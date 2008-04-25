@@ -311,12 +311,13 @@
     <name>VBoxAboutNonOSEDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">Quant al VirtualBox</translation>
+        <translation>VirtualBox - Quant a</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Interfície Gràfica d&apos;Usuari de VirtualBox
+Versió %1</translation>
     </message>
 </context>
 <context>
@@ -390,11 +391,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Només lectura</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estiga marcat, el sistema operatiu client no podrà escriure a la carpeta compartida especificada.</translation>
     </message>
 </context>
 <context>
@@ -904,15 +905,15 @@ Version %1</source>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;iàleg Informatiu de la Sessió</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el Diàleg Informatiu de la Sessió</translation>
     </message>
 </context>
 <context>
@@ -1516,7 +1517,7 @@ Version %1</source>
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>Disc durs</translation>
+        <translation>Disc dur</translation>
     </message>
     <message>
         <source>Network</source>
@@ -1794,152 +1795,212 @@ Version %1</source>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>VT-x/AMD-V
+
+detalls informe</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>PAE/NX
+
+detalls informe</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat
+
+detalls informe (VT-x/AMD-V)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat
+
+detalls informe (VT-x/AMD-V)</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat
+
+detalls informe (PAE/NX)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat
+
+detalls informe (PAE/NX)</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador amfitrió
+
+detalls informe (àudio)</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador
+
+detalls informe (àudio)</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1
+
+detalls informe (ports paral·lels)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat
+
+detalls informe (ports paral·lels)</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ports paral·lels
+
+detalls informe</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB
+
+DispositiuTipus</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Carpeta Compartida
+
+DispositiuTipus</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE
+
+EmmagazematgeBus</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA
+
+EmmagazematgeBus</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Primari</translation>
+        <translation>Primari
+
+EmmagazematgeBusCanal</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Secundari</translation>
+        <translation>Secundari
+
+EmmagazematgeBusCanal</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Mestre</translation>
+        <translation>Mestre
+
+EmmagazematgeBusDispositiu</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Esclau</translation>
+        <translation>Esclau
+
+EmmagazematgeBusDispositiu</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1
+
+EmmagazematgeBusDispositiu</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imatge VHD
+
+DiscEmmazematgeTipus</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Solaris Audio
+
+ÀudioControladorTipus</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio
+
+ÀudioControladorTipus</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH AC97
+
+ÀudioControladorTipus</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SoundBlaster 16
+
+ÀudioControladorTipus</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-PCI II (Am79C970A)
+
+XarxaAdaptadorTipus</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-FAST III (Am79C973)
+
+XarxaAdaptadorTipus</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)
+
+XarxaAdaptadorTipus</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3
+
+IDEControladorTipus</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4
+
+IDEControladorTipus</translation>
     </message>
 </context>
 <context>
@@ -2282,15 +2343,22 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Llista els filtres USB
+globals. La casella de selecció
+de la dreta defineix què filtre
+concret està activat o no. Feu
+servir el menú de context o 
+els botons de la dreta per 
+afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix Filtre Buit</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Afegeix Filtre Buit</translation>
     </message>
     <message>
         <source>
@@ -2298,87 +2366,91 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com 
+a cadenes buides. Tingueu en compte que els filtres coincidiran
+amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix un Filtre des d&apos;un Dispositiu</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix un Filtre des d&apos;un &amp;Dispositiu</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps 
+fixats als valors del dispositu USB seleccionat connectat
+al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina el filtre</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina el filt&amp;re</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Elimina el filtre USB remarcat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mou el Filtre Amunt</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mou el Filtre Amunt</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Mou el filtre remarcat amunt.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mou el Filtre Avall</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;ou el Filtre Avall</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Mou el filtre remarcat avall.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Ranura</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Disc durs</translation>
+        <translation>Disc dur</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxHardDiskSettings</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Discs durs</translation>
+        <translation>&amp;Discs durs</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilita &amp;el Controlador SATA</translation>
     </message>
     <message>
         <source>
@@ -2387,11 +2459,14 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Quan estiga marcat, habilita el controlador
+virtual SATA per a aquesta màquina. Tingueu en
+compte qu no podeu adjuntar discs durs a ports
+SATA quan el controlador SATA no es troba actiu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>Discs Durs &amp;Adjunts</translation>
     </message>
     <message>
         <source>
@@ -2404,70 +2479,79 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Mostra tots els discs durs 
+adjunts a aquesta màquina. Feu doble 
+clic amb el ratolí o premeu el botó
+&lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Espai&lt;/tt&gt; a l&apos;element
+remarcat per activar la llista desplegable i
+triar el valor que desitgeu. Feu servir el
+menú de context o els botons de la dreta
+per afegir o eliminar els adjunts als discs
+durs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix Adjunt</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Afegeix Adjunt</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afegeix un nou adjunt al disc dur.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina Adjunt</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Elimina Adjunt</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Suprimeix</translation>
+        <translation>Suprimeix</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Elimina l&apos;adjunt al disc dur remarcat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccioneu un Disc Dur</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seleccioneu un Disc Dur</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espai</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Invoca el Gestor de Discs Virtuals per a seleccionar 
+un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; fa servir el disc dur que es troba adjuntat a &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Doble clic per afegir un nou adjunt</translation>
     </message>
 </context>
 <context>
@@ -2651,7 +2735,14 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat
+molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida
+especificada) conforme el Sistema Amfitrió consumisca espai.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer
+de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una 
+imatge de mida fixa triga un temps segons la grandària de la mateixa i de 
+l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3231,155 +3322,155 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut desar els paràmetres globals del VirtualBox a &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut carregar la configuració global de la IGU des de &lt;b&gt;&lt;nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut desar la configuració global de la IGU a &lt;b&gt;&lt;nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut desar els paràmetres de la màquina virtual &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut carregar els paràmetres de la màquina virtual &lt;b&gt;%1&lt;/b&gt; des de &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Suprimeix</translation>
+        <translation>Suprimeix</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lleva del registre</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished">Descarta</translation>
+        <translation>Descarta</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Continua</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Voleu suprimir aquest fitxer d&apos;imatge de disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si seleccioneu &lt;b&gt;Suprimeix&lt;/b&gt;, el fitxer d&apos;imatge s&apos;eliminarà completament una vegada es lleve del registre el disc dur. Aquesta operació no es pot desfer.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Suprimeix</translation>
+        <translation>Suprimeix</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lleva del registre</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hi ha discs durs adjunts als ports SATA a aquesta màquina virtual. Si deshabiliteu el controlador SATA, tots aquests discs es desadjuntaran automàticament.&lt;/p&gt;&lt;p&gt;Esteu segur que voleu deshabilitar el controlador SATA?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Inhabilita</translation>
+        <translation>Inhabilita</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut adjuntar la imatge del disc dur amb UUID %1 a la ranura de dispositius %2 al canal %3 del bus %4 de la màquina &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut desadjuntar una imatge de disc dur a la ranura de dispositius %1 al canal %2 del bus %3 de la màquina &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Descarrega</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Munta</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La tecla d&apos;amfitrió es troba actualment definida com a &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="unfinished"></translation>
+        <translation>Captura</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Un  o més dels discs durs virtuals, CD/DVD o disquet no es troben actualment accessibles. Això significa que no podreu treballar amb les màquines virtuals que els facen servir fins que estiguen accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir la finestra del Gestor de Disc Virtual i comprovar quins medis es troben inaccessibles, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Comprova</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han desat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Desa&lt;/b&gt; per desar ara els fitxers auto-convertits (ja no serà possible fer servir aquests paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans de desar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel·la&lt;/b&gt; per no desar ara els fitxers de paràmetres auto-convertits.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Tingueu en compte que si seleccioneu &lt;b&gt;Cancel·la&lt;/b&gt;, els fitxers de paràmetres auto-convertits es desaran implícitament en el nou format tot i que una vegada que canvieu algun paràmetre o inicieu una màquina virtual, en canvi en aquest cas  &lt;b&gt;no&lt;/b&gt; es faran còpies de seguretat.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">De&amp;sa</translation>
+        <translation>De&amp;sa</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Còpia de seguretat</translation>
     </message>
     <message>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Cancel·la</translation>
+        <translation>Cancel·la</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Canvia</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Canvia</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Segur que voleu reinicializar la màquina virtual?&lt;/p&gt;&lt;p&gt;Quan la màquina es reinicialitza, les dades no desades de totes les aplicacions a dins es perdran.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Reinicialitza</translation>
+        <translation>Reinicialitza</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Continua</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vés Enrere</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut copiar el fitxer &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; a &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
 </context>
 <context>
@@ -3434,15 +3525,15 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut dur a terme la conformitat de connexió.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ompliu aquest formulari de registre per deixar-nos conèixer que feu servir el VirtualBox i, opcionalment, per mantindre-vos informat sobre novetats i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu el vostre nom complet fent servir caràcters latins i la vostra adreça de correu electrònica als camps següents. Tingueu en compte que Sun Microsystems farà servir aquesta informació només per estadístiques del producte i per enviar-vos notícies sobre el VirtualBox. En particular, Sun Microsystems no deixarà les vostres dades a terceres parts. Podeu trobar informació detallada sobre l&apos;ús de les dades personals a la secció &lt;b&gt;Política de Privacitat&lt;/b&gt; (en anglès) del Manual de Virtual Box o &lt; l&apos;adreça web &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacitat&lt;/a&gt; (en anglès).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Marqueu aquesta casella si no voleu rebre informació de Sun Microsystems a l&apos;adreça que heu especificat.</translation>
     </message>
 </context>
 <context>
@@ -3701,35 +3792,35 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation type="unfinished">R&amp;eprèn</translation>
+        <translation>R&amp;eprèn</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Reprèn</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+P</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Reprèn l&apos;execució de la màquina virtual</translation>
+        <translation>Reprèn l&apos;execució de la màquina virtual</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pausa</translation>
+        <translation>&amp;Pausa</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished">Pausa</translation>
+        <translation>Pausa</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Suspèn l&apos;execució de la màquina virtual</translation>
+        <translation>Suspèn l&apos;execució de la màquina virtual</translation>
     </message>
 </context>
 <context>
@@ -3814,23 +3905,23 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Accés</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espai</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Edita la carpeta compartida seleccionada (Ctrl+Espai)</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Complet</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Només lectura</translation>
     </message>
 </context>
 <context>
@@ -3932,7 +4023,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>&amp;Descarga la captura</translation>
+        <translation>&amp;Descarta la captura</translation>
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
@@ -4028,7 +4119,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espai</translation>
     </message>
 </context>
 <context>
@@ -4373,119 +4464,119 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Diàleg Informatiu de la Sessió</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Tan&amp;ca</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Informació de la Sessió</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detalls</translation>
+        <translation>&amp;Detalls</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Temps d&apos;execució</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transferències DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transferències PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Lectura de Dades</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished"></translation>
+        <translation>Escriptura de Dades</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished"></translation>
+        <translation>Transmissió de Dades</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished"></translation>
+        <translation>Recepció de Dades</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Atributs del Temps d&apos;Execució</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolució de Pantalla</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualització per Maquinari</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estadístiques CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estadístiques de l&apos;Adaptador de Xarxa</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation type="unfinished">No connectat</translation>
+        <translation>No connectat</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estadístiques de Discs Durs</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Primari Mestre</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Primari Esclau</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Secundari Mestre</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Secundari Esclau</translation>
     </message>
 </context>
 <context>
@@ -4652,66 +4743,66 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nom de la Xarxa</translation>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipus d&apos;Adaptador</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciona el tipus d&apos;adaptador de xarxa virtual. Segons el valor, VirtualBox proveirà diferent maquinari de xarxa per a la màquina virtual.</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el nom de la xarxa interna seleccionada per a aquest adaptador.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
         <source>VBoxVMParallelPortSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMParal·lelPortParàmetres</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilita Port Paral·l&amp;el</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estiga marca, habilita el port paral·lel de la màquina virtual.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
-        <translation type="unfinished">&amp;Número de Port</translation>
+        <translation>&amp;Número de Port</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el número del port paràl·lel. Podeu triar un dels ports paral·lels estàndards o seleccionar &lt;b&gt;Definit per l&apos;usuari&lt;/b&gt; i especificar els paràmetres manualment.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
-        <translation type="unfinished">&amp;IRQ</translation>
+        <translation>&amp;IRQ</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el número IRQ per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;255&lt;/tt&gt;. Valors més grans que &lt;tt&gt;15&lt;/tt&gt; es faran servir si &lt;b&gt;IO APIC&lt;/b&gt; es troba habilitat a aquesta màquina virtual.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
-        <translation type="unfinished">Po&amp;rt E/S</translation>
+        <translation>Po&amp;rt E/S</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça base del port E/S per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="unfinished">Ruta del &amp;port</translation>
+        <translation>Ruta del &amp;Port</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el nom del dispositiu paral·lel del sistema client.</translation>
     </message>
 </context>
 <context>
@@ -5122,7 +5213,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation>Invoca el Gestor de Disc Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
+        <translation>Invoca el Gestor de Discs Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -5461,59 +5552,59 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
     </message>
     <message>
         <source>00</source>
-        <translation type="unfinished">00</translation>
+        <translation>00</translation>
     </message>
     <message>
         <source>01</source>
-        <translation type="unfinished">01</translation>
+        <translation>01</translation>
     </message>
     <message>
         <source>02</source>
-        <translation type="unfinished">02</translation>
+        <translation>02</translation>
     </message>
     <message>
         <source>03</source>
-        <translation type="unfinished">03</translation>
+        <translation>03</translation>
     </message>
     <message>
         <source>04</source>
-        <translation type="unfinished">04</translation>
+        <translation>04</translation>
     </message>
     <message>
         <source>05</source>
-        <translation type="unfinished">05</translation>
+        <translation>05</translation>
     </message>
     <message>
         <source>08</source>
-        <translation type="unfinished">08</translation>
+        <translation>08</translation>
     </message>
     <message>
         <source>10</source>
-        <translation type="unfinished">10</translation>
+        <translation>10</translation>
     </message>
     <message>
         <source>09</source>
-        <translation type="unfinished">09</translation>
+        <translation>09</translation>
     </message>
     <message>
         <source>06</source>
-        <translation type="unfinished">06</translation>
+        <translation>06</translation>
     </message>
     <message>
         <source> Parallel Ports </source>
-        <translation type="unfinished"></translation>
+        <translation>Ports Paral·lels</translation>
     </message>
     <message>
         <source>07</source>
-        <translation type="unfinished">07</translation>
+        <translation>07</translation>
     </message>
     <message>
         <source>#parallelPorts</source>
-        <translation type="unfinished"></translation>
+        <translation>#Porsparal·lels</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilita PA&amp;E/NX</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When
@@ -5524,31 +5615,37 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Quan
+estiga marcat, la 
+característica d&apos;Extensió
+d&apos;Adreça Física (PAE)
+de la CPU del sistema
+client s&apos;exposarà a la 
+màquina virtual.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;ipus de Controlador IDE</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineix el tipus del controlador virtual IDE. Segons aquest valor, VirtualBox proveirà diferents dispositius de maquinari IDE virtual per al sistema client.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Controlador d&apos;Àudio</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciona el tipus de la targeta de so virtual. Segons aquest valor, VirtualBox proveirà diferents dispositius de maquinari de so per al sistema client.</translation>
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilita el controlador USB &amp;2.0</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estiga marcat, habilita el controlador virtual USB EHCI per a aquesta màquina. El controlador USB ECHI proveïx de suport USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5560,15 +5657,22 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Llista tots els filtres USB
+d&apos;aquesta màquina. La casella de 
+seleccióde la dreta defineix què 
+filtre concret està activat o no. Feu
+servir el menú de context o 
+els botons de la dreta per 
+afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix Filtre Buit</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Afegeix Filtre Buit</translation>
     </message>
     <message>
         <source>
@@ -5576,77 +5680,81 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com 
+a cadenes buides. Tingueu en compte que els filtres coincidiran
+amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix un Filtre des d&apos;un Dispositiu</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix un Filtre des d&apos;un &amp;Dispositiu</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps 
+fixats als valors del dispositu USB seleccionat connectat
+al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina el filtre</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina el filt&amp;re</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Elimina el filtre USB remarcat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mou el Filtre Amunt</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mou el Filtre Amunt</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Mou el filtre USB remarcat amunt.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mou el Filtre Avall</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;ou el Filtre Avall</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Mou el filtre USB remarcat avall.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha especificat un nom de xarxa intern</translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha especificat una ruta al port</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
 </context>
 </TS>

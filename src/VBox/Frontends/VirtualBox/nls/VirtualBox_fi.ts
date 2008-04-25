@@ -236,11 +236,11 @@
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Seuraava</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Edellinen</translation>
     </message>
 </context>
 <context>
@@ -259,7 +259,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -303,19 +303,20 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VirtualBox - graafinen käyttöliittymä; versio %1&lt;br&gt;
+%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxAboutNonOSEDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">VirtualBox - tietoja</translation>
+        <translation>VirtualBox - tietoja</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - graafinen käyttöliittymä; versio %1</translation>
     </message>
 </context>
 <context>
@@ -330,7 +331,7 @@ Version %1</source>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvaava nimi uudelle verkkoliitännälle</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -338,7 +339,7 @@ Version %1</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
 </context>
 <context>
@@ -381,19 +382,19 @@ Version %1</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tee pysyväksi</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vain luku</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
@@ -408,7 +409,7 @@ Version %1</source>
     </message>
     <message>
         <source>You want to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse toiminto:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -428,7 +429,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -436,7 +437,7 @@ Version %1</source>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Palauta laite tilaan, joka on tallennettu nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
         <source>Help</source>
@@ -456,7 +457,7 @@ Version %1</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
@@ -466,7 +467,7 @@ Version %1</source>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>Läh&amp;etä sammuta-signaali</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
@@ -528,7 +529,7 @@ Version %1</source>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation type="unfinished"></translation>
+        <translation>Muuta asiakkaan näytön kokoa automaattisesti, kun ikkunan kokoa muutetaan (vaatii asiakaslisäykset)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -536,7 +537,7 @@ Version %1</source>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation type="unfinished"></translation>
+        <translation>Säädä ikkunan kokoa ja sijaintia sopimaan asiakkaan näyttöön</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -544,7 +545,7 @@ Version %1</source>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähetä Ctrl-Alt-Del-näppäinyhdistelmä virtuaalikoneelle</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
@@ -552,7 +553,7 @@ Version %1</source>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähetä Ctrl-Alt-Backspace-näppäinyhdistelmä virtuaalikoneelle</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -653,7 +654,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tilastot...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
@@ -669,11 +670,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>&amp;Tietoa VirtualBoxista...</translation>
+        <translation>&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä tuotetiedot sisältävä valintaikkuna</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
@@ -705,7 +706,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Ohje</translation>
+        <translation>O&amp;hje</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -758,15 +759,15 @@ Version %1</source>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>&amp;Yritä uudestaan</translation>
+        <translation>&amp;Jatka</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Jatka virtuaalikoneen suorittamista</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota &amp;hiiren integrointi pois käytöstä</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
@@ -836,11 +837,11 @@ Version %1</source>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Saumato&amp;n tila</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaihda saumattoman työpöytäintegraation tilaan</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -952,7 +953,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Sisältö...</translation>
+        <translation>&amp;Sisältö...</translation>
     </message>
     <message>
         <source>F1</source>
@@ -964,11 +965,11 @@ Version %1</source>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;ekisteröi VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa VirtualBoxin rekisteröintilomakkeen</translation>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
@@ -1043,7 +1044,7 @@ Version %1</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -1253,7 +1254,7 @@ Version %1</source>
     <name>VBoxDownloaderWgt</name>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
@@ -1261,7 +1262,7 @@ Version %1</source>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Peruuta VirtualBox-asiakaslisäyksien CD-levykuvan lataus</translation>
+        <translation>Peru VirtualBox-asiakaslisäyksien CD-levykuvan lataus</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
@@ -1319,7 +1320,7 @@ Version %1</source>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Käytttöjärjestelmän tyyppi</translation>
+        <translation>Käyttöjärjestelmän tyyppi</translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -1618,7 +1619,7 @@ Version %1</source>
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Muuttamaton</translation>
     </message>
     <message>
         <source>Writethrough</source>
@@ -1638,7 +1639,7 @@ Version %1</source>
     <message>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VMDK-levykuva</translation>
     </message>
     <message>
         <source>Null</source>
@@ -1648,7 +1649,7 @@ Version %1</source>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ulkoinen</translation>
     </message>
     <message>
         <source>Guest</source>
@@ -1683,7 +1684,7 @@ Version %1</source>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Null-ääniajuri</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -1693,12 +1694,12 @@ Version %1</source>
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OSS-ääniajuri</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ALSA-ääniajuri</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
@@ -1723,12 +1724,12 @@ Version %1</source>
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Isäntäkoneen liitäntä</translation>
     </message>
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sisäinen verkko</translation>
     </message>
     <message>
         <source>Not supported</source>
@@ -1753,12 +1754,12 @@ Version %1</source>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pidossa</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kaapattu</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
@@ -1778,17 +1779,17 @@ Version %1</source>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Isännältä asiakkaalle</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Asiakkaalta isännälle</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kaksisuuntainen</translation>
     </message>
     <message>
         <source>Select a directory</source>
@@ -1801,42 +1802,42 @@ Version %1</source>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">Portti %1</translation>
+        <translation>Portti %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Ei käytössä</translation>
     </message>
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sarjaportit</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Jaetut Kansiot</translation>
+        <translation>Jaetut kansiot</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>details report (shadef folders)</comment>
-        <translation type="unfinished">%1</translation>
+        <translation>%1</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Ei mitään</translation>
+        <translation>Ei mitään</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Jaetut Kansiot</translation>
+        <translation>Jaetut kansiot</translation>
     </message>
     <message>
         <source>Stuck</source>
@@ -1851,17 +1852,17 @@ Version %1</source>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Isäntäkoneen putki</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>PortMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Isäntäkoneen laite</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation type="unfinished"></translation>
+        <translation>Käyttäjän määrittämä</translation>
     </message>
     <message>
         <source>Custom Hard Disk</source>
@@ -1881,27 +1882,27 @@ Version %1</source>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Käytössä</translation>
+        <translation>Käytössä</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Ei käytössä</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Käytössä</translation>
+        <translation>Käytössä</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Ei käytössä</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Isäntäkoneen ajuri</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -1911,77 +1912,77 @@ Version %1</source>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Portti %1</translation>
+        <translation>Portti %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Ei käytössä</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rinnakkaisportit</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Jaettu kansio</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Ensisijainen</translation>
+        <translation>Ensisijainen</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Toissijainen</translation>
+        <translation>Toissijainen</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Isäntä (master)</translation>
+        <translation>Isäntä (master)</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Orja (slave)</translation>
+        <translation>Orja (slave)</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Portti %1</translation>
+        <translation>Portti %1</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VHD-levykuva</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
@@ -2110,15 +2111,15 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Näppäimistö</translation>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Isäntänäppäin</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaappaa näppäimistö &amp;automaattisesti</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
@@ -2150,7 +2151,7 @@ Version %1</source>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="obsolete">Poista valitut USB-suodattimet.</translation>
+        <translation>Poista valittu USB-suodatin.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -2202,15 +2203,15 @@ Version %1</source>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished">Tallentaa muutokset ja sulkee valintaikkunan.</translation>
+        <translation>Hyväksyy (tallentaa) muutokset ja sulkee valintaikkunan.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>Peruuttaa muutokset ja sulkee valintaikkunan.</translation>
+        <translation>Peruu muutokset ja sulkee valintaikkunan.</translation>
     </message>
     <message>
         <source>VirtualBox Preferences</source>
@@ -2327,11 +2328,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Extended Features</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Laajennetut ominaisuudet</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota &amp;VT-x/AMD-V käyttöön</translation>
     </message>
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
@@ -2351,11 +2352,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää tyhjä suodatin</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lisää tyhjä suodatin</translation>
     </message>
     <message>
         <source>
@@ -2382,11 +2383,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista suodatin</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Poista suodatin</translation>
     </message>
     <message>
         <source>
@@ -2427,11 +2428,11 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Paikka</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Kiintolevy</translation>
+        <translation>Kiintolevy</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
@@ -2439,11 +2440,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Kiintolevyt</translation>
+        <translation>&amp;Kiintolevyt</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ota SATA-ohjain käyttöön</translation>
     </message>
     <message>
         <source>
@@ -2456,7 +2457,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>Liitetyt &amp;kiintolevyt</translation>
     </message>
     <message>
         <source>
@@ -2473,11 +2474,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää liitos</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lisää liitos</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -2491,11 +2492,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista liitos</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Poista liitos</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -2509,11 +2510,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kiintolevy</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Valitse kiintolevy</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
@@ -2550,19 +2551,19 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxLogSearchPanel</name>
     <message>
         <source>Close the search panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje hakupaneeli</translation>
     </message>
     <message>
         <source>Find </source>
-        <translation type="unfinished"></translation>
+        <translation>Esti </translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjoita haettava teksti tähän</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Edellinen</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
@@ -2570,7 +2571,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seuraava</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -2578,7 +2579,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;uomioi kirjainkoko</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
@@ -2586,7 +2587,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>String not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekstiä ei löytynyt</translation>
     </message>
 </context>
 <context>
@@ -2610,11 +2611,13 @@ to the system default language.&lt;/qt&gt;
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tämä ohjattu toiminto auttaa uuden virtuaalisen kiintolevykuvan luomisesssa virtuaalikoneelle.&lt;/p&gt;
+&lt;p&gt;Käytä &lt;b&gt;Seuraava&lt;/b&gt;-painiketta siirtyäksesi seuraavalle sivulle
+ja &lt;b&gt;Edellinen&lt;/b&gt;-painiketta siirtyäksesi edelliselle sivulle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Tervetuloa uuden virtuaalilevyn luontivelhoon</translation>
+        <translation>Tervetuloa uuden virtuaalilevyn ohjattuun luomiseen</translation>
     </message>
     <message>
         <source>Image Type</source>
@@ -2622,7 +2625,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dynaamisesti laajentuva levykuva</translation>
     </message>
     <message>
         <source>Alt+D</source>
@@ -2630,7 +2633,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kiinteän kokoinen levykuva</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2639,7 +2642,8 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Napsauta &lt;b&gt;Valitse&lt;/b&gt;-painiketta valitaksesi tallennettavan virtuaalikiintolevyn
+levykuvan sijainnin ja nimen, tai kirjoita tiedostonimi tekstikenttään.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Image File Name</source>
@@ -2664,17 +2668,19 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Uutta virtuaalista kiintolevyn levykuvaa ollaan luomassa seuraavilla parametreilla:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>Jos yllä olevat asetukset ovat oikein, napsauta &lt;b&gt;Valmis&lt;/b&gt;-painiketta.
+                            Kun painiketta napsautetaan, uusi kiintolevyn levykuva luodaan.
+                            </translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Yhteenveto</translation>
+        <translation>Yhteenveto</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -2686,11 +2692,11 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiintolevyjen levykuvat (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse tiedosto uudelle kiintolevyn levykuvalle</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -2714,18 +2720,24 @@ time depending on the image size and the write performance of your harddisk.&lt;
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tämä ohjattu toiminto auttaa uuden virtuaalikoneen luomisessa
+VirtualBoxia varten.&lt;/p&gt;
+&lt;p&gt;Käytä &lt;b&gt;Seuraava&lt;/b&gt;-painiketta siirtyäksesi seuraavalle sivulle
+ja &lt;b&gt;Edellinen&lt;/b&gt;-painiketta palataksesi edelliselle sivulle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Tervetuloa virtuaalikoneen luontivelhoon</translation>
+        <translation>Tervetuloa virtuaalikoneen ohjattuun luontiin</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Syötä uuden virtuaalikoneen nimi ja valitse virtuaalikoneeseen asennettavaksi
+suunnitellun asiakaskäyttöjärjestelmän tyyppi.&lt;/p&gt;
+&lt;p&gt;Virtuaalikoneen nimi kuvailee yleensä sen laitteisto- ja ohjelmistoasennuksen.
+Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -2741,11 +2753,11 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Valitse virtuaalikoneelle varattavan järjestelmämuistin (RAM) määrä megatavuissa.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Järjestelmä&amp;muistin koko</translation>
+        <translation>Järjestelmä&amp;muistin määrä</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -2779,7 +2791,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation>&amp;Käynnistä kovalevyltä</translation>
+        <translation>&amp;Käynnistä kovalevyltä (ensisijainen isäntä)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
@@ -2791,7 +2803,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>Virtuaalilevy</translation>
+        <translation>Virtuaalikiintolevy</translation>
     </message>
     <message>
         <source>
@@ -2800,7 +2812,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             with the following parameters:
                             &lt;/p&gt;
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+                            &lt;p&gt;
+                            Uutta virtuaalikonetta ollaan luomassa
+                            seuraavilla parametreilla:
+                            &lt;/p&gt;
+                            </translation>
     </message>
     <message>
         <source>
@@ -2846,12 +2863,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - tietoja</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - kysymys</translation>
     </message>
     <message>
         <source>VirtualBox - Warning</source>
@@ -3242,22 +3259,22 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Poista</translation>
+        <translation>Poista</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Poista rekisteröinti</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hylkää</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Jatka</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
@@ -3266,12 +3283,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Poista</translation>
+        <translation>Poista</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Poista rekisteröinti</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
@@ -3280,7 +3297,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Poista käytöstä</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
@@ -3293,12 +3310,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nouda</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Liitä</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3326,17 +3343,17 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Tallenna</translation>
+        <translation>&amp;Tallenna</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Varmuuskopioi</translation>
     </message>
     <message>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -3360,12 +3377,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Jatka</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mene takaisin</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -3439,7 +3456,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3487,7 +3504,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Näyttää yleisten asetusten valintaikkunan</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -3547,15 +3564,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;ylkää</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Hylkää</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Hylkää valitun virtuaalikoneen tallennettu tila</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -3603,7 +3620,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Poista kaikki varoitukset</translation>
+        <translation>&amp;Palauta kaikki varoitukset</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
@@ -3679,7 +3696,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;ekisteröi VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
@@ -3691,11 +3708,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation type="unfinished">&amp;Yritä uudestaan</translation>
+        <translation>J&amp;atka</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Jatka</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
@@ -3703,19 +3720,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Jatka virtuaalikoneen suorittamista</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Keskeytä</translation>
+        <translation>&amp;Keskeytä</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytä</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytä virtuaalikoneen suoritus</translation>
     </message>
 </context>
 <context>
@@ -3825,11 +3842,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Pääsy</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+välilyönti</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
@@ -3837,11 +3854,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Täysi</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Vain luku</translation>
     </message>
 </context>
 <context>
@@ -3884,7 +3901,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3956,12 +3973,12 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nykyinen tila (muuttunut)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nykyinen tila</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
@@ -3974,7 +3991,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation> (nykyine, </translation>
     </message>
     <message>
         <source>online)</source>
@@ -3989,12 +4006,12 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Luotu </translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Luotu </translation>
     </message>
     <message>
         <source>%1 since %2</source>
@@ -4019,11 +4036,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Revert to Current Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
         <source>Ctrl+Shift+R</source>
@@ -4043,11 +4060,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä yksityiskohdat valitusta palautuspisteestä</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+välilyönti</translation>
     </message>
 </context>
 <context>
@@ -4097,7 +4114,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
 </context>
 <context>
@@ -4270,7 +4287,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Ensimmäisen suorituskerran ohjattu toiminto</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
@@ -4278,7 +4295,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Tervetuloa ensimmäisen suorituskerran ohjattuun toimintoon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
@@ -4334,7 +4351,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Yhteenveto</translation>
+        <translation>Yhteenveto</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
@@ -4381,7 +4398,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Sulje</translation>
+        <translation>&amp;Sulje</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
@@ -4389,7 +4406,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Yksityiskohdat</translation>
+        <translation>&amp;Yksityiskohdat</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
@@ -4421,11 +4438,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Käytössä</translation>
+        <translation>Käytössä</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation>Ei käytössä</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4553,7 +4570,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Ohje</translation>
+        <translation>Ohje</translation>
     </message>
     <message>
         <source>F1</source>
@@ -4561,11 +4578,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Etsi</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje</translation>
     </message>
 </context>
 <context>
@@ -4680,11 +4697,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verkon nimi</translation>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovitin&amp;tyyppi</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
@@ -4829,7 +4846,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Valitse asetusryhmä vasemmalla puolella olevasta luettelosta, ja siirrä hiiren osoitinta asetusten yli saadaksesi lisää tietoja&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -4981,7 +4998,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation>&amp;Videomuistin koko</translation>
+        <translation>&amp;Videomuistin määrä</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
@@ -5229,7 +5246,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Peruuta</translation>
+        <translation>Peru</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
@@ -5405,7 +5422,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox-isäntäkoneen liitäntä %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -5425,7 +5442,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota &amp;VT-x/AMD-V käyttöön</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
@@ -5437,7 +5454,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;Remember Media Mounted at Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Muista suoritettaessa liitetyt mediat</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -5449,11 +5466,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>O&amp;ther</source>
-        <translation type="unfinished"></translation>
+        <translation>Muu&amp;t</translation>
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ota läpivienti käyttöön</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
@@ -5570,7 +5587,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota PA&amp;E/NX käyttöön</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When
@@ -5585,7 +5602,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IDE-ohjaimen tyyppi</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -5593,7 +5610,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Ääni&amp;ohjain</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -5601,7 +5618,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota USB &amp;2.0 -ohjain käyttöön</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>

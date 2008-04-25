@@ -39,11 +39,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>Mover o dispositivo de boot seleccionado para cima.</translation>
+        <translation>Move o dispositivo de arranque seleccionado para cima.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>Mover o dispositivo de boot seleccionado para baixo.</translation>
+        <translation>Move o dispositivo de arranque seleccionado para baixo.</translation>
     </message>
 </context>
 <context>
@@ -298,12 +298,12 @@
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation>Acerca do VirtualBox</translation>
+        <translation>VirtualBox - Acerca</translation>
     </message>
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Interface de Utilizador Gráfica do VirtualBox Versão %1&lt;br&gt;
+        <translation>&lt;qt&gt;Interface Gráfico de Utilizador VirtualBox Versão %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -311,27 +311,28 @@
     <name>VBoxAboutNonOSEDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">Acerca do VirtualBox</translation>
+        <translation>VirtualBox - Acerca</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Interface Gráfico de Utilizador VirtualBox
+Versão %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Adicionar Placa de Rede</translation>
+        <translation>Adicionar Interface Hospedeiro</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Nome da Placa de Rede</translation>
+        <translation>Nome do Interface</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Descrição da nova placa de rede</translation>
+        <translation>Nome descritivo do novo interface de rede</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -370,7 +371,7 @@ Version %1</source>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Mostra o nome de uma pasta partilhada (como será visto pelo SO virtual).</translation>
+        <translation>Mostra o nome de uma pasta partilhada (como será visto pelo SO convidado).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
@@ -394,11 +395,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Apenas leitura</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando seleccionado, o SO convidado não poderá escrever na pasta especificada.</translation>
     </message>
 </context>
 <context>
@@ -447,9 +448,9 @@ Version %1</source>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Grava o estado de execução actual da máquina virtual para o disco rígido do PC hospedeiro.&lt;/p&gt;
-&lt;p&gt;Na próxima vez que esta máquina arrancar, será restaurada a partir do estado armazenado e continuará a execução a partir do mesmo lugar onde foi gravada, que lhe irá permitir continuar o seu trabalho imediatamente.&lt;/p&gt;
-&lt;p&gt;Note que gravar o estado da máquina virtual demora algum tempo, dependendo do sistema operativo hospedeiro e da quantidade de memória atribuída à máquina virtual.&lt;/p&gt;
+        <translation>&lt;p&gt;Grava o estado de execução actual da máquina virtual para o disco rígido físico do PC hospedeiro.&lt;/p&gt;
+&lt;p&gt;Na próxima vez que esta máquina arrancar, será restaurada a partir do estado armazenado e continuará a execução a partir do mesmo lugar onde foi gravada, o que lhe irá permitir imediatamente continuar o seu trabalho.&lt;/p&gt;
+&lt;p&gt;Note que gravar o estado da máquina virtual demora algum tempo, dependendo do sistema operativo convidado e da quantidade de memória que atribuiu à máquina virtual.&lt;/p&gt;
 </translation>
     </message>
     <message>
@@ -460,8 +461,8 @@ Version %1</source>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envia para a máquina virtual o evento de carregar no Botão de Energia  ACPI.&lt;/p&gt;
-&lt;p&gt;Normalmente, o sistema operativo convidade a correr dentro da máquina virtual detecta este evento e executa o procedimento de desligar o computador de uma forma segura. Esta é a forma recomendada de desligar a máquina virtual porque todas as aplicações em execução assim terão a oportunidade de gravar so deus dados e estado de uma forma segura.&lt;/p&gt;
+        <translation>&lt;p&gt;Envia o evento de carregar no Botão de Energia  ACPI para a máquina virtual.&lt;/p&gt;
+&lt;p&gt;Normalmente, o sistema operativo convidado a correr dentro da máquina virtual detecta este evento e executa o procedimento de desligar o computador de uma forma segura. Esta é a forma recomendada de desligar a máquina virtual porque todas as aplicações em execução assim terão a oportunidade de gravar so deus dados e estado de uma forma segura.&lt;/p&gt;
 &lt;p&gt;Se a máquina não responder a esta acção então o sistema operativo convidado pode estar mal configurado ou interpreta os eventos do Botão de Desligar ACPI. Neste caso, seleccione a opção &lt;b&gt;Desligar a máquina virtual&lt;/b&gt; para parar a máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -506,7 +507,7 @@ Version %1</source>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Alternar para ecrã completo</translation>
+        <translation>Alterna para ecrã completo</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
@@ -516,7 +517,7 @@ Version %1</source>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Auto-redimensionar Ecrã</translation>
+        <translation>Auto-redimensiona o Ecrã Convidado</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
@@ -524,7 +525,7 @@ Version %1</source>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>auto-redimensiona o ecrã do sistema convidado quando a janela é redimensionada (requer a instalação dos Controladores Adicionais para Convidado)</translation>
+        <translation>Redimensiona automaticamente o ecrã convidado quando a janela é redimensionada (requer as Adições de Convidado)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -641,11 +642,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Instalar Controladores Adicionais para Convidado...</translation>
+        <translation>&amp;Instalar Adições de Convidado...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Montar a imagem de instalação de Controladores Adicionais para Convidado</translation>
+        <translation>Monta a imagem de instalação das Adições de Convidado</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -705,11 +706,11 @@ Version %1</source>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se a função de auto-redimensionar o ecrã do sistema convidado está Activa (&lt;img src=auto_resize_on_16px.png/&gt;) ou Desligada (&lt;img src=auto_resize_off_16px.png/&gt;). Note que esta função requer que os Controladores Adicionais Para Convidado estejam instalados no sistema convidado.</translation>
+        <translation>Indica se a função de auto-redimensionar o ecrã do sistema convidado está Activa (&lt;img src=auto_resize_on_16px.png/&gt;) ou Desligada (&lt;img src=auto_resize_off_16px.png/&gt;). Note que esta função requer que as Adições de Convidado estejam instaladas no sistema convidado.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se o ponteiro do rato do sistema hospedeiro foi capturado pelo sistema convidado:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro não foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integração do rato (IR) está Activa&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IR está Desligada, o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IR está Desligada, o ponteiro não está capturado&lt;/nobr&gt;&lt;br&gt;Repare que o recurso de integração do rato requer que os Controladore Adicionais Para Convidado estejam instalados no sistema convidado.</translation>
+        <translation>Indica se o ponteiro do rato do sistema hospedeiro foi capturado pelo sistema convidado:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro não foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integração do rato (IR) está Activa&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IR está Desligada, o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IR está Desligada, o ponteiro não está capturado&lt;/nobr&gt;&lt;br&gt;Repare que o recurso de integração do rato requer que as Adições de Convidado estejam instaladas no sistema convidado.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
@@ -870,25 +871,25 @@ Version %1</source>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Modo Seam&amp;less</translation>
+        <translation>Modo &apos;Seam&amp;less&apos;</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Alterna para o modo &quot;seamless&quot; de integração com o desktop</translation>
+        <translation>Muda para modo de integração de ecrã &apos;seamless&apos;</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation>Indica se o teclado foi capturado pelo sistema operativo Convidado (&lt;img src=hostkey_captured_16px.png/&gt;) ou não (&lt;img src=hostkey_16px.png/&gt;).</translation>
+        <translation>Indica se o teclado foi capturado pelo SO convidado (&lt;img src=hostkey_captured_16px.png/&gt;) ou não (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade da disquete:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade do dispositivo de disquetes:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drive do Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Dispositivo Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -908,7 +909,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drive do Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Dispositivo Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -933,7 +934,7 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade das interfaces de rede:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos interfaces de rede:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
@@ -958,26 +959,26 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos dispositivos USB conectados:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos dispositivos USB ligados:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhum dispositivo USB conectado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhum dispositivo USB ligado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controladora USB desactivada&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controlador USB desactivado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indica se o servidor de Display Remoto (VRDP) está activo (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+        <translation>Indica se o servidor de Ecrã Remoto (Servidor VRDP) está activo (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade em pastas partilhadas:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade das pastas partilhadas:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -994,7 +995,7 @@ Version %1</source>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation>Mostrar o conteúdo da ajuda em-linha</translation>
+        <translation>Mostra o conteúdo da ajuda em-linha</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -1006,15 +1007,15 @@ Version %1</source>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox xVM Sun</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Diálogo de I&amp;nformação da Sessão</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o Diálogo de Informação da Sessão</translation>
     </message>
 </context>
 <context>
@@ -1110,7 +1111,7 @@ Version %1</source>
     </message>
     <message>
         <source>Add</source>
-        <translation>Acrescentar</translation>
+        <translation>Adicionar</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -1248,7 +1249,7 @@ Version %1</source>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Seleccione um ficheiro de imagem de CD/DVD-ROM</translation>
+        <translation>Seleccione um ficheiro de imagem CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
@@ -1260,23 +1261,23 @@ Version %1</source>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation>Criar um novo disco rígido virtual</translation>
+        <translation>Cria um novo disco rígido virtual</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation>Adicionar (registar) um ficheiro de imagem existente</translation>
+        <translation>Adiciona (regista) um ficheiro de imagem existente</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation>Remover (desregistar) o dispositivo seleccionado</translation>
+        <translation>Remove (desregista) o dispositivo seleccionado</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation>Libertar o dispositivo seleccionado desligando-o da máquina virtual</translation>
+        <translation>Liberta o dispositivo seleccionado desligando-o da máquina virtual</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation>Actualizar a lista de dispositivos</translation>
+        <translation>Actualiza a lista de dispositivos</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
@@ -1295,11 +1296,11 @@ Version %1</source>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>A transferir a imagem de CD dos Controladores Adicionais para Convidado do VirtualBox de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>A transferir a imagem de CD das Adições de Convidado VirtualBox de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Cancela a transferência da imagem de CD dos Controladores Adicionais para Convidado do VirtualBox</translation>
+        <translation>Cancela a transferência da imagem de CD das Adições de Convidado VirtualBox</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
@@ -1323,11 +1324,11 @@ Version %1</source>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Seleccione a pasta para gravar a imagem dos Controladores Adicionais para Convidado</translation>
+        <translation>Seleccione a pasta para gravar a imagem das Adições de Convidado</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation>Tempo para conexão excedido.</translation>
+        <translation>Intervalo de tempo para conexão excedido.</translation>
     </message>
     <message>
         <source>The download process has been cancelled by the user.</source>
@@ -1369,7 +1370,7 @@ Version %1</source>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Tipo do Sistema Operativo</translation>
+        <translation>Tipo de Sistema Operativo</translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -1921,152 +1922,152 @@ Version %1</source>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Activado</translation>
+        <translation>Activado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Desactivado</translation>
+        <translation>Desactivado</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Activado</translation>
+        <translation>Activado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Desactivado</translation>
+        <translation>Desactivado</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador do Dispositivo</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Porta %1</translation>
+        <translation>Porta %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Desactivado</translation>
+        <translation>Desactivado</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Portas Paralelas</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pasta Partilhada</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Primário</translation>
+        <translation>Primário</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Secundário</translation>
+        <translation>Secundário</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Master</translation>
+        <translation>&apos;Master&apos;</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Slave</translation>
+        <translation>&apos;Slave&apos;</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Porta %1</translation>
+        <translation>Porta %1</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagem VHD</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Áudio Solaris</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4</translation>
     </message>
 </context>
 <context>
@@ -2409,15 +2410,24 @@ usar o idioma predefinido do sistema.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Lista todos os filtros USB
+globais. A caixa de marcação
+à sua esquerda define se
+um filtro em particular está
+activo ou não. Use o menu
+do contexto ou os botões
+à sua direita para adicionar
+ou remover filtros USB.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar Filtro Vazio</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adicionar Filtro Vazio</translation>
     </message>
     <message>
         <source>
@@ -2425,87 +2435,98 @@ usar o idioma predefinido do sistema.&lt;/qt&gt;
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Adiciona um novo filtro USB com todos os campos
+inicialmente definidos como vazios. Note que tal filtro irá
+corresponder a qualquer dispositivo USB ligado.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar Filtro Do Dispositivo</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;dicionar Filtro Do Dispositivo</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Adiciona um novo filtro USB com todos os campos
+definidos para os valores do dispositivo USB seleccionado
+ligado à máquina.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro Remoto</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro &amp;Remoto</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Filtro Para Cima</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mover Filtro Para Cima</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Move o filtro USB destacado para cima.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Filtro Para Baixo</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;over Filtro Para Baixo</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Move o filtro USB destacado para baixo.&lt;/qt&gt;
+</translation>
     </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Encaixe</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Disco Rígido</translation>
+        <translation>Disco Rígido</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">Discos &amp;Rígidos</translation>
+        <translation>Discos &amp;Rígidos</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Activar Controlador SARA</translation>
     </message>
     <message>
         <source>
@@ -2514,11 +2535,16 @@ usar o idioma predefinido do sistema.&lt;/qt&gt;
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Quando seleccionado, activa o controlador
+SATA virtual desta máquina. Note que não pode
+ligar discos rígidos às portas SATA quando o
+controlador virtual está desactivado.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ligações dos Discos Rígidos</translation>
     </message>
     <message>
         <source>
@@ -2531,70 +2557,87 @@ usar o idioma predefinido do sistema.&lt;/qt&gt;
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Lista todos os discos rígidos
+ligados ao duplo clique ou às
+teclas &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Espaço&lt;/tt&gt;
+no item destacado para activar
+a escolha do valor desejado.
+Use o menu do contexto ou
+os botões à sua direita
+para adicionar ou remover
+ligações de discos rígidos.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar Ligação</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adicionar ligação</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished">Ins</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Adiciona uma nova ligação a um disco rígido.&lt;/qt
+</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Remover Ligação</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Remover Ligação</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Apagar</translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Remove a ligação ao disco rígido destacada.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionar Disco Rígido</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seleccionar Disco Rígido</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espaço</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Invoca o Gestor de Discos Virtuais para seleccionar um disco rígido
+para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; usa o disco rígido que já está ligado a &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplo clique para adicionar nova ligação</translation>
     </message>
 </context>
 <context>
@@ -2778,7 +2821,13 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione o tipo de imagem do disco rígido virtual que deseja criar.&lt;/p&gt;
+&lt;p&gt;Uma &lt;b&gt;imagem de expansão dinâmica&lt;/b&gt; ocupa inicialmente um pequeno
+espaço do seu disco rígido. Irá crescer dinâmicamente (para o
+tamanho indicado) consoante o SO Convidado cresce.&lt;/p&gt;
+&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não cresce. É armazenada num ficheiro com
+aproximadamente o mesmo tamanho do disco rígido virtual. A criação de uma imagem pode
+demorar algum tempo dependendo do tamanho da imagem e do desempenho do seu disco rígido.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2870,7 +2919,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation>Disco Rígido de &amp;Arranque (Master Primário)</translation>
+        <translation>Disco Rígido de &amp;Arranque (&apos;Master&apos; Primário)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
@@ -3081,7 +3130,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tem a certeza de que deseja desregistar a máquina virtual inacessível &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Não poderá mais registá-la a partir do interface gráfico.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tem a certeza de que deseja desregistar a máquina virtual inacessível &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Não a poderá voltar a registar através do  interface gráfico.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
@@ -3157,11 +3206,11 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Falha ao criar a placa de rede de hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Falha ao criar o interface de rede do hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Falha ao remover a placa de rede de hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Falha ao remover o interface de rede do hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -3283,15 +3332,15 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os Controladores Adicionais para Convidado do VirtualBox instalados no Sistema Operativo Convidado são muito antigos: a versão instalada é %1, e a versão esperada é %2. Alguns recursos dos Controladores Adicionais para Convidado (integração do rato, auto-redimensionamento da janela do convidado) provavelmente não irão funcionar correctamente.&lt;/p&gt;&lt;p&gt;Por favor actualize os Controladores Adicionais para Convidado para a versão actual usando a função &lt;b&gt;Instalar Controladores Adicionais para Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;As Adições de Convidado VirtualBox instalados no SO Convidado são muito antigas: a versão instalada é %1, e a versão esperada é %2. Alguns recursos das Adições de Convidado (integração do rato, auto-redimensionamento da janela do convidado) provavelmente não irão funcionar correctamente.&lt;/p&gt;&lt;p&gt;Por favor actualize as Adições de Convidado para a versão actual escolhendo &lt;b&gt;Instalar Adições de Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os Controladores Adicionais para Convidado do VirtualBox instalados no Sistema Operativo Convidado estão desactualizados: a versão instalada é %1, e a versão esperada é %2. Alguns recursos dos Controladores Adicionais para Convidado (integração do rato, auto-redimensionamento de janela do convidado) podem não funcionar correctamente.&lt;/p&gt;&lt;p&gt;É recomendado que actualize os Controladores Adicionais para Convidado para a versão actual usando a função &lt;b&gt;Instalar Controladores Adicionais para Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;As Adições de Convidado VirtualBox instalados no SO Convidado estão desactualizadas: a versão instalada é %1, e a versão esperada é %2. Alguns recursos das Adições de Convidado (integração do rato, auto-redimensionamento de janela do convidado) podem não funcionar correctamente.&lt;/p&gt;&lt;p&gt;É recomendado que actualize as Adições de Convidado para a versão actual usando a função &lt;b&gt;Instalar Adições de Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os Controladores Adicionais para Convidado do VirtualBox instalados no Sistema Operativo Convidado são recentes demais para esta versão do VirtualBox: a versão instalada é %1, a versão esperada é %2.&lt;/p&gt;&lt;p&gt;O uso de uma versão mais nova dos Adicionais com uma versão mais antiga do VirtualBox não é suportado. Por favor instale a versão actual dos Controladores Adicionais para Convidado usando a função &lt;b&gt;Instalar Controladores Adicionais para Convidado&lt;/b&gt; do menu  &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;As Adições de ConvidadoVirtualBox instalados no SO Convidado são demasiado recentes para esta versão VirtualBox: a versão instalada é %1, a versão esperada é %2.&lt;/p&gt;&lt;p&gt;O uso de uma versão mais nova das Adições com uma versão mais antiga do VirtualBox não é suportado. Por favor instale a versão actual das Adições de Convidado escolhendo &lt;b&gt;Instalar Adições de Convidado&lt;/b&gt; do menu  &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3307,19 +3356,19 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível encontrar o ficheiro de imagem do CD dos Controladores Adicionais para Convidado em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja transferir esta imagem de CD da Internet?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Não foi possível encontrar o ficheiro de imagem do CD das Adições de Convidado em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja transferir esta imagem de CD da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Falha ao tentar transferir a imagem de CD dos Controladores Adicionais para Convidado do VirtualBox de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Falha ao tentar transferir a imagem de CD das Adições de Convidado VirtualBox de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tem certeza que deseja transferir imagem de CD dos Controladores Adicionais para Convidado do VirtualBox de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (tamanho %3 bytes)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tem certeza que deseja transferir imagem de CD das Adições de Convidado VirtualBox de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (tamanho %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A imagem de CD dos Controladores Adicionais para Convidado do VirtualBox foi gravada com sucesso de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja registar esta imagem de CD e montá-la no dispositivo CD/DVD virtual?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;A imagem de CD das Adições de Convidado VirtualBox foi gravada com sucesso de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja registar esta imagem de CD e montá-la no dispositivo CD/DVD virtual?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3367,155 +3416,155 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falha ao gravar as definições globais do VirtualBox para &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falha ao carregar a configuração gráfica global para &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A aplicação irá agora terminar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falha ao gravar a configuração gráfica global para &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A aplicação irá agora terminar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao gravar as definições da máquina virtual &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao carregar as definições da máquina virtual &lt;b&gt;%1&lt;/b&gt; de &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Apagar</translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Desregistar</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished">Descartar</translation>
+        <translation>Descartar</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deseja apagar este ficheiro de imagem do disco rígido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se seleccionar &lt;b&gt;Apagar&lt;/b&gt; então a imagem será apagada permanentemente após remover o registo do disco rígido. Esta operação não pode ser desfeita.&lt;/p&gt;&lt;p&gt;Se seleccionar &lt;b&gt;Desregistar&lt;/b&gt; então o disco virtual será desregistado e removido da colecção, mas o ficheiro da imagem será deixado no seu disco físico.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Apagar</translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Desregistar</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Existem discos rígidos ligados às portas SATA desta máquina virtual. Se seleccionar desactivar o controlador SATA, todos estes discos rígidos serão automaticamente desligados.&lt;/p&gt;&lt;p&gt;Tem certeza que deseja desactivar o controlador SATA?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Desactivar</translation>
+        <translation>Desactivar</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao desligar a imagem do disco rígido com UUID %1 para encaixe do dispositivo %2 no canal %3 do &apos;bus&apos; %4 da máquina &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao desligar uma imagem di disco rígido do encaixe do dispositivo %1 no canal %2 do &apos;bus&apos; %3 da máquina &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Transferir</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Montar</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A chave da m+aquina está actualmente definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="unfinished"></translation>
+        <translation>Capturar</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Um ou mais dos discos rígidos virtuais registados, CD/DVD ou disquetes estão actualmente disponíveis. Como resultado, não poderá operar máquinas virtuais que usem estas médias até que estas fiquem acessíves posteriormente.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Seleccione&lt;/b&gt; abrir a janela do Gestor de Discos Virtuais e veja que média está inacessível, ou prima &lt;b&gt;Ignorar&lt;/b&gt; para ignorar esta mensagem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionar</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Os ficheiros de definições VirtualBox seguintes foram automaticamente convertidas para as novas versoes de formatos de ficheiros de definições &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;No entanto, os resultados da conversão ainda não foram gravados no disco. Por favor prima:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Gravar&lt;/b&gt; para gravar agora todos os ficheiros convertidos automaticamente (não será possível usar estes ficheiros de definições em versões antigas do VirtualBox futuramente);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Salvaguardar&lt;/b&gt; para criar cópias de salvaguarda dos ficheiros de definições no formato antigo antes de as gravar no novo formato;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancelar&lt;/b&gt; para não gravar agora os ficheiros de definições convertidos automaticamente.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note que se seleccionar &lt;b&gt;Cancel&lt;/b&gt;, os ficheiros de definições convertidos automaticamente serão implicitamente gravados no novo formato assim que alterar uma definição ou iniciar uma máquina virtual, but &lt;b&gt;não&lt;/b&gt; serão criadas quaisque cópias de salvaguarda neste caso.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Gravar</translation>
+        <translation>&amp;Gravar</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Salvaguardar</translation>
     </message>
     <message>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mudar</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mudar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deseja realmente restaurar a máquina virtual?&lt;/p&gt;&lt;p&gt;Assim que a máquina é restaurada, todos os dados não gravados das aplicações a correr nesta máquina serão perdidos.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Restaurar</translation>
+        <translation>Restaurar</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Voltar</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao copiar o ficheiro &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; para &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
 </context>
 <context>
@@ -3570,15 +3619,15 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível estabelecer uma ligação.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Por favor preencha este formulário de registo para sabermos que usa o VirtualBox e, opcionalmente, para o manter informado acerca de noticias e actualizações do VirtualBox.&lt;/p&gt;&lt;p&gt;Indique o seu nome completo usando caracteres em Latim e o seu endereço electrónico nos campos em baixo. Por favor note que a Sun Microsystems irá usar esta informação apenas para elaborar estatíticas do uso do produto e para lhe enviar noticias acerca do VirtualBox. Em particular, a Sun Microsystems nunca irá passar qualquer dos seus dados para terceiros. A informação detalhada acerca de como usamos os seus dados pessoais pode ser encontrada na secção &lt;b&gt;Política de Privacidade&lt;/b&gt; no manual VirtualBox ou na página &apos;web&apos; &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacidade&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccione esta opção se não deseja receber correio da Sun Microsystems no endereço electrónico que indicou.</translation>
     </message>
 </context>
 <context>
@@ -3841,35 +3890,35 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox xVM Sun</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation type="unfinished">R&amp;esumir</translation>
+        <translation>R&amp;esumir</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Resumir</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+P</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Resume a execução da máquina virtual</translation>
+        <translation>Resume a execução da máquina virtual</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pausar</translation>
+        <translation>&amp;Pausar</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished">Pausa</translation>
+        <translation>Pausa</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Suspende a execução da máquina virtual</translation>
+        <translation>Suspende a execução da máquina virtual</translation>
     </message>
 </context>
 <context>
@@ -3901,9 +3950,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>&lt;qt&gt;Lista todas as pastas partilhadas acessíveis a esta máquina.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\partilha&lt;/tt&gt;
-para aceder a uma pasta partilhada chamada &lt;i&gt;partilha&lt;/i&gt; de um sistema operativo baseado em DOS ou Windows (através de uma consola), ou
-&lt;tt&gt;mount -t vboxsf partilha ponto_de_montagem&lt;/tt&gt;
-para aceder a partir de um sistema operativo Linux. Este recurso requer a instalação dos Controladores Adicionais Para Convidado.&lt;/qt&gt;</translation>
+para aceder a uma pasta partilhada chamada &lt;i&gt;partilha&lt;/i&gt; de um SO tipo DOS,
+ou (a partir de um terminal) &lt;tt&gt;mount -t vboxsf partilha ponto_de_montagem&lt;/tt&gt;
+para a aceder de um SO Linux. Este recurso requer a instalação das Adições de Convidado.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add</source>
@@ -3984,23 +4033,23 @@ para aceder a partir de um sistema operativo Linux. Este recurso requer a instal
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Aceder</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espaço</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Edita a pasta partilhada seleccionada (Ctrl+Espaço)</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Completo</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Leitura apenas</translation>
     </message>
 </context>
 <context>
@@ -4218,7 +4267,7 @@ para aceder a partir de um sistema operativo Linux. Este recurso requer a instal
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Espaço</translation>
     </message>
 </context>
 <context>
@@ -4564,119 +4613,119 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Diálogo de Informação de Sessão</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">Fe&amp;char</translation>
+        <translation>Fe&amp;char</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Informação de Sessão</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detalhes</translation>
+        <translation>&amp;Detalhes</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Execução</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transferências DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transferências PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Dados Lidos</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished"></translation>
+        <translation>Dados Gravados</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished"></translation>
+        <translation>Dados Transferidos</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished"></translation>
+        <translation>Dados Recebidos</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Activado</translation>
+        <translation>Activado</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished">Desactivado</translation>
+        <translation>Desactivado</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Atributos de Execução</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolução de Ecrã</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualização do Material</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estatisticas de Disco Rígido IDE</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estatisticas CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estatisticas de Adaptador de Rede</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation type="unfinished">Não conectado</translation>
+        <translation>Não conectado</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Estatisticas do Disco Rígido</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Master&apos; Primário</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Slave&apos; Primário</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Master&apos; Secundário</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Slave&apos; Secundário</translation>
     </message>
 </context>
 <context>
@@ -4751,7 +4800,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation>Activar Placa de R&amp;ede</translation>
+        <translation>Activar Adaptador R&amp;ede</translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
@@ -4775,11 +4824,11 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation>Definições da Placa de Rede do Hospedeiro</translation>
+        <translation>Definições do Interface de Rede</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
-        <translation>&amp;Nome da Placa de Rede</translation>
+        <translation>&amp;Nome do Interface</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
@@ -4847,7 +4896,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation>Mostra o nome da placa de rede do hospedeiro seleccionada para este adaptador.</translation>
+        <translation>Mostra o nome do interface de rede do hospedeiro seleccionado para este adaptador.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
@@ -4859,11 +4908,11 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation>Mostra o nome da placa de rede TAP.</translation>
+        <translation>Mostra o nome do interface TAP.</translation>
     </message>
     <message>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation>Mostra o comando executado para configurar a placa de rede TAP.</translation>
+        <translation>Mostra o comando executado para defiinir o interface TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
@@ -4871,7 +4920,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation>Mostra o comando executado para finalizar a placa de rede TAP.</translation>
+        <translation>Mostra o comando executado para finalizar o interface TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
@@ -4883,66 +4932,66 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nome da Rede</translation>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipo de Adaptador</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciona o tipo do adaptador de rede virtual. Dependendo deste valor, o VirtualBox irá fornecer material de rede diferente para a m+aquina virtual.</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o nome da rede interna seleccionada para este adaptador.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
         <source>VBoxVMParallelPortSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Activar Porta Paralela</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando seleccionado, activa a porta paralela indicada da máquina virtual.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
-        <translation type="unfinished">&amp;Número da Porta</translation>
+        <translation>&amp;Número da Porta</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o número da porta paralela. Pode escolher uma das portas paralelas padrão ou seleccionar &lt;b&gt;Definidas para Utilizador&lt;/b&gt; e indicar manualmente os parâmetros da porta.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
-        <translation type="unfinished">&amp;IRQ</translation>
+        <translation>&amp;IRQ</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o número IRQ desta porta paralela. Os valor válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;255&lt;/tt&gt;. Os valores maiores que &lt;tt&gt;15&lt;/tt&gt; podem apenas ser usados se a opção &lt;b&gt;IO APIC&lt;/b&gt; estiver activada para esta máquina virtual.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
-        <translation type="unfinished">Po&amp;rta de E/S</translation>
+        <translation>Po&amp;rta E/S</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o endereço base da porta E/S para esta porta paralela. Os valores válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="unfinished">Localização da &amp;Porta</translation>
+        <translation>Localização da &amp;Porta</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra o nome do dispositivo paralelo da máquina.</translation>
     </message>
 </context>
 <context>
@@ -5056,7 +5105,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation></translation>
+        <translation>#hdds</translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -5080,7 +5129,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation></translation>
+        <translation>#dvd</translation>
     </message>
     <message>
         <source> Audio </source>
@@ -5092,7 +5141,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation></translation>
+        <translation>#áudio</translation>
     </message>
     <message>
         <source> Network </source>
@@ -5116,7 +5165,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation></translation>
+        <translation>#usb</translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -5128,7 +5177,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation></translation>
+        <translation>#vrdp</translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -5140,7 +5189,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation></translation>
+        <translation>#sfolders</translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -5156,11 +5205,11 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>&amp;Tipo de Sistema Operativo</translation>
+        <translation>&amp;Tipo de SO</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Quantidade de &amp;Memória</translation>
+        <translation>Tamanho da &amp;Memória Base</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -5252,11 +5301,11 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Dispositivo de Disquetes do Hospedeiro</translation>
+        <translation>&amp;Dispositivo de Disquetes Hospedeiro</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Monta o dispositivo de disquetes especificado do hospedeiro num dispositivo de disquetes virtual.</translation>
+        <translation>Monta o dispositivo de disquetes hospedeiro especificado num dispositivo de disquetes virtual.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -5264,15 +5313,15 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Monta a imagem de disquete especificada num dispositivo de disquetes virtual.</translation>
+        <translation>Monta a imagem de Disquete especificada num dispositivo de Disquetes virtual.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Montar Dispositivo de CD/DVD</translation>
+        <translation>&amp;Montar Dispositivo CD/DVD</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>&amp;Dispositivo de CD/DVD Hospedeiro</translation>
+        <translation>&amp;Dispositivo CD/DVD Hospedeiro</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
@@ -5284,7 +5333,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Monta a imagem de CD/DVD especificada num dispositivio CD/DVD virtual.</translation>
+        <translation>Monta a imagem CD/DVD especificada num dispositivio CD/DVD virtual.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
@@ -5356,7 +5405,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>Activa o S&amp;ervidor VRDP</translation>
+        <translation>Activar S&amp;ervidor VRDP</translation>
     </message>
     <message>
         <source>Server port </source>
@@ -5380,7 +5429,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Especifica o tempo máximo a aguardar para autenticação do convidado, em milisegundos.</translation>
+        <translation>Especifica o intervalo de tempo para a autenticação do convidado, em milisegundos.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -5396,7 +5445,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Configurações inválidas detectadas</translation>
+        <translation>Detectadas definições inválidas</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -5432,27 +5481,27 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Quando seleccionado, monta o dispositivo especificado num dispositivo CD/DVD na máquina virtual. Note que o dispositivo CD/DVD está sempre conectado ao controlador IDE Master Secundário da máquina.</translation>
+        <translation>Quando seleccionado, monta o dispositivo especificado num dispositivo CD/DVD da máquina virtual. Note que o dispositivo CD/DVD está sempre conectado ao controlador IDE &apos;Master&apos; Secundário da máquina.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Mostra o ficheiro de imagem a montar ao dispositivo CD/DVD virtual e permite escolher uma imagem diferente.</translation>
+        <translation>Mostra o ficheiro de imagem a montar para o dispositivo CD/DVD virtual e permite escolher uma imagem diferente.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Quando seleccionado, monta o dispositivo especificado no dispositivo de disquetes da máquina virtual.</translation>
+        <translation>Quando seleccionado, monta o dispositivo especificado no dispositivo de Disquetes da máquina virtual.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>Mostra o ficheiro de imagem a montar no dispositivo de disquetes virtual e permite seleccionar uma imagem diferente.</translation>
+        <translation>Mostra o ficheiro de imagem a montar no dispositivo de Disquetes virtual e permite seleccionar uma imagem diferente.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Quando seleccionado, a placa de som PCI virtual é ligada à máquina virtual que usa o dispositivo especificado para comunicar com a placa de som do hospedeiro.</translation>
+        <translation>Quando seleccionado, a placa de som PCI virtual é ligada à máquina virtual que usa o controlador especificado para comunicar com a placa de som do hospedeiro.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Quando seleccionado, a MV irá agir como um servidor de Protocolo de Ecrã Remoto (RDP), permitindo a clientes remotos conectarem-se e operarem a MV (quando estiver a ser executada) usando um cliente RDP padrão.</translation>
+        <translation>Quando seleccionado, a MV irá agir como um servidor de Protocolo de Ecrã Remoto (RDP), permitindo a clientes remotos conectarem-se e operarem a MV (quando está a correr) usando um cliente RDP padrão.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -5543,7 +5592,7 @@ e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV.
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Define o modo de partilha da área de transferência entre o sistema operativo convidado e o sistema operativo hospedeiro. Este recurso requer a instalação dos Controladores Adicionais para Convidado no sistema operativo convidado.</translation>
+        <translation>Define o modo de partilha da área de transferência entre o SO convidado e hospedeiro. Note que este recurso requer a instalação das Adições de Convidado no SO convidado.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
@@ -5581,7 +5630,7 @@ e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV.
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Controla o controlador de saída áudio. O &lt;b&gt;Controlador de áudio Nulo&lt;/b&gt;
-cria uma placa de som no PC convidado, mas todos os acessos a este serão ignorados.&lt;/qt&gt;</translation>
+faz com que o PC convidade veja uma placa de som, no entanto qualquer acesso a esta será ignorado.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
@@ -5606,23 +5655,23 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation>Placas de Rede do Hospede&amp;iro</translation>
+        <translation>&amp;Interfaces do Hospedeiro</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation>Lista todas as placas de rede do hospedeiro.</translation>
+        <translation>Lista todos os interfaces do hospedeiro.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation>Adiciona uma nova placa de rede do hospedeiro.</translation>
+        <translation>Adiciona um novo interface hospedeiro.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation>Remove a placa de rede do hospedeiro seleccionada.</translation>
+        <translation>Remove o interface hospedeiro seleccionado.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation>&lt;Nenhuma placa apropriada&gt;</translation>
+        <translation>&lt;Nenhum interface apropriado&gt;</translation>
     </message>
     <message>
         <source>Add</source>
@@ -5634,11 +5683,11 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation>Placa de Rede do Hospedeiro VirtualBox %1</translation>
+        <translation>Interface Hospedeiro VirtualBox %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Deseja remover a placa de rede do hospedeiro seleccionada &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Esta placa pode estar em uso por um ou mais adaptadores de rede desta ou de outra MV. Após a remoção, estes adaptadores deixarão de funcionar até que corrija as configurações escolhendo um nome diferente para a placa de rede ou um tipo de conexão diferente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Deseja remover o interface de rede hospedeiro seleccionado &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Este interface pode estar em uso por um ou mais adaptadores de rede desta ou de outra MV. Após a remoção, estes adaptadores deixarão de funcionar até que corrija as configurações escolhendo um nome de interface diferente ou um tipo de ligação de adaptador diferente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>9</source>
@@ -5658,19 +5707,19 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation>Quando marcada, a máquina virtual irá tentar usar as extensões de virtualização de material disponíveis no CPU do hospedeiro, tais como a VT-x Intel ou AMD-V AMD. Caso a opção esteja desactivada, o estado desta opção será determinado pelo valor da configuração global.</translation>
+        <translation>Quando seleccionado, a máquina virtual irá tentar usar as extensões de virtualização de material disponíveis no CPU do hospedeiro, tais como a VT-x Intel ou AMD-V AMD. A caixa de marcação a cinzento significa que esta opção é determinada pelo valor da configuração global.</translation>
     </message>
     <message>
         <source>Other &amp;Settings</source>
-        <translation>Outra&amp;s Preferências</translation>
+        <translation>Outra&amp;s Definições</translation>
     </message>
     <message>
         <source>&amp;Remember Media Mounted at Runtime</source>
-        <translation>Lembra&amp;r Dispostivos Montados Durante a Execução</translation>
+        <translation>Lembra&amp;r Dispositivos Montados ao Iniciar</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Se seleccionado, qualquer alteração nos dispositios de CD/DVD e Disquetes realizada durante a execução da máquina será gravada no ficheiro de configuração para preservar a configuração dos dispositivos entre execuções.</translation>
+        <translation>Se seleccionado, qualquer alteração nos dispositivos CD/DVD ou Disquetes montados realizada durante a execução da máquina será gravada no ficheiro de definições para preservar a configuração dos dispositivos montados entre execuções.</translation>
     </message>
     <message>
         <source>O&amp;ther</source>
@@ -5678,7 +5727,7 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation>Activar &amp;Passagem (Passthrough)</translation>
+        <translation>Activar &amp;Passagem Directa</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
@@ -5698,7 +5747,7 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Mostra o número da porta do servidor VRDP. Pode especificar &lt;tt&gt;0&lt;/tt&gt; (zero) para forçar o valor da porta para o valor predefinido.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Mostra o número da porta do servidor VRDP. Pode indicar &lt;tt&gt;0&lt;/tt&gt; (zero) para restaurar a porta para o valor predefinido.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
@@ -5726,15 +5775,15 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>A imagem de disquete não está seleccionada</translation>
+        <translation>A imagem da Disquete não está seleccionada</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected</source>
-        <translation>O interface de rede do hospedeiro seleccionado está incorreto</translation>
+        <translation>Está seleccionado um interface de rede hospedeiro incorreto</translation>
     </message>
     <message>
         <source>Duplicate port number is selected </source>
-        <translation>Um número de porta duplicado está seleccionado </translation>
+        <translation>Está seleccionado um número de porta duplicado</translation>
     </message>
     <message>
         <source>Duplicate port path is entered </source>
@@ -5751,59 +5800,59 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
     </message>
     <message>
         <source>00</source>
-        <translation type="unfinished">00</translation>
+        <translation>00</translation>
     </message>
     <message>
         <source>01</source>
-        <translation type="unfinished">01</translation>
+        <translation>01</translation>
     </message>
     <message>
         <source>02</source>
-        <translation type="unfinished">02</translation>
+        <translation>02</translation>
     </message>
     <message>
         <source>03</source>
-        <translation type="unfinished">03</translation>
+        <translation>03</translation>
     </message>
     <message>
         <source>04</source>
-        <translation type="unfinished">04</translation>
+        <translation>04</translation>
     </message>
     <message>
         <source>05</source>
-        <translation type="unfinished">05</translation>
+        <translation>05</translation>
     </message>
     <message>
         <source>08</source>
-        <translation type="unfinished">08</translation>
+        <translation>08</translation>
     </message>
     <message>
         <source>10</source>
-        <translation type="unfinished">10</translation>
+        <translation>10</translation>
     </message>
     <message>
         <source>09</source>
-        <translation type="unfinished">09</translation>
+        <translation>09</translation>
     </message>
     <message>
         <source>06</source>
-        <translation type="unfinished">06</translation>
+        <translation>06</translation>
     </message>
     <message>
         <source> Parallel Ports </source>
-        <translation type="unfinished"></translation>
+        <translation>Portas Paralelas</translation>
     </message>
     <message>
         <source>07</source>
-        <translation type="unfinished">07</translation>
+        <translation>07</translation>
     </message>
     <message>
         <source>#parallelPorts</source>
-        <translation type="unfinished"></translation>
+        <translation>#parallelPorts</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar PA&amp;E/NX</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When
@@ -5814,31 +5863,36 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Quando seleccionada,
+a Extensão de Endereços
+Fisica (PAE), opção do CPU
+da máquina, será exposta
+à máquina virtual.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo de Controlador &amp;IDE</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Define o tipo do controlador IDE virtual. Dependendo deste valor, o VirtualBox irá fornecer diferentes dispositivos de material IDE virtual para o SO convidado.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Controlador Áudio</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciona o tipo da placa de som virtual. Dependendo deste valor, o VirtualBox irá fornecer material de áudio diferente para a máquina virtual.</translation>
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar Controlador USB &amp;2.0</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando seleccionado, activar o controlador USB EHCI virtual desta máquina. O controlador USB ECHI fornece o suporte USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5850,15 +5904,23 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Lista todos os filtros USB desta
+máquina. A caixa de marcação
+à sua esquerda define se o filtro
+em particular está activo ou não.
+Use o menu do contexto ou
+os botões à sua direita para
+adicionar ou remover filtros USB.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar Filtro Vazio</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adicionar Filtro Vazio</translation>
     </message>
     <message>
         <source>
@@ -5866,77 +5928,90 @@ cria uma placa de som no PC convidado, mas todos os acessos a este serão ignora
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Adiciona um novo filtro USB com todos os campos
+inicialmente definidos como vazios. Note que um filtro como este irá
+corresponder a qualquer dispositivo USB ligado a esta máquina.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar Filtro Do Dispositivo</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;dicionar Filtro Do Dispositivo</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Adiciona um novo filtro USB com todos os
+campos definidos para os valores do dispositivo
+USB seleccionado ligado à máquina.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Remover Filtro</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Remover Filtro</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Remove o filtro USB destacado.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Filtro Para Cima</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mover Filtro Para Cima</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Move o filtro USB destacado para cima.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Filtro Para Baixo</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;over Filtro Para Baixo</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;Move o filtro US destacado para baixo.&lt;/qt&gt;
+</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome da rede interna não está definido</translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>A localização da porta não está especificada</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Porta %1</translation>
+        <translation>Porta %1</translation>
     </message>
 </context>
 </TS>
