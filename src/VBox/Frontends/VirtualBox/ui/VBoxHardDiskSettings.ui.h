@@ -704,7 +704,7 @@ QString VBoxHardDiskSettings::checkValidity()
 void VBoxHardDiskSettings::addHDItem()
 {
     HDListItem *item = createItem (mSlotUniquizer, mMachine);
-    item->moveFocusToColumn (0);
+    item->moveFocusToColumn (1);
     mLvHD->setCurrentItem (item);
     if (!mLvHD->hasFocus())
         mLvHD->setFocus();
@@ -837,7 +837,7 @@ void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
     {
         int prevFocusColumn =
             mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType ?
-            static_cast<HDListItem*> (mPrevItem)->focusColumn() : 0;
+            static_cast<HDListItem*> (mPrevItem)->focusColumn() : 1;
 
         if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
             static_cast<HDListItem*> (mPrevItem)->moveFocusToColumn (-1);
