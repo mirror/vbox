@@ -22,6 +22,7 @@
 #include "Helper.h"
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxDev.h>
 #include <VBox/VBoxVideo.h>
 
 #include <VBox/VBoxGuestLib.h>
@@ -1829,6 +1830,39 @@ VP_STATUS VBoxVideoSetPowerState(PVOID HwDeviceExtension, ULONG HwId,
 }
 
 /**
+ * VBoxVideoSetGraphicsCap
+ * 
+ * Tells the host whether or not we currently support graphics in the
+ * additions
+ */
+BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
+{
+    VMMDevReqGuestCapabilities2 *req = NULL;
+    int rc;
+
+    rc = VbglGRAlloc ((VMMDevRequestHeader **)&req,
+                      sizeof (VMMDevReqGuestCapabilities2),
+                      VMMDevReq_SetGuestCapabilities);
+
+    if (!RT_SUCCESS(rc))
+        dprintf(("VBoxVideoSetGraphicsCap: failed to allocate a request, rc=%Rrc\n", rc));
+    else
+    {
+        req->u32OrMask = isEnabled ? VMMDEV_GUEST_SUPPORTS_GRAPHICS : 0;
+        req->u32NotMask = isEnabled ? 0 : VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+  
+        rc = VbglGRPerform (&req->header);
+        if (!RT_SUCCESS(rc) || !RT_SUCCESS(req->header.rc))
+            dprintf(("VBoxVideoSetGraphicsCap: request failed, rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+        if (RT_SUCCESS(rc))
+            rc = req->header.rc;
+    }
+    if (req != NULL)
+        VbglGRFree (&req->header);
+    return RT_SUCCESS(rc);
+}
+
+/**
  * VBoxVideoSetCurrentMode
  *
  * Sets the adapter to the specified operating mode.
@@ -1864,6 +1898,8 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
 
+    /* Tell the host that we now support graphics in the additions */
+    VBoxVideoSetGraphicsCap(TRUE);
     return TRUE;
 }
 
@@ -1896,7 +1932,9 @@ BOOLEAN FASTCALL VBoxVideoResetDevice(
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
 #endif
 
-   return TRUE;
+    /* Tell the host that we no longer support graphics in the additions */
+    VBoxVideoSetGraphicsCap(FALSE);
+    return TRUE;
 }
 
 /**
