@@ -572,7 +572,27 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             if (!yres)
                 yres = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight;
             if (!bpp)
+            {
                 bpp  = VideoModes[DeviceExtension->CurrentMode - 1].BitsPerPlane;
+#ifdef DEBUG_frank
+                {
+                    int i;
+                    dprintf(("VBoxVideo: using bpp=%d from CurrentMode\n", bpp));
+                    for (i=0; i<MAX_VIDEO_MODES + 2; i++)
+                    {
+                        if (   VideoModes[i].VisScreenWidth
+                            || VideoModes[i].VisScreenHeight
+                            || VideoModes[i].BitsPerPlane)
+                        {
+                            dprintf((" %2d: %4d x %4d @ %2d %s\n",
+                                    i, VideoModes[i].VisScreenWidth,
+                                    VideoModes[i].VisScreenHeight, VideoModes[i].BitsPerPlane,
+                                    i == (DeviceExtension->CurrentMode-1) ? "<==" : ""));
+                        }
+                    }
+                }
+#endif
+            }
         }
 
         /* does the host like that mode? */

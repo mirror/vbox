@@ -86,6 +86,8 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
                 *yres = req->yres;
             if (bpp)
                 *bpp  = req->bpp;
+            dprintf(("VBoxVideo::vboxQueryDisplayRequest: returning %d x %d @ %d\n",
+                     req->xres, req->yres, req->bpp));
             bRC = TRUE;
         }
         else
