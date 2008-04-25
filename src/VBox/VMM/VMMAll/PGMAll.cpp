@@ -181,6 +181,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_SHW_NAME
 
 
+#ifndef IN_GC /* AMD64 implies VT-x/AMD-V */
 /*
  * Shadow - AMD64 mode
  */
@@ -204,7 +205,7 @@ typedef struct PGMHVUSTATE
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
-
+#endif
 
 
 /**
