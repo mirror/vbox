@@ -1070,6 +1070,27 @@ int VBoxProblemReporter::confirmDetachSATASlots (QWidget *aParent)
         tr ("Disable", "hard disk"));
 }
 
+int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (QWidget *aParent,
+                                                  const QString &aVMName)
+{
+    return message (aParent, Question,
+        tr ("<p>The count of currently available virtual hard disks which can "
+            "be attached to <b><nobr>%1</nobr></b> virtual machine is less "
+            "than the count of attachments for this virtual machine.</p>"
+            "<p>You can run <b><nobr>New Virtual Disk</nobr></b> wizard by pressing "
+            "<b><nobr>Create</nobr></b> button to add new hard disk or start "
+            "<b><nobr>Virtual Disk Manager</nobr></b> by pressing "
+            "<b><nobr>Manage</nobr></b> button to add some *.vdi file or "
+            "release some hard disk attached to another virtual machine.</p>")
+            .arg (aVMName),
+        0, /* aAutoConfirmId */
+        QIMessageBox::Yes | QIMessageBox::Default,
+        QIMessageBox::No,
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        tr ("&Create", "hard disk"),
+        tr ("&Manage", "hard disk"));
+}
+
 void VBoxProblemReporter::cannotCreateHardDiskImage (
     QWidget *parent, const CVirtualBox &vbox, const QString &src,
     const CVirtualDiskImage &vdi, const CProgress &progress)
