@@ -65,3 +65,28 @@ BEGINPROC   TestProc
 
 ENDPROC   TestProc
 
+
+BITS 64
+align 16
+BEGINPROC TestProc64
+      movzx rax,byte  [edx]
+      movzx rax,word  [edx]
+      lock cmpxchg [rcx], rax
+      lock cmpxchg [rcx], ax
+      lock cmpxchg [r15], dl
+      movzx RSI, word [R8]
+      in al, dx
+      in ax, dx
+      in eax, dx
+      mov rbx, [rcx + rax*4 + 17]
+      mov rbx, [rbp + rax*4 + 4]
+      mov rbx, [rbp + rax*4]
+      int 80h
+      in  al, 60h
+      in  ax, dx
+      out 64h, eax
+
+      movss xmm0, xmm14
+      movsd xmm6, xmm1
+      ret
+ENDPROC   TestProc64

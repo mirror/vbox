@@ -29,6 +29,7 @@
 #include <iprt/string.h>
 
 DECLASM(int) TestProc();
+DECLASM(int) TestProc64();
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
 
 int main(int argc, char **argv)
@@ -51,6 +52,28 @@ int main(int argc, char **argv)
 
             memset(&cpu, 0, sizeof(cpu));
             cpu.mode = CPUMODE_32BIT;
+            if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
+                printf(szOutput);
+            else
+            {
+                printf("DISOne failed!\n");
+                return 1;
+            }
+            pInstr += cb;
+        }
+
+        printf("\n64 bits disassembly\n");
+        pInstr = (RTUINTPTR)TestProc64;
+
+        for (int i=0;i<50;i++)
+        {
+            unsigned    cb;
+            DISCPUSTATE cpu;
+            char         szOutput[256];
+
+            memset(&cpu, 0, sizeof(cpu));
+            cpu.mode = CPUMODE_64BIT;
+//__debugbreak();
             if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
                 printf(szOutput);
             else

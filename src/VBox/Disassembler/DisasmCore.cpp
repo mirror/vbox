@@ -277,7 +277,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
         /* Hardcoded assumption about OP_* values!! */
-        if (opcode <= OP_LOCK)
+        if (opcode <= OP_LAST_PREFIX)
         {
             pCpu->lastprefix = opcode;
 
@@ -349,11 +349,12 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 Assert(pCpu->mode == CPUMODE_64BIT);
                 /* REX prefix byte */
                 pCpu->prefix    |= PREFIX_REX;
-                pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
+                pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                iByte           += sizeof(uint8_t);
 
                 if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
                     pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
-                break;
+                continue;   //fetch the next byte
             }
         }
 
@@ -2026,7 +2027,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     type    = OP_PARM_VTYPE(pParam->param);
     subtype = OP_PARM_VSUBTYPE(pParam->param);
     if (fRegAddr)
-        subtype = OP_PARM_d;
+        subtype = (pCpu->opmode == CPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else
     if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
     {
