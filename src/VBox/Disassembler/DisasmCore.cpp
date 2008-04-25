@@ -279,11 +279,13 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         /* Hardcoded assumption about OP_* values!! */
         if (opcode <= OP_LAST_PREFIX)
         {
-            pCpu->lastprefix = opcode;
-
             /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
             if (opcode != OP_REX)
+            {
+                /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
+                pCpu->lastprefix = opcode;
                 pCpu->prefix &= ~PREFIX_REX;
+            }
 
             switch (opcode)
             {
@@ -515,14 +517,18 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 // 7 - 6  5 - 3  2-0
 // Scale  Index  Base
 //*****************************************************************************
-const char *szSIBBaseReg[8]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
-const char *szSIBIndexReg[8] = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
+const char *szSIBBaseReg[8]    = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+const char *szSIBIndexReg[8]   = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
+const char *szSIBBaseReg64[16] = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
+const char *szSIBIndexReg64[16]= {"RAX", "RCX", "RDX", "RBX", NULL,  "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
 const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
 
 //*****************************************************************************
 void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    unsigned scale, base, index;
+    unsigned scale, base, index, regtype;
+    const char **ppszSIBIndexReg;
+    const char **ppszSIBBaseReg;
     char szTemp[32];
     szTemp[0] = '\0';
 
@@ -530,7 +536,20 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
     base  = pCpu->SIB.Bits.Base;
     index = pCpu->SIB.Bits.Index;
 
-    if (szSIBIndexReg[index])
+    if (pCpu->addrmode == CPUMODE_32BIT)
+    {
+        ppszSIBIndexReg = szSIBIndexReg;
+        ppszSIBBaseReg  = szSIBBaseReg;
+        regtype         = USE_REG_GEN32;
+    }
+    else
+    {
+        ppszSIBIndexReg = szSIBIndexReg64;
+        ppszSIBBaseReg  = szSIBBaseReg64;
+        regtype         = USE_REG_GEN64;
+    }
+
+    if (ppszSIBIndexReg[index])
     {
          pParam->flags |= USE_INDEX;
          pParam->index.reg_gen = index;
@@ -542,14 +561,14 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
          }
 
          if (base == 5 && pCpu->ModRM.Bits.Mod == 0)
-             disasmAddStringF(szTemp, sizeof(szTemp), "%s%s", szSIBIndexReg[index], szSIBScale[scale]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s%s", ppszSIBIndexReg[index], szSIBScale[scale]);
          else
-             disasmAddStringF(szTemp, sizeof(szTemp), "%s+%s%s", szSIBBaseReg[base], szSIBIndexReg[index], szSIBScale[scale]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s+%s%s", ppszSIBBaseReg[base], ppszSIBIndexReg[index], szSIBScale[scale]);
     }
     else
     {
          if (base != 5 || pCpu->ModRM.Bits.Mod != 0)
-             disasmAddStringF(szTemp, sizeof(szTemp), "%s", szSIBBaseReg[base]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s", ppszSIBBaseReg[base]);
     }
 
     if (base == 5 && pCpu->ModRM.Bits.Mod == 0)
@@ -565,7 +584,7 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
     {
         disasmAddString(pParam->szParam, szTemp);
 
-        pParam->flags |= USE_BASE | USE_REG_GEN32;
+        pParam->flags |= USE_BASE | regtype;
         pParam->base.reg_gen = base;
     }
     return;   /* Already fetched everything in ParseSIB; no size returned */
@@ -690,7 +709,9 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             case OP_PARM_W: //XMM register or memory operand
                 if (mod != 3)
                     break;  /* memory operand */
+                reg = rm; /* the RM field specifies the xmm register */
                 /* else no break */
+
             case OP_PARM_V: //XMM register
                 disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "XMM%d", reg);
                 pParam->flags |= USE_REG_XMM;
@@ -2027,7 +2048,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     type    = OP_PARM_VTYPE(pParam->param);
     subtype = OP_PARM_VSUBTYPE(pParam->param);
     if (fRegAddr)
-        subtype = (pCpu->opmode == CPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
+        subtype = (pCpu->addrmode == CPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else
     if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
     {
@@ -2151,7 +2172,18 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
 
     if (subtype == OP_PARM_v)
     {
-        subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
+        switch(pCpu->opmode)
+        {
+        case CPUMODE_32BIT:
+            subtype = OP_PARM_d;
+            break;
+        case CPUMODE_64BIT:
+            subtype = OP_PARM_q;
+            break;
+        case CPUMODE_16BIT:
+            subtype = OP_PARM_w;
+            break;
+        }
     }
 
     switch (subtype)
