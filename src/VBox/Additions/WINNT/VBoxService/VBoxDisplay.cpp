@@ -259,6 +259,9 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         i++;
     }
     
+    /* Width, height or BPP equal to 0 means that this value must be not changed.
+     * Update input parameters if necessary.
+     */
     if (Width == 0)
     {
         Width = paRects[Id].right - paRects[Id].left;
@@ -267,6 +270,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     if (Height == 0)
     {
         Height = paRects[Id].bottom - paRects[Id].top;
+    }
+
+    if (BitsPerPixel == 0)
+    {
+        BitsPerPixel = paDeviceModes[Id].dmBitsPerPel;
     }
 
     /* Check whether a mode reset or a change is requested. */
