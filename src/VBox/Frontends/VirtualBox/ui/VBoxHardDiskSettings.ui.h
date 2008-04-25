@@ -677,7 +677,13 @@ QString VBoxHardDiskSettings::checkValidity()
     while (item)
     {
         QString id = item->getId().toString();
-        if (idList.contains (id))
+        if (item->getId().isNull())
+        {
+            result = tr ("No hard disk is selected for <i>%1</i>")
+                .arg (item->text (0));
+            break;
+        }
+        else if (idList.contains (id))
         {
             result = tr ("<i>%1</i> uses the hard disk that is already "
                          "attached to <i>%2</i>")
