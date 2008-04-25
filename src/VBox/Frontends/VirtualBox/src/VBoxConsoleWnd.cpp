@@ -1973,6 +1973,17 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         CGuest guest = console->console().GetGuest();
         LONG maxWidth  = guest.GetMaxGuestWidth();
         LONG maxHeight = guest.GetMaxGuestHeight();
+        /** @todo this implements the correct size computation for X11 guests.
+         * Using a less wasteful approach than using a square region would be
+         * appreciated, but this has to reflect what the guest additions do. */
+        if (maxWidth || maxHeight)
+            usedBits = RT_MAX(usedBits, (  RT_MAX(screen.width(), screen.height())
+                                         * RT_MAX(screen.width(), screen.height())
+                                         * guestBpp
+                                         + _1M * 8) /* current cache per screen - may be changed in future */
+                                        * csession.GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
+                                        + 4096 * 8); /* adapter info */
+
         if (aOn && (   (availBits < usedBits)
                     || ((maxWidth != 0) && (maxWidth < screen.width()))
                     || ((maxHeight != 0) && (maxHeight < screen.height()))
