@@ -262,7 +262,37 @@ typedef const RTWINERRMSG *PCRTWINERRMSG;
  * @param   rc      The status code.
  */
 RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
-#endif /* RT_OS_WINDOWS */
+
+/** On windows COM errors are part of the Windows error database. */
+typedef RTWINERRMSG RTCOMERRMSG;
+
+#else  /* !RT_OS_WINDOWS */
+
+/**
+ * COM/XPCOM error code message.
+ */
+typedef struct RTCOMERRMSG
+{
+    /** Pointer to the full message string. */
+    const char *pszMsgFull;
+    /** Pointer to the define string. */
+    const char *pszDefine;
+    /** Error code number. */
+    uint32_t    iCode;
+} RTCOMERRMSG;
+#endif /* !RT_OS_WINDOWS */
+/** Pointer to a XPCOM/COM error code message. */
+typedef RTCOMERRMSG *PRTCOMERRMSG;
+/** Pointer to const a XPCOM/COM error code message. */
+typedef const RTCOMERRMSG *PCRTCOMERRMSG;
+
+/**
+ * Get the message structure corresponding to a given COM/XPCOM error code.
+ *
+ * @returns Pointer to read-only message description.
+ * @param   rc      The status code.
+ */
+RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 #endif /* IN_RING3 */
 

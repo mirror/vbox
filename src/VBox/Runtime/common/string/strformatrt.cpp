@@ -116,10 +116,14 @@
  *      - \%Rwa             - Takes a long Windows error code as argument. Will insert the
  *                            error code define + full description.
  *
- * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
+ *      - \%Rhrc            - Takes a COM/XPCOM status code as argument. Will insert the status
+ *                            code define corresponding to the Windows error code.
+ *      - \%Rhrf            - Takes a COM/XPCOM status code as argument. Will insert the
+ *                            full description of the specified status code.
+ *      - \%Rhra            - Takes a COM/XPCOM error code as argument. Will insert the
+ *                            error code define + full description.
  *
- * @todo (r=dmik) Add a cross-platform \%Rcomr? that will fall back to \%Rw? on
- * Win32 platforms and will interpret XPCOM result codes on all other.
+ * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
  *
  *
  * Group 4, structure dumpers.
@@ -485,7 +489,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             /* Group 3 */
 
             /*
-             * hex dumping.
+             * hex dumping and COM/XPCOM.
              */
             case 'h':
             {
@@ -566,6 +570,34 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                         break;
                     }
 
+
+#ifdef IN_RING3
+                    /*
+                     * XPCOM / COM status code: %Rhrc, %Rhrf, %Rhra
+                     * ASSUMES: If Windows Then COM else XPCOM.
+                     */
+                    case 'r':
+                    {
+
+                        char ch = *(*ppszFormat)++;
+                        uint32_t hrc = va_arg(*pArgs, uint32_t);
+                        PCRTCOMERRMSG pMsg = RTErrCOMGet(hrc);
+                        switch (ch)
+                        {
+                            case 'c':
+                                return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
+                            case 'f':
+                                return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
+                            case 'a':
+                                return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, hrc, pMsg->pszMsgFull);
+                            default:
+                                AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
+                                return 0;
+                        }
+                        break;
+                    }
+#endif /* IN_RING3 */
+
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", ch, pszFormatOrg));
                         return 0;
@@ -621,24 +653,24 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             {
                 long rc = va_arg(*pArgs, long);
                 char ch = *(*ppszFormat)++;
-#if defined(RT_OS_WINDOWS)
+# if defined(RT_OS_WINDOWS)
                 PCRTWINERRMSG pMsg = RTErrWinGet(rc);
-#endif
+# endif
                 switch (ch)
                 {
-#if defined(RT_OS_WINDOWS)
+# if defined(RT_OS_WINDOWS)
                     case 'c':
                         return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
                     case 'f':
                         return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
                     case 'a':
                         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
-#else
+# else
                     case 'c':
                     case 'f':
                     case 'a':
                         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "0x%08X", rc);
-#endif
+# endif
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
