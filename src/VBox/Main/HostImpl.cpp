@@ -1299,6 +1299,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
             tr ("USB device with UUID {%Vuuid} is not currently attached to the host"),
             id.raw());
 
+/** @todo r=bird this doesn't belong here but in the HostUSBDevice bit. */
     AutoWriteLock devLock (device);
 
     if (device->isStatePending())
@@ -1332,7 +1333,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
     }
 
     /* try to capture the device */
-    device->requestCapture (aMachine);
+    device->requestCaptureForVM (aMachine);
 
     return S_OK;
 }
@@ -2045,8 +2046,10 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
     mParent->getOpenedMachines (machines);
 
     /// @todo it may be better to take a copy of filters to iterate and leave
-    /// the host lock before calling HostUSBDevice:requestCapture() (which
-    /// calls the VM process).
+    /// the host lock before calling HostUSBDevice:requestCaptureForVM() (which
+    /// may call the VM process).
+    /// Moving this matching into USBProxyService at the same time would be
+    /// nice too, that'll simplify the locking a bit more.
 
     /* apply global filters */
     USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
@@ -2060,8 +2063,8 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
             (*it)->COMGETTER (Action) (&action);
             if (action == USBDeviceFilterAction_Ignore)
             {
-                /* request to give the device back to the host*/
-                aDevice->requestRelease();
+                /* request to give the device back to the host */
+                aDevice->requestReleaseToHost();
                 /* nothing to do any more */
                 return S_OK;
             }
@@ -2089,7 +2092,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         {
             /* no any filter matched at all */
             /* request to give the device back to the host */
-            aDevice->requestRelease();
+            aDevice->requestReleaseToHost();
         }
         else
         {
@@ -2136,8 +2139,9 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
 
     if (hasMatch)
     {
+        /** @todo r=bird: this is wrong as requestAttachToVM may return false for different reasons that we. */
         /* try to capture the device */
-        return aDevice->requestCapture (aMachine, maskedIfs);
+        return aDevice->requestCaptureForVM (aMachine, maskedIfs);
     }
 
     return hasMatch;
