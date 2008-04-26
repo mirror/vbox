@@ -256,6 +256,10 @@ RuntimeR3_SOURCES += \
 	VBox/strformat-vbox.cpp \
 	VBox/RTAssertDoBreakpoint-vbox.cpp \
 	VBox/log-vbox.cpp
+ifneq ($(BUILD_TARGET),win)
+RuntimeR3_SOURCES += \
+	common/err/errmsgxpcom.cpp
+endif
 
 RuntimeR3_SOURCES.win = \
 	generic/rand-stubs-generic.cpp \
