@@ -366,7 +366,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nicspeed<1-N> <kbps>]\n"
                  "                            [-hostifdev<1-N> none|<devicename>]\n"
                  "                            [-intnet<1-N> <network name>]\n"
-                 "                            [-natnet<1-N> <network>]\n"
+                 "                            [-natnet<1-N> <network>|default]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
                  "                            [-uart<1-N> off|<I/O base> <IRQ>]\n"
                  "                            [-uartmode<1-N> disconnected|\n"
@@ -4044,14 +4044,19 @@ static int handleModifyVM(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
 
-            RTIPV4ADDR Network;
-            RTIPV4ADDR Netmask;
-            int rc = RTCidrStrToIPv4(argv[i + 1], &Network, &Netmask);
-            if (RT_FAILURE(rc))
-                return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", argv[i + 1]);
-            if (Netmask & 0x1f)
-                return errorArgument("Prefix length of the NAT network must be less than 28.\n");
-            natnet[n - 1] = argv[i + 1];
+            if (!strcmp(argv[i + 1], "default"))
+                natnet[n - 1] = "";
+            else
+            {
+                RTIPV4ADDR Network;
+                RTIPV4ADDR Netmask;
+                int rc = RTCidrStrToIPv4(argv[i + 1], &Network, &Netmask);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", argv[i + 1]);
+                if (Netmask & 0x1f)
+                    return errorArgument("Prefix length of the NAT network must be less than 28.\n");
+                natnet[n - 1] = argv[i + 1];
+            }
             i++;
         }
 #ifdef RT_OS_LINUX
