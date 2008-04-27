@@ -475,7 +475,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     RTIPV4ADDR Netmask;
     rc = RTCidrStrToIPv4(szNetwork, &Network, &Netmask);
     if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: Configuration error: network '%s' describes not a valid IPv4 network"));
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: Configuration error: network '%s' describes not a valid IPv4 network"), pDrvIns->iInstance, szNetwork);
 
     RTStrPrintf(szNetAddr, sizeof(szNetAddr), "%d.%d.%d.%d",
                (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00) >> 8, Network & 0xFF);
