@@ -851,20 +851,6 @@ int main()
 
 #ifdef VBOX_WITH_AHCI
     /* Storage/DevAHCI.cpp */
-#if 0 /* not used in GC anymore. */
-    GEN_CHECK_SIZE(AHCIPORTTASKSTATE);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, uTag);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, fQueued);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdHdr);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdFis);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE-1]);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, GCPhysCmdHdrAddr);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, uLBAStartSector);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cSectors);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, pvBufHC);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, uATARegError);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, uATARegStatus);
-#endif
 
     GEN_CHECK_SIZE(AHCIPort);
     GEN_CHECK_OFF(AHCIPort, pDevInsHC);
@@ -891,19 +877,22 @@ int main()
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
     GEN_CHECK_OFF(AHCIPort, ahciIOTasks);
-    GEN_CHECK_OFF(AHCIPort, ahciIOTasks[AHCI_NR_COMMAND_SLOTS-1]);
+    GEN_CHECK_OFF(AHCIPort, ahciIOTasks[2*AHCI_NR_COMMAND_SLOTS-1]);
     GEN_CHECK_OFF(AHCIPort, uActWritePos);
     GEN_CHECK_OFF(AHCIPort, uActReadPos);
     GEN_CHECK_OFF(AHCIPort, uActTasksActive);
     GEN_CHECK_OFF(AHCIPort, fPoweredOn);
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
+    GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSend);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
     GEN_CHECK_OFF(AHCIPort, pDrvBlockAsync);
     GEN_CHECK_OFF(AHCIPort, pDrvBlockBios);
+    GEN_CHECK_OFF(AHCIPort, pDrvMount);
     GEN_CHECK_OFF(AHCIPort, IBase);
     GEN_CHECK_OFF(AHCIPort, IPort);
     GEN_CHECK_OFF(AHCIPort, IPortAsync);
+    GEN_CHECK_OFF(AHCIPort, IMountNotify);
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
     GEN_CHECK_OFF(AHCIPort, Led);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
