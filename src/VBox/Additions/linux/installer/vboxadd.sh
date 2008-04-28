@@ -116,10 +116,6 @@ module=$kdir/$modname
 owner=vboxadd
 group=1
 
-file=""
-test -f $module.o  && file=$module.o
-test -f $module.ko && file=$module.ko
-
 fail() {
     if [ "$system" = "gentoo" ]; then
         eerror $1
@@ -128,10 +124,6 @@ fail() {
     fail_msg
     echo "($1)"
     exit 1
-}
-
-test -z "$file" && {
-    fail "Kernel module not found"
 }
 
 running() {
