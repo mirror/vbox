@@ -448,6 +448,18 @@ public:
         return mVector [1]->count();
     }
 
+    void tryToChooseExcluding (const QStringList &aUsedList)
+    {
+        for (int i = 0; i < mVector [1]->count(); ++ i)
+        {
+            if (!aUsedList.contains (mVector [1]->text (i)))
+            {
+                setId (static_cast<HDVdiItem*> (mVector [1])->getId (i));
+                break;
+            }
+        }
+    }
+
 private:
 
     void init()
@@ -709,6 +721,7 @@ QString VBoxHardDiskSettings::checkValidity()
 
 void VBoxHardDiskSettings::addHDItem()
 {
+    /* Create new item */
     HDListItem *item = createItem (mSlotUniquizer, mMachine);
     item->moveFocusToColumn (1);
     mLvHD->setCurrentItem (item);
@@ -718,6 +731,18 @@ void VBoxHardDiskSettings::addHDItem()
     if (mLvHD->childCount() == 1)
         onCurrentChanged (item);
 
+    /* Search through the attachments for the used VDIs */
+    QStringList usedList;
+    HDListItem *it = mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
+        static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
+    while (it)
+    {
+        usedList << it->text (1);
+        it = it->nextSibling();
+    }
+    item->tryToChooseExcluding (usedList);
+
+    /* Ask the user for method to add new vdi */
     int result = mLvHD->childCount() - 1 > item->vdiCount() ?
         vboxProblem().confirmRunNewHDWzdOrVDM (this, mMachine.GetName()) :
         QIMessageBox::Cancel;
