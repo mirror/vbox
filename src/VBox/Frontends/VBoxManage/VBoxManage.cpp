@@ -1104,7 +1104,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("sata=\"%s\"\n", fEnabled ? "on" : "off");
         else
-            RTPrintf("SATA:          %s\n", fEnabled ? "enabled" : "disabled");
+            RTPrintf("SATA:            %s\n", fEnabled ? "enabled" : "disabled");
     }
 
     /*
