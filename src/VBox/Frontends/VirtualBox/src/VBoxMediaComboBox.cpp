@@ -248,9 +248,11 @@ void VBoxMediaComboBox::processOnItem (QListBoxItem* aItem)
     QToolTip::add (listBox()->viewport(), mTipList [index]);
 }
 
-QUuid VBoxMediaComboBox::getId()
+QUuid VBoxMediaComboBox::getId (int aId)
 {
-    return mUuidList.isEmpty() ? QUuid() : QUuid (mUuidList [currentItem()]);
+    return mUuidList.isEmpty() ? QUuid() :
+           aId == -1 ? QUuid (mUuidList [currentItem()]) :
+           QUuid (mUuidList [aId]);
 }
 
 void VBoxMediaComboBox::appendItem (const QString &aName,
