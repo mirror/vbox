@@ -984,8 +984,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             case NetworkAdapterType_Am79C973:
                 rc = CFGMR3InsertInteger(pCfg, "Am79C973", 1);                      RC_CHECK();
+                break;
             case NetworkAdapterType_I82540EM:
                 rc = CFGMR3InsertInteger(pCfg, "AdapterType", 0);                   RC_CHECK();
+                break;
             case NetworkAdapterType_I82543GC:
                 rc = CFGMR3InsertInteger(pCfg, "AdapterType", 1);                   RC_CHECK();
                 break;
