@@ -568,30 +568,12 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         if (DeviceExtension->CurrentMode != 0)
         {
             if (!xres)
-                xres = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenWidth;
+                xres = DeviceExtension->CurrentModeWidth;
             if (!yres)
-                yres = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight;
+                yres = DeviceExtension->CurrentModeHeight;
             if (!bpp)
             {
-                bpp  = VideoModes[DeviceExtension->CurrentMode - 1].BitsPerPlane;
-#ifdef DEBUG_frank
-                {
-                    int i;
-                    dprintf(("VBoxVideo: using bpp=%d from CurrentMode\n", bpp));
-                    for (i=0; i<MAX_VIDEO_MODES + 2; i++)
-                    {
-                        if (   VideoModes[i].VisScreenWidth
-                            || VideoModes[i].VisScreenHeight
-                            || VideoModes[i].BitsPerPlane)
-                        {
-                            dprintf((" %2d: %4d x %4d @ %2d %s\n",
-                                    i, VideoModes[i].VisScreenWidth,
-                                    VideoModes[i].VisScreenHeight, VideoModes[i].BitsPerPlane,
-                                    i == (DeviceExtension->CurrentMode-1) ? "<==" : ""));
-                        }
-                    }
-                }
-#endif
+                bpp  = DeviceExtension->CurrentModeBPP;
             }
         }
 
@@ -713,6 +695,23 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             dprintf(("VBoxVideo: host does not like special mode: (xres = %d, yres = %d, bpp = %d)\n",
                      xres, yres, bpp));
     }
+#ifdef DEBUG
+    {
+        int i;
+        dprintf(("VBoxVideo: VideoModes (CurrentMode = %d)\n", DeviceExtension->CurrentMode));
+        for (i=0; i<MAX_VIDEO_MODES + 2; i++)
+        {
+            if (   VideoModes[i].VisScreenWidth
+                || VideoModes[i].VisScreenHeight
+                || VideoModes[i].BitsPerPlane)
+            {
+                dprintf((" %2d: %4d x %4d @ %2d\n",
+                        i, VideoModes[i].VisScreenWidth,
+                        VideoModes[i].VisScreenHeight, VideoModes[i].BitsPerPlane));
+            }
+        }
+    }
+#endif
 }
 
 /* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
@@ -1898,6 +1897,10 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     ModeInfo = &VideoModes[DeviceExtension->CurrentMode - 1];
     dprintf(("VBoxVideoSetCurrentMode: width: %d, height: %d, bpp: %d\n", ModeInfo->VisScreenWidth,
              ModeInfo->VisScreenHeight, ModeInfo->BitsPerPlane));
+
+    DeviceExtension->CurrentModeWidth  = ModeInfo->VisScreenWidth;
+    DeviceExtension->CurrentModeHeight = ModeInfo->VisScreenHeight;
+    DeviceExtension->CurrentModeBPP    = ModeInfo->BitsPerPlane;
 
     if (DeviceExtension->iDevice > 0)
     {
