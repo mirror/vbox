@@ -877,7 +877,7 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
     if (mSlotUniquizer->getSATAPortsCount() != newSATAPortsCount)
     {
         mSlotUniquizer->setSATAPortsCount (newSATAPortsCount);
-        onAfterCurrentChanged (mLvHD->currentItem());
+        onAfterCurrentChanged (mPrevItem);
     }
 }
 
