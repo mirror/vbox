@@ -2217,7 +2217,7 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
 
     /* Detach the device from any machine currently using it,
        reset all data and uninitialize the device object. */
-    device->onDetachedPhys();
+    device->onPhysicalDetached();
 }
 
 /**
