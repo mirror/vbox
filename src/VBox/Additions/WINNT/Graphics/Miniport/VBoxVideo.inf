@@ -74,11 +74,11 @@ HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [SourceDisksNames]
 1 = %VBoxVideo.Disk%,,,""
-;cat 2 = %VBoxVideo.Disk%,,,""
+2 = %VBoxVideo.Disk%,,,""
 
 [SourceDisksFiles]
-;cat VBoxVideo.sys = 1
-;cat VBoxDisp.dll = 2
+VBoxVideo.sys = 1
+VBoxDisp.dll = 2
 
 [Strings]
 REG_SZ = 0x00000000
