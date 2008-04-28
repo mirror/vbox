@@ -1283,8 +1283,10 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
     AutoWriteLock alock (this);
     CHECK_READY();
 
+    /*
+     * Translate the device id into a device object.
+     */
     Guid id (aId);
-
     ComObjPtr <HostUSBDevice> device;
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (!device && it != mUSBDevices.end())
@@ -1293,47 +1295,16 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
             device = (*it);
         ++ it;
     }
-
     if (!device)
         return setError (E_INVALIDARG,
             tr ("USB device with UUID {%Vuuid} is not currently attached to the host"),
             id.raw());
 
-/** @todo r=bird this doesn't belong here but in the HostUSBDevice bit. */
+    /*
+     * Try to capture the device
+     */
     AutoWriteLock devLock (device);
-
-    if (device->isStatePending())
-        return setError (E_INVALIDARG,
-            tr ("USB device '%s' with UUID {%Vuuid} is busy (waiting for a pending "
-                "state change). Please try later"),
-            device->name().raw(), id.raw());
-
-    if (device->state() == USBDeviceState_NotSupported)
-        return setError (E_INVALIDARG,
-            tr ("USB device '%s' with UUID {%Vuuid} cannot be accessed by guest "
-                "computers"),
-            device->name().raw(), id.raw());
-
-    if (device->state() == USBDeviceState_Unavailable)
-        return setError (E_INVALIDARG,
-            tr ("USB device '%s' with UUID {%Vuuid} is being exclusively used by the "
-                "host computer"),
-            device->name().raw(), id.raw());
-
-    if (device->state() == USBDeviceState_Captured)
-    {
-        /* Machine::name() requires a read lock */
-        AutoReadLock machLock (device->machine());
-
-        return setError (E_INVALIDARG,
-            tr ("USB device '%s' with UUID {%Vuuid} is already captured by the virtual "
-                "machine '%ls'"),
-            device->name().raw(), id.raw(),
-            device->machine()->name().raw());
-    }
-
-    /* try to capture the device */
-    device->requestCaptureForVM (aMachine);
+    device->requestCaptureForVM (aMachine, true /* aSetError */);
 
     return S_OK;
 }
@@ -2141,7 +2112,8 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
     {
         /** @todo r=bird: this is wrong as requestAttachToVM may return false for different reasons that we. */
         /* try to capture the device */
-        return aDevice->requestCaptureForVM (aMachine, maskedIfs);
+        HRESULT hrc = aDevice->requestCaptureForVM (aMachine, false /* aSetError */, maskedIfs);
+        return SUCCEEDED (hrc);
     }
 
     return hasMatch;
