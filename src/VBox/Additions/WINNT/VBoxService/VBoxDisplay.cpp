@@ -259,8 +259,10 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         i++;
     }
     
-    /* Width, height or BPP equal to 0 means that this value must be not changed.
+    /* Width, height equal to 0 means that this value must be not changed.
      * Update input parameters if necessary.
+     * Note: BitsPerPixel is taken into account later, when new rectangles
+     *       are assigned to displays.
      */
     if (Width == 0)
     {
@@ -270,12 +272,6 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     if (Height == 0)
     {
         Height = paRects[Id].bottom - paRects[Id].top;
-    }
-
-    if (BitsPerPixel == 0)
-    {
-        BitsPerPixel = paDeviceModes[Id].dmBitsPerPel;
-        dprintf(("VBoxDisplay: bpp=0 => bpp=%d\n", BitsPerPixel));
     }
 
     /* Check whether a mode reset or a change is requested. */
