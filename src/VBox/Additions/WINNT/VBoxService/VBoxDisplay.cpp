@@ -275,6 +275,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     if (BitsPerPixel == 0)
     {
         BitsPerPixel = paDeviceModes[Id].dmBitsPerPel;
+        dprintf(("VBoxDisplay: bpp=0 => bpp=%d\n", BitsPerPixel));
     }
 
     /* Check whether a mode reset or a change is requested. */
