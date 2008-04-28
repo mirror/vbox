@@ -418,8 +418,9 @@ public:
 
     void showEditor()
     {
-        if (mVector [mFocusColumn]->count())
-            mVector [mFocusColumn]->popup();
+        if (mFocusColumn >= 0)
+            if (mVector [mFocusColumn]->count())
+                mVector [mFocusColumn]->popup();
     }
 
     int focusColumn() const
