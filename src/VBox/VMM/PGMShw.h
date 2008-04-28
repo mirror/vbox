@@ -118,6 +118,7 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     {
         int rc;
 
+#if PGM_SHW_TYPE != PGM_TYPE_AMD64 /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
         /* GC */
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(GetPage),  &pModeData->pfnGCShwGetPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(GetPage),  rc), rc);
@@ -129,6 +130,7 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(SetPDEByIndex),  rc), rc);
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(ModifyPDEByIndex),  &pModeData->pfnGCShwModifyPDEByIndex);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(ModifyPDEByIndex),  rc), rc);
+#endif /* Not AMD64 shadow paging. */
 
         /* Ring-0 */
         rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPage),  &pModeData->pfnR0ShwGetPage);
