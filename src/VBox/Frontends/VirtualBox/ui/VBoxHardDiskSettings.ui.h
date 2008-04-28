@@ -735,7 +735,7 @@ void VBoxHardDiskSettings::addHDItem()
     QStringList usedList;
     HDListItem *it = mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
         static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
-    while (it)
+    while (it && it != item)
     {
         usedList << it->text (1);
         it = it->nextSibling();
