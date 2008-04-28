@@ -67,6 +67,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     {
         int rc;
 
+#if PGM_SHW_TYPE != PGM_TYPE_AMD64 /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
         /* GC */
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_BTH_NAME_GC_STR(Trap0eHandler),  &pModeData->pfnGCBthTrap0eHandler);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_GC_STR(Trap0eHandler),  rc), rc);
@@ -80,10 +81,11 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_GC_STR(PrefetchPage), rc), rc);
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_BTH_NAME_GC_STR(VerifyAccessSyncPage), &pModeData->pfnGCBthVerifyAccessSyncPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_GC_STR(VerifyAccessSyncPage), rc), rc);
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_BTH_NAME_GC_STR(AssertCR3), &pModeData->pfnGCBthAssertCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_GC_STR(AssertCR3), rc), rc);
-#endif
+# endif
+#endif /* Not AMD64 shadow paging. */
 
         /* Ring 0 */
         rc = PDMR3GetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(Trap0eHandler),  &pModeData->pfnR0BthTrap0eHandler);
