@@ -744,7 +744,7 @@ void VBoxHardDiskSettings::addHDItem()
 
     /* Ask the user for method to add new vdi */
     int result = mLvHD->childCount() - 1 > item->vdiCount() ?
-        vboxProblem().confirmRunNewHDWzdOrVDM (this, mMachine.GetName()) :
+        vboxProblem().confirmRunNewHDWzdOrVDM (this) :
         QIMessageBox::Cancel;
     if (result == QIMessageBox::Yes)
     {
