@@ -176,7 +176,7 @@ void RWLockHandle::lockRead()
     RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
 
     bool isWriteLock = mWriteLockLevel != 0;
-    bool isFirstReadLock = mReadLockCount == 1;
+    bool isFirstReadLock = mReadLockCount == 0;
 
     if (isWriteLock && mWriteLockThread == threadSelf)
     {
