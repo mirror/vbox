@@ -675,11 +675,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
 
-    mToggleFSModeTimer = new QTimer (this);
-    mToggleFSModeTimer->setSingleShot (true);
-    connect (mToggleFSModeTimer, SIGNAL (timeout()),
-             this, SIGNAL (resizeHintDone()));
-
     /* setup rendering */
 
     CDisplay display = mConsole.GetDisplay();
@@ -1057,9 +1052,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
                 LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
                           re->width(), re->height(), re->bitsPerPixel()));
-
-                if (mToggleFSModeTimer->isActive())
-                    mToggleFSModeTimer->stop();
 
                 /* do frame buffer dependent resize */
                 mFrameBuf->resizeEvent (re);
@@ -2244,7 +2236,6 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    mToggleFSModeTimer->start (2000);
 }
 
 /**

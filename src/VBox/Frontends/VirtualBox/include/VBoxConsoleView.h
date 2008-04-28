@@ -239,7 +239,6 @@ private:
     long muCapsLockAdaptionCnt;
 
     QTimer *resize_hint_timer;
-    QTimer *mToggleFSModeTimer;
 
     VBoxDefs::RenderMode mode;
 

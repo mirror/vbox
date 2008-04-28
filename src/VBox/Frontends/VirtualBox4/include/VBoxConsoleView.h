@@ -256,8 +256,6 @@ private:
     long muNumLockAdaptionCnt;
     long muCapsLockAdaptionCnt;
 
-    QTimer *mToggleFSModeTimer;
-
     VBoxDefs::RenderMode mode;
 
     QRegion mLastVisibleRegion;
