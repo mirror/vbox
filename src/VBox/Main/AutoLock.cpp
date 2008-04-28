@@ -45,6 +45,8 @@ RWLockHandle::RWLockHandle()
     mWriteLockThread = NIL_RTNATIVETHREAD;
 
     mReadLockCount = 0;
+    mSelfReadLockCount = 0;
+
     mWriteLockLevel = 0;
     mWriteLockPending = 0;
 
@@ -93,7 +95,9 @@ void RWLockHandle::lockWrite()
 
     RTCritSectEnter (&mCritSect);
 
-    if (mWriteLockThread != RTThreadNativeSelf())
+    RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
+
+    if (mWriteLockThread != threadSelf)
     {
         if (mReadLockCount != 0 || mWriteLockThread != NIL_RTNATIVETHREAD ||
             mWriteLockPending != 0 /* respect other pending writers */)
@@ -109,8 +113,9 @@ void RWLockHandle::lockWrite()
 
         Assert (mWriteLockLevel == 0);
         Assert (mWriteLockThread == NIL_RTNATIVETHREAD);
+        Assert (mSelfReadLockCount == 0 /* missing unlockRead()? */);
 
-        mWriteLockThread = RTThreadNativeSelf();
+        mWriteLockThread = threadSelf;
     }
 
     ++ mWriteLockLevel;
@@ -138,6 +143,9 @@ void RWLockHandle::unlockWrite()
         -- mWriteLockLevel;
         if (mWriteLockLevel == 0)
         {
+            Assert (mSelfReadLockCount == 0
+                    /* mixed unlockWrite()/unlockRead() order? */);
+
             mWriteLockThread = NIL_RTNATIVETHREAD;
 
             /* no write locks, let writers go if there are any (top priority),
@@ -165,21 +173,29 @@ void RWLockHandle::lockRead()
 
     RTCritSectEnter (&mCritSect);
 
-    ++ mReadLockCount;
-    Assert (mReadLockCount != 0 /* read lock overflow? */);
+    RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
 
     bool isWriteLock = mWriteLockLevel != 0;
     bool isFirstReadLock = mReadLockCount == 1;
 
-    if (isWriteLock && mWriteLockThread == RTThreadNativeSelf())
+    if (isWriteLock && mWriteLockThread == threadSelf)
     {
-        /* read lock nested into the write lock, cause return immediately */
+        /* read lock nested into the write lock */
+        ++ mSelfReadLockCount;
+        Assert (mSelfReadLockCount != 0 /* self read lock overflow? */);
+
+        /* cause to return immediately */
         isWriteLock = false;
     }
     else
     {
+        ++ mReadLockCount;
+        Assert (mReadLockCount != 0 /* read lock overflow? */);
+
         if (!isWriteLock)
         {
+            Assert (mSelfReadLockCount == 0 /* missing unlockRead()? */);
+
             /* write locks are top priority, so let them go if they are
              * pending */
             if (mWriteLockPending != 0)
@@ -217,19 +233,28 @@ void RWLockHandle::unlockRead()
 
     RTCritSectEnter (&mCritSect);
 
-    Assert (mReadLockCount != 0 /* unlockRead() w/o preceding lockRead()? */);
-    if (mReadLockCount != 0)
+    RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
+
+    if (mWriteLockLevel != 0)
     {
-        if (mWriteLockLevel != 0)
+        /* read unlock nested into the write lock */
+        Assert (mWriteLockThread == threadSelf
+                /* unlockRead() after lockWrite()? */);
+        if (mWriteLockThread == threadSelf)
         {
-            /* read unlock nested into the write lock, just decrease the
-             * counter */
-            Assert (mWriteLockThread == RTThreadNativeSelf()
-                    /* unlockRead() after lockWrite()? */);
-            if (mWriteLockThread == RTThreadNativeSelf())
-                -- mReadLockCount;
+            Assert (mSelfReadLockCount != 0
+                    /* unlockRead() w/o preceding lockRead()? */);
+            if (mSelfReadLockCount != 0)
+            {
+                -- mSelfReadLockCount;
+            }
         }
-        else
+    }
+    else
+    {
+        Assert (mReadLockCount != 0
+                /* unlockRead() w/o preceding lockRead()? */);
+        if (mReadLockCount != 0)
         {
             -- mReadLockCount;
             if (mReadLockCount == 0)
