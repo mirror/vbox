@@ -65,6 +65,9 @@ typedef struct _DEVICE_EXTENSION
 
 
    ULONG CurrentMode;                          /* Saved information about video modes */
+   ULONG CurrentModeWidth;
+   ULONG CurrentModeHeight;
+   ULONG CurrentModeBPP;
 
    ULONG ulFrameBufferOffset;                  /* The framebuffer position in the VRAM. */
    ULONG ulFrameBufferSize;                    /* The size of the current framebuffer. */
