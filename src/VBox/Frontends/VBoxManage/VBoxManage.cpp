@@ -1108,8 +1108,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     }
 
     /*
-	 * Hard disks
-	 */
+     * Hard disks
+     */
     ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
     rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
