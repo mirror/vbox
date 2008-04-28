@@ -45,3 +45,4 @@ if test "$1" = "--test"; then
   exit
 fi
 $randrbin --output Virtual\ Output --preferred
+xrefresh 2>&1 > /dev/null
