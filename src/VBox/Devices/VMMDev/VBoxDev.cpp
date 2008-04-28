@@ -576,31 +576,6 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
-        case VMMDevReq_SetMaxGuestResolution:
-        {
-            if (pRequestHeader->size != sizeof(VMMDevReqGuestResolution))
-            {
-                AssertMsgFailed(("VMMDev guest resolution structure has invalid size!\n"));
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                VMMDevReqGuestResolution *guestRes = (VMMDevReqGuestResolution*)pRequestHeader;
-
-                pData->u32MaxGuestWidth  = guestRes->u32MaxWidth;
-                pData->u32MaxGuestHeight = guestRes->u32MaxHeight;
-
-                LogRel(("Guest Additions maximum resolution of %dx%d reported\n",
-                        pData->u32MaxGuestWidth, pData->u32MaxGuestHeight));
-
-                /* Only notify frontends that are interested (i.e. Main, but not BFE) */
-                if (NULL != pData->pDrv->pfnUpdateMaxGuestResolution)
-                    pData->pDrv->pfnUpdateMaxGuestResolution(pData->pDrv, pData->u32MaxGuestWidth, pData->u32MaxGuestHeight);
-                pRequestHeader->rc = VINF_SUCCESS;
-            }
-            break;
-        }
-
         /*
          * Retrieve mouse information
          */
@@ -1971,7 +1946,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  7
+#define VMMDEV_SSM_VERSION  6
 
 /**
  * Saves a state of the VMM device.
@@ -2002,9 +1977,6 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 
     SSMR3PutU32(pSSMHandle, pData->guestCaps);
 
-    SSMR3PutU32(pSSMHandle, pData->u32MaxGuestWidth);
-    SSMR3PutU32(pSSMHandle, pData->u32MaxGuestHeight);
-
 #ifdef VBOX_HGCM
     vmmdevHGCMSaveState (pData, pSSMHandle);
 #endif /* VBOX_HGCM */
@@ -2023,8 +1995,7 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
     VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
-    if (   SSM_VERSION_MAJOR_CHANGED(u32Version, VMMDEV_SSM_VERSION)
-        || (SSM_VERSION_MINOR(u32Version) < 6))
+    if (u32Version != VMMDEV_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     SSMR3GetU32(pSSMHandle, &pData->hypervisorSize);
     SSMR3GetU32(pSSMHandle, &pData->mouseCapabilities);
@@ -2044,13 +2015,6 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetU32(pSSMHandle, &pData->u32VideoAccelEnabled);
 
     SSMR3GetU32(pSSMHandle, &pData->guestCaps);
-
-    if (   SSM_VERSION_MAJOR(u32Version) >  0
-        || SSM_VERSION_MINOR(u32Version) >= 7)
-    {
-        SSMR3GetU32(pSSMHandle, &pData->u32MaxGuestWidth);
-        SSMR3GetU32(pSSMHandle, &pData->u32MaxGuestHeight);
-    }
 
 #ifdef VBOX_HGCM
     vmmdevHGCMLoadState (pData, pSSMHandle);
@@ -2081,9 +2045,6 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     }
     if (pData->pDrv)
         pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
-
-    if (    pData->pDrv && pData->pDrv->pfnUpdateMaxGuestResolution)
-        pData->pDrv->pfnUpdateMaxGuestResolution(pData->pDrv, pData->u32MaxGuestWidth, pData->u32MaxGuestHeight);
 
     return VINF_SUCCESS;
 }
@@ -2357,10 +2318,6 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* Reset means that additions will report again. */
     pData->fu32AdditionsOk = false;
     memset (&pData->guestInfo, 0, sizeof (pData->guestInfo));
-
-    /* No maximum resolution specified yet */
-    pData->u32MaxGuestWidth  = 0;
-    pData->u32MaxGuestHeight = 0;
 
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 

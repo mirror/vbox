@@ -231,28 +231,3 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req.header.rc));
     return fRc;
 }
-
-
-/**
- * Report the maximum resolution that we currently support to the host.
- *
- * @returns iprt status value.
- * @param   cx      The maximum horizontal resolution.
- * @param   cy      The maximum vertical resolution.
- */
-VBGLR3DECL(int) VbglR3ReportMaxGuestResolution(uint32_t cx, uint32_t cy)
-{
-    int rc = VERR_UNRESOLVED_ERROR;
-    VMMDevReqGuestResolution req;
-
-    vmmdevInitRequest(&req.header, VMMDevReq_SetMaxGuestResolution);
-    req.u32MaxWidth     = cx;
-    req.u32MaxHeight    = cy;
-    rc = vbglR3GRPerform(&req.header);
-    if (!RT_SUCCESS(rc) || !RT_SUCCESS(req.header.rc))
-        LogRelFunc(("error reporting maximum supported resolution to VMMDev. "
-                    "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req.header.rc));
-    if (RT_SUCCESS(rc))
-        rc = req.header.rc;
-    return rc;
-}

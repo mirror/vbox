@@ -160,36 +160,6 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(MaxGuestWidth) (ULONG *aMaxWidth)
-{
-    if (!VALID_PTR(aMaxWidth))
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    *aMaxWidth = mData.mMaxWidth;
-
-    return S_OK;
-}
-
-STDMETHODIMP Guest::COMGETTER(MaxGuestHeight) (ULONG *aMaxHeight)
-{
-    if (!VALID_PTR(aMaxHeight))
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    *aMaxHeight = mData.mMaxHeight;
-
-    return S_OK;
-}
-
 STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
 {
     if (!aSupportsSeamless)
@@ -364,17 +334,6 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     mData.mAdditionsVersion = aVersion;
     /* this implies that Additions are active */
     mData.mAdditionsActive = TRUE;
-}
-
-void Guest::setMaxGuestResolution (ULONG aMaxWidth, ULONG aMaxHeight)
-{
-    AutoCaller autoCaller (this);
-    AssertComRCReturnVoid (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    mData.mMaxWidth  = aMaxWidth;
-    mData.mMaxHeight = aMaxHeight;
 }
 
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
