@@ -2071,6 +2071,11 @@ Version %1</source>
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
+        <source>Intel PRO/1000 T Server (82543GC)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
+    </message>
+    <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX3</translation>

@@ -2528,6 +2528,8 @@ void VBoxGlobal::languageChange()
         tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
     networkAdapterTypes [KNetworkAdapterType_I82540EM] =
         tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
+    networkAdapterTypes [KNetworkAdapterType_I82543GC] =
+        tr ("Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
 
     networkAttachmentTypes [KNetworkAttachmentType_Null] =
         tr ("Not attached", "NetworkAttachmentType");
