@@ -25,17 +25,17 @@ LayoutFile=layout.inf
 DriverVer=08/21/2006,5.00.2072
 ;cat CatalogFile=VBoxGuest.cat
 
-;cat [SourceDisksNames]
-;cat 1 = %VBoxGuest.MediaDesc%
-;cat 2 = %VBoxControl.MediaDesc%
-;cat 3 = %VBoxService.MediaDesc%
-;cat 4 = %vbcoinst.MediaDesc%
-;cat
-;cat [SourceDisksFiles]
-;cat VBoxGuest.sys = 1
-;cat VBoxControl.exe = 2
-;cat VBoxService.exe = 3
-;cat vbcoinst.dll = 4
+[SourceDisksNames]
+1 = %VBoxGuest.MediaDesc%
+2 = %VBoxControl.MediaDesc%
+3 = %VBoxService.MediaDesc%
+4 = %vbcoinst.MediaDesc%
+
+[SourceDisksFiles]
+VBoxGuest.sys = 1
+VBoxControl.exe = 2
+VBoxService.exe = 3
+vbcoinst.dll = 4
 
 [DestinationDirs]
 DefaultDestDir = 12 ; drivers
