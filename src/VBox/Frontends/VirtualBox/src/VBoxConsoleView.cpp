@@ -667,6 +667,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     connect (resize_hint_timer, SIGNAL (timeout()),
              this, SLOT (doResizeHint()));
 
+    mToggleFSModeTimer = new QTimer (this);
+    connect (mToggleFSModeTimer, SIGNAL (timeout()),
+             this, SIGNAL (resizeHintDone()));
+
     /* setup rendering */
 
     CDisplay display = mConsole.GetDisplay();
@@ -1036,6 +1040,9 @@ bool VBoxConsoleView::event (QEvent *e)
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
                 LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
                           re->width(), re->height(), re->bitsPerPixel()));
+
+                if (mToggleFSModeTimer->isActive())
+                    mToggleFSModeTimer->stop();
 
                 /* do frame buffer dependent resize */
                 mFrameBuf->resizeEvent (re);
@@ -1525,11 +1532,6 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 #endif /* defined (Q_WS_MAC) */
             case QEvent::Resize:
             {
-            	/* This timer is used to prevent the guest from
-            	 * being swamped with resize requests when the user
-            	 * resizes the window by dragging the mouse.  The
-            	 * guest will not get a request until 300ms after
-            	 * the last mouse movement. */
                 if (!mIgnoreMainwndResize &&
                     mIsAdditionsActive && mAutoresizeGuest)
                     resize_hint_timer->start (300, TRUE);
@@ -2232,6 +2234,7 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
+    mToggleFSModeTimer->start (2000, true);
 }
 
 /**
