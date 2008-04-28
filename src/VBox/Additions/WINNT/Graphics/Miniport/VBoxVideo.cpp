@@ -201,18 +201,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     size_t matrixIndex;
     VP_STATUS status = 0;
 
-    ULONG CurrentModeWidth = 0;
-    ULONG CurrentModeHeight = 0;
-    ULONG CurrentModeBPP = 0;
-    
-    if (DeviceExtension->CurrentMode != 0)
-    {
-        /* Save current video mode parameters because VideoModes array will be now rebuilt from scratch. */
-        CurrentModeWidth  = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenWidth;
-        CurrentModeHeight = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight;
-        CurrentModeBPP    = VideoModes[DeviceExtension->CurrentMode - 1].BitsPerPlane;
-    }
-
     /*
      * Query the y-offset from the host
      */
@@ -580,12 +568,12 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         if (DeviceExtension->CurrentMode != 0)
         {
             if (!xres)
-                xres = CurrentModeWidth;
+                xres = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenWidth;
             if (!yres)
-                yres = CurrentModeHeight;
+                yres = VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight;
             if (!bpp)
             {
-                bpp  = CurrentModeBPP;
+                bpp  = VideoModes[DeviceExtension->CurrentMode - 1].BitsPerPlane;
 #ifdef DEBUG_frank
                 {
                     int i;
