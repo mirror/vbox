@@ -22,11 +22,6 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/subheader.kmk
 
-# The KMK_OPTS_JOBS is a kmk v0.1.3 feature. Fake it for now.
-ifndef KMK_OPTS_JOBS
- KMK_OPTS_JOBS = 1
-endif
-
 # Include sub-makefile(s) first if we're doing parallel building.
 # This is primarily a hack to try avoid idling all but one cpu when
 # building the gigant soap sources.
