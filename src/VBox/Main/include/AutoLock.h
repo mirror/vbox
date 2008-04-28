@@ -192,7 +192,9 @@ private:
 
     RTNATIVETHREAD mWriteLockThread;
 
-    uint32_t mReadLockCount;
+    uint32_t mReadLockCount;     /*< Number of read locks */
+    uint32_t mSelfReadLockCount; /*< Number of read locks nested in write lock */
+
     uint32_t mWriteLockLevel;
     uint32_t mWriteLockPending;
 
