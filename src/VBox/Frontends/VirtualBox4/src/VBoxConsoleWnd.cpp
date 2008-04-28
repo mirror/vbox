@@ -1993,14 +1993,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                          + _1M * 8) /* current cache per screen - may be changed in future */
                          * csession.GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
                          + 4096 * 8; /* adapter info */
-        CGuest guest = console->console().GetGuest();
-        LONG maxWidth  = guest.GetMaxGuestWidth();
-        LONG maxHeight = guest.GetMaxGuestHeight();
-        if (aOn && (   (availBits < usedBits)
-                    || ((maxWidth != 0) && (maxWidth < screen.width()))
-                    || ((maxHeight != 0) && (maxHeight < screen.height()))
-                   )
-           )
+        if (aOn && (availBits < usedBits))
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
                 screen.height(), guestBpp, (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);

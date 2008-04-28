@@ -175,6 +175,5 @@ extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
                                         uint32_t *piDisplay, VBOXPtr pVBox);
 
 extern Bool vboxHostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
-extern Bool vboxReportMaxGuestResolution(uint32_t u32Width, uint32_t u32Height);
 
 #endif /* _VBOXVIDEO_H_ */

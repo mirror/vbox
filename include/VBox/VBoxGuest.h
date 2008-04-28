@@ -157,7 +157,6 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
-    VMMDevReq_SetMaxGuestResolution      = 57,
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -287,7 +286,7 @@ typedef struct
     uint32_t build;
 } VMMDevReqHostVersion;
 
-/** old guest capabilites structure (ReportGuestCapabilities) */
+/** guest capabilites structure */
 typedef struct
 {
     /** header */
@@ -296,7 +295,7 @@ typedef struct
     uint32_t    caps;
 } VMMDevReqGuestCapabilities;
 
-/** new guest capabilites structure (SetGuestCapabilities) */
+/** guest capabilites structure */
 typedef struct
 {
     /** header */
@@ -306,17 +305,6 @@ typedef struct
     /** mask of capabilities to be removed */
     uint32_t    u32NotMask;
 } VMMDevReqGuestCapabilities2;
-
-/** Report the maximum possible guest resolution */
-typedef struct
-{
-    /** header */
-    VMMDevRequestHeader header;
-    /** Maximum width */
-    uint32_t    u32MaxWidth;
-    /** Maximum height */
-    uint32_t    u32MaxHeight;
-} VMMDevReqGuestResolution;
 
 /** idle request structure */
 typedef struct
@@ -1276,8 +1264,6 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReqGuestCapabilities);
         case VMMDevReq_SetGuestCapabilities:
             return sizeof(VMMDevReqGuestCapabilities2);
-        case VMMDevReq_SetMaxGuestResolution:
-            return sizeof(VMMDevReqGuestResolution);
 #ifdef VBOX_HGCM
         case VMMDevReq_HGCMConnect:
             return sizeof(VMMDevHGCMConnect);
@@ -1463,10 +1449,9 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
 
 /** @name Display
  * @{ */
-VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,uint32_t *piDisplay);
+VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
 VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
 VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
-VBGLR3DECL(int)     VbglR3ReportMaxGuestResolution(uint32_t cx, uint32_t cy);
 /** @}  */
 
 

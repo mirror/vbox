@@ -5183,7 +5183,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="655f0f7f-a35b-4e2f-a728-175d7e18dcce"
+     uuid="d8556fca-81bc-12af-fca3-365528fa38ca"
 
      wsmap="suppress"
      >
@@ -5226,24 +5226,6 @@
         Additions may also report a version but yet not be active as
         the version might be refused by VirtualBox (incompatible) or
         other failures occured.
-      </desc>
-    </attribute>
-
-    <attribute name="maxGuestWidth" type="unsigned long" readonly="yes">
-      <desc>
-        The maximum horizontal resolution currently supported by the
-        Guest Additions for the purpose of host-initiated resiing
-        (and fullscreen and seamless).  A value of zero means no
-        arbitrary maximum other than that imposed by VRAM limits.
-      </desc>
-    </attribute>
-
-    <attribute name="maxGuestHeight" type="unsigned long" readonly="yes">
-      <desc>
-        The maximum vertical resolution currently supported by the
-        Guest Additions for the purpose of host-initiated resiing
-        (and fullscreen and seamless).  A value of zero means no
-        arbitrary maximum other than that imposed by VRAM limits.
       </desc>
     </attribute>
 

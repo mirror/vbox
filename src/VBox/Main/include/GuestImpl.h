@@ -60,8 +60,6 @@ public:
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
-    STDMETHOD(COMGETTER(MaxGuestWidth)) (ULONG *aMaxWidth);
-    STDMETHOD(COMGETTER(MaxGuestHeight)) (ULONG *aMaxHeight);
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
@@ -77,8 +75,6 @@ public:
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion);
 
-    void setMaxGuestResolution (ULONG aMaxWidth, ULONG aMaxHeight);
-
     void setSupportsSeamless (BOOL aSupportsSeamless);
 
     void setSupportsGraphics (BOOL aSupportsGraphics);
@@ -92,18 +88,13 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsActive (FALSE), mMaxWidth (0),
-                 mMaxHeight(0), mSupportsSeamless (FALSE),
+        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
                   /* Windows and OS/2 guests take this for granted */
                  mSupportsGraphics (TRUE) {}
 
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
         Bstr  mAdditionsVersion;
-        /** The maximum width supported by the guest - zero means no maximum */
-        ULONG mMaxWidth;
-        /** The maximum height supported by the guest - zero means no maximum */
-        ULONG mMaxHeight;
         BOOL  mSupportsSeamless;
         BOOL  mSupportsGraphics;
     };

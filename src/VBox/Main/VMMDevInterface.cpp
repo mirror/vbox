@@ -217,34 +217,6 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
 }
 
 /**
- * Update the maximum guest resolution.
- * This is called when the guest sends us a corresponding notification. The new resolution
- * is given and the connector should update its internal state.
- * @note    This member can be left null if the connector is not interested in the
- *          notification.
- *
- * @param   pInterface          Pointer to this interface.
- * @param   u32MaxWidth         New width.
- * @param   u32MaxHeight        New Height.
- * @thread  The emulation thread.
- */
-DECLCALLBACK(void) vmmdevUpdateMaxGuestResolution(PPDMIVMMDEVCONNECTOR pInterface, uint32_t u32MaxWidth, uint32_t u32MaxHeight)
-{
-    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
-
-    /* store that information in IGuest */
-    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
-    Assert(guest);
-    if (!guest)
-        return;
-
-    guest->setMaxGuestResolution(u32MaxWidth, u32MaxHeight);
-
-    /* This information is queried when it is needed, so there is no need to
-       issue any further notifications. */
-}
-
-/**
  * Update the mouse capabilities.
  * This is called when the mouse capabilities change. The new capabilities
  * are given and the connector should update its internal state.
@@ -704,7 +676,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
     pData->Connector.pfnUpdateGuestVersion            = vmmdevUpdateGuestVersion;
     pData->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;
-    pData->Connector.pfnUpdateMaxGuestResolution      = vmmdevUpdateMaxGuestResolution;
     pData->Connector.pfnUpdateMouseCapabilities       = vmmdevUpdateMouseCapabilities;
     pData->Connector.pfnUpdatePointerShape            = vmmdevUpdatePointerShape;
     pData->Connector.pfnVideoAccelEnable              = iface_VideoAccelEnable;
