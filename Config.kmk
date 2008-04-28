@@ -93,7 +93,7 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),1267),1)
+ifneq ($(call int-ge,$(KMK_REVISION),1562),1)
  $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) PATH_KBUILD=$(PATH_KBUILD))
 endif
 
