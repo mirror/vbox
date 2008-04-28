@@ -1946,7 +1946,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  6
+#define VMMDEV_SSM_VERSION  8
 
 /**
  * Saves a state of the VMM device.
@@ -1995,7 +1995,8 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
     VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
-    if (u32Version != VMMDEV_SSM_VERSION)
+    if (   SSM_VERSION_MAJOR_CHANGED(u32Version, VMMDEV_SSM_VERSION)
+        || (SSM_VERSION_MINOR(u32Version) < 6))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     SSMR3GetU32(pSSMHandle, &pData->hypervisorSize);
     SSMR3GetU32(pSSMHandle, &pData->mouseCapabilities);
@@ -2015,6 +2016,15 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetU32(pSSMHandle, &pData->u32VideoAccelEnabled);
 
     SSMR3GetU32(pSSMHandle, &pData->guestCaps);
+
+    /* Attributes which were temporarily introduced in r30072 */
+    if (   SSM_VERSION_MAJOR(u32Version) ==  0
+        && SSM_VERSION_MINOR(u32Version) == 7)
+    {
+        uint32_t temp;
+        SSMR3GetU32(pSSMHandle, &temp);
+        SSMR3GetU32(pSSMHandle, &temp);
+    }
 
 #ifdef VBOX_HGCM
     vmmdevHGCMLoadState (pData, pSSMHandle);
