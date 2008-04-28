@@ -228,7 +228,13 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.pkgresponse                                             $(SOLARISINSTDIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vboxdevlink.sed                                              $(SOLARISINSTDIR)/etc/devlink.tab
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.space                                                   $(SOLARISINSTDIR)/vbox.space
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/doc/ReadMe-Solaris.txt                                          $(SOLARISINSTDIR)/ReadMe.txt
+	@#$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/doc/ReadMe-Solaris.txt                                        $(SOLARISINSTDIR)/ReadMe.txt
+	$(QUIET)$(SED) \
+		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
+		-e "s/@BUILD_TARGET_ARCH@/$(BUILD_TARGET_ARCH)/g" \
+		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
+		--output $(SOLARISINSTDIR)/ReadMe.txt \
+		$(PATH_ROOT)/doc/ReadMe-Solaris.txt
 	$(call MSG_L1,Creating install package: $(PKGFILENAME).tar.gz)
 	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) $(BUILD_TARGET_ARCH)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
