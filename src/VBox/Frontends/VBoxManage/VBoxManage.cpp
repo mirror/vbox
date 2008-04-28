@@ -357,7 +357,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nic<1-N> none|null|nat|hostif|intnet]\n"
                  "                            [-nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
-                                                                              "|82540EM"
+                                                                              "|82540EM|82543GC"
 #endif
                  "]\n"
                  "                            [-cableconnected<1-N> on|off]\n"
@@ -1342,6 +1342,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 #ifdef VBOX_WITH_E1000
                 case NetworkAdapterType_I82540EM:
                     strNICType = "82540EM";
+                    break;
+                case NetworkAdapterType_I82543GC:
+                    strNICType = "82543GC";
                     break;
 #endif
                 default:
@@ -4978,6 +4981,10 @@ static int handleModifyVM(int argc, char *argv[],
                 else if (strcmp(nictype[n], "82540EM") == 0)
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82540EM), 1);
+                }
+                else if (strcmp(nictype[n], "82543GC") == 0)
+                {
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82543GC), 1);
                 }
 #endif
                 else

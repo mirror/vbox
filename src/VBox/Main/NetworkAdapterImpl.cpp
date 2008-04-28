@@ -206,6 +206,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         case NetworkAdapterType_Am79C973:
 #ifdef VBOX_WITH_E1000
         case NetworkAdapterType_I82540EM:
+        case NetworkAdapterType_I82543GC:
 #endif
             break;
         default:
@@ -1017,6 +1018,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         mData->mAdapterType = NetworkAdapterType_Am79C973;
     else if (strcmp (adapterType, "82540EM") == 0)
         mData->mAdapterType = NetworkAdapterType_I82540EM;
+    else if (strcmp (adapterType, "82543GC") == 0)
+        mData->mAdapterType = NetworkAdapterType_I82543GC;
     else
         ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
                                E_FAIL);
@@ -1133,6 +1136,8 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             break;
         case NetworkAdapterType_I82540EM:
             typeStr = "82540EM";
+        case NetworkAdapterType_I82543GC:
+            typeStr = "82543GC";
             break;
         default:
             ComAssertMsgFailedRet (("Invalid network adapter type: %d\n",

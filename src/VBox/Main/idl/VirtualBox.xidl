@@ -8195,6 +8195,7 @@
     <const name="Am79C970A"             value="1"/>
     <const name="Am79C973"              value="2"/>
     <const name="I82540EM"              value="3"/>
+    <const name="I82543GC"              value="4"/>
   </enum>
 
   <interface
