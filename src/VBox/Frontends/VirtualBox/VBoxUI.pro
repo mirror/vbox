@@ -136,15 +136,7 @@ IMAGES	= images/tpixel.png \
 	images/hostkey_captured_pressed_16px.png \
 	images/hostkey_disabled_16px.png \
 	images/machine_16px.png \
-	images/VirtualBox_16px.png \
-	images/VirtualBox_20px.png \
-	images/VirtualBox_32px.png \
-	images/VirtualBox_40px.png \
-	images/VirtualBox_48px.png \
-	images/VirtualBox_64px.png \
-	images/VirtualBox_cube_42px.png \
 	images/help_16px.png \
-	images/about_16px.png \
 	images/site_16px.png \
 	images/register_16px.png \
 	images/register_disabled_16px.png \

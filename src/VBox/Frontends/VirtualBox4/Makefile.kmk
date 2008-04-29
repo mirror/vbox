@@ -655,8 +655,14 @@ VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/darwin/PkgInfo \
-	$(PATH_TARGET)/Info.plist \
+	$(PATH_TARGET)/Info.plist
+ifdef VBOX_OSE
+VirtualBox.app_SOURCES += \
+	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
+else
+VirtualBox.app_SOURCES += \
 	images/VirtualBox.icns=>Resources/virtualbox.icns
+endif
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
@@ -673,8 +679,14 @@ VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Content
 VirtualBoxVM.app_MODE = 644
 VirtualBoxVM.app_SOURCES = \
 	src/darwin/VM-PkgInfo=>PkgInfo \
-	$(PATH_TARGET)/VM-Info.plist=>Info.plist \
+	$(PATH_TARGET)/VM-Info.plist=>Info.plist
+ifdef VBOX_OSE
+VirtualBoxVM.app_SOURCES += \
+	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
+else
+VirtualBoxVM.app_SOURCES += \
 	images/VirtualBox.icns=>Resources/virtualbox.icns
+endif
 VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/
 

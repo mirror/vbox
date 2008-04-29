@@ -19,4 +19,4 @@
  * additional information or have any questions.
  */
 
-IDI_ICON1               ICON    DISCARDABLE     "images\VirtualBox_win.ico"
+IDI_ICON1               ICON    DISCARDABLE     "images\OSE\VirtualBox_win.ico"
