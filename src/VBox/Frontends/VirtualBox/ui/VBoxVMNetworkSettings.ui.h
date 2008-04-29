@@ -58,6 +58,11 @@ void VBoxVMNetworkSettings::init()
 #if defined Q_WS_WIN
     /* disable unused interface name UI */
     grbTAP->setHidden (true);
+    /* Make the line editor of the editable combobox read-only to disable
+     * modifications by the user. The combobox itself remains "editable" to
+     * allow for setting text missing in the drop-down list. */
+    cbHostInterfaceName->lineEdit()->setReadOnly (true);
+
     connect (grbEnabled, SIGNAL (toggled (bool)),
              this, SLOT (grbEnabledToggled (bool)));
 #else
@@ -116,7 +121,7 @@ void VBoxVMNetworkSettings::loadInterfaceList (const QStringList &aList,
     if (aList.count())
         cbHostInterfaceName->insertStringList (aList);
     else
-        cbHostInterfaceName->insertItem (aNillItem);
+        cbHostInterfaceName->setCurrentText (aNillItem);
 
     if (currentListItemName.isEmpty() || currentListItemName == aNillItem)
         cbHostInterfaceName->setCurrentItem (0);
