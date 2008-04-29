@@ -48,7 +48,7 @@
 static const RTCOMERRMSG  g_aStatusMsgs[] =
 {
 //#include "errmsgxpcomdata.h"
-    { 0, "NS_SUCCESS", "Success" },
+    { "NS_SUCCESS", "Success", 0 },
     { NULL, NULL, 0 }
 };
 
