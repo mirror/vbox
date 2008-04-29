@@ -65,22 +65,35 @@ void VBoxGuestDisplayChangeThreadX11::uninit(void)
 }
 
 /**
- * Display change request monitor thread function
+ * Display change request monitor thread function.
+ * Before entering the loop, we re-read the last request
+ * received, and if the first one received inside the
+ * loop is identical we ignore it, because it is probably
+ * stale.
  */
 int VBoxGuestDisplayChangeThreadX11::threadFunction(VBoxGuestThread *pThread)
 {
     mThread = pThread;
     LogFlowThisFunc(("\n"));
+    uint32_t cx0 = 0, cy0 = 0, cBits0 = 0, iDisplay0 = 0;
+    int rc = VbglR3GetLastDisplayChangeRequest(&cx0, &cy0, &cBits0, &iDisplay0);
     while (!mThread->isStopping())
     {
-        uint32_t cx, cy, cBits, iDisplay;
+        uint32_t cx = 0, cy = 0, cBits = 0, iDisplay = 0;
         int rc = VbglR3DisplayChangeWaitEvent(&cx, &cy, &cBits, &iDisplay);
-        /* If we are not stopping, sleep for a bit to avoid using up too
-            much CPU while retrying. */
-        if (RT_FAILURE(rc) && !mThread->isStopping())
-            mThread->yield();
-        else
-            system("VBoxRandR");
+        /* Ignore the request if it is stale */
+        if ((cx != cx0) || (cy != cy0))
+        {
+	        /* If we are not stopping, sleep for a bit to avoid using up too
+	            much CPU while retrying. */
+	        if (RT_FAILURE(rc) && !mThread->isStopping())
+	            mThread->yield();
+	        else
+	            system("VBoxRandR");
+        }
+        /* We do not want to ignore any further requests. */
+        cx0 = 0;
+        cy0 = 0;
     }
     LogFlowThisFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
