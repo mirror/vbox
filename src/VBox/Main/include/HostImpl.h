@@ -120,7 +120,11 @@ public:
 
     void onUSBDeviceAttached (HostUSBDevice *aDevice);
     void onUSBDeviceDetached (HostUSBDevice *aDevice);
-    void onUSBDeviceStateChanged (HostUSBDevice *aDevice);
+#ifdef NEW_HOSTUSBDEVICE_STATE
+    void onUSBDeviceStateChanged(HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine);
+#else
+    void onUSBDeviceStateChanged(HostUSBDevice *aDevice);
+#endif
 
     /* must be called from under this object's lock */
     USBProxyService *usbProxyService() { return mUSBProxyService; }
@@ -182,7 +186,7 @@ private:
 
 #ifdef VBOX_WITH_USB
     typedef std::list <ComObjPtr <HostUSBDevice> > USBDeviceList;
-    USBDeviceList mUSBDevices;
+    USBDeviceList mUSBDevices; /**< @todo remove this, use the one maintained by USBProxyService. */
 
     typedef std::list <ComObjPtr <HostUSBDeviceFilter> > USBDeviceFilterList;
     USBDeviceFilterList mUSBDeviceFilters;
