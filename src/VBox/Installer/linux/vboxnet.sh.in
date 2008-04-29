@@ -202,13 +202,13 @@ start_network()
                 # Add the interface to a bridge if one was specified
                 if [ -n "$3" ]; then
                   if brctl addif "$3" "$1" 2> /dev/null; then
-                    echo "$1 $2 $3" > "$VARFILE"
+                    echo "$1 $2 $3" >> "$VARFILE"
                   else
-                    echo "$1 $2" > "$VARFILE"
+                    echo "$1 $2" >> "$VARFILE"
                     echo "Warning - failed to add interface $1 to the bridge $3"
                   fi
                 else
-                  echo "$1 $2" > $VARFILE
+                  echo "$1 $2" >> "$VARFILE"
                 fi
                 i=20
               else
@@ -278,7 +278,6 @@ stop_network()
             brctl addif "$3" "$1"
           fi
         done < "$VARFILE"
-        failure "Removing of interface '$3' failed"
       fi
     done < "$VARFILE"
     rm -f "$VARFILE" 2> /dev/null
