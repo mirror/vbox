@@ -783,7 +783,7 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -2166,19 +2166,19 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>V&amp;RDP Authentication Library</source>
-        <translation>V&amp;RDP-Authentikationsbibliothek</translation>
+        <translation>V&amp;RDP-Authentisierungsbibliothek</translation>
     </message>
     <message>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Zeigt den Pfad für die Bibliothek, die die Authentikation für ferngesteuerte Clients (VRDP) erlaubt.</translation>
+        <translation>Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP) erlaubt.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
-        <translation>Öffnet einen Dialog, um die VRDP-Authentikationsbibliothek auszuwählen.</translation>
+        <translation>Öffnet einen Dialog, um die VRDP-Authentisierungsbibliothek auszuwählen.</translation>
     </message>
     <message>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Setzt die Authentikationsbibliothek auf den voreingestellten Wert. Die voreingestellte Bibliothek will wird angezeigt, nachdem die Änderungen übernommen wurden und der Dialog erneut geöffnet wurde.</translation>
+        <translation>Setzt die Authentisierungsbibliothek auf den voreingestellten Wert. Die voreingestellte Bibliothek will wird angezeigt, nachdem die Änderungen übernommen wurden und der Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
         <source>&amp;Extended Features</source>
@@ -2558,8 +2558,8 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;
-&lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur festgelegten Größe), wie das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
-&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird mit der endültigen Größe erzeugt. Das Erstellen eines Mediums fester Größe kann in Abhängigkeit von der Größe und der Schreibrate der Festplatte sehr lange (Minuten) dauern.&lt;/p&gt;</translation>
+&lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur vorher festgelegten Größe), wie das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
+&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird sofort mit der endgültigen Größe erzeugt. Das Erstellen eines Mediums fester Größe kann in Abhängigkeit von der Größe und der Schreibrate der Festplatte sehr lange (Minuten) dauern.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2738,7 +2738,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>&lt;tt&gt;%1&lt;/tt&gt; konnte nicht geöffnet werden. Stellen Sie sicher, dass Ihr Desktop Environment URLs anzeigen kann.</translation>
+        <translation>&lt;tt&gt;%1&lt;/tt&gt; konnte nicht geöffnet werden. Stellen Sie sicher, dass Ihre Benutzeroberfläche URLs anzeigen kann.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2906,11 +2906,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben in das VM-Fenster &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; betätigt. Maus sowie Tastatur werden daher &lt;b&gt;gefangen&lt;/b&gt; (die Maus nur, falls Mauszeiger-Integration vom aktuellen Gast-System nicht unterstützt wird). Dadurch sind diese für andere Anwendungen neben VirtualBox nicht verfügbar.&lt;/p&gt;&lt;p&gt;Durch Betätigen der Host-Taste kann dieser Modus jederzeit beendet werden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Rand des VM-Fensters gezeigt (Symbol&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;). Zusammen mit dem daneben angezeigten Maus-Icon ziegen diese den aktuellen Tastatur- und Maus-Fangmodus.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben in das VM-Fenster &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; betätigt. Maus sowie Tastatur werden daher &lt;b&gt;gefangen&lt;/b&gt; (die Maus nur, falls Mauszeiger-Integration vom aktuellen Gast-System nicht unterstützt wird). Dadurch sind diese für andere Anwendungen neben VirtualBox nicht verfügbar.&lt;/p&gt;&lt;p&gt;Durch Betätigen der Host-Taste kann dieser Modus jederzeit beendet werden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Rand des VM-Fensters gezeigt (Symbol&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;). Zusammen mit dem daneben liegenden Maus-Icon zeigen diese den aktuellen Tastatur- und Maus-Fangmodus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben den Modus &lt;b&gt;Tastatur fangen&lt;/b&gt; eingeschaltet. Wird das VM-Fenster aktiviert, wird die Tastatur automatisch &lt;b&gt;gefangen&lt;/b&gt; und damit für andere Anwendungen temporär nicht mehr verfügbar: Alle Tasteneingaben (inclusive Alt-Tab) werden in die VM umgeleitet.&lt;/p&gt;&lt;/p&gt;Sie können die &lt;b&gt;Host-Taste&lt;/b&gt; jederzeit betätigen, um diesen Modus für Tastatur (und Maus, falls ebenfalls gefangen) zu beenden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Ende des VM-Fensters neben dem&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;Icongezeigt. Zusammen mit dem Icon für die Maus daneben zeigt es den aktuellen Status für Maus und Tastatur.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben den Modus &lt;b&gt;Tastatur fangen&lt;/b&gt; eingeschaltet. Wird das VM-Fenster aktiviert, wird die Tastatur automatisch &lt;b&gt;gefangen&lt;/b&gt; und damit für andere Anwendungen temporär nicht mehr verfügbar: Alle Tasteneingaben (inklusive Alt-Tab) werden in die VM umgeleitet.&lt;/p&gt;&lt;/p&gt;Sie können die &lt;b&gt;Host-Taste&lt;/b&gt; jederzeit betätigen, um diesen Modus für Tastatur (und Maus, falls ebenfalls gefangen) zu beenden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Ende des VM-Fensters neben dem&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;Icongezeigt. Zusammen mit dem Icon für die Maus daneben zeigt es den aktuellen Status für Maus und Tastatur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3012,7 +3012,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Der Ordner für Sicherungspunkte der virtuellen Machine &lt;b&gt;%1&lt;/b&gt; konnte nicht nach &lt;nobr&gt;%2&lt;/b&gt;&lt;/nobr&gt; geändert werden.</translation>
+        <translation>Der Ordner für Sicherungspunkte der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht nach &lt;nobr&gt;%2&lt;/b&gt;&lt;/nobr&gt; geändert werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -3044,15 +3044,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%1&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann mittles Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%1&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann durch Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das Fenster der virtuellen Maschine ist optimiert für eine Anzeige im &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;-Farbmodus, der aktuelle Modus des virtuellen Bildschirms ist aber auf &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt; gesetzt.&lt;/p&gt;&lt;p&gt;Bitte öffnen Sie die Einstellungen für die Anzeige im Gast und wählen Sie den &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;-Farbmodus, falls verfügbar, um die beste Performance der Anzeige zu erreichen.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Manche Betriebssysteme (z.B. OS/2) arbeiten tatsächlich im 32-Bit-Farbmodus, zeigen aber einen 24-Bit-Farbmodus (16 Millionen Farben) an. Sie können versuchen, einen anderen Farbmodus einzustellen, um zu testen, ob diese Meldung verschwindet. Oder Sie können diese Meldung nun deaktivieren falls Sie sicher sind, dass der erforderliche Farbmodus (%4&amp;nbsp;bit) im Gast-Betriebssystem nicht verfügbar ist.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das Fenster der virtuellen Maschine ist optimiert für eine Anzeige im &lt;b&gt;%1-Bit&lt;/b&gt;-Farbmodus, der aktuelle Modus des virtuellen Bildschirms ist aber auf &lt;b&gt;%2-&amp;nbsp;Bit&lt;/b&gt; gesetzt.&lt;/p&gt;&lt;p&gt;Bitte öffnen Sie die Einstellungen für die Anzeige im Gast und wählen Sie den &lt;b&gt;%3-Bit&lt;/b&gt;-Farbmodus, falls verfügbar, um die beste Performance der Anzeige zu erreichen.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Manche Betriebssysteme (z.B. OS/2) arbeiten tatsächlich im 32-Bit-Farbmodus, zeigen aber einen 24-Bit-Farbmodus (16 Millionen Farben) an. Sie können versuchen, einen anderen Farbmodus einzustellen, um zu testen, ob diese Meldung verschwindet. Oder Sie können diese Meldung nun deaktivieren falls Sie sicher sind, dass der erforderliche Farbmodus (%4&amp;nbsp;Bit) im Gast-Betriebssystem nicht verfügbar ist.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ein schwerwiegender Fehler ist aufgetreten, und die Ausführung der virtuellen Maschine wurde unterbrochen.&lt;/p&gt;&lt;p&gt;Zusätzliche Informationen zu diesem Fehler suchen Sie bitte in der Community-Sektion auf &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; bzw. handeln Sie gemäß Ihres Supportvertrages. Bitte geben Sie die Logdatei &lt;tt&gt;VBox.log&lt;/tt&gt;, den Snapshot &lt;tt&gt;VBox.png&lt;/tt&gt;, den Sie im Verzeichnis &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; finden können, sowie eine Beschreibung der Maßnahmen, die zu diesem Fehler führten, weiter. Sie können diese Dateien auch durch Auswahl von &lt;b&gt;Zeige Log...&lt;/b&gt; im Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters finden.&lt;/p&gt;&lt;p&gt;Drücken Sie &lt;b&gt;OK&lt;/b&gt;, wenn Sie die virtuelle Maschine ausschalten wollen. Drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt;, wenn Sie diese für Debugging offen lassen wollen. Zum Debuggen sind spezielle Kenntnisse und Tools notwendig, so dass die empfohlene Aktion hier &lt;b&gt;OK&lt;/b&gt; ist.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ein schwerwiegender Fehler ist aufgetreten, und die Ausführung der virtuellen Maschine wurde unterbrochen.&lt;/p&gt;&lt;p&gt;Zusätzliche Informationen zu diesem Fehler suchen Sie bitte in der Community-Sektion auf &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; bzw. handeln Sie gemäß Ihres Supportvertrages. Bitte geben Sie die Logdatei &lt;tt&gt;VBox.log&lt;/tt&gt;, den Screenshot &lt;tt&gt;VBox.png&lt;/tt&gt;, den Sie im Verzeichnis &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; finden können, sowie eine Beschreibung der Maßnahmen, die zu diesem Fehler führten, weiter. Sie können diese Dateien auch durch Auswahl von &lt;b&gt;Zeige Log...&lt;/b&gt; im Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters finden.&lt;/p&gt;&lt;p&gt;Drücken Sie &lt;b&gt;OK&lt;/b&gt;, wenn Sie die virtuelle Maschine ausschalten wollen. Drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt;, wenn Sie diese für Debugging offen lassen wollen. Zum Debuggen sind spezielle Kenntnisse und Tools notwendig, so dass die empfohlene Aktion hier &lt;b&gt;OK&lt;/b&gt; ist.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
@@ -3157,7 +3157,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie die virtuelle Maschine wirklich zurücksetzen?&lt;/p&gt;&lt;p&gt;Dabei gehen ungesicherte Daten aller noch offenen Anwendungen des Gaste verloren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Maschine wirklich zurücksetzen?&lt;/p&gt;&lt;p&gt;Dabei gehen ungesicherte Daten aller noch offenen Anwendungen des Gastes verloren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3205,7 +3205,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation>Die Festplatte mit der UUID %1 konnte nicht an den Slot %2 / Kanal %3 / Bus %4 der Machine &lt;b&gt;%5&lt;/b&gt; angeschlossen werden.</translation>
+        <translation>Die Festplatte mit der UUID %1 konnte nicht an den Slot %2 / Kanal %3 / Bus %4 der Maschine &lt;b&gt;%5&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
@@ -3265,11 +3265,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation>&amp;E-mail</translation>
+        <translation>&amp;EMail</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation>Tragen Sie hier eine gültige E-mail Adresse ein.</translation>
+        <translation>Tragen Sie hier eine gültige EMail-Adresse ein.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -3301,7 +3301,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>Aktivieren Sie dieses Kästchen, wenn Sie E-Mail von Sun Microsystems an die oben genannte Adresse erhalten möchten.</translation>
+        <translation>Aktivieren Sie dieses Kästchen, wenn Sie EMail von Sun Microsystems an die oben genannte Adresse erhalten möchten.</translation>
     </message>
 </context>
 <context>
@@ -4166,7 +4166,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Beachten Sie, dass Sie kein Betriebssytem in dieser virtuellen Maschine installieren können, da Sie ihr keine Festplatte zugewiesen haben. Falls Sie eine Festplatte zuweisen wollen, beenden Sie diesen Assistenten, wählen Sie &lt;b&gt;Einstellungen&lt;/b&gt; aus dem Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters um den Einstellungsdialog dieser VM zu aktivieren und ändern Sie die Konfiguration der Festplatten.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt; um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für die Rückkehr auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Beachten Sie, dass Sie kein Betriebssystem in dieser virtuellen Maschine installieren können, da Sie ihr keine Festplatte zugewiesen haben. Falls Sie eine Festplatte zuweisen wollen, beenden Sie diesen Assistenten, wählen Sie &lt;b&gt;Einstellungen&lt;/b&gt; aus dem Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters um den Einstellungsdialog dieser VM zu aktivieren und ändern Sie die Konfiguration der Festplatten.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt; um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für die Rückkehr auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -4590,7 +4590,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Zeigt den Pfad zur seriellen Port-Pipe des Hostes wenn der Port im Modus &lt;b&gt;Host-Pipe&lt;/b&gt; arbeitet oder den Namen der seriellen Schnittstelle des Hostes im Modus &lt;b&gt;Host-Schnitstelle&lt;/b&gt;.</translation>
+        <translation>Zeigt den Pfad zur seriellen Port-Pipe des Hostes wenn der Port im Modus &lt;b&gt;Host-Pipe&lt;/b&gt; arbeitet oder den Namen der seriellen Schnittstelle des Hostes im Modus &lt;b&gt;Host-Schnittstelle&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
