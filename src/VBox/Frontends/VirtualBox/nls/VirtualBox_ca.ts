@@ -1989,13 +1989,6 @@ XarxaAdaptadorTipus</translation>
 XarxaAdaptadorTipus</translation>
     </message>
     <message>
-        <source>Intel PRO/1000 T Server (82543GC)</source>
-        <comment>NetworkAdapterType</comment>
-        <translation>Intel PRO/1000 T Server (82543GC)
-
-XarxaAdaptadorTipus</translation>
-    </message>
-    <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX3
