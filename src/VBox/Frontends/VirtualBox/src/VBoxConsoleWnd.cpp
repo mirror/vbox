@@ -2234,6 +2234,7 @@ CGImageRef VBoxConsoleWnd::dockImageState() const
 /////////////////////////////////////////////////////////////////////////////
 void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
 {
+	LogFlowThisFunc(("mIsSeamless=%s\n", mIsSeamless ? "true" : "false"));
     if (mIsSeamless)
     {
         /* It isn't guaranteed that the guest os set the video mode that
@@ -2260,6 +2261,7 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         mShiftingSpacerBottom->changeSize (0, RT_ABS (sRect.bottom() - aRect.bottom()),
                                            QSizePolicy::Preferred, QSizePolicy::Fixed);
     }
+    LogFlowFuncLeave();
 }
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)
@@ -2659,6 +2661,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
+	LogFlowFuncEnter();
     QRegion region = aRegion;
     /* The global mask shift cause of toolbars and such things. */
     region.translate (mMaskShift.width(), mMaskShift.height());
@@ -2730,6 +2733,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 #else
     QMainWindow::setMask (region);
 #endif
+	LogFlowFuncLeave();
 }
 
 /**
@@ -3249,6 +3253,10 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
                     toggleFullscreenMode (false /* aOn */, true /* aSeamless */);
             }
         }
+        /* Disable auto-resizing if advanced graphics are not available */
+        console->setAutoresizeGuest (   mIsGraphicsSupported
+                                     && vmAutoresizeGuestAction->isOn());
+        vmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);
     }
 
     /* Check the GA version only in case of additions are active */
