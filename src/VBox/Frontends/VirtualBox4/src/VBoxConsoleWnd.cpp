@@ -3294,6 +3294,10 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
                     toggleFullscreenMode (false /* aOn */, true /* aSeamless */);
             }
         }
+        /* Disable auto-resizing if advanced graphics are not available */
+        console->setAutoresizeGuest (   mIsGraphicsSupported
+                                     && vmAutoresizeGuestAction->isChecked());
+        vmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);        
     }
 
     /* Check the GA version only in case of additions are active */
