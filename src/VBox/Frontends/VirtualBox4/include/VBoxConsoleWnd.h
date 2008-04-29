@@ -189,7 +189,6 @@ private slots:
 
     void onEnterFullscreen();
     void onExitFullscreen();
-    void exitFullscreen();
     void exitSeamless();
 
     void switchToFullscreen (bool aOn, bool aSeamless);
