@@ -1136,6 +1136,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             break;
         case NetworkAdapterType_I82540EM:
             typeStr = "82540EM";
+            break;
         case NetworkAdapterType_I82543GC:
             typeStr = "82543GC";
             break;
