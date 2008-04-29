@@ -37,6 +37,9 @@ bridge=$3
 appadd="VBoxAddIF"
 appdel="VBoxDeleteIF"
 
+iffile=/etc/vbox/interfaces
+varfile=/var/run/VirtualBox/vboxnet
+
 echo "VirtualBox host networking interface creation utility, version _VERSION_"
 echo "(C) 2005-2007 Sun Microsystems, Inc."
 echo "All rights reserved."
@@ -99,14 +102,14 @@ fi
 
 # Make sure that the configuration file is accessible and that the interface
 # is not already registered.
-if [ -f /etc/vbox/interfaces ]
+if [ -f "$iffile" ]
 then
   # Make sure that the configuration file is read and writable
-  if [ ! -r /etc/vbox/interfaces -o ! -w /etc/vbox/interfaces ]
+  if [ ! -r "$iffile" -o ! -w "$iffile" ]
   then
     echo 1>&2 ""
     echo 1>&2 "This utility must be able to read from and write to the file"
-    echo 1>&2 "/etc/vbox/interfaces.  Please make sure that you have enough permissions to"
+    echo 1>&2 "$iffile.  Please make sure that you have enough permissions to"
     echo 1>&2 "do this."
     exit 1
   fi
@@ -115,9 +118,9 @@ fi
 # Parse the configuration file and create a new, updated one.
 oldbridge=""
 foundif=""
-tempfile=/etc/vbox/interfaces.tmp
+tempfile="$iffile.tmp"
 rm -f "$tempfile"
-if [ -f /etc/vbox/interfaces ]
+if [ -f "$iffile" ]
 then
   while read line
   do
@@ -133,7 +136,7 @@ then
           (! test -z "$4" && ! expr match "$4" "#" > /dev/null))
       then
         echo 1>&2 ""
-        echo 1>&2 "Removing badly formed line $line in /etc/vbox/interfaces."
+        echo 1>&2 "Removing badly formed line $line in $iffile."
       # If the interface to be created is already registered in the file, then
       # remove it and remember the fact
       elif [ "$1" = "$interface" ]
@@ -147,20 +150,20 @@ then
         echo ""$line >> "$tempfile"
       fi
     fi # The line was not a comment
-  done < /etc/vbox/interfaces
+  done < "$iffile"
 else
-  # Create the file /etc/vbox/interfaces and add some explanations as comments
+  # Create the file $iffile and add some explanations as comments
   echo "# This file is for registering VirtualBox permanent host networking interfaces" > "$tempfile"
   echo "# and optionally adding them to network bridges on the host." >> "$tempfile"
   echo "# Each line should be of the format <interface name> <user name> [<bridge>]." >> "$tempfile"
   echo "" >> "$tempfile"
 fi
-mv -f "$tempfile" /etc/vbox/interfaces
+mv -f "$tempfile" "$iffile"
 
 # Add the new interface line to the file if so requested
 if [ "$appname" = "$appadd" ]
 then
-  echo "$interface" "$user" "$bridge" >> /etc/vbox/interfaces
+  echo "$interface" "$user" "$bridge" >> "$iffile"
   echo ""
   if [ -n "$group" ]; then
       echo "Creating the permanent host networking interface \"$interface\" for group $group."
@@ -231,9 +234,12 @@ else
         echo 1>&2 "Failed to add the interface \"$interface\" to the bridge \"$bridge\"."
         echo 1>&2 "Make sure that the bridge exists and that you currently have sufficient"
         echo 1>&2 "permissions to do this."
+        echo $interface $user >> $varfile 2>/dev/null
         exit 1
       fi
     fi
+    # We may end up with duplicate entries here, but this does no great harm.
+    echo $interface $user $bridge >> $varfile 2>/dev/null
   fi # $appname = $appadd
 fi # VBoxTunctl -d succeeded
 
