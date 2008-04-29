@@ -121,8 +121,6 @@ void *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             return pVM->pgm.s.apGCPaePDs[3];
         case PGMPOOL_IDX_PDPT:
             return pVM->pgm.s.pGCPaePDPT;
-        case PGMPOOL_IDX_PML4:
-            return pVM->pgm.s.pGCPaePML4;
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;

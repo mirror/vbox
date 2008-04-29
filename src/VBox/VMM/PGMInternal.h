@@ -1977,8 +1977,6 @@ typedef struct PGM
      * Extends PAE Paging.
      * @{ */
     /** The Page Map Level 4 table - HC Ptr. */
-    GCPTRTYPE(PX86PML4)         pGCPaePML4;
-    /** The Page Map Level 4 table - GC Ptr. */
     R3R0PTRTYPE(PX86PML4)       pHCPaePML4;
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                    HCPhysPaePML4;
@@ -3318,6 +3316,91 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
     return NULL;
 }
 
+#ifndef IN_GC
+/**
+ * Gets the page directory entry for the specified address.
+ *
+ * @returns The page directory entry in question.
+ * @returns A non-present entry if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ * @param   ppPml4e     Page Map Level-4 Entry (out)
+ * @param   pPdpe       Page directory pointer table entry (out)
+ */
+DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
+{
+    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+
+    *ppPml4e = &pPGM->pHCPaePML4->a[iPml4e];
+    if ((*ppPml4e)->n.u1Present)
+    {
+        PX86PDPT pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertFailed();
+            return 0ULL;
+        }
+
+        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        *pPdpe = pPdptTemp->a[iPdPt];
+        if (pPdpe->n.u1Present)
+        {
+            PX86PDPAE pPD;
+
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertFailed();
+                return 0ULL;
+            }
+            const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+            return pPD->a[iPD].u;
+        }
+    }
+    return 0ULL;
+}
+
+/**
+ * Gets the page directory entry for the specified address.
+ *
+ * @returns The page directory entry in question.
+ * @returns A non-present entry if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
+{
+    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+
+    if (pPGM->pHCPaePML4->a[iPml4e].n.u1Present)
+    {
+        PX86PDPT pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pHCPaePML4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertFailed();
+            return 0ULL;
+        }
+
+        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        if (pPdptTemp->a[iPdPt].n.u1Present)
+        {
+            PX86PDPAE pPD;
+
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertFailed();
+                return 0ULL;
+            }
+            const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+            return pPD->a[iPD].u;
+        }
+    }
+    return 0ULL;
+}
+#endif /* !IN_GC */
 
 /**
  * Checks if any of the specified page flags are set for the given page.
