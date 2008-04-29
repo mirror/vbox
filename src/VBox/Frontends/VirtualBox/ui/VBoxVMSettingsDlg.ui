@@ -2194,16 +2194,16 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                             <property name="name">
                                 <cstring>unnamed</cstring>
                             </property>
-		                    <widget class="QCheckBox">
-        		                <property name="name">
-                	                <cstring>cbEnableUSBEhci</cstring>
+                            <widget class="QCheckBox">
+                                <property name="name">
+                                    <cstring>cbEnableUSBEhci</cstring>
                                 </property>
                                 <property name="text">
                                     <string>Enable USB &amp;2.0 Controller</string>
                                 </property>
                                 <property name="whatsThis" stdset="0">
                                     <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
-                       	        </property>
+                                </property>
                             </widget>
                         </vbox>
                     </widget>
@@ -2739,104 +2739,104 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <property name="usesDropDown">
             <bool>false</bool>
         </property>
-	    <action>
-	        <property name="name">
-	            <cstring>mAddUSBFilterAct</cstring>
-	        </property>
-	        <property name="text">
-	            <string>Add Empty Filter</string>
-	        </property>
-	        <property name="menuText">
-	            <string>&amp;Add Empty Filter</string>
-	        </property>
-	        <property name="accel">
-	            <string>Ins</string>
-	        </property>
-	        <property name="whatsThis" stdset="0">
-	            <string>
-	              &lt;qt&gt;Adds a new USB filter with all fields initially set to
-	              empty strings. Note that such a filter will match any attached USB
-	              device.&lt;/qt&gt;
-	            </string>
-	        </property>
-	    </action>
-	    <action>
-	        <property name="name">
-	            <cstring>mAddUSBFilterFromAct</cstring>
-	        </property>
-	        <property name="text">
-	            <string>Add Filter From Device</string>
-	        </property>
-	        <property name="menuText">
-	            <string>A&amp;dd Filter From Device</string>
-	        </property>
-	        <property name="accel">
-	            <string>Alt+Ins</string>
-	        </property>
-	        <property name="whatsThis" stdset="0">
-	            <string>&lt;qt&gt;Adds a new USB filter with all fields set to the
-	              values of the selected USB device attached to the host
-	              PC.&lt;/qt&gt;
-	            </string>
-	        </property>
-	    </action>
-	    <action>
-	        <property name="name">
-	            <cstring>mRemoveUSBFilterAct</cstring>
-	        </property>
-	        <property name="text">
-	            <string>Remove Filter</string>
-	        </property>
-	        <property name="menuText">
-	            <string>&amp;Remove Filter</string>
-	        </property>
-	        <property name="accel">
-	            <string>Del</string>
-	        </property>
-	        <property name="whatsThis" stdset="0">
-	            <string>
-	              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
-	            </string>
-	        </property>
-	    </action>
-	    <action>
-	        <property name="name">
-	            <cstring>mUSBFilterUpAct</cstring>
-	        </property>
-	        <property name="text">
-	            <string>Move Filter Up</string>
-	        </property>
-	        <property name="menuText">
-	            <string>&amp;Move Filter Up</string>
-	        </property>
-	        <property name="accel">
-	            <string>Ctrl+Up</string>
-	        </property>
-	        <property name="whatsThis" stdset="0">
-	            <string>
-	              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
-	            </string>
-	        </property>
-	    </action>
-	    <action>
-	        <property name="name">
-	            <cstring>mUSBFilterDownAct</cstring>
-	        </property>
-	        <property name="text">
-	            <string>Move Filter Down</string>
-	        </property>
-	        <property name="menuText">
-	            <string>M&amp;ove Filter Down</string>
-	        </property>
-	        <property name="accel">
-	            <string>Ctrl+Down</string>
-	        </property>
-	        <property name="whatsThis" stdset="0">
-	            <string>
-	              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
-	            </string>
-	        </property>
-	    </action>
+    <action>
+        <property name="name">
+            <cstring>mAddUSBFilterAct</cstring>
+        </property>
+        <property name="text">
+            <string>Add Empty Filter</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Add Empty Filter</string>
+        </property>
+        <property name="accel">
+            <string>Ins</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mAddUSBFilterFromAct</cstring>
+        </property>
+        <property name="text">
+            <string>Add Filter From Device</string>
+        </property>
+        <property name="menuText">
+            <string>A&amp;dd Filter From Device</string>
+        </property>
+        <property name="accel">
+            <string>Alt+Ins</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mRemoveUSBFilterAct</cstring>
+        </property>
+        <property name="text">
+            <string>Remove Filter</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Remove Filter</string>
+        </property>
+        <property name="accel">
+            <string>Del</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mUSBFilterUpAct</cstring>
+        </property>
+        <property name="text">
+            <string>Move Filter Up</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Move Filter Up</string>
+        </property>
+        <property name="accel">
+            <string>Ctrl+Up</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mUSBFilterDownAct</cstring>
+        </property>
+        <property name="text">
+            <string>Move Filter Down</string>
+        </property>
+        <property name="menuText">
+            <string>M&amp;ove Filter Down</string>
+        </property>
+        <property name="accel">
+            <string>Ctrl+Down</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
     </actiongroup>
 </actions>
 <connections>
