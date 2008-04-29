@@ -123,6 +123,9 @@
  *      - \%Rhra            - Takes a COM/XPCOM error code as argument. Will insert the
  *                            error code define + full description.
  *
+ *      - \%Rfn             - Pretty printing of a function or method. It drops the
+ *                            return code and parameter list.
+ *
  * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
  *
  *
@@ -147,6 +150,7 @@
 # include <iprt/err.h>
 #endif
 #include <iprt/time.h>
+#include <iprt/ctype.h>
 #include "internal/string.h"
 
 
@@ -487,6 +491,53 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
 
 
             /* Group 3 */
+
+            /*
+             * Pretty function / method name printing.
+             */
+            case 'f':
+            {
+                char ch = *(*ppszFormat)++;
+                switch (ch)
+                {
+                    /*
+                     * Pretty function / method name printing.
+                     * This isn't 100% right (see classic signal prototype) and it assumes
+                     * standardized names, but it'll do for today.
+                     */
+                    case 'n':
+                    {
+                        const char *pszStart;
+                        const char *psz = pszStart = va_arg(*pArgs, const char *);
+                        if (!VALID_PTR(psz))
+                            return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+
+                        while ((ch = *psz) != '\0' && ch != '(')
+                        {
+                            if (RT_C_IS_BLANK(ch))
+                            {
+                                psz++;
+                                while ((ch = *psz) != '\0' && (RT_C_IS_BLANK(ch) || ch == '('))
+                                    psz++;
+                                if (ch)
+                                    pszStart = psz;
+                            }
+                            else if (ch == '(')
+                                break;
+                            else
+                                psz++;
+                        }
+
+                        return pfnOutput(pvArgOutput, pszStart, psz - pszStart);
+                    }
+
+                    default:
+                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", ch, pszFormatOrg));
+                        break;
+                }
+                break;
+            }
+
 
             /*
              * hex dumping and COM/XPCOM.
