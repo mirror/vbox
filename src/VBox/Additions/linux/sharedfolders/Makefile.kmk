@@ -23,27 +23,35 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
+PROGRAMS += mountvboxsf
+INSTALLS += vboxvfs-mod vboxvfs-sh
+OTHERS.linux += \
+	$(VBOX_PATH_ADDITIONS)/src/vboxvfs/build_in_tmp \
+	$(if $(VBOX_OSE),,$(VBOX_PATH_ADDITIONS)/src/vboxvfs/dkms.conf)
 ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS += vboxvfs
 endif
-PROGRAMS += mountvboxsf
-INSTALLS += vboxvfs-bin vboxvfs-sh
 
 #
-# Populate FILES_VBOXVFS_NOBIN and FILES_VBOXVFS_BIN
+# Populate FILES_VBOXVFS_NOBIN
 #
 include $(PATH_SUB_CURRENT)/files_vboxvfs
 
-#
-# Install the source.
-#
-vboxvfs-bin_INST        = $(INST_ADDITIONS)src/vboxvfs/
-vboxvfs-bin_MODE        = a+r,u+w
-vboxvfs-bin_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
+$(VBOX_PATH_ADDITIONS)/src/vboxvfs/build_in_tmp: \
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+	| $(call DIRDEP,$(VBOX_PATH_ADDITIONS)/src/vboxvfs)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvfs;g" < $< > $@
+	$(QUIET)chmod 0755 $@
 
-vboxvfs-sh_INST         = $(INST_ADDITIONS)src/vboxvfs/
-vboxvfs-sh_MODE         = a+rx,u+w
-vboxvfs-sh_SOURCES      = $(subst ",,$(FILES_VBOXVFS_BIN))
+$(VBOX_PATH_ADDITIONS)/src/vboxvfs/dkms.conf: $(PATH_SUB_CURRENT)/dkms.conf
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+
+vboxvfs-mod_INST        = $(INST_ADDITIONS)src/vboxvfs/
+vboxvfs-mod_MODE        = a+r,u+w
+vboxvfs-mod_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
+
 
 #
 # The module (for syntax checking).
