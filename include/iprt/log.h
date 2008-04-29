@@ -138,6 +138,13 @@ typedef enum RTLOGGROUP
 # define LOG_REL_INSTANCE   NULL
 #endif
 
+/** @def LOG_FN_FMT
+ * You can use this to specify you desired way of printing __PRETTY_FUNCTION__
+ * if you dislike the default one.
+ */
+#ifndef LOG_FN_FMT
+# define LOG_FN_FMT "%Rfn"
+#endif
 
 /** Logger structure. */
 #ifdef IN_GC
@@ -534,7 +541,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * ">>>>>" pattern (prepended to the beginning of each line).
  */
 #define LogTrace() \
-    LogFlow((">>>>> %s (%d): %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__))
+    LogFlow((">>>>> %s (%d): " LOG_FN_FMT "\n", __FILE__, __LINE__, __PRETTY_FUNCTION__))
 
 /** @def LogTraceMsg
  * The same as LogTrace but logs a custom log message right after the trace line.
@@ -554,7 +561,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogFunc(m) \
-    do { Log(("%s: ", __PRETTY_FUNCTION__)); Log(m); } while (0)
+    do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(m); } while (0)
 
 /** @def LogThisFunc
  * The same as LogFunc but for class functions (methods): the resulting log
@@ -564,7 +571,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogThisFunc(m) \
-    do { Log(("{%p} %s: ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
+    do { Log(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
 
 /** @def LogFlowFunc
  * Macro to log the execution flow inside C/C++ functions.
@@ -575,7 +582,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogFlowFunc(m) \
-    do { LogFlow(("%s: ", __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
+    do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
 
 /** @def LogWarningFunc
  * The same as LogWarning(), but prepents the log message with the function name.
@@ -584,7 +591,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogWarningFunc(m) \
-    do { Log(("%s: WARNING! ", __PRETTY_FUNCTION__)); Log(m); } while (0)
+    do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(m); } while (0)
 
 /** @def LogFlowThisFunc
  * The same as LogFlowFunc but for class functions (methods): the resulting log
@@ -594,7 +601,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogFlowThisFunc(m) \
-    do { LogFlow(("{%p} %s: ", this, __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
+    do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
 
 /** @def LogWarningThisFunc
  * The same as LogWarningFunc() but for class functions (methods): the resulting
@@ -604,7 +611,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * join two separate Log* calls and make this op atomic
  */
 #define LogWarningThisFunc(m) \
-    do { Log(("{%p} %s: WARNING! ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
+    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
 
 /** Shortcut to |LogFlowFunc ("ENTER\n")|, marks the beginnig of the function */
 #define LogFlowFuncEnter()      LogFlowFunc(("ENTER\n"))
@@ -780,14 +787,14 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * followed by a semicolon and space.
  */
 #define LogRelFunc(a) \
-    do { LogRel(("%s: ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+    do { LogRel((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
 
 /** @def LogRelThisFunc
  * The same as LogRelFunc but for class functions (methods): the resulting log
  * line is additionally perpended with a hex value of |this| pointer.
  */
 #define LogRelThisFunc(a) \
-    do { LogRel(("{%p} %s: ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
 
 /** @def LogRelLelik
  *  lelik logging.
