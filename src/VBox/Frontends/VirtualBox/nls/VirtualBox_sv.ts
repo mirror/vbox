@@ -1904,6 +1904,11 @@ Version %1</translation>
         <comment>IDEControllerType</comment>
         <translation>PIIX4</translation>
     </message>
+    <message>
+        <source>Intel PRO/1000 T Server (82543GC)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2429,6 +2434,10 @@ till systemets standardspråk.&lt;/qt&gt;
     <message>
         <source>Double-click to add a new attachment</source>
         <translation>Dubbelklicka för att lägga till en ny anslutning</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3301,6 +3310,20 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
         <translation>Misslyckades med att kopiera filen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; till &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished">Välj</translation>
     </message>
 </context>
 <context>
@@ -5434,6 +5457,10 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>USBActionGroup</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

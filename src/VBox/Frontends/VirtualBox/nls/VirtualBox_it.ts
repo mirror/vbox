@@ -2080,6 +2080,11 @@ Versione %1</translation>
         <comment>IDEControllerType</comment>
         <translation>PIIX4</translation>
     </message>
+    <message>
+        <source>Intel PRO/1000 T Server (82543GC)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2660,6 +2665,10 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     <message>
         <source>Double-click to add a new attachment</source>
         <translation>Doppio click per aggiungere una nuova connessione</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3605,6 +3614,20 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
         <translation>Impossibile copiare il file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished">Seleziona</translation>
     </message>
 </context>
 <context>
@@ -6109,6 +6132,10 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation>Porta %1</translation>
+    </message>
+    <message>
+        <source>USBActionGroup</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
