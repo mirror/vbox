@@ -1075,12 +1075,22 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpCpuIdFromSetIndex-generic.cpp \
+	generic/RTMpCpuIdToSetIndex-generic.cpp \
+	generic/RTMpDoesCpuExist-generic.cpp \
+	generic/RTMpGetCount-generic.cpp \
+	generic/RTMpGetMaxCpuId-generic.cpp \
+	generic/RTMpGetOnlineCount-generic.cpp \
+	generic/RTMpGetOnlineSet-generic.cpp \
+	generic/RTMpGetSet-generic.cpp \
+	generic/RTMpIsCpuOnline-generic.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
 	r0drv/solaris/assert-r0drv-solaris.c \
 	r0drv/solaris/initterm-r0drv-solaris.c \
 	r0drv/solaris/memobj-r0drv-solaris.c \
-	r0drv/solaris/mp-r0drv-solaris.c \
 	r0drv/solaris/process-r0drv-solaris.c \
 	r0drv/solaris/RTLogWriteDebugger-r0drv-solaris.c \
 	r0drv/solaris/semevent-r0drv-solaris.c \
