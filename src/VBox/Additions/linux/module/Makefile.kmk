@@ -23,23 +23,33 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-INSTALLS += vboxmod-bin vboxmod-sh
+INSTALLS += vboxmod-mod vboxmod-sh
+OTHERS.linux += \
+	$(VBOX_PATH_ADDITIONS)/src/vboxadd/build_in_tmp \
+	$(if $(VBOX_OSE),,$(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf)
 ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS += vboxadd
 endif
 
 #
-# Populate FILES_VBOXADD_NOBIN and FILES_VBOXADD_BIN
+# Populate FILES_VBOXADD_NOBIN
 #
 include $(PATH_SUB_CURRENT)/files_vboxadd
 
-vboxmod-bin_INST    = $(INST_ADDITIONS)src/vboxadd/
-vboxmod-bin_MODE    = a+r,u+w
-vboxmod-bin_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
+$(VBOX_PATH_ADDITIONS)/src/vboxadd/build_in_tmp: \
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+	| $(call DIRDEP,$(VBOX_PATH_ADDITIONS)/src/vboxadd)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxadd;g" < $< > $@
+	$(QUIET)chmod 0755 $@
 
-vboxmod-sh_INST     = $(INST_ADDITIONS)src/vboxadd/
-vboxmod-sh_MODE     = a+rx,u+w
-vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXADD_BIN))
+$(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf: $(PATH_SUB_CURRENT)/dkms.conf
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+
+vboxmod-mod_INST    = $(INST_ADDITIONS)src/vboxadd/
+vboxmod-mod_MODE    = a+r,u+w
+vboxmod-mod_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
 
 #
 # The module (for syntax checking).

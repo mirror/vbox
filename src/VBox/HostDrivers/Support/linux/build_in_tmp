@@ -33,16 +33,16 @@ DKMS=`which dkms`
 if [ -n "$DKMS" ]
 then
     echo "Attempting to install using DKMS"
-    status=`$DKMS status -m vboxdrv -v _VERSION_`
+    status=`$DKMS status -m _MODULE_ -v _VERSION_`
     if echo $status | grep added > /dev/null ||
         echo $status | grep built > /dev/null ||
         echo $status | grep installed > /dev/null
     then
-        $DKMS remove -m vboxdrv -v _VERSION_ --all
+        $DKMS remove -m _MODULE_ -v _VERSION_ --all
     fi
-    if $DKMS add -m vboxdrv -v _VERSION_ &&
-        $DKMS build -m vboxdrv -v _VERSION_ &&
-        $DKMS install -m vboxdrv -v _VERSION_ --force
+    if $DKMS add -m _MODULE_ -v _VERSION_ &&
+        $DKMS build -m _MODULE_ -v _VERSION_ &&
+        $DKMS install -m _MODULE_ -v _VERSION_ --force
     then
         exit 0
     fi
