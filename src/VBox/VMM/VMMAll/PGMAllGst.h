@@ -731,7 +731,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         Pde.u = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
         X86PDEPAE    Pde;
-        Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
+        Pde.u = pgmGstGetLongModePDE(&pState->pVM->pgm.s, GCPtr);
 #endif
         if (Pde.n.u1Present)
         {
