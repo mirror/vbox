@@ -467,7 +467,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Query the host for the preferred resolution and colour depth */
     {
-        uint32_t cx, cy, iDisplay, cBits = 24;
+        uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 24;
 
         if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay,
                                         pVBox))
@@ -475,8 +475,10 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
             /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
             if (cBits != 16)
                 cBits = 24;
-            cx -= cx % 8;
-            pcHostModeName = XNFprintf("%dx%d", cx, cy);
+            if ((0 != cx) && (0 != cy)) {
+                cx -= cx % 8;
+                pcHostModeName = XNFprintf("%dx%d", cx, cy);
+            }
         }
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
             return FALSE;
