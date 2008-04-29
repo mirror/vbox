@@ -262,6 +262,9 @@ CGImageRef DarwinCreateDockBadge (const char *aSource);
 void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
 void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
+# ifdef DEBUG
+void DarwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
+# endif
 #endif /* Q_WS_MAC */
 
 #endif // __VBoxUtils_h__
