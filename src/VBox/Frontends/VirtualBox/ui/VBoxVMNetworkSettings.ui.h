@@ -86,6 +86,9 @@ VBoxVMNetworkSettings::checkPage (const QStringList &aList)
 {
     KNetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
+    if (!grbEnabled->isChecked())
+        return CheckPage_Ok;
+    else
 #if defined Q_WS_WIN
     if (type == KNetworkAttachmentType_HostInterface &&
         isInterfaceInvalid (aList, cbHostInterfaceName->currentText()))
@@ -111,17 +114,14 @@ void VBoxVMNetworkSettings::loadInterfaceList (const QStringList &aList,
     cbHostInterfaceName->clear();
     /* load current list items */
     if (aList.count())
-    {
         cbHostInterfaceName->insertStringList (aList);
-        int index = aList.findIndex (currentListItemName);
-        if (index != -1)
-            cbHostInterfaceName->setCurrentItem (index);
-    }
     else
-    {
         cbHostInterfaceName->insertItem (aNillItem);
+
+    if (currentListItemName.isEmpty() || currentListItemName == aNillItem)
         cbHostInterfaceName->setCurrentItem (0);
-    }
+    else
+        cbHostInterfaceName->setCurrentText (currentListItemName);
 #else
     NOREF (aList);
     NOREF (aNillItem);
@@ -161,15 +161,8 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
     chbCableConnected->setChecked (adapter.GetCableConnected());
 
 #if defined Q_WS_WIN
-    QString name = adapter.GetHostInterface();
-    for (int index = 0; index < cbHostInterfaceName->count(); ++ index)
-        if (cbHostInterfaceName->text (index) == name)
-        {
-            cbHostInterfaceName->setCurrentItem (index);
-            break;
-        }
-    if (cbHostInterfaceName->currentItem() == -1)
-        cbHostInterfaceName->setCurrentText (name);
+    if (!adapter.GetHostInterface().isEmpty())
+        cbHostInterfaceName->setCurrentText (adapter.GetHostInterface());
 #else
     leHostInterface->setText (adapter.GetHostInterface());
 #endif
@@ -248,11 +241,7 @@ void VBoxVMNetworkSettings::revalidate()
 void VBoxVMNetworkSettings::grbEnabledToggled (bool aOn)
 {
 #if defined Q_WS_WIN
-    if (!aOn)
-    {
-        cbNetworkAttachment->setCurrentItem (0);
-        cbNetworkAttachment_activated (cbNetworkAttachment->currentText());
-    }
+    cbNetworkAttachment_activated (cbNetworkAttachment->currentText());
 #else
     NOREF (aOn);
 #endif
@@ -260,9 +249,11 @@ void VBoxVMNetworkSettings::grbEnabledToggled (bool aOn)
 
 void VBoxVMNetworkSettings::cbNetworkAttachment_activated (const QString &aString)
 {
-    bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
+    bool enableHostIf = grbEnabled->isChecked() &&
+                        vboxGlobal().toNetworkAttachmentType (aString) ==
                         KNetworkAttachmentType_HostInterface;
-    bool enableIntNet = vboxGlobal().toNetworkAttachmentType (aString) ==
+    bool enableIntNet = grbEnabled->isChecked() &&
+                        vboxGlobal().toNetworkAttachmentType (aString) ==
                         KNetworkAttachmentType_Internal;
 #if defined Q_WS_WIN
     txHostInterface_WIN->setEnabled (enableHostIf);

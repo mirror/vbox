@@ -240,6 +240,12 @@
                             <property name="name">
                                 <cstring>cbHostInterfaceName</cstring>
                             </property>
+                            <property name="editable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="insertionPolicy">
+                                <enum>NoInsertion</enum>
+                            </property>
                             <property name="whatsThis" stdset="0">
                                 <string>Displays the name of the host interface selected for this adapter.</string>
                             </property>
