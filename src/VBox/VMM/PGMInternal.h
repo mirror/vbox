@@ -3400,6 +3400,47 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
     }
     return 0ULL;
 }
+
+/**
+ * Gets the page directory entry for the specified address.
+ *
+ * @returns Pointer to the page directory entry in question.
+ * @returns NULL if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
+{
+    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+
+    if (pPGM->pHCPaePML4->a[iPml4e].n.u1Present)
+    {
+        PX86PDPT pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pHCPaePML4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertFailed();
+            return NULL;
+        }
+
+        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        if (pPdptTemp->a[iPdPt].n.u1Present)
+        {
+            PX86PDPAE pPD;
+
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertFailed();
+                return NULL;
+            }
+            const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+            return &pPD->a[iPD];
+        }
+    }
+    return NULL;
+}
+
 #endif /* !IN_GC */
 
 /**
