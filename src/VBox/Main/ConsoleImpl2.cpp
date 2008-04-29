@@ -198,7 +198,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
         default:
             AssertMsgFailed(("Invalid IDE controller type '%d'", controllerType));
-            return VERR_INVALID_PARAMETER;
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                              N_("Invalid IDE controller type '%d'"), controllerType);
     }
 
     /*
@@ -294,7 +295,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             default:
                 AssertMsgFailed(("Invalid bootDevice=%d\n", bootDevice));
-                return VERR_INVALID_PARAMETER;
+                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                  N_("Invalid boot device '%d'"), bootDevice);
         }
         rc = CFGMR3InsertString(pBiosCfg, szParamName, pszBootDevice);              RC_CHECK();
     }
@@ -959,7 +961,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             default:
                 AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'",
                                  adapterType, ulInstance));
-                return VERR_GENERAL_FAILURE;
+                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                  N_("Invalid network adapter type '%d' for slot '%d'"),
+                                  adapterType, ulInstance);
         }
 
         char szInstance[4]; Assert(ulInstance <= 999);
