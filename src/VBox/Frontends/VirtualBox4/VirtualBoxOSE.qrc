@@ -2,5 +2,13 @@
  <qresource prefix="/">
     <file alias="about.png">images/about.png</file>
     <file alias="about_tile.png">images/about_tile.png</file>
+    <file alias="VirtualBox_16px.png">images/OSE/VirtualBox_16px.png</file>
+    <file alias="VirtualBox_20px.png">images/OSE/VirtualBox_20px.png</file>
+    <file alias="VirtualBox_32px.png">images/OSE/VirtualBox_32px.png</file>
+    <file alias="VirtualBox_40px.png">images/OSE/VirtualBox_40px.png</file>
+    <file alias="VirtualBox_48px.png">images/OSE/VirtualBox_48px.png</file>
+    <file alias="VirtualBox_64px.png">images/OSE/VirtualBox_64px.png</file>
+    <file alias="VirtualBox_cube_42px.png">images/OSE/VirtualBox_cube_42px.png</file>
+    <file alias="about_16px.png">images/OSE/about_16px.png</file>
  </qresource>
  </RCC>

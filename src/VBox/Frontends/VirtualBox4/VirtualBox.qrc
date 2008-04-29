@@ -92,15 +92,7 @@
     <file alias="hostkey_captured_pressed_16px.png">images/hostkey_captured_pressed_16px.png</file>
     <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
     <file alias="machine_16px.png">images/machine_16px.png</file>
-    <file alias="VirtualBox_16px.png">images/VirtualBox_16px.png</file>
-    <file alias="VirtualBox_20px.png">images/VirtualBox_20px.png</file>
-    <file alias="VirtualBox_32px.png">images/VirtualBox_32px.png</file>
-    <file alias="VirtualBox_40px.png">images/VirtualBox_40px.png</file>
-    <file alias="VirtualBox_48px.png">images/VirtualBox_48px.png</file>
-    <file alias="VirtualBox_64px.png">images/VirtualBox_64px.png</file>
-    <file alias="VirtualBox_cube_42px.png">images/VirtualBox_cube_42px.png</file>
     <file alias="help_16px.png">images/help_16px.png</file>
-    <file alias="about_16px.png">images/about_16px.png</file>
     <file alias="site_16px.png">images/site_16px.png</file>
     <file alias="register_16px.png">images/register_16px.png</file>
     <file alias="register_disabled_16px.png">images/register_disabled_16px.png</file>
