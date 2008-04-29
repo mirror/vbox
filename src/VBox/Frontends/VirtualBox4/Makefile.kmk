@@ -661,7 +661,7 @@ VirtualBox.app_SOURCES += \
 	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
 else
 VirtualBox.app_SOURCES += \
-	images/VirtualBox.icns=>Resources/virtualbox.icns
+	images/NonOSE/VirtualBox.icns=>Resources/virtualbox.icns
 endif
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
@@ -685,7 +685,7 @@ VirtualBoxVM.app_SOURCES += \
 	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
 else
 VirtualBoxVM.app_SOURCES += \
-	images/VirtualBox.icns=>Resources/virtualbox.icns
+	images/NonOSE/VirtualBox.icns=>Resources/virtualbox.icns
 endif
 VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/
@@ -731,10 +731,10 @@ VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application.cpp
 # We have different about dialogs in OSE and PUEL. Therefor two independent
 # resource files exists.
 ifdef VBOX_OSE
-VirtualBox_QT_RC_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxOSE.qrc)
+VirtualBox_QT_RC_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBox_OSE.qrc)
 VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_ose.cpp
 else
-VirtualBox_QT_RC_NON_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxNonOSE.qrc)
+VirtualBox_QT_RC_NON_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBox_NonOSE.qrc)
 VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp
 VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
 VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
@@ -950,11 +950,11 @@ $(PATH_VirtualBox)/ui/qrc_application.cpp: VirtualBox.qrc $(VirtualBox_QT_RC)
 	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_RCC4) -o $@  $<
 
-$(PATH_VirtualBox)/ui/qrc_application_ose.cpp: VirtualBoxOSE.qrc $(VirtualBox_QT_RC_OSE)
+$(PATH_VirtualBox)/ui/qrc_application_ose.cpp: VirtualBox_OSE.qrc $(VirtualBox_QT_RC_OSE)
 	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_RCC4) -name "OSE" -o $@  $<
 
-$(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp: VirtualBoxNonOSE.qrc $(VirtualBox_QT_RC_NON_OSE)
+$(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp: VirtualBox_NonOSE.qrc $(VirtualBox_QT_RC_NON_OSE)
 	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_RCC4) -name "NonOSE" -o $@  $<
 

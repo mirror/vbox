@@ -48,6 +48,8 @@ include $(PATH_KBUILD)/header.kmk
 #
 ifdef VBOX_OSE
 VirtualBox_QT_IMAGES += \
+	images/OSE/about.png \
+	images/OSE/about_tile.png \
 	images/OSE/about_16px.png \
 	images/OSE/VirtualBox_16px.png \
 	images/OSE/VirtualBox_20px.png \
@@ -56,16 +58,17 @@ VirtualBox_QT_IMAGES += \
 	images/OSE/VirtualBox_48px.png \
 	images/OSE/VirtualBox_64px.png \
 	images/OSE/VirtualBox_cube_42px.png
-eelse
+else
 VirtualBox_QT_IMAGES += \
-	images/about_16px.png \
-	images/VirtualBox_16px.png \
-	images/VirtualBox_20px.png \
-	images/VirtualBox_32px.png \
-	images/VirtualBox_40px.png \
-	images/VirtualBox_48px.png \
-	images/VirtualBox_64px.png \
-	images/VirtualBox_cube_42px.png
+	images/NonOSE/about.png \
+	images/NonOSE/about_16px.png \
+	images/NonOSE/VirtualBox_16px.png \
+	images/NonOSE/VirtualBox_20px.png \
+	images/NonOSE/VirtualBox_32px.png \
+	images/NonOSE/VirtualBox_40px.png \
+	images/NonOSE/VirtualBox_48px.png \
+	images/NonOSE/VirtualBox_64px.png \
+	images/NonOSE/VirtualBox_cube_42px.png
 endif
 
 
@@ -302,7 +305,6 @@ ifdef VBOX_WITH_ICHAT_THEATER
 endif
 
 ifndef VBOX_OSE
-VirtualBox_QT_IMAGES += images/about_sun.png
 VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
 VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
@@ -432,7 +434,7 @@ VirtualBox.app_SOURCES += \
 	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
 else
 VirtualBox.app_SOURCES += \
-	images/VirtualBox.icns=>Resources/virtualbox.icns
+	images/NonOSE/VirtualBox.icns=>Resources/virtualbox.icns
 endif
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
@@ -456,7 +458,7 @@ VirtualBoxVM.app_SOURCES += \
 	images/OSE/VirtualBox.icns=>Resources/virtualbox.icns
 else
 VirtualBoxVM.app_SOURCES += \
-	images/VirtualBox.icns=>Resources/virtualbox.icns
+	images/NonOSE/VirtualBox.icns=>Resources/virtualbox.icns
 endif
 VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/
