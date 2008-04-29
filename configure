@@ -1532,7 +1532,7 @@ setup_wine()
 
 
 #
-# Determins the darwin version.
+# Determines the Darwin version.
 # @todo This should really check the Xcode/SDK version.
 #
 check_darwinversion()
@@ -1801,7 +1801,11 @@ if [ "$OS" = "darwin" ]; then
   # default so disable Qt3. --disable-qt disables both Qt3 and Qt4 GUI now,
   # --disable-qt4 disables only the Qt4 GUI (which is not appropriate for
   # Darwin as we disable the Qt3 here anyway.
+  # (Qt3 builds for Intel Macs are usually not threaded or for X11. And they
+  #  don't contain our patches, which means the result isn't really usable.)
   WITH_QT=0
+  # No Qt4 for OSE yet.
+  [ $OSE -ge 1 ] && WITH_QT4=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
