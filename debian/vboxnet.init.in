@@ -1,11 +1,10 @@
 #! /bin/sh
-#
 # Sun xVM VirtualBox
 # Linux static host networking interface initialization
 #
 
 #
-# Copyright (C) 2007 Sun Microsystems, Inc. GmbH
+# Copyright (C) 2007 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,75 +24,120 @@
 # Required-Stop:
 # Default-Start:  3 5
 # Default-Stop:
-# Short-Description: VirtualBox permanent host networking setup
+# Description:    VirtualBox permanent host networking setup
 ### END INIT INFO
 
-PATH=$PATH:/bin:/sbin:/usr/sbin
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 CONFIG="/etc/vbox/interfaces"
 VARDIR="/var/run/VirtualBox"
 VARFILE="/var/run/VirtualBox/vboxnet"
 TAPDEV="/dev/net/tun"
-NOLSB=%LSB%
+NOLSB=%NOLSB%
 
-if [ -z "$NOLSB" -a -f /lib/lsb/init-functions ]; then
-  . /lib/lsb/init-functions
+[ -f /lib/lsb/init-functions ] || NOLSB=yes
+
+if [ -n "$NOLSB" ]; then
+    if [ -f /etc/redhat-release ]; then
+        system=redhat
+    elif [ -f /etc/SuSE-release ]; then
+        system=suse
+    elif [ -f /etc/gentoo-release ]; then
+        system=gentoo
+    fi
+fi
+
+if [ -z "$NOLSB" ]; then
+    . /lib/lsb/init-functions
+    fail_msg() {
+        echo ""
+        log_failure_msg "$1"
+    }
+    succ_msg() {
+        log_success_msg " done."
+    }
+    begin_msg() {
+        log_daemon_msg "$@"
+    }
 else
-  log_action_begin_msg()
-  {
-    echo -n "$@..."
-  }
-  log_action_end_msg()
-  {
-    if [ -z "${2:-}" ]; then
-      end="."
+    if [ "$system" = "redhat" ]; then
+        . /etc/init.d/functions
+        fail_msg() {
+            echo_failure
+            echo
+            echo "  ($1)"
+        }
+        succ_msg() {
+            echo_success
+            echo
+        }
+    elif [ "$system" = "suse" ]; then
+        . /etc/rc.status
+        fail_msg() {
+            rc_failed 1
+            rc_status -v
+            echo "  ($1)"
+        }
+        succ_msg() {
+            rc_reset
+            rc_status -v
+        }
+    elif [ "$system" = "gentoo" ]; then
+        . /sbin/functions.sh
+        fail_msg() {
+            eerror "$1"
+        }
+        succ_msg() {
+            eend "$?"
+        }
+        begin_msg() {
+            ebegin "$1"
+        }
+        if [ "`which $0`" = "/sbin/rc" ]; then
+            shift
+        fi
     else
-      end=" ($2)."
+        fail_msg() {
+            echo " ...failed!"
+            echo "  ($1)"
+        }
+        succ_msg() {
+            echo " ...done."
+        }
     fi
-    if [ $1 -eq 0 ]; then
-      echo "done${end}"
-    else
-      echo "failed${end}"
+    if [ "$system" != "gentoo" ]; then
+        begin_msg() {
+            [ -z "${1:-}" ] && return 1
+            if [ -z "${2:-}" ]; then
+                echo -n "$1"
+            else
+                echo -n "$1: $2"
+            fi
+        }
     fi
-  }
-  log_success_msg()
-  {
-    echo "$@"
-  }
-  log_failure_msg()
-  {
-    echo "$@"
-  }
 fi
 
 failure()
 {
-  log_action_end_msg 1 "$1"
-  exit 0
+    fail_msg "$1"
+    # never return with exit code != 0
+    exit 0
 }
 
 running()
 {
-  test -f "$VARFILE"
-}
-
-valid_ifname()
-{
-  if expr match "$1" "vbox[0-9][0-9]*$" > /dev/null 2>&1; then
-    return 0
-  else
-    return 1
-  fi
+    test -f "$VARFILE"
 }
 
 # Create all permanent TAP devices registered on the system, add them to a
 # bridge if required and keep a record of proceedings in the file
 # /var/run/VirtualBox/vboxnet.  If this file already exists, assume that the
 # script has already been started and do nothing.
-start_network() {
-    log_action_begin_msg "Starting VirtualBox host networking"
+start_network()
+{
+    begin_msg "Starting VirtualBox host networking"
     # If the service is already running, return successfully.
     if [ -f "$VARFILE" ]; then
-      log_action_end_msg 0
+      succ_msg
       return 0
     fi
     # Fail if we can't create our runtime record file
@@ -107,7 +151,7 @@ start_network() {
     fi
     # If there is no configuration file, report success
     if [ ! -f "$CONFIG" ]; then
-      log_action_end_msg 0
+      succ_msg
       return 0
     fi
     # Fail if we can't read our configuration
@@ -115,16 +159,16 @@ start_network() {
       failure "Cannot read $CONFIG"
     fi
     # Fail if we don't have tunctl
-    if ! VBoxTunctl -h 2>&1 | grep -q VBoxTunctl > /dev/null; then
+    if ! VBoxTunctl -h 2>&1 | grep VBoxTunctl > /dev/null; then
       failure "VBoxTunctl not found"
     fi
     # Fail if we don't have the kernel tun device
     # Make sure that the tun module is loaded (Ubuntu 7.10 needs this)
     modprobe tun > /dev/null 2>&1
-    if ! cat /proc/misc 2>/dev/null | grep tun > /dev/null
-    then
+    if ! cat /proc/misc 2>/dev/null | grep tun > /dev/null; then
       failure "Linux tun/tap subsystem not available"
     fi
+    succ_msg
     # Read the configuration file entries line by line and create the
     # interfaces
     while read line; do
@@ -134,32 +178,37 @@ start_network() {
         # Check that the line is correctly formed (an interface name plus one
         # or two non-comment entries, possibly followed by a comment).
         if ((! expr match "$2" "#" > /dev/null) &&
-            (test -z "$4" || expr match "$4" "#" > /dev/null) &&
-            (valid_ifname "$1"))
-        then
+            (test -z "$4" || expr match "$4" "#" > /dev/null)); then
+          # As the very first thing, try delete the interface. Might already
+          # exist with different configuration. Ignore errors.
+          VBoxTunctl -d $1 > /dev/null 2>&1
+          case $user in
+            +*)
+                group=`echo $2 | cut -c2-`
+                cmd="VBoxTunctl -t $1 -g $group"
+                ;;
+            *)
+                cmd="VBoxTunctl -t $1 -u $2"
+                ;;
+          esac
           # Try to create the interface
-          if VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1
-          then
+          if $cmd > /dev/null 2>&1; then
             # On SUSE Linux Enterprise Server, the interface does not
             # appear immediately, so we loop trying to bring it up.
             i=1
-            while [ $i -le 10 ]
-            do
+            while [ $i -le 10 ]; do
               ifconfig "$1" up 2> /dev/null
-              if ifconfig | grep "$1" > /dev/null 2>&1
-              then
+              if ifconfig | grep "$1" > /dev/null; then
                 # Add the interface to a bridge if one was specified
-                if [ ! -z "$3" ]
-                then
-                  if brctl addif "$3" "$1" 2> /dev/null
-                  then
-                    echo "$1 $2 $3" > "$VARFILE"
+                if [ -n "$3" ]; then
+                  if brctl addif "$3" "$1" 2> /dev/null; then
+                    echo "$1 $2 $3" >> "$VARFILE"
                   else
-                    echo "$1 $2" > "$VARFILE"
+                    echo "$1 $2" >> "$VARFILE"
                     echo "Warning - failed to add interface $1 to the bridge $3"
                   fi
                 else
-                  echo "$1 $2" > $VARFILE
+                  echo "$1 $2" >> "$VARFILE"
                 fi
                 i=20
               else
@@ -167,15 +216,13 @@ start_network() {
                 sleep .1
               fi
             done
-            if [ $i -ne 20 ]
-            then
+            if [ $i -ne 20 ]; then
               echo "Warning - failed to bring up the interface $1"
             fi
           else
             echo "Warning - failed to create the interface $1 for the user $2"
           fi
         else
-          echo
           echo "Warning - invalid line in $CONFIG:"
           echo "  $line"
         fi
@@ -183,22 +230,22 @@ start_network() {
     done < "$CONFIG"
     # Set /dev/net/tun to belong to the group vboxusers if it exists and does
     # yet belong to a group.
-    if ls -g "$TAPDEV" 2>/dev/null | grep -q root; then
+    if ls -g "$TAPDEV" 2>/dev/null | grep root > /dev/null; then
       chgrp vboxusers "$TAPDEV"
       chmod 0660 "$TAPDEV"
     fi
-    log_action_end_msg 0
     return 0
 }
 
 # Shut down VirtualBox host networking and remove all permanent TAP
 # interfaces.  This action will fail if some interfaces could not be removed.
-stop_network() {
-    log_action_begin_msg "Shutting down VirtualBox host networking"
+stop_network()
+{
+    begin_msg "Shutting down VirtualBox host networking"
     # If there is no runtime record file, assume that the service is not
     # running.
     if [ ! -f "$VARFILE" ]; then
-      log_action_end_msg 0
+      succ_msg
       return 0
     fi
     # Fail if we can't read our runtime record file or write to the
@@ -207,7 +254,7 @@ stop_network() {
       failure "Failed to read $VARFILE or to write $VARDIR"
     fi
     # Fail if we don't have tunctl
-    if ! VBoxTunctl -h 2>&1 | grep -q VBoxTunctl > /dev/null; then
+    if ! VBoxTunctl -h 2>&1 | grep VBoxTunctl > /dev/null; then
       failure "VBoxTunctl not found"
     fi
     # Read the runtime record file entries line by line and delete the
@@ -216,27 +263,25 @@ stop_network() {
     while read line; do
       set ""$line
       # Remove the interface from a bridge if it is part of one
-      if [ ! -z "$3" ]; then
+      if [ -n "$3" ]; then
         brctl delif "$3" "$1" 2> /dev/null
       fi
       # Remove the interface.  Roll back everything and fail if this is not
       # possible
       if (! ifconfig "$1" down 2> /dev/null ||
-          ! VBoxTunctl -d "$1" > /dev/null 2>&1)
-      then
+          ! VBoxTunctl -d "$1" > /dev/null 2>&1); then
         while read line; do
           set ""$line
           VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1
           ifconfig "$1" up 2> /dev/null
-          if [ ! -z "$3" ]; then
+          if [ -n "$3" ]; then
             brctl addif "$3" "$1"
           fi
         done < "$VARFILE"
-        failure "Removing of interface failed"
       fi
     done < "$VARFILE"
     rm -f "$VARFILE" 2> /dev/null
-    log_action_end_msg 0
+    succ_msg
     return 0
 }
 
@@ -244,12 +289,13 @@ stop_network() {
 # interfaces.  This action will succeed even if not all interfaces could be
 # removed.  It is only intended for exceptional circumstances such as
 # uninstalling VirtualBox.
-force_stop_network() {
-    log_action_begin_msg "Shutting down VirtualBox host networking"
+force_stop_network()
+{
+    begin_msg "Shutting down VirtualBox host networking"
     # If there is no runtime record file, assume that the service is not
     # running.
     if [ ! -f "$VARFILE" ]; then
-      log_action_end_msg 0
+      succ_msg
       return 0
     fi
     # Fail if we can't read our runtime record file or write to the
@@ -258,7 +304,7 @@ force_stop_network() {
       failure "Failed to read $VARFILE or to write $VARDIR"
     fi
     # Fail if we don't have tunctl
-    if ! VBoxTunctl -h 2>&1 | grep -q VBoxTunctl > /dev/null; then
+    if ! VBoxTunctl -h 2>&1 | grep VBoxTunctl > /dev/null; then
       failure "VBoxTunctl not found"
     fi
     # Read the runtime record file entries line by line and delete the
@@ -267,7 +313,7 @@ force_stop_network() {
     while read line; do
       set ""$line
       # Remove the interface from a bridge if it is part of one
-      if [ ! -z "$3" ]; then
+      if [ -n "$3" ]; then
         brctl delif "$3" "$1" 2> /dev/null
       fi
       # Remove the interface.
@@ -275,7 +321,7 @@ force_stop_network() {
       VBoxTunctl -d "$1" > /dev/null 2>&1
     done < "$VARFILE"
     rm -f "$VARFILE" 2> /dev/null
-    log_action_end_msg 0
+    succ_msg
     return 0
 }
 
@@ -286,7 +332,10 @@ start)
 stop)
     stop_network
     ;;
-restart|reload|force-reload)
+restart|reload)
+    stop_network && start_network
+    ;;
+force-reload)
     stop_network
     start_network
     ;;
@@ -295,9 +344,9 @@ force-stop)
     ;;
 status)
     if running; then
-      log_success_msg "VirtualBox host networking is loaded."
+        echo "VirtualBox host networking is loaded."
     else
-      log_failure_msg "VirtualBox host networking is not loaded."
+        echo "VirtualBox host networking is not loaded."
     fi
     ;;
 *)
@@ -305,4 +354,4 @@ status)
     exit 1
 esac
 
-exit
+exit 0
