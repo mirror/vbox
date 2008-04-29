@@ -42,6 +42,7 @@ WITH_ALSA=1
 WITH_PULSE=1
 WITH_KMODS=1
 CC="gcc"
+CC_COMPAT=""
 CC32=""
 CC64=""
 CXX="g++"
@@ -108,6 +109,12 @@ fail()
     rm -f $ENV
     exit 1
   fi
+}
+
+log()
+{
+  echo "$1"
+  echo "$1" >> $LOG
 }
 
 log_success()
@@ -312,25 +319,59 @@ check_gcc()
 {
   test_header gcc
   if check_avail "$CC" CC really; then
-    cc_ver=`$CC -dumpversion`
+    cc_ver=`$CC -dumpversion` 2>/dev/null
+    if [ $? -ne 0 ]; then
+      log_failure "cannot execute '$CC -dumpversion'"
+      fail really
+    fi
     if check_avail "$CXX" CXX really; then
-      cxx_ver=`$CXX -dumpversion`
+      cxx_ver=`$CXX -dumpversion` 2>/dev/null
+      if [ $? -ne 0 ]; then
+        log_failure "cannot execute '$CXX -dumpversion'"
+        fail really
+      fi
       cc_maj=`echo $cc_ver|cut -d. -f1`
       cc_min=`echo $cc_ver|cut -d. -f2`
       if [ "x$cc_ver" != "x$cxx_ver" ]; then
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
-      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 ]; then
-        if [ "$OS" = "darwin" ]; then
-          log_success "found version $cc_ver"
-        else
-          log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
+      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "OS" = "darwin" ]; then
+        log_success "found version $cc_ver"
+      elif [ $cc_maj -eq 4 -a $cc_min -eq 3 ]; then
+        if [ -z "$CC_COMPAT" ]; then
+          log ""
+          log "  ** There are known problems with gcc version 4.3 when compiling the recompiler"
+          log "  ** stuff. You need to specify a compatibility compiler with version < 4.3. Look"
+          log "  ** for a package compat-gcc-34 on Fedora systems or something similar on other"
+          log "  ** distributions and call configure with parameter --with-gcc-compat=gcc34."
           fail really
         fi
-      elif [ $cc_maj -gt 3 ]; then
-        log_success "found version $cc_ver"
-      elif [ $cc_maj -lt 3 -o $cc_min -lt 2 ]; then
-        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
+        if check_avail "$CC_COMPAT" CC_COMPAT really; then
+          cc_compat_ver=`$CC_COMPAT -dumpversion` 2>/dev/null
+          if [ $? -ne 0 ]; then
+            log_failure "cannot execute '$CC_COMPAT -dumpversion'"
+            fail really
+          fi
+          cc_compat_maj=`echo $cc_compat_ver|cut -d. -f1`
+          cc_compat_min=`echo $cc_compat_ver|cut -d. -f2`
+          if [ $cc_compat_maj -lt 3 \
+               -o \( $cc_compat_maj -eq 3 -a $cc_compat_min -lt 2 \) \
+               -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -lt 1 \) \
+               -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -gt 2 \) \
+               -o $cc_compat_maj -gt 4 ]; then
+            log ""
+            log "  ** Version $cc_compat_ver of the compatibility gcc found. Expected gcc 3.x with x>1"
+            log "  ** or gcc 4.x with 0<x<3"
+            fail really
+          fi
+          cnf_append "VBOX_RECOMPILER_OP_GCC" "$CC_COMPAT"
+        fi
+      elif [ $cc_maj -lt 3 \
+             -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
+             -o \( $cc_maj -eq 4 -a $cc_min -lt 1 \) \
+             -o \( $cc_maj -eq 4 -a $cc_min -gt 3 \) \
+             -o $cc_maj -gt 4 ]; then
+        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<4"
         fail really
       else
         log_success "found version $cc_ver"
@@ -1593,6 +1634,9 @@ for option in $*; do
       ;;
     --with-g++=*)
       CXX=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-gcc-compat=*)
+      CC_COMPAT=`echo $option | cut -d'=' -f2`
       ;;
     --with-kbuild=*)
       KBUILDDIR=`echo $option | cut -d'=' -f2`
