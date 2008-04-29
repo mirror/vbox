@@ -153,20 +153,14 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
         *pGCPhys = GCPtr & PAGE_BASE_GC_MASK;
     return VINF_SUCCESS;
 
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    /* later */
-    /* check level 3 & 4 bits as well (r/w, u/s, nxe) */
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-
-#elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
+#elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
     /*
      * Get the PDE.
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     const X86PDE Pde = CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
-# else /* PAE */
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
     X86PDEPAE    Pde;
     bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
 
@@ -174,6 +168,22 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
      * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
      */
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    PX86PML4E    pPml4e;
+    X86PDPE      Pdpe;
+    X86PDEPAE    Pde;
+    bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+
+    Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr, &pPml4e, &Pdpe);
+    Assert(pPml4e);
+    if (!(pPml4e->n.u1Present & Pdpe.n.u1Present))
+        return VERR_PAGE_TABLE_NOT_PRESENT;
+
+    /* Merge accessed, write, user and no-execute bits into the PDE. */
+    Pde.n.u1Accessed  &= pPml4e->n.u1Accessed & Pdpe.n.u1Accessed;
+    Pde.n.u1Write     &= pPml4e->n.u1Write & Pdpe.n.u1Write;
+    Pde.n.u1User      &= pPml4e->n.u1User & Pdpe.n.u1User;
+    Pde.n.u1NoExecute &= pPml4e->n.u1NoExecute& Pdpe.n.u1NoExecute;
 # endif
 
     /*
@@ -357,18 +367,15 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE)
  || PGM_GST_TYPE == PGM_TYPE_PAE   \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-#if PGM_GST_TYPE == PGM_TYPE_AMD64
-    /* later */
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif
-
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     X86PDE    Pde;
     Pde   = CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> GST_PD_SHIFT];
-# else
+# elif PGM_GST_TYPE == PGM_TYPE_PAE
     X86PDEPAE Pde;
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+# elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    X86PDEPAE    Pde;
+    Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
 # endif
 
     pPDE->u = (X86PGPAEUINT)Pde.u;
@@ -719,9 +726,12 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
         X86PDE      Pde = pPDSrc->a[GCPtr >> X86_PD_SHIFT];
-#else
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
         X86PDEPAE   Pde;
         Pde.u = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+        X86PDEPAE    Pde;
+        Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
 #endif
         if (Pde.n.u1Present)
         {
