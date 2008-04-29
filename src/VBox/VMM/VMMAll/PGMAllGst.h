@@ -270,13 +270,6 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-#if PGM_GST_TYPE == PGM_TYPE_AMD64
-    /* later */
-    /* check level 3 & 4 bits as well (r/w, u/s, nxe) */
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif
-
     for (;;)
     {
         /*
@@ -284,11 +277,17 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
          */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
         PX86PDE pPde = &CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
-#else /* PAE */
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
         /* pgmGstGetPaePDEPtr will return 0 if the PDPTE is marked as not present
          * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
          */
         PX86PDEPAE pPde = pgmGstGetPaePDEPtr(&pVM->pgm.s, GCPtr);
+        Assert(pPde);
+        if (!pPde)
+            return VERR_PAGE_TABLE_NOT_PRESENT;
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+        /** @todo Setting the r/w, u/s & nx bits might have no effect depending on the pdpte & pml4 values */
+        PX86PDEPAE pPde = pgmGstGetLongModePDEPtr(&pVM->pgm.s, GCPtr);
         Assert(pPde);
         if (!pPde)
             return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -374,7 +373,7 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE)
     X86PDEPAE Pde;
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    X86PDEPAE    Pde;
+    X86PDEPAE Pde;
     Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
 # endif
 
@@ -730,7 +729,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         X86PDEPAE   Pde;
         Pde.u = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-        X86PDEPAE    Pde;
+        X86PDEPAE   Pde;
         Pde.u = pgmGstGetLongModePDE(&pState->pVM->pgm.s, GCPtr);
 #endif
         if (Pde.n.u1Present)
