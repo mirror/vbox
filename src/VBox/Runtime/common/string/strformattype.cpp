@@ -249,8 +249,8 @@ DECLINLINE(int32_t) rtstrFormatTypeLookup(const char *pszType, size_t cchType)
  */
 RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnHandler, void *pvUser)
 {
+    int rc;
     size_t cchType;
-    int rc = VINF_SUCCESS;
     uint32_t cTypes;
 
     /*
@@ -272,6 +272,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
     {
         /* find where to insert it. */
         uint32_t i = 0;
+        rc = VINF_SUCCESS;
         while (i < cTypes)
         {
             int iDiff = rtstrFormatTypeCompare(pszType, cchType, &g_aTypes[i]);
