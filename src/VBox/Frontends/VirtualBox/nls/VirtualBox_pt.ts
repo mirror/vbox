@@ -2072,7 +2072,7 @@ Versão %1</translation>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2646,7 +2646,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhum disco seleccionado para  &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -3577,17 +3577,17 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Não existe nenhum disco rígido disponível para a nova ligação criada.&lt;/p&gt;&lt;p&gt;Prima o botão &lt;b&gt;Criar&lt;/b&gt; para iniciar o assistente &lt;i&gt;Novo Disco Virtual&lt;/i&gt; e criar um novo disco rígido, ou prima o botão &lt;b&gt;Seleccionar&lt;/b&gt; para abrir o &lt;i&gt;Gestor de Discos Virtuais&lt;/i&gt; seleccionar o que deseja fazer.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Criar</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Seleccionar</translation>
+        <translation>Seleccionar</translation>
     </message>
 </context>
 <context>
@@ -6038,7 +6038,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>

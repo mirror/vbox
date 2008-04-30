@@ -2083,7 +2083,7 @@ Versione %1</translation>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2531,7 +2531,6 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
             </source>
         <translation>
               &lt;qt&gt;Sposta il filtro selezionato in basso.&lt;/qt&gt;
-
             </translation>
     </message>
 </context>
@@ -2668,7 +2667,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun disco rigido selezionato per &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -3617,17 +3616,17 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Non ci sono dischi rigidi inutilizzati disponibili per la connessione appena creata.&lt;/p&gt;&lt;p&gt;Premi il bottone &lt;b&gt;Crea&lt;/b&gt; per lanciare l&apos;Assistente &lt;i&gt;Nuovo Disco Virtuale&lt;/i&gt; e creare un nuovo disco rigido, o premi il bottone &lt;b&gt;Seleziona&lt;/b&gt; per aprire il &lt;i&gt;Gestore di Dischi Virtuali&lt;/i&gt; e decidere il da farsi.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Crea</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Seleziona</translation>
+        <translation>Seleziona</translation>
     </message>
 </context>
 <context>
@@ -4466,7 +4465,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definisce il filtro Nome prodotto come stringa
-di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà
+di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà 
 qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4474,7 +4473,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definisce il filtro Numero Seriale come stringa
-di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà
+di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà 
 qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -6117,7 +6116,6 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
             </source>
         <translation>
               &lt;qt&gt;Sposta il filtro selezionato in basso.&lt;/qt&gt;
-
             </translation>
     </message>
     <message>
@@ -6135,7 +6133,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>
