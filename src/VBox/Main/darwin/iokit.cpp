@@ -1107,7 +1107,9 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
                  * Re-enumerate the device and bail out.
                  */
                 irc = (*ppDevI)->USBDeviceReEnumerate(ppDevI, 0);
-                if (irc != kIOReturnSuccess)
+                if (irc == kIOReturnSuccess)
+                    vrc = VINF_SUCCESS;
+                else
                 {
                     LogRel(("USB: Failed to open device '%s', plug-in creation failed with irc=%#x.\n", pszAddress, irc));
                     vrc = RTErrConvertFromDarwinIO(irc);

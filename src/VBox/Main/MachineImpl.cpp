@@ -7400,6 +7400,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         endTakingSnapshot (FALSE /* aSuccess  */);
     }
 
+#ifdef VBOX_WITH_USB
     /* release all captured USB devices */
     if (aReason == Uninit::Abnormal && lastState >= MachineState_Running)
     {
@@ -7407,9 +7408,17 @@ void SessionMachine::uninit (Uninit::Reason aReason)
          * setting the machine state to Starting or Restoring.
          * Console::detachAllUSBDevices() will be called upon successful
          * termination. So, we need to release USB devices only if there was
-         * an abnormal termination of a running VM. */
-        DetachAllUSBDevices (TRUE /* aDone */);
+         * an abnormal termination of a running VM.
+         *
+         * This is identical to SessionMachine::DetachAllUSBDevices except
+         * for the aAbnormal argument. */
+        HRESULT rc = mUSBController->notifyProxy (false /* aInsertFilters */);
+        AssertComRC (rc);
+        NOREF (rc);
+
+        mParent->host()->detachAllUSBDevices (this, true /* aDone */, true /* aAbnormal */);
     }
+#endif /* VBOX_WITH_USB */
 
     if (!mData->mSession.mType.isNull())
     {
@@ -7681,7 +7690,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRC (rc);
     NOREF (rc);
 
-    return mParent->host()->detachAllUSBDevices (this, aDone);
+    return mParent->host()->detachAllUSBDevices (this, aDone, false /* aAbnormal */);
 #else
     return S_OK;
 #endif
