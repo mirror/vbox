@@ -26,10 +26,14 @@ include $(PATH_KBUILD)/subheader.kmk
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS       += tstAPI
  PROGRAMS.linux += tstVBoxAPILinux
+ # That testcase is actually not linux specific, it's generic XPCOM.
+ PROGRAMS.solaris += tstVBoxAPILinux
  PROGRAMS.win   += tstVBoxAPIWin
 else ifeq ($(USERNAME),dmik)
  PROGRAMS       += tstAPI
  PROGRAMS.linux += tstVBoxAPILinux
+ # That testcase is actually not linux specific, it's generic XPCOM.
+ PROGRAMS.solaris += tstVBoxAPILinux
  PROGRAMS.win   += tstVBoxAPIWin
 endif # VBOX_WITH_TESTCASES
 
