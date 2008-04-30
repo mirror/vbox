@@ -440,7 +440,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
                 goto l_create_failed;
             }
         }
-
+#ifndef RT_OS_WINDOWS
         rc = RTFileLock(pImage->File,
                         RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY, 0, cbLock);
         if (VBOX_FAILURE(rc))
@@ -448,7 +448,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
             cbLock = 0;    /* Not locked. */
             goto l_create_failed;
         }
-
+#endif
         if (enmType == VDI_IMAGE_TYPE_FIXED)
         {
             /*
@@ -541,9 +541,10 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
 
     l_create_failed:
 
+#ifndef RT_OS_WINDOWS
         if (cbLock)
             RTFileUnlock(pImage->File, 0, cbLock);
-
+#endif
         RTFileClose(pImage->File);
 
         /* Delete image file if error occured while creating */
@@ -600,7 +601,7 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
                         pImage->szFilename,
                         fOpen & VDI_OPEN_FLAGS_READONLY
                         ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                        : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+                        : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (VBOX_FAILURE(rc))
     {
         if (!(fOpen & VDI_OPEN_FLAGS_READONLY))
@@ -621,6 +622,7 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
     /* Set up current image r/w state. */
     pImage->fReadOnly = !!(pImage->fOpen & VDI_OPEN_FLAGS_READONLY);
 
+#ifndef RT_OS_WINDOWS
     /*
      * Set initial file lock for reading header only.
      * Length of lock doesn't matter, it just must include image header.
@@ -632,6 +634,7 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
         cbLock = 0;
         goto l_open_failed;
     }
+#endif
 
     /* Read pre-header. */
     rc = RTFileRead(pImage->File, &pImage->PreHeader, sizeof(pImage->PreHeader), NULL);
@@ -733,6 +736,7 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
     /* reset modified flag into first-modified state. */
     pImage->fModified = VDI_IMAGE_MODIFIED_FIRST;
 
+#ifndef RT_OS_WINDOWS
     /* Image is validated, set working file lock on it. */
     rc = RTFileUnlock(pImage->File, 0, cbLock);
     AssertRC(rc);
@@ -758,6 +762,7 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
         cbLock = 0;    /* Not locked. */
         goto l_open_failed;
     }
+#endif
 
     /* Allocate memory for blocks array. */
     pImage->paBlocks = (PVDIIMAGEBLOCKPOINTER)RTMemAlloc(sizeof(VDIIMAGEBLOCKPOINTER) * getImageBlocks(&pImage->Header));
@@ -784,8 +789,10 @@ l_open_failed:
     /* Clean up. */
     if (pImage->paBlocks)
         RTMemFree(pImage->paBlocks);
+#ifndef RT_OS_WINDOWS
     if (cbLock)
         RTFileUnlock(pImage->File, 0, cbLock);
+#endif
     RTFileClose(pImage->File);
     RTMemFree(pImage);
     Log(("vdiOpenImage: failed, filename=\"%s\", rc=%Vrc\n", pszFilename, rc));
@@ -963,10 +970,12 @@ static void vdiCloseImage(PVDIIMAGEDESC pImage)
     Assert(pImage->File != NIL_RTFILE);
 
     VDIFlushImage(pImage);
+#ifndef RT_OS_WINDOWS
     RTFileUnlock(pImage->File,
                  0,
                  pImage->offStartData
                + ((uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset));
+#endif
     RTFileClose(pImage->File);
 
     /* free image resources */
@@ -1945,9 +1954,11 @@ VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFil
                     RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL | RTFILE_O_NOT_CONTENT_INDEXED);
     if (VBOX_SUCCESS(rc))
     {
+#ifndef RT_OS_WINDOWS
         /* lock new image exclusively to close any wrong access by VDI API calls. */
         rc = RTFileLock(File, RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY, 0, cbFile);
         if (VBOX_SUCCESS(rc))
+#endif
         {
             /* Set the size of a new file. */
             rc = RTFileSetSize(File, cbFile);
@@ -2037,7 +2048,9 @@ VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFil
                 }
             }
 
+#ifndef RT_OS_WINDOWS
             RTFileUnlock(File, 0, cbFile);
+#endif
         }
 
         RTFileClose(File);
@@ -3318,6 +3331,9 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
     /* Flush last image changes if was r/w mode. */
     VDIFlushImage(pImage);
 
+#ifdef RT_OS_WINDOWS
+    int rc = VINF_SUCCESS;
+#else
     /* Change image locking. */
     uint64_t cbLock = pImage->offStartData
                     + ((uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset);
@@ -3327,6 +3343,7 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
                                   RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY,
                               0,
                               cbLock);
+#endif
     if (VBOX_SUCCESS(rc))
     {
         pImage->fReadOnly = fReadOnly;
@@ -3335,6 +3352,7 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
         return VINF_SUCCESS;
     }
 
+#ifndef RT_OS_WINDOWS
     /* Check for the most bad error in the world. Damn! It must never happens in real life! */
     if (rc == VERR_FILE_LOCK_LOST)
     {
@@ -3351,6 +3369,7 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
         if (pImage->fReadOnly != fReadOnly)
             rc = VERR_FILE_LOCK_VIOLATION;
     }
+#endif
 
     Log(("vdiChangeImageMode: Image \"%s\" mode change failed with rc=%Vrc, mode is %s\n",
          pImage->szFilename, rc, (pImage->fReadOnly) ? "read-only" : "read/write"));
