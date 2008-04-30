@@ -1,4 +1,4 @@
-/* $Id:$ */
+/* $Id$ */
 /** @file
  * IPRT - Convert Darwin Mach returns codes to iprt status codes.
  */
@@ -107,6 +107,10 @@ RTDECL(int) RTErrConvertFromDarwin(int iNativeCode)
          */
         case kIOReturnNoDevice:         return VERR_IO_BAD_UNIT;
         case kIOReturnUnsupported:      return VERR_NOT_SUPPORTED;
+        case kIOReturnInternalError:    return VERR_INTERNAL_ERROR;
+        case kIOReturnNoResources:      return VERR_OUT_OF_RESOURCES;
+        case kIOReturnBadArgument:      return VERR_INVALID_PARAMETER;
+        case kIOReturnCannotWire:       return VERR_LOCK_FAILED;
 
 #ifdef IN_RING3
         /*
