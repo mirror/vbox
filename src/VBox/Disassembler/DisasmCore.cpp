@@ -521,7 +521,9 @@ static const char *szSIBBaseReg[8]    = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP
 static const char *szSIBIndexReg[8]   = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
 static const char *szSIBBaseReg64[16] = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
 static const char *szSIBIndexReg64[16]= {"RAX", "RCX", "RDX", "RBX", NULL,  "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
+#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 static const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
+#endif
 //*****************************************************************************
 void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
@@ -879,7 +881,7 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 {
     unsigned sibinc;
     unsigned size = 0;
-    unsigned reg = pCpu->ModRM.Bits.Reg;
+    // unsigned reg = pCpu->ModRM.Bits.Reg;
     unsigned mod = pCpu->ModRM.Bits.Mod;
     unsigned rm  = pCpu->ModRM.Bits.Rm;
 
@@ -962,7 +964,7 @@ unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
 {
     unsigned sibinc;
     unsigned size = 0;
-    unsigned reg = pCpu->ModRM.Bits.Reg;
+    // unsigned reg = pCpu->ModRM.Bits.Reg;
     unsigned mod = pCpu->ModRM.Bits.Mod;
     unsigned rm  = pCpu->ModRM.Bits.Rm;
 
@@ -2062,6 +2064,9 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
         case CPUMODE_16BIT:
             subtype = OP_PARM_w;
             break;
+        default:
+            /* make gcc happy */
+            break;
         }
     }
 
@@ -2181,6 +2186,9 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
             break;
         case CPUMODE_16BIT:
             subtype = OP_PARM_w;
+            break;
+        default:
+            /* make gcc happy */
             break;
         }
     }
