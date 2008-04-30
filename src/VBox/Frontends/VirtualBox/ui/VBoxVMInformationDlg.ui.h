@@ -104,9 +104,6 @@ void VBoxVMInformationDlg::init()
     //                     VBoxGlobal::iconSet ("show_logs_16px.png"),
     //                     QString::null);
 
-    /* applying language settings */
-    languageChangeImp();
-
     /* show statistics page and make it focused */
     connect (mInfoStack, SIGNAL (currentChanged (QWidget*)),
              this, SLOT (onPageChanged (QWidget*)));
@@ -173,10 +170,13 @@ void VBoxVMInformationDlg::setup (const CSession &aSession,
 
 void VBoxVMInformationDlg::languageChangeImp()
 {
+    AssertReturnVoid (!mSession.isNull());
+
+    CMachine machine = mSession.GetMachine();
+    AssertReturnVoid (!machine.isNull());
+
     /* Setup a dialog caption. */
-    if (!mSession.isNull() && !mSession.GetMachine().isNull())
-        setCaption (tr ("%1 - Session Information")
-        .arg (mSession.GetMachine().GetName()));
+    setCaption (tr ("%1 - Session Information").arg (machine.GetName()));
 
     /* Setup a tabwidget page names. */
     mInfoStack->changeTab (mDetailsText, tr ("&Details"));
@@ -207,17 +207,26 @@ void VBoxVMInformationDlg::languageChangeImp()
     mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Data Read");
     mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Data Written");
 
-    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Data Transmitted");
-    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Data Received");
+    for (int i = 0; i < 4; i++)
+    {
+        CNetworkAdapter na = machine.GetNetworkAdapter (i);
+        KNetworkAdapterType ty = na.GetAdapterType();
+        const char *name;
 
-    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Data Transmitted");
-    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Data Received");
-
-    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Data Transmitted");
-    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Data Received");
-
-    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Data Transmitted");
-    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Data Received");
+        switch (ty)
+        {
+            case KNetworkAdapterType_I82540EM:
+                name = "E1k";
+                break;
+            default:
+                name = "PCNet";
+                break;
+        }
+        mNamesMap [QString("/Devices/%1%2/TransmitBytes")
+                     .arg(name) .arg(i)] = tr ("Data Transmitted");
+        mNamesMap [QString("/Devices/%1%2/ReceiveBytes")
+                     .arg(name) .arg(i)] = tr ("Data Received");
+    }
 
     /* Statistics page update. */
     refreshStatistics();
@@ -281,7 +290,8 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
     {
         case QEvent::LanguageChange:
         {
-            languageChangeImp();
+            if (!mSession.isNull())
+                languageChangeImp();
             break;
         }
         case QEvent::WindowStateChange:
