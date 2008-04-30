@@ -194,7 +194,11 @@ BEGINPROC   EMGCEmulateLockCmpXchg8b
     mov     ebx, [esp + 10h + 8]        ; EBX
     mov     ecx, [esp + 14h + 8]        ; ECX
 
+%ifdef RT_OS_OS2
+    lock cmpxchg8b [ebp]                ; do CMPXCHG8B
+%else
     lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
+%endif
     mov     dword [esp + 08h + 8], eax
     mov     dword [esp + 0ch + 8], edx
 
@@ -244,7 +248,11 @@ BEGINPROC   EMGCEmulateCmpXchg8b
     mov     ebx, [esp + 10h + 8]        ; EBX
     mov     ecx, [esp + 14h + 8]        ; ECX
 
+%ifdef RT_OS_OS2
+    cmpxchg8b [ebp]                     ; do CMPXCHG8B
+%else
     cmpxchg8b qword [ebp]               ; do CMPXCHG8B
+%endif
     mov     dword [esp + 08h + 8], eax
     mov     dword [esp + 0ch + 8], edx
 
