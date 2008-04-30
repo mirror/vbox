@@ -748,15 +748,15 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
     {
+#if 0
         unsigned maxSize, trySize = 512;
 
-#if 0
         do {
             maxSize = trySize;
             trySize += 128;
         } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
 #else
-        maxSize = 32000;
+        unsigned maxSize = 32000;
 #endif
 
         xf86CrtcSetSizeRange(pScrn, 64, 64, maxSize, maxSize);
