@@ -799,6 +799,9 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     struct stat DevStat;
     if (!fstat(RawFile, &DevStat) && S_ISBLK(DevStat.st_mode))
     {
+        /** @todo add a BLKGETSIZE64 ioctl here, as it eliminates the 2 TByte
+         * limit. But be careful, Linux 2.4.18 is the first revision with
+         * working BLKGETSIZE64, and in 2.5.x it's pretty random. 2.6.0 works. */
         long cBlocks;
         if (!ioctl(RawFile, BLKGETSIZE, &cBlocks))
             cbSize = (uint64_t)cBlocks * 512;
