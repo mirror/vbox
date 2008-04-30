@@ -33,6 +33,18 @@ DKMS=`which dkms`
 if [ -n "$DKMS" ]
 then
     echo "Attempting to install using DKMS"
+    $DKMS status -m _MODULE_ | while read line
+    # first, remove _any_ old module
+    do
+        if echo "$line" | grep -q added > /dev/null ||
+           echo "$line" | grep -q built > /dev/null ||
+           echo "$line" | grep -q installed > /dev/null; then
+            version=`echo "$line" | sed "s/_MODULE_,\([^,]*\),.*/\1/;t;d"`
+            info "  removing old DKMS module _MODULE_ version $version"
+            $DKMS remove -m _MODULE_ -v $version --all
+        fi
+    done
+    # there should not be any more matches
     status=`$DKMS status -m _MODULE_ -v _VERSION_`
     if echo $status | grep added > /dev/null ||
         echo $status | grep built > /dev/null ||
@@ -40,6 +52,7 @@ then
     then
         $DKMS remove -m _MODULE_ -v _VERSION_ --all
     fi
+    # finally install the module
     if $DKMS add -m _MODULE_ -v _VERSION_ &&
         $DKMS build -m _MODULE_ -v _VERSION_ &&
         $DKMS install -m _MODULE_ -v _VERSION_ --force
