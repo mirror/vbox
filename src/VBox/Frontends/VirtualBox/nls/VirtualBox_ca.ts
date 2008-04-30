@@ -4,7 +4,7 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation>Català</translation>
+        <translation>Català - Valencià</translation>
     </message>
     <message>
         <source>--</source>
@@ -1795,217 +1795,157 @@ Versió %1</translation>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V
-
-detalls informe</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>PAE/NX
-
-detalls informe</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Activat
-
-detalls informe (VT-x/AMD-V)</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Desactivat
-
-detalls informe (VT-x/AMD-V)</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Activat
-
-detalls informe (PAE/NX)</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Desactivat
-
-detalls informe (PAE/NX)</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Controlador amfitrió
-
-detalls informe (àudio)</translation>
+        <translation>Controlador amfitrió</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Controlador
-
-detalls informe (àudio)</translation>
+        <translation>Controlador</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Port %1
-
-detalls informe (ports paral·lels)</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Desactivat
-
-detalls informe (ports paral·lels)</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Ports paral·lels
-
-detalls informe</translation>
+        <translation>Ports paral·lels</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation>USB
-
-DispositiuTipus</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Carpeta Compartida
-
-DispositiuTipus</translation>
+        <translation>Carpeta Compartida</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation>IDE
-
-EmmagazematgeBus</translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation>SATA
-
-EmmagazematgeBus</translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation>Primari
-
-EmmagazematgeBusCanal</translation>
+        <translation>Primari</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation>Secundari
-
-EmmagazematgeBusCanal</translation>
+        <translation>Secundari</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation>Mestre
-
-EmmagazematgeBusDispositiu</translation>
+        <translation>Mestre</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation>Esclau
-
-EmmagazematgeBusDispositiu</translation>
+        <translation>Esclau</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusDevice</comment>
-        <translation>Port %1
-
-EmmagazematgeBusDispositiu</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Imatge VHD
-
-DiscEmmazematgeTipus</translation>
+        <translation>Imatge VHD</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation>Solaris Audio
-
-ÀudioControladorTipus</translation>
+        <translation>Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation>PulseAudio
-
-ÀudioControladorTipus</translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation>ICH AC97
-
-ÀudioControladorTipus</translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation>SoundBlaster 16
-
-ÀudioControladorTipus</translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>PCnet-PCI II (Am79C970A)
-
-XarxaAdaptadorTipus</translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>PCnet-FAST III (Am79C973)
-
-XarxaAdaptadorTipus</translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>Intel PRO/1000 MT Desktop (82540EM)
-
-XarxaAdaptadorTipus</translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation>PIIX3
-
-IDEControladorTipus</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation>PIIX4
-
-IDEControladorTipus</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2560,7 +2500,7 @@ un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translatio
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha seleccionat cap disc dur per &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -3483,17 +3423,17 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hi ha discs durs disponibles que no es fan servir per al nou adjunt creat.&lt;/p&gt;&lt;p&gt;Prmeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Crea</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Selecciona</translation>
+        <translation>Selecciona</translation>
     </message>
 </context>
 <context>
@@ -5781,7 +5721,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBAccióGrup</translation>
     </message>
 </context>
 </TS>

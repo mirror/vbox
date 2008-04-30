@@ -503,7 +503,6 @@ Version %1</source>
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Envoie le signal ACPI Touche d&apos;arrêt à la machine virtuelle.&lt;/p&gt;&lt;p&gt;Normalement, le système d&apos;exploitation client fonctionnant sous la machine virtuelle détecte ce signal et appelle une procédure d&apos;extinction contrôlée.  Ces la procédure recommandée car cela permet  aux logiciels de sauvegarder leurs données et état.&lt;/p&gt;&lt;p&gt;Si la machine virtuelle ne traite cette signalisation, il est possible que le système d&apos;exploitation client ne soit pas configuré correctement ou que le traitement de cette signalisation ne soit pas implémentée sur celui ci. Dans ce cas sélectionner &lt;b&gt;Eteindre la machine&lt;/b&gt; afin s_arrêter la machine virtuelle.&lt;/p&gt;
-
 </translation>
     </message>
     <message>
@@ -2144,7 +2143,7 @@ Version %1</source>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2747,7 +2746,7 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Aucun disque dur n&apos;est affecté à &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -3682,17 +3681,17 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aucun disque dur est ne peut être utilisé pour la création d&apos; un nouvel attachement.&lt;/p&gt;&lt;p&gt;Actionnez le bouton &lt;b&gt;Créer&lt;/b&gt; pour lancer l&apos;&lt;i&gt;assistant de création de disques virtuels&lt;/i&gt;, ou &lt;b&gt;Choisir&lt;/b&gt; pour afficher le &lt;i&gt;gestionnaire de disque virtuel&lt;/i&gt; et effectuer les opérations conséquentes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Créer</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Choisir</translation>
+        <translation>Choisir</translation>
     </message>
 </context>
 <context>
@@ -6353,7 +6352,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 </TS>

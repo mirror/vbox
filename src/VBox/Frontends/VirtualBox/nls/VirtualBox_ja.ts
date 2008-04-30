@@ -1908,7 +1908,7 @@ Version %1</source>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2205,7 +2205,7 @@ to the system default language.&lt;/qt&gt;
                                               filters.&lt;/qt&gt;
                                             </source>
         <translation>&lt;qt&gt;グローバルUSBフィルタをリスト表示します。
- 左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。
+ 左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。 
 USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -2398,7 +2398,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
     </message>
 </context>
 <context>
@@ -3262,17 +3262,18 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;
+&lt;p&gt;[&lt;b&gt;作成&lt;/b&gt;]ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、[&lt;b&gt;選択&lt;/b&gt;]ボタンをクリックして、&lt;i&gt;仮想ディスクマネージャ&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>作成(&amp;C)</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">選択</translation>
+        <translation>選択</translation>
     </message>
 </context>
 <context>
@@ -5365,7 +5366,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>
