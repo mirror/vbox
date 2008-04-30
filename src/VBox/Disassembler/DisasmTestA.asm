@@ -65,7 +65,7 @@ BEGINPROC   TestProc
 
 ENDPROC   TestProc
 
-
+%ifndef RT_OS_OS2
 BITS 64
 align 16
 BEGINPROC TestProc64
@@ -92,3 +92,4 @@ BEGINPROC TestProc64
       movsd xmm6, xmm1
       ret
 ENDPROC   TestProc64
+%endif

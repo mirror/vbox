@@ -29,7 +29,9 @@
 #include <iprt/string.h>
 
 DECLASM(int) TestProc();
+#ifndef RT_OS_OS2
 DECLASM(int) TestProc64();
+#endif
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
 
 int main(int argc, char **argv)
@@ -62,6 +64,7 @@ int main(int argc, char **argv)
             pInstr += cb;
         }
 
+#ifndef RT_OS_OS2
         printf("\n64 bits disassembly\n");
         pInstr = (RTUINTPTR)TestProc64;
 
@@ -83,6 +86,7 @@ int main(int argc, char **argv)
             }
             pInstr += cb;
         }
+#endif
     }
     return 0;
 }
