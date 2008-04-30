@@ -2378,6 +2378,8 @@ typedef struct PGM
     STAMCOUNTER     StatHandlersVirtualUnmarked;
     /** GC: Number of traps due to access outside range of monitored page(s). */
     STAMCOUNTER     StatHandlersUnhandled;
+    /** GC: Number of traps due to access to invalid physical memory. */
+    STAMCOUNTER     StatHandlersInvalid;
 
     /** GC: The number of times pgmGCGuestROMWriteHandler() was successfully called. */
     STAMCOUNTER     StatGCGuestROMWriteHandled;

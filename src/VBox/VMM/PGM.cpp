@@ -1308,6 +1308,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatHandlersVirtualByPhys,         STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Handlers/VirtualByPhys", STAMUNIT_OCCURENCES,  "Number of traps due to virtual access handlers by physical address.");
     STAM_REG(pVM, &pPGM->StatHandlersVirtualUnmarked,       STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Handlers/VirtualUnmarked", STAMUNIT_OCCURENCES,"Number of traps due to virtual access handlers by virtual address (without proper physical flags).");
     STAM_REG(pVM, &pPGM->StatHandlersUnhandled,             STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Handlers/Unhandled",  STAMUNIT_OCCURENCES,     "Number of traps due to access outside range of monitored page(s).");
+    STAM_REG(pVM, &pPGM->StatHandlersInvalid,               STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Handlers/Invalid",    STAMUNIT_OCCURENCES,     "Number of traps due to access to invalid physical memory.");
 
     STAM_REG(pVM, &pPGM->StatGCTrap0eConflicts,             STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Conflicts",           STAMUNIT_OCCURENCES,     "The number of times #PF was caused by an undetected conflict.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eUSNotPresentRead,      STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/NPRead",         STAMUNIT_OCCURENCES,     "Number of user mode not present read page faults.");
