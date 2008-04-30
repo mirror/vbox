@@ -22,9 +22,6 @@
 #ifndef ____H_AUTOLOCK
 #define ____H_AUTOLOCK
 
-/// @todo temporary
-#define VBOX_MAIN_AUTOLOCK_TRAP
-
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/critsect.h>
