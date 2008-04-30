@@ -6157,7 +6157,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>启用 USB 2.0 控制器(&amp;2)</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>选中，在该虚拟电脑上启用 USB EHCI 控制器。该控制器将提供 USB 2.0支持.</translation>
     </message>
     <message>
