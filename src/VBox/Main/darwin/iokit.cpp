@@ -502,7 +502,9 @@ void *DarwinSubscribeUSBNotifications(void)
         Assert(pNotify->NotifyRLSrc);
         if (pNotify->NotifyRLSrc)
         {
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
+            CFRunLoopRef RunLoopRef = CFRunLoopGetCurrent();
+            CFRetain(RunLoopRef); /* Workaround for crash when cleaning up the TLS / runloop((sub)mode). See #2807. */
+            CFRunLoopAddSource(RunLoopRef, pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
 
             /*
              * Create the notifcation callbacks.
@@ -539,7 +541,7 @@ void *DarwinSubscribeUSBNotifications(void)
                 }
                 IOObjectRelease(pNotify->AttachIterator);
             }
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
+            CFRunLoopRemoveSource(RunLoopRef, pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
         }
         IONotificationPortDestroy(pNotify->NotifyPort);
     }
