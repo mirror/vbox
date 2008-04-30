@@ -1921,8 +1921,12 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
 
-    /* Tell the host that we now support graphics in the additions */
-    VBoxVideoSetGraphicsCap(TRUE);
+    /* Tell the host that we now support graphics in the additions.
+     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
+     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
+     *        (for example Qt GUI debug build asserts when seamless is being enabled).
+     */
+    // VBoxVideoSetGraphicsCap(TRUE);
     return TRUE;
 }
 
@@ -1955,8 +1959,10 @@ BOOLEAN FASTCALL VBoxVideoResetDevice(
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
 #endif
 
-    /* Tell the host that we no longer support graphics in the additions */
-    VBoxVideoSetGraphicsCap(FALSE);
+    /* Tell the host that we no longer support graphics in the additions
+     * @todo: Keep old behaviour, see similar comment in VBoxVideoSetCurrentMode for details.
+     */
+    // VBoxVideoSetGraphicsCap(FALSE);
     return TRUE;
 }
 
