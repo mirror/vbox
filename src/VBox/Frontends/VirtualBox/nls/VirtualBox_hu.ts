@@ -4345,7 +4345,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; gyártót a szűréshez. 
+        <translation type="obsolete">&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; gyártót a szűréshez.
 Ha üresen hagyja, minden gyártóra illeszkedni fog.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5859,7 +5859,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

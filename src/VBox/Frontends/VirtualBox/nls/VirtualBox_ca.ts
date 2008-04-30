@@ -2353,8 +2353,8 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
 globals. La casella de selecció
 de la dreta defineix què filtre
 concret està activat o no. Feu
-servir el menú de context o 
-els botons de la dreta per 
+servir el menú de context o
+els botons de la dreta per
 afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -2371,7 +2371,7 @@ afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com 
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com
 a cadenes buides. Tingueu en compte que els filtres coincidiran
 amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
     </message>
@@ -2388,7 +2388,7 @@ amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps 
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps
 fixats als valors del dispositu USB seleccionat connectat
 al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
@@ -2484,8 +2484,8 @@ SATA quan el controlador SATA no es troba actiu.&lt;/qt&gt;</translation>
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation>&lt;qt&gt;Mostra tots els discs durs 
-adjunts a aquesta màquina. Feu doble 
+        <translation>&lt;qt&gt;Mostra tots els discs durs
+adjunts a aquesta màquina. Feu doble
 clic amb el ratolí o premeu el botó
 &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Espai&lt;/tt&gt; a l&apos;element
 remarcat per activar la llista desplegable i
@@ -2547,7 +2547,7 @@ durs.&lt;/qt&gt;</translation>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Invoca el Gestor de Discs Virtuals per a seleccionar 
+        <translation>&lt;qt&gt;Invoca el Gestor de Discs Virtuals per a seleccionar
 un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translation>
     </message>
     <message>
@@ -2693,7 +2693,7 @@ on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en e
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Aquesta serà la mida que s&apos;informarà 
+        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Aquesta serà la mida que s&apos;informarà
 al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2749,8 +2749,8 @@ time depending on the image size and the write performance of your harddisk.&lt;
 molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida
 especificada) conforme el Sistema Amfitrió consumisca espai.&lt;/p&gt;
 &lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer
-de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una 
-imatge de mida fixa triga un temps segons la grandària de la mateixa i de 
+de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una
+imatge de mida fixa triga un temps segons la grandària de la mateixa i de
 l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
     </message>
 </context>
@@ -2779,7 +2779,7 @@ i el botó &lt;b&gt;Enrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&g
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema 
+        <translation>&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema
 operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;
 &lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari.
 Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
@@ -2887,7 +2887,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
                             Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;.
                             Quan el premeu, es crearà una màquina virtual nova.
                             &lt;/p&gt;&lt;p&gt;
-                            Tingueu en compte que podeu canviar aquests i els altres paràmetres de la 
+                            Tingueu en compte que podeu canviar aquests i els altres paràmetres de la
                             màquina virtua creada en qualsevol moment fent servir el
                             diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del
                             menú de la finestra principal.
@@ -4246,7 +4246,7 @@ virtuals (&lt;i&gt;Manté&lt;/i&gt;).&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineix el filtre del port USB de l&apos;amfitrió com una
-cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no 
+cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4254,7 +4254,7 @@ tindrà cap valor.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineix el filtre del fabricant com una
-cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no 
+cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4262,9 +4262,9 @@ tindrà cap valor.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Defineix l&apos;ID del filtre del producte. El 
+        <translation>&lt;qt&gt;Defineix l&apos;ID del filtre del producte. El
 format de la cadena de &lt;i&gt;seqüència exacta&lt;/i&gt; és &lt;tt&gt;XXXX&lt;/tt&gt; a on
-&lt;tt&gt;X&lt;/tt&gt; és un dígit hexadecimal. Una cadena buida no 
+&lt;tt&gt;X&lt;/tt&gt; és un dígit hexadecimal. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4280,10 +4280,10 @@ cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no tindrà cap
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Defineix el número de revisió del producte. El 
+        <translation>&lt;qt&gt;Defineix el número de revisió del producte. El
 format de la cadena de &lt;i&gt;seqüència exacta&lt;/i&gt; és &lt;tt&gt;IIFF&lt;/tt&gt; a on
-&lt;tt&gt;I&lt;/tt&gt; és un dígit decimal de la part entera i &lt;tt&gt;F&lt;/tt&gt; 
-és un dígit decimal d&apos;una part de fracció. Una cadena buida no 
+&lt;tt&gt;I&lt;/tt&gt; és un dígit decimal de la part entera i &lt;tt&gt;F&lt;/tt&gt;
+és un dígit decimal d&apos;una part de fracció. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4291,7 +4291,7 @@ tindrà cap valor.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineix el número de sèrie del filtre com una
-cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no 
+cadena de &lt;i&gt;seqüència exacta&lt;/i&gt;. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4299,9 +4299,9 @@ tindrà cap valor.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Defineix l&apos;ID del venedor del producte. El 
+        <translation>&lt;qt&gt;Defineix l&apos;ID del venedor del producte. El
 format de la cadena de &lt;i&gt;seqüència exacta&lt;/i&gt; és &lt;tt&gt;XXXX&lt;/tt&gt; a on
-&lt;tt&gt;X&lt;/tt&gt; és un dígit hexadecimal. Una cadena buida no 
+&lt;tt&gt;X&lt;/tt&gt; és un dígit hexadecimal. Una cadena buida no
 tindrà cap valor.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5413,7 +5413,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Quan estiga marcat, la màquina virtual suportarà 
+        <translation>&lt;qt&gt;Quan estiga marcat, la màquina virtual suportarà
 l&apos;Entrada Sortida APIC (ES APIC), que pot disminuir el rendiment de la MV. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu
 aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!&lt;/qt&gt;</translation>
     </message>
@@ -5639,11 +5639,11 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
                                                           machine.&lt;/qt&gt;
                                                         </source>
         <translation>&lt;qt&gt;Quan
-estiga marcat, la 
+estiga marcat, la
 característica d&apos;Extensió
 d&apos;Adreça Física (PAE)
 de la CPU del sistema
-client s&apos;exposarà a la 
+client s&apos;exposarà a la
 màquina virtual.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5667,8 +5667,8 @@ màquina virtual.&lt;/qt&gt;</translation>
         <translation>Habilita el controlador USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>Quan estiga marcat, habilita el controlador virtual USB EHCI per a aquesta màquina. El controlador USB ECHI proveïx de suport USB 2.0.</translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Quan estiga marcat, habilita el controlador virtual USB EHCI per a aquesta màquina. El controlador USB EHCI proveïx de suport USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5682,11 +5682,11 @@ màquina virtual.&lt;/qt&gt;</translation>
                                             </source>
         <translation>
 &lt;qt&gt;Llista tots els filtres USB
-d&apos;aquesta màquina. La casella de 
-seleccióde la dreta defineix què 
+d&apos;aquesta màquina. La casella de
+seleccióde la dreta defineix què
 filtre concret està activat o no. Feu
-servir el menú de context o 
-els botons de la dreta per 
+servir el menú de context o
+els botons de la dreta per
 afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5703,7 +5703,7 @@ afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com 
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps fixats com
 a cadenes buides. Tingueu en compte que els filtres coincidiran
 amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
     </message>
@@ -5720,7 +5720,7 @@ amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps 
+        <translation>&lt;qt&gt;Afegeix un nou filtre USB amb tots els camps
 fixats als valors del dispositu USB seleccionat connectat
 al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>

@@ -2777,7 +2777,7 @@ z obrazem wirtualnego dysku lub wprowadź jego nazwę bezpośrednio w polu poni�
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wybierz rozmiar obrazu wirtualnego dysku twardego. Będzie on zgłoszony goszczonemu systemowi operacyjnemu 
+        <translation>&lt;p&gt;Wybierz rozmiar obrazu wirtualnego dysku twardego. Będzie on zgłoszony goszczonemu systemowi operacyjnemu
 jako rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2973,8 +2973,8 @@ opuścić ten krok i podłączyć dysk później, korzystając z okna Ustawień 
                             </source>
         <translation>&lt;p&gt;Jeżeli powyższe ustawienia są prawidłowe, wciśnij przycisk &lt;b&gt;Zakończ&lt;/b&gt;.
 Po naciśnięciu, nowa maszyna wirtualna zostanie utworzona. &lt;/p&gt;&lt;p&gt;
-Pamiętaj, że te i inne ustawienia utworzonej maszyny wirtualnej 
-możesz zmienić korzystając z przycisku &lt;b&gt;Ustawienia&lt;/b&gt; w 
+Pamiętaj, że te i inne ustawienia utworzonej maszyny wirtualnej
+możesz zmienić korzystając z przycisku &lt;b&gt;Ustawienia&lt;/b&gt; w
 oknie głównym programu. Zauważ, że należy ją jednak uprzednio wyłączyć.&lt;/p&gt;
                              </translation>
     </message>
@@ -4393,7 +4393,7 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Decyduje o tym, czy filtr ten dotyczy urządzeń 
+        <translation>&lt;qt&gt;Decyduje o tym, czy filtr ten dotyczy urządzeń
 USB podłączonych: lokalnie do Twojego komputera (&lt;i&gt;Nie&lt;/i&gt;),
 zdalnie do komputera na którym działa klient VRDP (&lt;i&gt;Tak&lt;/i&gt;)
 lub któregokolwiek z nich (&lt;i&gt;Bez znaczenia&lt;/i&gt;).&lt;/qt&gt;</translation>
@@ -4413,7 +4413,7 @@ użytku przez maszyny wirtualne użytkownika (&lt;i&gt;Przytrzymaj&lt;/i&gt;).&l
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem nazwy producenta sprzętu
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie producenta). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie producenta).
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4421,15 +4421,15 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem nazwy produktu
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie produktu). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie produktu).
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Definicja filtra z użyciem numeru seryjnego urządzenia 
-(wpisany łańcuch musi &lt;i&gt;idealnie  odpowiadać&lt;/i&gt; numerowi seryjnemu). 
+        <translation>&lt;qt&gt;Definicja filtra z użyciem numeru seryjnego urządzenia
+(wpisany łańcuch musi &lt;i&gt;idealnie  odpowiadać&lt;/i&gt; numerowi seryjnemu).
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4438,7 +4438,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem ID dostawcy (vendor ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID dostawcy). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID dostawcy).
 Filtr powinien mieć format &lt;tt&gt;XXXX&lt;/tt&gt;, gdzie &lt;tt&gt;X&lt;/tt&gt; jest cyfrą szesnastkową.
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
@@ -4448,7 +4448,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem ID produktu (product ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID produktu). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID produktu).
 Filtr powinien mieć format &lt;tt&gt;XXXX&lt;/tt&gt;, gdzie &lt;tt&gt;X&lt;/tt&gt; jest cyfrą szesnastkową.
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
@@ -4459,9 +4459,9 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem numeru wersji (revision ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi wersji). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi wersji).
 Filtr powinien mieć format &lt;tt&gt;CCDD&lt;/tt&gt;, gdzie &lt;tt&gt;C&lt;/tt&gt; jest cyfrą
-dziesiętna całkowitej części numeru wersji, a &lt;tt&gt;D&lt;/tt&gt; jest cyfra dziesiętną 
+dziesiętna całkowitej części numeru wersji, a &lt;tt&gt;D&lt;/tt&gt; jest cyfra dziesiętną
 części ułamkowej. Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt</translation>
     </message>
     <message>
@@ -4469,7 +4469,7 @@ części ułamkowej. Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wa
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem numeru portu USB gospodarza
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi portu). 
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi portu).
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -5906,7 +5906,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

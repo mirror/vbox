@@ -2572,7 +2572,7 @@ default virtual machine folder.</source>
     </message>
     <message>
         <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
+captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">如果勾選它，每次虛擬機器視窗啟動時都會自動捕捉鍵盤。當鍵盤被捕捉，
 所有的按鍵動作 (包括系統所用的 Alt-Tab) 都會被導向虛擬機器。</translation>
@@ -7058,7 +7058,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

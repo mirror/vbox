@@ -3690,7 +3690,7 @@ Använd
 &lt;tt&gt;net use x: \\vboxsvr\utdelning&lt;/tt&gt;
 för att komma åt en delad mapp med namnet &lt;i&gt;utdelning&lt;/i&gt; från ett DOS-liknande
 operativsystem, eller &lt;tt&gt;mount -t vboxsf utdelning monteringspunkt&lt;/tt&gt;
-för att komma åt den från ett Linux-operativsystem. Den här funktionen kräver 
+för att komma åt den från ett Linux-operativsystem. Den här funktionen kräver
 Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5074,7 +5074,7 @@ inaktivera inte den här funktionen efter att ett Windows-gästoperativsystem ha
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen 
+        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen
 kräver att tillägget Guest Additions är installerat på gästoperativsystemet.</translation>
     </message>
     <message>
@@ -5307,7 +5307,7 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
                                                           machine.&lt;/qt&gt;
                                                         </source>
         <translation>&lt;qt&gt;När
-                                                          kryssad kommer 
+                                                          kryssad kommer
                                                           funktionen Address
                                                           Extension (PAE) för
                                                           värdprocessorn att
@@ -5336,8 +5336,8 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
         <translation>Aktivera USB &amp;2.0-styrkort</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>När kryssad kommer det virtuella USB EHCI-styrkortet på denna maskin att aktiveras. USB ECHI-styrkortet tillhandahåller stöd för USB 2.0.</translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>När kryssad kommer det virtuella USB EHCI-styrkortet på denna maskin att aktiveras. USB EHCI-styrkortet tillhandahåller stöd för USB 2.0.</translation>
     </message>
     <message>
         <source>

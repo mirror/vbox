@@ -2347,7 +2347,7 @@ to the system default language.&lt;/qt&gt;
                                     </source>
         <translation>
 &lt;qt&gt;사용 가능한 사용자 인터페이스 언어의 목록입니다. 현재 사용하고 있는
-언어는 &lt;b&gt;굵게&lt;/b&gt; 표시되어 있습니다. &lt;i&gt;기본값&lt;/i&gt;을 선택하면 
+언어는 &lt;b&gt;굵게&lt;/b&gt; 표시되어 있습니다. &lt;i&gt;기본값&lt;/i&gt;을 선택하면
 시스템 기본 언어를 사용합니다.&lt;/qt&gt;
                                 </translation>
     </message>
@@ -4430,7 +4430,7 @@ computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;호스트 컴퓨터에 이 필터와 일치하는 장치가
-연결되었을 때의 동작을 정의합니다. &lt;i&gt;무시&lt;/i&gt;를 선택하면 
+연결되었을 때의 동작을 정의합니다. &lt;i&gt;무시&lt;/i&gt;를 선택하면
 호스트 컴퓨터에서 사용할 수 있도록 무시하며, &lt;i&gt;잡기&lt;/i&gt;를 선택하면
 가상 머신에서 사용할 수 있도록 잡습니다.&lt;/qt&gt;</translation>
     </message>
@@ -4439,7 +4439,7 @@ computer when a matching device is attached: give it up to the host OS
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;벤더 ID 필터를 정의합니다. 
+        <translation>&lt;qt&gt;벤더 ID 필터를 정의합니다.
 &lt;i&gt;정확하게 일치하는&lt;/i&gt; 문자열 형식은 16진수 숫자
 네 개로 나타납니다. (예: &lt;tt&gt;XXXX&lt;/tt&gt;)
 빈 문자열은 임의의 값과 일치합니다.&lt;/qt&gt;</translation>
@@ -4449,7 +4449,7 @@ value.&lt;/qt&gt;</source>
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;제품 ID 필터를 정의합니다. 
+        <translation>&lt;qt&gt;제품 ID 필터를 정의합니다.
 &lt;i&gt;정확하게 일치하는&lt;/i&gt; 문자열 형식은 16진수 숫자
 네 개로 나타납니다. (예: &lt;tt&gt;XXXX&lt;/tt&gt;)
 빈 문자열은 임의의 값과 일치합니다.&lt;/qt&gt;</translation>
@@ -4460,7 +4460,7 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;리비전 번호 필터를 정의합니다. 
+        <translation>&lt;qt&gt;리비전 번호 필터를 정의합니다.
 &lt;i&gt;정확하게 일치하는&lt;/i&gt; 형식은 &lt;tt&gt;IIFF&lt;/tt&gt;와 같이 나타납니다.
 &lt;tt&gt;I&lt;/tt&gt; 부분은 정수 부분의 10진수, &lt;tt&gt;F&lt;/tt&gt; 부분은 소수 부분의
 10진수를 나타냅니다. 빈 문자열은 임의의 값과
@@ -5941,7 +5941,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>USB 2.0 컨트롤러 사용하기(&amp;2)</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>선택하면 이 가상 머신의 USB EHCI 컨트롤러를 사용합니다. USB EHCI 컨트롤러는 USB 2.0을 지원합니다.</translation>
     </message>
     <message>

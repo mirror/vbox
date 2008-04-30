@@ -2602,7 +2602,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový obraz virtuálneho disku pre váš virtuálny stroj.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; 
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
 a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2618,7 +2618,7 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte typ obrazu virtuálneho disku, ktorý chcete vytvoriť.&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;Dynamicky expandujúci obraz&lt;/b&gt; na začiatku zaberá veľmi málo miesta
-na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej 
+na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej
 veľkosti) postupne ako bude hosťovský OS vyžadovať miesto na disku.&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;Obraz s pevnou veľkosťou&lt;/b&gt; nerastie. Uloží sa ako súbor približne
 rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
@@ -2730,7 +2730,7 @@ a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny stroj VirtualBox.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; 
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
 a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2850,7 +2850,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
                             Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
                             Keď ho stlačíte, vytvorí sa virtuálny stroj.
                             &lt;/p&gt;&lt;p&gt;
-                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného 
+                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného
                             virtuálneho stroja môžete kedykoľvek zmeniť pomocou
                             dialógu &lt;b&gt;Nastavenia&lt;/b&gt;, ktorý je dostupný
                             z ponuky hlavného okna.
@@ -5562,7 +5562,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

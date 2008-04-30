@@ -2237,7 +2237,7 @@ to the system default language.&lt;/qt&gt;
         <translation>
 &lt;qt&gt;
 &lt;qt&gt;Interfaze hizkuntza erabilgarrien zerrenda. Erabiltzen
-dena &lt;b&gt;lodian&lt;/b&gt; idatzirik dago. Hautatu &lt;i&gt;Lehenetsia&lt;/i&gt; 
+dena &lt;b&gt;lodian&lt;/b&gt; idatzirik dago. Hautatu &lt;i&gt;Lehenetsia&lt;/i&gt;
 sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
                                     </translation>
     </message>
@@ -4267,7 +4267,7 @@ edo bietan (&lt;i&gt;Edozein&lt;/i&gt;).&lt;/qt&gt;</translation>
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Iragazkia betetzen duen gailu bat eransterakoan ostalari ordenagailuak egingo duen ekintza ezartzen du(&lt;i&gt;Baztertu&lt;/i&gt;) edo eskuratu gero makina birtualek erabiltzeko 
+        <translation>&lt;qt&gt;Iragazkia betetzen duen gailu bat eransterakoan ostalari ordenagailuak egingo duen ekintza ezartzen du(&lt;i&gt;Baztertu&lt;/i&gt;) edo eskuratu gero makina birtualek erabiltzeko
 (&lt;i&gt;Eskuratu&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4276,7 +4276,7 @@ computer when a matching device is attached: give it up to the host OS
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Saltzaile ID iragazkia ezartzen du.
-&lt;i&gt;parekatze zehatz&lt;/i&gt; kate formatua &lt;tt&gt;XXXX&lt;/tt&gt; da, non 
+&lt;i&gt;parekatze zehatz&lt;/i&gt; kate formatua &lt;tt&gt;XXXX&lt;/tt&gt; da, non
 &lt;tt&gt;X&lt;/tt&gt; digito hamaseitar bat den. Kate hutsak edozein
 balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
@@ -4286,7 +4286,7 @@ balio bilatuko du.&lt;/qt&gt;</translation>
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Produktu ID iragazkia ezartzen du.
-&lt;i&gt;parekatze zehatz&lt;/i&gt; kate formatua &lt;tt&gt;XXXX&lt;/tt&gt; da, non 
+&lt;i&gt;parekatze zehatz&lt;/i&gt; kate formatua &lt;tt&gt;XXXX&lt;/tt&gt; da, non
 &lt;tt&gt;X&lt;/tt&gt; digito hamaseitar bat den. Kate hutsak edozein
 balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
@@ -4303,7 +4303,7 @@ value.&lt;/qt&gt;</source>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Ostalari USB iragazkia ezartzen du.
-&lt;i&gt;parekatze zehatz&lt;/i&gt; kate bat bezala. 
+&lt;i&gt;parekatze zehatz&lt;/i&gt; kate bat bezala.
 Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -5710,7 +5710,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

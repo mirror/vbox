@@ -2838,7 +2838,7 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vyberte obraz pevného disku, který bude použit
-jako bootovací pevný disk virtuálního počítače. Můžete buď vytvořit nový pevný   
+jako bootovací pevný disk virtuálního počítače. Můžete buď vytvořit nový pevný
 disk použitím tlačítka &lt;b&gt;Nový&lt;/b&gt;, nebo vybrat již existující obraz pevného
 disku z vysouvacího seznamu nebo stiskem tlačítka
 &lt;b&gt;Existijící&lt;/b&gt; (pro vyvolání dialogu Správce virtuálních disků)&lt;/p&gt;
@@ -5730,7 +5730,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
