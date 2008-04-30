@@ -146,6 +146,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/sdk,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/lib,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/bin,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARISINSTDIR)/additions/VBoxGuestAdditions.iso)
@@ -216,6 +217,9 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARISINSTDIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARISINSTDIR)/components/VirtualBox_XPCOM.xpt
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARISNLS),$(PATH_BIN)/$(f)) $(SOLARISINSTDIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),cp -p -R $(PATH_BIN)/sdk $(SOLARISINSTDIR),)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARISINSTDIR)/vboxwebsrv,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARISINSTDIR)/webtest,)	
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/lib/libqt-mt.so.3     $(SOLARISINSTDIR)/qtgcc/lib/libqt-mt.so.3,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/bin/qtconfig          $(SOLARISINSTDIR)/qtgcc/bin/qtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARISINSTDIR)/vnic_setup.sh
@@ -228,7 +232,6 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.pkgresponse                                             $(SOLARISINSTDIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vboxdevlink.sed                                              $(SOLARISINSTDIR)/etc/devlink.tab
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.space                                                   $(SOLARISINSTDIR)/vbox.space
-	@#$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/doc/ReadMe-Solaris.txt                                        $(SOLARISINSTDIR)/ReadMe.txt
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@BUILD_TARGET_ARCH@/$(BUILD_TARGET_ARCH)/g" \
