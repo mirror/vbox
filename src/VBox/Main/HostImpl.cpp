@@ -1480,7 +1480,7 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
  *  @note Locks this object for reading (@todo for writing now, until switched
  *  to the new locking scheme).
  */
-HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
+HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone, bool aAbnormal)
 {
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1499,7 +1499,7 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
              * Same procedure as in detachUSBDevice().
              */
             bool fRunFilters = false;
-            HRESULT hrc = device->onDetachFromVM(aMachine, aDone, &fRunFilters);
+            HRESULT hrc = device->onDetachFromVM(aMachine, aDone, &fRunFilters, aAbnormal);
             if (    SUCCEEDED(hrc)
                 &&  fRunFilters)
             {
