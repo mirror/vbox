@@ -26,6 +26,7 @@
 namespace util
 {
 
+
 RWLockHandle::RWLockHandle()
 {
 #ifdef VBOX_MAIN_USE_SEMRW
@@ -53,6 +54,7 @@ RWLockHandle::RWLockHandle()
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
 
+
 RWLockHandle::~RWLockHandle()
 {
 #ifdef VBOX_MAIN_USE_SEMRW
@@ -67,6 +69,7 @@ RWLockHandle::~RWLockHandle()
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
+
 
 bool RWLockHandle::isWriteLockOnCurrentThread() const
 {
@@ -84,6 +87,7 @@ bool RWLockHandle::isWriteLockOnCurrentThread() const
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
 
+
 void RWLockHandle::lockWrite()
 {
 #ifdef VBOX_MAIN_USE_SEMRW
@@ -99,6 +103,20 @@ void RWLockHandle::lockWrite()
 
     if (mWriteLockThread != threadSelf)
     {
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+        if (mReadLockCount != 0)
+        {
+            ReaderMap::const_iterator reader = mReaders.find (threadSelf);
+            if (reader != mReaders.end() && reader->second != 0)
+            {
+                AssertReleaseMsgFailedReturnVoid ((
+                    "SELF DEADLOCK DETECTED on Thread %0x: lockWrite() after "
+                    "lockRead(): reader count = %d!\n",
+                    threadSelf, reader->second));
+            }
+        }
+# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
+
         if (mReadLockCount != 0 || mWriteLockThread != NIL_RTNATIVETHREAD ||
             mWriteLockPending != 0 /* respect other pending writers */)
         {
@@ -125,6 +143,7 @@ void RWLockHandle::lockWrite()
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
+
 
 void RWLockHandle::unlockWrite()
 {
@@ -162,6 +181,7 @@ void RWLockHandle::unlockWrite()
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
 
+
 void RWLockHandle::lockRead()
 {
 #ifdef VBOX_MAIN_USE_SEMRW
@@ -174,6 +194,12 @@ void RWLockHandle::lockRead()
     RTCritSectEnter (&mCritSect);
 
     RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
+
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+    if (!mReaders.count (threadSelf))
+        mReaders [threadSelf] = 0;
+    ++ mReaders [threadSelf];
+# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
     bool isWriteLock = mWriteLockLevel != 0;
     bool isFirstReadLock = mReadLockCount == 0;
@@ -222,6 +248,7 @@ void RWLockHandle::lockRead()
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
 
+
 void RWLockHandle::unlockRead()
 {
 #ifdef VBOX_MAIN_USE_SEMRW
@@ -247,6 +274,10 @@ void RWLockHandle::unlockRead()
             if (mSelfReadLockCount != 0)
             {
                 -- mSelfReadLockCount;
+
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+                -- mReaders [threadSelf];
+# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
             }
         }
     }
@@ -263,6 +294,10 @@ void RWLockHandle::unlockRead()
                 if (mWriteLockPending != 0)
                     RTSemEventSignal (mGoWriteSem);
             }
+
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+            -- mReaders [threadSelf];
+# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
         }
     }
 
@@ -270,6 +305,7 @@ void RWLockHandle::unlockRead()
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
+
 
 uint32_t RWLockHandle::writeLockLevel() const
 {
@@ -285,6 +321,7 @@ uint32_t RWLockHandle::writeLockLevel() const
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
+
 
 } /* namespace util */
 
