@@ -2743,7 +2743,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
 &lt;p&gt;Uma &lt;b&gt;imagem dinâmicamente expansível&lt;/b&gt; ocupa um espaço inicial reduzido
 no seu disco rígido físico. Á medida que o sistema operativo Convidado requerer
 o espaço ocupado aumentará dinâmicamente (até o tamanho indicado).&lt;/p&gt;
-&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não aumenta de tamanho. Ela é armazenada 
+&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não aumenta de tamanho. Ela é armazenada
 num ficheiro com aproximadamente o mesmo tamanho que o definido para o disco virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2779,7 +2779,7 @@ que irá armazenar a imagem de disco virtual ou indique um nome de ficheiro no c
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o tamanho da imagem de disco virtual em MB. Este tamanho irá aparecer para o 
+        <translation>&lt;p&gt;Seleccione o tamanho da imagem de disco virtual em MB. Este tamanho irá aparecer para o
 sistema operativo Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2919,7 +2919,7 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccione uma imagem de disco rígido virtual para ser usada como o disco
 rígido de arranque da máquina virtual. Pode também criar um novo disco rígido
-virtual com o botão &lt;b&gt;Novo&lt;/b&gt; ou seleccione uma imagem de disco rígido 
+virtual com o botão &lt;b&gt;Novo&lt;/b&gt; ou seleccione uma imagem de disco rígido
 virtual da lista ou pressionando o botão &lt;b&gt;Existente&lt;/b&gt;para abrir o diálogo
 do Gestor de Discos Virtuais.&lt;/p&gt;
 &lt;p&gt;Se precisa de uma configuração mais complexa de discos rígidos, pode
@@ -2974,7 +2974,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
                             Assim que o premir, a nova máquina virtual será criada.
                             &lt;/p&gt;&lt;p&gt;
                             Pode alterar estas e outras configurações
-                            da máquina virtual quando desejar usando o 
+                            da máquina virtual quando desejar usando o
                             diálogo de &lt;b&gt;Configurações&lt;/b&gt; acessível
                             através do menu da janela principal.
                             &lt;/p&gt;
@@ -4409,7 +4409,7 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de fabricante (ID) como uma 
+        <translation>&lt;qt&gt;Define o filtro de fabricante (ID) como uma
 &lt;i&gt;correspondência exacta&lt;/i&gt; de texto. Um texto vazio irá
 corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
@@ -4417,7 +4417,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de nome (ID) do produto como uma 
+        <translation>&lt;qt&gt;Define o filtro de nome (ID) do produto como uma
 &lt;i&gt;correspondência exacta&lt;/i&gt;de texto. Um texto vazio irá
 corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
@@ -4425,7 +4425,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de número de série como um 
+        <translation>&lt;qt&gt;Define o filtro de número de série como um
 &lt;i&gt;texto exacto&lt;/i&gt;. Um texto vazio irá englobar qualquer
 valor.&lt;/qt&gt;</translation>
     </message>
@@ -5610,7 +5610,7 @@ um sistema operativo convidado do tipo Windows!&lt;/qt&gt;</translation>
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Quando seleccionado, a máquina virtual irá suportar o recurso de Entrada
-e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV. 
+e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV.
 &lt;b&gt;Nota:&lt;/b&gt; não desactive esta opção após instalar um sistema operativo do tipo Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5914,8 +5914,8 @@ da máquina, será exposta
         <translation>Activar Controlador USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>Quando seleccionado, activar o controlador USB EHCI virtual desta máquina. O controlador USB ECHI fornece o suporte USB 2.0.</translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Quando seleccionado, activar o controlador USB EHCI virtual desta máquina. O controlador USB EHCI fornece o suporte USB 2.0.</translation>
     </message>
     <message>
         <source>

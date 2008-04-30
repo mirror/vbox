@@ -2205,7 +2205,7 @@ to the system default language.&lt;/qt&gt;
                                               filters.&lt;/qt&gt;
                                             </source>
         <translation>&lt;qt&gt;グローバルUSBフィルタをリスト表示します。
- 左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。 
+ 左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。
 USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5260,7 +5260,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>USB 2.0 コントローラを有効にする(&amp;2)</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>仮想マシンの仮想USB EHCIコントローラを有効にします。USB EHCIコントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>

@@ -2446,14 +2446,14 @@ to the system default language.&lt;/qt&gt;
                                             </source>
         <translation>
                                               &lt;qt&gt;Lista todos os filtros globais
-                                              para USB. A marcação do lado 
+                                              para USB. A marcação do lado
                                               esquerdo define se um filtro em
-                                              particular está habilitado ou não. 
-                                              Utilize o menu de contexto ou os 
+                                              particular está habilitado ou não.
+                                              Utilize o menu de contexto ou os
                                               botões à direita para acrescentar
                                               ou remover filtros de dispositivo
                                               para a USB.&lt;/qt&gt;
-                                              
+
                                             </translation>
     </message>
     <message>
@@ -2575,7 +2575,7 @@ to the system default language.&lt;/qt&gt;
         <translation>
                           &lt;qt&gt;Quando selecionado, habilita a controladora virtual
                           SATA nesta máquina. Note que você não poderá conectar
-                          discos rígidos a portas SATA enquanto a controladora 
+                          discos rígidos a portas SATA enquanto a controladora
                           virtual SATA estiver desabilitada.&lt;/qt&gt;
                         </translation>
     </message>
@@ -2780,7 +2780,7 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selecione o tipo de imagem de disco virtual que você deseja criar.&lt;/p&gt;
 &lt;p&gt;Uma &lt;b&gt;imagem dinamicamente expansível&lt;/b&gt; ocupa um espaço inicial bem pequeno
-no seu disco rígido físico. Ela irá crescer dinamicamente (até o tamanho 
+no seu disco rígido físico. Ela irá crescer dinamicamente (até o tamanho
 especificado) à medida em que o sistema operacional Convidado pedir mais espaço em disco.&lt;/p&gt;
 &lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não aumenta de tamanho. Ela é armazenada em um arquivo com
 aproximadamente o mesmo tamanho que o definido para o disco virtual.&lt;/p&gt;</translation>
@@ -2826,7 +2826,7 @@ que irá armazenar a imagem de disco virtual ou digite um nome de arquivo no cam
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selecione o tamanho da imagem de disco virtual em megabytes. Este tamanho irá aparecer para o 
+        <translation>&lt;p&gt;Selecione o tamanho da imagem de disco virtual em megabytes. Este tamanho irá aparecer para o
 sistema operacional Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2879,10 +2879,10 @@ the same size as the size of the virtual hard disk. The creation of a fixed-size
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleciona o tipo de imagem de disco virtual que você deseja criar.&lt;/p&gt;
 &lt;p&gt;Uma &lt;b&gt;imagem dinamicamente expansível&lt;/b&gt; ocupa inicialmente um espaço bem
-pequeno no seu disco rígido físico e irá crescer dinamicamente (até o tamanho especificado) 
+pequeno no seu disco rígido físico e irá crescer dinamicamente (até o tamanho especificado)
 à medida em que o sistema operacional Convidado exigir mais espaço.&lt;/p&gt;
-&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não cresce. Ela é armazenada em um arquivo com 
-o  tamanho definido para o disco rígido virtual. A criação de uma imagem de tamanho fixo pode 
+&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não cresce. Ela é armazenada em um arquivo com
+o  tamanho definido para o disco rígido virtual. A criação de uma imagem de tamanho fixo pode
 demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu disco rígido físico.&lt;/p&gt;</translation>
     </message>
 </context>
@@ -2967,7 +2967,7 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selecione uma imagem de disco rígido virtual para ser utilizada como
 disco rígido principal da máquina virtual. Você pode criar um novo disco rígido
-virtual com o botão &lt;b&gt;Novo&lt;/b&gt;, selecionar uma imagem de disco rígido 
+virtual com o botão &lt;b&gt;Novo&lt;/b&gt;, selecionar uma imagem de disco rígido
 virtual da lista ou pressionar o botão &lt;b&gt;Existente&lt;/b&gt;
 para abrir o diálogo do Gerenciador de Discos Virtuais.&lt;/p&gt;
 &lt;p&gt;Se você precisa de uma configuração mais complexa de discos rígidos,
@@ -3022,7 +3022,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
                             Assim que pressioná-lo, a nova máquina virtual será criada.
                             &lt;/p&gt;&lt;p&gt;
                             Você pode alterar estas e outras configurações
-                            da máquina virtual a qualquer hora utilizando o 
+                            da máquina virtual a qualquer hora utilizando o
                             diálogo de &lt;b&gt;Configurações&lt;/b&gt; acessível
                             através do menu da janela principal.
                             &lt;/p&gt;
@@ -4465,7 +4465,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de fabricante como um 
+        <translation>&lt;qt&gt;Define o filtro de fabricante como um
 &lt;i&gt;texto exato&lt;/i&gt;. Um texto vazio irá englobar qualquer
  valor.&lt;/qt&gt;</translation>
     </message>
@@ -4473,7 +4473,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de nome do produto como um 
+        <translation>&lt;qt&gt;Define o filtro de nome do produto como um
 &lt;i&gt;texto exato&lt;/i&gt;. Um texto vazio irá englobar qualquer
  valor.&lt;/qt&gt;</translation>
     </message>
@@ -4481,7 +4481,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Define o filtro de número de série como um 
+        <translation>&lt;qt&gt;Define o filtro de número de série como um
 &lt;i&gt;texto exato&lt;/i&gt;. Um texto vazio irá englobar qualquer
 valor.&lt;/qt&gt;</translation>
     </message>
@@ -5724,8 +5724,8 @@ qualquer valor.&lt;/qt&gt;</translation>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Quando selecionado, a máquina virtual irá suportar 
-a Interface Avançada de Configuração e Gerenciamento de Energia (Advanced Configuration and 
+        <translation>&lt;qt&gt;Quando selecionado, a máquina virtual irá suportar
+a Interface Avançada de Configuração e Gerenciamento de Energia (Advanced Configuration and
 Power Management Interface, ou ACPI).
 &lt;b&gt;Nota:&lt;/b&gt; não desabilite esta opção após ter
 instalado um sistema operacional convidado do tipo Windows!&lt;/qt&gt;</translation>
@@ -5735,7 +5735,7 @@ instalado um sistema operacional convidado do tipo Windows!&lt;/qt&gt;</translat
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Quando selecionado, a máquina virtual irá suportar
-o recurso de Input Output APIC (IO APIC), o que deve diminuir levemente a performance da MV. 
+o recurso de Input Output APIC (IO APIC), o que deve diminuir levemente a performance da MV.
 &lt;b&gt;Nota:&lt;/b&gt; não desabilite esta opção após instalar um sistema operacional do tipo Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -6024,9 +6024,9 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
                                                           machine.&lt;/qt&gt;
                                                         </source>
         <translation>&lt;qt&gt;Quando
-                                                          marcado, o recurso de Extensão 
+                                                          marcado, o recurso de Extensão
                                                           de Endereço Físico (PAE, ou
-                                                          Physical Address Extension) 
+                                                          Physical Address Extension)
                                                           da CPU do hospedeiro será
                                                           exposto à máquina virtual.&lt;/qt&gt;
                                                         </translation>
@@ -6052,7 +6052,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation>Habilitar Controladora USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>Quando marcado, habilita a controladora virtual USB EHCI desta máquina. A controladora USB EHCI provê suporte ao padrão USB 2.0.</translation>
     </message>
     <message>
@@ -6070,7 +6070,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
                                               relativos a esta máquina. A marcação
                                               à esquerda define se um filtro específico
                                               está habilitado ou não. Utilize o menu de
-                                              contexto ou os botões à direita para 
+                                              contexto ou os botões à direita para
                                               acrescentar ou remover filtros de USB.&lt;/qt&gt;
                                             </translation>
     </message>

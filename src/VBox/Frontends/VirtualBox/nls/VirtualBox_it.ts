@@ -2531,7 +2531,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
             </source>
         <translation>
               &lt;qt&gt;Sposta il filtro selezionato in basso.&lt;/qt&gt;
-            
+
             </translation>
     </message>
 </context>
@@ -4466,7 +4466,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definisce il filtro Nome prodotto come stringa
-di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà 
+di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà
 qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4474,7 +4474,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definisce il filtro Numero Seriale come stringa
-di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà 
+di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota verificherà
 qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -6011,7 +6011,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation>Abilita controller USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>Se selezionato, abilita il controller USB EHCI virtuale della macchina. Il controller USB EHCI fornisce il supporto a USB 2.0.</translation>
     </message>
     <message>
@@ -6117,7 +6117,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
             </source>
         <translation>
               &lt;qt&gt;Sposta il filtro selezionato in basso.&lt;/qt&gt;
-            
+
             </translation>
     </message>
     <message>

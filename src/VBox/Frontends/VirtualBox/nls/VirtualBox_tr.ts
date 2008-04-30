@@ -2591,7 +2591,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Seç&lt;/b&gt; simgesine basarak sanal sabit disk kalıbının saklanacağı 
+        <translation>&lt;p&gt;&lt;b&gt;Seç&lt;/b&gt; simgesine basarak sanal sabit disk kalıbının saklanacağı
 konumu ve oluşturulacak dosyanın adını seçebilirsiniz ya da aşağıdaki alanına bir dosya ismi yazabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2605,7 +2605,7 @@ konumu ve oluşturulacak dosyanın adını seçebilirsiniz ya da aşağıdaki al
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal sabit disk kalıbının boyutunu megabyte cinsinden seçin. Bu boyut, misafir işletim sistemine 
+        <translation>&lt;p&gt;Sanal sabit disk kalıbının boyutunu megabyte cinsinden seçin. Bu boyut, misafir işletim sistemine
 sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     </message>
     <message>
@@ -2961,7 +2961,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bu ortam kalıbı bırakılınca ayrılacağı sanal makine(ler): 
+        <translation>&lt;p&gt;Bu ortam kalıbı bırakılınca ayrılacağı sanal makine(ler):
 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Devam edilsin mi?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3050,7 +3050,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal Makine ekranına &lt;b&gt;fare ile&lt;/b&gt; tıkladınız ya da &lt;b&gt;Sunucu anahtarına&lt;/b&gt; bastınız. 
+        <translation>&lt;p&gt;Sanal Makine ekranına &lt;b&gt;fare ile&lt;/b&gt; tıkladınız ya da &lt;b&gt;Sunucu anahtarına&lt;/b&gt; bastınız.
 Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/b&gt; ve sunucu makinenizdeki diğer uygulamalarınızın fare ve klavyenizi kullanamamasına neden olur (sadece fare işaretçisi uyumu misafir işletim sistemi tarafından desteklenmiyorsa)&lt;/p&gt;&lt;p&gt;İstediğiniz zaman &lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavye ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
     </message>
     <message>
@@ -3768,7 +3768,7 @@ to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Bu makinden erişilebilir tüm paylaşılan dizinleri listeler.
-DOS benzeri bir işletim sistemi üzerinde &lt;i&gt;paylasim&lt;/i&gt; olarak 
+DOS benzeri bir işletim sistemi üzerinde &lt;i&gt;paylasim&lt;/i&gt; olarak
 adlandırılan bir paylaşıma erişmek için &lt;tt&gt;net use x: \\vboxsvr\paylasim&lt;/tt&gt; kullanın ya da
 bir Linux makineden bu dizine erişebilmek için &lt;tt&gt;mount -t vboxsf paylasim mount_point&lt;/tt&gt; kullanın.
 Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</translation>
@@ -5547,7 +5547,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

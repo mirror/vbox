@@ -2725,7 +2725,7 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation>&lt;qt&gt;Listează toate discurile hard atașate la această mașină. Folosiți dublu click sau tasta &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt; pe itemul selectat pentru a activa lista și pentru a alege valoarea dorită. 
+        <translation>&lt;qt&gt;Listează toate discurile hard atașate la această mașină. Folosiți dublu click sau tasta &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt; pe itemul selectat pentru a activa lista și pentru a alege valoarea dorită.
 Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șterge atașamente de discuri hard.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -6415,8 +6415,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Activează controlor USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>Când este bifat, activează controlorul virtual USB EHCI al acestei mașini. Controlorul USB ECHI oferă suport USB 2.0.</translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Când este bifat, activează controlorul virtual USB EHCI al acestei mașini. Controlorul USB EHCI oferă suport USB 2.0.</translation>
     </message>
     <message>
         <source>

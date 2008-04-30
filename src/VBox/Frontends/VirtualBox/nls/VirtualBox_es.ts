@@ -2217,7 +2217,7 @@ Version %1</source>
     <message>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Muestra la ruta a el directorio VDI por omisión. Si no se ha explicitado, 
+        <translation type="obsolete">Muestra la ruta a el directorio VDI por omisión. Si no se ha explicitado,
 este directorio es utilizado cuando se crean nuevos discos virtuales o se agregan ya existentes.</translation>
     </message>
     <message>
@@ -2461,8 +2461,8 @@ written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.
                                     </source>
         <translation type="obsolete">
-Listar todos los idiomas disponibles. El idioma actual está 
-en escrito en &lt;b&gt;negrita&lt;/b&gt;. Seleccionar &lt;i&gt;Por Omisión&lt;/i&gt; si se quiere 
+Listar todos los idiomas disponibles. El idioma actual está
+en escrito en &lt;b&gt;negrita&lt;/b&gt;. Seleccionar &lt;i&gt;Por Omisión&lt;/i&gt; si se quiere
 volver al idioma por omisión del sistema.
                                     </translation>
     </message>
@@ -2518,8 +2518,8 @@ written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.&lt;/qt&gt;
                                     </source>
         <translation>
-&lt;qt&gt;Listar todos los idiomas disponibles. El idioma actual está 
-en escrito en &lt;b&gt;negrita&lt;/b&gt;. Seleccionar &lt;i&gt;Por Omisión&lt;/i&gt; si se quiere 
+&lt;qt&gt;Listar todos los idiomas disponibles. El idioma actual está
+en escrito en &lt;b&gt;negrita&lt;/b&gt;. Seleccionar &lt;i&gt;Por Omisión&lt;/i&gt; si se quiere
 volver al idioma por omisión del sistema.&lt;/qt&gt;
                                     </translation>
     </message>
@@ -2833,7 +2833,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Este asistente lo guiará para crear una Imagen de Disco Virtualpara su Máquina Virtual.&lt;/p&gt;
-&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente 
+&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente
 y &lt;b&gt;Atrás&lt;/b&gt; para regresar a la anterior.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2848,8 +2848,8 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccione el tipo de Imagen de Disco Virtual que desea crear.&lt;/p&gt;
-&lt;p&gt;Una &lt;b&gt;Imagen de expansión dinámica&lt;/b&gt; ocupa inicialmente poco espacio. 
-Luego irá creciendo a medida que el OS (sistema operativo) Huésped utilice 
+&lt;p&gt;Una &lt;b&gt;Imagen de expansión dinámica&lt;/b&gt; ocupa inicialmente poco espacio.
+Luego irá creciendo a medida que el OS (sistema operativo) Huésped utilice
 espacio (hasta el tamaño máximo especificado).&lt;/p&gt;
 &lt;p&gt;Una &lt;b&gt;Imagen de tamaño fijo&lt;/b&gt; no crece. Es almacenada en una imagen
 apenas mayor del tamaño del disco virtual.&lt;/p&gt;</translation>
@@ -2961,7 +2961,7 @@ a new virtual machine for VirtualBox.&lt;/p&gt;
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Este asistente lo guiará en los pasos necesario para crear una nueva
  Máquina Virtual para VirtualBox.&lt;/p&gt;
-&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente 
+&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente
 y &lt;b&gt;Atrás&lt;/b&gt; para regresar a la anterior.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3024,12 +3024,12 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione la Imagen de Disco Duro que será usada como disco 
+        <translation>&lt;p&gt;Seleccione la Imagen de Disco Duro que será usada como disco
 de inicio (boot) . Usted puede crear un disco nuevo
-presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco 
+presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco
 existente desde la lista desplegable o presionando el botón &lt;b&gt;Existentes&lt;/b&gt;
 (invoca el Administrador de Discos Virtuales).&lt;/p&gt;
-&lt;p&gt;Si Usted necesita una configuración más complicada de Discos Duros puede salterarse 
+&lt;p&gt;Si Usted necesita una configuración más complicada de Discos Duros puede salterarse
 este paso y luego conectar los Discos Duros desde el diálogo de Configuración de la Máquina Virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4080,7 +4080,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 Utilice &lt;tt&gt;net use x: \\vboxsvr\prestamo&lt;/tt&gt;
 para acceder al directorio compartido &lt;i&gt;prestamo&lt;/i&gt; desde un OS de tipo windows.
 O &lt;tt&gt;mount -t vboxsf prestamo mount_point&lt;/tt&gt;
-para acceder desde un OS Linux. 
+para acceder desde un OS Linux.
 Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5761,7 +5761,7 @@ esta opción depués de haber instalado un sistema operativo huésped Windows!&l
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Si está seleccionado, la máquina virtual soportará IO APIC 
+        <translation>&lt;qt&gt;Si está seleccionado, la máquina virtual soportará IO APIC
 (&quot;APIC de Entrada y Salida&quot; en inglés), podría disminuir sensiblemente el rendimiento de la máquina virtual.
 &lt;b&gt;Advertencia:&lt;/b&gt;¡No deshabilite esta opción depués de haber instalado un sistema operativo huésped Windows!&lt;/qt&gt;</translation>
     </message>
@@ -6064,7 +6064,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

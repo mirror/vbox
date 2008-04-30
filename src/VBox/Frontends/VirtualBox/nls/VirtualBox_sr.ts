@@ -2129,7 +2129,7 @@ Version %1</source>
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation>&lt;qt&gt;Списак сва доступна језика интерфејса. Актуелни језик је 
+        <translation>&lt;qt&gt;Списак сва доступна језика интерфејса. Актуелни језик је
 &lt;b&gt;дебело&lt;/b&gt;. Одабрати &lt;i&gt;Иницијално&lt;/i&gt; за рисет
 на системски језик.&lt;/qt&gt;</translation>
     </message>
@@ -2994,7 +2994,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox не може да се покрене у моду &lt;i&gt;Селектора  VM-а&lt;/i&gt; 
+        <translation>&lt;p&gt;VirtualBox не може да се покрене у моду &lt;i&gt;Селектора  VM-а&lt;/i&gt;
 &lt;p&gt;Програм ће се сада зауставити&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5326,8 +5326,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Упали USB 2.0 контролер</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>Када унето, упали виртуелниl &apos;USB EHCI&apos; контролер ове машине. &apos;USB ECHI&apos; контролер омогучава USB 2.0.</translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Када унето, упали виртуелниl &apos;USB EHCI&apos; контролер ове машине. &apos;USB EHCI&apos; контролер омогучава USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5344,7 +5344,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                               машине. Кутијица показује
                                               да ли је филтер омогучен
                                               или не. Користити контектуелни
-                                              мени или дугмада на десно за 
+                                              мени или дугмада на десно за
                                               додавање или скидање USB филтера.&lt;/qt&gt;
                                             </translation>
     </message>
