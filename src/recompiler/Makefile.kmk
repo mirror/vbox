@@ -382,6 +382,16 @@ ifeq ($(BUILD_TARGET),darwin)
  ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
   COMPILE_OP_CMDS := $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS))
  endif
+else if1of ($(BUILD_TARGET),linux)
+ ifneq ($(TOOL_$(VBOX_GCC_TOOL)_CC),$(VBOX_RECOMPILER_OP_GCC))
+  VBOX_RECOMPILER_OP_CHECK_CC_GCC = $(shell \
+    if $(VBOX_RECOMPILER_OP_GCC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+    then echo "$(1)"; \
+    else echo "$(2)"; fi; )
+  COMPILE_OP_CMDS := \
+    $(filter-out -fno-stack-protector, $(COMPILE_OP_CMDS)) \
+    $(call VBOX_RECOMPILER_OP_CHECK_CC_GCC,-fno-stack-protector)
+ endif
 endif
 
 # include the dependencies
