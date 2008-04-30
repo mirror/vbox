@@ -47,8 +47,8 @@ ifneq ($(BUILD_TARGET),win)
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
-ifeq ($(USERNAME),bird) # temporary
- #VBOX_MAIN_DEFS += NEW_HOSTUSBDEVICE_STATE
+if1of ($(BUILD_TARGET), darwin) # this is only temporary, all targets will use this soon.
+ VBOX_MAIN_DEFS += NEW_HOSTUSBDEVICE_STATE
 endif
 ## @todo later when RTSemRWIsWriteOwner and RTSemRWGetWriteRecursion are done
 #ifeq ($(filter-out linux darwin freebsd solaris,$(BUILD_TARGET)),)
