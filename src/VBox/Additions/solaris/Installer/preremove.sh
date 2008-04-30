@@ -24,6 +24,9 @@ echo "This script will unload the VirtualBox Guest kernel module..."
 /usr/sbin/svcadm disable -s svc:/system/virtualbox/vboxservice:default
 /usr/sbin/svccfg delete svc:/system/virtualbox/vboxservice:default
 
+# stop VBoxClient
+pkill -INT VBoxClient
+
 # vboxguest.sh would've been installed, we just need to call it.
 /opt/VirtualBoxAdditions/vboxguest.sh stop
 
