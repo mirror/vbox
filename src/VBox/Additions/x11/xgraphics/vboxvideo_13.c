@@ -933,8 +933,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
                       "The VBox video extensions are now enabled.\n");
         vboxEnableGraphicsCap(pVBox);
         /* Report the largest resolution that we support */
-//        vboxReportMaxGuestResolution(pScrn->display->virtualX,
-//                                     pScrn->display->virtualY);
     }
     return (TRUE);
 }
