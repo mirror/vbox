@@ -521,9 +521,7 @@ static const char *szSIBBaseReg[8]    = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP
 static const char *szSIBIndexReg[8]   = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
 static const char *szSIBBaseReg64[16] = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
 static const char *szSIBIndexReg64[16]= {"RAX", "RCX", "RDX", "RBX", NULL,  "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
-#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 static const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
-#endif
 //*****************************************************************************
 void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
