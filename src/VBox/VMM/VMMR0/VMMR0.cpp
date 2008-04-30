@@ -697,7 +697,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         case VMMR0_DO_GVMM_CREATE_VM:
             if (pVM || u64Arg)
                 return VERR_INVALID_PARAMETER;
-            SUPR0Printf("-> GVMMR0CreateVMReq\n");
             return GVMMR0CreateVMReq((PGVMMCREATEVMREQ)pReqHdr);
 
         case VMMR0_DO_GVMM_DESTROY_VM:
