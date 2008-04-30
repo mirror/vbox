@@ -1034,7 +1034,6 @@ void VBoxConsoleWnd::refreshView()
  */
 void VBoxConsoleWnd::onEnterFullscreen()
 {
-    LogFlowFuncEnter();
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
     /* It isn't guaranteed that the guest os set the video mode that
      * we requested. So after all the resizing stuff set the clipping
@@ -1054,7 +1053,9 @@ void VBoxConsoleWnd::onEnterFullscreen()
     if (mIsSeamless)
         connect (console, SIGNAL (resizeHintDone()),
                  this, SLOT(exitSeamless()));
-    LogFlowFuncLeave();
+    else if (mIsFullscreen)
+        connect (console, SIGNAL (resizeHintDone()),
+                 this, SLOT(exitFullscreen()));
 }
 
 /**
@@ -1063,7 +1064,6 @@ void VBoxConsoleWnd::onEnterFullscreen()
  */
 void VBoxConsoleWnd::onExitFullscreen()
 {
-	LogFlowFuncEnter();
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
 #ifdef Q_WS_MAC
     if (!mIsSeamless)
@@ -1079,7 +1079,16 @@ void VBoxConsoleWnd::onExitFullscreen()
 
     console->setIgnoreMainwndResize (false);
     console->normalizeGeometry (true /* adjustPosition */);
-    LogFlowFuncLeave();
+}
+
+/**
+ *  This slot is called if the guest changes resolution while in fullscreen
+ *  mode.
+ */
+void VBoxConsoleWnd::exitFullscreen()
+{
+    if (mIsFullscreen && vmFullscreenAction->isEnabled())
+        vmFullscreenAction->toggle();
 }
 
 /**
@@ -1088,7 +1097,8 @@ void VBoxConsoleWnd::onExitFullscreen()
  */
 void VBoxConsoleWnd::exitSeamless()
 {
-    vmSeamlessAction->setChecked (false);
+    if (mIsSeamless && vmSeamlessAction->isEnabled())
+        vmSeamlessAction->toggle();
 }
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
@@ -1968,7 +1978,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
-	LogFlowThisFunc(("aOn=%s, aSeamless=%s\n", aOn ? "true" : "false", aSeamless ? "true" : "false"));
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
     if (aSeamless)
     {
@@ -2239,7 +2248,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (wasHidden)
         hide();
 #endif
-    LogFlowThisFunc(("true\n"));
     return true;
 }
 
@@ -3279,21 +3287,11 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
         mIsGraphicsSupported = aGraphicsSupported;
         /* If seamless mode should be enabled then check if it is enabled
          * currently and re-enable it if open-view procedure is finished */
-        if (vmSeamlessAction->isOn())
-        {
-            if (   mIsOpenViewFinished
-                && aSeamlessSupported
-                && aGraphicsSupported)
-            {
-                if (!mIsSeamless)
-                    toggleFullscreenMode (true /* aOn */, true /* aSeamless */);
-            }
-            else
-            {
-                if (mIsSeamless)
-                    toggleFullscreenMode (false /* aOn */, true /* aSeamless */);
-            }
-        }
+        if (   vmSeamlessAction->isChecked()
+            && mIsOpenViewFinished
+            && aSeamlessSupported
+            && aGraphicsSupported)
+            toggleFullscreenMode (true, true);
         /* Disable auto-resizing if advanced graphics are not available */
         console->setAutoresizeGuest (   mIsGraphicsSupported
                                      && vmAutoresizeGuestAction->isChecked());
