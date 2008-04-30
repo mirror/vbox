@@ -22,6 +22,9 @@
 #ifndef ____H_AUTOLOCK
 #define ____H_AUTOLOCK
 
+/// @todo temporary
+#define VBOX_MAIN_AUTOLOCK_TRAP
+
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/critsect.h>
@@ -37,6 +40,10 @@
 
 #ifdef VBOX_MAIN_USE_SEMRW
 # include <iprt/semaphore.h>
+#else
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+#  include <map>
+# endif
 #endif
 
 namespace util
@@ -197,6 +204,13 @@ private:
 
     uint32_t mWriteLockLevel;
     uint32_t mWriteLockPending;
+
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+
+    typedef std::map <RTNATIVETHREAD, uint32_t> ReaderMap;
+    ReaderMap mReaders;
+
+# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 };
