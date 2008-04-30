@@ -250,7 +250,7 @@ DECLINLINE(int32_t) rtstrFormatTypeLookup(const char *pszType, size_t cchType)
 RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnHandler, void *pvUser)
 {
     size_t cchType;
-    int rc;
+    int rc = VINF_SUCCESS;
     uint32_t cTypes;
 
     /*
