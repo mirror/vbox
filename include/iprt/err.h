@@ -469,14 +469,18 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_TRAILING_SPACES                (-77)
 /** Trailing spaces. */
 #define VWRN_TRAILING_SPACES                77
-/** RTGetOpt: command line option not recognized. */
-#define VERR_GETOPT_UNKNOWN_OPTION          (-78)
-/** RTGetOpt: command line option needs argument. */
-#define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING  (-79)
-/** RTGetOpt: command line option has argument with bad format. */
-#define VERR_GETOPT_INVALID_ARGUMENT_FORMAT (-80)
 /** Generic not found error. */
-#define VERR_NOT_FOUND                      (-81)
+#define VERR_NOT_FOUND                      (-78)
+/** Generic not found warning. */
+#define VWRN_NOT_FOUND                      78
+/** Generic invalid state error. */
+#define VERR_INVALID_STATE                  (-79)
+/** Generic invalid state warning. */
+#define VWRN_INVALID_STATE                  79
+/** Generic out of resources error. */
+#define VERR_OUT_OF_RESOURCES              (-80)
+/** Generic out of resources warning. */
+#define VWRN_OUT_OF_RESOURCES               80
 /** @} */
 
 
@@ -904,13 +908,23 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VINF_ENV_VAR_NOT_FOUND                  (750)
 /** @} */
 
-/** @name Multiprocessor Status Code
+/** @name Multiprocessor Status Codes.
  * @{
  */
 /** The specified cpu is offline. */
 #define VERR_CPU_OFFLINE                        (-800)
 /** The specified cpu was not found. */
 #define VERR_CPU_NOT_FOUND                      (-801)
+/** @} */
+
+/** @name RTGetOpt status codes
+ * @{ */
+/** RTGetOpt: command line option not recognized. */
+#define VERR_GETOPT_UNKNOWN_OPTION              (-825)
+/** RTGetOpt: command line option needs argument. */
+#define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING   (-826)
+/** RTGetOpt: command line option has argument with bad format. */
+#define VERR_GETOPT_INVALID_ARGUMENT_FORMAT     (-827)
 /** @} */
 
 /* SED-END */
