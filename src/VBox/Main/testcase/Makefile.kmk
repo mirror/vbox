@@ -74,6 +74,7 @@ endif
 tstVBoxAPILinux_TEMPLATE = VBOXR3
 tstVBoxAPILinux_SOURCES  = tstVBoxAPILinux.cpp
 tstVBoxAPILinux_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar
+tstVBoxAPILinux_LDFLAGS.solaris += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/../../..'
 tstVBoxAPILinux_INCS     = \
 	$(VBOX_XPCOM_INCS) \
 	$(PATH_BIN)/sdk/include
