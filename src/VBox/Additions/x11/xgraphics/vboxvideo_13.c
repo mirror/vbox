@@ -748,20 +748,15 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
     {
-#if 0
         unsigned maxSize, trySize = 512;
 
         do {
             maxSize = trySize;
             trySize += 128;
         } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
-#else
-        unsigned maxSize = 32000;
-#endif
 
         xf86CrtcSetSizeRange(pScrn, 64, 64, maxSize, maxSize);
 
-#if 0
         /* I don't know exactly what these are for (and they are only used in a couple
            of places in the X server code), but due to a bug in RandR 1.2 they place
            an upper limit on possible resolutions.  To add to the fun, they get set
@@ -770,7 +765,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         pScrn->display->virtualY = maxSize;
         xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                    "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
-#endif
     }
 
     /* We are not interested in the monitor section in the configuration file. */
@@ -938,11 +932,9 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
         vboxEnableGraphicsCap(pVBox);
-#if 0
         /* Report the largest resolution that we support */
-        vboxReportMaxGuestResolution(pScrn->display->virtualX,
-                                     pScrn->display->virtualY);
-#endif
+//        vboxReportMaxGuestResolution(pScrn->display->virtualX,
+//                                     pScrn->display->virtualY);
     }
     return (TRUE);
 }
