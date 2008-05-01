@@ -1168,11 +1168,9 @@ endif
 #
 # RuntimeW32NT4GuestR0 - Win32 NT4 guest driver runtime.
 #
-RuntimeW32NT4GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
-RuntimeW32NT4GuestR0_SDKS          = $(RuntimeW32GuestR0_SDKS)
-RuntimeW32NT4GuestR0_DEFS          = $(RuntimeW32GuestR0_DEFS) IPRT_TARGET_NT4
-RuntimeW32NT4GuestR0_INCS          = $(RuntimeW32GuestR0_INCS)
-RuntimeW32NT4GuestR0_SOURCES       = $(RuntimeW32GuestR0_SOURCES)
+RuntimeW32NT4GuestR0_EXTENDS = RuntimeW32GuestR0
+RuntimeW32NT4GuestR0_EXTENDS_BY = appending
+RuntimeW32NT4GuestR0_DEFS = IPRT_TARGET_NT4
 
 
 #
