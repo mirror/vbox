@@ -81,7 +81,6 @@ struct ddi_dma_attr g_SolarisX86PhysMemLimits =
 };
 
 
-
 static uint64_t rtR0MemObjSolarisVirtToPhys(struct hat* hatSpace, caddr_t virtAddr)
 {
     /* We could use paddr_t (more solaris-like) rather than uint64_t but paddr_t isn't defined for 64-bit */
@@ -92,12 +91,7 @@ static uint64_t rtR0MemObjSolarisVirtToPhys(struct hat* hatSpace, caddr_t virtAd
         return PFN_INVALID;
     }
 
-    /* Both works, but second will work for non-page aligned virtAddr */
-#if 0
-    uint64_t physAddr = PAGE_SIZE * pfn;
-#else
     uint64_t physAddr = ((uint64_t)pfn << MMU_PAGESHIFT) | ((uintptr_t)virtAddr & MMU_PAGEOFFSET);
-#endif
     return physAddr;
 }
 
@@ -317,7 +311,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
             pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;   /* means kernel, see rtR0MemObjNativeFree() */
             pMemSolaris->ppShadowPages = ppl;
             *ppMem = &pMemSolaris->Core;
-            return VINF_SUCCESS;            
+            return VINF_SUCCESS;
         }
 
         as_pageunlock(&kas, ppl, virtAddr, cb, S_WRITE);
