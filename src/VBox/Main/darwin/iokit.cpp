@@ -846,6 +846,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                             pCur->idProduct, pCur->idVendor, u64SessionId, u32LocationId);
                 pCur->pszAddress = RTStrDup(szAddress);
                 AssertBreak(pCur->pszAddress,);
+                pCur->bBus = u32LocationId >> 24;
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR("PortNum"),                &pCur->bPort),);
                 uint8_t bSpeed;
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed),);
