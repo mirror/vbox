@@ -60,6 +60,15 @@ static const char main_key_us[MAIN_LEN][2] =
 "zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","<>","\x0\x0","\x0\x0"
 };
 
+/* U.S. English, no 102nd key */
+static const char main_key_us_101[MAIN_LEN][2] =
+{
+"`~","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","-_","=+",
+"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","[{","]}",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL",";:","'\"","\\|",
+"zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","\x0\x0","\x0\x0","\x0\x0"
+};
+
 /* U.S. English, International (with dead keys) */
 static const char main_key_us_intl[MAIN_LEN][2] =
 {

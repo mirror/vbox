@@ -35,6 +35,7 @@
    layout. */
  
  {"U.S. English", &main_key_us},
+ {"U.S. English, no 102nd key", &main_key_us_101},
  {"U.S. English, International (with dead keys)", &main_key_us_intl},
  {"U.S. English, Dvorak", &main_key_us_dvorak},
  {"U.S. English, Left handed Dvorak", &main_key_us_dvorak_l},
