@@ -87,7 +87,7 @@ VBoxBFE_SOURCES += \
 endif
 
 # USB Support
-ifneq ($(filter-out os2 darwin,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), l4 win)
 VBoxBFE_DEFS += VBOXBFE_WITH_USB
 VBoxBFE_SOURCES += \
 	HostUSBImpl.cpp \

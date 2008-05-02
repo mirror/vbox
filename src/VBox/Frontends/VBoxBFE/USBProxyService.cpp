@@ -305,6 +305,8 @@ void USBProxyService::processChanges (void)
     return VINF_SUCCESS;
 }
 
+
+#ifdef USBDEVICE_WITH_EVERYTHING
 /*static*/ void USBProxyService::freeInterfaceMembers (PUSBINTERFACE pIf, unsigned cIfs)
 {
     while (cIfs-- > 0)
@@ -325,9 +327,12 @@ void USBProxyService::processChanges (void)
         pIf++;
     }
 }
+#endif
+
 
 /*static*/ void USBProxyService::freeDevice (PUSBDEVICE pDevice)
 {
+#ifdef USBDEVICE_WITH_EVERYTHING
     PUSBCONFIG pCfg = pDevice->paConfigurations;
     unsigned cCfgs = pDevice->bNumConfigurations;
     while (cCfgs-- > 0)
@@ -345,6 +350,7 @@ void USBProxyService::processChanges (void)
     }
     RTMemFree (pDevice->paConfigurations);
     pDevice->paConfigurations = NULL;
+#endif
 
     RTStrFree ((char *)pDevice->pszManufacturer);
     pDevice->pszManufacturer = NULL;
