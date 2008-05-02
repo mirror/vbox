@@ -17,8 +17,10 @@
 # additional information or have any questions.
 #
 
-VBOXDRVFILE=""
 SILENTUNLOAD=""
+MODNAME="vboxdrv"
+MODDIR32="/platform/i86pc/kernel/drv"
+MODDIR64=$MODDIR32/amd64
 
 abort()
 {
@@ -31,35 +33,25 @@ info()
     echo 1>&2 "$1"
 }
 
-get_module_path()
-{
-    cputype=`isainfo -k`
-    moduledir="/platform/i86pc/kernel/drv";
-    if test "$cputype" = "amd64"; then
-        moduledir=$moduledir/amd64
-    fi
-    modulepath=$moduledir/vboxdrv
-    if test -f "$modulepath"; then
-        VBOXDRVFILE="$modulepath"
-    else
-        VBOXDRVFILE=""
-    fi
-}
-
 check_if_installed()
 {
-    if test "$VBOXDRVFILE" -a -f "$VBOXDRVFILE"; then
+    cputype=`isainfo -k`
+    modulepath="$MODDIR32/$MODNAME"    
+    if test "$cputype" = "amd64"; then
+        modulepath="$MODDIR64/$MODNAME"
+    fi
+    if test -f "$modulepath"; then
         return 0
     fi
-    abort "VirtualBox kernel module (vboxdrv) not installed."
+    abort "VirtualBox kernel module NOT installed."
 }
 
 module_loaded()
 {
     if test -f "/etc/name_to_major"; then
-        loadentry=`cat /etc/name_to_major | grep vboxdrv`
+        loadentry=`cat /etc/name_to_major | grep $MODNAME`
     else
-        loadentry=`/usr/sbin/modinfo | grep vboxdrv`
+        loadentry=`/usr/sbin/modinfo | grep $MODNAME`
     fi
     if test -z "$loadentry"; then
         return 1
@@ -77,15 +69,14 @@ check_root()
 start_module()
 {
     if module_loaded; then
-        info "vboxdrv already loaded..."
+        info "VirtualBox kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0666 root sys' vboxdrv
+        /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
         if test ! module_loaded; then
-            abort "Failed to load vboxdrv."
-        elif test -c "/devices/pseudo/vboxdrv@0:vboxdrv"; then
-            info "Loaded vboxdrv."
+            abort "## Failed to load VirtualBox kernel module."
+        elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then
+            info "VirtualBox kernel module successfully loaded."
         else
-            stop
             abort "Aborting due to attach failure."
         fi
     fi
@@ -94,10 +85,10 @@ start_module()
 stop_module()
 {
     if module_loaded; then
-        /usr/sbin/rem_drv vboxdrv
-        info "Unloaded vboxdrv."
+        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox kernel module."
+        info "VirtualBox kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
-        info "vboxdrv not loaded."
+        info "VirtualBox kernel module not loaded."
     fi
 }
 
@@ -112,14 +103,13 @@ restart_module()
 status_module()
 {
     if module_loaded; then
-        info "vboxdrv running."
+        info "Running."
     else
-        info "vboxdrv stopped."
+        info "Stopped."
     fi
 }
 
 check_root
-get_module_path
 check_if_installed
 
 if test "$2" = "silentunload"; then
