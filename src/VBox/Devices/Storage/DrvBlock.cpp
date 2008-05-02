@@ -694,6 +694,18 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
     pData->pDrvMediaAsync = NULL;
 }
 
+/**
+ * Reset notification.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The driver instance data.
+ */
+static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
+{
+    PDRVBLOCK pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
+
+    pData->fLocked = false;
+}
 
 /**
  * Construct a block driver instance.
@@ -978,7 +990,7 @@ const PDMDRVREG g_DrvBlock =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    drvblockReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
@@ -986,6 +998,3 @@ const PDMDRVREG g_DrvBlock =
     /* pfnDetach */
     drvblockDetach
 };
-
-
-
