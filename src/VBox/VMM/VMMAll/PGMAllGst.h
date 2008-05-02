@@ -183,7 +183,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
     Pde.n.u1Accessed  &= pPml4e->n.u1Accessed & Pdpe.lm.u1Accessed;
     Pde.n.u1Write     &= pPml4e->n.u1Write & Pdpe.lm.u1Write;
     Pde.n.u1User      &= pPml4e->n.u1User & Pdpe.lm.u1User;
-    Pde.n.u1NoExecute &= pPml4e->n.u1NoExecute& Pdpe.lm.u1NoExecute;
+    Pde.n.u1NoExecute &= pPml4e->n.u1NoExecute & Pdpe.lm.u1NoExecute;
 # endif
 
     /*
