@@ -639,6 +639,79 @@ PGMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return PGM_SHW_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
 }
 
+#ifndef IN_GC
+/**
+ * Gets the SHADOW page directory pointer for the specified address. Allocates
+ * backing pages in case the PDPT or page dirctory is missing.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   ppPD        Receives address of page directory
+ */
+PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppPD)
+{
+    PPGM           pPGM   = &pVM->pgm.s;
+    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PX86PML4E      pPml4e;
+    PPGMPOOLPAGE   pShwPage;
+    int            rc;
+
+    pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
+    if (    !pPml4e->n.u1Present
+        &&  !(pPml4e->u & X86_PML4E_PG_MASK))
+    {
+        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
+
+        Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
+        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, PGMPOOL_IDX_PML4, iPml4e, &pShwPage);
+        if (rc == VERR_PGM_POOL_FLUSHED)
+            return VINF_PGM_SYNC_CR3;
+
+        AssertRCReturn(rc, rc);
+
+        /* The PDPT was cached or created; hook it up now. */
+        pPml4e->u |= pShwPage->Core.Key;
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);    
+    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
+
+    if (    !pPdpe->n.u1Present
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+    {
+        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];       
+        PX86PDPT  pPdptGst;
+        rc = PGM_GCPHYS_2_PTR(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, &pPdptGst);
+        AssertRCReturn(rc, rc);
+
+        Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
+        rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, PGMPOOL_IDX_PDPT, iPdPt, &pShwPage);
+        if (rc == VERR_PGM_POOL_FLUSHED)
+            return VINF_PGM_SYNC_CR3;
+
+        AssertRCReturn(rc, rc);
+
+        /* The PDPT was cached or created; hook it up now. */
+        pPdpe->u |= pShwPage->Core.Key;
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * Gets effective Guest OS page information.
