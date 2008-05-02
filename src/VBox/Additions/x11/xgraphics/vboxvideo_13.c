@@ -802,6 +802,25 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     return (TRUE);
 }
 
+/**
+ * This function hooks into the chain that is called when framebuffer access
+ * is allowed or disallowed by a call to EnableDisableFBAccess in the server.
+ * In other words, it observes when the server wishes access to the 
+ * framebuffer to be enabled and when it should be disabled.  We need to know
+ * this because we disable access ourselves during mode switches (presumably
+ * the server should do this but it doesn't) and want to know whether to
+ * restore it or not afterwards. 
+ */
+static void
+vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
+{
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+
+    pVBox->accessEnabled = enable;
+    pVBox->EnableDisableFBAccess(scrnIndex, enable);
+}
+
 /*
  * QUOTE from the XFree86 DESIGN document:
  *
@@ -886,6 +905,10 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
 
+    /* We need to keep track of whether we are currently switched to a virtual
+     * terminal to know whether a mode set operation is currently safe to do.
+     */
+    pVBox->vtSwitch = FALSE;
     /* Initialise DGA.  The cast is unfortunately correct - it gets cast back
        to (unsigned char *) later. */
     xf86DiDGAInit(pScreen, (unsigned long) pVBox->base);
@@ -916,6 +939,13 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         VBOXLoadPalette, NULL, flags))
         return (FALSE);
 
+    /* Hook our observer function ito the chain which is called when
+     * framebuffer access is enabled or disabled in the server, and
+     * assume an initial state of enabled. */
+    pVBox->accessEnabled = TRUE;
+    pVBox->EnableDisableFBAccess = pScrn->EnableDisableFBAccess;
+    pScrn->EnableDisableFBAccess = vboxEnableDisableFBAccess;
+
     pVBox->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = VBOXCloseScreen;
     pScreen->SaveScreen = xf86SaveScreen;
@@ -945,7 +975,9 @@ static Bool
 VBOXEnterVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
 
+    pVBox->vtSwitch = FALSE;
     return xf86SetDesiredModes(pScrn);
 }
 
@@ -959,6 +991,7 @@ VBOXLeaveVT(int scrnIndex, int flags)
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
     vboxDisableGraphicsCap(pVBox);
+    pVBox->vtSwitch = TRUE;
 }
 
 static Bool
@@ -979,6 +1012,8 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     }
     pScrn->vtSema = FALSE;
 
+    /* Remove our observer functions from the X server call chains. */
+    pScrn->EnableDisableFBAccess = pVBox->EnableDisableFBAccess;
     pScreen->CloseScreen = pVBox->CloseScreen;
     return pScreen->CloseScreen(scrnIndex, pScreen);
 }
@@ -1046,9 +1081,19 @@ static Bool
 VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 {
     ScrnInfoPtr pScrn;
+    VBOXPtr pVBox;
+    Bool rc;
 
     pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of refering to the screen? */
-    return xf86SetSingleMode(pScrn, pMode, 0);
+    pVBox = VBOXGetRec(pScrn);
+    /* We want to disable access to the framebuffer before switching mode.
+     * After doing the switch, we allow access if it was allowed before. */
+    if (pVBox->accessEnabled)
+        pVBox->EnableDisableFBAccess(scrnIndex, FALSE);
+    rc = xf86SetSingleMode(pScrn, pMode, 0);
+    if (pVBox->accessEnabled)
+        pVBox->EnableDisableFBAccess(scrnIndex, TRUE);
+    return rc;
 }
 
 /* Set a graphics mode */
@@ -1059,6 +1104,10 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 
     int bpp = pScrn->depth == 24 ? 32 : 16;
     pVBox = VBOXGetRec(pScrn);
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (pVBox->vtSwitch == TRUE)
+        return TRUE;
     if (pVBox->useVbva == TRUE)
         if (vboxDisableVbva(pScrn) != TRUE)  /* This would be bad. */
             return FALSE;
@@ -1097,6 +1146,10 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
 
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (pVBox->vtSwitch == TRUE)
+        return;
     VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
 }
 
