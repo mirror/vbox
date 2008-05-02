@@ -54,7 +54,7 @@ rm -rf /opt/VirtualBox/etc
 /usr/sbin/installf -f $PKGINST
 
 if test "$currentzone" = "global"; then
-    /usr/sbin/devlinks
+    /usr/sbin/devfsadm -i vboxdrv
 fi
 
 echo "Done."
