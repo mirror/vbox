@@ -1767,7 +1767,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         /* Mark guest page directory as accessed */
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
         pPml4eSrc->n.u1Accessed = 1;
-        pPdpeSrc->lm.u1Accessed  = 1;
+        pPdpeSrc->lm.u1Accessed = 1;
 #  endif
         pPdeSrc->b.u1Accessed   = 1;
 
