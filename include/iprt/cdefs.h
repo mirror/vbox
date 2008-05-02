@@ -242,7 +242,7 @@
  *
  * @param   GCType  The GC type.
  */
-#define GCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR, RTGCPTR)
+#define GCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR32, RTGCPTR32)
 
 /** @def R3R0PTRTYPE
  * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0,
