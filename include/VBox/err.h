@@ -395,6 +395,14 @@
 #define VINF_PGM_SYNCPAGE_MODIFIED_PDE      1625
 /** Physical range crosses dynamic ram chunk boundary; translation to HC ptr not safe. */
 #define VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY  (-1626)
+/** Conflict between the core memory and the intermediate paging context, try again.
+ * There are some very special conditions applying to the intermediate paging context
+ * (used during the world switches), and some times we continuously run into these
+ * when asking the host kernel for memory during VM init. Let us know if you run into
+ * this and we'll adjust the code so it tries harder to avoid it.
+ */
+#define VERR_PGM_INTERMEDIATE_PAGING_CONFLICT   (-1627)
+
 /** @} */
 
 

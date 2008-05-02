@@ -245,7 +245,7 @@ static int vmmR3InitCoreCode(PVM pVM)
     if (pVM->vmm.s.pvHCCoreCodeR3)
     {
         rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
-        if (rc == VERR_PGM_MAPPINGS_FIX_CONFLICT)
+        if (rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT)
         {
             /* try more allocations. */
             struct
@@ -268,8 +268,8 @@ static int vmmR3InitCoreCode(PVM pVM)
                 if (!pVM->vmm.s.pvHCCoreCodeR3)
                     break;
                 rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
-            } while (   rc == VERR_PGM_MAPPINGS_FIX_CONFLICT
-                     && i < ELEMENTS(aBadTries) - 1);
+            } while (   rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT
+                     && i < RT_ELEMENTS(aBadTries) - 1);
 
             /* cleanup */
             if (VBOX_FAILURE(rc))
