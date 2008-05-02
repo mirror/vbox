@@ -254,7 +254,7 @@ static int vmmR3InitCoreCode(PVM pVM)
                 void    *pvR3;
                 RTHCPHYS HCPhys;
                 RTUINT   cb;
-            } aBadTries[16];
+            } aBadTries[128];
             unsigned i = 0;
             do
             {
