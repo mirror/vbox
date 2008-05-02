@@ -34,6 +34,8 @@
 
 __BEGIN_DECLS
 
+#ifdef USBDEVICE_WITH_EVERYTHING
+
 /**
  * USB device interface endpoint.
  */
@@ -123,6 +125,8 @@ typedef USBCONFIG *PUSBCONFIG;
 /** Pointer to a const USB configuration. */
 typedef const USBCONFIG *PCUSBCONFIG;
 
+#endif /* USBDEVICE_WITH_EVERYTHING */
+
 
 /**
  * The USB host device state.
@@ -172,6 +176,25 @@ typedef enum USBDEVICESPEED
  */
 typedef struct USBDEVICE
 {
+    /** If linked, this is the pointer to the next device in the list. */
+    struct USBDEVICE *pNext;
+    /** If linked doubly, this is the pointer to the prev device in the list. */
+    struct USBDEVICE *pPrev;
+    /** Manufacturer string. */
+    const char     *pszManufacturer;
+    /** Product string. */
+    const char     *pszProduct;
+    /** Serial number string. */
+    const char     *pszSerialNumber;
+    /** The address of the device. */
+    const char     *pszAddress;
+
+    /** Vendor ID. */
+    uint16_t        idVendor;
+    /** Product ID. */
+    uint16_t        idProduct;
+    /** Revision, integer part. */
+    uint16_t        bcdDevice;
     /** USB version number. */
     uint16_t        bcdUSB;
     /** Device class. */
@@ -180,50 +203,34 @@ typedef struct USBDEVICE
     uint8_t         bDeviceSubClass;
     /** Device protocol */
     uint8_t         bDeviceProtocol;
-    /** Vendor ID. */
-    uint16_t        idVendor;
-    /** Product ID. */
-    uint16_t        idProduct;
-    /** Revision, integer part. */
-    uint16_t        bcdDevice;
-    /** Manufacturer string. */
-    const char     *pszManufacturer;
-    /** Product string. */
-    const char     *pszProduct;
-    /** Serial number string. */
-    const char     *pszSerialNumber;
-    /** Serial hash. */
-    uint64_t        u64SerialHash;
     /** Number of configurations. */
     uint8_t         bNumConfigurations;
-    /** Pointer to an array of configurations. */
-    PUSBCONFIG      paConfigurations;
     /** The device state. */
     USBDEVICESTATE  enmState;
     /** The device speed. */
     USBDEVICESPEED  enmSpeed;
-    /** The address of the device. */
-    const char     *pszAddress;
-
+    /** Serial hash. */
+    uint64_t        u64SerialHash;
     /** The USB Bus number. */
     uint8_t         bBus;
-    /** The level in topologly for this bus. */
-    uint8_t         bLevel;
-    /** Device number. */
-    uint8_t         bDevNum;
-    /** Parent device number. */
-    uint8_t         bDevNumParent;
     /** The port number. */
     uint8_t         bPort;
+#if defined(RT_OS_LINUX)
+    /** Device number. */
+    uint8_t         bDevNum;
+#endif
+#ifdef USBDEVICE_WITH_EVERYTHING
+    /** Parent device number. */
+    uint8_t         bDevNumParent;
+    /** The level in topologly for this bus. */
+    uint8_t         bLevel;
     /** Number of devices on this level. */
     uint8_t         bNumDevices;
     /** Maximum number of children. */
     uint8_t         bMaxChildren;
-
-    /** If linked, this is the pointer to the next device in the list. */
-    struct USBDEVICE *pNext;
-    /** If linked doubly, this is the pointer to the prev device in the list. */
-    struct USBDEVICE *pPrev;
+    /** Pointer to an array of configurations. */
+    PUSBCONFIG      paConfigurations;
+#endif
 } USBDEVICE;
 /** Pointer to a USB device. */
 typedef USBDEVICE *PUSBDEVICE;
