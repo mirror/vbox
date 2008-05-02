@@ -500,11 +500,8 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
                 : uAddress - HCPhys < cbPages
             )
        )
-    {
-        AssertMsgFailed(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
-        LogRel(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
-        return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo new error code */
-    }
+        AssertLogRelMsgFailedReturn(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages),
+                                    VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
     /* The intermediate mapping must not conflict with our default hypervisor address. */
     size_t  cbHyper;
@@ -513,11 +510,8 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
         ? uAddress + cbPages > pvHyperGC
         : pvHyperGC + cbHyper > uAddress
        )
-    {
-        AssertMsgFailed(("Addr=%RTptr HyperGC=%VGv cbPages=%zu\n", Addr, pvHyperGC, cbPages));
-        LogRel(("Addr=%RTptr HyperGC=%VGv cbPages=%zu\n", Addr, pvHyperGC, cbPages));
-        return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo new error code */
-    }
+        AssertLogRelMsgFailedReturn(("Addr=%RTptr HyperGC=%VGv cbPages=%zu\n", Addr, pvHyperGC, cbPages),
+                                    VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
     const unsigned cPages = cbPages >> PAGE_SHIFT;
     int rc = pgmR3MapIntermediateCheckOne(pVM, uAddress, cPages, pVM->pgm.s.apInterPTs[0], pVM->pgm.s.apInterPaePTs[0]);
@@ -574,18 +568,13 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
             {
                 /** @todo this must be handled with a relocation of the conflicting mapping!
                  * Which of course cannot be done because we're in the middle of the initialization. bad design! */
-                AssertMsgFailed(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress));
-                LogRel(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress));
-                return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
+                AssertLogRelMsgFailedReturn(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress),
+                                            VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
             }
         }
         if (pPT->a[iPTE].u)
-        {
-            AssertMsgFailed(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n", iPTE, iPDE, uAddress, pPT->a[iPTE].u));
-            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n",
-                    iPTE, iPDE, uAddress, pPT->a[iPTE].u));
-            return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
-        }
+            AssertLogRelMsgFailedReturn(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n", iPTE, iPDE, uAddress, pPT->a[iPTE].u),
+                                        VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
         /*
          * PAE.
@@ -607,18 +596,13 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
             {
                 /** @todo this must be handled with a relocation of the conflicting mapping!
                  * Which of course cannot be done because we're in the middle of the initialization. bad design! */
-                AssertMsgFailed(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress));
-                LogRel(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress));
-                return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
+                AssertLogRelMsgFailedReturn(("Conflict between core code and PGMR3Mapping(). uAddress=%VHv\n", uAddress),
+                                            VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
             }
         }
         if (pPTPae->a[iPTE].u)
-        {
-            AssertMsgFailed(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n", iPTE, iPDE, uAddress, pPTPae->a[iPTE].u));
-            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n",
-                    iPTE, iPDE, uAddress, pPTPae->a[iPTE].u));
-            return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
-        }
+            AssertLogRelMsgFailedReturn(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n", iPTE, iPDE, uAddress, pPTPae->a[iPTE].u),
+                                        VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
         /* next */
         uAddress += PAGE_SIZE;
@@ -1200,8 +1184,8 @@ PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
  */
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    pHlp->pfnPrintf(pHlp, pVM->pgm.s.fMappingsFixed 
-                    ? "\nThe mappings are FIXED.\n" 
+    pHlp->pfnPrintf(pHlp, pVM->pgm.s.fMappingsFixed
+                    ? "\nThe mappings are FIXED.\n"
                     : "\nThe mappings are FLOATING.\n");
     PPGMMAPPING pCur;
     for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
