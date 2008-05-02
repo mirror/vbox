@@ -1732,9 +1732,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdpeSrc->n.u1Present
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 /* NX, r/w, u/s bits in the PDPE are long mode only */
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdpeSrc->n.u1NoExecute)
-        ||  (fWriteFault && !pPdpeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
-        ||  (fUserLevelFault && !pPdpeSrc->n.u1User)
+        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdpeSrc->lm.u1NoExecute)
+        ||  (fWriteFault && !pPdpeSrc->lm.u1Write && (fUserLevelFault || fWriteProtect))
+        ||  (fUserLevelFault && !pPdpeSrc->lm.u1User)
 # endif
        )
     {
@@ -1765,7 +1765,11 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     if (pPdeSrc->b.u1Size && fBigPagesSupported)
     {
         /* Mark guest page directory as accessed */
-        pPdeSrc->b.u1Accessed = 1;
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+        pPml4eSrc->n.u1Accessed = 1;
+        pPdpeSrc->lm.u1Accessed  = 1;
+#  endif
+        pPdeSrc->b.u1Accessed   = 1;
 
         /*
          * Only write protection page faults are relevant here.
@@ -1834,8 +1838,12 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         /*
          * Set the accessed bits in the page directory and the page table.
          */
-        pPdeSrc->n.u1Accessed = 1;
-        pPteSrc->n.u1Accessed = 1;
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+        pPml4eSrc->n.u1Accessed = 1;
+        pPdpeSrc->lm.u1Accessed = 1;
+#  endif
+        pPdeSrc->n.u1Accessed   = 1;
+        pPteSrc->n.u1Accessed   = 1;
 
         /*
          * Only write protection page faults are relevant here.

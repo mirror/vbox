@@ -3171,32 +3171,28 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
                 pHlp->pfnPrintf(pHlp,         /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                                 "%016llx 1  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx\n",
                                 u64Address + ((uint64_t)i << X86_PDPT_SHIFT),
-                                Pdpe.n.u1Write       ? 'W'  : 'R',
-                                Pdpe.n.u1User        ? 'U'  : 'S',
-                                Pdpe.n.u1Accessed    ? 'A'  : '-',
-                                Pdpe.n.u3Reserved & 1? '?'  : '.', /* ignored */
-                                Pdpe.n.u3Reserved & 4? '!'  : '.', /* mbz */
-                                Pdpe.n.u1WriteThru   ? "WT" : "--",
-                                Pdpe.n.u1CacheDisable? "CD" : "--",
-                                Pdpe.n.u3Reserved & 2? "!"  : "..",/* mbz */
-                                Pdpe.n.u1NoExecute   ? "NX" : "--",
+                                Pdpe.lm.u1Write       ? 'W'  : 'R',
+                                Pdpe.lm.u1User        ? 'U'  : 'S',
+                                Pdpe.lm.u1Accessed    ? 'A'  : '-',
+                                Pdpe.lm.u3Reserved & 1? '?'  : '.', /* ignored */
+                                Pdpe.lm.u3Reserved & 4? '!'  : '.', /* mbz */
+                                Pdpe.lm.u1WriteThru   ? "WT" : "--",
+                                Pdpe.lm.u1CacheDisable? "CD" : "--",
+                                Pdpe.lm.u3Reserved & 2? "!"  : "..",/* mbz */
+                                Pdpe.lm.u1NoExecute   ? "NX" : "--",
                                 Pdpe.u & RT_BIT(9)                   ? '1' : '0',
                                 Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
                                 Pdpe.u & RT_BIT(11)                  ? '1' : '0',
                                 Pdpe.u & X86_PDPE_PG_MASK);
             else
-                pHlp->pfnPrintf(pHlp,      /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
-                                "%08x 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx\n",
+                pHlp->pfnPrintf(pHlp,      /*P             G  WT CD AT NX 4M a p ?  */
+                                "%08x 0 |    P             %c %s %s %s %s .. %c%c%c  %016llx\n",
                                 i << X86_PDPT_SHIFT,
-                                Pdpe.n.u1Write       ? '!'  : '.', /* mbz */
-                                Pdpe.n.u1User        ? '!'  : '.', /* mbz */
-                                Pdpe.n.u1Accessed    ? '!'  : '.', /* mbz */
-                                Pdpe.n.u3Reserved & 1? '!'  : '.', /* mbz */
-                                Pdpe.n.u3Reserved & 4? '!'  : '.', /* mbz */
+                                Pdpe.n.u4Reserved & 1? '!'  : '.', /* mbz */
+                                Pdpe.n.u4Reserved & 4? '!'  : '.', /* mbz */
                                 Pdpe.n.u1WriteThru   ? "WT" : "--",
                                 Pdpe.n.u1CacheDisable? "CD" : "--",
-                                Pdpe.n.u3Reserved & 2? "!"  : "..",/* mbz */
-                                Pdpe.n.u1NoExecute   ? "NX" : "--",
+                                Pdpe.n.u4Reserved & 2? "!"  : "..",/* mbz */
                                 Pdpe.u & RT_BIT(9)                   ? '1' : '0',
                                 Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
                                 Pdpe.u & RT_BIT(11)                  ? '1' : '0',
