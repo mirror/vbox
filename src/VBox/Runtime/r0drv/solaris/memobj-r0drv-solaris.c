@@ -273,7 +273,6 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
         return VERR_NO_MEMORY;
 
     proc_t *userproc = (proc_t *)R0Process;
-
     struct as *useras = userproc->p_as;
     page_t **ppl;
 
@@ -294,7 +293,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     }
     else
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: as_pagelock failed rc=%d\n", rc);
-    rtR0MemObjDelete(pMemSolaris);
+    rtR0MemObjDelete(&pMemSolaris->Core);
     return VERR_LOCK_FAILED;
 }
 
@@ -326,7 +325,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
     }
     else
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: as_pagelock failed rc=%d\n", rc);
-    rtR0MemObjDelete(pMemSolaris);
+    rtR0MemObjDelete(&pMemSolaris->Core);
     return VERR_LOCK_FAILED;
 }
 
@@ -344,82 +343,16 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
-    PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;
-    size_t size = pMemToMapSolaris->Core.cb;
-    void *pv = pMemToMapSolaris->Core.pv;
-    pgcnt_t cPages = btop(size);
-    pgcnt_t iPage;
-    caddr_t addr;
-    int rc;
-
-    /* Create the mapping object */
-    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, size);
-    if (!pMemSolaris)
-        return VERR_NO_MEMORY;
-
-    as_rangelock(&kas);
-    if (pvFixed != (void *)-1)
-    {
-        /* Use user specified address */
-        addr = (caddr_t)pvFixed;
-
-        /* Blow away any previous mapping */
-        as_unmap(&kas, addr, size);
-    }
-    else
-    {
-        /* Let the system choose an address */
-        map_addr(&addr, size, 0, 1, MAP_SHARED | MAP_ANONYMOUS);
-        if (addr == NULL)
-        {
-            as_rangeunlock(&kas);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: map_addr failed\n");
-            return VERR_NO_MEMORY;
-        }
-
-        /* Check address against alignment, fail if it doesn't match */
-        if ((uintptr_t)addr & (uAlignment - 1))
-        {
-            as_rangeunlock(&kas);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: map_addr alignment(%ld) failed.\n", uAlignment);
-            return VERR_MAP_FAILED;
-        }
-    }
-
-    /* Our protection masks are identical to <sys/mman.h> but we
-     * need to add PROT_USER for the pages to be accessible by user
-     */
-    struct segvn_crargs crArgs = SEGVN_ZFOD_ARGS(fProt | PROT_USER, PROT_ALL);
-    rc = as_map(&kas, addr, size, segvn_create, &crArgs);
-    as_rangeunlock(&kas);
-    if (rc != 0)
-    {
-        cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: as_map failure.\n");
-        return VERR_NO_MEMORY;
-    }
-
-    /* Map each page into kernel space */
-    rw_enter(&kas.a_lock, RW_READER);
-    caddr_t kernAddr = pv;
-    caddr_t pageAddr = addr;
-    for (iPage = 0; iPage < cPages; iPage++)
-    {
-        page_t *pp = page_numtopp_nolock(hat_getpfnum(kas.a_hat, kernAddr));
-        hat_memload(kas.a_hat, pageAddr, pp, (fProt | PROT_USER), HAT_LOAD_LOCK);
-        pageAddr += ptob(1);
-        kernAddr += ptob(1);
-    }
-    rw_exit(&kas.a_lock);
-
-    pMemSolaris->Core.u.Mapping.R0Process = NIL_RTR0PROCESS; /* means kernel */
-    pMemSolaris->Core.pv = addr;
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+    /* @todo rtR0MemObjNativeMapKernel / Solaris - Should be fairly simple alloc kernel memory and memload it. */
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
+    AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
+    AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
+
     PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;
     size_t size = pMemToMapSolaris->Core.cb;
     proc_t *userproc = (proc_t *)R0Process;
@@ -430,42 +363,22 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     caddr_t addr;
     int rc;
 
+    /* Request the system for a mapping address. */
     as_rangelock(useras);
-    if (R3PtrFixed != (RTR3PTR)-1)
+    map_addr(&addr, size, 0 /* offset */, 1 /* vac-align */, MAP_SHARED | MAP_ANONYMOUS);
+    if (!addr)
     {
-        /* Use user specified address */
-        addr = (caddr_t)R3PtrFixed;
-
-        /* Verify user address (a bit paranoid) */
-        rc = valid_usr_range(addr, size, fProt, useras, (caddr_t)USERLIMIT32);
-        if (rc != RANGE_OKAY)
-        {
-            as_rangeunlock(useras);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: valid_usr_range failed, returned %d\n", rc);
-            return VERR_INVALID_POINTER;
-        }
-
-        /* Blow away any previous mapping */
-        as_unmap(useras, addr, size);
+        as_rangeunlock(useras);
+        cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr failed\n");
+        return VERR_MAP_FAILED;
     }
-    else
-    {
-        /* Let the system choose an address */
-        map_addr(&addr, size, 0, 1, MAP_SHARED | MAP_ANONYMOUS);
-        if (addr == NULL)
-        {
-            as_rangeunlock(useras);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr failed\n");
-            return VERR_MAP_FAILED;
-        }
 
-        /* Check address against alignment, fail if it doesn't match */
-        if ((uintptr_t)addr & (uAlignment - 1))
-        {
-            as_rangeunlock(useras);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr alignment(%ld) failed.\n", uAlignment);
-            return VERR_MAP_FAILED;
-        }
+    /* Check address against alignment, fail if it doesn't match */
+    if ((uintptr_t)addr & (uAlignment - 1))
+    {
+        as_rangeunlock(useras);
+        cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr alignment(%ld) failed.\n", uAlignment);
+        return VERR_MAP_FAILED;
     }
 
     /* Our protection masks are identical to <sys/mman.h> but we
