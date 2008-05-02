@@ -5020,6 +5020,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
     LogFlowFunc (("that={%p}\n", that));
 
     AssertReturn (that && aUuid, VERR_INVALID_PARAMETER);
+    ComObjPtr <OUSBDevice> device = **aIt;
 
     /*
      * If that was a remote device, release the backend pointer.
@@ -5044,10 +5045,10 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
 
         /* Remove the device from the collection */
         that->mUSBDevices.erase (*aIt);
-        LogFlowFunc (("Detached device {%Vuuid}\n", (**aIt)->id().raw()));
+        LogFlowFunc (("Detached device {%Vuuid}\n", device->id().raw()));
 
         /* notify callbacks */
-        that->onUSBDeviceStateChange (**aIt, false /* aAttached */, NULL);
+        that->onUSBDeviceStateChange (device, false /* aAttached */, NULL);
     }
 
     LogFlowFunc (("vrc=%Vrc\n", vrc));
