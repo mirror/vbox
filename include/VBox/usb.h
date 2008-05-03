@@ -231,6 +231,12 @@ typedef struct USBDEVICE
     /** Pointer to an array of configurations. */
     PUSBCONFIG      paConfigurations;
 #endif
+#ifdef RT_OS_WINDOWS
+    /** Alternate address. Can be NULL. */
+    char           *pszAltAddress;
+    /** The hub name. */
+    char           *pszHubName;
+#endif
 } USBDEVICE;
 /** Pointer to a USB device. */
 typedef USBDEVICE *PUSBDEVICE;
