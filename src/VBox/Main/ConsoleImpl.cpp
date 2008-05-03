@@ -2010,7 +2010,6 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
             Guid (aId).raw());
 
-# if defined(RT_OS_DARWIN) || defined(NEW_HOSTUSBDEVICE_STATE)
     /*
      * Inform the USB device and USB proxy about what's cooking.
      */
@@ -2019,14 +2018,6 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
     if (FAILED (rc2))
         return rc2;
     alock.enter();
-#  ifndef NEW_HOSTUSBDEVICE_STATE
-    for (it = mUSBDevices.begin(); it != mUSBDevices.end(); ++ it)
-        if ((*it)->id() == aId)
-            break;
-    if (it == mUSBDevices.end())
-        return S_OK;
-#  endif
-# endif
 
     /* Request the PDM to detach the USB device. */
     HRESULT rc = detachUSBDevice (it);
