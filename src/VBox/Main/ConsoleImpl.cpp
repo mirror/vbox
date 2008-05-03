@@ -5617,7 +5617,7 @@ HRESULT Console::captureUSBDevices (PVM pVM)
  */
 void Console::detachAllUSBDevices (bool aDone)
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc (("aDone=%RTbool\n", aDone));
 
     /* sanity check */
     AssertReturnVoid (isWriteLockOnCurrentThread());
