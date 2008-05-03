@@ -3474,7 +3474,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez vous vraiment télécharger l&apos;image CD Addition client VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taiile %3 octets)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez vous vraiment télécharger l&apos;image CD Addition client VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
@@ -3498,7 +3498,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera installé temporairement sur la machine virtuelle et cette dernière commencera l&apos;exècution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement déinstallé et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Notez que cette fonctionnalité dépend, entre autre,  du logiciel de mise en œuvre et que les actions doivent, éventuellement, être effectuées manuellement (&lt;b&gt;Déinstaller...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera installé temporairement sur la machine virtuelle et cette dernière commencera l&apos;exècution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement désinstallé et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Notez que cette fonctionnalité dépend, entre autre,  du logiciel de mise en œuvre et que les actions doivent, éventuellement, être effectuées manuellement (&lt;b&gt;Déinstaller...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3673,7 +3673,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>retour</translation>
+        <translation>Retour</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -5458,7 +5458,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Taiile la &amp;mémoire vive de base</translation>
+        <translation>Taille de la &amp;mémoire vive de base</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -6226,7 +6226,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation>&lt;qt&gt;Si la case est cochée, l&apos;extension des adresse physique (PAE) du processeur sera présenté al la machine virtuelle.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Si la case est cochée, l&apos;extension des adresses physiques (PAE) du processeur sera présentée é la machine virtuelle.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
