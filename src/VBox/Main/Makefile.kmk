@@ -47,9 +47,6 @@ ifneq ($(BUILD_TARGET),win)
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
-if1of ($(BUILD_TARGET), darwin linux win) # this is only temporary, all targets will use this soon.
- VBOX_MAIN_DEFS += NEW_HOSTUSBDEVICE_STATE
-endif
 ifneq ($(VBOX_VERSION_MAJOR)$(VBOX_VERSION_MINOR)$(VBOX_VERSION_BUILD),160)
  VBOX_MAIN_DEFS += VBOX_MAIN_AUTOLOCK_TRAP
 endif

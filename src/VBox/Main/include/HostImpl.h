@@ -120,11 +120,7 @@ public:
 
     void onUSBDeviceAttached (HostUSBDevice *aDevice);
     void onUSBDeviceDetached (HostUSBDevice *aDevice);
-#ifdef NEW_HOSTUSBDEVICE_STATE
     void onUSBDeviceStateChanged(HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine);
-#else
-    void onUSBDeviceStateChanged(HostUSBDevice *aDevice);
-#endif
 
     /* must be called from under this object's lock */
     USBProxyService *usbProxyService() { return mUSBProxyService; }

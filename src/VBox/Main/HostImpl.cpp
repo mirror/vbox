@@ -1348,7 +1348,6 @@ HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BO
 
     AutoWriteLock devLock (device);
 
-#ifdef NEW_HOSTUSBDEVICE_STATE
     /*
      * Work the state machine.
      */
@@ -1368,55 +1367,6 @@ HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BO
         ComAssertComRC(hrc2);
     }
     return hrc;
-
-#else  /* !NEW_HOSTUSBDEVICE_STATE */
-
-    LogFlowThisFunc (("id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d aDone=%RTbool\n",
-                      device->id().raw(), device->state(), device->isStatePending(),
-                      device->pendingState(), aDone));
-    HRESULT rc = S_OK;
-    if (!aDone)
-    {
-        if (device->isStatePending())
-            rc = setError (E_INVALIDARG,
-                tr ("USB device '%s' with UUID {%Vuuid} is busy (waiting for a pending "
-                    "state change). Please try later"),
-                             device->name().raw(), device->id().raw());
-        else
-            mUSBProxyService->detachingDevice (device);
-    }
-    else
-    {
-        if (device->isStatePending())
-        {
-            /* If an async detach operation is still pending (darwin), postpone
-               the setHeld() + the re-applying of filters until it is completed.
-               We indicate this by moving to the '*Filters' state variant. */
-            if (device->pendingStateEx() == HostUSBDevice::kDetachingPendingAttach)
-                device->setLogicalReconnect (HostUSBDevice::kDetachingPendingAttachFilters);
-            else if (device->pendingStateEx() == HostUSBDevice::kDetachingPendingDetach)
-                device->setLogicalReconnect (HostUSBDevice::kDetachingPendingDetachFilters);
-            else
-            {
-                Assert (device->pendingStateEx() == HostUSBDevice::kNothingPending);
-                rc = setError (E_INVALIDARG,
-                    tr ("USB device '%s' with UUID {%Vuuid} is busy (waiting for a pending "
-                        "state change). Please try later"),
-                                 device->name().raw(), device->id().raw());
-            }
-        }
-        else
-        {
-            ComAssertRet (device->machine() == aMachine, E_FAIL);
-
-            /* re-apply filters on the device before giving it back to the host */
-            device->setHeld();
-            rc = applyAllUSBFilters (device, aMachine);
-            ComAssertComRC (rc);
-        }
-    }
-    return rc;
-#endif /* !NEW_HOSTUSBDEVICE_STATE */
 }
 
 /**
@@ -1446,24 +1396,10 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
     {
         ComObjPtr <HostUSBDevice> device = *it;
         AutoWriteLock devLock (device);
-#ifdef NEW_HOSTUSBDEVICE_STATE
         if (   device->unistate() == kHostUSBDeviceState_HeldByProxy
             || device->unistate() == kHostUSBDeviceState_Unused
             || device->unistate() == kHostUSBDeviceState_Capturable)
             applyMachineUSBFilters(aMachine, device);
-#else /* !NEW_HOSTUSBDEVICE_STATE */
-
-        /* skip pending devices */
-        if (device->isStatePending())
-            continue;
-
-        if (device->state() == USBDeviceState_Busy ||
-            device->state() == USBDeviceState_Available ||
-            device->state() == USBDeviceState_Held)
-        {
-            applyMachineUSBFilters (aMachine, device);
-        }
-#endif /* !NEW_HOSTUSBDEVICE_STATE */
     }
 
     return S_OK;
@@ -1494,7 +1430,6 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone, bool aA
 
         if (device->machine() == aMachine)
         {
-# ifdef NEW_HOSTUSBDEVICE_STATE
             /*
              * Same procedure as in detachUSBDevice().
              */
@@ -1507,28 +1442,6 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone, bool aA
                 HRESULT hrc2 = applyAllUSBFilters(device, aMachine);
                 ComAssertComRC(hrc2);
             }
-# else  /* !NEW_HOSTUSBDEVICE_STATE */
-            if (!aDone)
-            {
-                if (!device->isStatePending())
-                    mUSBProxyService->detachingDevice (device);
-            }
-            else
-            {
-                if (!device->isStatePending())
-                {
-                    Assert (device->state() == USBDeviceState_Captured);
-
-                    /* re-apply filters on the device before giving it back to the
-                     * host */
-                    device->setHeld();
-                    HRESULT rc = applyAllUSBFilters (device, aMachine);
-                    AssertComRC (rc);
-                }
-                else if (device->pendingStateEx() == HostUSBDevice::kNothingPending)
-                    device->cancelPendingState();
-            }
-# endif  /* !NEW_HOSTUSBDEVICE_STATE */
         }
         ++ it;
     }
@@ -2047,7 +1960,6 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
     /// @todo must check for read lock, it's enough here
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(aDevice->isWriteLockOnCurrentThread(), E_FAIL);
-#ifdef NEW_HOSTUSBDEVICE_STATE
     /* Quietly ignore unsupported and unavailable device. */
     if (    aDevice->unistate() == kHostUSBDeviceState_UsedByHost
         ||  aDevice->unistate() == kHostUSBDeviceState_Unsupported) /** @todo !aDevice->isCapturable() or something */
@@ -2055,19 +1967,6 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         LogFlowThisFunc(("{%s} %s - quietly ignored\n", aDevice->name().raw(), aDevice->stateName()));
         return S_OK;
     }
-
-#else  /* !NEW_HOSTUSBDEVICE_STATE */
-    AssertReturn(aDevice->state() != USBDeviceState_Captured, E_FAIL);
-
-    AssertReturn(aDevice->isStatePending() == false, E_FAIL);
-
-    /* ignore unsupported devices */
-    if (aDevice->state() == USBDeviceState_NotSupported)
-        return S_OK;
-    /* ignore unavailable devices as well */
-    if (aDevice->state() == USBDeviceState_Unavailable)
-        return S_OK;
-#endif /* !NEW_HOSTUSBDEVICE_STATE */
 
     VirtualBox::SessionMachineVector machines;
     mParent->getOpenedMachines (machines);
@@ -2156,13 +2055,7 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
     /// @todo must check for read lock, it's enough here
     AssertReturn(isWriteLockOnCurrentThread(), false);
     AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
-#ifdef NEW_HOSTUSBDEVICE_STATE
     /* Let HostUSBDevice::requestCaptureToVM() validate the state. */
-#else  /* !NEW_HOSTUSBDEVICE_STATE */
-    AssertReturn (aDevice->state() != USBDeviceState_NotSupported, false);
-    AssertReturn (aDevice->state() != USBDeviceState_Unavailable, false);
-    AssertReturn (aDevice->isStatePending() == false, false);
-#endif /* !NEW_HOSTUSBDEVICE_STATE */
 
     ULONG maskedIfs;
     bool hasMatch = aMachine->hasMatchingUSBFilter (aDevice, &maskedIfs);
@@ -2191,15 +2084,8 @@ void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
     AssertReturnVoid(aDevice);
     AssertReturnVoid(isWriteLockOnCurrentThread());
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-#ifdef NEW_HOSTUSBDEVICE_STATE
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-#else
-    LogFlowThisFunc (("aDevice=%p id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
-                      aDevice, aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
-                      aDevice->pendingState()));
-    Assert (aDevice->isStatePending() == false);
-#endif
 
     /* add to the collecion */
     mUSBDevices.push_back (aDevice);
@@ -2224,14 +2110,8 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
     AssertReturnVoid(aDevice);
     AssertReturnVoid(isWriteLockOnCurrentThread());
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-#ifdef NEW_HOSTUSBDEVICE_STATE
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-#else
-    LogFlowThisFunc (("aDevice=%p id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
-                      aDevice, aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
-                      aDevice->pendingState()));
-#endif
 
     /*
      * Remove from the list.
@@ -2269,11 +2149,7 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
  * @param   aRunFilters     Whether to run filters.
  * @param   aIgnoreMachine  The machine to ignore when running filters.
  */
-#ifdef NEW_HOSTUSBDEVICE_STATE
 void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine)
-#else
-void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
-#endif
 {
     /*
      * Validate preconditions.
@@ -2282,16 +2158,9 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
     AssertReturnVoid(aDevice);
     AssertReturnVoid(isWriteLockOnCurrentThread());
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-#ifdef NEW_HOSTUSBDEVICE_STATE
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-#else
-    LogFlowThisFunc (("aDevice=%p id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
-                      aDevice, aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
-                      aDevice->pendingState()));
-#endif
 
-# ifdef NEW_HOSTUSBDEVICE_STATE
     /*
      * Run filters if requested to do so.
      */
@@ -2301,51 +2170,6 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
         HRESULT rc = applyAllUSBFilters(device, aIgnoreMachine);
         AssertComRC(rc);
     }
-# else  /* !NEW_HOSTUSBDEVICE_STATE */
-    ComObjPtr <HostUSBDevice> device (aDevice);
-    if (device->isStatePending())
-    {
-        /* it was a state change request */
-        if (device->pendingStateEx() == HostUSBDevice::kDetachingPendingAttachFilters)
-        {
-            /* The device has completed an asynchronous detach operation, subject
-               it to the filters and such if the current state permits this.
-               (handlePendingStateChange will disassociate itself from the machine.) */
-            ComObjPtr <SessionMachine> machine (device->machine());
-            device->handlePendingStateChange();
-            if (device->state() == USBDeviceState_Captured)
-            {
-                Log (("USB: running filters on async detached device\n"));
-                device->setHeld();
-                HRESULT rc = applyAllUSBFilters (device, machine);
-                AssertComRC (rc);
-            }
-            else
-                Log (("USB: async detached devices reappeared in stated %d instead of %d!\n",
-                      device->state(), USBDeviceState_Captured));
-        }
-        else
-            device->handlePendingStateChange();
-    }
-    else if (   device->state() == USBDeviceState_Available
-             || device->state() == USBDeviceState_Busy)
-    {
-        /* The device has gone from being unavailable (not subject to filters) to being
-           available / busy. This transition can be triggered by udevd or manual
-           permission changes on Linux. On all systems may be triggered by the host
-           ceasing to use the device - like unmounting an MSD in the Finder or invoking
-           the "Safely remove XXXX" stuff on Windows (perhaps). */
-        HRESULT rc = applyAllUSBFilters (device);
-        AssertComRC (rc);
-    }
-    else
-    {
-        /* some external state change */
-
-        /// @todo re-run all USB filters probably
-        AssertFailed();
-    }
-# endif /* !NEW_HOSTUSBDEVICE_STATE */
 }
 #endif /* VBOX_WITH_USB */
 
