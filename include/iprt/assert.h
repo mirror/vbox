@@ -324,20 +324,17 @@ __END_DECLS
  */
 #ifdef RT_STRICT
 # define AssertBreakVoid(expr) \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-        { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertBreakpoint(); \
-            break; \
-        } \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertBreakpoint(); \
+        break; \
+    } else do {} while (0)
 #else
 # define AssertBreakVoid(expr) \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-            break; \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+        break; \
+    else do {} while (0)
 #endif
 
 
@@ -542,16 +539,16 @@ __END_DECLS
  */
 #ifdef RT_STRICT
 # define AssertFailedBreakVoid()  \
-    do { \
+    if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertBreakpoint(); \
         break; \
-    } while (0)
+    } else do {} while (0)
 #else
 # define AssertFailedBreakVoid()  \
-    do { \
+    if (1) \
         break; \
-    } while (0)
+    else do {} while (0)
 #endif
 
 
@@ -646,17 +643,17 @@ __END_DECLS
  */
 #ifdef RT_STRICT
 # define AssertMsgFailedBreakVoid(a)  \
-    do { \
+    if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
         AssertBreakpoint(); \
         break; \
-    } while (0)
+    } else do {} while (0)
 #else
 # define AssertMsgFailedBreakVoid(a)  \
-    do { \
+    if (1) \
         break; \
-    } while (0)
+    else do {} while (0)
 #endif
 
 
@@ -1086,15 +1083,13 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
 #define AssertReleaseBreakStmt(expr, stmt)  \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-        { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
-            stmt; \
-            break; \
-        } \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertReleaseBreakpoint(); \
+        stmt; \
+        break; \
+    } else do {} while (0)
 
 /** @def AssertReleaseBreakVoid
  * Assert that an expression is true, hit a breakpoing and break if it isn't.
@@ -1187,18 +1182,15 @@ __END_DECLS
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
  * @todo Rename to AssertReleaseMsgBreak.
- * @todo broken
  */
 #define AssertReleaseMsgBreakVoid(expr, a)  \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-        { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertMsg2 a; \
-            AssertReleaseBreakpoint(); \
-            break; \
-        } \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } else do {} while (0)
 
 
 /** @def AssertReleaseFailed
@@ -1252,11 +1244,11 @@ __END_DECLS
  * @todo broken, should use 'if' instead of 'do'.
  */
 #define AssertReleaseFailedBreakVoid()  \
-    do { \
+    if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertReleaseBreakpoint(); \
         break; \
-    } while (0)
+    } else do {} while (0)
 
 
 /** @def AssertReleaseMsgFailed
@@ -1322,12 +1314,12 @@ __END_DECLS
  * @todo broken
  */
 #define AssertReleaseMsgFailedBreakVoid(a) \
-    do { \
+    if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
         AssertReleaseBreakpoint(); \
         break; \
-    } while (0)
+    } else do {} while (0)
 
 
 /** @def AssertFatal
