@@ -28,17 +28,18 @@
  * Global pointer to the libdlpi module. This should only be set once all needed libraries
  * and symbols have been successfully loaded.
  */
-static RTLDRMOD ghLibDlpi = NULL;
+static RTLDRMOD g_hLibDlpi = NULL;
 
 /**
  * Whether we have tried to load libdlpi yet.  This flag should only be set
  * to "true" after we have either loaded both libraries and all symbols which we need,
  * or failed to load something and unloaded.
  */
-static bool gCheckedForLibDlpi = false;
+static bool g_fCheckedForLibDlpi = false;
 
-/** 
- * All the symbols we need from libdlpi.
+/** All the symbols we need from libdlpi.
+ * @todo r=bird: rename to g_pfnLibDlpi*.
+ * @{
  */
 int (*gLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
 void (*gLibDlpiClose)(dlpi_handle_t);
@@ -48,19 +49,18 @@ int (*gLibDlpiSetPhysAddr)(dlpi_handle_t, uint_t, const void *, size_t);
 int (*gLibDlpiPromiscon)(dlpi_handle_t, uint_t);
 int (*gLibDlpiRecv)(dlpi_handle_t, void *, size_t *, void *, size_t *, int, dlpi_recvinfo_t *);
 int (*gLibDlpiFd)(dlpi_handle_t);
+/** @} */
 
 bool gLibDlpiFound(void)
 {
     RTLDRMOD hLibDlpi;
 
-    if (ghLibDlpi && gCheckedForLibDlpi == true)
+    if (g_hLibDlpi && g_fCheckedForLibDlpi)
         return true;
-    if (gCheckedForLibDlpi == true)
+    if (g_fCheckedForLibDlpi)
         return false;
     if (!RT_SUCCESS(RTLdrLoad(LIB_DLPI, &hLibDlpi)))
-    {
         return false;
-    }
     if (   RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&gLibDlpiOpen))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&gLibDlpiClose))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_info", (void **)&gLibDlpiInfo))
@@ -71,15 +71,15 @@ bool gLibDlpiFound(void)
         && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_fd", (void **)&gLibDlpiFd))
        )
     {
-        ghLibDlpi = hLibDlpi;
-        gCheckedForLibDlpi = true;
+        g_hLibDlpi = hLibDlpi;
+        g_fCheckedForLibDlpi = true;
         return true;
     }
     else
     {
         RTLdrClose(hLibDlpi);
-        gCheckedForLibDlpi = true;
+        g_fCheckedForLibDlpi = true;
         return false;
-    }    
+    }
 }
 
