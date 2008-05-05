@@ -987,7 +987,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
                 break;
             }
 
-            AssertMsgFailedBreakVoid (("Invalid channel %d\n", aChannel));
+            AssertMsgFailedBreak (("Invalid channel %d\n", aChannel));
         }
         case KStorageBus_SATA:
         {
@@ -1031,7 +1031,7 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
                 break;
             }
 
-            AssertMsgFailedBreakVoid (("Invalid channel {%s}\n", aChannel.latin1()));
+            AssertMsgFailedBreak (("Invalid channel {%s}\n", aChannel.latin1()));
             break;
         }
         default:
@@ -1063,7 +1063,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
                 break;
             }
 
-            AssertMsgFailedBreakVoid (("Invalid device %d\n", aDevice));
+            AssertMsgFailedBreak (("Invalid device %d\n", aDevice));
         }
         case KStorageBus_SATA:
         {
