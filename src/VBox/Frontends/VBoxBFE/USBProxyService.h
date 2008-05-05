@@ -139,16 +139,6 @@ protected:
     virtual PUSBDEVICE getDevices (void);
 
 public:
-#ifdef USBDEVICE_WITH_EVERYTHING
-    /**
-     * Free all the members of a USB interface returned by getDevice().
-     *
-     * @param   pIf         Pointer to the interface.
-     * @param   cIfs        Number of consecutive interfaces pIf points to
-     */
-    static void freeInterfaceMembers (PUSBINTERFACE pIf, unsigned cIfs);
-#endif
-
     /**
      * Free one USB device returned by getDevice().
      *
