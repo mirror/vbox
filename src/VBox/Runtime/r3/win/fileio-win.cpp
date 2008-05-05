@@ -128,6 +128,28 @@ DECLINLINE(bool) IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
 }
 
 
+RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
+{
+    HANDLE h = (HANDLE)uNative;
+    if (    h == INVALID_HANDLE_VALUE
+        ||  (RTFILE)uNative != uNative)
+    {
+        AssertMsgFailed(("%p\n", uNative));
+        *pFile = NIL_RTFILE;
+        return VERR_INVALID_HANDLE;
+    }
+    *pFile = (RTFILE)h;
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File)
+{
+    AssertReturn(File != NIL_RTFILE, (RTHCINTPTR)INVALID_HANDLE_VALUE);
+    return (RTHCINTPTR)File;
+}
+
+
 RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
 {
     /*
