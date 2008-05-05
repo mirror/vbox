@@ -165,7 +165,7 @@ RTR3DECL(int)  RTFileClose(RTFILE File);
  * @param   pFile           Where to store the IPRT file handle.
  * @param   uNative         The native handle.
  */
-RTR3DECL(int) RTFileFromNative(PRTFILE *pFile, RTHCINTPTR uNative);
+RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative);
 
 /**
  * Gets the native handle for an IPRT file handle.
