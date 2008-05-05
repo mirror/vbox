@@ -3151,7 +3151,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
             AssertRCBreak (vrc2, vrc = vrc2);
 
             newEnvStr = RTStrDup(Utf8Str (aEnvironment));
-            AssertPtrBreak (newEnvStr, vrc = vrc2);
+            AssertPtrBreakStmt (newEnvStr, vrc = vrc2);
 
             /* put new variables to the environment
              * (ignore empty variable names here since RTEnv API
