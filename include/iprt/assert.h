@@ -1378,7 +1378,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRC(rc)            AssertMsgRC(rc, ("%Vra\n", (rc)))
+#define AssertRC(rc)                AssertMsgRC(rc, ("%Vra\n", (rc)))
 
 /** @def AssertRCReturn
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return if it isn't.
@@ -1395,7 +1395,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCReturnVoid(rc)   AssertMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
+#define AssertRCReturnVoid(rc)      AssertMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
 
 /** @def AssertRCBreakStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1406,14 +1406,13 @@ __END_DECLS
  */
 #define AssertRCBreakStmt(rc, stmt) AssertMsgRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
 
-/** @def AssertRCBreakVoid
+/** @def AssertRCBreak
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
- * @todo Rename to AssertRCBreak.
  */
-#define AssertRCBreakVoid(rc)       AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
+#define AssertRCBreak(rc)           AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
 
 /** @def AssertMsgRC
  * Asserts a iprt status code successful.
