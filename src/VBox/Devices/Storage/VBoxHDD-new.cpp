@@ -820,7 +820,7 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
     do
     {
         /* sanity check */
-        AssertPtrBreakVoid(pDisk);
+        AssertPtrBreak(pDisk);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
         VDCloseAll(pDisk);
         RTMemFree(pDisk);
@@ -3254,7 +3254,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
     do
     {
         /* sanity check */
-        AssertPtrBreakVoid(pDisk);
+        AssertPtrBreak(pDisk);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         RTLogPrintf("--- Dumping VD Disk, Images=%u\n", pDisk->cImages);
