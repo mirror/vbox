@@ -467,15 +467,15 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
             do
             {
                 /* If you change one, zero the other to make clear what you mean. */
-                AssertBreakVoid(pTime->u8Month <= 12);
-                AssertBreakVoid(pTime->u8MonthDay <= (fLeapYear
-                                                      ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
-                                                      : g_acDaysInMonths[pTime->u8Month - 1]));
+                AssertBreak(pTime->u8Month <= 12);
+                AssertBreak(pTime->u8MonthDay <= (fLeapYear
+                                                  ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
+                                                  : g_acDaysInMonths[pTime->u8Month - 1]));
                 uint16_t u16YearDay = pTime->u8MonthDay - 1
                                     + (fLeapYear
                                        ? g_aiDayOfYearLeap[pTime->u8Month - 1]
                                        : g_aiDayOfYear[pTime->u8Month - 1]);
-                AssertBreakVoid(u16YearDay == pTime->u16YearDay);
+                AssertBreak(u16YearDay == pTime->u16YearDay);
                 fRecalc = false;
             } while (0);
         }
