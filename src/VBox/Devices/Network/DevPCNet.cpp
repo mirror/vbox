@@ -1580,6 +1580,7 @@ static void pcnetStart(PCNetState *pData)
     pcnetEnablePrivateIf(pData);
     pData->aCSR[0] &= ~0x0004;       /* clear STOP bit */
     pData->aCSR[0] |=  0x0002;       /* STRT */
+    pcnetPollTimer(pData);           /* start timer if it was stopped */
 }
 
 /**
@@ -2564,7 +2565,11 @@ static void pcnetPollTimer(PCNetState *pData)
 
     pcnetUpdateIrq(pData);
 
-    if (RT_LIKELY(!CSR_STOP(pData) && !CSR_SPND(pData) && !CSR_DPOLL(pData)))
+    /* If the receive thread is waiting for new descriptors, poll TX/RX even if polling
+     * disabled. We wouldn't need to poll for new TX descriptors in that case but it will
+     * not hurt as waiting for RX descriptors should occur very seldom */
+    if (   RT_UNLIKELY(pData->fMaybeOutOfSpace)
+        || RT_LIKELY(!CSR_STOP(pData) && !CSR_SPND(pData) && !CSR_DPOLL(pData)))
     {
         /* We ensure that we poll at least every 2ms (500Hz) but not more often than
          * 5000 times per second. This way we completely prevent the overhead from
