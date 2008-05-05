@@ -1403,7 +1403,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCBreak(rc)           AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
+#define AssertRCBreak(rc)           AssertMsgRCBreak(rc, ("%Vra\n", (rc)))
 
 /** @def AssertRCBreakStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1451,6 +1451,18 @@ __END_DECLS
 #define AssertMsgRCReturnVoid(rc, msg) \
     do { AssertMsgReturnVoid(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
+/** @def AssertMsgRCBreak
+ * Asserts a iprt status code successful and if it's not break.
+ *
+ * If RT_STRICT is defined the message will be printed and a breakpoint hit before it breaks
+ *
+ * @param   rc      iprt status code.
+ * @param   msg     printf argument list (in parenthesis).
+ * @remark  rc is references multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertMsgRCBreak(rc, msg) \
+    if (1) { AssertMsgBreak(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
+
 /** @def AssertMsgRCBreakStmt
  * Asserts a iprt status code successful and break if it's not.
  *
@@ -1463,19 +1475,6 @@ __END_DECLS
  */
 #define AssertMsgRCBreakStmt(rc, msg, stmt) \
     if (1) { AssertMsgBreakStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } else do {} while (0)
-
-/** @def AssertMsgRCBreakVoid
- * Asserts a iprt status code successful and if it's not break.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it breaks
- *
- * @param   rc      iprt status code.
- * @param   msg     printf argument list (in parenthesis).
- * @remark  rc is references multiple times. In release mode is NOREF()'ed.
- * @todo Rename to AssertMsgRCBreak.
- */
-#define AssertMsgRCBreakVoid(rc, msg) \
-    if (1) { AssertMsgBreak(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
 
 /** @def AssertRCSuccess
  * Asserts an iprt status code equals VINF_SUCCESS.
