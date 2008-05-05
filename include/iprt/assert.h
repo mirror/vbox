@@ -1501,7 +1501,15 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccessReturnVoid(rc)    AssertMsgReturnVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertRCSuccessReturnVoid(rc)       AssertMsgReturnVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+
+/** @def AssertRCSuccessBreak
+ * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertRCSuccessBreak(rc)            AssertMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 /** @def AssertRCSuccessBreakStmt
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1511,15 +1519,6 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertRCSuccessBreakStmt(rc, stmt)  AssertMsgBreakStmt((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
-
-/** @def AssertRCSuccessBreakVoid
- * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
- *
- * @param   rc      iprt status code.
- * @remark  rc is references multiple times. In release mode is NOREF()'ed.
- * @todo Rename to AssertRCSuccessBreak.
- */
-#define AssertRCSuccessBreakVoid(rc)    AssertMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertLogRelRC
