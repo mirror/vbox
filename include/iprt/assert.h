@@ -291,7 +291,7 @@ __END_DECLS
 #endif
 
 
-/** @def AssertBreak
+/** @def AssertBreakStmt
  * Assert that an expression is true and breaks if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before doing break.
  *
@@ -299,7 +299,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
 #ifdef RT_STRICT
-# define AssertBreak(expr, stmt) \
+# define AssertBreakStmt(expr, stmt) \
     if (RT_UNLIKELY(!(expr))) { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertBreakpoint(); \
@@ -307,7 +307,7 @@ __END_DECLS
         break; \
     } else do {} while (0)
 #else
-# define AssertBreak(expr, stmt) \
+# define AssertBreakStmt(expr, stmt) \
     if (RT_UNLIKELY(!(expr))) { \
         stmt; \
         break; \
@@ -1931,6 +1931,7 @@ __END_DECLS
  * @todo Rename to AssertPtrBreakStmt.
  */
 #define AssertPtrBreak(pv, stmt)  AssertMsgBreakStmt(VALID_PTR(pv), ("%p\n", (pv)), stmt)
+#define AssertPtrBreakStmt(pv, stmt)  AssertMsgBreakStmt(VALID_PTR(pv), ("%p\n", (pv)), stmt)
 
 /** @def AssertPtrBreakVoid
  * Asserts that a pointer is valid.

@@ -1058,7 +1058,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                     struct vm_area_struct *vma = find_vma(pTask->mm, ulAddrCur); /* this is probably the same for all the pages... */
-                    AssertBreak(vma, rc = VERR_INTERNAL_ERROR);
+                    AssertBreakStmt(vma, rc = VERR_INTERNAL_ERROR);
 #endif
 
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
@@ -1090,7 +1090,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                     {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                         struct vm_area_struct *vma = find_vma(pTask->mm, ulAddrCur); /* this is probably the same for all the pages... */
-                        AssertBreak(vma, rc = VERR_INTERNAL_ERROR);
+                        AssertBreakStmt(vma, rc = VERR_INTERNAL_ERROR);
 #endif
 
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)

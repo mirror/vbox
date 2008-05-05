@@ -2392,7 +2392,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
     do
     {
-        AssertBreak (d.get(), rc = E_POINTER);
+        AssertBreakStmt (d.get(), rc = E_POINTER);
         AssertReturn (!d->progress.isNull(), E_POINTER);
 
         /* protect VirtualBox from uninitialization */

@@ -77,7 +77,7 @@ enum
     VBoxSVC_WaitSlice = 100,
 };
 
-/** 
+/**
  *  Full path to the VBoxSVC executable.
  */
 static char VBoxSVCPath [RTPATH_MAX];
@@ -92,7 +92,7 @@ static bool IsVBoxSVCPathSet = false;
 NS_DECL_CLASSINFO (VirtualBox)
 NS_IMPL_CI_INTERFACE_GETTER1 (VirtualBox, IVirtualBox)
 
-/** 
+/**
  *  VirtualBox component constructor.
  *
  *  This constructor is responsible for starting the VirtualBox server
@@ -134,8 +134,8 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     componentDir->GetNativePath (path);
 
                     LogFlowFunc (("component directory = \"%s\"\n", path.get()));
-                    AssertBreak (path.Length() + strlen (VBoxSVC_exe) < RTPATH_MAX,
-                                 rc = NS_ERROR_FAILURE);
+                    AssertBreakStmt (path.Length() + strlen (VBoxSVC_exe) < RTPATH_MAX,
+                                     rc = NS_ERROR_FAILURE);
 
                     strcpy (VBoxSVCPath, path.get());
                     RTPathStripFilename (VBoxSVCPath);
@@ -254,15 +254,15 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
 #if 0
 /// @todo not really necessary for the moment
-/** 
- * 
- * @param aCompMgr 
- * @param aPath 
- * @param aLoaderStr 
- * @param aType 
- * @param aInfo 
- * 
- * @return 
+/**
+ *
+ * @param aCompMgr
+ * @param aPath
+ * @param aLoaderStr
+ * @param aType
+ * @param aInfo
+ *
+ * @return
  */
 static NS_IMETHODIMP
 VirtualBoxRegistration (nsIComponentManager *aCompMgr,
@@ -285,7 +285,7 @@ VirtualBoxRegistration (nsIComponentManager *aCompMgr,
 }
 #endif
 
-/** 
+/**
  *  Component definition table.
  *  Lists all components defined in this module.
  */
@@ -298,10 +298,10 @@ static const nsModuleComponentInfo components[] =
         NULL, /* VirtualBoxRegistration, */ // registration function
         NULL, // deregistration function
         NULL, // destructor function
-        /// @todo 
+        /// @todo
         NS_CI_INTERFACE_GETTER_NAME(VirtualBox), // interfaces function
         NULL, // language helper
-        /// @todo 
+        /// @todo
         &NS_CLASSINFO_NAME(VirtualBox) // global class info & flags
     }
 };
