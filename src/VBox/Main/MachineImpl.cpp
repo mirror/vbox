@@ -1655,6 +1655,10 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     if (id.isEmpty() || aBus == StorageBus_Null)
         return E_INVALIDARG;
 
+    /* The device property is not used for SATA yet. Thus it is always zero. */
+    if ((aBus == StorageBus_SATA) && (aDevice != 0))
+        AssertMsgFailed(("Invalid aDevice %d\n", aDevice));
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
