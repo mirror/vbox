@@ -181,6 +181,10 @@ HWACCMR0DECL(int) HWACCMR0Init()
                     if (   (HWACCMR0Globals.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                                                                 == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                     {
+                        RTR0MEMOBJ pScatchMemObj;
+                        void      *pvScatchPage;
+                        RTHCPHYS   pScatchPagePhys;
+
                         HWACCMR0Globals.vmx.fSupported          = true;
                         HWACCMR0Globals.vmx.msr.vmx_basic_info  = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
                         HWACCMR0Globals.vmx.msr.vmx_pin_ctls    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
@@ -194,11 +198,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
                         HWACCMR0Globals.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
                         HWACCMR0Globals.vmx.hostCR4             = ASMGetCR4();
-
-#if HC_ARCH_BITS == 64
-                        RTR0MEMOBJ pScatchMemObj;
-                        void      *pvScatchPage;
-                        RTHCPHYS   pScatchPagePhys;
 
                         rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
                         if (RT_FAILURE(rc))
@@ -231,7 +230,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         {
                             /* KVM leaves the CPU in VMX root mode. Not only is this not allowed, it will crash the host when we enter raw mode, because
                              * (a) clearing X86_CR4_VMXE in CR4 causes a #GP    (we no longer modify this bit)
-                             * (b) turning off paging causes a #GP              (unavoidable when switching from long to 32 bits mode)
+                             * (b) turning off paging causes a #GP              (unavoidable when switching from long to 32 bits mode or 32 bits to PAE)
                              *
                              * They should fix their code, but until they do we simply refuse to run.
                              */
@@ -248,7 +247,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         RTR0MemObjFree(pScatchMemObj, false);
                         if (VBOX_FAILURE(HWACCMR0Globals.lLastError))
                             return HWACCMR0Globals.lLastError ;
-#endif
                     }
                     else
                     {
