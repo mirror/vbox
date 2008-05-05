@@ -722,7 +722,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (hddType == HardDiskStorageType_VirtualDiskImage)
             {
                 ComPtr<IVirtualDiskImage> vdiDisk = hardDisk;
-                AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
+                AssertBreakStmt (!vdiDisk.isNull(), hrc = E_FAIL);
 
                 rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1, "Driver",         "VBoxHDD");               RC_CHECK();
@@ -742,7 +742,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         break;
 
                     vdiDisk = curHardDisk;
-                    AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
+                    AssertBreakStmt (!vdiDisk.isNull(), hrc = E_FAIL);
 
                     PCFGMNODE pCur;
                     rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
@@ -760,7 +760,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (hddType == HardDiskStorageType_ISCSIHardDisk)
             {
                 ComPtr<IISCSIHardDisk> iSCSIDisk = hardDisk;
-                AssertBreak (!iSCSIDisk.isNull(), hrc = E_FAIL);
+                AssertBreakStmt (!iSCSIDisk.isNull(), hrc = E_FAIL);
 
                 rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1, "Driver",         "iSCSI");                 RC_CHECK();
@@ -826,7 +826,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (hddType == HardDiskStorageType_VMDKImage)
             {
                 ComPtr<IVMDKImage> vmdkDisk = hardDisk;
-                AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
+                AssertBreakStmt (!vmdkDisk.isNull(), hrc = E_FAIL);
 
                 rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
 #if 1 /* Enable new VD container code (and new VMDK), as the bugs are fixed. */
@@ -844,7 +844,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (hddType == HardDiskStorageType_CustomHardDisk)
             {
                 ComPtr<ICustomHardDisk> customHardDisk = hardDisk;
-                AssertBreak (!customHardDisk.isNull(), hrc = E_FAIL);
+                AssertBreakStmt (!customHardDisk.isNull(), hrc = E_FAIL);
 
                 rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
@@ -861,7 +861,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (hddType == HardDiskStorageType_VHDImage)
             {
                 ComPtr<IVHDImage> vhdDisk = hardDisk;
-                AssertBreak (!vhdDisk.isNull(), hrc = E_FAIL);
+                AssertBreakStmt (!vhdDisk.isNull(), hrc = E_FAIL);
 
                 rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();

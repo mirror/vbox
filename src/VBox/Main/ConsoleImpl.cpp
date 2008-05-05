@@ -2877,7 +2877,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                 }
 
                 pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface (pBase, PDMINTERFACE_MOUNT);
-                AssertBreak (pIMount, rc = VERR_INVALID_POINTER);
+                AssertBreakStmt (pIMount, rc = VERR_INVALID_POINTER);
 
                 /*
                  * Unmount the media.

@@ -255,7 +255,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             break;
         if (ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualRawPrev, u64NanoTS, u64PrevNanoTS))
             break;
-        AssertBreak(--cTries <= 0, );
+        AssertBreakVoid(--cTries <= 0);
         if (cTries < 25 && !VM_IS_EMT(pVM)) /* give up early */
             break;
     }
