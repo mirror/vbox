@@ -1803,6 +1803,17 @@ __END_DECLS
  */
 #define AssertReleaseRCSuccessReturnVoid(rc)     AssertReleaseMsgReturnVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
+/** @def AssertReleaseRCSuccessBreak
+ * Asserts that an iprt status code equals VINF_SUCCESS.
+ *
+ * On failure information about the error will be printed, a breakpoint hit
+ * and finally breaking the current statement if the breakpoint is somehow ignored.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times.
+ */
+#define AssertReleaseRCSuccessBreak(rc)         AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+
 /** @def AssertReleaseRCSuccessBreakStmt
  * Asserts that an iprt status code equals VINF_SUCCESS.
  *
@@ -1814,18 +1825,6 @@ __END_DECLS
  * @remark  rc is references multiple times.
  */
 #define AssertReleaseRCSuccessBreakStmt(rc, stmt)   AssertReleaseMsgBreakStmt((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
-
-/** @def AssertReleaseRCSuccessBreakVoid
- * Asserts that an iprt status code equals VINF_SUCCESS.
- *
- * On failure information about the error will be printed, a breakpoint hit
- * and finally breaking the current statement if the breakpoint is somehow ignored.
- *
- * @param   rc      iprt status code.
- * @remark  rc is references multiple times.
- * @todo Rename to AssertReleaseRCSuccessBreak.
- */
-#define AssertReleaseRCSuccessBreakVoid(rc)     AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertFatalRC
