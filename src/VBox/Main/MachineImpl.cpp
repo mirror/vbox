@@ -1652,12 +1652,51 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 {
     Guid id = aId;
 
-    if (id.isEmpty() || aBus == StorageBus_Null)
+    if (id.isEmpty())
         return E_INVALIDARG;
 
-    /* The device property is not used for SATA yet. Thus it is always zero. */
-    if ((aBus == StorageBus_SATA) && (aDevice != 0))
-        AssertMsgFailed(("Invalid aDevice %d\n", aDevice)); /** @todo r=bird: You don't assert on bad input, you return E_FAIL or E_INVALIDARG via setError()! This is what is referred to in comments 9 and 5. */
+    if (aBus == StorageBus_SATA)
+    {
+        /* The device property is not used for SATA yet. Thus it is always zero. */
+        if (aDevice != 0)
+            return setError (E_INVALIDARG,
+                tr ("Invalid device number: %l (must be always 0)"),
+                    aDevice);
+
+        /*
+         * We suport 30 ports.
+         * @todo: r=aeichner make max port count a system property.
+         */
+        if ((aChannel < 0) || (aChannel >= 30))
+            return setError (E_INVALIDARG,
+                tr ("Invalid channel number: %l (must be in range [%lu, %lu])"),
+                    aChannel, 0, 29);
+    }
+    else if (aBus == StorageBus_IDE)
+    {
+        /* Validate input for IDE drives. */
+        if (aChannel == 0)
+        {
+            if ((aDevice < 0) || (aDevice > 1))
+                return setError (E_INVALIDARG,
+                    tr ("Invalid device number: %l (must be in range [%lu, %lu])"),
+                        aDevice, 0, 1);
+        }
+        else if (aChannel == 1)
+        {
+            /* The first device is assigned to the CD/DVD drive. */
+            if (aDevice != 1)
+                return setError (E_INVALIDARG,
+                    tr ("Invalid device number: %l (must be %lu)"),
+                        aDevice, 1);
+        }
+        else
+            return setError (E_INVALIDARG,
+                tr ("Invalid channel number: %l (must be in range [%lu, %lu])"),
+                    aChannel, 0, 1);
+    }
+    else
+        return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
