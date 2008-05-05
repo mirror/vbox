@@ -409,6 +409,30 @@ __END_DECLS
 #endif
 
 
+/** @def AssertMsgBreak
+ * Assert that an expression is true and breaks if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @todo Rename to AssertMsgBreak.
+ */
+#ifdef RT_STRICT
+# define AssertMsgBreak(expr, a)  \
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertBreakpoint(); \
+        break; \
+    } else do {} while (0)
+#else
+# define AssertMsgBreak(expr, a) \
+    if (RT_UNLIKELY(!(expr))) \
+        break; \
+    else do {} while (0)
+#endif
+
 /** @def AssertMsgBreakStmt
  * Assert that an expression is true and breaks if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before doing break.
@@ -433,31 +457,6 @@ __END_DECLS
         break; \
     } else do {} while (0)
 #endif
-
-/** @def AssertMsgBreakVoid
- * Assert that an expression is true and breaks if it isn't.
- * In RT_STRICT mode it will hit a breakpoint before returning.
- *
- * @param   expr    Expression which should be true.
- * @param   a       printf argument list (in parenthesis).
- * @todo Rename to AssertMsgBreak.
- */
-#ifdef RT_STRICT
-# define AssertMsgBreakVoid(expr, a)  \
-    if (RT_UNLIKELY(!(expr))) \
-    { \
-        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertMsg2 a; \
-        AssertBreakpoint(); \
-        break; \
-    } else do {} while (0)
-#else
-# define AssertMsgBreakVoid(expr, a) \
-    if (RT_UNLIKELY(!(expr))) \
-        break; \
-    else do {} while (0)
-#endif
-
 
 /** @def AssertFailed
  * An assertion failed hit breakpoint.
@@ -1486,7 +1485,7 @@ __END_DECLS
  * @todo Rename to AssertMsgRCBreak.
  */
 #define AssertMsgRCBreakVoid(rc, msg) \
-    if (1) { AssertMsgBreakVoid(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
+    if (1) { AssertMsgBreak(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
 
 /** @def AssertRCSuccess
  * Asserts an iprt status code equals VINF_SUCCESS.
@@ -1531,7 +1530,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  * @todo Rename to AssertRCSuccessBreak.
  */
-#define AssertRCSuccessBreakVoid(rc)    AssertMsgBreakVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertRCSuccessBreakVoid(rc)    AssertMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertLogRelRC
@@ -1911,7 +1910,7 @@ __END_DECLS
  * @param   pv      The pointer.
  * @todo Rename to AssertPtrBreak.
  */
-#define AssertPtrBreakVoid(pv)  AssertMsgBreakVoid(VALID_PTR(pv), ("%p\n", (pv)))
+#define AssertPtrBreakVoid(pv)  AssertMsgBreak(VALID_PTR(pv), ("%p\n", (pv)))
 
 /** @def AssertPtrNull
  * Asserts that a pointer is valid or NULL.
@@ -1949,7 +1948,7 @@ __END_DECLS
  * @param   pv      The pointer.
  * @todo Rename to AssertPtrNullBreak.
  */
-#define AssertPtrNullBreakVoid(pv)  AssertMsgBreakVoid(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
+#define AssertPtrNullBreakVoid(pv)  AssertMsgBreak(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
 
 /** @def AssertGCPhys32
  * Asserts that the high dword of a physical address is zero

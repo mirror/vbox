@@ -1016,8 +1016,8 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
             QStringVector::const_iterator it =
                 qFind (storageBusChannels.begin(), storageBusChannels.end(),
                        aChannel);
-            AssertMsgBreakVoid (it != storageBusChannels.end(),
-                                ("No value for {%s}\n", aChannel.latin1()));
+            AssertMsgBreak (it != storageBusChannels.end(),
+                            ("No value for {%s}\n", aChannel.latin1()));
             channel = (LONG) (it - storageBusChannels.begin());
             break;
         }
@@ -1067,7 +1067,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
         }
         case KStorageBus_SATA:
         {
-            AssertMsgBreakVoid (aDevice == 0, ("Invalid device %d\n", aDevice));
+            AssertMsgBreak (aDevice == 0, ("Invalid device %d\n", aDevice));
             /* always zero so far for SATA */
             break;
         }
@@ -1104,7 +1104,7 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
         }
         case KStorageBus_SATA:
         {
-            AssertMsgBreakVoid(aDevice.isEmpty(), ("Invalid device {%s}\n", aDevice.latin1()));
+            AssertMsgBreak(aDevice.isEmpty(), ("Invalid device {%s}\n", aDevice.latin1()));
             /* always zero for SATA so far. */
             break;
         }
