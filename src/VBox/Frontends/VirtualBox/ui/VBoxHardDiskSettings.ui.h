@@ -134,8 +134,8 @@ private:
         mSATAList.clear();
 
         for (int i = 0; i < mSataPortsCount; ++ i)
-            mSATAList << HDSlot (vboxGlobal().toFullString (KStorageBus_SATA, 0, i),
-                                 KStorageBus_SATA, 0, i);
+            mSATAList << HDSlot (vboxGlobal().toFullString (KStorageBus_SATA, i, 0),
+                                 KStorageBus_SATA, i, 0);
 
         emit listChanged();
     }
