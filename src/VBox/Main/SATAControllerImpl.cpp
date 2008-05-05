@@ -298,6 +298,11 @@ STDMETHODIMP SATAController::GetIDEEmulationPort(LONG DevicePosition, LONG *aPor
 
 STDMETHODIMP SATAController::SetIDEEmulationPort(LONG DevicePosition, LONG aPortNumber)
 {
+    if ((aPortNumber < 0) || (aPortNumber >= 30))
+        return setError (E_INVALIDARG,
+            tr ("Invalid port number: %l (must be in range [%lu, %lu])"),
+                aPortCount, 0, 29);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
