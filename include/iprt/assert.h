@@ -1105,17 +1105,16 @@ __END_DECLS
  *
  * @param   expr    Expression which should be true.
  * @todo Rename to AssertReleaseBreak.
- * @todo broken
  */
 #define AssertReleaseBreakVoid(expr)  \
-    do { \
+    if { \
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertReleaseBreakpoint(); \
             break; \
         } \
-    } while (0)
+    } else do {} while (0)
 
 
 /** @def AssertReleaseMsg
