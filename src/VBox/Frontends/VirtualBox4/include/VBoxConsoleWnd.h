@@ -269,20 +269,6 @@ private:
 #endif
     QMenu *mHelpMenu;
 
-    // Menu identifiers
-    enum {
-        vmMenuId = 1,
-        devicesMenuId,
-        devicesMountFloppyMenuId,
-        devicesMountDVDMenuId,
-        devicesUSBMenuId,
-        devicesNetworkMenuId,
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        dbgMenuId,
-#endif
-        helpMenuId,
-    };
-
     QSpacerItem *mShiftingSpacerLeft;
     QSpacerItem *mShiftingSpacerTop;
     QSpacerItem *mShiftingSpacerRight;

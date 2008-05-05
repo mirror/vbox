@@ -116,7 +116,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
     , dbgCommandLineAction (NULL)
-    , dbgMenu (NULL)
+    , mDbgMenu (NULL)
 #endif
     , console (0)
     , machine_state (KMachineState_Null)
@@ -365,14 +365,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     /* Debug popup menu */
     if (vboxGlobal().isDebuggerEnabled())
     {
-        dbgMenu = new QMenu (this);
-        dbgMenu->addAction (dbgStatisticsAction);
-        dbgMenu->addAction (dbgCommandLineAction);
-        menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
-        mMainMenu->insertItem (QString::null, dbgMenu, dbgMenuId);
+        mDbgMenu = menuBar()->addMenu (QString::null);
+        mMainMenu->addMenu (mDbgMenu);
+        mDbgMenu->addAction (dbgStatisticsAction);
+        mDbgMenu->addAction (dbgCommandLineAction);
     }
     else
-        dbgMenu = NULL;
+        mDbgMenu = NULL;
 #endif
 
     /* Help submenu */
@@ -1609,10 +1608,7 @@ void VBoxConsoleWnd::languageChange()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
-    {
-        menuBar()->changeItem (dbgMenuId, tr ("De&bug"));
-        mMainMenu->changeItem (dbgMenuId, tr ("De&bug"));
-    }
+        mDbgMenu->setTitle (tr ("De&bug"));
 #endif
     mHelpMenu->setTitle (tr ("&Help"));
 //    mHelpMenu->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
