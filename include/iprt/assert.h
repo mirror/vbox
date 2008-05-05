@@ -1918,28 +1918,27 @@ __END_DECLS
  */
 #define AssertPtrNullReturnVoid(pv)     AssertMsgReturnVoid(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
 
+/** @def AssertPtrNullBreak
+ * Asserts that a pointer is valid or NULL.
+ *
+ * @param   pv      The pointer.
+ */
+#define AssertPtrNullBreak(pv)          AssertMsgBreak(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
+
 /** @def AssertPtrNullBreakStmt
  * Asserts that a pointer is valid or NULL.
  *
  * @param   pv      The pointer.
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
-#define AssertPtrNullBreakStmt(pv, stmt)    AssertMsgBreakStmt(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)), stmt)
-
-/** @def AssertPtrNullBreakVoid
- * Asserts that a pointer is valid or NULL.
- *
- * @param   pv      The pointer.
- * @todo Rename to AssertPtrNullBreak.
- */
-#define AssertPtrNullBreakVoid(pv)  AssertMsgBreak(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
+#define AssertPtrNullBreakStmt(pv, stmt) AssertMsgBreakStmt(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)), stmt)
 
 /** @def AssertGCPhys32
  * Asserts that the high dword of a physical address is zero
  *
  * @param   GCPhys      The address (RTGCPHYS).
  */
-#define AssertGCPhys32(GCPhys)      AssertMsg(VALID_PHYS32(GCPhys), ("%RGp\n", (RTGCPHYS)(GCPhys)))
+#define AssertGCPhys32(GCPhys)          AssertMsg(VALID_PHYS32(GCPhys), ("%RGp\n", (RTGCPHYS)(GCPhys)))
 
 
 /** @} */
