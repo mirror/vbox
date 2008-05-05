@@ -224,10 +224,14 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
             /* If GetOverlappedResult() returned with TRUE, the operation was finished successfully */
         }
 
-        /* Not very nice, but what else can we do? */
+        /*
+         * Wait for the device to have some room. A return code != VINF_SUCCESS
+         * means that we were woken up during a VM state transition. Drop the
+         * current packet and wait for the next one.
+         */
         rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
-            break;
+            continue;
 
         STAM_COUNTER_INC(&pData->StatPktRecv);
         STAM_COUNTER_ADD(&pData->StatPktRecvBytes, dwNumberOfBytesTransferred);
