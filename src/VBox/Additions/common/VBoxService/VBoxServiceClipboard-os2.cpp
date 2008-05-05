@@ -672,7 +672,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
         case WM_DRAWCLIPBOARD:
             if (g_enmState == kClipboardState_SettingViewer)
                 break;
-            AssertMsgBreakVoid(g_enmState == kClipboardState_Viewer, ("g_enmState=%d\n", g_enmState));
+            AssertMsgBreak(g_enmState == kClipboardState_Viewer, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2Poll();
             break;
 
@@ -683,7 +683,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
         case WM_DESTROYCLIPBOARD:
             if (g_enmState == kClipboardState_Destroying)
                 break; /* it's us doing the replacing, ignore. */
-            AssertMsgBreakVoid(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
+            AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2Destroyed();
             break;
 
@@ -692,7 +692,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
          * This is called by someone which owns the clipboard, but that's fine.
          */
         case WM_RENDERFMT:
-            AssertMsgBreakVoid(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
+            AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2RenderFormat(SHORT1FROMMP(mp1));
             break;
 
