@@ -1771,21 +1771,12 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwExit,(PVM pVM));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
 
     DECLGCCALLBACKMEMBER(int,  pfnGCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
     /** @} */
 
     /** @name Function pointers for Guest paging.
@@ -1999,24 +1990,12 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwExit,(PVM pVM));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
 
     DECLGCCALLBACKMEMBER(int,  pfnGCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
-    RTGCPTR                    alignment0; /**< structure size alignment. */
-#endif
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
-    DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
 
     /** @} */
 

@@ -2484,21 +2484,12 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR3ShwGetPage              = pModeData->pfnR3ShwGetPage;
     Assert(pVM->pgm.s.pfnR3ShwGetPage);
     pVM->pgm.s.pfnR3ShwModifyPage           = pModeData->pfnR3ShwModifyPage;
-    pVM->pgm.s.pfnR3ShwGetPDEByIndex        = pModeData->pfnR3ShwGetPDEByIndex;
-    pVM->pgm.s.pfnR3ShwSetPDEByIndex        = pModeData->pfnR3ShwSetPDEByIndex;
-    pVM->pgm.s.pfnR3ShwModifyPDEByIndex     = pModeData->pfnR3ShwModifyPDEByIndex;
 
     pVM->pgm.s.pfnGCShwGetPage              = pModeData->pfnGCShwGetPage;
     pVM->pgm.s.pfnGCShwModifyPage           = pModeData->pfnGCShwModifyPage;
-    pVM->pgm.s.pfnGCShwGetPDEByIndex        = pModeData->pfnGCShwGetPDEByIndex;
-    pVM->pgm.s.pfnGCShwSetPDEByIndex        = pModeData->pfnGCShwSetPDEByIndex;
-    pVM->pgm.s.pfnGCShwModifyPDEByIndex     = pModeData->pfnGCShwModifyPDEByIndex;
 
     pVM->pgm.s.pfnR0ShwGetPage              = pModeData->pfnR0ShwGetPage;
     pVM->pgm.s.pfnR0ShwModifyPage           = pModeData->pfnR0ShwModifyPage;
-    pVM->pgm.s.pfnR0ShwGetPDEByIndex        = pModeData->pfnR0ShwGetPDEByIndex;
-    pVM->pgm.s.pfnR0ShwSetPDEByIndex        = pModeData->pfnR0ShwSetPDEByIndex;
-    pVM->pgm.s.pfnR0ShwModifyPDEByIndex     = pModeData->pfnR0ShwModifyPDEByIndex;
 
 
     /* guest */
