@@ -41,7 +41,7 @@ if [ -z "$2" ]; then
     fi
 
     # To use a specific physical NIC, replace $phys_nic with the name of the NIC.
-    vnic_name=`/usr/lib/vna $phys_nic $mac`
+    vnic_name="vnic"`/usr/lib/vna $phys_nic $mac`
     if [ $? != 0 ]; then
         exit 1
     fi
