@@ -1422,15 +1422,14 @@ __END_DECLS
  */
 #define AssertRCReturnVoid(rc)   AssertMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
 
-/** @def AssertRCBreak
+/** @def AssertRCBreakStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
- * @todo Rename to AssertRCBreakStmt.
  */
-#define AssertRCBreak(rc, stmt)   AssertRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
+#define AssertRCBreakStmt(rc, stmt) AssertMsgRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
 
 /** @def AssertRCBreakVoid
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1439,7 +1438,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  * @todo Rename to AssertRCBreak.
  */
-#define AssertRCBreakVoid(rc)   AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
+#define AssertRCBreakVoid(rc)       AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
 
 /** @def AssertMsgRC
  * Asserts a iprt status code successful.
@@ -1488,8 +1487,8 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCBreakStmt(rc, msg, stmt) \
-    do { AssertMsgBreakStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
+#define AssertMsgRCBreakStmt(rc, msg, stmt) \
+    if (1) { AssertMsgBreakStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } else do {} while (0)
 
 /** @def AssertMsgRCBreakVoid
  * Asserts a iprt status code successful and if it's not break.
@@ -1502,7 +1501,7 @@ __END_DECLS
  * @todo Rename to AssertMsgRCBreak.
  */
 #define AssertMsgRCBreakVoid(rc, msg) \
-    do { AssertMsgBreakVoid(RT_SUCCESS(rc), msg); NOREF(rc); } while (0)
+    if (1) { AssertMsgBreakVoid(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
 
 /** @def AssertRCSuccess
  * Asserts an iprt status code equals VINF_SUCCESS.
