@@ -1851,7 +1851,7 @@ if [ "$OS" = "linux" ]; then
   else
     cnf_append "VBOX_LINUX_SRC" ""
     cnf_append "VBOX_WITH_VBOXDRV" ""
-    cnf_append "VBOX_WITH_LINUX_ADDITIONS_32BIT_R0" ""
+    cnf_append "VBOX_WITH_ADDITION_DRIVERS" ""
   fi
   if [ $WITH_ALSA -eq 1 ]; then
     check_alsa
