@@ -4691,7 +4691,7 @@ HRESULT Machine::findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineN
             continue;
 
         /* the next uuid is not found, no need to continue... */
-        AssertFailedBreakVoid();
+        AssertFailedBreak();
     }
 
     // we must always succesfully find the node
