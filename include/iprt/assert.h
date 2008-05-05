@@ -1217,6 +1217,16 @@ __END_DECLS
     } while (0)
 
 
+/** @def AssertReleaseFailedBreak
+ * An assertion failed, hit a breakpoint and break.
+ */
+#define AssertReleaseFailedBreak()  \
+    if (1) { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } else do {} while (0)
+
 /** @def AssertReleaseFailedBreakStmt
  * An assertion failed, hit a breakpoint and break.
  *
@@ -1227,18 +1237,6 @@ __END_DECLS
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertReleaseBreakpoint(); \
         stmt; \
-        break; \
-    } else do {} while (0)
-
-/** @def AssertReleaseFailedBreakVoid
- * An assertion failed, hit a breakpoint and break.
- * @todo Rename to AssertReleaseFailedBreak.
- * @todo broken, should use 'if' instead of 'do'.
- */
-#define AssertReleaseFailedBreakVoid()  \
-    if (1) { \
-        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
         break; \
     } else do {} while (0)
 
