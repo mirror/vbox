@@ -34,100 +34,6 @@
 
 __BEGIN_DECLS
 
-#ifdef USBDEVICE_WITH_EVERYTHING
-
-/**
- * USB device interface endpoint.
- */
-typedef struct USBENDPOINT
-{
-    /** The address of the endpoint on the USB device described by this descriptor. */
-    uint8_t     bEndpointAddress;
-    /** This field describes the endpoint's attributes when it is configured using the bConfigurationValue. */
-    uint8_t     bmAttributes;
-    /** Maximum packet size this endpoint is capable of sending or receiving when this configuration is selected. */
-    uint16_t    wMaxPacketSize;
-    /** Interval for polling endpoint for data transfers. Expressed in milliseconds.
-     * This is interpreted the bInterval value. */
-    uint16_t    u16Interval;
-} USBENDPOINT;
-/** Pointer to a USB device interface endpoint. */
-typedef USBENDPOINT *PUSBENDPOINT;
-/** Pointer to a const USB device interface endpoint. */
-typedef const USBENDPOINT *PCUSBENDPOINT;
-
-/** USBENDPOINT::bmAttributes values.
- * @{ */
-#define USB_EP_ATTR_CONTROL         0
-#define USB_EP_ATTR_ISOCHRONOUS     1
-#define USB_EP_ATTR_BULK            2
-#define USB_EP_ATTR_INTERRUPT       3
-/** @} */
-
-
-/**
- * USB device interface.
- */
-typedef struct USBINTERFACE
-{
-    /** Number of interface. */
-    uint8_t     bInterfaceNumber;
-    /** Value used to select alternate setting for the interface identified in the prior field. */
-    uint8_t     bAlternateSetting;
-    /** Number of endpoints used by this interface (excluding endpoint zero). */
-    uint8_t     bNumEndpoints;
-    /** Pointer to an array of endpoints. */
-    PUSBENDPOINT paEndpoints;
-    /** Interface class. */
-    uint8_t     bInterfaceClass;
-    /** Interface subclass. */
-    uint8_t     bInterfaceSubClass;
-    /** Protocol code. */
-    uint8_t     bInterfaceProtocol;
-    /** Number of alternate settings. */
-    uint8_t     cAlts;
-    /** Pointer to an array of alternate interface settings. */
-    struct USBINTERFACE *paAlts;
-    /** String describing this interface. */
-    const char *pszInterface;
-    /** String containing the driver name.
-     * This is a NULL pointer if the interface is not in use. */
-    const char *pszDriver;
-} USBINTERFACE;
-/** Pointer to a USB device interface description. */
-typedef USBINTERFACE *PUSBINTERFACE;
-/** Pointer to a const USB device interface description. */
-typedef const USBINTERFACE *PCUSBINTERFACE;
-
-/**
- * Device configuration.
- */
-typedef struct USBCONFIG
-{
-    /** Set if this is the active configuration. */
-    bool        fActive;
-    /** Number of interfaces. */
-    uint8_t     bNumInterfaces;
-    /** Pointer to an array of interfaces. */
-    PUSBINTERFACE paInterfaces;
-    /** Configuration number. (For SetConfiguration().) */
-    uint8_t     bConfigurationValue;
-    /** Configuration description string. */
-    const char *pszConfiguration;
-    /** Configuration characteristics. */
-    uint8_t     bmAttributes;
-    /** Maximum power consumption of the USB device in this config.
-     * (This field does NOT need shifting like in the USB config descriptor.)  */
-    uint16_t    u16MaxPower;
-} USBCONFIG;
-/** Pointer to a USB configuration. */
-typedef USBCONFIG *PUSBCONFIG;
-/** Pointer to a const USB configuration. */
-typedef const USBCONFIG *PCUSBCONFIG;
-
-#endif /* USBDEVICE_WITH_EVERYTHING */
-
-
 /**
  * The USB host device state.
  */
@@ -218,18 +124,6 @@ typedef struct USBDEVICE
 #if defined(RT_OS_LINUX)
     /** Device number. */
     uint8_t         bDevNum;
-#endif
-#ifdef USBDEVICE_WITH_EVERYTHING
-    /** Parent device number. */
-    uint8_t         bDevNumParent;
-    /** The level in topologly for this bus. */
-    uint8_t         bLevel;
-    /** Number of devices on this level. */
-    uint8_t         bNumDevices;
-    /** Maximum number of children. */
-    uint8_t         bMaxChildren;
-    /** Pointer to an array of configurations. */
-    PUSBCONFIG      paConfigurations;
 #endif
 #ifdef RT_OS_WINDOWS
     /** Alternate address. Can be NULL. */
