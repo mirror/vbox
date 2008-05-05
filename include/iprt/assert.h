@@ -1881,6 +1881,13 @@ __END_DECLS
  */
 #define AssertPtrReturnVoid(pv)         AssertMsgReturnVoid(VALID_PTR(pv), ("%p\n", (pv)))
 
+/** @def AssertPtrBreak
+ * Asserts that a pointer is valid.
+ *
+ * @param   pv      The pointer.
+ */
+#define AssertPtrBreak(pv)              AssertMsgBreak(VALID_PTR(pv), ("%p\n", (pv)))
+
 /** @def AssertPtrBreakStmt
  * Asserts that a pointer is valid.
  *
@@ -1888,13 +1895,6 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
 #define AssertPtrBreakStmt(pv, stmt)    AssertMsgBreakStmt(VALID_PTR(pv), ("%p\n", (pv)), stmt)
-
-/** @def AssertPtrBreak
- * Asserts that a pointer is valid.
- *
- * @param   pv      The pointer.
- */
-#define AssertPtrBreak(pv)              AssertMsgBreak(VALID_PTR(pv), ("%p\n", (pv)))
 
 /** @def AssertPtrNull
  * Asserts that a pointer is valid or NULL.
