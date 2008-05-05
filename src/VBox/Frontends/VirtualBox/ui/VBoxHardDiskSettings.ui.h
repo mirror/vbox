@@ -666,8 +666,8 @@ void VBoxHardDiskSettings::putBackToMachine()
     while (item)
     {
         if (item->bus() == KStorageBus_SATA)
-            maxSATAPort = maxSATAPort < item->device() ?
-                          item->device() : maxSATAPort;
+            maxSATAPort = maxSATAPort < (item->channel()+1) ?
+                          (item->channel()+1) : maxSATAPort;
         mMachine.AttachHardDisk (item->getId(),
             item->bus(), item->channel(), item->device());
         if (!mMachine.isOk())
