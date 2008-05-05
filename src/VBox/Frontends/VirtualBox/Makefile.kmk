@@ -359,6 +359,9 @@ endif
 ifdef VBOX_WITH_PULSE
  VirtualBox_DEFS         += VBOX_WITH_PULSE
 endif
+ifdef VBOX_WITH_E1000
+ VirtualBox_DEFS         += VBOX_WITH_E1000
+endif
 ifdef VBOX_OSE
  VirtualBox_DEFS         += VBOX_OSE
 endif

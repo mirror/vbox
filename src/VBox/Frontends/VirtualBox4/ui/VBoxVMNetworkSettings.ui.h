@@ -33,8 +33,10 @@ void VBoxVMNetworkSettings::init()
 {
     cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_Am79C970A));
     cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_Am79C973));
+#ifdef VBOX_WITH_E1000
     cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_I82540EM));
     //cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_I82543GC));
+#endif
 
     leMACAddress->setValidator (new QRegExpValidator
                                 (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
