@@ -159,6 +159,23 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
 RTR3DECL(int)  RTFileClose(RTFILE File);
 
 /**
+ * Creates an IPRT file handle from a native one.
+ *
+ * @returns IPRT status code.
+ * @param   pFile           Where to store the IPRT file handle.
+ * @param   uNative         The native handle.
+ */
+RTR3DECL(int) RTFileFromNative(PRTFILE *pFile, RTHCINTPTR uNative);
+
+/**
+ * Gets the native handle for an IPRT file handle.
+ *
+ * @return  The native handle.
+ * @params  File            The IPRT file handle.
+ */
+RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File);
+
+/**
  * Delete a file.
  *
  * @returns iprt status code.
