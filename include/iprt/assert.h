@@ -1153,6 +1153,21 @@ __END_DECLS
     } while (0)
 
 
+/** @def AssertReleaseMsgBreak
+ * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ */
+#define AssertReleaseMsgBreak(expr, a)  \
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } else do {} while (0)
+
 /** @def AssertReleaseMsgBreakStmt
  * Assert that an expression is true, print the message and hit a breakpoing and break if it isn't.
  *
@@ -1166,22 +1181,6 @@ __END_DECLS
         AssertMsg2 a; \
         AssertReleaseBreakpoint(); \
         stmt; \
-        break; \
-    } else do {} while (0)
-
-/** @def AssertReleaseMsgBreakVoid
- * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
- *
- * @param   expr    Expression which should be true.
- * @param   a       printf argument list (in parenthesis).
- * @todo Rename to AssertReleaseMsgBreak.
- */
-#define AssertReleaseMsgBreakVoid(expr, a)  \
-    if (RT_UNLIKELY(!(expr))) \
-    { \
-        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
         break; \
     } else do {} while (0)
 
@@ -1778,7 +1777,7 @@ __END_DECLS
  * @remark  rc is references multiple times.
  * @todo Rename to AssertReleaseMsgRCBreak.
  */
-#define AssertReleaseMsgRCBreakVoid(rc, msg)    AssertReleaseMsgBreakVoid(RT_SUCCESS(rc), msg)
+#define AssertReleaseMsgRCBreakVoid(rc, msg)    AssertReleaseMsgBreak(RT_SUCCESS(rc), msg)
 
 /** @def AssertReleaseRCSuccess
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1835,7 +1834,7 @@ __END_DECLS
  * @remark  rc is references multiple times.
  * @todo Rename to AssertReleaseRCSuccessBreak.
  */
-#define AssertReleaseRCSuccessBreakVoid(rc)     AssertReleaseMsgBreakVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertReleaseRCSuccessBreakVoid(rc)     AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertFatalRC
