@@ -235,6 +235,12 @@ STDMETHODIMP SATAController::COMSETTER(PortCount) (ULONG aPortCount)
 {
     LogFlowThisFunc (("aPortCount=%u\n", aPortCount));
 
+    /* We support a maximum of 30 channels. */
+    if ((aPortCount < 1) || (aPortCount > 30))
+        return setError (E_INVALIDARG,
+            tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                aPortCount, 1, 30);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
