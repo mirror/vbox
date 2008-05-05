@@ -3148,7 +3148,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         {
             /* clone the current environment */
             int vrc2 = RTEnvClone (&env, RTENV_DEFAULT);
-            AssertRCBreak (vrc2, vrc = vrc2);
+            AssertRCBreakStmt (vrc2, vrc = vrc2);
 
             newEnvStr = RTStrDup(Utf8Str (aEnvironment));
             AssertPtrBreakStmt (newEnvStr, vrc = vrc2);
@@ -3181,7 +3181,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
             if (VBOX_SUCCESS (vrc2) && *var)
                 vrc2 = RTEnvPutEx (env, var);
 
-            AssertRCBreak (vrc2, vrc = vrc2);
+            AssertRCBreakStmt (vrc2, vrc = vrc2);
         }
         while (0);
 
