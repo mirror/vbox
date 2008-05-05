@@ -617,15 +617,15 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
     do
     {
         /* Check arguments. */
-        AssertMsgBreak(cEntriesAlloc,
-                       ("cEntriesAlloc=%u\n", cEntriesAlloc),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(pEntries),
-                       ("pEntries=%#p\n", pEntries),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(pcEntriesUsed),
-                       ("pcEntriesUsed=%#p\n", pcEntriesUsed),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cEntriesAlloc,
+                           ("cEntriesAlloc=%u\n", cEntriesAlloc),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pEntries),
+                           ("pEntries=%#p\n", pEntries),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pcEntriesUsed),
+                           ("pcEntriesUsed=%#p\n", pcEntriesUsed),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* First enumerate static backends. */
         for (unsigned i = 0; aBackends[i] != NULL; i++)
@@ -772,12 +772,12 @@ VBOXDDU_DECL(int) VDCreate(PFNVDERROR pfnError, void *pvErrorUser,
     do
     {
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pfnError),
-                       ("pfnError=%#p\n", pfnError),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(ppDisk),
-                       ("ppDisk=%#p\n", ppDisk),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pfnError),
+                           ("pfnError=%#p\n", pfnError),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(ppDisk),
+                           ("ppDisk=%#p\n", ppDisk),
+                           rc = VERR_INVALID_PARAMETER);
 
         pDisk = (PVBOXHDD)RTMemAllocZ(sizeof(VBOXHDD));
         if (pDisk)
@@ -853,12 +853,12 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
     do
     {
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(ppszFormat),
-                       ("ppszFormat=%#p\n", ppszFormat),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(ppszFormat),
+                           ("ppszFormat=%#p\n", ppszFormat),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* First check if static backends support this file format. */
         for (unsigned i = 0; aBackends[i] != NULL; i++)
@@ -1036,15 +1036,15 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
-                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                       ("uOpenFlags=%#x\n", uOpenFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
+                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* Force readonly for images without base/diff consistency checking. */
         if (uOpenFlags & VD_OPEN_FLAGS_INFO)
@@ -1250,47 +1250,47 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
-                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(enmType == VD_IMAGE_TYPE_NORMAL || enmType == VD_IMAGE_TYPE_FIXED,
-                       ("enmType=%#x\n", enmType),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(cbSize,
-                       ("cbSize=%llu\n", cbSize),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
-                       ("uImageFlags=%#x\n", uImageFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
+                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(enmType == VD_IMAGE_TYPE_NORMAL || enmType == VD_IMAGE_TYPE_FIXED,
+                           ("enmType=%#x\n", enmType),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbSize,
+                           ("cbSize=%llu\n", cbSize),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
+                           ("uImageFlags=%#x\n", uImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
         /* The PCHS geometry fields may be 0 to leave it for later. */
-        AssertMsgBreak(   VALID_PTR(pPCHSGeometry)
-                       && pPCHSGeometry->cCylinders <= 16383
-                       && pPCHSGeometry->cHeads <= 16
-                       && pPCHSGeometry->cSectors <= 63,
-                       ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
-                        pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
-                        pPCHSGeometry->cSectors),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry)
+                           && pPCHSGeometry->cCylinders <= 16383
+                           && pPCHSGeometry->cHeads <= 16
+                           && pPCHSGeometry->cSectors <= 63,
+                           ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
+                            pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
+                            pPCHSGeometry->cSectors),
+                           rc = VERR_INVALID_PARAMETER);
         /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
-        AssertMsgBreak(   VALID_PTR(pLCHSGeometry)
-                       && pLCHSGeometry->cCylinders <= 1024
-                       && pLCHSGeometry->cHeads <= 255
-                       && pLCHSGeometry->cSectors <= 63,
-                       ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
-                        pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
-                        pLCHSGeometry->cSectors),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                       ("uOpenFlags=%#x\n", uOpenFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry)
+                           && pLCHSGeometry->cCylinders <= 1024
+                           && pLCHSGeometry->cHeads <= 255
+                           && pLCHSGeometry->cSectors <= 63,
+                           ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
+                            pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
+                            pLCHSGeometry->cSectors),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* Check state. */
-        AssertMsgBreak(pDisk->cImages == 0,
-                       ("Create base image cannot be done with other images open\n"),
-                       rc = VERR_VDI_INVALID_STATE);
+        AssertMsgBreakStmt(pDisk->cImages == 0,
+                           ("Create base image cannot be done with other images open\n"),
+                           rc = VERR_VDI_INVALID_STATE);
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1443,23 +1443,23 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
-                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
-                       ("uImageFlags=%#x\n", uImageFlags),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                       ("uOpenFlags=%#x\n", uOpenFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
+                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
+                           ("uImageFlags=%#x\n", uImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* Check state. */
-        AssertMsgBreak(pDisk->cImages != 0,
-                       ("Create diff image cannot be done without other images open\n"),
-                       rc = VERR_VDI_INVALID_STATE);
+        AssertMsgBreakStmt(pDisk->cImages != 0,
+                           ("Create diff image cannot be done without other images open\n"),
+                           rc = VERR_VDI_INVALID_STATE);
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1821,15 +1821,15 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
     do {
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pDiskFrom), ("pDiskFrom=%#p\n", pDiskFrom),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pDiskFrom), ("pDiskFrom=%#p\n", pDiskFrom),
+                           rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskFrom->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskFrom->u32Signature));
 
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
         AssertBreak(VALID_PTR(pImageFrom), rc = VERR_VDI_IMAGE_NOT_FOUND);
-        AssertMsgBreak(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
+                           rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskTo->u32Signature));
 
@@ -1886,9 +1886,9 @@ movefail:
         }
 
         /* If fMoveByRename is set pszFilename is allowed to be NULL, so do the parameter check here. */
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* Collect properties of source image. */
         VDIMAGETYPE enmTypeFrom;
@@ -2192,16 +2192,16 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pvBuf),
-                       ("pvBuf=%#p\n", pvBuf),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(cbRead,
-                       ("cbRead=%zu\n", cbRead),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(uOffset + cbRead <= pDisk->cbSize,
-                       ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
-                        uOffset, cbRead, pDisk->cbSize),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pvBuf),
+                           ("pvBuf=%#p\n", pvBuf),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbRead,
+                           ("cbRead=%zu\n", cbRead),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
+                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
+                            uOffset, cbRead, pDisk->cbSize),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_NOT_OPENED);
@@ -2237,16 +2237,16 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pvBuf),
-                       ("pvBuf=%#p\n", pvBuf),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(cbWrite,
-                       ("cbWrite=%zu\n", cbWrite),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(uOffset + cbWrite <= pDisk->cbSize,
-                       ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
-                        uOffset, cbWrite, pDisk->cbSize),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pvBuf),
+                           ("pvBuf=%#p\n", pvBuf),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbWrite,
+                           ("cbWrite=%zu\n", cbWrite),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
+                           ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
+                            uOffset, cbWrite, pDisk->cbSize),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_NOT_OPENED);
@@ -2422,9 +2422,9 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pPCHSGeometry),
-                       ("pPCHSGeometry=%#p\n", pPCHSGeometry),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pPCHSGeometry),
+                           ("pPCHSGeometry=%#p\n", pPCHSGeometry),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2475,14 +2475,14 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(   VALID_PTR(pPCHSGeometry)
-                       && pPCHSGeometry->cCylinders <= 16383
-                       && pPCHSGeometry->cHeads <= 16
-                       && pPCHSGeometry->cSectors <= 63,
-                       ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
-                        pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
-                        pPCHSGeometry->cSectors),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry)
+                           && pPCHSGeometry->cCylinders <= 16383
+                           && pPCHSGeometry->cHeads <= 16
+                           && pPCHSGeometry->cSectors <= 63,
+                           ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
+                            pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
+                            pPCHSGeometry->cSectors),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2568,9 +2568,9 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pLCHSGeometry),
-                       ("pLCHSGeometry=%#p\n", pLCHSGeometry),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pLCHSGeometry),
+                           ("pLCHSGeometry=%#p\n", pLCHSGeometry),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2621,14 +2621,14 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(   VALID_PTR(pLCHSGeometry)
-                       && pLCHSGeometry->cCylinders <= 1024
-                       && pLCHSGeometry->cHeads <= 255
-                       && pLCHSGeometry->cSectors <= 63,
-                       ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
-                        pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
-                        pLCHSGeometry->cSectors),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry)
+                           && pLCHSGeometry->cCylinders <= 1024
+                           && pLCHSGeometry->cHeads <= 255
+                           && pLCHSGeometry->cSectors <= 63,
+                           ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
+                            pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
+                            pLCHSGeometry->cSectors),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2713,9 +2713,9 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(puVersion),
-                       ("puVersion=%#p\n", puVersion),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(puVersion),
+                           ("puVersion=%#p\n", puVersion),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2750,9 +2750,9 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(penmType),
-                       ("penmType=%#p\n", penmType),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(penmType),
+                           ("penmType=%#p\n", penmType),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2788,9 +2788,9 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(puImageFlags),
-                       ("puImageFlags=%#p\n", puImageFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(puImageFlags),
+                           ("puImageFlags=%#p\n", puImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2825,9 +2825,9 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(puOpenFlags),
-                       ("puOpenFlags=%#p\n", puOpenFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(puOpenFlags),
+                           ("puOpenFlags=%#p\n", puOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2863,9 +2863,9 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                       ("uOpenFlags=%#x\n", uOpenFlags),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2905,12 +2905,12 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
-                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(cbFilename,
-                       ("cbFilename=%u\n", cbFilename),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbFilename,
+                           ("cbFilename=%u\n", cbFilename),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2958,12 +2958,12 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszComment),
-                       ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
-                       rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(cbComment,
-                       ("cbComment=%u\n", cbComment),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszComment),
+                           ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbComment,
+                           ("cbComment=%u\n", cbComment),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -2999,9 +2999,9 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszComment) || pszComment == NULL,
-                       ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszComment) || pszComment == NULL,
+                           ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3035,9 +3035,9 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pUuid),
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid),
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3070,9 +3070,9 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
         AssertBreak(VALID_PTR(pDisk), rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        AssertMsgBreak(VALID_PTR(pUuid) || pUuid == NULL,
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid) || pUuid == NULL,
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3111,9 +3111,9 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pUuid),
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid),
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3148,9 +3148,9 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pUuid) || pUuid == NULL,
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid) || pUuid == NULL,
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3191,9 +3191,9 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pUuid),
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid),
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
@@ -3227,9 +3227,9 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pUuid) || pUuid == NULL,
-                       ("pUuid=%#p\n", pUuid),
-                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pUuid) || pUuid == NULL,
+                           ("pUuid=%#p\n", pUuid),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
