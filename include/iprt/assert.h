@@ -446,25 +446,21 @@ __END_DECLS
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
  * @todo Rename to AssertMsgBreak.
- * @todo broken, use if.
  */
 #ifdef RT_STRICT
 # define AssertMsgBreakVoid(expr, a)  \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-        { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertMsg2 a; \
-            AssertBreakpoint(); \
-            break; \
-        } \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertBreakpoint(); \
+        break; \
+    } else do {} while (0)
 #else
 # define AssertMsgBreakVoid(expr, a) \
-    do { \
-        if (RT_UNLIKELY(!(expr))) \
-            break; \
-    } while (0)
+    if (RT_UNLIKELY(!(expr))) \
+        break; \
+    else do {} while (0)
 #endif
 
 
