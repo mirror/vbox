@@ -745,8 +745,8 @@ VBoxGlobal::VBoxGlobal()
     , sessionStates (KSessionState_COUNT)
     , deviceTypes (KDeviceType_COUNT)
     , storageBuses (KStorageBus_COUNT)
-    , storageBusDevices (3)
-    , storageBusChannels (2)
+    , storageBusDevices (2)
+    , storageBusChannels (3)
     , diskTypes (KHardDiskType_COUNT)
     , diskStorageTypes (KHardDiskStorageType_COUNT)
     , vrdpAuthTypes (KVRDPAuthType_COUNT)
@@ -974,7 +974,7 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
  */
 QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
 {
-    Assert (storageBusChannels.count() == 2);
+    Assert (storageBusChannels.count() == 3);
     QString channel;
 
     switch (aBus)
@@ -991,9 +991,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
         }
         case KStorageBus_SATA:
         {
-            AssertMsgBreakVoid (aChannel == 0, ("Invalid channel %d\n", aChannel));
-
-            /* null string since the SATA channel is alwayz zero so far */
+            channel = storageBusChannels [2].arg (aChannel);
             break;
         }
         default:
@@ -1025,9 +1023,15 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
         }
         case KStorageBus_SATA:
         {
-            AssertMsgBreakVoid (aChannel.isEmpty(),
-                                ("Invalid channel {%s}\n", aChannel.latin1()));
-            /* always zero so far for SATA */
+            /// @todo use regexp to properly extract the %1 text
+            QString tpl = storageBusChannels [2].arg ("");
+            if (aChannel.startsWith (tpl))
+            {
+                channel = aChannel.right (aChannel.length() - tpl.length()).toLong();
+                break;
+            }
+
+            AssertMsgFailedBreakVoid (("Invalid channel {%s}\n", aChannel.latin1()));
             break;
         }
         default:
@@ -1046,7 +1050,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
 {
     NOREF (aChannel);
 
-    Assert (storageBusDevices.count() == 3);
+    Assert (storageBusDevices.count() == 2);
     QString device;
 
     switch (aBus)
@@ -1063,7 +1067,8 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
         }
         case KStorageBus_SATA:
         {
-            device = storageBusDevices [2].arg (aDevice);
+            AssertMsgBreakVoid (aDevice == 0, ("Invalid device %d\n", aDevice));
+            /* always zero so far for SATA */
             break;
         }
         default:
@@ -1099,15 +1104,9 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
         }
         case KStorageBus_SATA:
         {
-            /// @todo use regexp to properly extract the %1 text
-            QString tpl = storageBusDevices [2].arg ("");
-            if (aDevice.startsWith (tpl))
-            {
-                device = aDevice.right (aDevice.length() - tpl.length()).toLong();
-                break;
-            }
-
-            AssertMsgFailedBreakVoid (("Invalid device {%s}\n", aDevice.latin1()));
+            AssertMsgBreakVoid(aDevice.isEmpty(), ("Invalid device {%s}\n", aDevice.latin1()));
+            /* always zero for SATA so far. */
+            break;
         }
         default:
             AssertFailedBreakVoid();
@@ -1138,10 +1137,10 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
         }
         case KStorageBus_SATA:
         {
-            /* we only have one SATA channel so far which is always zero */
+            /* we only have one SATA device so far which is always zero */
             device = QString ("%1 %2")
                 .arg (vboxGlobal().toString (aBus))
-                .arg (vboxGlobal().toString (aBus, aChannel, aDevice));
+                .arg (vboxGlobal().toString (aBus, aChannel));
             break;
         }
         default:
@@ -2452,16 +2451,17 @@ void VBoxGlobal::languageChange()
     storageBuses [KStorageBus_SATA] =
         tr ("SATA", "StorageBus");
 
-    Assert (storageBusChannels.count() == 2);
+    Assert (storageBusChannels.count() == 3);
     storageBusChannels [0] =
         tr ("Primary", "StorageBusChannel");
     storageBusChannels [1] =
         tr ("Secondary", "StorageBusChannel");
+    storageBusChannels [2] =
+        tr ("Port %1", "StorageBusChannel");
 
-    Assert (storageBusDevices.count() == 3);
+    Assert (storageBusDevices.count() == 2);
     storageBusDevices [0] = tr ("Master", "StorageBusDevice");
     storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
-    storageBusDevices [2] = tr ("Port %1", "StorageBusDevice");
 
     diskTypes [KHardDiskType_Normal] =
         tr ("Normal", "DiskType");
