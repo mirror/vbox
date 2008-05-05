@@ -1070,6 +1070,21 @@ __END_DECLS
     } while (0)
 
 
+/** @def AssertReleaseBreak
+ * Assert that an expression is true, hit a breakpoing and break if it isn't.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#define AssertReleaseBreak(expr)  \
+    if { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertReleaseBreakpoint(); \
+            break; \
+        } \
+    } else do {} while (0)
+
 /** @def AssertReleaseBreakStmt
  * Assert that an expression is true, hit a breakpoing and break if it isn't.
  *
@@ -1083,22 +1098,6 @@ __END_DECLS
         AssertReleaseBreakpoint(); \
         stmt; \
         break; \
-    } else do {} while (0)
-
-/** @def AssertReleaseBreakVoid
- * Assert that an expression is true, hit a breakpoing and break if it isn't.
- *
- * @param   expr    Expression which should be true.
- * @todo Rename to AssertReleaseBreak.
- */
-#define AssertReleaseBreakVoid(expr)  \
-    if { \
-        if (RT_UNLIKELY(!(expr))) \
-        { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
-            break; \
-        } \
     } else do {} while (0)
 
 
