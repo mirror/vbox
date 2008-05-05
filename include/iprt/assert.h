@@ -1661,7 +1661,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRC(rc)             AssertReleaseMsgRC(rc, ("%Vra\n", (rc)))
+#define AssertReleaseRC(rc)                 AssertReleaseMsgRC(rc, ("%Vra\n", (rc)))
 
 /** @def AssertReleaseRCReturn
  * Asserts a iprt status code successful, returning if it isn't.
@@ -1673,7 +1673,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCReturn(rc, rcRet) AssertReleaseMsgRCReturn(rc, ("%Vra\n", (rc)), rcRet)
+#define AssertReleaseRCReturn(rc, rcRet)    AssertReleaseMsgRCReturn(rc, ("%Vra\n", (rc)), rcRet)
 
 /** @def AssertReleaseRCReturnVoid
  * Asserts a iprt status code successful, returning if it isn't.
@@ -1684,7 +1684,18 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCReturnVoid(rc) AssertReleaseMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
+#define AssertReleaseRCReturnVoid(rc)       AssertReleaseMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
+
+/** @def AssertReleaseRCBreak
+ * Asserts a iprt status code successful, breaking if it isn't.
+ *
+ * On failure information about the error will be printed, a breakpoint hit
+ * and finally breaking the current statement if the breakpoint is somehow ignored.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times.
+ */
+#define AssertReleaseRCBreak(rc)            AssertReleaseMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
 
 /** @def AssertReleaseRCBreakStmt
  * Asserts a iprt status code successful, break if it isn't.
@@ -1698,18 +1709,6 @@ __END_DECLS
  */
 #define AssertReleaseRCBreakStmt(rc, stmt)  AssertReleaseMsgRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
 
-/** @def AssertReleaseRCBreakVoid
- * Asserts a iprt status code successful, breaking if it isn't.
- *
- * On failure information about the error will be printed, a breakpoint hit
- * and finally breaking the current statement if the breakpoint is somehow ignored.
- *
- * @param   rc      iprt status code.
- * @remark  rc is references multiple times.
- * @todo Rename to AssertReleaseRCBreak.
- */
-#define AssertReleaseRCBreakVoid(rc) AssertReleaseMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
-
 /** @def AssertReleaseMsgRC
  * Asserts a iprt status code successful.
  *
@@ -1719,7 +1718,7 @@ __END_DECLS
  * @param   msg     printf argument list (in parenthesis).
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseMsgRC(rc, msg)    AssertReleaseMsg(RT_SUCCESS_NP(rc), msg)
+#define AssertReleaseMsgRC(rc, msg)         AssertReleaseMsg(RT_SUCCESS_NP(rc), msg)
 
 /** @def AssertReleaseMsgRCReturn
  * Asserts a iprt status code successful.
