@@ -61,7 +61,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # ifdef VBOX_WITH_CROSSBOW
-#  include <libdlpi.h>
+#  include "solaris/vbox-libdlpi.h"
 # endif
 #else
 # include <sys/fcntl.h>
@@ -276,7 +276,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             size_t cbRead = 0;
 #ifdef VBOX_WITH_CROSSBOW
             cbRead = sizeof(achBuf);
-            rc = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
+            rc = gLibDlpiRecv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
             rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
 #else
             /** @note At least on Linux we will never receive more than one network packet
@@ -514,31 +514,31 @@ static int SolarisOpenVNIC(PDRVTAP pData)
     /*
      * Open & bind the NIC using the datalink provider routine.
      */
-    int rc = dlpi_open(pData->pszDeviceName, &pData->pDeviceHandle, DLPI_RAW);
+    int rc = gLibDlpiOpen(pData->pszDeviceName, &pData->pDeviceHandle, DLPI_RAW);
     if (rc != DLPI_SUCCESS)
         return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                            N_("Failed to open VNIC \"%s\" in raw mode"), pData->pszDeviceName);
 
     dlpi_info_t vnicInfo;
-    rc = dlpi_info(pData->pDeviceHandle, &vnicInfo, 0);
+    rc = gLibDlpiInfo(pData->pDeviceHandle, &vnicInfo, 0);
     if (rc == DLPI_SUCCESS)
     {
         if (vnicInfo.di_mactype == DL_ETHER)
         {
-            rc = dlpi_bind(pData->pDeviceHandle, DLPI_ANY_SAP, NULL);
+            rc = gLibDlpiBind(pData->pDeviceHandle, DLPI_ANY_SAP, NULL);
             if (rc == DLPI_SUCCESS)
             {
-                rc = dlpi_set_physaddr(pData->pDeviceHandle, DL_CURR_PHYS_ADDR, &pData->MacAddress, ETHERADDRL);
+                rc = gLibDlpiSetPhysAddr(pData->pDeviceHandle, DL_CURR_PHYS_ADDR, &pData->MacAddress, ETHERADDRL);
                 if (rc == DLPI_SUCCESS)
                 {
-                    rc = dlpi_promiscon(pData->pDeviceHandle, DL_PROMISC_SAP);
+                    rc = gLibDlpiPromiscon(pData->pDeviceHandle, DL_PROMISC_SAP);
                     if (rc == DLPI_SUCCESS)
                     {
                         /* Need to use DL_PROMIS_PHYS (not multicast) as we cannot be sure what the guest needs. */
-                        rc = dlpi_promiscon(pData->pDeviceHandle, DL_PROMISC_PHYS);
+                        rc = gLibDlpiPromiscon(pData->pDeviceHandle, DL_PROMISC_PHYS);
                         if (rc == DLPI_SUCCESS)
                         {
-                            pData->FileDevice = dlpi_fd(pData->pDeviceHandle);
+                            pData->FileDevice = gLibDlpiFd(pData->pDeviceHandle);
                             if (pData->FileDevice >= 0)
                             {
                                 Log(("SolarisOpenVNIC: %s -> %d\n", pData->pszDeviceName, pData->FileDevice));
@@ -571,7 +571,7 @@ static int SolarisOpenVNIC(PDRVTAP pData)
     else
         rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                          N_("Failed to obtain VNIC info"));
-    dlpi_close(pData->pDeviceHandle);
+    gLibDlpiClose(pData->pDeviceHandle);
     return rc;
 }
 
@@ -971,6 +971,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Do the setup.
      */
 # ifdef VBOX_WITH_CROSSBOW
+    if (!gLibDlpiFound())
+    {
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                       N_("Failed to load library %s required for host interface networking."), LIB_DLPI);
+    }
     rc = SolarisOpenVNIC(pData);
 # else
     rc = SolarisTAPAttach(pData);
