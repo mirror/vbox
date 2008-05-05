@@ -914,7 +914,7 @@ __END_DECLS
  * An assertion failed, break.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
  */
-#define AssertLogRelFailedBreak()  \
+#define AssertLogRelFailedBreak() \
     if (1) \
     { \
         AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
