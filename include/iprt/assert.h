@@ -1378,7 +1378,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRC(rc)                AssertMsgRC(rc, ("%Vra\n", (rc)))
+#define AssertRC(rc)                AssertMsgRC(rc, ("%Rra\n", (rc)))
 
 /** @def AssertRCReturn
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return if it isn't.
@@ -1387,7 +1387,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCReturn(rc, rcRet)   AssertMsgRCReturn(rc, ("%Vra\n", (rc)), rcRet)
+#define AssertRCReturn(rc, rcRet)   AssertMsgRCReturn(rc, ("%Rra\n", (rc)), rcRet)
 
 /** @def AssertRCReturnVoid
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return if it isn't.
@@ -1395,7 +1395,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCReturnVoid(rc)      AssertMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
+#define AssertRCReturnVoid(rc)      AssertMsgRCReturnVoid(rc, ("%Rra\n", (rc)))
 
 /** @def AssertRCBreak
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1403,7 +1403,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCBreak(rc)           AssertMsgRCBreak(rc, ("%Vra\n", (rc)))
+#define AssertRCBreak(rc)           AssertMsgRCBreak(rc, ("%Rra\n", (rc)))
 
 /** @def AssertRCBreakStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1412,7 +1412,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCBreakStmt(rc, stmt) AssertMsgRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
+#define AssertRCBreakStmt(rc, stmt) AssertMsgRCBreakStmt(rc, ("%Rra\n", (rc)), stmt)
 
 /** @def AssertMsgRC
  * Asserts a iprt status code successful.
@@ -1484,7 +1484,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccess(rc)                 AssertMsg((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertRCSuccess(rc)                 AssertMsg((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertRCSuccessReturn
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and return if it isn't.
@@ -1493,7 +1493,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccessReturn(rc, rcRet)    AssertMsgReturn((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), rcRet)
+#define AssertRCSuccessReturn(rc, rcRet)    AssertMsgReturn((rc) == VINF_SUCCESS, ("%Rra\n", (rc)), rcRet)
 
 /** @def AssertRCSuccessReturnVoid
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and return if it isn't.
@@ -1501,7 +1501,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccessReturnVoid(rc)       AssertMsgReturnVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertRCSuccessReturnVoid(rc)       AssertMsgReturnVoid((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertRCSuccessBreak
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1509,7 +1509,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccessBreak(rc)            AssertMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertRCSuccessBreak(rc)            AssertMsgBreak((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertRCSuccessBreakStmt
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
@@ -1518,7 +1518,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccessBreakStmt(rc, stmt)  AssertMsgBreakStmt((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
+#define AssertRCSuccessBreakStmt(rc, stmt)  AssertMsgBreakStmt((rc) == VINF_SUCCESS, ("%Rra\n", (rc)), stmt)
 
 
 /** @def AssertLogRelRC
@@ -1641,7 +1641,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertLogRelRCSuccessBreak(rc)          AssertLogRelMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertLogRelRCSuccessBreak(rc)          AssertLogRelMsgBreak((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertLogRelRCSuccessBreakStmt
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1650,7 +1650,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times.
  */
-#define AssertLogRelRCSuccessBreakStmt(rc, stmt) AssertLogRelMsgBreakStmt((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
+#define AssertLogRelRCSuccessBreakStmt(rc, stmt) AssertLogRelMsgBreakStmt((rc) == VINF_SUCCESS, ("%Rra\n", (rc)), stmt)
 
 
 /** @def AssertReleaseRC
@@ -1661,7 +1661,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRC(rc)                 AssertReleaseMsgRC(rc, ("%Vra\n", (rc)))
+#define AssertReleaseRC(rc)                 AssertReleaseMsgRC(rc, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCReturn
  * Asserts a iprt status code successful, returning if it isn't.
@@ -1673,7 +1673,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCReturn(rc, rcRet)    AssertReleaseMsgRCReturn(rc, ("%Vra\n", (rc)), rcRet)
+#define AssertReleaseRCReturn(rc, rcRet)    AssertReleaseMsgRCReturn(rc, ("%Rra\n", (rc)), rcRet)
 
 /** @def AssertReleaseRCReturnVoid
  * Asserts a iprt status code successful, returning if it isn't.
@@ -1684,7 +1684,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCReturnVoid(rc)       AssertReleaseMsgRCReturnVoid(rc, ("%Vra\n", (rc)))
+#define AssertReleaseRCReturnVoid(rc)       AssertReleaseMsgRCReturnVoid(rc, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCBreak
  * Asserts a iprt status code successful, breaking if it isn't.
@@ -1695,7 +1695,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCBreak(rc)            AssertReleaseMsgRCBreak(rc, ("%Vra\n", (rc)))
+#define AssertReleaseRCBreak(rc)            AssertReleaseMsgRCBreak(rc, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCBreakStmt
  * Asserts a iprt status code successful, break if it isn't.
@@ -1707,7 +1707,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCBreakStmt(rc, stmt)  AssertReleaseMsgRCBreakStmt(rc, ("%Vra\n", (rc)), stmt)
+#define AssertReleaseRCBreakStmt(rc, stmt)  AssertReleaseMsgRCBreakStmt(rc, ("%Rra\n", (rc)), stmt)
 
 /** @def AssertReleaseMsgRC
  * Asserts a iprt status code successful.
@@ -1778,7 +1778,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCSuccess(rc)                  AssertReleaseMsg((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertReleaseRCSuccess(rc)                  AssertReleaseMsg((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCSuccessReturn
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1790,7 +1790,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCSuccessReturn(rc, rcRet)     AssertReleaseMsgReturn((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), rcRet)
+#define AssertReleaseRCSuccessReturn(rc, rcRet)     AssertReleaseMsgReturn((rc) == VINF_SUCCESS, ("%Rra\n", (rc)), rcRet)
 
 /** @def AssertReleaseRCSuccessReturnVoid
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1801,7 +1801,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCSuccessReturnVoid(rc)     AssertReleaseMsgReturnVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertReleaseRCSuccessReturnVoid(rc)     AssertReleaseMsgReturnVoid((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCSuccessBreak
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1812,7 +1812,7 @@ __END_DECLS
  * @param   rc      iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCSuccessBreak(rc)         AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertReleaseRCSuccessBreak(rc)         AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseRCSuccessBreakStmt
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1824,7 +1824,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseRCSuccessBreakStmt(rc, stmt)   AssertReleaseMsgBreakStmt((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
+#define AssertReleaseRCSuccessBreakStmt(rc, stmt)   AssertReleaseMsgBreakStmt((rc) == VINF_SUCCESS, ("%Rra\n", (rc)), stmt)
 
 
 /** @def AssertFatalRC
@@ -1835,7 +1835,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertFatalRC(rc)               AssertFatalMsgRC(rc, ("%Vra\n", (rc)))
+#define AssertFatalRC(rc)               AssertFatalMsgRC(rc, ("%Rra\n", (rc)))
 
 /** @def AssertReleaseMsgRC
  * Asserts a iprt status code successful.
@@ -1856,7 +1856,7 @@ __END_DECLS
  * @param   rc  iprt status code.
  * @remark  rc is references multiple times.
  */
-#define AssertFatalRCSuccess(rc)        AssertFatalMsg((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
+#define AssertFatalRCSuccess(rc)        AssertFatalMsg((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
 
 /** @def AssertPtr
