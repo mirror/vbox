@@ -304,8 +304,13 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
                 int rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
                 STAM_PROFILE_ADV_START(&pData->StatReceive, a);
+
+                /*
+                 * A return code != VINF_SUCCESS means that we were woken up during a VM
+                 * state transistion. Drop the packet and wait for the next one.
+                 */
                 if (RT_FAILURE(rc))
-                    break;
+                    continue;
 
                 /*
                  * Pass the data up.
