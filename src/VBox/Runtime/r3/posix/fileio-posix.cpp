@@ -214,6 +214,27 @@ RTR3DECL(int)  RTFileClose(RTFILE File)
 }
 
 
+RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
+{
+    if (    uNative < 0
+        ||  (RTFILE)uNative != (RTUINTPTR)uNative)
+    {
+        AssertMsgFailed(("%p\n", uNative));
+        *pFile = NIL_RTFILE;
+        return VERR_INVALID_HANDLE;
+    }
+    *pFile = (RTFILE)uNative;
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File)
+{
+    AssertReturn(File != NIL_RTFILE, -1);
+    return (RTHCINTPTR)File;
+}
+
+
 RTR3DECL(int)  RTFileDelete(const char *pszFilename)
 {
     char *pszNativeFilename;
