@@ -518,15 +518,14 @@ __END_DECLS
 #endif
 
 
-/** @def AssertFailedBreak
+/** @def AssertFailedBreakStmt
  * An assertion failed, hit breakpoint (RT_STRICT mode only), execute
  * the given statement and break.
  *
  * @param   stmt    Statement to execute before break.
- * @todo Rename to AssertFailedBreakStmt.
  */
 #ifdef RT_STRICT
-# define AssertFailedBreak(stmt) \
+# define AssertFailedBreakStmt(stmt) \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertBreakpoint(); \
@@ -534,7 +533,7 @@ __END_DECLS
         break; \
     } else do {} while (0)
 #else
-# define AssertFailedBreak(stmt) \
+# define AssertFailedBreakStmt(stmt) \
     if (1) { \
         stmt; \
         break; \
@@ -618,16 +617,15 @@ __END_DECLS
 #endif
 
 
-/** @def AssertMsgFailedBreak
+/** @def AssertMsgFailedBreakStmt
  * An assertion failed, hit breakpoint (RT_STRICT mode only), execute
  * the given statement and break.
  *
  * @param   a       printf argument list (in parenthesis).
  * @param   stmt    Statement to execute before break.
- * @todo Rename to AssertMsgFailedBreakStmt.
  */
 #ifdef RT_STRICT
-# define AssertMsgFailedBreak(a, stmt) \
+# define AssertMsgFailedBreakStmt(a, stmt) \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
@@ -636,7 +634,7 @@ __END_DECLS
         break; \
     } else do {} while (0)
 #else
-# define AssertMsgFailedBreak(a, stmt) \
+# define AssertMsgFailedBreakStmt(a, stmt) \
     if (1) { \
         stmt; \
         break; \
