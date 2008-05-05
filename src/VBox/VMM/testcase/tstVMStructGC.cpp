@@ -398,14 +398,8 @@ int main()
     GEN_CHECK_OFF(PGM, pfnR3ShwExit);
     GEN_CHECK_OFF(PGM, pfnR3ShwGetPage);
     GEN_CHECK_OFF(PGM, pfnR3ShwModifyPage);
-    GEN_CHECK_OFF(PGM, pfnR3ShwGetPDEByIndex);
-    GEN_CHECK_OFF(PGM, pfnR3ShwSetPDEByIndex);
-    GEN_CHECK_OFF(PGM, pfnR3ShwModifyPDEByIndex);
     GEN_CHECK_OFF(PGM, pfnGCShwGetPage);
     GEN_CHECK_OFF(PGM, pfnGCShwModifyPage);
-    GEN_CHECK_OFF(PGM, pfnGCShwGetPDEByIndex);
-    GEN_CHECK_OFF(PGM, pfnGCShwSetPDEByIndex);
-    GEN_CHECK_OFF(PGM, pfnGCShwModifyPDEByIndex);
     GEN_CHECK_OFF(PGM, pfnR3GstRelocate);
     GEN_CHECK_OFF(PGM, pfnR3GstExit);
     GEN_CHECK_OFF(PGM, pfnR3GstMonitorCR3);

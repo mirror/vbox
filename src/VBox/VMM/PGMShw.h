@@ -86,9 +86,6 @@ PGM_SHW_DECL(int, Exit)(PVM pVM);
 /* all */
 PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_SHW_DECL(int, GetPDEByIndex)(PVM pVM, uint32_t iPD, PX86PDEPAE pPde);
-PGM_SHW_DECL(int, SetPDEByIndex)(PVM pVM, uint32_t iPD, X86PDEPAE Pde);
-PGM_SHW_DECL(int, ModifyPDEByIndex)(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask);
 __END_DECLS
 
 
@@ -110,9 +107,6 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     pModeData->pfnR3ShwExit              = PGM_SHW_NAME(Exit);
     pModeData->pfnR3ShwGetPage           = PGM_SHW_NAME(GetPage);
     pModeData->pfnR3ShwModifyPage        = PGM_SHW_NAME(ModifyPage);
-    pModeData->pfnR3ShwGetPDEByIndex     = PGM_SHW_NAME(GetPDEByIndex);
-    pModeData->pfnR3ShwSetPDEByIndex     = PGM_SHW_NAME(SetPDEByIndex);
-    pModeData->pfnR3ShwModifyPDEByIndex  = PGM_SHW_NAME(ModifyPDEByIndex);
 
     if (fResolveGCAndR0)
     {
@@ -124,12 +118,6 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(GetPage),  rc), rc);
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(ModifyPage),  &pModeData->pfnGCShwModifyPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(ModifyPage),  rc), rc);
-        rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(GetPDEByIndex),  &pModeData->pfnGCShwGetPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(GetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(SetPDEByIndex),  &pModeData->pfnGCShwSetPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(SetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolGC(pVM, NULL, PGM_SHW_NAME_GC_STR(ModifyPDEByIndex),  &pModeData->pfnGCShwModifyPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(ModifyPDEByIndex),  rc), rc);
 #endif /* Not AMD64 shadow paging. */
 
         /* Ring-0 */
@@ -137,12 +125,6 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(GetPage),  rc), rc);
         rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPage),  &pModeData->pfnR0ShwModifyPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPage),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPDEByIndex),  &pModeData->pfnR0ShwGetPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(GetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(SetPDEByIndex),  &pModeData->pfnR0ShwSetPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(SetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPDEByIndex),  &pModeData->pfnR0ShwModifyPDEByIndex);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPDEByIndex),  rc), rc);
     }
     return VINF_SUCCESS;
 }

@@ -94,9 +94,6 @@
 __BEGIN_DECLS
 PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
-PGM_SHW_DECL(int, GetPDEByIndex)(PVM pVM, uint32_t iPD, PX86PDEPAE pPde);
-PGM_SHW_DECL(int, SetPDEByIndex)(PVM pVM, uint32_t iPD, X86PDEPAE Pde);
-PGM_SHW_DECL(int, ModifyPDEByIndex)(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask);
 __END_DECLS
 
 
@@ -118,52 +115,44 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
      * Get the PDE.
      */
 #if PGM_SHW_TYPE == PGM_TYPE_AMD64
-    /*
-     * For the first 4G we have preallocated page directories.
-     * Since the two upper levels contains only fixed flags, we skip those when possible.
-     */
+    bool      fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
     X86PDEPAE Pde;
-#if GC_ARCH_BITS == 64
-    if (GCPtr < _4G)
-#endif
-    {
-        const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT)  & SHW_PDPT_MASK;
-        const unsigned iPd    = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
-    }
-#if GC_ARCH_BITS == 64
-    else
-    {
-        /* PML4 */
-        const unsigned iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-        X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
-        if (!Pml4e.n.u1Present)
-            return VERR_PAGE_TABLE_NOT_PRESENT;
 
-        /* PDPT */
-        PX86PDPT pPDPT;
-        int rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-        X86PDPE Pdpe = pPDPT->a[iPDPT];
-        if (!Pdpe.n.u1Present)
-            return VERR_PAGE_TABLE_NOT_PRESENT;
+    /* PML4 */
+    const unsigned iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+    if (!Pml4e.n.u1Present)
+        return VERR_PAGE_TABLE_NOT_PRESENT;
 
-        /* PD */
-        PX86PDPAE pPd;
-        rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        Pdpe = pPDPT->a[iPd];
-    }
-#endif /* GC_ARCH_BITS == 64 */
+    /* PDPT */
+    PX86PDPT pPDPT;
+    int rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+    X86PDPE Pdpe = pPDPT->a[iPDPT];
+    if (!Pdpe.n.u1Present)
+        return VERR_PAGE_TABLE_NOT_PRESENT;
+
+    /* PD */
+    PX86PDPAE pPd;
+    rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    Pde = pPd->a[iPd];
+
+    /* Merge accessed, write, user and no-execute bits into the PDE. */
+    Pde.n.u1Accessed  &= Pml4e.n.u1Accessed & Pdpe.lm.u1Accessed;
+    Pde.n.u1Write     &= Pml4e.n.u1Write & Pdpe.lm.u1Write;
+    Pde.n.u1User      &= Pml4e.n.u1User & Pdpe.lm.u1User;
+    Pde.n.u1NoExecute &= Pml4e.n.u1NoExecute & Pdpe.lm.u1NoExecute;
 
 #elif PGM_SHW_TYPE == PGM_TYPE_PAE
+    bool           fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
     const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    X86PDEPAE Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+    X86PDEPAE      Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
 
 #else /* PGM_TYPE_32BIT */
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
@@ -171,6 +160,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 #endif
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
+
+    Assert(!Pde.b.u1Size);
 
     /*
      * Get PT entry.
@@ -184,15 +175,19 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     }
     else /* mapping: */
     {
+#if PGM_SHW_TYPE == PGM_TYPE_AMD64
+        AssertFailed(); /* can't happen */
+#else
         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
 
         PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
         AssertMsgReturn(pMap, ("GCPtr=%VGv\n", GCPtr), VERR_INTERNAL_ERROR);
-#if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_32BIT
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTXALLSUFF(pPT);
-#else /* PAE and AMD64: */
+# else /* PAE */
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTXALLSUFF(paPaePTs);
-#endif
+# endif
+#endif 
     }
     const unsigned iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
     SHWPTE Pte = pPT->a[iPt];
@@ -201,12 +196,20 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 
     /*
      * Store the results.
-     * RW and US flags depend on the entire page transation hierarchy - except for
+     * RW and US flags depend on the entire page translation hierarchy - except for
      * legacy PAE which has a simplified PDPE.
      */
     if (pfFlags)
+    {
         *pfFlags = (Pte.u & ~SHW_PTE_PG_MASK)
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
+# if PGM_WITH_NX(PGM_SHW_TYPE)
+        /* The NX bit is determined by a bitwise OR between the PT and PD */
+        if (fNoExecuteBitValid)
+            *pfFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
+# endif
+    }
+
     if (pHCPhys)
         *pHCPhys = Pte.u & SHW_PTE_PG_MASK;
 
@@ -230,6 +233,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
  */
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
+    int rc;
+
     /*
      * Walk page tables and pages till we're done.
      */
@@ -239,47 +244,30 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
          * Get the PDE.
          */
 #if PGM_SHW_TYPE == PGM_TYPE_AMD64
-        /*
-         * For the first 4G we have preallocated page directories.
-         * Since the two upper levels contains only fixed flags, we skip those when possible.
-         */
         X86PDEPAE Pde;
-#if GC_ARCH_BITS == 64
-        if (GCPtr < _4G)
-#endif
-        {
-            const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT)  & SHW_PDPT_MASK;
-            const unsigned iPd    = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-            Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
-        }
-#if GC_ARCH_BITS == 64
-        else
-        {
-            /* PML4 */
-            const unsigned iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-            X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
-            if (!Pml4e.n.u1Present)
-                return VERR_PAGE_TABLE_NOT_PRESENT;
+        /* PML4 */
+        const unsigned iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+        X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+        if (!Pml4e.n.u1Present)
+            return VERR_PAGE_TABLE_NOT_PRESENT;
 
-            /* PDPT */
-            PX86PDPT pPDPT;
-            int rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
-            if (VBOX_FAILURE(rc))
-                return rc;
-            const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-            X86PDPE Pdpe = pPDPT->a[iPDPT];
-            if (!Pdpe.n.u1Present)
-                return VERR_PAGE_TABLE_NOT_PRESENT;
+        /* PDPT */
+        PX86PDPT pPDPT;
+        rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+        X86PDPE Pdpe = pPDPT->a[iPDPT];
+        if (!Pdpe.n.u1Present)
+            return VERR_PAGE_TABLE_NOT_PRESENT;
 
-            /* PD */
-            PX86PDPAE pPd;
-            rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
-            if (VBOX_FAILURE(rc))
-                return rc;
-            const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-            Pdpe = pPDPT->a[iPd];
-        }
-#endif /* GC_ARCH_BITS == 64 */
+        /* PD */
+        PX86PDPAE pPd;
+        rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
+        Pde = pPd->a[iPd];
 
 #elif PGM_SHW_TYPE == PGM_TYPE_PAE
         const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
@@ -293,12 +281,11 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
-
         /*
          * Map the page table.
          */
         PSHWPT pPT;
-        int rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
+        rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
         if (VBOX_FAILURE(rc))
             return rc;
 
@@ -322,101 +309,3 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
     }
 }
 
-/**
- * Retrieve shadow PDE
- *
- * @returns VBox status code.
- * @param   pVM         The virtual machine.
- * @param   iPD         Shadow PDE index.
- * @param   pPde        Where to store the shadow PDE entry.
- */
-PGM_SHW_DECL(int, GetPDEByIndex)(PVM pVM, unsigned iPD, PX86PDEPAE pPde)
-{
-#if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE
-    /*
-     * Get page directory addresses.
-     */
-    Assert(iPD < SHW_TOTAL_PD_ENTRIES);
-# if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PDE pPdeSrc = &CTXMID(pVM->pgm.s.p,32BitPD)->a[iPD];
-# else
-    PX86PDEPAE pPdeSrc = &CTXMID(pVM->pgm.s.ap,PaePDs)[0]->a[iPD];    /* We treat this as a PD with 2048 entries. */
-# endif
-
-    pPde->u = (X86PGPAEUINT)pPdeSrc->u;
-    return VINF_SUCCESS;
-
-#else
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}
-
-/**
- * Set shadow PDE
- *
- * @returns VBox status code.
- * @param   pVM         The virtual machine.
- * @param   iPD         Shadow PDE index.
- * @param   Pde         Shadow PDE.
- */
-PGM_SHW_DECL(int, SetPDEByIndex)(PVM pVM, unsigned iPD, X86PDEPAE Pde)
-{
-#if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE
-    /*
-     * Get page directory addresses and update the specified entry.
-     */
-    Assert(iPD < SHW_TOTAL_PD_ENTRIES);
-# if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    Assert(Pde.au32[1] == 0); /* First uint32_t is backwards compatible. */
-    Assert(Pde.n.u1Size == 0);
-    PX86PDE pPdeDst = &CTXMID(pVM->pgm.s.p,32BitPD)->a[iPD];
-    pPdeDst->u = Pde.au32[0];
-# else
-    PX86PDEPAE pPdeDst = &CTXMID(pVM->pgm.s.ap,PaePDs)[0]->a[iPD];  /* We treat this as a PD with 2048 entries. */
-    pPdeDst->u = Pde.u;
-# endif
-    Assert(pPdeDst->n.u1Present);
-
-    return VINF_SUCCESS;
-#else
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}
-
-/**
- * Modify shadow PDE
- *
- * @returns VBox status code.
- * @param   pVM         The virtual machine.
- * @param   iPD         Shadow PDE index.
- * @param   fFlags      The OR  mask - page flags X86_PDE_*, excluding the page mask of course.
- * @param   fMask       The AND mask - page flags X86_PDE_*.
- *                      Be extremely CAREFUL with ~'ing values because they can be 32-bit!
- */
-PGM_SHW_DECL(int, ModifyPDEByIndex)(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask)
-{
-#if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE
-    /*
-     * Get page directory addresses and update the specified entry.
-     */
-    Assert(iPD < SHW_TOTAL_PD_ENTRIES);
-# if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PDE pPdeDst = &CTXMID(pVM->pgm.s.p,32BitPD)->a[iPD];
-
-    pPdeDst->u = ((pPdeDst->u & ((X86PGUINT)fMask | SHW_PDE_PG_MASK)) | ((X86PGUINT)fFlags & ~SHW_PDE_PG_MASK));
-    Assert(!pPdeDst->n.u1Size);
-# else
-    PX86PDEPAE pPdeDst = &CTXMID(pVM->pgm.s.ap,PaePDs)[0]->a[iPD];      /* We treat this as a PD with 2048 entries. */
-
-    pPdeDst->u = (pPdeDst->u & (fMask | SHW_PDE_PG_MASK)) | (fFlags & ~SHW_PDE_PG_MASK);
-# endif
-    Assert(pPdeDst->n.u1Present);
-
-    return VINF_SUCCESS;
-#else
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}
