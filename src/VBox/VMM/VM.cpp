@@ -388,7 +388,12 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
      */
     rc = PDMR3LdrLoadVMMR0U(pUVM);
     if (RT_FAILURE(rc))
-        return vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+    {
+        if (rc != VERR_VMX_IN_VMX_ROOT_MODE)
+            return vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+        else
+            return rc;  /* proper error message set later on; @todo we need a cleaner solution for this */
+    }
 
     /*
      * Request GVMM to create a new VM for us.
