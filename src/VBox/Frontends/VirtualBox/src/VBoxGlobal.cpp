@@ -995,7 +995,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
             break;
         }
         default:
-            AssertFailedBreakVoid();
+            AssertFailedBreak();
     }
 
     return channel;
@@ -1035,7 +1035,7 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
             break;
         }
         default:
-            AssertFailedBreakVoid();
+            AssertFailedBreak();
     }
 
     return channel;
@@ -1072,7 +1072,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
             break;
         }
         default:
-            AssertFailedBreakVoid();
+            AssertFailedBreak();
     }
 
     return device;
@@ -1109,7 +1109,7 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
             break;
         }
         default:
-            AssertFailedBreakVoid();
+            AssertFailedBreak();
     }
 
     return device;
@@ -1144,7 +1144,7 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
             break;
         }
         default:
-            AssertFailedBreakVoid();
+            AssertFailedBreak();
     }
 
     return device;
