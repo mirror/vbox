@@ -412,6 +412,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIRichLabel.h \
 	include/QIAbstractWizard.h \
 	include/QIAbstractDialog.h \
+	include/QIListView.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
@@ -489,6 +490,7 @@ VirtualBox_SOURCES = \
 	src/QIAbstractWizard.cpp \
 	src/QIAbstractDialog.cpp \
 	src/QIDialog.cpp \
+	src/QIListView.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \

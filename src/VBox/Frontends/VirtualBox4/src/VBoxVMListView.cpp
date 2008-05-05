@@ -29,9 +29,6 @@
 
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
-# if MAC_LEOPARD_STYLE
-#  include <qmacstyle_mac.h>
-# endif /* MAC_LEOPARD_STYLE */
 #endif
 
 
@@ -611,7 +608,7 @@ bool VBoxVMModel::VBoxVMItemNameCompareGreaterThan (VBoxVMItem* aItem1, VBoxVMIt
 /* VBoxVMListView class */
 
 VBoxVMListView::VBoxVMListView (QWidget *aParent /* = 0 */)
-    :QListView (aParent)
+    :QIListView (aParent)
 {
     /* Create & set our delegation class */
     VBoxVMItemPainter *delegate = new VBoxVMItemPainter(this);
@@ -621,19 +618,6 @@ VBoxVMListView::VBoxVMListView (QWidget *aParent /* = 0 */)
     /* Publish the activation of items */
     connect (this, SIGNAL (activated (const QModelIndex &)),
              this, SIGNAL (activated ()));
-    /* Track if the application lost the focus */
-#if MAC_LEOPARD_STYLE
-    connect (QCoreApplication::instance(), SIGNAL (focusChanged (QWidget *, QWidget *)),
-             this, SLOT (focusChanged (QWidget *, QWidget *)));
-    /* 1 pixel line frame */
-    setMidLineWidth (1);
-    setLineWidth (0);
-    setFrameShape (QFrame::Box);
-    focusChanged (NULL, this);
-    /* Nesty hack to disable the focus rect on the list view. This interface
-     * may change at any time! */
-    static_cast<QMacStyle *> (style())->setFocusRectPolicy (this, QMacStyle::FocusDisabled);
-#endif /* MAC_LEOPARD_STYLE */
 }
 
 void VBoxVMListView::selectItemByRow (int row)
@@ -699,21 +683,6 @@ void VBoxVMListView::dataChanged (const QModelIndex &aTopLeft, const QModelIndex
     selectCurrent();
     ensureCurrentVisible();
     emit currentChanged(); 
-}
-
-void VBoxVMListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
-{
-#if MAC_LEOPARD_STYLE
-    QColor bgColor (212, 221, 229);
-    if (aNow == NULL)
-        bgColor.setRgb (232, 232, 232);
-    QPalette pal = viewport()->palette();
-    pal.setColor (QPalette::Base, bgColor);
-    viewport()->setPalette (pal);
-    viewport()->setAutoFillBackground (true);
-#else /* MAC_LEOPARD_STYLE */
-    NOREF (aNow);
-#endif /* MAC_LEOPARD_STYLE */
 }
 
 void VBoxVMListView::mousePressEvent (QMouseEvent *aEvent)
@@ -858,48 +827,6 @@ void VBoxVMItemPainter::paint (QPainter *aPainter, const QStyleOptionViewItem &a
 //    aPainter->drawRect (boundingRect);
     aPainter->restore();
     drawFocus(aPainter, aOption, aOption.rect);
-}
-
-void VBoxVMItemPainter::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption, 
-                                        const QModelIndex &aIndex) const
-{   
-#if MAC_LEOPARD_STYLE
-    NOREF (aIndex);
-    /* Macify for Leopard */
-    if (aOption.state & QStyle::State_Selected)
-    {   
-        /* Standard color for selected items and focus on the widget */
-        QColor topLineColor (69, 128, 200);
-        QColor topGradColor (92, 147, 214);
-        QColor bottomGradColor (21, 83, 169);
-        /* Color for selected items and no focus on the widget */
-        if (QWidget *p = qobject_cast<QWidget *> (parent()))
-            if (!p->hasFocus())
-            {
-                topLineColor.setRgb (145, 160, 192);
-                topGradColor.setRgb (162, 177, 207);
-                bottomGradColor.setRgb (110, 129, 169);
-            }
-        /* Color for selected items and no focus on the application at all */
-        if (qApp->focusWidget() == NULL)
-            {
-                topLineColor.setRgb (151, 151, 151);
-                topGradColor.setRgb (180, 180, 180);
-                bottomGradColor.setRgb (137, 137, 137);
-            }
-        /* Paint the background */
-        QRect r = aOption.rect;
-        r.setTop (r.top() + 1);
-        QLinearGradient linearGrad (QPointF(0, r.top()), QPointF(0, r.bottom()));
-        linearGrad.setColorAt (0, topGradColor);
-        linearGrad.setColorAt (1, bottomGradColor);
-        aPainter->setPen (topLineColor);
-        aPainter->drawLine (r.left(), r.top() - 1, r.right(), r.top() - 1);
-        aPainter->fillRect (r, linearGrad);
-    }
-#else /* MAC_LEOPARD_STYLE */
-    QItemDelegate::drawBackground (aPainter, aOption, aIndex);
-#endif /* MAC_LEOPARD_STYLE */
 }
 
 QRect VBoxVMItemPainter::rect (const QStyleOptionViewItem &aOption,
