@@ -65,7 +65,7 @@ typedef struct _Odin32ClipboardHeader
 *   Global Variables                                                           *
 *******************************************************************************/
 
-/** The control thread (main) handle. 
+/** The control thread (main) handle.
  * Only used to avoid some queue creation trouble. */
 static RTTHREAD g_ThreadCtrl = NIL_RTTHREAD;
 /** The HAB of the control thread (main). */
@@ -90,17 +90,17 @@ static HMQ g_hmqWorker = NULLHANDLE;
 static HWND g_hwndWorker = NULLHANDLE;
 /** The timer id returned by WinStartTimer. */
 static ULONG g_idWorkerTimer = ~0UL;
-/** The state of the clipboard. 
+/** The state of the clipboard.
  * @remark I'm trying out the 'k' prefix from the mac here, bear with me.  */
 static enum
-{ 
+{
     /** The clipboard hasn't been initialized yet. */
     kClipboardState_Uninitialized = 0,
     /** WinSetClipbrdViewer call in progress, ignore WM_DRAWCLIPBOARD. */
     kClipboardState_SettingViewer,
     /** We're monitoring the clipboard as a viewer. */
     kClipboardState_Viewer,
-    /** We're monitoring the clipboard using polling. 
+    /** We're monitoring the clipboard using polling.
      * This usually means something is wrong... */
     kClipboardState_Polling,
     /** We're destroying the clipboard content, ignore WM_DESTROYCLIPBOARD. */
@@ -111,9 +111,9 @@ static enum
 /** Set if the clipboard was empty the last time we polled it. */
 static bool g_fEmptyClipboard = false;
 
-/** A clipboard format atom for the dummy clipboard data we insert 
- * watching for clipboard changes. If this format is found on the 
- * clipboard, the empty clipboard function has not been called 
+/** A clipboard format atom for the dummy clipboard data we insert
+ * watching for clipboard changes. If this format is found on the
+ * clipboard, the empty clipboard function has not been called
  * since we last polled it. */
 static ATOM g_atomNothingChanged = 0;
 
@@ -156,7 +156,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
     pPib->pib_ultype = 3; /* PM session type */
 
     /*
-     * Since we have to send shutdown messages and such from the 
+     * Since we have to send shutdown messages and such from the
      * service controller (main) thread, create a HAB and HMQ for it.
      */
     g_habCtrl = WinInitialize(0);
@@ -192,10 +192,10 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
                 if (g_atomOdin32UnicodeText == 0)
                     g_atomOdin32UnicodeText = WinFindAtom(WinQuerySystemAtomTable(), SZFMT_ODIN32_UNICODETEXT);
                 if (g_atomOdin32UnicodeText == 0)
-                    VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n", 
+                    VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
                                      lLastError, WinGetLastError(g_habCtrl));
 
-                VBoxServiceVerbose(2, "g_u32ClientId=%RX32 g_atomNothingChanged=%#x g_atomOdin32UnicodeText=%#x\n", 
+                VBoxServiceVerbose(2, "g_u32ClientId=%RX32 g_atomNothingChanged=%#x g_atomOdin32UnicodeText=%#x\n",
                                    g_u32ClientId, g_atomNothingChanged, g_atomOdin32UnicodeText);
                 return VINF_SUCCESS;
             }
@@ -203,7 +203,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
             VBoxServiceError("Failed to connect to the clipboard service, rc=%Rrc!\n", rc);
         }
         else
-            VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n", 
+            VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
                              lLastError, WinGetLastError(g_habCtrl));
     }
     else
@@ -236,7 +236,7 @@ static void VBoxServiceClipboardOS2PollViewer(void)
     else
         g_enmState = kClipboardState_Polling;
     if ((int)g_enmState != iOrgState)
-    { 
+    {
         if (g_enmState == kClipboardState_Viewer)
             VBoxServiceVerbose(3, "clipboard: viewer\n");
         else
@@ -252,15 +252,15 @@ static void VBoxServiceClipboardOS2AdvertiseHostFormats(uint32_t fFormats)
 {
     /*
      * Open the clipboard and switch to 'destruction' mode.
-     * Make sure we stop being viewer. Temporarily also make sure we're 
+     * Make sure we stop being viewer. Temporarily also make sure we're
      * not the owner so that PM won't send us any WM_DESTROYCLIPBOARD message.
      */
     if (WinOpenClipbrd(g_habWorker))
     {
         if (g_enmState == kClipboardState_Viewer)
-            WinSetClipbrdViewer(g_habWorker, NULLHANDLE); 
+            WinSetClipbrdViewer(g_habWorker, NULLHANDLE);
         if (g_enmState == kClipboardState_Owner)
-            WinSetClipbrdOwner(g_habWorker, NULLHANDLE); 
+            WinSetClipbrdOwner(g_habWorker, NULLHANDLE);
 
         g_enmState = kClipboardState_Destroying;
         if (WinEmptyClipbrd(g_habWorker))
@@ -342,10 +342,10 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
     void *pvPM = NULL;
 
     /*
-     * The Odin32 stuff is simple, we just assume windows data from the host 
+     * The Odin32 stuff is simple, we just assume windows data from the host
      * and all we need to do is add the header.
      */
-    if (    usFmt 
+    if (    usFmt
         &&  (   usFmt == g_atomOdin32UnicodeText
              /* || usFmt == ...*/
             )
@@ -357,7 +357,7 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
          * Convert the unicode text to the current ctype locale.
          *
          * Note that we probably should be using the current PM or DOS codepage
-         * here instead of the LC_CTYPE one which iconv uses by default. 
+         * here instead of the LC_CTYPE one which iconv uses by default.
          * -lazybird
          */
         Assert(fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
@@ -387,20 +387,20 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
         else
             VBoxServiceError("RTUtf16ToUtf8() -> %Rrc\n", rc);
     }
-    
+
     return pvPM;
 }
 
 
 /**
  * Tries to deliver an advertised host format.
- * 
+ *
  * @param   usFmt       The PM format name.
- * 
- * @remark  We must not try open the clipboard here because WM_RENDERFMT is a 
- *          request send synchronously by someone who has already opened the 
+ *
+ * @remark  We must not try open the clipboard here because WM_RENDERFMT is a
+ *          request send synchronously by someone who has already opened the
  *          clipboard. We would enter a deadlock trying to open it here.
- *          
+ *
  */
 static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
 {
@@ -412,12 +412,12 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
     uint32_t fFormat;
     if (    usFmt == CF_TEXT
         ||  usFmt == g_atomOdin32UnicodeText)
-        fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT; 
+        fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
     else /** @todo bitmaps */
         fFormat = 0;
     if (fFormat)
     {
-        /* 
+        /*
          * Query the data from the host.
          * This might require two iterations because of buffer guessing.
          */
@@ -491,7 +491,7 @@ static void VBoxServiceClipboardOS2SendDataToHost(uint32_t fFormat)
             /* Got any odin32 unicode text? */
             PVOID pvPM;
             PCLIPHEADER pHdr = (PCLIPHEADER)WinQueryClipbrdData(g_habWorker, g_atomOdin32UnicodeText);
-            if (    pHdr 
+            if (    pHdr
                 &&  !memcmp(pHdr->achMagic, CLIPHEADER_MAGIC, sizeof(pHdr->achMagic)))
             {
                 pv = pHdr + 1;
@@ -547,7 +547,7 @@ static void VBoxServiceClipboardOS2ReportFormats(void)
     ULONG ulFormat = 0;
     while ((ulFormat = WinEnumClipbrdFmts(g_habWorker, ulFormat)) != 0)
     {
-        if (    ulFormat == CF_TEXT 
+        if (    ulFormat == CF_TEXT
             ||  ulFormat == g_atomOdin32UnicodeText)
             fFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
         /** @todo else bitmaps and stuff. */
@@ -559,8 +559,8 @@ static void VBoxServiceClipboardOS2ReportFormats(void)
 
 /**
  * Poll the clipboard for changes.
- * 
- * This is called both when we're the viewer and when we're 
+ *
+ * This is called both when we're the viewer and when we're
  * falling back to polling. If something has changed it will
  * notify the host.
  */
@@ -579,7 +579,7 @@ static void VBoxServiceClipboardOS2Poll(void)
             {
                 g_fEmptyClipboard = false;
                 VBoxServiceClipboardOS2ReportFormats();
-    
+
                 /* inject the dummy */
                 PVOID pv;
                 APIRET rc = DosAllocSharedMem(&pv, NULL, 1, OBJ_GIVEABLE | OBJ_GETTABLE | PAG_READ | PAG_WRITE | PAG_COMMIT);
@@ -631,9 +631,9 @@ static void VBoxServiceClipboardOS2Destroyed(void)
 
 /**
  * The window procedure for the object window.
- * 
+ *
  * @returns Message result.
- * 
+ *
  * @param   hwnd    The window handle.
  * @param   msg     The message.
  * @param   mp1     Message parameter 1.
@@ -664,26 +664,26 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             g_hwndWorker = NULLHANDLE;
             break;
 
-        /* 
+        /*
          * Clipboard viewer message - the content has been changed.
-         * This is sent *after* releasing the clipboard sem 
+         * This is sent *after* releasing the clipboard sem
          * and during the WinSetClipbrdViewer call.
          */
         case WM_DRAWCLIPBOARD:
             if (g_enmState == kClipboardState_SettingViewer)
                 break;
-            AssertMsgBreak(g_enmState == kClipboardState_Viewer, ("g_enmState=%d\n", g_enmState), );
+            AssertMsgBreakVoid(g_enmState == kClipboardState_Viewer, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2Poll();
             break;
 
-        /* 
+        /*
          * Clipboard owner message - the content was replaced.
          * This is sent by someone with an open clipboard, so don't try open it now.
          */
         case WM_DESTROYCLIPBOARD:
             if (g_enmState == kClipboardState_Destroying)
                 break; /* it's us doing the replacing, ignore. */
-            AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState), );
+            AssertMsgBreakVoid(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2Destroyed();
             break;
 
@@ -692,16 +692,16 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
          * This is called by someone which owns the clipboard, but that's fine.
          */
         case WM_RENDERFMT:
-            AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState), );
+            AssertMsgBreakVoid(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
             VBoxServiceClipboardOS2RenderFormat(SHORT1FROMMP(mp1));
             break;
 
         /*
-         * Clipboard owner message - we're about to quit and should render all formats. 
+         * Clipboard owner message - we're about to quit and should render all formats.
          *
-         * However, because we're lazy, we'll just ASSUME that since we're quitting 
-         * we're probably about to shutdown or something and there is no point in 
-         * doing anything here except for emptying the clipboard and removing 
+         * However, because we're lazy, we'll just ASSUME that since we're quitting
+         * we're probably about to shutdown or something and there is no point in
+         * doing anything here except for emptying the clipboard and removing
          * ourselves as owner. Any failures at this point are silently ignored.
          */
         case WM_RENDERALLFMTS:
@@ -729,7 +729,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             break;
 
         /*
-         * This is just a fallback polling strategy in case some other 
+         * This is just a fallback polling strategy in case some other
          * app is trying to view the clipboard too. We also use this
          * to try recover from errors.
          *
@@ -739,7 +739,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
          * a desktop).
          */
         case WM_TIMER:
-            if (    g_enmState != kClipboardState_Viewer 
+            if (    g_enmState != kClipboardState_Viewer
                 &&  g_enmState != kClipboardState_Polling)
                 break;
 
@@ -757,7 +757,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             break;
 
 
-        /* 
+        /*
          * Clipboard owner messages dealing with owner drawn content.
          * We shouldn't be seeing any of these.
          */
@@ -770,7 +770,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
 
         /*
          * We shouldn't be seeing any other messages according to the docs.
-         * But for whatever reason, PM sends us a WM_ADJUSTWINDOWPOS message 
+         * But for whatever reason, PM sends us a WM_ADJUSTWINDOWPOS message
          * during WinCreateWindow. So, ignore that and assert on anything else.
          */
         default:
@@ -784,14 +784,14 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
 
 /**
  * The listener thread.
- * 
- * This thread is dedicated to listening for host messages and forwarding 
+ *
+ * This thread is dedicated to listening for host messages and forwarding
  * these to the worker thread (using PM).
- * 
+ *
  * The thread will set g_fListenerOkay and signal its user event when it has
  * completed initialization. In the case of init failure g_fListenerOkay will
  * not be set.
- * 
+ *
  * @returns Init error code or VINF_SUCCESS.
  * @param   ThreadSelf  Our thread handle.
  * @param   pvUser      Pointer to the clipboard service shutdown indicator.
@@ -826,29 +826,29 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                 uint32_t fFormats;
                 rc = VbglR3ClipboardGetHostMsg(g_u32ClientId, &Msg, &fFormats);
                 if (RT_SUCCESS(rc))
-                {                          
+                {
                     VBoxServiceVerbose(3, "VBoxServiceClipboardOS2Listener: Msg=%#x  fFormats=%#x\n", Msg, fFormats);
                     switch (Msg)
                     {
-                        /* 
-                         * The host has announced available clipboard formats. 
+                        /*
+                         * The host has announced available clipboard formats.
                          * Forward the information to the window, so it can later
                          * respond do WM_RENDERFORMAT message.
                          */
                         case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
-                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 
+                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
                                             MPFROMLONG(fFormats), 0))
-                                VBoxServiceError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n", 
+                                VBoxServiceError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
                                                  g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
-                        /* 
+                        /*
                          * The host needs data in the specified format.
                          */
                         case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
-                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, 
+                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                             MPFROMLONG(fFormats), 0))
-                                VBoxServiceError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n", 
+                                VBoxServiceError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n",
                                                  g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
@@ -917,7 +917,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                                                NULL);                                   /* pPresParams */
                 if (g_hwndWorker != NULLHANDLE)
                 {
-                    VBoxServiceVerbose(3, "g_hwndWorker=%#lx g_habWorker=%#lx g_hmqWorker=%#lx\n", g_hwndWorker, g_habWorker, g_hmqWorker); 
+                    VBoxServiceVerbose(3, "g_hwndWorker=%#lx g_habWorker=%#lx g_hmqWorker=%#lx\n", g_hwndWorker, g_habWorker, g_hmqWorker);
 
                     /*
                      * Create the listener thread.
@@ -934,7 +934,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                         if (g_fListenerOkay)
                         {
                             /*
-                             * Tell the control thread that it can continue 
+                             * Tell the control thread that it can continue
                              * spawning services.
                              */
                             RTThreadUserSignal(RTThreadSelf());
@@ -1013,7 +1013,7 @@ static DECLCALLBACK(void) VBoxServiceClipboardOS2Term(void)
 /**
  * The OS/2 'clipboard' service description.
  */
-VBOXSERVICE g_Clipboard = 
+VBOXSERVICE g_Clipboard =
 {
     /* pszName. */
     "clipboard",
