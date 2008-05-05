@@ -1281,6 +1281,19 @@ __END_DECLS
     } while (0)
 
 
+/** @def AssertReleaseMsgFailedBreak
+ * An assertion failed, print a message, hit a breakpoint and break.
+ *
+ * @param   a   printf argument list (in parenthesis).
+ */
+#define AssertReleaseMsgFailedBreak(a) \
+    if (1) { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } else do {} while (0)
+
 /** @def AssertReleaseMsgFailedBreakStmt
  * An assertion failed, print a message, hit a breakpoint and break.
  *
@@ -1293,21 +1306,6 @@ __END_DECLS
         AssertMsg2 a; \
         AssertReleaseBreakpoint(); \
         stmt; \
-        break; \
-    } else do {} while (0)
-
-/** @def AssertReleaseMsgFailedBreakVoid
- * An assertion failed, print a message, hit a breakpoint and break.
- *
- * @param   a   printf argument list (in parenthesis).
- * @todo Rename to AssertReleaseMsgFailedBreak.
- * @todo broken
- */
-#define AssertReleaseMsgFailedBreakVoid(a) \
-    if (1) { \
-        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
         break; \
     } else do {} while (0)
 
