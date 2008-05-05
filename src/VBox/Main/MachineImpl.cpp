@@ -1657,7 +1657,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     /* The device property is not used for SATA yet. Thus it is always zero. */
     if ((aBus == StorageBus_SATA) && (aDevice != 0))
-        AssertMsgFailed(("Invalid aDevice %d\n", aDevice));
+        AssertMsgFailed(("Invalid aDevice %d\n", aDevice)); /** @todo r=bird: You don't assert on bad input, you return E_FAIL or E_INVALIDARG via setError()! This is what is referred to in comments 9 and 5. */
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
