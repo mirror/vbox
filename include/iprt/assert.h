@@ -291,6 +291,27 @@ __END_DECLS
 #endif
 
 
+/** @def AssertBreak
+ * Assert that an expression is true and breaks if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#ifdef RT_STRICT
+# define AssertBreak(expr) \
+    if (RT_UNLIKELY(!(expr))) \
+    { \
+        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertBreakpoint(); \
+        break; \
+    } else do {} while (0)
+#else
+# define AssertBreak(expr) \
+    if (RT_UNLIKELY(!(expr))) \
+        break; \
+    else do {} while (0)
+#endif
+
 /** @def AssertBreakStmt
  * Assert that an expression is true and breaks if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before doing break.
@@ -312,29 +333,6 @@ __END_DECLS
         stmt; \
         break; \
     } else do {} while (0)
-#endif
-
-/** @def AssertBreakVoid
- * Assert that an expression is true and breaks if it isn't.
- * In RT_STRICT mode it will hit a breakpoint before returning.
- *
- * @param   expr    Expression which should be true.
- * @todo Rename to AssertBreak.
- * @todo broken, use if.
- */
-#ifdef RT_STRICT
-# define AssertBreakVoid(expr) \
-    if (RT_UNLIKELY(!(expr))) \
-    { \
-        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
-        break; \
-    } else do {} while (0)
-#else
-# define AssertBreakVoid(expr) \
-    if (RT_UNLIKELY(!(expr))) \
-        break; \
-    else do {} while (0)
 #endif
 
 

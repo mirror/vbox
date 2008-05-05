@@ -1162,7 +1162,7 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
         SCSICommandDescriptorBlock cdb = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
         memcpy(&cdb[0], pbCmd, cbCmd);
         IOReturn irc = (*ppScsiTaskI)->SetCommandDescriptorBlock(ppScsiTaskI, cdb, cbCmd);
-        AssertBreakVoid(irc == kIOReturnSuccess);
+        AssertBreak(irc == kIOReturnSuccess);
 
         /* Setup the buffer. */
         if (enmTxDir == PDMBLOCKTXDIR_NONE)
@@ -1175,11 +1175,11 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
                                                           ? kSCSIDataTransfer_FromTargetToInitiator
                                                           : kSCSIDataTransfer_FromInitiatorToTarget);
         }
-        AssertBreakVoid(irc == kIOReturnSuccess);
+        AssertBreak(irc == kIOReturnSuccess);
 
         /* Set the timeout. */
         irc = (*ppScsiTaskI)->SetTimeoutDuration(ppScsiTaskI, cTimeoutMillies ? cTimeoutMillies : 30000 /*ms*/);
-        AssertBreakVoid(irc == kIOReturnSuccess);
+        AssertBreak(irc == kIOReturnSuccess);
 
         /* Execute the command and get the response. */
         SCSI_Sense_Data SenseData = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
@@ -1187,13 +1187,13 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
         SCSITaskStatus TaskStatus = kSCSITaskStatus_GOOD;
         UInt64 cbReturned = 0;
         irc = (*ppScsiTaskI)->ExecuteTaskSync(ppScsiTaskI, &SenseData, &TaskStatus, &cbReturned);
-        AssertBreakVoid(irc == kIOReturnSuccess);
+        AssertBreak(irc == kIOReturnSuccess);
         if (pcbBuf)
             *pcbBuf = cbReturned;
 
         irc = (*ppScsiTaskI)->GetSCSIServiceResponse(ppScsiTaskI, &ServiceResponse);
-        AssertBreakVoid(irc == kIOReturnSuccess);
-        AssertBreakVoid(ServiceResponse == kSCSIServiceResponse_TASK_COMPLETE);
+        AssertBreak(irc == kIOReturnSuccess);
+        AssertBreak(ServiceResponse == kSCSIServiceResponse_TASK_COMPLETE);
 
         if (TaskStatus == kSCSITaskStatus_GOOD)
             rc = VINF_SUCCESS;

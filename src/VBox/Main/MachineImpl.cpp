@@ -4408,7 +4408,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreakVoid (slot < ELEMENTS (mNetworkAdapters));
+            AssertBreak (slot < ELEMENTS (mNetworkAdapters));
 
             rc = mNetworkAdapters [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);
@@ -4428,7 +4428,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
+            AssertBreak (slot < ELEMENTS (mSerialPorts));
 
             rc = mSerialPorts [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);
@@ -4448,7 +4448,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
+            AssertBreak (slot < ELEMENTS (mSerialPorts));
 
             rc = mParallelPorts [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);

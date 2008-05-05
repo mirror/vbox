@@ -820,7 +820,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
             PUSBDEVICE pCur = (PUSBDEVICE)RTMemAllocZ(sizeof(*pCur));
             do /* loop for breaking out of on failure. */
             {
-                AssertBreakVoid(pCur);
+                AssertBreak(pCur);
 
                 /*
                  * Mandatory
@@ -828,28 +828,28 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 pCur->bcdUSB = 0;                                           /* we've no idea. */
                 pCur->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;    /* just a default, we'll try harder in a bit. */
 
-                AssertBreakVoid(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceClass),           &pCur->bDeviceClass));
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceClass),           &pCur->bDeviceClass));
                 /* skip hubs */
                 if (pCur->bDeviceClass == 0x09 /* hub, find a define! */)
                     break;
-                AssertBreakVoid(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceSubClass),       &pCur->bDeviceSubClass));
-                AssertBreakVoid(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceProtocol),       &pCur->bDeviceProtocol));
-                AssertBreakVoid(darwinDictGetU16(PropsRef, CFSTR(kUSBVendorID),             &pCur->idVendor));
-                AssertBreakVoid(darwinDictGetU16(PropsRef, CFSTR(kUSBProductID),            &pCur->idProduct));
-                AssertBreakVoid(darwinDictGetU16(PropsRef, CFSTR(kUSBDeviceReleaseNumber),  &pCur->bcdDevice));
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceSubClass),       &pCur->bDeviceSubClass));
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceProtocol),       &pCur->bDeviceProtocol));
+                AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBVendorID),             &pCur->idVendor));
+                AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBProductID),            &pCur->idProduct));
+                AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBDeviceReleaseNumber),  &pCur->bcdDevice));
                 uint32_t u32LocationId;
-                AssertBreakVoid(darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32LocationId));
+                AssertBreak(darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32LocationId));
                 uint64_t u64SessionId;
-                AssertBreakVoid(darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64SessionId));
+                AssertBreak(darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64SessionId));
                 char szAddress[64];
                 RTStrPrintf(szAddress, sizeof(szAddress), "p=0x%04RX16;v=0x%04RX16;s=0x%016RX64;l=0x%08RX32",
                             pCur->idProduct, pCur->idVendor, u64SessionId, u32LocationId);
                 pCur->pszAddress = RTStrDup(szAddress);
-                AssertBreakVoid(pCur->pszAddress);
+                AssertBreak(pCur->pszAddress);
                 pCur->bBus = u32LocationId >> 24;
-                AssertBreakVoid(darwinDictGetU8(PropsRef,  CFSTR("PortNum"),                &pCur->bPort));
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR("PortNum"),                &pCur->bPort));
                 uint8_t bSpeed;
-                AssertBreakVoid(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed));
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed));
                 Assert(bSpeed <= 2);
                 pCur->enmSpeed = bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
@@ -1026,7 +1026,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
 #if 0 /* Guess what, this doesn't 'ing work either! */
                 SInt32 i32 = (int16_t)u64Value;
                 CFNumberRef Num = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &i32);
-                AssertBreakVoid(Num);
+                AssertBreak(Num);
                 CFDictionarySetValue(RefMatchingDict, chValue == 'p' ? CFSTR(kUSBProductID) : CFSTR(kUSBVendorID), Num);
                 CFRelease(Num);
 #endif
