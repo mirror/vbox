@@ -3070,8 +3070,8 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
             break;
         }
         default:
-            AssertMsgFailedBreak ((
-                "Invalid message code %d (%08lX)\n", aMsgCode, aMsgCode),
+            AssertMsgFailedBreakStmt (
+                ("Invalid message code %d (%08lX)\n", aMsgCode, aMsgCode),
                 VERR_GENERAL_FAILURE);
     }
 
