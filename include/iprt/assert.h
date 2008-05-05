@@ -76,6 +76,44 @@
  * @{
  */
 
+__BEGIN_DECLS
+
+/**
+ * The 1st part of an assert message.
+ *
+ * @param   pszExpr     Expression. Can be NULL.
+ * @param   uLine       Location line number.
+ * @param   pszFile     Location file name.
+ * @param   pszFunction Location function name.
+ * @remark  This API exists in HC Ring-3 and GC.
+ */
+RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
+
+/**
+ * The 2nd (optional) part of an assert message.
+ * @param   pszFormat   Printf like format string.
+ * @param   ...         Arguments to that string.
+ * @remark  This API exists in HC Ring-3 and GC.
+ */
+RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
+
+/**
+ * Overridable function that decides whether assertions executes the breakpoint or not.
+ *
+ * The generic implementation will return true.
+ *
+ * @returns true if the breakpoint should be hit, false if it should be ignored.
+ * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
+ */
+RTDECL(bool)    RTAssertDoBreakpoint(void);
+
+/** The last assert message, 1st part. */
+extern RTDATADECL(char) g_szRTAssertMsg1[1024];
+/** The last assert message, 2nd part. */
+extern RTDATADECL(char) g_szRTAssertMsg2[2048];
+
+__END_DECLS
+
 
 /** @def AssertBreakpoint()
  * Assertion Breakpoint.
@@ -1947,47 +1985,10 @@ __END_DECLS
 /** @def AssertGCPhys32
  * Asserts that the high dword of a physical address is zero
  *
- * @param   pv      The pointer.
+ * @param   GCPhys      The address (RTGCPHYS).
  */
-#define AssertGCPhys32(pv)          AssertMsg(VALID_PHYS32_PTR(pv), ("%p\n", (pv)))
+#define AssertGCPhys32(GCPhys)      AssertMsg(VALID_PHYS32(GCPhys), ("%RGp\n", (RTGCPHYS)(GCPhys)))
 
-__BEGIN_DECLS
-
-/**
- * The 1st part of an assert message.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
-
-/**
- * The 2nd (optional) part of an assert message.
- * @param   pszFormat   Printf like format string.
- * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
-
-/**
- * Overridable function that decides whether assertions executes the breakpoint or not.
- *
- * The generic implementation will return true.
- *
- * @returns true if the breakpoint should be hit, false if it should be ignored.
- * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
- */
-RTDECL(bool)    RTAssertDoBreakpoint(void);
-
-/** The last assert message, 1st part. */
-extern RTDATADECL(char) g_szRTAssertMsg1[1024];
-/** The last assert message, 2nd part. */
-extern RTDATADECL(char) g_szRTAssertMsg2[2048];
-
-__END_DECLS
 
 /** @} */
 

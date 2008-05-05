@@ -1206,11 +1206,11 @@
 #endif
 
 
-/** @def VALID_PHYS32_PTR
+/** @def VALID_PHYS32
  * 32 bits physical address validation macro.
- * @param   ptr
+ * @param   Phys          The RTGCPHYS address.
  */
-#define VALID_PHYS32_PTR(ptr)     ( (RTGCPHYS64)(ptr) < _4G )
+#define VALID_PHYS32(Phys)  ( (uint64_t)(Phys) < (uint64_t)_4G )
 
 /** @def N_
  * The \#define N_ is used mark a string for translation. This is usable in
