@@ -24,12 +24,10 @@
 #define __VBoxVMListView_h__
 
 #include "VBoxGlobal.h"
-#include "VBoxDefs.h"
+#include "QIListView.h"
 
 /* Qt includes */
 #include <QAbstractListModel>
-#include <QListView>
-#include <QItemDelegate>
 #include <QDateTime>
 
 class VBoxVMItem
@@ -137,7 +135,7 @@ private:
     QList<VBoxVMItem *> mVMItemList;
 };
 
-class VBoxVMListView: public QListView
+class VBoxVMListView: public QIListView
 {
     Q_OBJECT;
 
@@ -160,28 +158,23 @@ protected slots:
     void selectionChanged (const QItemSelection &aSelected, const QItemSelection &aDeselected);
     void currentChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious);
     void dataChanged (const QModelIndex &aTopLeft, const QModelIndex &aBottomRight);
-    void focusChanged (QWidget *aOld, QWidget *aNow);
 
 protected:
     void mousePressEvent (QMouseEvent *aEvent);
     bool selectCurrent();
 }; 
 
-class VBoxVMItemPainter: public QItemDelegate
+class VBoxVMItemPainter: public QIItemDelegate
 {
 public:
     VBoxVMItemPainter (QObject *aParent = 0)
-      : QItemDelegate (aParent), mMargin (8), mSpacing (mMargin * 3 / 2) {}
+      : QIItemDelegate (aParent), mMargin (8), mSpacing (mMargin * 3 / 2) {}
 
     QSize sizeHint (const QStyleOptionViewItem &aOption,
                     const QModelIndex &aIndex) const;
 
     void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption,
                 const QModelIndex &aIndex) const;
-
-protected:
-    void drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption, 
-                         const QModelIndex &aIndex) const;
 
 private:
     inline QFontMetrics fontMetric (const QModelIndex &aIndex, int aRole) const { return QFontMetrics (aIndex.data (aRole).value<QFont>()); }
