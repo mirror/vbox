@@ -1889,7 +1889,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation>Port %1</translation>
     </message>
     <message>

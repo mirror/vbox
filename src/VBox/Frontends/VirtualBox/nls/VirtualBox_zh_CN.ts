@@ -2039,7 +2039,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation>端口 %1</translation>
     </message>
     <message>

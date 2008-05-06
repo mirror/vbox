@@ -2035,7 +2035,7 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation type="unfinished">Port %1</translation>
     </message>
     <message>

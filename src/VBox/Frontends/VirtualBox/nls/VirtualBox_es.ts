@@ -2078,7 +2078,7 @@ Version %1</source>
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation type="unfinished">Puerto %1</translation>
     </message>
     <message>

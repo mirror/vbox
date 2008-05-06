@@ -2335,7 +2335,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>

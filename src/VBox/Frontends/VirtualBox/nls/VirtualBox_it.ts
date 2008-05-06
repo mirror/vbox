@@ -2027,7 +2027,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation>Porta %1</translation>
     </message>
     <message>
