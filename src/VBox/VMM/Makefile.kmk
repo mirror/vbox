@@ -439,4 +439,5 @@ PGMAllBth.o   PGMAllGst.o   PGMAllShw.o \
 PGMAllBth.obj PGMAllGst.obj PGMAllShw.obj: PGMAll.o
 PGMGCBth.o   PGMGCGst.o   PGMGCShw.o \
 PGMGCBth.obj PGMGCGst.obj PGMGCShw.obj: PGMGC.o
+PGMPhysRWTmpl.o PGMPhysRWTmpl.obj: PGMPhys.o
 
