@@ -531,13 +531,14 @@ PGMR3DECL(int)  PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool f
 #endif
 PGMR3DECL(int)  PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch);
 
-/** @todo r=bird: s/Byte/U8/ s/Word/U16/ s/Dword/U32/ to match other functions names and returned types. */
-PGMR3DECL(uint8_t) PGMR3PhysReadByte(PVM pVM, RTGCPHYS GCPhys);
-PGMR3DECL(uint16_t) PGMR3PhysReadWord(PVM pVM, RTGCPHYS GCPhys);
-PGMR3DECL(uint32_t) PGMR3PhysReadDword(PVM pVM, RTGCPHYS GCPhys);
-PGMR3DECL(void) PGMR3PhysWriteByte(PVM pVM, RTGCPHYS GCPhys, uint8_t val);
-PGMR3DECL(void) PGMR3PhysWriteWord(PVM pVM, RTGCPHYS GCPhys, uint16_t val);
-PGMR3DECL(void) PGMR3PhysWriteDword(PVM pVM, RTGCPHYS GCPhys, uint32_t val);
+PGMR3DECL(uint8_t) PGMR3PhysReadU8(PVM pVM, RTGCPHYS GCPhys);
+PGMR3DECL(uint16_t) PGMR3PhysReadU16(PVM pVM, RTGCPHYS GCPhys);
+PGMR3DECL(uint32_t) PGMR3PhysReadU32(PVM pVM, RTGCPHYS GCPhys);
+PGMR3DECL(uint64_t) PGMR3PhysReadU64(PVM pVM, RTGCPHYS GCPhys);
+PGMR3DECL(void) PGMR3PhysWriteU8(PVM pVM, RTGCPHYS GCPhys, uint8_t Value);
+PGMR3DECL(void) PGMR3PhysWriteU16(PVM pVM, RTGCPHYS GCPhys, uint16_t Value);
+PGMR3DECL(void) PGMR3PhysWriteU32(PVM pVM, RTGCPHYS GCPhys, uint32_t Value);
+PGMR3DECL(void) PGMR3PhysWriteU64(PVM pVM, RTGCPHYS GCPhys, uint64_t Value);
 PDMR3DECL(int)  PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
 PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM);
 PDMR3DECL(int)  PGMR3PhysAllocateHandyPages(PVM pVM);

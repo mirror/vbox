@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PGM - Page Manager and Monitor, Physical Memory Addressing.
+ * PGM - Page Manager and Monitor, Physical Memory Access Template.
  */
 
 /*
