@@ -1837,7 +1837,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Base class to track component's chlidren of some particular type.
+ *  Base class to track component's children of some particular type.
  *
  *  This class is similar to VirtualBoxBaseWithChildren, with the exception
  *  that all children must be of the same type. For this reason, it's not
