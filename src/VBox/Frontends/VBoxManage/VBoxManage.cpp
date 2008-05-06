@@ -357,8 +357,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nic<1-N> none|null|nat|hostif|intnet]\n"
                  "                            [-nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
-                                                                              "|82540EM"
-                 //"|82540EM|82543GC"
+                                                                              "|82540EM|82543GC"
 #endif
                  "]\n"
                  "                            [-cableconnected<1-N> on|off]\n"
