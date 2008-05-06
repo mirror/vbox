@@ -156,7 +156,7 @@ bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
     UInt32 eventKind = ::GetEventKind (inEvent);
 
     /* For debugging events */
-    /* 
+    /*
     if (!(eventKind == kEventWindowActivated ||
           eventClass == 0x63757465))
         ::DarwinDebugPrintEvent ("view: ", inEvent);
@@ -2237,7 +2237,8 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
  */
 void VBoxConsoleView::toggleFSMode()
 {
-    if (mIsAdditionsActive && mAutoresizeGuest)
+    if ((mIsAdditionsActive && mAutoresizeGuest) ||
+        mMainWnd->isTrueFullscreen())
     {
         QSize newSize = QSize();
         if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
@@ -3504,7 +3505,8 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if (mIsAdditionsActive && mAutoresizeGuest)
+    if ((mIsAdditionsActive && mAutoresizeGuest) ||
+        mMainWnd->isTrueFullscreen())
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
@@ -3518,7 +3520,8 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         /* Increase the desktop geometry if needed */
         setDesktopGeometry(sz.width(), sz.height());
 
-        mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
+        if (mIsAdditionsActive)
+            mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
 }
 
