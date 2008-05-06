@@ -1,4 +1,21 @@
 <ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
  <class>VBoxNewVMWzd</class>
  <widget class="QDialog" name="VBoxNewVMWzd" >
   <property name="geometry" >
@@ -594,7 +611,7 @@
                </widget>
               </item>
               <item row="0" column="3" >
-               <widget class="QLineEdit" name="mLeRAM" >
+               <widget class="QILineEdit" name="mLeRAM" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
                   <horstretch>0</horstretch>
@@ -1206,6 +1223,11 @@
    <class>QITextEdit</class>
    <extends>QTextEdit</extends>
    <header>QIAbstractWizard.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
