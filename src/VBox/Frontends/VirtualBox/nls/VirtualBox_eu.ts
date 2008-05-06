@@ -1920,7 +1920,7 @@ Version %1</source>
     </message>
     <message>
         <source>Port %1</source>
-        <comment>StorageBusDevice</comment>
+        <comment>StorageBusChannel</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
