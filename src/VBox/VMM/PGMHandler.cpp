@@ -274,7 +274,7 @@ PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
  * @thread  EMT
  */
 /** @todo rename this to PGMR3HandlerVirtualRegisterEx. */
-/** @todo create a template for virtual handlers (see async i/o), we're wasting space 
+/** @todo create a template for virtual handlers (see async i/o), we're wasting space
  * duplicating the function pointers now. (Or we will once we add the missing callbacks.) */
 PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                          PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
@@ -355,19 +355,19 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
      * The current implementation doesn't allow multiple handlers for
      * the same range this makes everything much simpler and faster.
      */
-    AVLROGCPTRTREE *pRoot = enmType != PGMVIRTHANDLERTYPE_HYPERVISOR 
+    AVLROGCPTRTREE *pRoot = enmType != PGMVIRTHANDLERTYPE_HYPERVISOR
                           ? &pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers
                           : &pVM->pgm.s.CTXSUFF(pTrees)->HyperVirtHandlers;
     pgmLock(pVM);
     if (*pRoot != 0)
     {
         PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, true);
-        if (    !pCur 
-            ||  GCPtr     > pCur->GCPtrLast 
+        if (    !pCur
+            ||  GCPtr     > pCur->GCPtrLast
             ||  GCPtrLast < pCur->GCPtr)
             pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, false);
-        if (    pCur 
-            &&  GCPtr     <= pCur->GCPtrLast 
+        if (    pCur
+            &&  GCPtr     <= pCur->GCPtrLast
             &&  GCPtrLast >= pCur->GCPtr)
         {
             /*
@@ -487,7 +487,7 @@ PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
     }
 
     pgmUnlock(pVM);
-    
+
     STAM_DEREG(pVM, &pCur->Stat);
     MMHyperFree(pVM, pCur);
 
