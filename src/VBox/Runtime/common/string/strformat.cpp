@@ -773,9 +773,16 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     }
 
                     /*
-                     * Nested extension.
+                     * Nested extensions.
                      */
-                    case 'N':
+                    case 'M': /* replace the format string (not stacked yet). */
+                    {
+                        pszStartOutput = pszFormat = va_arg(args, const char *);
+                        AssertPtr(pszStartOutput);
+                        break;
+                    }
+
+                    case 'N': /* real nesting. */
                     {
                         const char *pszFormatNested = va_arg(args, const char *);
                         va_list    *pArgsNested     = va_arg(args, va_list *);
