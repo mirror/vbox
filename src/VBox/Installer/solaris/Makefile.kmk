@@ -274,7 +274,6 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
 
 $(PATH_BIN)/$(DBGARCHIVE): \
-		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSTRIPBIN)) \
 		$(VBOX_VERSION_STAMP) \
 		Makefile.kmk
 	$(call MSG_L1,Installing debug binaries $(SOLARISDBGDIR))
