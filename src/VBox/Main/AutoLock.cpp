@@ -19,12 +19,118 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_MAIN_AUTOLOCK_TRAP
+// workaround for compile problems on gcc 4.1
+# ifdef __GNUC__
+#  pragma GCC visibility push(default)
+# endif
+#endif
+
 #include "AutoLock.h"
 
 #include "Logging.h"
 
+#include <iprt/string.h>
+
+#ifdef VBOX_MAIN_AUTOLOCK_TRAP
+# if defined (RT_OS_LINUX)
+#  include <signal.h>
+#  include <execinfo.h>
+/* get REG_EIP from ucontext.h */
+#  ifndef __USE_GNU
+#  define __USE_GNU
+#  endif
+#  include <ucontext.h>
+#  ifdef RT_ARCH_AMD64
+#   define REG_PC REG_RIP
+#  else
+#   define REG_PC REG_EIP
+#  endif
+# endif
+#endif /* VBOX_MAIN_AUTOLOCK_TRAP */
+
 namespace util
 {
+
+#ifdef VBOX_MAIN_AUTOLOCK_TRAP
+
+namespace internal
+{
+
+struct TLS
+{
+    struct Uint32_t
+    {
+        Uint32_t() : raw (0) {}
+        operator uint32_t &() { return raw; }
+        uint32_t raw;
+    };
+
+    typedef std::map <RWLockHandle *, Uint32_t> HandleMap;
+    HandleMap handles; /*< handle reference counter on the current thread */
+};
+
+/**
+ * Global module initialization structure.
+ *
+ * The constructor and destructor of this structure are used to perform global
+ * module initiaizaton and cleanup. Thee must be only one global variable of
+ * this structure.
+ */
+static
+class Global
+{
+public:
+
+    Global() : tlsID (NIL_RTTLS)
+    {
+#if defined (RT_OS_LINUX)
+        int vrc = RTTlsAllocEx (&tlsID, TLSDestructor);
+        AssertRC (vrc);
+#else
+        tlsID = RTTlsAlloc();
+        Assert (tlsID != NIL_RTTLS);
+#endif
+    }
+
+    ~Global()
+    {
+        RTTlsFree (tlsID);
+    }
+
+    TLS *tls() const
+    {
+        TLS *tls = NULL;
+        if (tlsID != NIL_RTTLS)
+        {
+            tls = static_cast <TLS *> (RTTlsGet (tlsID));
+            if (tls == NULL)
+            {
+                tls = new TLS();
+                RTTlsSet (tlsID, tls);
+            }
+        }
+
+        return tls;
+    }
+
+    RTTLS tlsID;
+}
+gGlobal;
+
+DECLCALLBACK(void) TLSDestructor (void *aValue)
+{
+    if (aValue != NULL)
+    {
+        TLS *tls = static_cast <TLS *> (aValue);
+        RWLockHandle::TLSDestructor (tls);
+        delete tls;
+    }
+}
+
+} /* namespace internal */
+
+#endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
 
 RWLockHandle::RWLockHandle()
@@ -106,13 +212,28 @@ void RWLockHandle::lockWrite()
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
         if (mReadLockCount != 0)
         {
-            ReaderMap::const_iterator reader = mReaders.find (threadSelf);
-            if (reader != mReaders.end() && reader->second != 0)
+            using namespace internal;
+            TLS *tls = gGlobal.tls();
+            if (tls != NULL)
             {
-                AssertReleaseMsgFailedReturnVoid ((
-                    "SELF DEADLOCK DETECTED on Thread %0x: lockWrite() after "
-                    "lockRead(): reader count = %d!\n",
-                    threadSelf, reader->second));
+                TLS::HandleMap::const_iterator it = tls->handles.find (this);
+                if (it != tls->handles.end() && it->second.raw != 0)
+                {
+                    /* if there is a writer then the handle reference counter equals
+                     * to the number of readers on the current thread plus 1 */
+
+                    uint32_t readers = it->second.raw;
+                    if (mWriteLockThread != NIL_RTNATIVETHREAD)
+                        -- readers;
+
+                    std::string info;
+                    gatherInfo (info);
+
+                    AssertReleaseMsgFailedReturnVoid ((
+                        "DETECTED SELF DEADLOCK on Thread %08x: lockWrite() after "
+                        "lockRead(): reader count = %d!\n%s\n",
+                        threadSelf, readers, info.c_str()));
+                }
             }
         }
 # endif /* VBOX_MAIN_AUTOLOCK_TRAP */
@@ -138,6 +259,10 @@ void RWLockHandle::lockWrite()
 
     ++ mWriteLockLevel;
     Assert (mWriteLockLevel != 0 /* overflow */);
+
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+    logOp (LockWrite);
+# endif
 
     RTCritSectLeave (&mCritSect);
 
@@ -176,6 +301,10 @@ void RWLockHandle::unlockWrite()
         }
     }
 
+# ifdef VBOX_MAIN_AUTOLOCK_TRAP
+    logOp (UnlockWrite);
+# endif
+
     RTCritSectLeave (&mCritSect);
 
 #endif /* VBOX_MAIN_USE_SEMRW */
@@ -196,9 +325,7 @@ void RWLockHandle::lockRead()
     RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
 
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
-    if (!mReaders.count (threadSelf))
-        mReaders [threadSelf] = 0;
-    ++ mReaders [threadSelf];
+    logOp (LockRead);
 # endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
     bool isWriteLock = mWriteLockLevel != 0;
@@ -276,7 +403,7 @@ void RWLockHandle::unlockRead()
                 -- mSelfReadLockCount;
 
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
-                -- mReaders [threadSelf];
+                logOp (UnlockRead);
 # endif /* VBOX_MAIN_AUTOLOCK_TRAP */
             }
         }
@@ -296,7 +423,7 @@ void RWLockHandle::unlockRead()
             }
 
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
-            -- mReaders [threadSelf];
+            logOp (UnlockRead);
 # endif /* VBOX_MAIN_AUTOLOCK_TRAP */
         }
     }
@@ -321,6 +448,120 @@ uint32_t RWLockHandle::writeLockLevel() const
 
 #endif /* VBOX_MAIN_USE_SEMRW */
 }
+
+
+#ifdef VBOX_MAIN_AUTOLOCK_TRAP
+
+void RWLockHandle::logOp (Operation aOp)
+{
+    std::string info;
+
+    char buf [256];
+    RTStrPrintf (buf, sizeof (buf), "[%c] Thread %08x (%s)\n",
+                 aOp == LockRead ? 'r' : aOp == LockWrite ? 'w' : '?',
+                 RTThreadNativeSelf(), RTThreadGetName (RTThreadSelf()));
+    info += buf;
+
+# if defined (RT_OS_LINUX)
+
+    void *trace [16];
+    char **messages = (char **) NULL;
+    int i, trace_size = 0;
+    trace_size = backtrace (trace, 16);
+
+    messages = backtrace_symbols (trace, trace_size);
+    /* skip first stack frame (points here) and the second stack frame (points
+     * to lockRead()/lockWrite() */
+    for (i = 2; i < trace_size; ++i)
+        (info += messages[i]) += "\n";
+
+    free (messages);
+
+# endif /* defined (RT_OS_LINUX) */
+
+    internal::TLS *tls = internal::gGlobal.tls();
+    if (tls != NULL)
+    {
+
+        switch (aOp)
+        {
+            case LockRead:
+            {
+                mReaderInfo.push_back (info);
+                ++ tls->handles [this];
+                break;
+            }
+            case UnlockRead:
+            {
+                mReaderInfo.pop_back();
+                -- tls->handles [this];
+                break;
+            }
+            case LockWrite:
+            {
+                mWriterInfo = info;
+                ++ tls->handles [this];
+                break;
+            }
+            case UnlockWrite:
+            {
+                mWriterInfo.clear();;
+                -- tls->handles [this];
+                break;
+            }
+        }
+    }
+}
+
+void RWLockHandle::gatherInfo (std::string &aInfo)
+{
+    char buf [256];
+    RTStrPrintf (buf, sizeof (buf),
+                 "[*] RWLockHandle %x:\n", this,
+                 RTThreadNativeSelf(), RTThreadGetName (RTThreadSelf()));
+    aInfo += buf;
+
+    /* add reader info */
+    for (ReaderInfo::const_iterator it = mReaderInfo.begin();
+         it != mReaderInfo.end(); ++ it)
+    {
+        aInfo += *it;
+    }
+    /* add writer info */
+    if (!mWriterInfo.empty())
+        aInfo += mWriterInfo;
+}
+
+/* static */
+void RWLockHandle::TLSDestructor (internal::TLS *aTLS)
+{
+    using namespace internal;
+
+    if (aTLS != NULL && aTLS->handles.size())
+    {
+        std::string info;
+        size_t cnt = 0;
+
+        for (TLS::HandleMap::const_iterator it = aTLS->handles.begin();
+             it != aTLS->handles.end(); ++ it)
+        {
+            if (it->second.raw != 0)
+            {
+                it->first->gatherInfo (info);
+                ++ cnt;
+            }
+        }
+
+        if (cnt != 0)
+        {
+            AssertReleaseMsgFailed ((
+                "DETECTED %d HELD RWLockHandle's on Thread %08x!\n%s\n",
+                cnt, RTThreadNativeSelf(), info.c_str()));
+        }
+    }
+}
+
+#endif /* ifdef VBOX_MAIN_AUTOLOCK_TRAP */
 
 
 } /* namespace util */
