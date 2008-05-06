@@ -594,9 +594,7 @@ typedef RTR0UINTPTR    *PRTR0UINTPTR;
 typedef const RTR0UINTPTR *PCRTR0UINTPTR;
 
 
-/** Host Physical Memory Address.
- * @todo    This should be configurable at compile time too...
- */
+/** Host Physical Memory Address. */
 typedef uint64_t        RTHCPHYS;
 /** Pointer to Host Physical Memory Address. */
 typedef RTHCPHYS       *PRTHCPHYS;
