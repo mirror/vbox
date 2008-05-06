@@ -40,11 +40,21 @@
 #else
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
 #  include <map>
+#  include <list>
+#  include <string>
 # endif
 #endif
 
 namespace util
 {
+
+#ifdef VBOX_MAIN_AUTOLOCK_TRAP
+namespace internal
+{
+    struct TLS;
+    DECLCALLBACK(void) TLSDestructor (void *aValue);
+}
+#endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
 /**
  * Abstract lock operations. See LockHandle and AutoWriteLock for details.
@@ -204,8 +214,16 @@ private:
 
 # ifdef VBOX_MAIN_AUTOLOCK_TRAP
 
-    typedef std::map <RTNATIVETHREAD, uint32_t> ReaderMap;
-    ReaderMap mReaders;
+    enum Operation { LockRead, UnlockRead, LockWrite, UnlockWrite };
+    void logOp (Operation aOp);
+    void gatherInfo (std::string &aInfo);
+
+    friend DECLCALLBACK(void) internal::TLSDestructor (void *aValue);
+    static void TLSDestructor (internal::TLS *aTLS);
+
+    typedef std::list <std::string> ReaderInfo;
+    ReaderInfo mReaderInfo;
+    std::string mWriterInfo;
 
 # endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
