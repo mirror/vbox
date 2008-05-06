@@ -3580,6 +3580,9 @@ cdrom_boot()
   Bit32u lba;
   Bit16u boot_segment, nbsectors, i, error;
   Bit8u  device;
+#ifdef VBOX
+  Bit8u  read_try;
+#endif /* VBOX */
 
   // Find out the first cdrom
   for (device=0; device<BX_MAX_ATA_DEVICES;device++) {
@@ -3598,8 +3601,19 @@ cdrom_boot()
   atacmd[3]=(0x11 & 0x00ff0000) >> 16;
   atacmd[4]=(0x11 & 0x0000ff00) >> 8;
   atacmd[5]=(0x11 & 0x000000ff);
+#ifdef VBOX
+  for (read_try = 0; read_try <= 4; read_try++)
+  {
+    error = ata_cmd_packet(device, 12, get_SS(), atacmd, 0, 2048L, ATA_DATA_IN, get_SS(), buffer);
+    if (!error)
+      break;
+  }
+  if (error)
+    return 3;
+#else /* !VBOX */
   if((error = ata_cmd_packet(device, 12, get_SS(), atacmd, 0, 2048L, ATA_DATA_IN, get_SS(), buffer)) != 0)
     return 3;
+#endif /* !VBOX */
 
   // Validity checks
   if(buffer[0]!=0)return 4;
