@@ -413,11 +413,21 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #endif
 
 
+/** @def LOG_USE_C99
+ * Governs the use of variadic macros.
+ */
+#ifndef LOG_USE_C99
+# if defined(RT_ARCH_AMD64)
+#  define LOG_USE_C99
+# endif
+#endif
+
+
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
 #ifdef LOG_ENABLED
-# if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
+# if defined(LOG_USE_C99)
 #  define _LogRemoveParentheseis(...)               __VA_ARGS__
 #  define _LogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
 #  define LogIt(pvInst, fFlags, iGroup, fmtargs)    _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
@@ -528,12 +538,16 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 /** @def LogWarning
  * The same as Log(), but prepents a <tt>"WARNING! "</tt> string to the message.
- * @param m    custom log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ *
+ * @param   a   Custom log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogWarning(m) \
-    do { Log(("WARNING! ")); Log(m); } while (0)
+#if defined(LOG_USE_C99)
+# define LogWarning(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "WARNING! %M", _LogRemoveParentheseis a )
+#else
+# define LogWarning(a) \
+    do { Log(("WARNING! ")); Log(a); } while (0)
+#endif
 
 /** @def LogTrace
  * Macro to trace the execution flow: logs the file name, line number and
@@ -545,99 +559,132 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 /** @def LogTraceMsg
  * The same as LogTrace but logs a custom log message right after the trace line.
- * @param m    custom log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ *
+ * @param   a   Custom log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogTraceMsg(m) \
-    do {  LogTrace(); LogFlow(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogTraceMsg(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, ">>>>> %s (%d): %M" LOG_FN_FMT, __FILE__, __LINE__, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogTraceMsg(a) \
+    do {  LogFlow((">>>>> %s (%d): " LOG_FN_FMT, __FILE__, __LINE__, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+#endif
 
 /** @def LogFunc
  * Level 1 logging inside C/C++ functions.
- * Prepends the given log message with the function name followed by a semicolon
- * and space.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogFunc(m) \
-    do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogFunc(a) \
+    do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
+#endif
 
 /** @def LogThisFunc
  * The same as LogFunc but for class functions (methods): the resulting log
- * line is additionally perpended with a hex value of |this| pointer.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ * line is additionally prepended with a hex value of |this| pointer.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogThisFunc(m) \
-    do { Log(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogThisFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogThisFunc(a) \
+    do { Log(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
+#endif
 
 /** @def LogFlowFunc
  * Macro to log the execution flow inside C/C++ functions.
- * Prepends the given log message with the function name followed by a semicolon
- * and space.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ *
+ * Prepends the given log message with the function name followed by
+ * a semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogFlowFunc(m) \
-    do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogFlowFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogFlowFunc(a) \
+    do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+#endif
 
 /** @def LogWarningFunc
  * The same as LogWarning(), but prepents the log message with the function name.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogWarningFunc(m) \
-    do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogWarningFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogWarningFunc(a) \
+    do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(a); } while (0)
+#endif
 
 /** @def LogFlowThisFunc
  * The same as LogFlowFunc but for class functions (methods): the resulting log
- * line is additionally perpended with a hex value of |this| pointer.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ * line is additionally prepended with a hex value of |this| pointer.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogFlowThisFunc(m) \
-    do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogFlow(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogFlowThisFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogFlowThisFunc(a) \
+    do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+#endif
 
 /** @def LogWarningThisFunc
  * The same as LogWarningFunc() but for class functions (methods): the resulting
- * log line is additionally perpended with a hex value of |this| pointer.
- * @param m    log message in format <tt>("string\n" [, args])</tt>
- * @todo use a Log macro with a variable argument list (requires MSVC8) to
- * join two separate Log* calls and make this op atomic
+ * log line is additionally prepended with a hex value of |this| pointer.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
-#define LogWarningThisFunc(m) \
-    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
+#ifdef LOG_USE_C99
+# define LogWarningThisFunc(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogWarningThisFunc(a) \
+    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
+#endif
 
-/** Shortcut to |LogFlowFunc ("ENTER\n")|, marks the beginnig of the function */
+/** Shortcut to |LogFlowFunc ("ENTER\n")|, marks the beginnig of the function. */
 #define LogFlowFuncEnter()      LogFlowFunc(("ENTER\n"))
 
-/** Shortcut to |LogFlowFunc ("LEAVE\n")|, marks the end of the function */
+/** Shortcut to |LogFlowFunc ("LEAVE\n")|, marks the end of the function. */
 #define LogFlowFuncLeave()      LogFlowFunc(("LEAVE\n"))
 
-/** Shortcut to |LogFlowThisFunc ("ENTER\n")|, marks the beginnig of the function */
+/** Shortcut to |LogFlowThisFunc ("ENTER\n")|, marks the beginnig of the function. */
 #define LogFlowThisFuncEnter()  LogFlowThisFunc(("ENTER\n"))
 
-/** Shortcut to |LogFlowThisFunc ("LEAVE\n")|, marks the end of the function */
+/** Shortcut to |LogFlowThisFunc ("LEAVE\n")|, marks the end of the function. */
 #define LogFlowThisFuncLeave()  LogFlowThisFunc(("LEAVE\n"))
 
 /** @def LogObjRefCnt
  * Helper macro to print the current reference count of the given COM object
  * to the log file.
- * @param obj  object in question (must be a pointer to an IUnknown subclass
- *             or simply define COM-style AddRef() and Release() methods)
+ *
+ * @param pObj  Pointer to the object in question (must be a pointer to an
+ *              IUnknown subclass or simply define COM-style AddRef() and
+ *              Release() methods)
+ *
  * @note Use it only for temporary debugging. It leaves dummy code even if
  *       logging is disabled.
  */
-#define LogObjRefCnt(obj) \
+#define LogObjRefCnt(pObj) \
     do { \
-        int refc = (obj)->AddRef(); -- refc; \
-        LogFlow((#obj "{%p}.refCnt=%d\n", (obj), refc)); \
-        (obj)->Release(); \
+        int refc = (pObj)->AddRef(); \
+        LogFlow((#pObj "{%p}.refCnt=%d\n", (pObj), refc - 1)); \
+        (pObj)->Release(); \
     } while (0)
 
 
@@ -720,7 +767,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
+#if defined(LOG_USE_C99)
 # define _LogRelRemoveParentheseis(...)                __VA_ARGS__
 #  define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
 #  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
@@ -791,7 +838,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 /** @def LogRelThisFunc
  * The same as LogRelFunc but for class functions (methods): the resulting log
- * line is additionally perpended with a hex value of |this| pointer.
+ * line is additionally prepended with a hex value of |this| pointer.
  */
 #define LogRelThisFunc(a) \
     do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
