@@ -1533,7 +1533,7 @@ static void pcnetInit(PCNetState *pData)
         if (pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), false))
             cbRxBuffers += 4096-rmd.rmd1.bcnt;
     }
-    
+
     /*
      * Heuristics: The Solaris pcn driver allocates too few RX buffers (128 buffers of a
      * size of 128 bytes are 16KB in summary) leading to frequent RX buffer overflows. In
@@ -2539,9 +2539,7 @@ static void pcnetPollRxTx(PCNetState *pData)
  */
 static void pcnetPollTimerStart(PCNetState *pData)
 {
-    TMTimerSet(pData->CTXSUFF(pTimerPoll),
-               TMTimerGet(pData->CTXSUFF(pTimerPoll))
-               + TMTimerFromMilli(pData->CTXSUFF(pTimerPoll), 2));
+    TMTimerSetMillies(pData->CTXSUFF(pTimerPoll), 2);
 }
 
 
