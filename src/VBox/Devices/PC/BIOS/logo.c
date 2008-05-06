@@ -400,7 +400,7 @@ done:
             int i;
 
             if (uBootMenu == 2)
-                printf("Press F12 to select boot device.");
+                printf("Press F12 to select boot device.\n");
 
             // if the user has pressed F12 don't wait here
             if (!f12_pressed)
