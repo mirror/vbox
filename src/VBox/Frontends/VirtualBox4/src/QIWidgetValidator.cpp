@@ -224,9 +224,19 @@ void QIWidgetValidator::rescan()
             if (!le->validator())
                 continue;
             /* disconnect to avoid duplicate connections */
+            disconnect (le, SIGNAL (editingFinished ()),
+                        this, SLOT (doRevalidate()));
+            disconnect (le, SIGNAL (cursorPositionChanged (int, int)),
+                        this, SLOT (doRevalidate()));
             disconnect (le, SIGNAL (textChanged (const QString &)),
                         this, SLOT (doRevalidate()));
+            /* Use all signals which indicate some change in the text. The
+             * textChanged signal isn't sufficient in Qt4. */
             connect (le, SIGNAL (textChanged (const QString &)),
+                     this, SLOT (doRevalidate()));
+            connect (le, SIGNAL (cursorPositionChanged (int, int)),
+                     this, SLOT (doRevalidate()));
+            connect (le, SIGNAL (editingFinished ()),
                      this, SLOT (doRevalidate()));
         }
         else if (QComboBox *cb = qobject_cast<QComboBox *> (wgt))
