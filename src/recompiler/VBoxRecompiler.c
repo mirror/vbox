@@ -1902,7 +1902,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
     pVM->rem.s.Env.fmask        = pCtx->msrSFMASK;
     pVM->rem.s.Env.kernelgsbase = pCtx->msrKERNELGSBASE;
 #endif
-    /* Note that FS_BASE & GS_BASE are already synced; QEmu keeps them in the hidden selector registers. 
+    /* Note that FS_BASE & GS_BASE are already synced; QEmu keeps them in the hidden selector registers.
      * So we basically assume the hidden registers are in sync with these MSRs (vt-x & amd-v). Correct??
      */
 
@@ -2932,7 +2932,7 @@ uint8_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
     uint8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadByte(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -2948,7 +2948,7 @@ int8_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
     int8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadByte(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -2964,7 +2964,7 @@ uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
     uint16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadWord(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -2980,7 +2980,7 @@ int16_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
     uint16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadWord(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -2996,7 +2996,7 @@ uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys)
     uint32_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -3012,7 +3012,7 @@ int32_t remR3PhysReadS32(RTGCPHYS SrcGCPhys)
     int32_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -3028,8 +3028,7 @@ uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys)
     uint64_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val =            PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys)
-        | ((uint64_t)PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys + 4) << 32); /** @todo fix me! */
+    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
     return val;
 }
@@ -3061,7 +3060,7 @@ void remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteByte(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU8(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 }
 
@@ -3076,7 +3075,7 @@ void remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteWord(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU16(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 }
 
@@ -3091,7 +3090,7 @@ void remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU32(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 }
 
@@ -3106,8 +3105,7 @@ void remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys, (uint32_t)val); /** @todo add U64 interface. */
-    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys + 4, val >> 32);
+    PGMR3PhysWriteU64(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 }
 

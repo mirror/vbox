@@ -54,27 +54,31 @@ DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhy
 
 
 /*
- * PGMR3PhysReadByte/Word/Dword
- * PGMR3PhysWriteByte/Word/Dword
+ * PGMR3PhysReadU8-64
+ * PGMR3PhysWriteU8-64
  */
-/** @todo rename and add U64. */
-
-#define PGMPHYSFN_READNAME  PGMR3PhysReadByte
-#define PGMPHYSFN_WRITENAME PGMR3PhysWriteByte
+#define PGMPHYSFN_READNAME  PGMR3PhysReadU8
+#define PGMPHYSFN_WRITENAME PGMR3PhysWriteU8
 #define PGMPHYS_DATASIZE    1
 #define PGMPHYS_DATATYPE    uint8_t
 #include "PGMPhys.h"
 
-#define PGMPHYSFN_READNAME  PGMR3PhysReadWord
-#define PGMPHYSFN_WRITENAME PGMR3PhysWriteWord
+#define PGMPHYSFN_READNAME  PGMR3PhysReadU16
+#define PGMPHYSFN_WRITENAME PGMR3PhysWriteU16
 #define PGMPHYS_DATASIZE    2
 #define PGMPHYS_DATATYPE    uint16_t
 #include "PGMPhys.h"
 
-#define PGMPHYSFN_READNAME  PGMR3PhysReadDword
-#define PGMPHYSFN_WRITENAME PGMR3PhysWriteDword
+#define PGMPHYSFN_READNAME  PGMR3PhysReadU32
+#define PGMPHYSFN_WRITENAME PGMR3PhysWriteU32
 #define PGMPHYS_DATASIZE    4
 #define PGMPHYS_DATATYPE    uint32_t
+#include "PGMPhys.h"
+
+#define PGMPHYSFN_READNAME  PGMR3PhysReadU64
+#define PGMPHYSFN_WRITENAME PGMR3PhysWriteU64
+#define PGMPHYS_DATASIZE    8
+#define PGMPHYS_DATATYPE    uint64_t
 #include "PGMPhys.h"
 
 
