@@ -509,7 +509,6 @@ __END_DECLS
 
 /** @def AssertFailedBreak
  * An assertion failed, hit breakpoint (RT_STRICT mode only) and break.
- * @todo Rename to AssertFailedBreak.
  */
 #ifdef RT_STRICT
 # define AssertFailedBreak()  \
