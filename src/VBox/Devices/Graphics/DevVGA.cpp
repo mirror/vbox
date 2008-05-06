@@ -4013,6 +4013,10 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint16_t        xLogo = (LOGO_MAX_WIDTH - pData->cxLogo) / 2;
                 uint16_t        yLogo = LOGO_MAX_HEIGHT - (LOGO_MAX_HEIGHT - pData->cyLogo) / 2;
 
+                /* Check VRAM size */
+                if (pData->vram_size < LOGO_MAX_SIZE)
+                    break;
+
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
                     pu8Dst = pData->vram_ptrHC + LOGO_MAX_SIZE;
                 else
@@ -5702,6 +5706,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             pData->pszLogoFile = NULL;
         }
     }
+
+    /*
+     * Disable graphic splash screen if it doesn't fit into VRAM.
+     */
+    if (pData->vram_size < LOGO_MAX_SIZE)
+        LogoHdr.fu8FadeIn = LogoHdr.fu8FadeOut = LogoHdr.u16LogoMillies = 0;
 
     /*
      * Allocate buffer for the logo data.
