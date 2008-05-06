@@ -966,8 +966,6 @@
                   | (uint32_t)((uint8_t)(b2)) << 16 \
                   | (uint16_t)((uint8_t)(b1)) << 8 \
                   |            (uint8_t)(b0) )
-/** @todo remove this after uses in VUSBUrb.cpp has been corrected. */
-#define MAKE_U32_FROM_U8(b0,b1,b2,b3) RT_MAKE_U32_FROM_U8(b0,b1,b2,b3)
 
 /** @def RT_MAKE_U16
  * Constructs a uint32_t value from two uint16_t values.
