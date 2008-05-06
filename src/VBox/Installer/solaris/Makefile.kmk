@@ -26,13 +26,14 @@ ifneq ($(BUILD_PLATFORM),solaris)
 $(error "The Solaris installer can only be built on Solaris!") # yeah, right.
 endif
 
+SOLARISINSTDIR  := $(PATH_TARGET)/install
+SOLARISDBGDIR   := $(PATH_TARGET)/installdbg
 PKGINFO_ARCH     = $(shell uname -p)
 PKGFILENAME      = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(BUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
 DBGARCHIVE       = VirtualBox-dbg.tar.bz2
 PACKING          = $(PATH_BIN)/$(PKGFILENAME).tar.gz $(PATH_BIN)/$(DBGARCHIVE)
-OTHER_CLEAN      = $(addprefix $(PATH_TARGET)/install/,vbox.pkginfo vbox.pkgresponse ReadMe.txt \
-								makepackage.sh vboxdrv vboxdrv.conf prototype \
-								vboxdrv.sh postinstall.sh preremove.sh VBox.sh vnic_setup.sh vnic_term.sh)
+OTHER_CLEAN      = $(addprefix $(SOLARISINSTDIR)/,vbox.pkginfo vbox.space vbox.pkgresponse \
+								makepackage.sh prototype postinstall.sh preremove.sh etc/devlink.tab)
 
 INSTALLS	     = solaris-doc
 
@@ -90,7 +91,26 @@ SOLARISNOSTRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),License-$(VBOX_LICENSE_VER).html) \
 	components/VBoxXPCOMBase.xpt \
-	components/VirtualBox_XPCOM.xpt
+	components/VirtualBox_XPCOM.xpt \
+	autoresponse \
+	vboxdrv.conf \
+	vboxdrv.sh \
+	VBox.sh \
+	vnic_setup.sh \
+	vnic_term.sh \
+	ReadMe.txt
+
+SOLARISNLS = \
+	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
+	  $(shell $(CAT_EXT) \
+		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
+	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
+
+SOLARISSDK = \
+	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
+	  $(shell $(CAT_EXT) \
+		sdkfiles),\
+	  $(f)),)
 
 SOLARISNLS = \
 	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
@@ -119,15 +139,21 @@ ifdef VBOX_WITH_HEADLESS
  SOLARISSTRIPBIN += \
 	VBoxHeadless
 endif
+ifdef VBOX_WITH_WEBSERVICES
+ SOLARISSTRIPBIN += \
+	vboxwebsrv \
+	webtest
+endif
 
+# Guest Additions
+SOLARISNOSTRIP += \
+	$(if $(VBOX_OSE),,additions/VBoxGuestAdditions.iso)
 
-SOLARISARCHFILES := $(SOLARISSTRIPBIN) $(SOLARISSTRIPOBJ) $(SOLARISNOSTRIP) $(SOLARISNLS)
-SOLARISINSTDIR := $(PATH_TARGET)/install
-SOLARISDBGDIR :=  $(PATH_TARGET)/installdbg
+SOLARISARCHFILES := $(SOLARISSTRIPBIN) $(SOLARISSTRIPOBJ) $(SOLARISNOSTRIP) $(SOLARISNLS) $(SOLARISSDK)
 
 OTHER_CLEAN += $(addprefix $(SOLARISINSTDIR)/,$(SOLARISARCHFILES)) \
 				$(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz \
-				$(PATH_BIN)/$(PKGFILENAME).tar.gz \
+				$(SOLARISINSTDIR)/$(PKGFILENAME).pkg \
 				$(addprefix $(SOLARISDBGDIR)/,$(SOLARISSTRIPBIN)) \
 				$(SOLARISDBGDIR)/$(DBGARCHIVE)
 
@@ -135,20 +161,18 @@ OTHER_CLEAN += $(addprefix $(SOLARISINSTDIR)/,$(SOLARISARCHFILES)) \
 include $(PATH_KBUILD)/footer.kmk
 
 $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
+		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSDK)) \
 		$(VBOX_VERSION_STAMP) \
 		makepackage.sh \
 		postinstall.sh \
 		preremove.sh \
 		vbox.pkginfo \
+		vbox.space \
 		vbox.pkgresponse \
 		vboxdevlink.sed \
-		vboxdrv.sh \
-		VBox.sh \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		Makefile.kmk
 	$(call MSG_L1,Installing binaries $(SOLARISINSTDIR))
-	@# Clear out the existing package files if needed
-	$(QUIET)rm -rf $(SOLARISINSTDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
@@ -226,7 +250,6 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARISINSTDIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARISINSTDIR)/components/VirtualBox_XPCOM.xpt
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARISNLS),$(PATH_BIN)/$(f)) $(SOLARISINSTDIR)/nls,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),cp -p -L -R $(PATH_BIN)/sdk $(SOLARISINSTDIR),)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARISINSTDIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARISINSTDIR)/webtest,)	
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/lib/libqt-mt.so.3     $(SOLARISINSTDIR)/qtgcc/lib/libqt-mt.so.3,)
@@ -252,6 +275,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
 
 $(PATH_BIN)/$(DBGARCHIVE): \
+		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSTRIPBIN)) \
 		$(VBOX_VERSION_STAMP) \
 		Makefile.kmk
 	$(call MSG_L1,Installing debug binaries $(SOLARISDBGDIR))
@@ -281,7 +305,14 @@ $(PATH_BIN)/$(DBGARCHIVE): \
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARISDBGDIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARISDBGDIR)/VBoxHeadless,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARISDBGDIR)/VBoxDbg.so,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_BIN)/vboxwebsrv                         $(SOLARISDBGDIR)/vboxwebsrv,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_BIN)/webtest                            $(SOLARISDBGDIR)/webtest,)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBGARCHIVE) -C $(SOLARISDBGDIR) $(SOLARISSTRIPBIN)
 	$(QUIET)chmod 0644 $(PATH_BIN)/$(DBGARCHIVE)
+
+$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_INST_DIR)/,$(PATH_BIN)/,$$@)
+	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(CP) -pf $< $@
 
