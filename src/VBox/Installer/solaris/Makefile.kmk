@@ -161,7 +161,6 @@ OTHER_CLEAN += $(addprefix $(SOLARISINSTDIR)/,$(SOLARISARCHFILES)) \
 include $(PATH_KBUILD)/footer.kmk
 
 $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
-		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSDK)) \
 		$(VBOX_VERSION_STAMP) \
 		makepackage.sh \
 		postinstall.sh \
@@ -311,8 +310,9 @@ $(PATH_BIN)/$(DBGARCHIVE): \
 	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBGARCHIVE) -C $(SOLARISDBGDIR) $(SOLARISSTRIPBIN)
 	$(QUIET)chmod 0644 $(PATH_BIN)/$(DBGARCHIVE)
 
-$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_INST_DIR)/,$(PATH_BIN)/,$$@)
-	$(RM) -f $@
-	$(MKDIR) -p $(@D)
-	$(CP) -pf $< $@
+# Commented out for now
+#$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_INST_DIR)/,$(PATH_BIN)/,$$@)
+#	$(RM) -f $@
+#	$(MKDIR) -p $(@D)
+#	$(CP) -pf $< $@
 
