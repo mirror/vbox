@@ -756,7 +756,7 @@ void VBoxSelectorWnd::fileExit()
 
 void VBoxSelectorWnd::vmNew()
 {
-    VBoxNewVMWzd wzd;
+    VBoxNewVMWzd wzd (this);
     if (wzd.exec() == QDialog::Accepted)
     {
         CMachine m = wzd.machine();
