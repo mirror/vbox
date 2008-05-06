@@ -3747,7 +3747,7 @@ typedef struct PGMCHECKINTARGS
     bool                    fLeftToRight;    /**< true: left-to-right; false: right-to-left. */
     PPGMPHYSHANDLER         pPrevPhys;
     PPGMVIRTHANDLER         pPrevVirt;
-    PPGMPHYS2VIRTHANDLER   pPrevPhys2Virt;
+    PPGMPHYS2VIRTHANDLER    pPrevPhys2Virt;
     PVM                     pVM;
 } PGMCHECKINTARGS, *PPGMCHECKINTARGS;
 
@@ -3885,21 +3885,23 @@ PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
      * Check the trees.
      */
     int cErrors = 0;
-    PGMCHECKINTARGS Args = { true, NULL, NULL, NULL, pVM };
+    const static PGMCHECKINTARGS s_LeftToRight = { true, NULL, NULL, NULL, pVM };
+    const static PGMCHECKINTARGS s_RightToLeft = { false, NULL, NULL, NULL, pVM };
+    PGMCHECKINTARGS Args = s_LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
-    Args.fLeftToRight = false;
+    Args = s_RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
-    Args.fLeftToRight = true;
+    Args = s_LeftToRight;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args.fLeftToRight = false;
+    Args = s_RightToLeft;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args.fLeftToRight = true;
+    Args = s_LeftToRight;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args.fLeftToRight = false;
+    Args = s_RightToLeft;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args.fLeftToRight = true;
+    Args = s_LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
-    Args.fLeftToRight = false;
+    Args = s_RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
 
     return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
