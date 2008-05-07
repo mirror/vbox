@@ -34,6 +34,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
 
@@ -43,7 +44,12 @@
 #include <sys/time.h>
 
 #include "internal/magics.h"
+#include "internal/strict.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** @todo move this to r3/posix/something.h. */
 #ifdef RT_OS_SOLARIS
 # define ATOMIC_GET_PTHREAD_T(pvVar, pThread) ASMAtomicReadSize(pvVar, pThread)
@@ -166,6 +172,9 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     /*
      * Check if it's the writer (implement write+read recursion).
      */
+#ifdef RTSEMRW_STRICT
+    RTTHREAD  ThreadSelf = RTThreadSelf();
+#endif
     pthread_t Self = pthread_self();
     pthread_t Writer;
     ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
@@ -173,6 +182,10 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     {
         Assert(pThis->cWriterReads < INT32_MAX);
         pThis->cWriterReads++;
+#ifdef RTSEMRW_STRICT
+        if (ThreadSelf != NIL_RTTHREAD)
+            RTThreadReadLockInc(ThreadSelf);
+#endif
         return VINF_SUCCESS;
     }
 
@@ -222,6 +235,10 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 #endif /* !RT_OS_DARWIN */
     }
 
+#ifdef RTSEMRW_STRICT
+    if (ThreadSelf != NIL_RTTHREAD)
+        RTThreadReadLockInc(ThreadSelf);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -247,6 +264,9 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     /*
      * Check if it's the writer.
      */
+#ifdef RTSEMRW_STRICT
+    RTTHREAD  ThreadSelf = RTThreadSelf();
+#endif
     pthread_t Self = pthread_self();
     pthread_t Writer;
     ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
@@ -255,6 +275,10 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
         AssertMsgReturn(pThis->cWriterReads > 0,
                         ("pThis=%p\n", pThis), VERR_NOT_OWNER);
         pThis->cWriterReads--;
+#ifdef RTSEMRW_STRICT
+        if (ThreadSelf != NIL_RTTHREAD)
+            RTThreadReadLockDec(ThreadSelf);
+#endif
         return VINF_SUCCESS;
     }
 
@@ -268,6 +292,10 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
         return RTErrConvertFromErrno(rc);
     }
 
+#ifdef RTSEMRW_STRICT
+    if (ThreadSelf != NIL_RTTHREAD)
+        RTThreadReadLockDec(ThreadSelf);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -343,6 +371,11 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, Self);
     pThis->cWrites = 1;
+#ifdef RTSEMRW_STRICT
+    RTTHREAD ThreadSelf = RTThreadSelf();
+    if (ThreadSelf != NIL_RTTHREAD)
+        RTThreadWriteLockInc(ThreadSelf);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -388,6 +421,11 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
         return RTErrConvertFromErrno(rc);
     }
 
+#ifdef RTSEMRW_STRICT
+    RTTHREAD ThreadSelf = RTThreadSelf();
+    if (ThreadSelf != NIL_RTTHREAD)
+        RTThreadWriteLockDec(ThreadSelf);
+#endif
     return VINF_SUCCESS;
 }
 
