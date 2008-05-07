@@ -2328,6 +2328,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* Reset means that additions will report again. */
     pData->fu32AdditionsOk = false;
     memset (&pData->guestInfo, 0, sizeof (pData->guestInfo));
+    pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
 
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 
