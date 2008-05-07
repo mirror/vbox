@@ -73,7 +73,7 @@ typedef const PDMCRITSECT *PCPDMCRITSECT;
 PDMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
 
 /**
- * Leaves a critical section entered with PDMCritSectEnter().
+ * Enters a PDM critical section.
  *
  * @returns VINF_SUCCESS if entered successfully.
  * @returns rcBusy when encountering a busy critical section in GC/R0.
@@ -84,6 +84,18 @@ PDMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *ps
  *                              and the section is busy.
  */
 PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
+
+/**
+ * Enters a PDM critical section.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @returns rcBusy when encountering a busy critical section in GC/R0.
+ * @returns VERR_SEM_DESTROYED if the critical section is dead.
+ *
+ * @param   pCritSect           The PDM critical section to enter.
+ * @param   fCallHost           Whether this is a VMMGCCallHost() or VMMR0CallHost() request.
+ */
+PDMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
 
 /**
  * Leaves a critical section entered with PDMCritSectEnter().
