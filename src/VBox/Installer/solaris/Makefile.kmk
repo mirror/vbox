@@ -115,6 +115,7 @@ SOLARIS_NLS = \
 		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
 
+## @todo r=bird: Why QTGUI?
 SOLARIS_SDK = \
 	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
 	  $(shell $(CAT_EXT) \
@@ -164,6 +165,10 @@ OTHER_CLEAN += \
 
 include $(PATH_KBUILD)/footer.kmk
 
+## @todo r=bird: makepackage.sh packing a directory tree, right? So, there is no guarantee that it's not
+#                containing any obsolete files the way packing is performed here. Consider recursivly
+#                invoking $(MAKE) vbox_copy_sdk_files (or similar) to do the copying after $(RM) -Rf the
+#                directory tree.
 $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_VERSION_STAMP) \
 		makepackage.sh \
