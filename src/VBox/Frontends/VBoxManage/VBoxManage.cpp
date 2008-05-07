@@ -442,6 +442,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage controlvm        <uuid>|<name>\n"
                  "                            pause|resume|reset|poweroff|savestate|\n"
                  "                            acpipowerbutton|acpisleepbutton|\n"
+                 "                            keyboardputscancode <hex> [<hex> ...]|\n"
                  "                            setlinkstate<1-4> on|off |\n"
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
@@ -5562,6 +5563,69 @@ static int handleControlVM(int argc, char *argv[],
         else if (strcmp(argv[1], "acpisleepbutton") == 0)
         {
             CHECK_ERROR_BREAK (console, SleepButton());
+        }
+        else if (strcmp(argv[1], "keyboardputscancode") == 0)
+        {
+            ComPtr<IKeyboard> keyboard;
+            CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(keyboard.asOutParam()));
+
+            if (argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s) as hex byte(s).", argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* Arbitrary restrict the length of a sequence of scancodes to 1024. */
+            LONG alScancodes[1024];
+            int cScancodes = 0;
+
+            /* Process the command line. */
+            int i;
+            for (i = 1 + 1; i < argc && cScancodes < RT_ELEMENTS(alScancodes); i++, cScancodes++)
+            {
+                if (   isxdigit (argv[i][0])
+                    && isxdigit (argv[i][1])
+                    && argv[i][2] == 0)
+                {
+                    uint8_t u8Scancode;
+                    int rc = RTStrToUInt8Ex(argv[i], NULL, 16, &u8Scancode);
+                    if (RT_FAILURE (rc))
+                    {
+                        RTPrintf("Error: converting '%s' returned %Vrc!\n", argv[i], rc);
+                        rc = E_FAIL;
+                        break;
+                    }
+
+                    alScancodes[cScancodes] = u8Scancode;
+                }
+                else
+                {
+                    RTPrintf("Error: '%s' is not a hex byte!\n", argv[i]);
+                    rc = E_FAIL;
+                    break;
+                }
+            }
+
+            if (FAILED(rc))
+                break;
+
+            if (   cScancodes == RT_ELEMENTS(alScancodes)
+                && i < argc)
+            {
+                RTPrintf("Error: too many scancodes, maximum %d allowed!\n", RT_ELEMENTS(alScancodes));
+                rc = E_FAIL;
+                break;
+            }
+
+            /* Send scancodes to the VM.
+             * Note: 'PutScancodes' did not work here. Only the first scancode was transmitted.
+             */
+            for (i = 0; i < cScancodes; i++)
+            {
+                CHECK_ERROR_BREAK(keyboard, PutScancode(alScancodes[i]));
+                RTPrintf("Scancode[%d]: 0x%02X\n", i, alScancodes[i]);
+            }
         }
         else if (strncmp(argv[1], "setlinkstate", 12) == 0)
         {
