@@ -380,7 +380,8 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
          * Decrement waiters, if >= 0 then we have to wake one of them up.
          */
 #ifdef RTCRITSECT_STRICT
-        RTThreadWriteLockDec(pCritSect->Strict.ThreadOwner);
+        if (pCritSect->Strict.ThreadOwner != NIL_RTTHREAD) /* May happen for PDMCritSects when entering GC/R0. */
+            RTThreadWriteLockDec(pCritSect->Strict.ThreadOwner);
         ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, NIL_RTTHREAD);
 #endif
         ASMAtomicXchgSize(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
