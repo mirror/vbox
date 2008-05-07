@@ -1301,11 +1301,6 @@ $(PATH_TARGET)/errmsgcomdata.h: common/err/errmsgcom.sed $(PATH_SDK_WINPSDK_INC)
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-$(PATH_TARGET)/errmsgxpcomdata.h: common/err/errmsgxpcom.sed $(DEPTH)/src/libs/xpcom18a4/xpcom/base/nsError.h
-	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
-	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
-	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
-
 
 #
 # Aliases for .cpp.h files so we can more easily do syntax checking from the editor.
