@@ -31,8 +31,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-//#include <some xpcom header.h>
-
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -47,8 +45,63 @@
  */
 static const RTCOMERRMSG  g_aStatusMsgs[] =
 {
-//#include "errmsgxpcomdata.h"
-    { "NS_SUCCESS", "Success", 0 },
+    { "NS_OK",                              "Success",                                      UINT32_C(0x00000000) },
+    { "NS_ERROR_NOT_IMPLEMENTED",           "Not implemented",                              UINT32_C(0x80004001) },
+    { "NS_ERROR_NO_INTERFACE",              "Interface not supported",                      UINT32_C(0x80004002) },
+    { "NS_ERROR_INVALID_POINTER",           "Invalid pointer value",                        UINT32_C(0x80004003) },
+    { "NS_ERROR_ABORT",                     "Operation aborted",                            UINT32_C(0x80004004) },
+    { "NS_ERROR_FAILURE",                   "Operation failed",                             UINT32_C(0x80004005) },
+    { "NS_ERROR_UNEXPECTED",                "Unexpected error",                             UINT32_C(0x8000ffff) },
+    { "NS_ERROR_OUT_OF_MEMORY",             "Memory allocation failed",                     UINT32_C(0x8007000e) },
+    { "NS_ERROR_INVALID_ARG",               "Invalid argument value",                       UINT32_C(0x80070057) },
+    { "NS_ERROR_NO_AGGREGATION",            "Class does not allow aggregation",             UINT32_C(0x80040110) },
+    { "NS_ERROR_NOT_AVAILABLE",             "Resource not available",                       UINT32_C(0x80040111) },
+    { "NS_ERROR_NOT_INITIALIZED",           "Instance not initialized",                     UINT32_C(0xc1f30001) },
+    { "NS_ERROR_ALREADY_INITIALIZED",       "Instance already initialized",                 UINT32_C(0xc1f30002) },
+
+    { "NS_ERROR_FACTORY_NOT_REGISTERED",    "Class not registered",                         UINT32_C(0x80040154) },
+    { "NS_ERROR_FACTORY_REGISTER_AGAIN",    "Cannot be registered, try again later",        UINT32_C(0x80040155) },
+    { "NS_ERROR_FACTORY_NOT_LOADED",        "Dynamically loaded factory cannot be found",   UINT32_C(0x800401f8) },
+    { "NS_ERROR_FACTORY_EXISTS",            "Factory already exists",                       UINT32_C(0xc1f30100) },
+    { "NS_ERROR_FACTORY_NO_SIGNATURE_SUPPORT", "Factory does not support signatures",       UINT32_C(0xc1f30101) },
+
+    { "NS_ERROR_CANNOT_CONVERT_DATA",       "Cannot convert data",                          UINT32_C(0x80010001) },
+    { "NS_ERROR_OBJECT_IS_IMMUTABLE",       "Object is immutable",                          UINT32_C(0x80010002) },
+    { "NS_ERROR_LOSS_OF_SIGNIFICANT_DATA",  "Loss of significant data",                     UINT32_C(0x80010003) },
+    { "NS_ERROR_PROXY_INVALID_IN_PARAMETER","Cannot proxy an IN parameter",                 UINT32_C(0x80010010) },
+    { "NS_ERROR_PROXY_INVALID_OUT_PARAMETER", "Cannot proxy an OUT parameter",              UINT32_C(0x80010011) },
+    { "NS_SUCCESS_LOSS_OF_INSIGNIFICANT_DATA", "Loss of insignificant data",                UINT32_C(0x00010001) },
+
+    { "NS_BASE_STREAM_CLOSED",              "Stream closed",                                UINT32_C(0x80470002) },
+    { "NS_BASE_STREAM_OSERROR",             "Operative system stream error",                UINT32_C(0x80470003) },
+    { "NS_BASE_STREAM_ILLEGAL_ARGS",        "Illegal argument to stream method",            UINT32_C(0x80470004) },
+    { "NS_BASE_STREAM_NO_CONVERTER",        "No stream converter",                          UINT32_C(0x80470005) },
+    { "NS_BASE_STREAM_BAD_CONVERSION",      "Badstream conversion",                         UINT32_C(0x80470006) },
+    { "NS_BASE_STREAM_WOULD_BLOCK",         "Stream operation would block",                 UINT32_C(0x80470007) },
+
+    { "NS_ERROR_FILE_UNRECOGNIZED_PATH",    "Unrecognized path",                            UINT32_C(0x80520001) },
+    { "NS_ERROR_FILE_UNRESOLVABLE_SYMLINK", "NS_ERROR_FILE_UNRESOLVABLE_SYMLINK",           UINT32_C(0x80520002) },
+    { "NS_ERROR_FILE_EXECUTION_FAILED",     "NS_ERROR_FILE_EXECUTION_FAILED",               UINT32_C(0x80520003) },
+    { "NS_ERROR_FILE_UNKNOWN_TYPE",         "NS_ERROR_FILE_UNKNOWN_TYPE",                   UINT32_C(0x80520004) },
+    { "NS_ERROR_FILE_DESTINATION_NOT_DIR",  "NS_ERROR_FILE_DESTINATION_NOT_DIR",            UINT32_C(0x80520005) },
+    { "NS_ERROR_FILE_TARGET_DOES_NOT_EXIST","NS_ERROR_FILE_TARGET_DOES_NOT_EXIST",          UINT32_C(0x80520006) },
+    { "NS_ERROR_FILE_COPY_OR_MOVE_FAILED",  "NS_ERROR_FILE_COPY_OR_MOVE_FAILED",            UINT32_C(0x80520007) },
+    { "NS_ERROR_FILE_ALREADY_EXISTS",       "NS_ERROR_FILE_ALREADY_EXISTS",                 UINT32_C(0x80520008) },
+    { "NS_ERROR_FILE_INVALID_PATH",         "NS_ERROR_FILE_INVALID_PATH",                   UINT32_C(0x80520009) },
+    { "NS_ERROR_FILE_DISK_FULL",            "NS_ERROR_FILE_DISK_FULL",                      UINT32_C(0x8052000a) },
+    { "NS_ERROR_FILE_CORRUPTED",            "NS_ERROR_FILE_CORRUPTED",                      UINT32_C(0x8052000b) },
+    { "NS_ERROR_FILE_NOT_DIRECTORY",        "NS_ERROR_FILE_NOT_DIRECTORY",                  UINT32_C(0x8052000c) },
+    { "NS_ERROR_FILE_IS_DIRECTORY",         "NS_ERROR_FILE_IS_DIRECTORY",                   UINT32_C(0x8052000d) },
+    { "NS_ERROR_FILE_IS_LOCKED",            "NS_ERROR_FILE_IS_LOCKED",                      UINT32_C(0x8052000e) },
+    { "NS_ERROR_FILE_TOO_BIG",              "NS_ERROR_FILE_TOO_BIG",                        UINT32_C(0x8052000f) },
+    { "NS_ERROR_FILE_NO_DEVICE_SPACE",      "NS_ERROR_FILE_NO_DEVICE_SPACE",                UINT32_C(0x80520010) },
+    { "NS_ERROR_FILE_NAME_TOO_LONG",        "NS_ERROR_FILE_NAME_TOO_LONG",                  UINT32_C(0x80520011) },
+    { "NS_ERROR_FILE_NOT_FOUND",            "NS_ERROR_FILE_NOT_FOUND",                      UINT32_C(0x80520012) },
+    { "NS_ERROR_FILE_READ_ONLY",            "NS_ERROR_FILE_READ_ONLY",                      UINT32_C(0x80520013) },
+    { "NS_ERROR_FILE_DIR_NOT_EMPTY",        "NS_ERROR_FILE_DIR_NOT_EMPTY",                  UINT32_C(0x80520014) },
+    { "NS_ERROR_FILE_ACCESS_DENIED",        "NS_ERROR_FILE_ACCESS_DENIED",                  UINT32_C(0x80520015) },
+    { "NS_SUCCESS_FILE_DIRECTORY_EMPTY",    "NS_SUCCESS_FILE_DIRECTORY_EMPTY",              UINT32_C(0x00520001) },
+
     { NULL, NULL, 0 }
 };
 
