@@ -140,7 +140,7 @@ RWLockHandle::RWLockHandle()
     int vrc = RTSemRWCreate (&mSemRW);
     AssertRC (vrc);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     int vrc = RTCritSectInit (&mCritSect);
     AssertRC (vrc);
@@ -157,7 +157,7 @@ RWLockHandle::RWLockHandle()
     mWriteLockLevel = 0;
     mWriteLockPending = 0;
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -167,13 +167,13 @@ RWLockHandle::~RWLockHandle()
 
     RTSemRWDestroy (mSemRW);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTSemEventMultiDestroy (mGoReadSem);
     RTSemEventDestroy (mGoWriteSem);
     RTCritSectDelete (&mCritSect);
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -183,14 +183,14 @@ bool RWLockHandle::isWriteLockOnCurrentThread() const
 
     return RTSemRWIsWriteOwner (mSemRW);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
     bool locked = mWriteLockThread == RTThreadNativeSelf();
     RTCritSectLeave (&mCritSect);
     return locked;
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -201,7 +201,7 @@ void RWLockHandle::lockWrite()
     int vrc = RTSemRWRequestWrite (mSemRW, RT_INDEFINITE_WAIT);
     AssertRC (vrc);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
 
@@ -266,7 +266,16 @@ void RWLockHandle::lockWrite()
 
     RTCritSectLeave (&mCritSect);
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+# ifdef DEBUG
+    if (mWriteLockLevel == 1)
+    {
+        RTTHREAD iprtThreadSelf = RTThreadSelf();
+        if (iprtThreadSelf != NIL_RTTHREAD)
+            RTThreadWriteLockInc (iprtThreadSelf);
+    }
+# endif
+
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -277,7 +286,7 @@ void RWLockHandle::unlockWrite()
     int vrc = RTSemRWReleaseWrite (mSemRW);
     AssertRC (vrc);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
 
@@ -298,6 +307,12 @@ void RWLockHandle::unlockWrite()
                 RTSemEventSignal (mGoWriteSem);
             else if (mReadLockCount != 0)
                 RTSemEventMultiSignal (mGoReadSem);
+
+# ifdef DEBUG
+            RTTHREAD iprtThreadSelf = RTThreadSelf();
+            if (iprtThreadSelf != NIL_RTTHREAD)
+                RTThreadWriteLockDec (iprtThreadSelf);
+# endif
         }
     }
 
@@ -307,7 +322,7 @@ void RWLockHandle::unlockWrite()
 
     RTCritSectLeave (&mCritSect);
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -318,7 +333,7 @@ void RWLockHandle::lockRead()
     int vrc = RTSemRWRequestRead (mSemRW, RT_INDEFINITE_WAIT);
     AssertRC (vrc);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
 
@@ -372,7 +387,13 @@ void RWLockHandle::lockRead()
     if (isWriteLock)
         RTSemEventMultiWait (mGoReadSem, RT_INDEFINITE_WAIT);
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+# ifdef DEBUG
+    RTTHREAD iprtThreadSelf = RTThreadSelf();
+    if (iprtThreadSelf != NIL_RTTHREAD)
+        RTThreadReadLockInc (iprtThreadSelf);
+# endif
+
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -383,7 +404,7 @@ void RWLockHandle::unlockRead()
     int vrc = RTSemRWReleaseRead (mSemRW);
     AssertRC (vrc);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
 
@@ -430,7 +451,13 @@ void RWLockHandle::unlockRead()
 
     RTCritSectLeave (&mCritSect);
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+# ifdef DEBUG
+    RTTHREAD iprtThreadSelf = RTThreadSelf();
+    if (iprtThreadSelf != NIL_RTTHREAD)
+        RTThreadReadLockDec (iprtThreadSelf);
+# endif
+
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
@@ -440,13 +467,13 @@ uint32_t RWLockHandle::writeLockLevel() const
 
     return RTSemRWGetWriteRecursion (mSemRW);
 
-#else /* VBOX_MAIN_USE_SEMRW */
+#else /* !VBOX_MAIN_USE_SEMRW */
 
     Assert (mWriteLockLevel != 0);
 
     return mWriteLockLevel;
 
-#endif /* VBOX_MAIN_USE_SEMRW */
+#endif /* !VBOX_MAIN_USE_SEMRW */
 }
 
 
