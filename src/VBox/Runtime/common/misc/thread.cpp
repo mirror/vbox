@@ -1079,6 +1079,9 @@ RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
  */
 RTDECL(int32_t) RTThreadGetWriteLockCount(RTTHREAD Thread)
 {
+    if (Thread == NIL_RTTHREAD)
+        return 0;
+
     PRTTHREADINT pThread = rtThreadGet(Thread);
     if (!pThread)
         return VERR_INVALID_HANDLE;
@@ -1129,6 +1132,9 @@ RTDECL(void) RTThreadWriteLockDec(RTTHREAD Thread)
  */
 RTDECL(int32_t) RTThreadGetReadLockCount(RTTHREAD Thread)
 {
+    if (Thread == NIL_RTTHREAD)
+        return 0;
+
     PRTTHREADINT pThread = rtThreadGet(Thread);
     if (!pThread)
         return VERR_INVALID_HANDLE;
