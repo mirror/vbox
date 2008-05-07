@@ -8688,7 +8688,7 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
 }
 
 /**
- *  @note Locks this object for reading.
+ *  @note The calls shall hold no locks. Will temporarily lock this object for reading.
  */
 HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
                                            IVirtualBoxErrorInfo *aError,
@@ -8713,11 +8713,15 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
     if (!directControl)
         return E_FAIL;
 
+    /* No locks should be held at this point. */
+    AssertMsg (RTThreadGetWriteLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetWriteLockCount (RTThreadSelf())));
+    AssertMsg (RTThreadGetReadLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetReadLockCount (RTThreadSelf())));
+
     return directControl->OnUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
 
 /**
- *  @note Locks this object for reading.
+ *  @note The calls shall hold no locks. Will temporarily lock this object for reading.
  */
 HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
                                            IVirtualBoxErrorInfo *aError)
@@ -8740,6 +8744,10 @@ HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
      * expected by the caller */
     if (!directControl)
         return E_FAIL;
+
+    /* No locks should be held at this point. */
+    AssertMsg (RTThreadGetWriteLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetWriteLockCount (RTThreadSelf())));
+    AssertMsg (RTThreadGetReadLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetReadLockCount (RTThreadSelf())));
 
     return directControl->OnUSBDeviceDetach (aId, aError);
 }
