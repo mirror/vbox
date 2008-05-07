@@ -23,6 +23,7 @@
 #define ____H_GUESTIMPL
 
 #include "VirtualBoxBase.h"
+#include <VBox/ostypes.h>
 
 class Console;
 
@@ -73,7 +74,7 @@ public:
     STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
 
     // public methods that are not in IDL
-    void setAdditionsVersion (Bstr aVersion);
+    void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);
 
     void setSupportsSeamless (BOOL aSupportsSeamless);
 

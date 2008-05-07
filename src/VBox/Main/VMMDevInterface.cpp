@@ -150,7 +150,7 @@ int VMMDev::SetCredentialsJudgementResult (uint32_t u32Flags)
 
 /**
  * Report guest OS version.
- * Called whenever the Additions issue a guest version report request.
+ * Called whenever the Additions issue a guest version report request or the VM is reset.
  *
  * @param   pInterface          Pointer to this interface.
  * @param   guestInfo           Pointer to guest information structure
@@ -170,19 +170,29 @@ DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBo
     if (!guest)
         return;
 
-    char version[20];
-    RTStrPrintf(version, sizeof(version), "%d", guestInfo->additionsVersion);
-    guest->setAdditionsVersion(Bstr(version));
-
-    /*
-     * Tell the console interface about the event
-     * so that it can notify its consumers.
-     */
-    pDrv->pVMMDev->getParent()->onAdditionsStateChange();
-    
-    if (guestInfo->additionsVersion < VMMDEV_VERSION)
+    if (guestInfo->additionsVersion != 0)
     {
-        pDrv->pVMMDev->getParent()->onAdditionsOutdated();
+        char version[20];
+        RTStrPrintf(version, sizeof(version), "%d", guestInfo->additionsVersion);
+        guest->setAdditionsVersion(Bstr(version), guestInfo->osType);
+
+        /*
+         * Tell the console interface about the event
+         * so that it can notify its consumers.
+         */
+        pDrv->pVMMDev->getParent()->onAdditionsStateChange();
+
+        if (guestInfo->additionsVersion < VMMDEV_VERSION)
+            pDrv->pVMMDev->getParent()->onAdditionsOutdated();
+    }
+    else
+    {
+        /*
+         * The guest additions was disabled because of a reset
+         * or driver unload.
+         */
+        guest->setAdditionsVersion (Bstr(), guestInfo->osType);
+        pDrv->pVMMDev->getParent()->onAdditionsStateChange();
     }
 }
 
@@ -213,7 +223,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * so that it can notify its consumers.
      */
     pDrv->pVMMDev->getParent()->onAdditionsStateChange();
-    
+
 }
 
 /**
@@ -457,7 +467,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_SYSTEM_CACHE)
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_MemSystemCache, pGuestStats->u32MemSystemCache / (_1M/pGuestStats->u32PageSize));
-    
+
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PageFileSize, pGuestStats->u32PageFileSize / (_1M/pGuestStats->u32PageSize));
 
@@ -500,7 +510,7 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
     LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
-    
+
     if (    !pServiceLocation
         || (   pServiceLocation->type != VMMDevHGCMLoc_LocalHost
             && pServiceLocation->type != VMMDevHGCMLoc_LocalHost_Existing))

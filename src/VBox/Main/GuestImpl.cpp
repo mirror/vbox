@@ -322,9 +322,9 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-void Guest::setAdditionsVersion (Bstr aVersion)
+void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
 {
-    AssertReturnVoid (!aVersion.isEmpty());
+    Assert(aVersion.isNull() || !aVersion.isEmpty());
 
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -332,8 +332,10 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     AutoWriteLock alock (this);
 
     mData.mAdditionsVersion = aVersion;
-    /* this implies that Additions are active */
-    mData.mAdditionsActive = TRUE;
+    mData.mAdditionsActive = !aVersion.isNull();
+    /** @todo Translate aOsType to a string and assign it to mData.mOSTypeId.
+     * The problem is just that the VBOXOSTYPE -> string translation table is in VBoxSVC. :/
+     * We need this fixed for correct session information! */
 }
 
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
