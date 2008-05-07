@@ -5275,7 +5275,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
      */
     if (ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
     {
-        uint64_t    u64Start = RTTimeMilliTS();
+        uint64_t u64Start = RTTimeMilliTS();
         int rc2 = VINF_SUCCESS;
         int iFailed = -1;
         for (unsigned i = 0; i < RT_ELEMENTS(pData->aCts); i++)
@@ -5288,6 +5288,8 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
                               NULL);
             if (VBOX_FAILURE(rc) && rc != VERR_INVALID_HANDLE)
             {
+                AssertMsg(rc == VERR_TIMEOUT && RTTimeMilliTS() - u64Start >= 5000,
+                          ("rc=%Rrc cMsElapsed=%RI64 ms  Now: %Ri64 ms i=%d\n", rc, cMsElapsed, RTTimeMilliTS() - u64Start, i));
                 rc2 = rc;
                 iFailed = i;
             }
