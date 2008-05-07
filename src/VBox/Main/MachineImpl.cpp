@@ -7688,7 +7688,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
 #ifdef VBOX_WITH_USB
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn (service, E_FAIL);
-    return service->detachDeviceFromVM (this, aId, aDone);
+    return service->detachDeviceFromVM (this, aId, !!aDone);
 #else
     return E_FAIL;
 #endif
@@ -7746,7 +7746,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
 
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn (service, E_FAIL);
-    return service->detachAllDevicesFromVM (this, aDone, false /* aAbnormal */);
+    return service->detachAllDevicesFromVM (this, !!aDone, false /* aAbnormal */);
 #else
     return S_OK;
 #endif
