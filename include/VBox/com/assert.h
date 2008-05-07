@@ -40,7 +40,7 @@
  *  @param rc   COM result code
  */
 #define AssertComRC(rc)      \
-    do { AssertMsg (SUCCEEDED (rc), ("COM RC = 0x%08X\n", rc)); NOREF (rc); } while (0)
+    do { AssertMsg (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc)); NOREF (rc); } while (0)
 
 /**
  *  A special version of AssertComRC that returns the given expression
@@ -50,7 +50,7 @@
  *  @param ret  the expression to return
  */
 #define AssertComRCReturn(rc, ret)      \
-    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = 0x%08X\n", rc), ret)
+    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc), ret)
 
 /**
  *  A special version of AssertComRC that returns the given result code
@@ -60,7 +60,7 @@
  *  @param ret  the expression to return
  */
 #define AssertComRCReturnRC(rc)         \
-    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = 0x%08X\n", rc), rc)
+    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc), rc)
 
 /**
  *  A special version of AssertComRC that returns if the result code is failed.
@@ -69,7 +69,7 @@
  *  @param ret  the expression to return
  */
 #define AssertComRCReturnVoid(rc)      \
-    AssertMsgReturnVoid (SUCCEEDED (rc), ("COM RC = 0x%08X\n", rc))
+    AssertMsgReturnVoid (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc))
 
 /**
  *  A special version of AssertComRC that evaluates the given expression and
@@ -79,17 +79,17 @@
  *  @param eval the expression to evaluate
  */
 #define AssertComRCBreak(rc, eval)      \
-    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { eval; break; } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { AssertComRC (rc); eval; break; } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that evaluates the given expression and
  *  throws it if the result code is failed.
  *
  *  @param rc   COM result code
- *  @param eval the expression to evaluate
+ *  @param eval the expression to throw
  */
 #define AssertComRCThrow(rc, eval)      \
-    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { throw (eval); } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { AssertComRC (rc); throw (eval); } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that just breaks if the result code is
@@ -98,7 +98,7 @@
  *  @param rc   COM result code
  */
 #define AssertComRCBreakRC(rc)          \
-    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { AssertComRC (rc); break; } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that just throws @a rc if the result code is
@@ -107,7 +107,7 @@
  *  @param rc   COM result code
  */
 #define AssertComRCThrowRC(rc)          \
-    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { AssertComRC (rc); throw rc; } else do {} while (0)
 
 /**
  *  Checks whether the given COM result code is successful.
@@ -116,7 +116,7 @@
  *  @param rc   COM result code
  */
 #define CheckComRCReturnRC(rc)      \
-    if (1) { if (!SUCCEEDED (rc)) return (rc); } else do {} while (0)
+    if (!SUCCEEDED (rc)) { return (rc); } else do {} while (0)
 
 /**
  *  Checks whether the given COM result code is successful.
@@ -125,7 +125,7 @@
  *  @param rc   COM result code
  */
 #define CheckComRCBreakRC(rc)      \
-    if (1) { if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { break; } else do {} while (0)
 
 /**
  *  Checks whether the given COM result code is successful.
@@ -134,7 +134,7 @@
  *  @param rc   COM result code
  */
 #define CheckComRCThrowRC(rc)      \
-    if (1) { if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
+    if (!SUCCEEDED (rc)) { throw rc; } else do {} while (0)
 
 /*
  * A section of helpful macros for error output
@@ -146,8 +146,8 @@
  */
 #define PRINT_RC_MESSAGE(rc) \
     do { \
-        RTPrintf ("[!] Primary RC  = %Rwa\n", rc); \
-        Log (("[!] Primary RC  = %Rwa\n", rc)); \
+        RTPrintf ("[!] Primary RC  = %Rhra\n", rc); \
+        Log (("[!] Primary RC  = %Rhra\n", rc)); \
     } while (0)
 
 /**
@@ -163,19 +163,19 @@
         Log (("[!] Full error info present: %RTbool, basic error info present: %RTbool\n", \
               info.isFullAvailable(), info.isBasicAvailable())); \
         if (info.isFullAvailable() || info.isBasicAvailable()) { \
-            RTPrintf ("[!] Result Code = %Rwa\n", info.getResultCode()); \
+            RTPrintf ("[!] Result Code = %Rhra\n", info.getResultCode()); \
             RTPrintf ("[!] Text        = %ls\n", info.getText().raw()); \
-            RTPrintf ("[!] Component   = %ls, Interface: %ls, {%Vuuid}\n", \
+            RTPrintf ("[!] Component   = %ls, Interface: %ls, {%RTuuid}\n", \
                       info.getComponent().raw(), info.getInterfaceName().raw(), \
                       info.getInterfaceID().raw()); \
-            RTPrintf ("[!] Callee      = %ls, {%Vuuid}\n", \
+            RTPrintf ("[!] Callee      = %ls, {%RTuuid}\n", \
                       info.getCalleeName().raw(), info.getCalleeIID().raw()); \
-            Log (("[!] Result Code = %Rwa\n", info.getResultCode())); \
+            Log (("[!] Result Code = %Rhra\n", info.getResultCode())); \
             Log (("[!] Text        = %ls\n", info.getText().raw())); \
-            Log (("[!] Component   = %ls, Interface: %ls, {%Vuuid}\n", \
+            Log (("[!] Component   = %ls, Interface: %ls, {%RTuuid}\n", \
                   info.getComponent().raw(), info.getInterfaceName().raw(), \
                   info.getInterfaceID().raw())); \
-            Log (("[!] Callee      = %ls, {%Vuuid}\n", \
+            Log (("[!] Callee      = %ls, {%RTuuid}\n", \
                   info.getCalleeName().raw(), info.getCalleeIID().raw())); \
         } \
     } while (0)
