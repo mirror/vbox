@@ -526,12 +526,13 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
     /*
      * Remove it from the tree and mark it as dead.
      *
-     * Thread that has seen rtThreadTerminate and entered the final TERMINATED
-     * state does not need removing, probably no thread should require removing
-     * here. However, be careful making sure that cRefs isn't 0 if we do or we'll
-     * blow up because the strict locking code will be calling us back.
+     * Threads that has seen rtThreadTerminate and should already have been
+     * removed from the tree. There is probably no thread that  should
+     * require removing here. However, be careful making sure that cRefs
+     * isn't 0 if we do or we'll blow up because the strict locking code
+     * will be calling us back.
      */
-    if (pThread->enmState != RTTHREADSTATE_TERMINATED)
+    if (ASMBitTest(&pThread->fIntFlags, RTTHREADINT_FLAG_IN_TREE_BIT))
     {
         ASMAtomicIncU32(&pThread->cRefs);
         rtThreadRemove(pThread);
