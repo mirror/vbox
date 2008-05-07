@@ -338,6 +338,30 @@ RTDECL(int)   RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies);
  */
 RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem);
 
+/**
+ * Checks if the caller is the exclusive semaphore owner.
+ *
+ * @returns true / false accoringly.
+ * @param   RWSem       The Read/Write semaphore in question.
+ */
+RTDECL(bool)  RTSemRWIsWriteOwner(RTSEMRW RWSem);
+
+/**
+ * Gets the write recursion count.
+ *
+ * @returns The write recursion count (0 if bad semaphore handle).
+ * @param   RWSem       The Read/Write semaphore in question.
+ */
+RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem);
+
+/**
+ * Gets the read recursion count of the current writer.
+ *
+ * @returns The read recursion count (0 if bad semaphore handle).
+ * @param   RWSem       The Read/Write semaphore in question.
+ */
+RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem);
+
 
 
 /**

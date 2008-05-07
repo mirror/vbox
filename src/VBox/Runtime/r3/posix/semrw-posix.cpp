@@ -429,3 +429,59 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     return VINF_SUCCESS;
 }
 
+
+RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, false);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    false);
+
+    /*
+     * Check ownership.
+     */
+    pthread_t Self = pthread_self();
+    pthread_t Writer;
+    ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
+    return Writer == Self;
+}
+
+
+RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, 0);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    0);
+
+    /*
+     * Return the requested data.
+     */
+    return pThis->cWrites;
+}
+
+
+RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, 0);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    0);
+
+    /*
+     * Return the requested data.
+     */
+    return pThis->cWriterReads;
+}
