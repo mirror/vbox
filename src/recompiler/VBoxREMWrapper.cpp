@@ -935,6 +935,10 @@ static const REMPARMDESC g_aArgsRTStrPrintfV[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
     { REMPARMDESC_FLAGS_VALIST,     0 }
 };
+static const REMPARMDESC g_aArgsThread[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTTHREAD), NULL }
+};
 
 
 /* CRT args */
@@ -1124,7 +1128,9 @@ static REMFNDESC g_aRTImports[] =
     { "RTMemProtect",                           (void *)(uintptr_t)&RTMemProtect,                   &g_aArgsRTMemProtect[0],                    ELEMENTS(g_aArgsRTMemProtect),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTStrPrintf",                            (void *)(uintptr_t)&RTStrPrintf,                    &g_aArgsRTStrPrintf[0],                     ELEMENTS(g_aArgsRTStrPrintf),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(size_t), NULL },
     { "RTStrPrintfV",                           (void *)(uintptr_t)&RTStrPrintfV,                   &g_aArgsRTStrPrintfV[0],                    ELEMENTS(g_aArgsRTStrPrintfV),                      REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_VALIST, sizeof(size_t), NULL },
+    { "RTThreadSelf",                           (void *)(uintptr_t)&RTThreadSelf,                   NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(RTTHREAD),    NULL },
     { "RTThreadNativeSelf",                     (void *)(uintptr_t)&RTThreadNativeSelf,             NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT, sizeof(RTNATIVETHREAD), NULL },
+    { "RTThreadGetWriteLockCount",              (void *)(uintptr_t)&RTThreadGetWriteLockCount,      &g_aArgsThread[0],                          0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(int32_t),    NULL },
 };
 
 
