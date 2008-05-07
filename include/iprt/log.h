@@ -291,43 +291,45 @@ struct RTLOGGER
 typedef enum RTLOGFLAGS
 {
     /** The logger instance is disabled for normal output. */
-    RTLOGFLAGS_DISABLED         = 0x00000001,
+    RTLOGFLAGS_DISABLED             = 0x00000001,
     /** The logger instance is using buffered output. */
-    RTLOGFLAGS_BUFFERED         = 0x00000002,
+    RTLOGFLAGS_BUFFERED             = 0x00000002,
     /** The logger instance expands LF to CR/LF. */
-    RTLOGFLAGS_USECRLF          = 0x00000010,
+    RTLOGFLAGS_USECRLF              = 0x00000010,
     /** Show relative timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_REL_TS           = 0x00000020,
+    RTLOGFLAGS_REL_TS               = 0x00000020,
     /** Show decimal timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_DECIMAL_TS       = 0x00000040,
-    /** New lines should be reprefixed with the CPU id (ApicID on intel/amd). */
-    RTLOGFLAGS_PREFIX_CPUID     = 0x00010000,
+    RTLOGFLAGS_DECIMAL_TS           = 0x00000040,
+    /** New lines should be prefixed with the write and read lock counts. */
+    RTLOGFLAGS_PREFIX_LOCK_COUNTS   = 0x00008000,
+    /** New lines should be prefixed with the CPU id (ApicID on intel/amd). */
+    RTLOGFLAGS_PREFIX_CPUID         = 0x00010000,
     /** New lines should be prefixed with the native process id. */
-    RTLOGFLAGS_PREFIX_PID       = 0x00020000,
+    RTLOGFLAGS_PREFIX_PID           = 0x00020000,
     /** New lines should be prefixed with group flag number causing the output. */
-    RTLOGFLAGS_PREFIX_FLAG_NO   = 0x00040000,
+    RTLOGFLAGS_PREFIX_FLAG_NO       = 0x00040000,
     /** New lines should be prefixed with group flag name causing the output. */
-    RTLOGFLAGS_PREFIX_FLAG      = 0x00080000,
+    RTLOGFLAGS_PREFIX_FLAG          = 0x00080000,
     /** New lines should be prefixed with group number. */
-    RTLOGFLAGS_PREFIX_GROUP_NO  = 0x00100000,
+    RTLOGFLAGS_PREFIX_GROUP_NO      = 0x00100000,
     /** New lines should be prefixed with group name. */
-    RTLOGFLAGS_PREFIX_GROUP     = 0x00200000,
+    RTLOGFLAGS_PREFIX_GROUP         = 0x00200000,
     /** New lines should be prefixed with the native thread id. */
-    RTLOGFLAGS_PREFIX_TID       = 0x00400000,
+    RTLOGFLAGS_PREFIX_TID           = 0x00400000,
     /** New lines should be prefixed with thread name. */
-    RTLOGFLAGS_PREFIX_THREAD    = 0x00800000,
+    RTLOGFLAGS_PREFIX_THREAD        = 0x00800000,
     /** New lines should be prefixed with formatted timestamp since program start. */
-    RTLOGFLAGS_PREFIX_TIME_PROG = 0x04000000,
+    RTLOGFLAGS_PREFIX_TIME_PROG     = 0x04000000,
     /** New lines should be prefixed with formatted timestamp (UCT). */
-    RTLOGFLAGS_PREFIX_TIME      = 0x08000000,
+    RTLOGFLAGS_PREFIX_TIME          = 0x08000000,
     /** New lines should be prefixed with milliseconds since program start. */
-    RTLOGFLAGS_PREFIX_MS_PROG   = 0x10000000,
+    RTLOGFLAGS_PREFIX_MS_PROG       = 0x10000000,
     /** New lines should be prefixed with timestamp. */
-    RTLOGFLAGS_PREFIX_TSC       = 0x20000000,
+    RTLOGFLAGS_PREFIX_TSC           = 0x20000000,
     /** New lines should be prefixed with timestamp. */
-    RTLOGFLAGS_PREFIX_TS        = 0x40000000,
+    RTLOGFLAGS_PREFIX_TS            = 0x40000000,
     /** The prefix mask. */
-    RTLOGFLAGS_PREFIX_MASK      = 0x7cff0000
+    RTLOGFLAGS_PREFIX_MASK          = 0x7cff8000
 } RTLOGFLAGS;
 
 /**

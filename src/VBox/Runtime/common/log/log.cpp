@@ -102,6 +102,10 @@ static PRTLOGGER                    g_pLogger;
 /** Default release logger instance. */
 static PRTLOGGER                    g_pRelLogger;
 #endif /* !IN_GC */
+#ifdef IN_RING3
+/** The RTThreadGetWriteLockCount() change caused by the logger mutex semaphore. */
+static uint32_t volatile            g_cLoggerLockCount;
+#endif
 #ifdef IN_RING0
 /** Number of per-thread loggers. */
 static int32_t volatile             g_cPerThreadLoggers;
@@ -412,17 +416,30 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
 #endif  /* IN_RING3 */
 
             /*
-             * Create mutex.
+             * Create mutex and check how much it counts when entering the lock
+             * so that we can report the values for RTLOGFLAGS_PREFIX_LOCK_COUNTS.
              */
             if (RT_SUCCESS(rc))
             {
                 rc = RTSemFastMutexCreate(&pLogger->MutexSem);
                 if (RT_SUCCESS(rc))
                 {
+#ifdef IN_RING3 /** @todo do counters in ring-0 too? */
+                    RTTHREAD Thread = RTThreadSelf();
+                    if (Thread != NIL_RTTHREAD)
+                    {
+                        int32_t c = RTThreadGetWriteLockCount(Thread);
+                        RTSemFastMutexRequest(pLogger->MutexSem);
+                        c = RTThreadGetWriteLockCount(Thread) - c;
+                        RTSemFastMutexRelease(pLogger->MutexSem);
+                        ASMAtomicWriteU32(&g_cLoggerLockCount, c);
+                    }
+#endif
                     *ppLogger = pLogger;
                     return VINF_SUCCESS;
                 }
-                else if (pszErrorMsg)
+
+                if (pszErrorMsg)
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, "failed to create sempahore");
             }
 #ifdef IN_RING3
@@ -1213,6 +1230,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
             { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
             { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
+            { "lockcnts",     sizeof("lockcnts"    ) - 1,   RTLOGFLAGS_PREFIX_LOCK_COUNTS,  false },
             { "cpuid",        sizeof("cpuid"       ) - 1,   RTLOGFLAGS_PREFIX_CPUID,        false },
             { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false },
             { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false },
@@ -1916,9 +1934,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 /*
                  * Flush the buffer if there isn't enough room for the maximum prefix config.
-                 * Max is 214, add a couple of extra bytes.
+                 * Max is 224, add a couple of extra bytes.
                  */
-                if (cb < 214 + 16)
+                if (cb < 224 + 16)
                 {
                     rtlogFlush(pLogger);
                     cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
@@ -2092,6 +2110,33 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #endif
                     psz += RTStrFormatNumber(psz, idCpu, 16, sizeof(idCpu) * 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';                                                               /* +17 */
+                }
+                if (pLogger->fFlags & RTLOGFLAGS_PREFIX_LOCK_COUNTS)
+                {
+#ifdef IN_RING3 /** @todo implement these counters in ring-0 too? */
+                    RTTHREAD Thread = RTThreadSelf();
+                    if (Thread != NIL_RTTHREAD)
+                    {
+                        uint32_t cReadLocks  = RTThreadGetReadLockCount(Thread);
+                        uint32_t cWriteLocks = RTThreadGetWriteLockCount(Thread) - g_cLoggerLockCount;
+                        cReadLocks  = RT_MIN(0xfff, cReadLocks);
+                        cWriteLocks = RT_MIN(0xfff, cWriteLocks);
+                        psz += RTStrFormatNumber(psz, cReadLocks,  16, 3, 0, RTSTR_F_ZEROPAD);
+                        *psz++ = '/';
+                        psz += RTStrFormatNumber(psz, cWriteLocks, 16, 3, 0, RTSTR_F_ZEROPAD);
+                    }
+                    else
+#endif
+                    {
+                        *psz++ = '0';
+                        *psz++ = '0';
+                        *psz++ = '0';
+                        *psz++ = '/';
+                        *psz++ = '0';
+                        *psz++ = '0';
+                        *psz++ = '0';
+                    }
+                    *psz++ = ' ';                                                               /* +8 */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
                 {
