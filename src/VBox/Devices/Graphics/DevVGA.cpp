@@ -3811,7 +3811,7 @@ static int vbeParseBitmap(PVGASTATE pData)
         {
             const uint8_t *pu8Pal = pData->pu8Logo + sizeof(LOGOHDR) + sizeof(BMPINFO) + pWinHdr->Size; /* ASSUMES Size location (safe) */
 
-            for (i = 0; i <= pData->cLogoPalEntries; i++)
+            for (i = 0; i < pData->cLogoPalEntries; i++)
             {
                 uint16_t j;
                 uint32_t u32Pal = 0;
