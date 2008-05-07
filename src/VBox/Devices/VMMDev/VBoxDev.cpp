@@ -1994,10 +1994,12 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
  */
 static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
+    /** @todo The code load code is assuming we're always loaded into a fresh VM. */
     VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
     if (   SSM_VERSION_MAJOR_CHANGED(u32Version, VMMDEV_SSM_VERSION)
         || (SSM_VERSION_MINOR(u32Version) < 6))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
     SSMR3GetU32(pSSMHandle, &pData->hypervisorSize);
     SSMR3GetU32(pSSMHandle, &pData->mouseCapabilities);
     SSMR3GetU32(pSSMHandle, &pData->mouseXAbs);
@@ -2295,6 +2297,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 {
     VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+
     /*
      * Reset the mouse integration feature bit
      */
@@ -2326,10 +2329,16 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     memset(pData->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
 
     /* Reset means that additions will report again. */
+    const bool fVersionChanged = pData->fu32AdditionsOk
+                              || pData->guestInfo.additionsVersion
+                              || pData->guestInfo.osType != VBOXOSTYPE_Unknown;
+    if (fVersionChanged)
+        Log(("vmmdevReset: fu32AdditionsOk=%d additionsVersion=%x osType=%#x\n",
+             pData->fu32AdditionsOk, pData->guestInfo.additionsVersion, pData->guestInfo.osType));
     pData->fu32AdditionsOk = false;
     memset (&pData->guestInfo, 0, sizeof (pData->guestInfo));
-    pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
 
+    /* clear pending display change request. */
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 
     /* disable seamless mode */
@@ -2341,7 +2350,8 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* disabled statistics updating */
     pData->u32LastStatIntervalSize = 0;
 
-    /* Clear the event variables.
+    /*
+     * Clear the event variables.
      *
      *   Note: The pData->u32HostEventFlags is not cleared.
      *         It is designed that way so host events do not
@@ -2351,10 +2361,20 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pData->u32NewGuestFilterMask = 0;
     pData->fNewGuestFilterMask   = 0;
 
-    /* This is the default, as Windows and OS/2 guests take this for granted. */
+    /* This is the default, as Windows and OS/2 guests take this for granted. (Actually, neither does...) */
     /** @todo change this when we next bump the interface version */
-    pData->guestCaps = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
-    pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
+    const bool fCapsChanged = pData->guestCaps != VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+    if (fCapsChanged)
+        Log(("vmmdevReset: fCapsChanged=%#x -> %#x\n", pData->guestCaps, VMMDEV_GUEST_SUPPORTS_GRAPHICS));
+    pData->guestCaps = VMMDEV_GUEST_SUPPORTS_GRAPHICS; /** @todo r=bird: why? I cannot see this being done at construction?*/
+
+    /*
+     * Call the update functions as required.
+     */
+    if (fVersionChanged)
+        pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
+    if (fCapsChanged)
+        pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
 }
 
 
