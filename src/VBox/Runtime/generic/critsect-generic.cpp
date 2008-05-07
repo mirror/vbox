@@ -41,13 +41,8 @@
 
 /** @def RTCRITSECT_STRICT
  * Define this to enable deadlock detection.
- *
- * @remark  This won't work safely on L4 since we have to traverse the AVL tree
- *          in order to get the RT thread structure there and this tree is
- *          protected by a critsect atm.
- * @todo the L4 exclusion is no longer true, we've been using TLS for storing this for quite a while now.
  */
-#if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT) && !defined(RT_OS_L4)
+#if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT)
 # define RTCRITSECT_STRICT
 #endif
 
