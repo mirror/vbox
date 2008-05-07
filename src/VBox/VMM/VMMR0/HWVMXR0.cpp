@@ -992,14 +992,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 
     /* allowed zero */
     if ((val & (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & 0xFFFFFFFF))
-    {
         Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: zero\n"));
-    }
+
     /* allowed one */
     if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_pin_ctls >> 32ULL)) != 0)
-    {
         Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: one\n"));
-    }
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
     AssertRC(rc);
@@ -1007,14 +1004,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 
     /* allowed zero */
     if ((val & (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & 0xFFFFFFFF))
-    {
         Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
-    }
+
     /* allowed one */
     if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls >> 32ULL)) != 0)
-    {
         Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: one\n"));
-    }
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
     AssertRC(rc);
@@ -1022,14 +1016,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 
     /* allowed zero */
     if ((val & (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF))
-    {
         Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: zero\n"));
-    }
+
     /* allowed one */
     if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL)) != 0)
-    {
         Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: one\n"));
-    }
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
     AssertRC(rc);
@@ -1037,14 +1028,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 
     /* allowed zero */
     if ((val & (pVM->hwaccm.s.vmx.msr.vmx_exit & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_exit & 0xFFFFFFFF))
-    {
         Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: zero\n"));
-    }
+
     /* allowed one */
     if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_exit >> 32ULL)) != 0)
-    {
         Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
-    }
 #endif
 
 #if 0

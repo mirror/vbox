@@ -62,19 +62,6 @@
 #define PGM_OUT_OF_SYNC_IN_GC
 
 /**
- * Virtualize the dirty bit
- * This also makes a half-hearted attempt at the accessed bit. For full
- * accessed bit virtualization define PGM_SYNC_ACCESSED_BIT.
- */
-#define PGM_SYNC_DIRTY_BIT
-
-/**
- * Fully virtualize the accessed bit.
- * @remark This requires SYNC_DIRTY_ACCESSED_BITS to be defined!
- */
-#define PGM_SYNC_ACCESSED_BIT
-
-/**
  * Check and skip global PDEs for non-global flushes
  */
 #define PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
@@ -102,13 +89,6 @@
  * Enable caching of PGMR3PhysRead/WriteByte/Word/Dword
  */
 #define PGM_PHYSMEMACCESS_CACHING
-
-/*
- * Assert Sanity.
- */
-#if defined(PGM_SYNC_ACCESSED_BIT) && !defined(PGM_SYNC_DIRTY_BIT)
-# error "PGM_SYNC_ACCESSED_BIT requires PGM_SYNC_DIRTY_BIT!"
-#endif
 
 /** @def PGMPOOL_WITH_CACHE
  * Enable agressive caching using the page pool.

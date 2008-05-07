@@ -158,7 +158,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 # endif
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
-#  ifdef PGM_SYNC_DIRTY_BIT
     /*
      * If we successfully correct the write protection fault due to dirty bit
      * tracking, or this page fault is a genuine one, then return immediately.
@@ -174,7 +173,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         LogBird(("Trap0eHandler: returns %s\n", rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? "VINF_SUCCESS" : "VINF_EM_RAW_GUEST_TRAP"));
         return rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? VINF_SUCCESS : rc;
     }
-#  endif
 
     STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0ePD[iPDSrc]);
 # endif /* PGM_WITH_PAGING(PGM_GST_TYPE) */
@@ -848,7 +846,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 {
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
-    || PGM_GST_TYPE == PGM_TYPE_PAE
+    || PGM_GST_TYPE == PGM_TYPE_PAE \
+    || PGM_GST_TYPE == PGM_TYPE_AMD64
+    int rc;
 
     LogFlow(("InvalidatePage %x\n", GCPtrPage));
     /*
@@ -858,9 +858,40 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PDE     pPdeDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
-# else
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
     PX86PDEPAE  pPdeDst = &pVM->pgm.s.CTXMID(ap,PaePDs[0])->a[iPDDst];
+# else /* AMD64 */
+    /* PML4 */
+    const unsigned iPml4  = ((RTGCUINTPTR64)GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PX86PML4E pPml4eDst = &CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+    if (!pPml4eDst->n.u1Present)
+    {
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePageSkipped));
+        return VINF_SUCCESS;
+    }
+
+    /* PDPT */
+    PX86PDPT pPDPT;
+    rc = PGM_HCPHYS_2_PTR(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, &pPDPT);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    const unsigned iPDPT = ((RTGCUINTPTR64)GCPtrPage >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+    PX86PDPE pPdpeDst = &pPDPT->a[iPDPT];
+    if (!pPdpeDst->n.u1Present)
+    {
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePageSkipped));
+        return VINF_SUCCESS;
+    }
+
+    /* PD */
+    PX86PDPAE pPd;
+    rc = PGM_HCPHYS_2_PTR(pVM, pPdpeDst->u & X86_PDPE_PG_MASK, &pPd);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    const unsigned iPd = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    PX86PDEPAE  pPdeDst = &pPd->a[iPd];
 # endif
+
     const SHWPDE PdeDst = *pPdeDst;
     if (!PdeDst.n.u1Present)
     {
@@ -875,9 +906,15 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PX86PD          pPDSrc      = CTXSUFF(pVM->pgm.s.pGuestPD);
     const unsigned  iPDSrc      = GCPtrPage >> GST_PD_SHIFT;
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
-# else /* PAE */
+# else
     unsigned        iPDSrc;
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+#  else /* AMD64 */
+    PX86PML4E       pPml4eSrc;
+    X86PDPE         PdpeSrc;
+    PX86PDPAE       pPDSrc      = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtrPage, &pPml4eSrc, &PdpeSrc, &iPDSrc);
+#  endif
     GSTPDE          PdeSrc;
 
     if (pPDSrc)
@@ -913,10 +950,84 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # endif /* IN_RING3 */
 
 
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    Assert(pPml4eDst->n.u1Present && pPml4eDst->u & SHW_PDPT_MASK);
+    if (pPml4eSrc->n.u1Present)
+    {
+        if (   pPml4eSrc->n.u1User != pPml4eDst->n.u1User
+            || (!pPml4eSrc->n.u1Write && pPml4eDst->n.u1Write))
+        {
+            /*
+             * Mark not present so we can resync the PML4E when it's used.
+             */
+            LogFlow(("InvalidatePage: Out-of-sync PML4E at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+                     GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+            pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4);
+            pPml4eDst->u = 0;
+            STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
+            PGM_INVL_GUEST_TLBS();
+        }
+        else if (!pPml4eSrc->n.u1Accessed)
+        {
+            /*
+             * Mark not present so we can set the accessed bit.
+             */
+            pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4);
+            pPml4eDst->u = 0;
+            STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
+            PGM_INVL_GUEST_TLBS();
+        }
+    }
+    else
+    {
+        pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4);
+        pPml4eDst->u = 0;
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
+        PGM_INVL_PG(GCPtrPage);
+        return VINF_SUCCESS;
+    }
+
+    Assert(pPdpeDst->n.u1Present && pPdpeDst->u & SHW_PDPT_MASK);
+    if (PdpeSrc.n.u1Present)
+    {
+        if (   PdpeSrc.lm.u1User != pPdpeDst->lm.u1User
+            || (!PdpeSrc.lm.u1Write && pPdpeDst->lm.u1Write))
+        {
+            /*
+             * Mark not present so we can resync the PML4E when it's used.
+             */
+            LogFlow(("InvalidatePage: Out-of-sync PDPE at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                     GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+            pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PML4, iPml4);
+            pPdpeDst->u = 0;
+            STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
+            PGM_INVL_GUEST_TLBS();
+        }
+        else if (!PdpeSrc.lm.u1Accessed)
+        {
+            /*
+             * Mark not present so we can set the accessed bit.
+             */
+            pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PML4, iPml4);
+            pPdpeDst->u = 0;
+            STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
+            PGM_INVL_GUEST_TLBS();
+        }
+    }
+    else
+    {
+        pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PDPT, iPDDst);
+        pPdpeDst->u = 0;
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
+        PGM_INVL_PG(GCPtrPage);
+        return VINF_SUCCESS;
+    }
+# endif
+
     /*
      * Deal with the Guest PDE.
      */
-    int rc = VINF_SUCCESS;
+    rc = VINF_SUCCESS;
     if (PdeSrc.n.u1Present)
     {
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
@@ -941,7 +1052,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
         }
-# ifdef PGM_SYNC_ACCESSED_BIT
         else if (!PdeSrc.n.u1Accessed)
         {
             /*
@@ -952,7 +1062,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
         }
-# endif
         else if (!fIsBigPage)
         {
             /*
@@ -1015,15 +1124,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             {
                 /* ASSUMES a the given bits are identical for 4M and normal PDEs */
                 /** @todo PAT */
-# ifdef PGM_SYNC_DIRTY_BIT
                 if (        (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
                         ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
                     &&  (   PdeSrc.b.u1Dirty /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
                          || (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)))
-# else
-                if (    (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
-                    ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD)))
-# endif
                 {
                     LogFlow(("Skipping flush for big page containing %VGv (PD=%X .u=%VX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4MBPagesSkip));
@@ -1063,10 +1167,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
 
     return rc;
-
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-//# error not implemented
-    return VERR_INTERNAL_ERROR;
 
 #else /* guest real and protected mode */
     /* There's no such thing as InvalidatePage when paging is disabled, so just ignore. */
@@ -1217,8 +1317,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             }
             else
             {
-#ifdef PGM_SYNC_DIRTY_BIT
-# ifdef PGM_SYNC_ACCESSED_BIT
                 /*
                  * If the page or page directory entry is not marked accessed,
                  * we mark the page not present.
@@ -1230,7 +1328,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                     PteDst.u = 0;
                 }
                 else
-# endif
                 /*
                  * If the page is not flagged as dirty and is writable, then make it read-only, so we can set the dirty bit
                  * when the page is modified.
@@ -1248,7 +1345,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
                 }
-#endif
             }
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
@@ -1377,14 +1473,12 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 # endif
        )
     {
-# ifdef PGM_SYNC_ACCESSED_BIT
         /*
          * Check that the PDE is marked accessed already.
          * Since we set the accessed bit *before* getting here on a #PF, this
          * check is only meant for dealing with non-#PF'ing paths.
          */
         if (PdeSrc.n.u1Accessed)
-# endif
         {
             PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
             if (!fBigPage)
@@ -1507,7 +1601,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                     pPTDst->a[iPTDst] = PteDst;
 
 
-# ifdef PGM_SYNC_DIRTY_BIT
                     /*
                      * If the page is not flagged as dirty and is writable, then make it read-only
                      * at PD level, so we can set the dirty bit when the page is modified.
@@ -1535,7 +1628,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 #  else /* PAE */
                     pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst] = PdeDst;
 #  endif
-# endif /* PGM_SYNC_DIRTY_BIT */
                     Log2(("SyncPage: BIG %VGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%VGp%s\n",
                           GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
@@ -1545,9 +1637,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
             }
             return VINF_SUCCESS;
         }
-# ifdef PGM_SYNC_ACCESSED_BIT
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,SyncPagePDNAs));
-#endif
     }
     else
     {
@@ -1857,6 +1947,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
             else
                 STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageAlreadyDirty);
 #  endif
+
             pPteSrc->n.u1Dirty = 1;
 
             if (pPdeDst->n.u1Present)
@@ -2094,14 +2185,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             {
                 PdeDst.u = pShwPage->Core.Key
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
-# ifdef PGM_SYNC_DIRTY_BIT /* (see explanation and assumptions further down.) */
+                /* (see explanation and assumptions further down.) */
                 if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageBig));
                     PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
                     PdeDst.b.u1Write = 0;
                 }
-# endif
             }
             *pPdeDst = PdeDst;
             return VINF_SUCCESS;
@@ -2113,12 +2203,10 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         PdeDst.u &= X86_PDE_AVL_MASK;
         PdeDst.u |= pShwPage->Core.Key;
 
-# ifdef PGM_SYNC_DIRTY_BIT
         /*
          * Page directory has been accessed (this is a fault situation, remember).
          */
         pPDSrc->a[iPDSrc].n.u1Accessed = 1;
-# endif
         if (fPageTable)
         {
             /*
@@ -2224,7 +2312,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | (X86_PDE_AVL_MASK & ~PGM_PDFLAGS_TRACK_DIRTY)))
                      | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
 
-# ifdef PGM_SYNC_DIRTY_BIT
             /*
              * If the page is not flagged as dirty and is writable, then make it read-only
              * at PD level, so we can set the dirty bit when the page is modified.
@@ -2241,7 +2328,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                 PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
                 PdeDst.b.u1Write = 0;
             }
-# endif /* PGM_SYNC_DIRTY_BIT */
             *pPdeDst = PdeDst;
 
             /*
@@ -2458,11 +2544,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PdeSrc.n.u1User     = 1;
 # endif
 
-# ifdef PGM_SYNC_ACCESSED_BIT
     if (PdeSrc.n.u1Present && PdeSrc.n.u1Accessed)
-# else
-    if (PdeSrc.n.u1Present)
-# endif
     {
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[GCPtrPage >> SHW_PD_SHIFT];
