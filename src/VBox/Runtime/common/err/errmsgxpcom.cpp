@@ -52,16 +52,18 @@ static const RTCOMERRMSG  g_aStatusMsgs[] =
     { "NS_ERROR_ABORT",                     "Operation aborted",                            UINT32_C(0x80004004) },
     { "NS_ERROR_FAILURE",                   "Operation failed",                             UINT32_C(0x80004005) },
     { "NS_ERROR_UNEXPECTED",                "Unexpected error",                             UINT32_C(0x8000ffff) },
+    { "E_ACCESSDENIED",                     "Access denied",                                UINT32_C(0x80070005) }, /* VirtualBox addition */
     { "NS_ERROR_OUT_OF_MEMORY",             "Memory allocation failed",                     UINT32_C(0x8007000e) },
     { "NS_ERROR_INVALID_ARG",               "Invalid argument value",                       UINT32_C(0x80070057) },
-    { "NS_ERROR_NO_AGGREGATION",            "Class does not allow aggregation",             UINT32_C(0x80040110) },
-    { "NS_ERROR_NOT_AVAILABLE",             "Resource not available",                       UINT32_C(0x80040111) },
     { "NS_ERROR_NOT_INITIALIZED",           "Instance not initialized",                     UINT32_C(0xc1f30001) },
     { "NS_ERROR_ALREADY_INITIALIZED",       "Instance already initialized",                 UINT32_C(0xc1f30002) },
 
+    { "NS_ERROR_NO_AGGREGATION",            "Class does not allow aggregation",             UINT32_C(0x80040110) },
+    { "NS_ERROR_NOT_AVAILABLE",             "Resource not available",                       UINT32_C(0x80040111) },
     { "NS_ERROR_FACTORY_NOT_REGISTERED",    "Class not registered",                         UINT32_C(0x80040154) },
     { "NS_ERROR_FACTORY_REGISTER_AGAIN",    "Cannot be registered, try again later",        UINT32_C(0x80040155) },
     { "NS_ERROR_FACTORY_NOT_LOADED",        "Dynamically loaded factory cannot be found",   UINT32_C(0x800401f8) },
+
     { "NS_ERROR_FACTORY_EXISTS",            "Factory already exists",                       UINT32_C(0xc1f30100) },
     { "NS_ERROR_FACTORY_NO_SIGNATURE_SUPPORT", "Factory does not support signatures",       UINT32_C(0xc1f30101) },
 
