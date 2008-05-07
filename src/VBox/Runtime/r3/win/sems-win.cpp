@@ -36,9 +36,22 @@
 #include <Windows.h>
 
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def RTSEMMUTEX_STRICT
+ * Enables strictness checks and lock accounting.
+ */
+#ifndef RTSEMMUTEX_STRICT
+# if defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT) || defined(DOXYGEN_RUNNING)
+#  define RTSEMMUTEX_STRICT
+# endif
+#endif
 
 /** Converts semaphore to win32 handle. */
 #define SEM2HND(Sem) ((HANDLE)(uintptr_t)Sem)
@@ -229,7 +242,16 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
     int rc = WaitForSingleObjectEx(SEM2HND(MutexSem), cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies, TRUE);
     switch (rc)
     {
-        case WAIT_OBJECT_0:         return VINF_SUCCESS;
+        case WAIT_OBJECT_0:
+        {
+#ifdef RTSEMMUTEX_STRICT
+            RTTHREAD Thread = RTThreadSelf();
+            if (Thread != NIL_RTTHREAD)
+                RTThreadWriteLockInc(Thread);
+#endif
+            return VINF_SUCCESS;
+        }
+
         case WAIT_TIMEOUT:          return VERR_TIMEOUT;
         case WAIT_IO_COMPLETION:    return VERR_INTERRUPTED;
         case WAIT_ABANDONED:        return VERR_SEM_OWNER_DIED;
@@ -251,8 +273,18 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Unlock mutex semaphore.
      */
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD Thread = RTThreadSelf();
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockDec(Thread);
+#endif
     if (ReleaseMutex(SEM2HND(MutexSem)))
         return VINF_SUCCESS;
+
+#ifdef RTSEMMUTEX_STRICT
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockInc(Thread);
+#endif
     AssertMsgFailed(("Release MutexSem %p failed, lasterr=%d\n", MutexSem, GetLastError()));
     return RTErrConvertFromWin32(GetLastError());
 }

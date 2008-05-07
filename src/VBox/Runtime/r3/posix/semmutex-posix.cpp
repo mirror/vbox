@@ -34,6 +34,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
 
@@ -41,6 +42,19 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def RTSEMMUTEX_STRICT
+ * Enables strictness checks and lock accounting.
+ */
+#ifndef RTSEMMUTEX_STRICT
+# if defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT) || defined(DOXYGEN_RUNNING)
+#  define RTSEMMUTEX_STRICT
+# endif
+#endif
 
 
 /*******************************************************************************
@@ -66,7 +80,7 @@ struct RTSEMMUTEXINTERNAL
  * @returns false if invalid.
  * @param   pIntMutexSem    Pointer to the mutex semaphore to validate.
  */
-inline bool rtsemMutexValid(struct RTSEMMUTEXINTERNAL *pIntMutexSem)
+DECLINLINE(bool) rtsemMutexValid(struct RTSEMMUTEXINTERNAL *pIntMutexSem)
 {
     if ((uintptr_t)pIntMutexSem < 0x10000)
         return false;
@@ -223,6 +237,11 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
      */
     pIntMutexSem->Owner = Self;
     ASMAtomicXchgU32(&pIntMutexSem->cNesting, 1);
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD Thread = RTThreadSelf();
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockInc(Thread);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -271,6 +290,11 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Clear the state. (cNesting == 1)
      */
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD Thread = RTThreadSelf();
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockDec(Thread);
+#endif
     pIntMutexSem->Owner    = (pthread_t)-1;
     ASMAtomicXchgU32(&pIntMutexSem->cNesting, 0);
 
