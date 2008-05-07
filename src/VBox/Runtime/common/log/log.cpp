@@ -2121,19 +2121,15 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         uint32_t cWriteLocks = RTThreadGetWriteLockCount(Thread) - g_cLoggerLockCount;
                         cReadLocks  = RT_MIN(0xfff, cReadLocks);
                         cWriteLocks = RT_MIN(0xfff, cWriteLocks);
-                        psz += RTStrFormatNumber(psz, cReadLocks,  16, 3, 0, RTSTR_F_ZEROPAD);
+                        psz += RTStrFormatNumber(psz, cReadLocks,  16, 1, 0, RTSTR_F_ZEROPAD);
                         *psz++ = '/';
-                        psz += RTStrFormatNumber(psz, cWriteLocks, 16, 3, 0, RTSTR_F_ZEROPAD);
+                        psz += RTStrFormatNumber(psz, cWriteLocks, 16, 1, 0, RTSTR_F_ZEROPAD);
                     }
                     else
 #endif
                     {
                         *psz++ = '0';
-                        *psz++ = '0';
-                        *psz++ = '0';
                         *psz++ = '/';
-                        *psz++ = '0';
-                        *psz++ = '0';
                         *psz++ = '0';
                     }
                     *psz++ = ' ';                                                               /* +8 */
