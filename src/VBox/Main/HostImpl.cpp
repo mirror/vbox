@@ -186,7 +186,6 @@ void Host::uninit()
 
 #ifdef VBOX_WITH_USB
     mUSBDeviceFilters.clear();
-    mUSBDevices.clear();
 #endif
 
     setReady (FALSE);
@@ -588,12 +587,8 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
-    ComObjPtr <HostUSBDeviceCollection> collection;
-    collection.createObject();
-    collection->init (mUSBDevices);
-    collection.queryInterfaceTo (aUSBDevices);
+    return mUSBProxyService->getDeviceCollection (aUSBDevices);
 
-    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1219,7 +1214,6 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 }
 
 #ifdef VBOX_WITH_USB
-
 /**
  *  Called by setter methods of all USB device filters.
  */
@@ -1264,191 +1258,6 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
 
     return S_OK;
 }
-
-
-/**
- *  Requests the USB proxy service to capture the given host USB device.
- *
- *  When the request is completed,
- *  IInternalSessionControl::onUSBDeviceAttach() will be called on the given
- *  machine object.
- *
- *  Called by Console from the VM process (throug IInternalMachineControl).
- *  Must return extended error info in case of errors.
- */
-HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
-{
-    ComAssertRet (aMachine, E_INVALIDARG);
-
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    /*
-     * Translate the device id into a device object.
-     */
-    Guid id (aId);
-    ComObjPtr <HostUSBDevice> device;
-    USBDeviceList::iterator it = mUSBDevices.begin();
-    while (!device && it != mUSBDevices.end())
-    {
-        if ((*it)->id() == id)
-            device = (*it);
-        ++ it;
-    }
-    if (!device)
-        return setError (E_INVALIDARG,
-            tr ("USB device with UUID {%Vuuid} is not currently attached to the host"),
-            id.raw());
-
-    /*
-     * Try to capture the device
-     */
-    AutoWriteLock devLock (device);
-    device->requestCaptureForVM (aMachine, true /* aSetError */);
-
-    return S_OK;
-}
-
-/**
- *  Notification from the VM process that it is going to detach (\a aDone = false)
- *  or that is has just detach (\a aDone = true) the given USB device.
- *
- *  When \a aDone = false we only inform the USB Proxy about what the vm is
- *  up to so it doesn't get confused and create a new USB host device object
- *  (a Darwin issue).
- *
- *  When \a aDone = true we replay all filters against the given USB device
- *  excluding filters of the machine the device is currently marked as
- *  captured by.
- *
- *  When the \a aDone = true request is completed,
- *  IInternalSessionControl::onUSBDeviceDetach() will be called on the given
- *  machine object.
- *
- *  Called by Console from the VM process (throug IInternalMachineControl).
- *
- */
-HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone)
-{
-    LogFlowThisFunc (("aMachine=%p, aId={%Vuuid}\n", aMachine, Guid (aId).raw()));
-
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    ComObjPtr <HostUSBDevice> device;
-    USBDeviceList::iterator it = mUSBDevices.begin();
-    while (!device && it != mUSBDevices.end())
-    {
-        if ((*it)->id() == aId)
-            device = (*it);
-        ++ it;
-    }
-
-    ComAssertRet (!!device, E_FAIL);
-
-    AutoWriteLock devLock (device);
-
-    /*
-     * Work the state machine.
-     */
-    LogFlowThisFunc(("id={%Vuuid} state=%s aDone=%RTbool name={%s}\n",
-                     device->id().raw(), device->stateName(), aDone, device->name().raw()));
-    bool fRunFilters = false;
-    HRESULT hrc = device->onDetachFromVM(aMachine, aDone, &fRunFilters);
-
-    /*
-     * Run filters if necessary.
-     */
-    if (    SUCCEEDED(hrc)
-        &&  fRunFilters)
-    {
-        Assert(aDone && device->unistate() == kHostUSBDeviceState_HeldByProxy && device->machine().isNull());
-        HRESULT hrc2 = applyAllUSBFilters(device, aMachine);
-        ComAssertComRC(hrc2);
-    }
-    return hrc;
-}
-
-/**
- *  Asks the USB proxy service to capture all currently available USB devices
- *  that match filters of the given machine.
- *
- *  When the request is completed,
- *  IInternalSessionControl::onUSBDeviceDetach() will be called on the given
- *  machine object per every captured USB device.
- *
- *  Called by Console from the VM process (through IInternalMachineControl)
- *  upon VM startup.
- *
- *  @note Locks this object for reading (@todo for writing now, until switched
- *  to the new locking scheme).
- */
-HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
-{
-    LogFlowThisFunc (("aMachine=%p\n", aMachine));
-
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    for (USBDeviceList::iterator it = mUSBDevices.begin();
-         it != mUSBDevices.end();
-         ++ it)
-    {
-        ComObjPtr <HostUSBDevice> device = *it;
-        AutoWriteLock devLock (device);
-        if (   device->unistate() == kHostUSBDeviceState_HeldByProxy
-            || device->unistate() == kHostUSBDeviceState_Unused
-            || device->unistate() == kHostUSBDeviceState_Capturable)
-            applyMachineUSBFilters(aMachine, device);
-    }
-
-    return S_OK;
-}
-
-/**
- *  Replays all filters against all USB devices currently marked as captured
- *  by the given machine (excluding this machine's filters).
- *
- *  Called by Console from the VM process (throug IInternalMachineControl)
- *  upon normal VM termination or by SessionMachine::uninit() upon abnormal
- *  VM termination (from under the Machine/SessionMachine lock).
- *
- *  @note Locks this object for reading (@todo for writing now, until switched
- *  to the new locking scheme).
- */
-HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone, bool aAbnormal)
-{
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    USBDeviceList::iterator it = mUSBDevices.begin();
-    while (it != mUSBDevices.end())
-    {
-        ComObjPtr <HostUSBDevice> device = *it;
-
-        AutoWriteLock devLock (device);
-
-        if (device->machine() == aMachine)
-        {
-            /*
-             * Same procedure as in detachUSBDevice().
-             */
-            bool fRunFilters = false;
-            HRESULT hrc = device->onDetachFromVM(aMachine, aDone, &fRunFilters, aAbnormal);
-            if (    SUCCEEDED(hrc)
-                &&  fRunFilters)
-            {
-                Assert(aDone && device->unistate() == kHostUSBDeviceState_HeldByProxy && device->machine().isNull());
-                HRESULT hrc2 = applyAllUSBFilters(device, aMachine);
-                ComAssertComRC(hrc2);
-            }
-        }
-        ++ it;
-    }
-
-    return S_OK;
-}
-
 #endif /* VBOX_HOST_USB */
 
 // private methods
@@ -2087,9 +1896,6 @@ void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
 
-    /* add to the collecion */
-    mUSBDevices.push_back (aDevice);
-
     /* apply all filters */
     ComObjPtr <HostUSBDevice> device (aDevice);
     HRESULT rc = applyAllUSBFilters (device);
@@ -2114,30 +1920,10 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
                      aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
 
     /*
-     * Remove from the list.
+     * Detach the device from any machine currently using it,
+     * reset all data and uninitialize the device object.
      */
-    Guid id = aDevice->id();
-
-    ComObjPtr <HostUSBDevice> device;
-    Host::USBDeviceList::iterator it = mUSBDevices.begin();
-    while (it != mUSBDevices.end())
-    {
-        if ((*it)->id() == id)
-        {
-            device = (*it);
-            break;
-        }
-        ++ it;
-    }
-
-    AssertReturnVoid (!!device);
-
-    /* remove from the collecion */
-    mUSBDevices.erase (it);
-
-    /* Detach the device from any machine currently using it,
-       reset all data and uninitialize the device object. */
-    device->onPhysicalDetached();
+    aDevice->onPhysicalDetached();
 }
 
 /**
