@@ -46,6 +46,11 @@ solaris-doc_MODE = a+r,u+w
 solaris-doc_SOURCES = \
 	$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt=>LICENSE)
 
+#
+# Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
+# go into the temporary install folder $(SOLARISINSTDIR) should be part of $(SOLARISARCHFILES).
+# For the files produced during packing they should be cleaned up promptly when the work is done.
+
 # Strip these binaries
 SOLARISSTRIPBIN = \
 	vboxdrv \
@@ -170,8 +175,10 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 		vbox.pkgresponse \
 		vboxdevlink.sed \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
-		Makefile.kmk
+		Makefile.kmk \
+		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSDK))
 	$(call MSG_L1,Installing binaries $(SOLARISINSTDIR))
+	$(QUIET)$(RM) -f $(addprefix $(SOLARISINSTDIR)/,$(filter-out $(SOLARISDK),$(SOLARISARCHFILES)))
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
@@ -272,12 +279,15 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(call MSG_L1,Creating install package: $(PKGFILENAME).tar.gz)
 	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) $(BUILD_TARGET_ARCH)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
+	@# Clean up files emitted as side-effect or result of packing
+	$(QUIET)$(RM) -f $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz
+	$(QUIET)$(RM) -f $(SOLARISINSTDIR)/$(PKGFILENAME).pkg
 
 $(PATH_BIN)/$(DBGARCHIVE): \
 		$(VBOX_VERSION_STAMP) \
 		Makefile.kmk
 	$(call MSG_L1,Installing debug binaries $(SOLARISDBGDIR))
-	$(QUIET)rm -rf $(SOLARISDBGDIR)
+	$(QUIET)$(RM) -Rf $(SOLARISDBGDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISDBGDIR)/components
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARISDBGDIR)/vboxdrv
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARISDBGDIR)/VBoxBFE
@@ -309,9 +319,8 @@ $(PATH_BIN)/$(DBGARCHIVE): \
 	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBGARCHIVE) -C $(SOLARISDBGDIR) $(SOLARISSTRIPBIN)
 	$(QUIET)chmod 0644 $(PATH_BIN)/$(DBGARCHIVE)
 
-# Commented out for now
-#$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_INST_DIR)/,$(PATH_BIN)/,$$@)
-#	$(RM) -f $@
-#	$(MKDIR) -p $(@D)
-#	$(CP) -pf $< $@
+$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSDK)): $$(subst $$(SOLARISINSTDIR)/,$(PATH_BIN)/,$$@)
+	$(call MSG_L1,Copying $@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(CP) -pf $< $@
 
