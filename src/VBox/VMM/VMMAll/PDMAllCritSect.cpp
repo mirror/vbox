@@ -35,11 +35,11 @@
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/semaphore.h>
-#endif 
+#endif
 
 
 /**
- * Leaves a critical section entered with PDMCritSectEnter().
+ * Enters a PDM critical section.
  *
  * @returns VINF_SUCCESS if entered successfully.
  * @returns rcBusy when encountering a busy critical section in GC/R0.
@@ -95,6 +95,32 @@ PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     return rcBusy;
 #endif
 }
+
+
+#ifdef IN_RING3
+/**
+ * Enters a PDM critical section.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @returns rcBusy when encountering a busy critical section in GC/R0.
+ * @returns VERR_SEM_DESTROYED if the critical section is dead.
+ *
+ * @param   pCritSect           The PDM critical section to enter.
+ * @param   fCallHost           Whether this is a VMMGCCallHost() or VMMR0CallHost() request.
+ */
+PDMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
+{
+    int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+    if (    rc == VINF_SUCCESS
+        &&  fCallHost
+        &&  pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
+    {
+        RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
+        ASMAtomicUoWriteSize(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
+    }
+    return rc;
+}
+#endif /* IN_RING3 */
 
 
 /**

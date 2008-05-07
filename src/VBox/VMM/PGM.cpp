@@ -2312,7 +2312,9 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
  */
 PDMR3DECL(int) PGMR3LockCall(PVM pVM)
 {
-    return pgmLock(pVM);
+    int rc = PDMR3CritSectEnterEx(&pVM->pgm.s.CritSect, true /* fHostCall */);
+    AssertRC(rc);
+    return rc;
 }
 
 

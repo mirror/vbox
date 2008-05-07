@@ -1181,13 +1181,17 @@ static DECLCALLBACK(void) pdmR3PollerTimer(PVM pVM, PTMTIMER pTimer, void *pvUse
 
 
 /**
- * Serivce a VMMCALLHOST_PDM_LOCK call.
+ * Service a VMMCALLHOST_PDM_LOCK call.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
 PDMR3DECL(int) PDMR3LockCall(PVM pVM)
 {
-    return pdmLockEx(pVM, VERR_INTERNAL_ERROR);
+#ifdef VBOX_WITH_PDM_LOCK
+    return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
