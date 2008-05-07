@@ -682,6 +682,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     connect (resize_hint_timer, SIGNAL (timeout()),
              this, SLOT (doResizeHint()));
 
+    /* This timer is used as 'last resort' which toggles f/s mode
+       in case of guest additions are not responding. */
     mToggleFSModeTimer = new QTimer (this);
     connect (mToggleFSModeTimer, SIGNAL (timeout()),
              this, SIGNAL (resizeHintDone()));
@@ -2250,7 +2252,17 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    mToggleFSModeTimer->start (2000, true);
+    /* Currently there is 2000 msec pause before timer transfers
+     * console into desired mode "if GA are active and auto-resize
+     * feature enabled" and 100 msec pause before it transfers
+     * console into this mode "if GA are not active or auto-resize
+     * feature disabled". 100 msec pause required for resizing
+     * before normalizing geometry. */
+    mToggleFSModeTimer->start (mIsAdditionsActive && mAutoresizeGuest ?
+        2000 : 100, true);
+
+    /// @todo (r=dsen) perform roll-back after 'entering' mode in case
+    //                 we got no resizing response from the guest.
 }
 
 /**
