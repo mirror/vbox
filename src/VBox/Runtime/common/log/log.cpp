@@ -2128,9 +2128,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     else
 #endif
                     {
-                        *psz++ = '0';
+                        *psz++ = '?';
                         *psz++ = '/';
-                        *psz++ = '0';
+                        *psz++ = '?';
                     }
                     *psz++ = ' ';                                                               /* +8 */
                 }
