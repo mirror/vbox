@@ -274,7 +274,7 @@ public:
 #if defined (DEBUG)
 #define ComAssertComRC(rc)  AssertComRC (rc)
 #else
-#define ComAssertComRC(rc)  ComAssertMsg (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc))
+#define ComAssertComRC(rc)  ComAssertMsg (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", (rc), (rc)))
 #endif
 
 
