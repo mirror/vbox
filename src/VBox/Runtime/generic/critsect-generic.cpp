@@ -45,6 +45,7 @@
  * @remark  This won't work safely on L4 since we have to traverse the AVL tree
  *          in order to get the RT thread structure there and this tree is
  *          protected by a critsect atm.
+ * @todo the L4 exclusion is no longer true, we've been using TLS for storing this for quite a while now.
  */
 #if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT) && !defined(RT_OS_L4)
 # define RTCRITSECT_STRICT
@@ -352,6 +353,7 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
     pCritSect->Strict.u32EnterLine = uLine;
     pCritSect->Strict.uEnterId     = uId;
     ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, (RTUINTPTR)ThreadSelf); /* screw gcc and its pedantic warnings. */
+    RTThreadWriteLockInc(ThreadSelf);
 #endif
 
     return VINF_SUCCESS;
@@ -388,6 +390,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
          * Decrement waiters, if >= 0 then we have to wake one of them up.
          */
 #ifdef RTCRITSECT_STRICT
+        RTThreadWriteLockDec(pCritSect->Strict.ThreadOwner);
         ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, NIL_RTTHREAD);
 #endif
         ASMAtomicXchgSize(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);

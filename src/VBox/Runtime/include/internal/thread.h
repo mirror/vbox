@@ -65,6 +65,10 @@ typedef enum RTTHREADSTATE
     RTTHREADSTATE_EVENT,
     /** Waiting on a event multiple wakeup semaphore. */
     RTTHREADSTATE_EVENTMULTI,
+    /** Waiting on a read write semaphore, read (shared) access. */
+    RTTHREADSTATE_RW_READ,
+    /** Waiting on a read write semaphore, write (exclusive) access. */
+    RTTHREADSTATE_RW_WRITE,
     /** The thread is sleeping. */
     RTTHREADSTATE_SLEEP,
     /** The usual 32-bit size hack. */
@@ -77,6 +81,8 @@ typedef enum RTTHREADSTATE
                                         ||  (enmState) == RTTHREADSTATE_MUTEX \
                                         ||  (enmState) == RTTHREADSTATE_EVENT \
                                         ||  (enmState) == RTTHREADSTATE_EVENTMULTI \
+                                        ||  (enmState) == RTTHREADSTATE_RW_READ \
+                                        ||  (enmState) == RTTHREADSTATE_RW_WRITE \
                                         ||  (enmState) == RTTHREADSTATE_SLEEP \
                                        )
 
@@ -139,6 +145,10 @@ typedef struct RTTHREADINT
     unsigned volatile       uBlockLine;
     /** Where we're blocking. */
     RTUINTPTR volatile      uBlockId;
+    /** Number of registered write locks, mutexes and critsects that this thread owns. */
+    int32_t volatile        cWriteLocks;
+    /** Number of registered read locks that this thread owns, nesting included. */
+    int32_t volatile        cReadLocks;
 #endif /* IN_RING3 */
 #ifdef IPRT_WITH_GENERIC_TLS
     /** The TLS entries for this thread. */
