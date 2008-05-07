@@ -39,20 +39,12 @@
 #include <iprt/thread.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include "internal/strict.h"
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @def RTSEMMUTEX_STRICT
- * Enables strictness checks and lock accounting.
- */
-#ifndef RTSEMMUTEX_STRICT
-# if defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT) || defined(DOXYGEN_RUNNING)
-#  define RTSEMMUTEX_STRICT
-# endif
-#endif
-
 /** Converts semaphore to win32 handle. */
 #define SEM2HND(Sem) ((HANDLE)(uintptr_t)Sem)
 
@@ -288,6 +280,4 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     AssertMsgFailed(("Release MutexSem %p failed, lasterr=%d\n", MutexSem, GetLastError()));
     return RTErrConvertFromWin32(GetLastError());
 }
-
-
 

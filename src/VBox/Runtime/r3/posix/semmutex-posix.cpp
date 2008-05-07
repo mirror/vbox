@@ -37,24 +37,12 @@
 #include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include "internal/strict.h"
 
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** @def RTSEMMUTEX_STRICT
- * Enables strictness checks and lock accounting.
- */
-#ifndef RTSEMMUTEX_STRICT
-# if defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT) || defined(DOXYGEN_RUNNING)
-#  define RTSEMMUTEX_STRICT
-# endif
-#endif
 
 
 /*******************************************************************************

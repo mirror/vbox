@@ -38,13 +38,8 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include "internal/thread.h"
+#include "internal/strict.h"
 
-/** @def RTCRITSECT_STRICT
- * Define this to enable deadlock detection.
- */
-#if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT)
-# define RTCRITSECT_STRICT
-#endif
 
 /* in strict mode we're redefining this, so undefine it now for the implementation. */
 #undef RTCritSectEnter

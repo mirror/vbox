@@ -34,9 +34,11 @@
 #include <iprt/semaphore.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include "internal/magics.h"
+#include "internal/strict.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -240,6 +242,11 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
      */
     pThis->Owner = Self;
     ASMAtomicXchgU32(&pThis->cNesting, 1);
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD Thread = RTThreadSelf();
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockInc(Thread);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -291,6 +298,11 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Clear the state. (cNesting == 1)
      */
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD Thread = RTThreadSelf();
+    if (Thread != NIL_RTTHREAD)
+        RTThreadWriteLockDec(Thread);
+#endif
     pThis->Owner = (pthread_t)~0;
     ASMAtomicXchgU32(&pThis->cNesting, 0);
 
