@@ -65,9 +65,18 @@ VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
 // util::Lockable interface
 RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
 {
-    /* lasy initialization */
-    if (!mObjectLock)
-        mObjectLock = new RWLockHandle;
+    /* lazy initialization */
+    if (RT_UNLIKELY(!mObjectLock))
+    {
+        AssertCompile (sizeof (RWLockHandle *) == sizeof (void *));
+        RWLockHandle *objLock = new RWLockHandle;
+        if (!ASMAtomicCmpXchgPtr ((void * volatile *) &mObjectLock, objLock, NULL))
+        {
+            delete objLock;
+            objLock = (RWLockHandle *) ASMAtomicReadPtr ((void * volatile *) &mObjectLock);
+        }
+        return objLock;
+    }
     return mObjectLock;
 }
 
