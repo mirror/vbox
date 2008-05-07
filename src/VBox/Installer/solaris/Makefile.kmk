@@ -181,30 +181,30 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/lib,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/bin,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARISINSTDIR)/additions/VBoxGuestAdditions.iso)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/vboxdrv                                                          $(SOLARISINSTDIR)/vboxdrv
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARISINSTDIR)/vboxdrv
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARISINSTDIR)/VBoxBFE
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARISINSTDIR)/VBoxDD.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2.so                                                       $(SOLARISINSTDIR)/VBoxDD2.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARISINSTDIR)/VBoxDDU.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARISINSTDIR)/VBoxDD.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD2.so                                                       $(SOLARISINSTDIR)/VBoxDD2.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARISINSTDIR)/VBoxDDU.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxManage                                                       $(SOLARISINSTDIR)/VBoxManage
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxREM.so                                                       $(SOLARISINSTDIR)/VBoxREM.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxREM.so                                                       $(SOLARISINSTDIR)/VBoxREM.so
 	$(QUIET)$(if $(SOL64_PKG),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxREM2.rel                                   $(SOLARISINSTDIR)/VBoxREM2.rel,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxVMM.so                                                       $(SOLARISINSTDIR)/VBoxVMM.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxXPCOM.so                                                     $(SOLARISINSTDIR)/VBoxXPCOM.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVMM.so                                                       $(SOLARISINSTDIR)/VBoxVMM.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxXPCOM.so                                                     $(SOLARISINSTDIR)/VBoxXPCOM.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxXPCOMIPCD                                                    $(SOLARISINSTDIR)/VBoxXPCOMIPCD
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSVC                                                          $(SOLARISINSTDIR)/VBoxSVC
-	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSharedFolders.so            $(SOLARISINSTDIR)/VBoxSharedFolders.so,)
-	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSharedClipboard.so        $(SOLARISINSTDIR)/VBoxSharedClipboard.so,)
+	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedFolders.so            $(SOLARISINSTDIR)/VBoxSharedFolders.so,)
+	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedClipboard.so        $(SOLARISINSTDIR)/VBoxSharedClipboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSDL                                $(SOLARISINSTDIR)/VBoxSDL,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARISINSTDIR)/VBoxRT.so
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxKeyboard.so                          $(SOLARISINSTDIR)/VBoxKeyboard.so,)
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARISINSTDIR)/VBoxRT.so
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard.so                          $(SOLARISINSTDIR)/VBoxKeyboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                               $(SOLARISINSTDIR)/VirtualBox,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARISINSTDIR)/VBoxDbg.so,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARISINSTDIR)/VBoxSettings.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARISINSTDIR)/components/VBoxC.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxSVCM.so                                           $(SOLARISINSTDIR)/components/VBoxSVCM.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                      $(SOLARISINSTDIR)/components/VBoxXPCOMIPCC.so
-	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARISINSTDIR)/VBoxVRDP.so,)
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARISINSTDIR)/VBoxSettings.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARISINSTDIR)/components/VBoxC.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxSVCM.so                                           $(SOLARISINSTDIR)/components/VBoxSVCM.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                      $(SOLARISINSTDIR)/components/VBoxXPCOMIPCC.so
+	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARISINSTDIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARISINSTDIR)/VBoxHeadless,)
 	$(call MSG_L1,Stripping binaries $(SOLARISINSTDIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxdrv,)
@@ -243,12 +243,12 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
 		--output $(SOLARISINSTDIR)/vbox.pkginfo \
 		$(PATH_CURRENT)/vbox.pkginfo
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARISINSTDIR)/vboxdrv.conf
-	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0755 $(PATH_BIN)/UserManual.pdf  $(SOLARISINSTDIR)/UserManual.pdf,)
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 $(PATH_BIN)/LICENSE                                        $(SOLARISINSTDIR)/LICENSE)
-	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0755 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARISINSTDIR)/License-$(VBOX_LICENSE_VER).html,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARISINSTDIR)/components/VBoxXPCOMBase.xpt
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARISINSTDIR)/components/VirtualBox_XPCOM.xpt
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARISINSTDIR)/vboxdrv.conf
+	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf  $(SOLARISINSTDIR)/UserManual.pdf,)
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARISINSTDIR)/LICENSE)
+	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARISINSTDIR)/License-$(VBOX_LICENSE_VER).html,)
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARISINSTDIR)/components/VBoxXPCOMBase.xpt
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARISINSTDIR)/components/VirtualBox_XPCOM.xpt
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARISNLS),$(PATH_BIN)/$(f)) $(SOLARISINSTDIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARISINSTDIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARISINSTDIR)/webtest,)	
@@ -272,7 +272,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt
 	$(call MSG_L1,Creating install package: $(PKGFILENAME).tar.gz)
 	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) $(BUILD_TARGET_ARCH)
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -f $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz
 	$(QUIET)$(RM) -f $(SOLARISINSTDIR)/$(PKGFILENAME).pkg
