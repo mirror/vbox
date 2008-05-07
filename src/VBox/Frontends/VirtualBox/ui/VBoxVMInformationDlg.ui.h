@@ -482,8 +482,9 @@ void VBoxVMInformationDlg::refreshStatistics()
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
         QString addInfo = console.GetGuest().GetAdditionsVersion();
         uint addVersion = addInfo.toUInt();
-        QString addVerisonStr = QString ("%1.%2")
-            .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion));
+        QString addVerisonStr = !addInfo.isNull() ? QString ("%1.%2")
+            .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) :
+            tr ("Not detected", "information dialog (guest additions version)");
 
         result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
