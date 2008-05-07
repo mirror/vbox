@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
     {
         if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--nodaemon"))
             fDaemonise = false;
-        else if (!strcmp(argv[i], "-h") || strcmp(argv[i], "--help"))
+        else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
             exit(0);
