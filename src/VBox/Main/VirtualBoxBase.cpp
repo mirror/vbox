@@ -34,6 +34,7 @@
 #include "Logging.h"
 
 #include <iprt/semaphore.h>
+#include <iprt/asm.h>
 
 // VirtualBoxBaseNEXT_base methods
 ////////////////////////////////////////////////////////////////////////////////
