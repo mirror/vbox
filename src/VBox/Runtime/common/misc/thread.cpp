@@ -525,8 +525,18 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
 {
     /*
      * Remove it from the tree and mark it as dead.
+     *
+     * Thread that has seen rtThreadTerminate and entered the final TERMINATED
+     * state does not need removing, probably no thread should require removing
+     * here. However, be careful making sure that cRefs isn't 0 if we do or we'll
+     * blow up because the strict locking code will be calling us back.
      */
-    rtThreadRemove(pThread);
+    if (pThread->enmState != RTTHREADSTATE_TERMINATED)
+    {
+        ASMAtomicIncU32(&pThread->cRefs);
+        rtThreadRemove(pThread);
+        ASMAtomicDecU32(&pThread->cRefs);
+    }
     ASMAtomicXchgU32(&pThread->u32Magic, RTTHREADINT_MAGIC_DEAD);
 
     /*
