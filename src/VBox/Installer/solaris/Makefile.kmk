@@ -28,6 +28,7 @@ endif
 
 SOLARISINSTDIR  := $(PATH_TARGET)/install
 SOLARISDBGDIR   := $(PATH_TARGET)/installdbg
+SOLDBGOBJCOPY   := /usr/sfw/bin/gobjcopy -p --only-keep-debug
 PKGINFO_ARCH     = $(shell uname -p)
 PKGFILENAME      = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(BUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
 DBGARCHIVE       = VirtualBox-dbg.tar.bz2
@@ -117,12 +118,6 @@ SOLARISSDK = \
 		sdkfiles),\
 	  $(f)),)
 
-SOLARISNLS = \
-	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
-	  $(shell $(CAT_EXT) \
-		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
-	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
-
 ifdef VBOX_WITH_DOCS
  ifndef $(VBOX_OSE)
   SOLARISNOSTRIP += \
@@ -162,7 +157,6 @@ OTHER_CLEAN += $(addprefix $(SOLARISINSTDIR)/,$(SOLARISARCHFILES)) \
 				$(addprefix $(SOLARISDBGDIR)/,$(SOLARISSTRIPBIN)) \
 				$(SOLARISDBGDIR)/$(DBGARCHIVE)
 
-
 include $(PATH_KBUILD)/footer.kmk
 
 $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
@@ -178,7 +172,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 		Makefile.kmk \
 		$(addprefix $(SOLARISINSTDIR)/,$(SOLARISSDK))
 	$(call MSG_L1,Installing binaries $(SOLARISINSTDIR))
-	$(QUIET)$(RM) -f $(addprefix $(SOLARISINSTDIR)/,$(filter-out $(SOLARISDK),$(SOLARISARCHFILES)))
+	$(QUIET)$(RM) -f $(addprefix $(SOLARISINSTDIR)/,$(filter-out $(SOLARISSDK),$(SOLARISARCHFILES)))
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
@@ -289,32 +283,32 @@ $(PATH_BIN)/$(DBGARCHIVE): \
 	$(call MSG_L1,Installing debug binaries $(SOLARISDBGDIR))
 	$(QUIET)$(RM) -Rf $(SOLARISDBGDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISDBGDIR)/components
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARISDBGDIR)/vboxdrv
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARISDBGDIR)/VBoxBFE
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARISDBGDIR)/VBoxDD.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD2.so                                                       $(SOLARISDBGDIR)/VBoxDD2.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxManage                                                       $(SOLARISDBGDIR)/VBoxManage
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxREM.so                                                       $(SOLARISDBGDIR)/VBoxREM.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARISDBGDIR)/VBoxRT.so
-	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSDL                                $(SOLARISDBGDIR)/VBoxSDL,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSVC                                                          $(SOLARISDBGDIR)/VBoxSVC
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARISDBGDIR)/VBoxDDU.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVMM.so                                                       $(SOLARISDBGDIR)/VBoxVMM.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxXPCOM.so                                                     $(SOLARISDBGDIR)/VBoxXPCOM.so
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxXPCOMIPCD                                                    $(SOLARISDBGDIR)/VBoxXPCOMIPCD
-	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedFolders.so            $(SOLARISDBGDIR)/VBoxSharedFolders.so,)
-	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedClipboard.so        $(SOLARISDBGDIR)/VBoxSharedClipboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard.so                          $(SOLARISDBGDIR)/VBoxKeyboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                               $(SOLARISDBGDIR)/VirtualBox,)
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARISDBGDIR)/VBoxSettings.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARISDBGDIR)/components/VBoxC.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxSVCM.so                                           $(SOLARISDBGDIR)/components/VBoxSVCM.so
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                      $(SOLARISDBGDIR)/components/VBoxXPCOMIPCC.so
-	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARISDBGDIR)/VBoxVRDP.so,)
-	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARISDBGDIR)/VBoxHeadless,)
-	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARISDBGDIR)/VBoxDbg.so,)
-	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_BIN)/vboxwebsrv                         $(SOLARISDBGDIR)/vboxwebsrv,)
-	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_BIN)/webtest                            $(SOLARISDBGDIR)/webtest,)
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/vboxdrv                                                            $(SOLARISDBGDIR)/vboxdrv
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxBFE                                                            $(SOLARISDBGDIR)/VBoxBFE
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxDD.so                                                          $(SOLARISDBGDIR)/VBoxDD.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxDD2.so                                                         $(SOLARISDBGDIR)/VBoxDD2.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxManage                                                         $(SOLARISDBGDIR)/VBoxManage
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxREM.so                                                         $(SOLARISDBGDIR)/VBoxREM.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxRT.so                                                          $(SOLARISDBGDIR)/VBoxRT.so
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxSDL                                  $(SOLARISDBGDIR)/VBoxSDL,)
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxSVC                                                            $(SOLARISDBGDIR)/VBoxSVC
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxDDU.so                                                         $(SOLARISDBGDIR)/VBoxDDU.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxVMM.so                                                         $(SOLARISDBGDIR)/VBoxVMM.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxXPCOM.so                                                       $(SOLARISDBGDIR)/VBoxXPCOM.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxXPCOMIPCD                                                      $(SOLARISDBGDIR)/VBoxXPCOMIPCD
+	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxSharedFolders.so              $(SOLARISDBGDIR)/VBoxSharedFolders.so,)
+	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxSharedClipboard.so          $(SOLARISDBGDIR)/VBoxSharedClipboard.so,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxKeyboard.so                            $(SOLARISDBGDIR)/VBoxKeyboard.so,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOLDBGOBJCOPY) $(PATH_BIN)/VirtualBox                                 $(SOLARISDBGDIR)/VirtualBox,)
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARISDBGDIR)/VBoxSettings.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARISDBGDIR)/components/VBoxC.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/components/VBoxSVCM.so                                             $(SOLARISDBGDIR)/components/VBoxSVCM.so
+	$(QUIET)$(SOLDBGOBJCOPY) $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                        $(SOLARISDBGDIR)/components/VBoxXPCOMIPCC.so
+	$(QUIET)$(if $(VBOX_WITH_VRDP),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxVRDP.so                                 $(SOLARISDBGDIR)/VBoxVRDP.so,)
+	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxHeadless                            $(SOLARISDBGDIR)/VBoxHeadless,)
+	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(SOLDBGOBJCOPY) $(PATH_BIN)/VBoxDbg.so                          $(SOLARISDBGDIR)/VBoxDbg.so,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(SOLDBGOBJCOPY) $(PATH_BIN)/vboxwebsrv                           $(SOLARISDBGDIR)/vboxwebsrv,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(SOLDBGOBJCOPY) $(PATH_BIN)/webtest                              $(SOLARISDBGDIR)/webtest,)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBGARCHIVE) -C $(SOLARISDBGDIR) $(SOLARISSTRIPBIN)
 	$(QUIET)chmod 0644 $(PATH_BIN)/$(DBGARCHIVE)
