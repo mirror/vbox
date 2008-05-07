@@ -115,12 +115,8 @@ SOLARIS_NLS = \
 		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
 
-## @todo r=bird: Why QTGUI?
 SOLARIS_SDK = \
-	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
-	  $(shell $(CAT_EXT) \
-		sdkfiles),\
-	  $(f)),)
+	$(foreach f, $(shell $(CAT_EXT) sdkfiles), $(f))
 
 ifdef VBOX_WITH_DOCS
  ifndef $(VBOX_OSE)
@@ -262,7 +258,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARIS_INST_DIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/lib/libqt-mt.so.3     $(SOLARIS_INST_DIR)/qtgcc/lib/libqt-mt.so.3,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/lib/libqt-mt.so.3     $(SOLARIS_INST_DIR)/qtgcc/lib/libqt-mt.so.3,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/bin/qtconfig          $(SOLARIS_INST_DIR)/qtgcc/bin/qtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh
