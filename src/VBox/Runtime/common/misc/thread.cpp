@@ -198,7 +198,7 @@ void rtThreadTerm(void)
 
 #ifdef IN_RING3
 
-inline void rtThreadLockRW(void)
+DECLINLINE(void) rtThreadLockRW(void)
 {
     if (g_ThreadRWSem == NIL_RTSEMRW)
         rtThreadInit();
@@ -207,7 +207,7 @@ inline void rtThreadLockRW(void)
 }
 
 
-inline void rtThreadLockRD(void)
+DECLINLINE(void) rtThreadLockRD(void)
 {
     if (g_ThreadRWSem == NIL_RTSEMRW)
         rtThreadInit();
@@ -216,14 +216,14 @@ inline void rtThreadLockRD(void)
 }
 
 
-inline void rtThreadUnLockRW(void)
+DECLINLINE(void) rtThreadUnLockRW(void)
 {
     int rc = RTSemRWReleaseWrite(g_ThreadRWSem);
     AssertReleaseRC(rc);
 }
 
 
-inline void rtThreadUnLockRD(void)
+DECLINLINE(void) rtThreadUnLockRD(void)
 {
     int rc = RTSemRWReleaseRead(g_ThreadRWSem);
     AssertReleaseRC(rc);
@@ -243,6 +243,8 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszN
 
     /*
      * Allocate and insert the thread.
+     * (It is vital that rtThreadNativeAdopt updates the TLS before
+     * we try inserting the thread because of locking.)
      */
     int rc = VERR_NO_MEMORY;
     PRTTHREADINT pThread = rtThreadAlloc(enmType, fFlags, RTTHREADINT_FLAGS_ALIEN, pszName);
@@ -1053,6 +1055,110 @@ RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
 #ifdef IN_RING3
 
 /**
+ * Gets the number of write locks and critical sections the specified
+ * thread owns.
+ *
+ * This number does not include any nested lock/critect entries.
+ *
+ * Note that it probably will return 0 for non-strict builds since
+ * release builds doesn't do unnecessary diagnostic counting like this.
+ *
+ * @returns Number of locks on success (0+) and VERR_INVALID_HANDLER on failure
+ * @param   Thread          The thread we're inquiring about.
+ */
+RTDECL(int32_t) RTThreadGetWriteLockCount(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    if (!pThread)
+        return VERR_INVALID_HANDLE;
+    int32_t cWriteLocks = ASMAtomicReadS32(&pThread->cWriteLocks);
+    rtThreadRelease(pThread);
+    return cWriteLocks;
+}
+
+
+/**
+ * Works the THREADINT::cWriteLocks member, mostly internal.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTThreadWriteLockInc(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicIncS32(&pThread->cWriteLocks);
+    rtThreadRelease(pThread);
+}
+
+
+/**
+ * Works the THREADINT::cWriteLocks member, mostly internal.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTThreadWriteLockDec(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicDecS32(&pThread->cWriteLocks);
+    rtThreadRelease(pThread);
+}
+
+
+/**
+ * Gets the number of read locks the specified thread owns.
+ *
+ * Note that nesting read lock entry will be included in the
+ * total sum. And that it probably will return 0 for non-strict
+ * builds since release builds doesn't do unnecessary diagnostic
+ * counting like this.
+ *
+ * @returns Number of read locks on success (0+) and VERR_INVALID_HANDLER on failure
+ * @param   Thread          The thread we're inquiring about.
+ */
+RTDECL(int32_t) RTThreadGetReadLockCount(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    if (!pThread)
+        return VERR_INVALID_HANDLE;
+    int32_t cReadLocks = ASMAtomicReadS32(&pThread->cReadLocks);
+    rtThreadRelease(pThread);
+    return cReadLocks;
+}
+
+
+/**
+ * Works the THREADINT::cReadLocks member.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTThreadReadLockInc(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicIncS32(&pThread->cReadLocks);
+    rtThreadRelease(pThread);
+}
+
+
+/**
+ * Works the THREADINT::cReadLocks member.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTThreadReadLockDec(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicDecS32(&pThread->cReadLocks);
+    rtThreadRelease(pThread);
+}
+
+
+
+
+
+/**
  * Recalculates scheduling attributes for the the default process
  * priority using the specified priority type for the calling thread.
  *
@@ -1061,6 +1167,7 @@ RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
  * operation to RTThread.
  *
  * @returns iprt status code.
+ * @remarks Will only work for strict builds.
  */
 int rtThreadDoCalcDefaultPriority(RTTHREADTYPE enmType)
 {
