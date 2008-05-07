@@ -7459,7 +7459,9 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         AssertComRC (rc);
         NOREF (rc);
 
-        mParent->host()->detachAllUSBDevices (this, true /* aDone */, true /* aAbnormal */);
+        USBProxyService *service = mParent->host()->usbProxyService();
+        if (service)
+            service->detachAllDevicesFromVM (this, true /* aDone */, true /* aAbnormal */);
     }
 #endif /* VBOX_WITH_USB */
 
@@ -7661,8 +7663,13 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
     AssertComRCReturnRC (autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    /* if cautureUSBDevice() fails, it must have set extended error info */
-    return mParent->host()->captureUSBDevice (this, aId);
+    /* if captureDeviceForVM() fails, it must have set extended error info */
+    MultiResult rc = mParent->host()->checkUSBProxyService();
+    CheckComRCReturnRC (rc);
+
+    USBProxyService *service = mParent->host()->usbProxyService();
+    AssertReturn (service, E_FAIL);
+    return service->captureDeviceForVM (this, aId);
 #else
     return E_FAIL;
 #endif
@@ -7679,7 +7686,9 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    return mParent->host()->detachUSBDevice (this, aId, aDone);
+    USBProxyService *service = mParent->host()->usbProxyService();
+    AssertReturn (service, E_FAIL);
+    return service->detachDeviceFromVM (this, aId, aDone);
 #else
     return E_FAIL;
 #endif
@@ -7705,7 +7714,9 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AssertComRC (rc);
     NOREF (rc);
 
-    return mParent->host()->autoCaptureUSBDevices (this);
+    USBProxyService *service = mParent->host()->usbProxyService();
+    AssertReturn (service, E_FAIL);
+    return service->autoCaptureDevicesForVM (this);
 #else
     return S_OK;
 #endif
@@ -7733,7 +7744,9 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRC (rc);
     NOREF (rc);
 
-    return mParent->host()->detachAllUSBDevices (this, aDone, false /* aAbnormal */);
+    USBProxyService *service = mParent->host()->usbProxyService();
+    AssertReturn (service, E_FAIL);
+    return service->detachAllDevicesFromVM (this, aDone, false /* aAbnormal */);
 #else
     return S_OK;
 #endif

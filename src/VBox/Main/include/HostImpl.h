@@ -105,22 +105,14 @@ public:
     HRESULT saveSettings (settings::Key &aGlobal);
 
 #ifdef VBOX_WITH_USB
-    /** @todo We could benefit from moving all this USB management into USBProxyService
-     * instead of spreading out like this. Host only needs to keep the host filter list and make
-     * it available to the proxy service. Then only the proxy needs to be intimate friends
-     * with HostUSBDevice, which would simplify the overall picture a bit.
-     * But, I don't dare move anything about this right now though, as I have no time nor any
-     * wishes to provoke the deadlock troll so close to a release... */
-    HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
-                                     BOOL aActiveChanged = FALSE);
-    HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
-    HRESULT detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone);
-    HRESULT autoCaptureUSBDevices (SessionMachine *aMachine);
-    HRESULT detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone, bool aAbnormal);
-
+    /** @name To be moved, they don't belong here.
+     * @{ */
     void onUSBDeviceAttached (HostUSBDevice *aDevice);
     void onUSBDeviceDetached (HostUSBDevice *aDevice);
     void onUSBDeviceStateChanged(HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine);
+    /** @} */
+
+    HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter, BOOL aActiveChanged = FALSE);
 
     /* must be called from under this object's lock */
     USBProxyService *usbProxyService() { return mUSBProxyService; }
@@ -159,11 +151,13 @@ private:
                      : NULL;
     }
 
+public:  //temporary - will be moved soon.
     HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
                                 SessionMachine *aMachine = NULL);
 
     bool applyMachineUSBFilters (SessionMachine *aMachine,
                                  ComObjPtr <HostUSBDevice> &aDevice);
+private: //temporary
 #endif /* VBOX_WITH_USB */
 
 #ifdef RT_OS_WINDOWS
@@ -181,9 +175,6 @@ private:
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
 #ifdef VBOX_WITH_USB
-    typedef std::list <ComObjPtr <HostUSBDevice> > USBDeviceList;
-    USBDeviceList mUSBDevices; /**< @todo remove this, use the one maintained by USBProxyService. */
-
     typedef std::list <ComObjPtr <HostUSBDeviceFilter> > USBDeviceFilterList;
     USBDeviceFilterList mUSBDeviceFilters;
 
