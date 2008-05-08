@@ -990,7 +990,6 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
             tr ("The given USB device filter is not created within "
                 "this VirtualBox instance"));
 
-    AutoWriteLock alockFilter (filter);
     if (filter->mInList)
         return setError (E_INVALIDARG,
             tr ("The given USB device filter is already in the list"));
