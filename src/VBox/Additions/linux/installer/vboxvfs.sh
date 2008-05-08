@@ -25,6 +25,8 @@
 # Provides:       vboxvfs
 # Required-Start: vboxadd
 # Required-Stop:
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
 # Description:    VirtualBox Linux Additions VFS kernel module
 ### END INIT INFO
 
