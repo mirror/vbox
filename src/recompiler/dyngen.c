@@ -2103,7 +2103,9 @@ void gen_code(const char *name, host_ulong offset, host_ulong size,
 				fprintf(outfile, "    extern char %s;\n",
 					sym_name);
 #else
-                    fprintf(outfile, "extern char %s;\n", sym_name);
+                    /* don't include memcpy here as this external reference wouldn't work anyway! */
+                    if (strcmp(sym_name, "memcpy"))
+                        fprintf(outfile, "extern char %s;\n", sym_name);
 #endif
                 }
             }
