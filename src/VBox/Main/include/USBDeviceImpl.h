@@ -1,6 +1,5 @@
 /** @file
- *
- * VirtualBox COM class implementation
+ * Header file for the OUSBDevice (IUSBDevice) class, VBoxC.
  */
 
 /*
