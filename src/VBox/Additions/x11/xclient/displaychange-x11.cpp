@@ -80,14 +80,17 @@ int VBoxGuestDisplayChangeThreadX11::threadFunction(VBoxGuestThread *pThread)
     while (!mThread->isStopping())
     {
         uint32_t cx = 0, cy = 0, cBits = 0, iDisplay = 0;
-        int rc = VbglR3DisplayChangeWaitEvent(&cx, &cy, &cBits, &iDisplay);
+        rc = VbglR3DisplayChangeWaitEvent(&cx, &cy, &cBits, &iDisplay);
         /* Ignore the request if it is stale */
         if ((cx != cx0) || (cy != cy0))
         {
 	        /* If we are not stopping, sleep for a bit to avoid using up too
 	            much CPU while retrying. */
-	        if (RT_FAILURE(rc) && !mThread->isStopping())
-	            mThread->yield();
+	        if (RT_FAILURE(rc))
+                {
+                    if (!mThread->isStopping())
+                        mThread->yield();
+                }
 	        else
 	            system("VBoxRandR");
         }

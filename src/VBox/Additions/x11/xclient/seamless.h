@@ -182,7 +182,7 @@ public:
         LogFlowThisFunc(("\n"));
         if (isInitialised)
         {
-            mHost.stop();
+            mHost.stop(cMillies);
             mGuestThread.stop(cMillies, 0);
             mGuest.uninit();
             isInitialised = false;
