@@ -231,6 +231,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
              */
             if (rc == -ETIMEDOUT)
             {
+/** @something is broken here. shows up every now and again in the ata code. Should try to run the timeout against RTTimeMilliTS to check that it's doing the right thing... */
                 Assert(pTimeout);
                 return VERR_TIMEOUT;
             }
