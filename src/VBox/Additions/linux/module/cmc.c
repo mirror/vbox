@@ -29,7 +29,7 @@ static DECLVBGL(void)
 vboxadd_hgcm_callback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
 {
     VBoxDevice *dev = pvData;
-    wait_event (dev->eventq, pHeader->fu32Flags & VBOX_HGCM_REQ_DONE);
+    wait_event_interruptible (dev->eventq, pHeader->fu32Flags & VBOX_HGCM_REQ_DONE);
 }
 
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
