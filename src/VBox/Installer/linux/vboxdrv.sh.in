@@ -21,8 +21,6 @@
 # Provides:       vboxdrv
 # Required-Start: $syslog
 # Required-Stop:
-# Default-Start:  3 5
-# Default-Stop:
 # Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
