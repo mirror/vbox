@@ -978,6 +978,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (!aFilter)
         return E_INVALIDARG;
 
+    /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoWriteLock alock (this);
     CHECK_READY();
 
@@ -1025,6 +1026,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (!aFilter)
         return E_POINTER;
 
+    /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoWriteLock alock (this);
     CHECK_READY();
 
