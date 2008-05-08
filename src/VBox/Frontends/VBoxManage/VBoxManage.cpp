@@ -5582,7 +5582,7 @@ static int handleControlVM(int argc, char *argv[],
 
             /* Process the command line. */
             int i;
-            for (i = 1 + 1; i < argc && cScancodes < RT_ELEMENTS(alScancodes); i++, cScancodes++)
+            for (i = 1 + 1; i < argc && cScancodes < (int)RT_ELEMENTS(alScancodes); i++, cScancodes++)
             {
                 if (   isxdigit (argv[i][0])
                     && isxdigit (argv[i][1])
