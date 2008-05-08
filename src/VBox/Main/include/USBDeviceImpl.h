@@ -114,7 +114,6 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <OUSBDevice>, IUSBDevi
             return E_INVALIDARG;
         if (!aDevice)
             return E_POINTER;
-RTLogPrintf("%Rfn: id=%RTuuid\n", __PRETTY_FUNCTION__, idToFind.raw());
 
         *aDevice = NULL;
         Vector::value_type found;
@@ -123,7 +122,6 @@ RTLogPrintf("%Rfn: id=%RTuuid\n", __PRETTY_FUNCTION__, idToFind.raw());
         {
             Guid id;
             (*it)->COMGETTER(Id) (id.asOutParam());
-RTLogPrintf("%Rfn: it=%RTuuid\n", __PRETTY_FUNCTION__, id.raw());
             if (id == idToFind)
                 found = *it;
             ++ it;
@@ -131,7 +129,6 @@ RTLogPrintf("%Rfn: it=%RTuuid\n", __PRETTY_FUNCTION__, id.raw());
 
         if (!found)
         {
-RTLogPrintf("%Rfn: not found\n", __PRETTY_FUNCTION__);
             return setError (E_INVALIDARG, OUSBDeviceCollection::tr (
                 "Could not find a USB device with UUID {%s}"),
                 idToFind.toString().raw());
