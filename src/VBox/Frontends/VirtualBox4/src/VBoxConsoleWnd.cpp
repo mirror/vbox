@@ -1037,7 +1037,7 @@ void VBoxConsoleWnd::onEnterFullscreen()
     /* It isn't guaranteed that the guest os set the video mode that
      * we requested. So after all the resizing stuff set the clipping
      * mask and the spacing shifter to the corresponding values. */
-    setViewInSeamlessMode (QRect(console->mapToGlobal (QPoint(0, 0)), console->size()));
+    setViewInSeamlessMode (QRect (console->mapToGlobal (QPoint (0, 0)), console->size()));
 #ifdef Q_WS_MAC
     if (!mIsSeamless)
     {
@@ -1051,10 +1051,11 @@ void VBoxConsoleWnd::onEnterFullscreen()
     vmFullscreenAction->setEnabled (mIsFullscreen);
     if (mIsSeamless)
         connect (console, SIGNAL (resizeHintDone()),
-                 this, SLOT(exitSeamless()));
-    else if (mIsFullscreen)
-        connect (console, SIGNAL (resizeHintDone()),
-                 this, SLOT(exitFullscreen()));
+                 this, SLOT (exitSeamless()));
+    /* disabled for now */
+    //else if (mIsFullscreen)
+    //    connect (console, SIGNAL (resizeHintDone()),
+    //             this, SLOT (exitFullscreen()));
 }
 
 /**
@@ -1086,6 +1087,7 @@ void VBoxConsoleWnd::onExitFullscreen()
  */
 void VBoxConsoleWnd::exitFullscreen()
 {
+    Assert (0); /* disabled for now */
     if (mIsFullscreen && vmFullscreenAction->isEnabled())
         vmFullscreenAction->toggle();
 }
