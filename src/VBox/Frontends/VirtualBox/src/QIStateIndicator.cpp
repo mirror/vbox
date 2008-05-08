@@ -157,11 +157,19 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
  */
 void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
 {
-    QContextMenuEvent qme (QContextMenuEvent::Mouse, aEv->pos(), aEv->globalPos(), 0);
-    emit contextMenuRequested (this, &qme);
-    if (qme.isAccepted())
-        aEv->accept();
-    else
+    /* Do this for the left mouse button event only, cause in the case of the
+     * right mouse button it could happen that the context menu event is
+     * triggered twice. Also this isn't necessary for the middle mouse button
+     * which would be some kind of overstated. */
+    if (aEv->button() == Qt::LeftButton)
+    {
+        QContextMenuEvent qme (QContextMenuEvent::Mouse, aEv->pos(), aEv->globalPos(), 0);
+        emit contextMenuRequested (this, &qme);
+        if (qme.isAccepted())
+            aEv->accept();
+        else
+            QFrame::mousePressEvent (aEv);
+    }else
         QFrame::mousePressEvent (aEv);
 }
 #endif /* Q_WS_MAC */
