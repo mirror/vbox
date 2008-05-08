@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3494,25 +3494,15 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing (10);
-    mainLayout->addLayout (buttonLayout);
-    QPushButton *pbHelp = new QPushButton (tr ("Help"));
-    QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    QPushButton *pbOk = new QPushButton (tr ("&OK"));
-    QPushButton *pbCancel = new QPushButton (tr ("Cancel"));
-    connect (pbHelp, SIGNAL (clicked()), &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
-    connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
-    pbHelp->setShortcut (Qt::Key_F1);
-    buttonLayout->addWidget (pbHelp);
-    buttonLayout->addItem (spacer);
-    buttonLayout->addWidget (pbOk);
-    buttonLayout->addWidget (pbCancel);
+    QDialogButtonBox *buttonBox = new QDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
+    QPushButton *btnHelp = buttonBox->button (QDialogButtonBox::Help);
+    btnHelp->setText (tr ("Help"));
+    btnHelp->setShortcut (QKeySequence (tr ("F1"))); 
 
-    /* Setup the default push button */
-    pbOk->setAutoDefault (true);
-    pbOk->setDefault (true);
+    connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    mainLayout->addWidget (buttonBox);
 }
 
 void VBoxSFDialog::accept()
