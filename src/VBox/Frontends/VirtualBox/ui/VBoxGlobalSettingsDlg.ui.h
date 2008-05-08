@@ -558,6 +558,9 @@ void VBoxGlobalSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
+
+    lvLanguages->ensureVisible (0, lvLanguages->itemPos (lvLanguages->currentItem()),
+                                0, 0);
 }
 
 void VBoxGlobalSettingsDlg::listView_currentChanged (QListViewItem *item)
