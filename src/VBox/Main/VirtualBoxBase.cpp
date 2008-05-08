@@ -608,15 +608,16 @@ VirtualBoxSupportErrorInfoImplBase::MultiResult::~MultiResult()
 HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
     HRESULT aResultCode, const GUID &aIID,
     const Bstr &aComponent, const Bstr &aText,
-    bool aWarning)
+    bool aWarning, bool aLogIt)
 {
     /* whether multi-error mode is turned on */
     bool preserve = ((uintptr_t) RTTlsGet (MultiResult::sCounter)) > 0;
 
-    LogRel (("ERROR [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%ls} aText={%ls} "
-             "aWarning=%RTbool, preserve=%RTbool\n",
-             aResultCode, aResultCode, &aIID, aComponent.raw(), aText.raw(), aWarning,
-             preserve));
+    if (aLogIt)
+        LogRel (("ERROR [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%ls} aText={%ls} "
+                 "aWarning=%RTbool, preserve=%RTbool\n",
+                 aResultCode, aResultCode, &aIID, aComponent.raw(), aText.raw(), aWarning,
+                 preserve));
 
     /* these are mandatory, others -- not */
     AssertReturn ((!aWarning && FAILED (aResultCode)) ||

@@ -1104,7 +1104,7 @@ class VirtualBoxSupportErrorInfoImplBase
 {
     static HRESULT setErrorInternal (HRESULT aResultCode, const GUID &aIID,
                                      const Bstr &aComponent, const Bstr &aText,
-                                     bool aWarning);
+                                     bool aWarning, bool aLogIt);
 
 protected:
 
@@ -1232,11 +1232,12 @@ protected:
     };
 
     static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                                    const Bstr &aComponent,
-                                    const Bstr &aText)
+                             const Bstr &aComponent,
+                             const Bstr &aText,
+                             bool aLogIt = true)
     {
         return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 false /* aWarning */);
+                                 false /* aWarning */, aLogIt);
     }
 
     static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
@@ -1244,16 +1245,16 @@ protected:
                                const Bstr &aText)
     {
         return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 true /* aWarning */);
+                                 true /* aWarning */, true /* aLogIt */);
     }
 
     static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
                              const Bstr &aComponent,
-                             const char *aText, va_list aArgs)
+                             const char *aText, va_list aArgs, bool aLogIt = true)
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
                                  Utf8StrFmtVA (aText, aArgs),
-                                 false /* aWarning */);
+                                 false /* aWarning */, aLogIt);
     }
 
     static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
@@ -1262,7 +1263,7 @@ protected:
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
                                  Utf8StrFmtVA (aText, aArgs),
-                                 true /* aWarning */);
+                                 true /* aWarning */, true /* aLogIt */);
     }
 };
 
@@ -1381,7 +1382,7 @@ protected:
         va_list args;
         va_start (args, aText);
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, aIID, aComponent, aText, args);
+            (aResultCode, aIID, aComponent, aText, args, true /* aLogIt */);
         va_end (args);
         return rc;
     }
@@ -1435,7 +1436,7 @@ protected:
         va_list args;
         va_start (args, aText);
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, true /* aLogIt */);
         va_end (args);
         return rc;
     }
@@ -1472,7 +1473,7 @@ protected:
                               va_list aArgs)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs, true /* aLogIt */);
         return rc;
     }
 
@@ -1508,7 +1509,7 @@ protected:
     static HRESULT setErrorBstr (HRESULT aResultCode, const Bstr &aText)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, true /* aLogIt */);
         return rc;
     }
 
@@ -1543,7 +1544,7 @@ protected:
         va_list args;
         va_start (args, aText);
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, aIID, C::getComponentName(), aText, args);
+            (aResultCode, aIID, C::getComponentName(), aText, args, true /* aLogIt */);
         va_end (args);
         return rc;
     }
@@ -1564,6 +1565,23 @@ protected:
         va_start (args, aText);
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, aIID, C::getComponentName(), aText, args);
+        va_end (args);
+        return rc;
+    }
+
+    /**
+     *  Sets the error information for the current thread but doesn't put
+     *  anything in the release log. This is very useful for avoiding
+     *  harmless error from causing confusion.
+     *
+     *  It is otherwise identical to #setError (HRESULT, const char *text, ...).
+     */
+    static HRESULT setErrorNoLog (HRESULT aResultCode, const char *aText, ...)
+    {
+        va_list args;
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, false /* aLogIt */);
         va_end (args);
         return rc;
     }
