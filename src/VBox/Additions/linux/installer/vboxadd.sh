@@ -25,8 +25,6 @@
 # Provides:       vboxadd
 # Required-Start:
 # Required-Stop:
-# Default-Start:  3 5
-# Default-Stop:
 # Description:    VirtualBox Linux Additions kernel module
 ### END INIT INFO
 
