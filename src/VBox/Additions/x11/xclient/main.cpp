@@ -140,7 +140,8 @@ void vboxClientSignalHandler(int cSignal)
     Log(("VBoxClient: terminated with signal %d\n", cSignal));
     /** Disable seamless mode */
     VbglR3SeamlessSetCap(false);
-    VbglR3Term();
+    printf(("VBoxClient: terminating...\n"));
+    /* don't call VbglR3Term() here otherwise the /dev/vboxadd filehandle is closed */
     /* Our pause() call will now return and exit. */
 }
 
@@ -289,6 +290,7 @@ int main(int argc, char *argv[])
     LogRel(("VBoxClient: exiting...\n"));
     try
     {
+        /* r=frank: Why all these 2s delays? What are we waiting for? */
 #ifdef DYNAMIC_RESIZE
 # ifdef SEAMLESS_GUEST
         LogRel(("VBoxClient: shutting down seamless Guest Additions...\n"));
