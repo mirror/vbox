@@ -3091,7 +3091,7 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
         if (denom == 1)
             return intg;
 
-        Q_UINT64 hund = hundS.rightJustify (2, '0').toULongLong();
+        Q_UINT64 hund = hundS.leftJustify (2, '0').toULongLong();
         hund = hund * denom / 100;
         intg = intg * denom + hund;
         return intg;
