@@ -290,29 +290,36 @@ void RWLockHandle::unlockWrite()
 
     RTCritSectEnter (&mCritSect);
 
+    RTNATIVETHREAD threadSelf = RTThreadNativeSelf();
+
     Assert (mWriteLockLevel != 0 /* unlockWrite() w/o preceding lockWrite()? */);
     if (mWriteLockLevel != 0)
     {
-        -- mWriteLockLevel;
-        if (mWriteLockLevel == 0)
+        Assert (mWriteLockThread == threadSelf
+                /* unlockWrite() w/o preceding lockWrite()? */);
+        if (mWriteLockThread == threadSelf)
         {
-            Assert (mSelfReadLockCount == 0
-                    /* mixed unlockWrite()/unlockRead() order? */);
+            -- mWriteLockLevel;
+            if (mWriteLockLevel == 0)
+            {
+                Assert (mSelfReadLockCount == 0
+                        /* mixed unlockWrite()/unlockRead() order? */);
 
-            mWriteLockThread = NIL_RTNATIVETHREAD;
+                mWriteLockThread = NIL_RTNATIVETHREAD;
 
-            /* no write locks, let writers go if there are any (top priority),
-             * otherwise let readers go if there are any */
-            if (mWriteLockPending != 0)
-                RTSemEventSignal (mGoWriteSem);
-            else if (mReadLockCount != 0)
-                RTSemEventMultiSignal (mGoReadSem);
+                /* no write locks, let writers go if there are any (top priority),
+                 * otherwise let readers go if there are any */
+                if (mWriteLockPending != 0)
+                    RTSemEventSignal (mGoWriteSem);
+                else if (mReadLockCount != 0)
+                    RTSemEventMultiSignal (mGoReadSem);
 
 # ifdef DEBUG
-            RTTHREAD iprtThreadSelf = RTThreadSelf();
-            if (iprtThreadSelf != NIL_RTTHREAD)
-                RTThreadWriteLockDec (iprtThreadSelf);
+                RTTHREAD iprtThreadSelf = RTThreadSelf();
+                if (iprtThreadSelf != NIL_RTTHREAD)
+                    RTThreadWriteLockDec (iprtThreadSelf);
 # endif
+            }
         }
     }
 
