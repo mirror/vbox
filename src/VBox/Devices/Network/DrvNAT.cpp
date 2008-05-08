@@ -511,9 +511,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                      * Register a load done notification to get the MAC address into the slirp
                      * engine after we loaded a guest state.
                      */
-                    rc2 = pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName, 0, 0,
-                                                           pDrvIns->iInstance, NULL, NULL, NULL, NULL, NULL,
-                                                           drvNATLoadDone);
+                    rc2 = PDMDrvHlpSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName,
+                                               pDrvIns->iInstance, 0, 0,
+                                               NULL, NULL, NULL, NULL, NULL, drvNATLoadDone);
                     AssertRC(rc2);
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 

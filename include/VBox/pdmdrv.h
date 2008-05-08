@@ -805,6 +805,19 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, cons
 
 #ifdef IN_RING3
 /**
+ * @copydoc PDMDRVHLP::pfnSSMRegister
+ */
+DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+                                     PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
+                                     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
+{
+    return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pszName, u32Instance, u32Version, cbGuess,
+                                            pfnSavePrep, pfnSaveExec, pfnSaveDone,
+                                            pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+}
+
+
+/**
  * @copydoc PDMDRVHLP::pfnSTAMRegister
  */
 DECLINLINE(void) PDMDrvHlpSTAMRegister(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
