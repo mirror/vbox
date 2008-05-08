@@ -1226,7 +1226,7 @@ ifeq ($(VBOX_LDR_FMT32),lx)
  RuntimeGC_SOURCES += os2/sys0.asm
 endif
 
-ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), darwin solaris freebsd)
 RuntimeGC_SOURCES += \
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
