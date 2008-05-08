@@ -559,8 +559,10 @@ void VBoxGlobalSettingsDlg::showEvent (QShowEvent *e)
 
     VBoxGlobal::centerWidget (this, parentWidget());
 
-    lvLanguages->ensureVisible (0, lvLanguages->itemPos (lvLanguages->currentItem()),
-                                0, 0);
+    /* ensures selected language item visible */
+    QListViewItem *item = lvLanguages->currentItem();
+    if (item)
+        lvLanguages->ensureVisible (0, lvLanguages->itemPos (item), 0, 0);
 }
 
 void VBoxGlobalSettingsDlg::listView_currentChanged (QListViewItem *item)
