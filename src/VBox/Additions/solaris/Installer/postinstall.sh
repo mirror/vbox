@@ -38,7 +38,7 @@ chmod a+x $vboxadditions_path/VBoxRandR.sh
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
 
 # Install Xorg components to the required places
-xorgversion_long=`/usr/bin/X11/Xorg -version 2>&1 | grep "X Window System Version"`
+xorgversion_long=`/usr/X11/bin/Xorg -version 2>&1 | grep "X Window System Version"`
 xorgversion=`/usr/bin/expr "${xorgversion_long}" : 'X Window System Version \([^ ]*\)'`
 
 vboxmouse_src=""
@@ -72,8 +72,8 @@ if test -z "$vboxmouse_src"; then
     retval=2
 else
     echo "Configuring Xorg..."
-    vboxmouse_dest="/usr/lib/X11/modules/input/vboxmouse_drv.so"
-    vboxvideo_dest="/usr/lib/X11/modules/input/vboxvideo_drv.so"
+    vboxmouse_dest="/usr/X11/lib/modules/input/vboxmouse_drv.so"
+    vboxvideo_dest="/usr/X11/lib/modules/input/vboxvideo_drv.so"
     /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
     /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
     cp "$vboxmouse_src" "$vboxmouse_dest"
@@ -128,7 +128,7 @@ echo "Configuring service..."
 /usr/sbin/svccfg import /var/svc/manifest/system/virtualbox/vboxservice.xml
 /usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
 
-/usr/sbin/devlinks
+/usr/sbin/devfsadm -i vboxguest
 
 echo "Done."
 if test $retval -eq 0; then
