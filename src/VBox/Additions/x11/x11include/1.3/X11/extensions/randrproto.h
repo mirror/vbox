@@ -564,8 +564,8 @@ typedef struct {
     CARD8 type;				/* always evBase + ScreenChangeNotify */
     CARD8 rotation;			/* new rotation */
     CARD16 sequenceNumber B16;
-    Time timestamp B32; B32;			/* time screen was changed */
-    Time configTimestamp B32; B32;		/* time config data was changed */
+    Time timestamp B32;			/* time screen was changed */
+    Time configTimestamp B32;		/* time config data was changed */
     Window root B32;			/* root window */
     Window window B32;			/* window requesting notification */
     SizeID sizeID B16;			/* new size ID */
