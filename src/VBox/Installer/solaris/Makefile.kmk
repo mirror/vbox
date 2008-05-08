@@ -179,10 +179,17 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		vbox.space \
 		vbox.pkgresponse \
 		vboxdevlink.sed \
+		VBox.sh \
+		sdkfiles \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		Makefile.kmk \
-		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)) \
-		$(addprefix $(PATH_BIN)/,$(SOLARIS_STRIP_BIN) $(SOLARIS_NO_STRIP) $(SOLARIS_STRIP_OBJS))
+		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
+		$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(PATH_BIN)/License-$(VBOX_LICENSE_VER).html) \
+		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
+		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh \
+		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh \
+		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS),$(SOLARIS_ARCH_FILES))) \
+		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK))
 	$(call MSG_L1,Installing binaries $(SOLARIS_INST_DIR))
 	$(QUIET)$(RM) -f $(addprefix $(SOLARIS_INST_DIR)/,$(filter-out $(SOLARIS_SDK),$(SOLARIS_ARCH_FILES)))
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
@@ -331,4 +338,8 @@ $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_INST_DIR)/
 	$(call MSG_L1,Copying $@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CP) -pf $< $@
+
+# Enable this for forceful incremental re-packaging. Disabled as it's not needed.
+#.PHONY: $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK))
+#	$(RM) -Rf $(SOLARISINSTDIR)
 
