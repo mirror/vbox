@@ -120,6 +120,7 @@
     <forward>class VBoxConsoleView</forward>
 </forwards>
 <variables>
+    <variable access="public">typedef QMap &lt;QString, QStringList&gt; LinksMapType;</variable>
     <variable access="public">typedef QMap &lt;QString, QString&gt; DataMapType;</variable>
     <variable access="public">struct CounterElementType { QString type; DataMapType list; };</variable>
     <variable access="public">typedef QValueList &lt;CounterElementType&gt; CounterListType;</variable>
@@ -135,6 +136,8 @@
     <variable access="private">QPushButton *mDefaultButton;</variable>
     <variable access="private">DataMapType mNamesMap;</variable>
     <variable access="private">DataMapType mValuesMap;</variable>
+    <variable access="private">DataMapType mUnitsMap;</variable>
+    <variable access="private">LinksMapType mLinksMap;</variable>
     <variable access="private">QTimer mStatTimer;</variable>
     <variable access="private">VBoxConsoleView *mConsole;</variable>
     <variable access="private">int mWidth;</variable>
@@ -160,9 +163,9 @@
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function returnType="QString" access="pritave">parseStatistics( const QString &amp; )</function>
     <function access="private">refreshStatistics()</function>
-    <function returnType="QString" access="pritave">formatHardDisk( const QString &amp;, KStorageBus, LONG, LONG, int, int )</function>
-    <function returnType="QString" access="pritave">formatAdapter( const QString &amp;, ULONG, int, int )</function>
-    <function returnType="QString" access="pritave">composeArticle( const QString &amp;, int, int )</function>
+    <function returnType="QString" access="pritave">formatHardDisk( KStorageBus, LONG, LONG, const QString &amp; )</function>
+    <function returnType="QString" access="pritave">formatAdapter( ULONG, const QString &amp; )</function>
+    <function returnType="QString" access="pritave">composeArticle( const QString &amp; )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
