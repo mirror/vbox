@@ -149,6 +149,8 @@ typedef DECLVBGL(void) VBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *
  * Perform a connect request. That is locate required service and
  * obtain a client identifier for future access.
  *
+ * @note This function can NOT handle cancelled requests!
+ *
  * @param pConnectInfo    The request data.
  * @param pAsyncCallback  Required pointer to function that is called when
  *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
@@ -167,6 +169,8 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
  * Perform a disconnect request. That is tell the host that
  * the client will not call the service anymore.
  *
+ * @note This function can NOT handle cancelled requests!
+ *
  * @param pDisconnectInfo The request data.
  * @param pAsyncCallback  Required pointer to function that is called when
  *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
@@ -180,7 +184,9 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
 DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
                                   VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
-/* Call a HGCM service.
+/** Call a HGCM service.
+ *
+ * @note This function can deal with cancelled requests.
  *
  * @param pCallInfo       The request data.
  * @param pAsyncCallback  Required pointer to function that is called when
