@@ -5275,27 +5275,11 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
      */
     if (ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
     {
-        uint64_t u64Start = RTTimeMilliTS();
-        int rc2 = VINF_SUCCESS;
-        int iFailed = -1;
         for (unsigned i = 0; i < RT_ELEMENTS(pData->aCts); i++)
         {
-            /* Wait for at most 5 seconds, and if that is elapsed for 100msec
-             * per remaining thread. Just to be on the safe side. */
-            int64_t cMsElapsed = RTTimeMilliTS() - u64Start;
-            rc = RTThreadWait(pData->aCts[i].AsyncIOThread,
-                              RT_MAX(5000 - cMsElapsed, 100),
-                              NULL);
-            if (VBOX_FAILURE(rc) && rc != VERR_INVALID_HANDLE)
-            {
-                AssertMsg(rc == VERR_TIMEOUT && RTTimeMilliTS() - u64Start >= 5000,
-                          ("rc=%Rrc cMsElapsed=%RI64 ms  Now: %RI64 ms i=%d\n", rc, cMsElapsed, RTTimeMilliTS() - u64Start, i));
-                rc2 = rc;
-                iFailed = i;
-            }
+            rc = RTThreadWait(pData->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
+            AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
         }
-        AssertMsgRC(rc2, ("Some of the async I/O threads are still running! (%RU64 ms) rc2=%Rrc iFailed=%d\n",
-                          RTTimeMilliTS() - u64Start, rc2, iFailed));
     }
     else
         AssertMsgFailed(("Async I/O is still busy!\n"));
