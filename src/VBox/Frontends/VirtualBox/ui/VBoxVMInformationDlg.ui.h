@@ -482,14 +482,15 @@ void VBoxVMInformationDlg::refreshStatistics()
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
         QString addInfo = console.GetGuest().GetAdditionsVersion();
         uint addVersion = addInfo.toUInt();
-        QString addVerisonStr = !addInfo.isNull() ? QString ("%1.%2")
-            .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) :
-            tr ("Not detected", "information dialog (guest additions version)");
+        QString addVerisonStr = !addInfo.isNull() ?
+            tr ("Version %1.%2", "guest additions")
+                .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) :
+            tr ("Not Detected", "guest additions");
 
         result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
                   bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt);
-        result += bdyRow.arg (tr ("Additions Version")).arg (addVerisonStr);
+        result += bdyRow.arg (tr ("Guest Additions")).arg (addVerisonStr);
         result += paragraph;
     }
 
@@ -519,19 +520,20 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* Network Adapters Statistics. */
-    result += hdrRow.arg ("nw_16px.png")
-        .arg (tr ("Network Adapter Statistics"));
-    result += formatAdapter (VBoxGlobal::tr ("Adapter %1",
-        "details report (network)").arg (1), 0, 16, 17);
-    result += interline;
-    result += formatAdapter (VBoxGlobal::tr ("Adapter %1",
-        "details report (network)").arg (2), 1, 18, 19);
-    result += interline;
-    result += formatAdapter (VBoxGlobal::tr ("Adapter %1",
-        "details report (network)").arg (3), 2, 20, 21);
-    result += interline;
-    result += formatAdapter (VBoxGlobal::tr ("Adapter %1",
-        "details report (network)").arg (4), 3, 22, 23);
+    {
+        result += hdrRow.arg ("nw_16px.png")
+            .arg (tr ("Network Adapter Statistics"));
+        ulong count = vboxGlobal().virtualBox()
+            .GetSystemProperties().GetNetworkAdapterCount();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            result += formatAdapter (
+                VBoxGlobal::tr ("Adapter %1", "details report (network)")
+                .arg (slot), slot, 16 + slot * 2, 17 + slot * 2);
+            if (slot < count - 1)
+                result += interline;
+        }
+    }
 
     /* Show full composed page. */
     mStatisticText->setText (table.arg (result));
@@ -556,7 +558,7 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
         result += composeArticle ("B", aStart + 2, aFinish + 2);
     }
     else
-        result += composeArticle (tr ("Not attached", "information dialog (hard disk)"), -1, -1);
+        result += composeArticle (tr ("Not Attached", "hard disk"), -1, -1);
     return result;
 }
 
@@ -575,7 +577,7 @@ QString VBoxVMInformationDlg::formatAdapter (const QString &aName,
     CNetworkAdapter na = machine.GetNetworkAdapter (aSlot);
     result += na.GetEnabled() ?
         composeArticle ("B", aStart, aFinish) :
-        composeArticle (tr ("Disabled", "information dialog (network adapter)"), -1, -1);
+        composeArticle (tr ("Disabled", "network adapter"), -1, -1);
     return result;
 }
 
