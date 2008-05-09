@@ -43,6 +43,8 @@ VgaBiosBin_DEFS     = IN_VBOXDD2
 VgaBiosBin_INCS     = $(VBOX_PATH_DEVICES_SRC)
 VgaBiosBin_SOURCES  = $(PATH_TARGET)/VgaBiosBin.c
 VgaBiosBin_CLEAN    = \
+	$(PATH_TARGET)/vbetables.h \
+	\
 	$(PATH_TARGET)/_vgabios_.c \
 	$(PATH_TARGET)/vgabios0.s \
 	$(PATH_TARGET)/vgabios1.s \

@@ -146,6 +146,7 @@ VBoxBFE_CXXFLAGS.l4 += -fno-rtti -nostdinc -Wno-non-virtual-dtor \
 	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR))
 VBoxBFE_CFLAGS.linux += -O ## @todo what's this good for?
 
+VBoxBFE_CLEAN = $(PATH_VBoxBFE)/Ico64x01.h
 VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
 
 
