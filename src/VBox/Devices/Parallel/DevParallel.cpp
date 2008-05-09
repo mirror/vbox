@@ -199,7 +199,6 @@ static int parallel_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         ch |= (LPT_CONTROL_BIT6 | LPT_CONTROL_BIT7);
         if (ch != s->reg_control) {
 #ifndef IN_RING3
-            NOREF(ch);
             return VINF_IOM_HC_IOPORT_WRITE;
 #else
             int rc = s->pDrvHostParallelConnector->pfnWriteControl(s->pDrvHostParallelConnector, ch);
@@ -650,7 +649,7 @@ static DECLCALLBACK(int) parallelDestruct(PPDMDEVINS pDevIns)
     ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
 
     PDMR3CritSectDelete(&pData->CritSect);
-/** @todo destroy the event sem? */
+    RTSemEventDestroy(pData->ReceiveSem);
 
     return VINF_SUCCESS;
 }
