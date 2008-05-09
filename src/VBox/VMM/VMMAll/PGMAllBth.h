@@ -2489,6 +2489,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PdeDst.u &= X86_PDE_AVL_MASK;
     PdeDst.u |= pShwPage->Core.Key;
     PdeDst.n.u1Present = 1;
+    PdeDst.n.u1Write   = 1;
+    PdeDst.n.u1User    = 1;
     *pPdeDst = PdeDst;
 
     rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)GCPtrPage, PGM_SYNC_NR_PAGES, 0 /* page not present */);
