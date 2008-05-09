@@ -25,12 +25,12 @@
 
 #include "QIMessageBox.h"
 #include "QIRichLabel.h"
+#include "QIDialogButtonBox.h"
 
 /* Qt includes */
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
-#include <QDialogButtonBox>
 
 /** @class QIMessageBox
  *
@@ -122,7 +122,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mSpacer = new QSpacerItem (0, 0);
     layout->addItem (mSpacer);
 
-    mButtonBox = new QDialogButtonBox;
+    mButtonBox = new QIDialogButtonBox;
     mButtonBox->setCenterButtons (true);
     layout->addWidget (mButtonBox);
 

@@ -32,7 +32,8 @@ class QLineEdit;
 class QPushButton;
 class QCheckBox;
 class SFTreeViewItem;
-class QDialogButtonBox;
+
+class QIDialogButtonBox;
 
 enum SFDialogType
 {
@@ -138,12 +139,12 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    QDialogButtonBox *mButtonBox;
-    QLineEdit        *mLePath;
-    QLineEdit        *mLeName;
-    QCheckBox        *mCbPermanent;
-    QCheckBox        *mCbReadonly;
-    SFoldersNameList  mUsedNames;
+    QIDialogButtonBox *mButtonBox;
+    QLineEdit         *mLePath;
+    QLineEdit         *mLeName;
+    QCheckBox         *mCbPermanent;
+    QCheckBox         *mCbReadonly;
+    SFoldersNameList   mUsedNames;
 };
 
 #endif // __VBoxSharedFoldersSettings_h__

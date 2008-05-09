@@ -28,6 +28,7 @@
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
 #include "QIMessageBox.h"
+#include "QIDialogButtonBox.h"
 
 #ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
@@ -35,7 +36,6 @@
 
 /* Qt includes */
 #include <QLibraryInfo>
-#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QToolTip>
 #include <QTranslator>
@@ -567,7 +567,7 @@ public:
         mLicenseText = new QTextBrowser (this);
         mAgreeButton = new QPushButton (tr ("I &Agree"), this);
         mDisagreeButton = new QPushButton (tr ("I &Disagree"), this);
-        QDialogButtonBox *dbb = new QDialogButtonBox (this);
+        QDialogButtonBox *dbb = new QIDialogButtonBox (this);
         dbb->addButton (mAgreeButton, QDialogButtonBox::AcceptRole);
         dbb->addButton (mDisagreeButton, QDialogButtonBox::RejectRole);
 

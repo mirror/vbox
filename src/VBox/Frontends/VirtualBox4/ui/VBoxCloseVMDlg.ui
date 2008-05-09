@@ -201,7 +201,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="mButtonBox" >
+    <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
      </property>
@@ -210,6 +210,13 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11" />
+ <customwidgets>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../VirtualBox.qrc" />
  </resources>

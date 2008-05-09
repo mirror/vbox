@@ -20,10 +20,11 @@
  * additional information or have any questions.
  */
 
-#include <VBoxSharedFoldersSettings.h>
-#include <VBoxGlobal.h>
-#include <VBoxProblemReporter.h>
-#include <VBoxUtils.h>
+#include "VBoxSharedFoldersSettings.h"
+#include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxUtils.h"
+#include "QIDialogButtonBox.h"
 
 /* Qt includes */
 #include <QLineEdit>
@@ -32,7 +33,6 @@
 #include <QHeaderView>
 #include <QTimer>
 #include <QLabel>
-#include <QDialogButtonBox>
 
 class SFTreeViewItem : public QTreeWidgetItem
 {
@@ -719,7 +719,7 @@ VBoxAddSFDialog::VBoxAddSFDialog (VBoxSharedFoldersSettings *aParent,
     }
 
     /* Setup Button layout */
-    mButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    mButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     mButtonBox->setCenterButtons (true);
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));

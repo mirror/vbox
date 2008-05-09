@@ -95,7 +95,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QDialogButtonBox" name="mButtonBox" >
+     <widget class="QIDialogButtonBox" name="mButtonBox" >
       <property name="standardButtons" >
        <set>QDialogButtonBox::Close</set>
       </property>
@@ -105,6 +105,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar" />
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../VirtualBox.qrc" />
  </resources>

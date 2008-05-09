@@ -32,8 +32,6 @@ VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
     /* Apply UI decorations */
     setupUi (this);
 
-    /* Help is toggled with F1 */
-    mButtonBox->button (QDialogButtonBox::Help)->setShortcut (QKeySequence (tr ("F1"))); 
     /* Set fixed size */
     setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
