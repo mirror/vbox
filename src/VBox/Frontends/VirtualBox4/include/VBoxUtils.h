@@ -276,6 +276,9 @@ void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
+# ifdef DEBUG
+void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
+# endif
 #endif /* Q_WS_MAC */
 
 #endif // __VBoxUtils_h__

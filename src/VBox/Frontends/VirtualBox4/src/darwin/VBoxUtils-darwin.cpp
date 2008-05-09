@@ -292,3 +292,162 @@ OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
     return status;
 }
 
+/* Event debugging stuff. Borrowed from the Knuts Qt patch. */
+#ifdef DEBUG
+
+# define MY_CASE(a) case a: return #a
+const char * DarwinDebugEventName (UInt32 ekind)
+{
+    switch (ekind)
+    {
+        MY_CASE(kEventWindowUpdate                );
+        MY_CASE(kEventWindowDrawContent           );
+        MY_CASE(kEventWindowActivated             );
+        MY_CASE(kEventWindowDeactivated           );
+        MY_CASE(kEventWindowHandleActivate        );
+        MY_CASE(kEventWindowHandleDeactivate      );
+        MY_CASE(kEventWindowGetClickActivation    );
+        MY_CASE(kEventWindowGetClickModality      );
+        MY_CASE(kEventWindowShowing               );
+        MY_CASE(kEventWindowHiding                );
+        MY_CASE(kEventWindowShown                 );
+        MY_CASE(kEventWindowHidden                );
+        MY_CASE(kEventWindowCollapsing            );
+        MY_CASE(kEventWindowCollapsed             );
+        MY_CASE(kEventWindowExpanding             );
+        MY_CASE(kEventWindowExpanded              );
+        MY_CASE(kEventWindowZoomed                );
+        MY_CASE(kEventWindowBoundsChanging        );
+        MY_CASE(kEventWindowBoundsChanged         );
+        MY_CASE(kEventWindowResizeStarted         );
+        MY_CASE(kEventWindowResizeCompleted       );
+        MY_CASE(kEventWindowDragStarted           );
+        MY_CASE(kEventWindowDragCompleted         );
+        MY_CASE(kEventWindowClosed                );
+        MY_CASE(kEventWindowTransitionStarted     );
+        MY_CASE(kEventWindowTransitionCompleted   );
+        MY_CASE(kEventWindowClickDragRgn          );
+        MY_CASE(kEventWindowClickResizeRgn        );
+        MY_CASE(kEventWindowClickCollapseRgn      );
+        MY_CASE(kEventWindowClickCloseRgn         );
+        MY_CASE(kEventWindowClickZoomRgn          );
+        MY_CASE(kEventWindowClickContentRgn       );
+        MY_CASE(kEventWindowClickProxyIconRgn     );
+        MY_CASE(kEventWindowClickToolbarButtonRgn );
+        MY_CASE(kEventWindowClickStructureRgn     );
+        MY_CASE(kEventWindowCursorChange          );
+        MY_CASE(kEventWindowCollapse              );
+        MY_CASE(kEventWindowCollapseAll           );
+        MY_CASE(kEventWindowExpand                );
+        MY_CASE(kEventWindowExpandAll             );
+        MY_CASE(kEventWindowClose                 );
+        MY_CASE(kEventWindowCloseAll              );
+        MY_CASE(kEventWindowZoom                  );
+        MY_CASE(kEventWindowZoomAll               );
+        MY_CASE(kEventWindowContextualMenuSelect  );
+        MY_CASE(kEventWindowPathSelect            );
+        MY_CASE(kEventWindowGetIdealSize          );
+        MY_CASE(kEventWindowGetMinimumSize        );
+        MY_CASE(kEventWindowGetMaximumSize        );
+        MY_CASE(kEventWindowConstrain             );
+        MY_CASE(kEventWindowHandleContentClick    );
+        MY_CASE(kEventWindowGetDockTileMenu       );
+        MY_CASE(kEventWindowProxyBeginDrag        );
+        MY_CASE(kEventWindowProxyEndDrag          );
+        MY_CASE(kEventWindowToolbarSwitchMode     );
+        MY_CASE(kEventWindowFocusAcquired         );
+        MY_CASE(kEventWindowFocusRelinquish       );
+        MY_CASE(kEventWindowFocusContent          );
+        MY_CASE(kEventWindowFocusToolbar          );
+        MY_CASE(kEventWindowFocusDrawer           );
+        MY_CASE(kEventWindowSheetOpening          );
+        MY_CASE(kEventWindowSheetOpened           );
+        MY_CASE(kEventWindowSheetClosing          );
+        MY_CASE(kEventWindowSheetClosed           );
+        MY_CASE(kEventWindowDrawerOpening         );
+        MY_CASE(kEventWindowDrawerOpened          );
+        MY_CASE(kEventWindowDrawerClosing         );
+        MY_CASE(kEventWindowDrawerClosed          );
+        MY_CASE(kEventWindowDrawFrame             );
+        MY_CASE(kEventWindowDrawPart              );
+        MY_CASE(kEventWindowGetRegion             );
+        MY_CASE(kEventWindowHitTest               );
+        MY_CASE(kEventWindowInit                  );
+        MY_CASE(kEventWindowDispose               );
+        MY_CASE(kEventWindowDragHilite            );
+        MY_CASE(kEventWindowModified              );
+        MY_CASE(kEventWindowSetupProxyDragImage   );
+        MY_CASE(kEventWindowStateChanged          );
+        MY_CASE(kEventWindowMeasureTitle          );
+        MY_CASE(kEventWindowDrawGrowBox           );
+        MY_CASE(kEventWindowGetGrowImageRegion    );
+        MY_CASE(kEventWindowPaint                 );
+    }
+    static char s_sz[64];
+    sprintf(s_sz, "kind=%u", (uint)ekind);
+    return s_sz;
+}
+# undef MY_CASE
+
+/* Convert a class into the 4 char code defined in
+ * 'Developer/Headers/CFMCarbon/CarbonEvents.h' to 
+ * identify the event. */
+const char * darwinDebugClassName (UInt32 eclass)
+{
+    char *pclass = (char*)&eclass;
+    static char s_sz[11];
+    sprintf(s_sz, "class=%c%c%c%c", pclass[3], 
+                                    pclass[2], 
+                                    pclass[1], 
+                                    pclass[0]);
+    return s_sz;
+}
+
+void darwinDebugPrintEvent (const char *psz, EventRef event)
+{
+  if (!event)
+      return;
+  UInt32 ekind = GetEventKind (event), eclass = GetEventClass (event);
+  if (eclass == kEventClassWindow)
+  {
+      switch (ekind)
+      {
+          case kEventWindowDrawContent:
+          case kEventWindowUpdate:
+          case kEventWindowBoundsChanged:
+              break;
+          default:
+          {
+              WindowRef wid = NULL;
+              GetEventParameter(event, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
+              QWidget *widget = QWidget::find((WId)wid);
+              printf("%d %s: (%s) %#x win=%p wid=%p (%s)\n", (int)time(NULL), psz, darwinDebugClassName (eclass), (uint)ekind, wid, widget, DarwinDebugEventName (ekind));
+              break;
+          }
+      }
+  }
+  else if (eclass == kEventClassCommand)
+  {
+      WindowRef wid = NULL;
+      GetEventParameter(event, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
+      QWidget *widget = QWidget::find((WId)wid);
+      const char *name = "Unknown";
+      switch (ekind)
+      {
+          case kEventCommandProcess:
+              name = "kEventCommandProcess";
+              break;
+          case kEventCommandUpdateStatus:
+              name = "kEventCommandUpdateStatus";
+              break;
+      }
+      printf("%d %s: (%s) %#x win=%p wid=%p (%s)\n", (int)time(NULL), psz, darwinDebugClassName (eclass), (uint)ekind, wid, widget, name);
+  }
+  else if (eclass == kEventClassKeyboard)
+      printf("%d %s: %#x(%s) %#x (kEventClassKeyboard)\n", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
+
+  else
+      printf("%d %s: %#x(%s) %#x\n", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
+}
+
+#endif /* DEBUG */

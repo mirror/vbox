@@ -114,9 +114,22 @@ LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
 pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                          EventRef inEvent, void *inUserData)
 {
-    VBoxConsoleView *view = (VBoxConsoleView *)inUserData;
-    UInt32 EventClass = ::GetEventClass (inEvent);
-    if (EventClass == kEventClassKeyboard)
+    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (inUserData);
+    UInt32 eventClass = ::GetEventClass (inEvent);
+    UInt32 eventKind = ::GetEventKind (inEvent);
+    /* For debugging events */
+    /* 
+    if (!(eventClass == 'cute'))
+        ::darwinDebugPrintEvent ("view: ", inEvent);
+    */
+
+    /* Not sure but this seems an triggered event if the spotlight searchbar is
+     * displayed. So flag that the host key isn't pressed alone. */
+    if (eventClass == 'cgs ' && eventKind == 0x15 &&
+        view->mIsHostkeyPressed)
+        view->mIsHostkeyAlone = false;
+
+    if (eventClass == kEventClassKeyboard)
     {
         if (view->darwinKeyboardEvent (inEvent))
             return 0;
@@ -128,7 +141,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
      * as a half measure to prevent unexpected behaviour. However, we don't
      * get any key down/up events, so these combinations are dead to the guest...
      */
-    else if (EventClass == kEventClassCommand)
+    else if (eventClass == kEventClassCommand)
     {
         if (view->mKbdCaptured)
             return 0;
@@ -144,9 +157,23 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
 /* static */
 bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
 {
-    VBoxConsoleView *view = (VBoxConsoleView *)inUserData;
-    UInt32 EventClass = ::GetEventClass (inEvent);
-    if (EventClass == kEventClassKeyboard)
+    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (inUserData);
+    UInt32 eventClass = ::GetEventClass (inEvent);
+    UInt32 eventKind = ::GetEventKind (inEvent);
+
+    /* For debugging events */
+    /* 
+    if (!(eventClass == 'cute'))
+        ::darwinDebugPrintEvent ("view: ", inEvent);
+    */
+
+    /* Not sure but this seems an triggered event if the spotlight searchbar is
+     * displayed. So flag that the host key isn't pressed alone. */
+    if (eventClass == 'cgs ' && eventKind == 0x15 &&
+        view->mIsHostkeyPressed)
+        view->mIsHostkeyAlone = false;
+
+    if (eventClass == kEventClassKeyboard)
     {
         if (view->darwinKeyboardEvent (inEvent))
             return true;
