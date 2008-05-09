@@ -264,13 +264,14 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, P
 PDMR3DECL(int) PDMR3AsyncCompletionTaskAssociate(PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx);
 
 /**
- * Start processing the task handle.
- * The task must have a type specific context.
+ * Submit an array of tasks for processing
+ * The tasks must have a type specific context.
  *
  * @returns VBox status code.
- * @param   pTask   Pointer to the task which should be submited.
+ * @param   apTasks  Array of tasks which should be processed.
+ * @param   cTasks   Number of tasks in the array which should be processed.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK pTask);
+PDMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK apTasks[], unsigned cTasks);
 
 /**
  * Sets the user argument of a completion task.
@@ -354,14 +355,6 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateLnxIO(PPPDMASYNCCOMPLETIONTASK ppTask,
         return rc;
     }
 
-    rc = PDMR3AsyncCompletionTaskSubmit(pTask);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Submitting Linux task failed\n"));
-        PDMR3AsyncCompletionTaskDestroy(pTask);
-        return rc;
-    }
-
     *ppTask = pTask;
 
     return rc;
@@ -396,14 +389,6 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateUnxAIO(PPPDMASYNCCOMPLETIONTASK ppTask
         return rc;
     }
 
-    rc = PDMR3AsyncCompletionTaskSubmit(pTask);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Submitting AIO task failed\n"));
-        PDMR3AsyncCompletionTaskDestroy(pTask);
-        return rc;
-    }
-
     *ppTask = pTask;
 
     return rc;
@@ -434,14 +419,6 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateOs2Event(PPPDMASYNCCOMPLETIONTASK ppTa
         return rc;
     }
 
-    rc = PDMR3AsyncCompletionTaskSubmit(pTask);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Submitting OS/2 task failed\n"));
-        PDMR3AsyncCompletionTaskDestroy(pTask);
-        return rc;
-    }
-
     *ppTask = pTask;
 
     return rc;
@@ -469,14 +446,6 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateWinObject(PPPDMASYNCCOMPLETIONTASK ppT
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Creating Windows task failed\n"));
-        return rc;
-    }
-
-    rc = PDMR3AsyncCompletionTaskSubmit(pTask);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Submitting Windows task failed\n"));
-        PDMR3AsyncCompletionTaskDestroy(pTask);
         return rc;
     }
 
@@ -532,14 +501,6 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETIONTASK ppTask
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Creating Socket task failed\n"));
-        return rc;
-    }
-
-    rc = PDMR3AsyncCompletionTaskSubmit(pTask);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Submitting Socket task failed\n"));
-        PDMR3AsyncCompletionTaskDestroy(pTask);
         return rc;
     }
 
