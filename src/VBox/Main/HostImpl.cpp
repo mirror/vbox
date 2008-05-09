@@ -153,9 +153,11 @@ HRESULT Host::init (VirtualBox *parent)
     mUSBProxyService = new USBProxyServiceLinux (this);
 # elif defined (RT_OS_OS2)
     mUSBProxyService = new USBProxyServiceOs2 (this);
+# elif defined (RT_OS_SOLARIS) && 0
+    mUSBProxyService = new USBProxyServiceSolaris (this);
 # elif defined (RT_OS_WINDOWS)
     mUSBProxyService = new USBProxyServiceWin32 (this);
-# elif
+# else
     mUSBProxyService = new USBProxyService (this);
 # endif
     HRESULT hrc = mUSBProxyService->init();
