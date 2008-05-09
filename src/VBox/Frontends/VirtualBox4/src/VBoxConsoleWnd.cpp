@@ -3496,10 +3496,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
-    QDialogButtonBox *buttonBox = new QDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-    QPushButton *btnHelp = buttonBox->button (QDialogButtonBox::Help);
-    btnHelp->setText (tr ("Help"));
-    btnHelp->setShortcut (QKeySequence (tr ("F1"))); 
+    QIDialogButtonBox *buttonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
 
     connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));

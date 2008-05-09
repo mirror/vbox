@@ -34,7 +34,8 @@ class QIRichLabel;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
-class QDialogButtonBox;
+
+class QIDialogButtonBox;
 
 class QIMessageBox : public QIDialog
 {
@@ -108,7 +109,7 @@ private:
     QWidget *mDetailsVBox;
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
-    QDialogButtonBox *mButtonBox;
+    QIDialogButtonBox *mButtonBox;
 };
 
 #endif
