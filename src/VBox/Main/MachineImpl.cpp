@@ -8681,10 +8681,17 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
     AutoReadLock alock (this);
 
 #ifdef VBOX_WITH_USB
-    return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
-#else
-    return false;
+    switch (mData->mMachineState)
+    {
+        case MachineState_Starting:
+        case MachineState_Restoring:
+        case MachineState_Paused:
+        case MachineState_Running:
+            return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
+        default: break;
+    }
 #endif
+    return false;
 }
 
 /**
