@@ -33,8 +33,6 @@ DEPTH ?= ../../..
 SUB_DEPTH = .
 include $(PATH_KBUILD)/subheader.kmk
 
-include testcase/Makefile.kmk
-
 ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
