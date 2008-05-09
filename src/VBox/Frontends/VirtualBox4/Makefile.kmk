@@ -490,6 +490,7 @@ VirtualBox_SOURCES = \
 	src/QIAbstractWizard.cpp \
 	src/QIAbstractDialog.cpp \
 	src/QIDialog.cpp \
+	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \
 	src/QILineEdit.cpp \
 	src/VBoxDefs.cpp \
