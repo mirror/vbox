@@ -1685,7 +1685,7 @@ public:
         //  there is a separate mutex for state transition, so calling the
         //  child's uninit() from under the children map lock should not produce
         //  dead-locks any more).
-        Assert (!child->isWriteLockOnCurrentThread());
+        Assert (!child->isWriteLockOnCurrentThread() || child->lockHandle() == lockHandle());
         removeDependentChild (ComPtr <IUnknown> (child));
     }
 

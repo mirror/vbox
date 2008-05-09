@@ -27,6 +27,7 @@
 # include "HostUSBDeviceImpl.h"
 # include "USBDeviceFilterImpl.h"
 # include "USBProxyService.h"
+# include "VirtualBoxImpl.h"
 #else
 class USBProxyService;
 #endif
@@ -105,22 +106,15 @@ public:
     HRESULT saveSettings (settings::Key &aGlobal);
 
 #ifdef VBOX_WITH_USB
-    /** @name To be moved, they don't belong here.
-     * @{ */
-    void onUSBDeviceAttached (HostUSBDevice *aDevice);
-    void onUSBDeviceDetached (HostUSBDevice *aDevice);
-    void onUSBDeviceStateChanged(HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine);
-    /** @} */
+    typedef std::list <ComObjPtr <HostUSBDeviceFilter> > USBDeviceFilterList;
+
+    /** Must be called from under this object's lock. */
+    USBProxyService *usbProxyService() { return mUSBProxyService; }
 
     HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter, BOOL aActiveChanged = FALSE);
-
-    /* must be called from under this object's lock */
-    USBProxyService *usbProxyService() { return mUSBProxyService; }
-#else  /* !VBOX_WITH_USB */
-    USBProxyService *usbProxyService() { return NULL; }
-#endif /* !VBOX_WITH_USB */
-
+    void getUSBFilters(USBDeviceFilterList *aGlobalFiltes, VirtualBox::SessionMachineVector *aMachines);
     HRESULT checkUSBProxyService();
+#endif /* !VBOX_WITH_USB */
 
 #ifdef RT_OS_WINDOWS
     static int networkInterfaceHelperServer (SVCHlpClient *aClient,
@@ -150,14 +144,6 @@ private:
         return child ? dynamic_cast <HostUSBDeviceFilter *> (child)
                      : NULL;
     }
-
-public:  //temporary - will be moved soon.
-    HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
-                                SessionMachine *aMachine = NULL);
-
-    bool applyMachineUSBFilters (SessionMachine *aMachine,
-                                 ComObjPtr <HostUSBDevice> &aDevice);
-private: //temporary
 #endif /* VBOX_WITH_USB */
 
 #ifdef RT_OS_WINDOWS
@@ -175,7 +161,6 @@ private: //temporary
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
 #ifdef VBOX_WITH_USB
-    typedef std::list <ComObjPtr <HostUSBDeviceFilter> > USBDeviceFilterList;
     USBDeviceFilterList mUSBDeviceFilters;
 
     /** Pointer to the USBProxyService object. */

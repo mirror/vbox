@@ -143,20 +143,24 @@ HRESULT Host::init (VirtualBox *parent)
 
     mParent = parent;
 
-#if defined (RT_OS_DARWIN) && defined (VBOX_WITH_USB)
+#ifdef VBOX_WITH_USB
+    /*
+     * Create and initialize the USB Proxy Service.
+     */
+# if defined (RT_OS_DARWIN)
     mUSBProxyService = new USBProxyServiceDarwin (this);
-#elif defined (RT_OS_LINUX) && defined (VBOX_WITH_USB)
+# elif defined (RT_OS_LINUX)
     mUSBProxyService = new USBProxyServiceLinux (this);
-#elif defined (RT_OS_OS2) && defined (VBOX_WITH_USB)
+# elif defined (RT_OS_OS2)
     mUSBProxyService = new USBProxyServiceOs2 (this);
-#elif defined (RT_OS_WINDOWS) && defined (VBOX_WITH_USB)
+# elif defined (RT_OS_WINDOWS)
     mUSBProxyService = new USBProxyServiceWin32 (this);
-#elif defined (VBOX_WITH_USB)
+# elif
     mUSBProxyService = new USBProxyService (this);
-#endif
-    /** @todo handle !mUSBProxySerivce->isActive() and mUSBProxyService->getLastError()
-     * and somehow report or whatever that the proxy failed to startup.
-     * Also, there might be init order issues... */
+# endif
+    HRESULT hrc = mUSBProxyService->init();
+    AssertComRCReturn(hrc, hrc);
+#endif /* VBOX_WITH_USB */
 
     setReady(true);
     return S_OK;
@@ -1260,7 +1264,24 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
 
     return S_OK;
 }
-#endif /* VBOX_HOST_USB */
+
+
+/**
+ * Interface for obtaining a copy of the USBDeviceFilterList,
+ * used by the USBProxyService.
+ *
+ * @param   aGlobalFilters      Where to put the global filter list copy.
+ * @param   aMachines           Where to put the machine vector.
+ */
+void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::SessionMachineVector *aMachines)
+{
+    AutoWriteLock alock (this);
+
+    mParent->getOpenedMachines (*aMachines);
+    *aGlobalFilters = mUSBDeviceFilters;
+}
+
+#endif /* VBOX_WITH_USB */
 
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
@@ -1745,222 +1766,6 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 #endif // RT_OS_LINUX || RT_OS_SOLARIS
 
 #ifdef VBOX_WITH_USB
-
-/**
- *  Applies all (golbal and VM) filters to the given USB device. The device
- *  must be either a newly attached device or a device released by a VM.
- *
- *  This method will request the USB proxy service to release the device (give
- *  it back to the host) if none of the global or VM filters want to capture
- *  the device.
- *
- *  @param aDevice  USB device to apply filters to.
- *  @param aMachine Machine the device was released by or @c NULL.
- *
- *  @note the method must be called from under this object's write lock and
- *  from the aDevice's write lock.
- */
-HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
-                                  SessionMachine *aMachine /* = NULL */)
-{
-    LogFlowThisFunc(("{%s}\n", aDevice->name().raw()));
-
-    /*
-     * Verify preconditions.
-     */
-    /// @todo must check for read lock, it's enough here
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), E_FAIL);
-    /* Quietly ignore unsupported and unavailable device. */
-    if (    aDevice->unistate() == kHostUSBDeviceState_UsedByHost
-        ||  aDevice->unistate() == kHostUSBDeviceState_Unsupported) /** @todo !aDevice->isCapturable() or something */
-    {
-        LogFlowThisFunc(("{%s} %s - quietly ignored\n", aDevice->name().raw(), aDevice->stateName()));
-        return S_OK;
-    }
-
-    VirtualBox::SessionMachineVector machines;
-    mParent->getOpenedMachines (machines);
-
-    /// @todo it may be better to take a copy of filters to iterate and leave
-    /// the host lock before calling HostUSBDevice:requestCaptureForVM() (which
-    /// may call the VM process).
-    /// Moving this matching into USBProxyService at the same time would be
-    /// nice too, that'll simplify the locking a bit more.
-
-    /* apply global filters */
-    USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
-    for (; it != mUSBDeviceFilters.end(); ++ it)
-    {
-        AutoWriteLock filterLock (*it);
-        const HostUSBDeviceFilter::Data &data = (*it)->data();
-        if (aDevice->isMatch (data))
-        {
-            USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;
-            (*it)->COMGETTER (Action) (&action);
-            if (action == USBDeviceFilterAction_Ignore)
-            {
-                /* request to give the device back to the host */
-                aDevice->requestReleaseToHost();
-                /* nothing to do any more */
-                return S_OK;
-            }
-            if (action == USBDeviceFilterAction_Hold)
-                break;
-        }
-    }
-
-    /* apply machine filters */
-    size_t i = 0;
-    for (; i < machines.size(); ++ i)
-    {
-        /* skip the machine the device was just detached from */
-        if (aMachine && machines [i] == aMachine)
-            continue;
-
-        if (applyMachineUSBFilters (machines [i], aDevice))
-            break;
-    }
-
-    if (i == machines.size())
-    {
-        /* no matched machine filters, check what to do */
-        if (it == mUSBDeviceFilters.end())
-        {
-            /* no any filter matched at all */
-            /* request to give the device back to the host */
-            aDevice->requestReleaseToHost();
-        }
-        else
-        {
-            /* there was a global Hold filter */
-            aDevice->requestHold();
-        }
-    }
-
-    return S_OK;
-}
-
-/**
- *  Runs through filters of the given machine and asks the USB proxy service
- *  to capture the given USB device when there is a match.
- *
- *  @param aMachine Machine whose filters are to be run.
- *  @param aDevice  USB device, a candidate for auto-capturing.
- *  @return         @c true if there was a match and @c false otherwise.
- *
- *  @note the method must be called from under this object's write lock and
- *  from the aDevice's write lock.
- *
- *  @note Locks aMachine for reading.
- */
-bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
-                                   ComObjPtr <HostUSBDevice> &aDevice)
-{
-    LogFlowThisFunc(("{%s}\n", aDevice->name().raw()));
-
-    /*
-     * Validate preconditions.
-     */
-    AssertReturn(aMachine, false);
-    /// @todo must check for read lock, it's enough here
-    AssertReturn(isWriteLockOnCurrentThread(), false);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
-    /* Let HostUSBDevice::requestCaptureToVM() validate the state. */
-
-    ULONG maskedIfs;
-    bool hasMatch = aMachine->hasMatchingUSBFilter (aDevice, &maskedIfs);
-    if (hasMatch)
-    {
-        /** @todo r=bird: this is wrong as requestAttachToVM may return false for different reasons that we. */
-        /* try to capture the device */
-        HRESULT hrc = aDevice->requestCaptureForVM (aMachine, false /* aSetError */, maskedIfs);
-        return SUCCEEDED (hrc);
-    }
-
-    return hasMatch;
-}
-
-/**
- *  Called by USB proxy service when a new device is physically attached
- *  to the host.
- *
- *  @param      aDevice     Pointer to the device which has been attached.
- */
-void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
-{
-    /*
-     * Validate precoditions.
-     */
-    AssertReturnVoid(aDevice);
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-    LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
-                     aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-
-    /* apply all filters */
-    ComObjPtr <HostUSBDevice> device (aDevice);
-    HRESULT rc = applyAllUSBFilters (device);
-    AssertComRC (rc);
-}
-
-/**
- *  Called by USB proxy service when the device is physically detached
- *  from the host.
- *
- *  @param      aDevice     Pointer to the device which has been detached.
- */
-void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
-{
-    /*
-     * Validate preconditions.
-     */
-    AssertReturnVoid(aDevice);
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-    LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
-                     aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-
-    /*
-     * Detach the device from any machine currently using it,
-     * reset all data and uninitialize the device object.
-     */
-    aDevice->onPhysicalDetached();
-}
-
-/**
- *  Called by USB proxy service when the state of the device has changed
- *  either because of the state change request or because of some external
- *  interaction.
- *
- * @param   aDevice         The device in question.
- * @param   aRunFilters     Whether to run filters.
- * @param   aIgnoreMachine  The machine to ignore when running filters.
- */
-void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice, bool aRunFilters, SessionMachine *aIgnoreMachine)
-{
-    /*
-     * Validate preconditions.
-     */
-    LogFlowThisFunc(("aDevice=%p\n", aDevice));
-    AssertReturnVoid(aDevice);
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-    LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
-                     aDevice, aDevice->name().raw(), aDevice->stateName(), aDevice->id().raw()));
-
-    /*
-     * Run filters if requested to do so.
-     */
-    if (aRunFilters)
-    {
-        ComObjPtr<HostUSBDevice> device(aDevice);
-        HRESULT rc = applyAllUSBFilters(device, aIgnoreMachine);
-        AssertComRC(rc);
-    }
-}
-#endif /* VBOX_WITH_USB */
-
 /**
  *  Checks for the presense and status of the USB Proxy Service.
  *  Returns S_OK when the Proxy is present and OK, or E_FAIL and a
@@ -1974,7 +1779,6 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice, bool aRunFilters, Se
  */
 HRESULT Host::checkUSBProxyService()
 {
-#ifdef VBOX_WITH_USB
     AutoWriteLock alock (this);
     CHECK_READY();
 
@@ -1998,10 +1802,8 @@ HRESULT Host::checkUSBProxyService()
     }
 
     return S_OK;
-#else
-    return E_NOTIMPL;
-#endif
 }
+#endif /* VBOX_WITH_USB */
 
 #ifdef RT_OS_WINDOWS
 
