@@ -51,5 +51,5 @@ BEGIN
    END
 END
 
-IDI_VIRTUALBOX ICON DISCARDABLE "vbox.ico"
+#include "VBoxService-icon.rc"
 
