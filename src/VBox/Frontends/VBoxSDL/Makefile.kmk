@@ -43,6 +43,8 @@ ifndef VBOX_OSE
 	win32/WinUI.cpp \
 	win32/TitlebarButtons.cpp \
 	win32/VBoxSDL.rc
+win32/VBoxSDL.rc_DEPS = $(PATH_VBoxSDL)/VBoxSDL-icon.rc
+win32/VBoxSDL.rc_CLEAN = $(PATH_VBoxSDL)/VBoxSDL-icon.rc
 endif
 
 VBoxSDL_DEFS       =
@@ -153,4 +155,9 @@ include $(PATH_KBUILD)/subfooter.kmk
 $(PATH_VBoxSDL)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxSDL))
 	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
+
+# Icon include file.
+$(PATH_VBoxSDL)/VBoxSDL-icon.rc: $(PATH_SUB_CURRENT)/win32/VBoxSDL.rc Makefile.kmk | $$(call DIRDEP,$$(@D))
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
