@@ -41,6 +41,7 @@ VBoxService_SOURCES  = \
         VBoxMemBalloon.cpp \
 	helpers.cpp \
 	VBoxService.rc
+
 VBoxService_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
 
@@ -48,5 +49,16 @@ VBoxService_LIBS     = \
 VBoxService.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxService.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
+# The icon location is configurable.
+VBoxService.rc_INCS = $(PATH_VBoxService)
+VBoxService.rc_DEPS = $(PATH_VBoxService)/VBoxService-icon.rc
+VBoxService.rc_CLEAN = $(PATH_VBoxService)/VBoxService-icon.rc
+
+
 include	$(PATH_KBUILD)/subfooter.kmk
+
+# Icon include file.
+$(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_ICON_FILE) Makefile.kmk | $$(call DIRDEP,$$(@D))
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
