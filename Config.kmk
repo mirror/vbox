@@ -1051,6 +1051,14 @@ else
  VBOX_GCC_RPATH_OPT = -Wl,-rpath,
 endif
 
+ifdef VBOX_OSE
+ VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
+ VBOX_MACOSX_ICON_FILE  ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox.icns
+else
+ #VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico - need more recent RC.
+ VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
+ VBOX_MACOSX_ICON_FILE  ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox.icns
+endif
 
 #
 # GCC stuff properties.
