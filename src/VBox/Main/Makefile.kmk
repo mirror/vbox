@@ -252,7 +252,13 @@ ifeq ($(BUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()
 endif
 
-win32/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs
+win32/VBoxSVC.rc_INCS   = $(PATH_TARGET)
+win32/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs $(PATH_TARGET)/VBoxSVC-icon.rc
+win32/VBoxSVC.rc_CLEAN  = $(PATH_TARGET)/VBoxSVC-icon.rc
+
+$(PATH_TARGET)/VBoxSVC-icon.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
+	$(RM) -f $@
+	$(APPEND) $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 
 #
