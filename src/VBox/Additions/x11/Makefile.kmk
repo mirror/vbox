@@ -20,7 +20,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 if1of ($(KBUILD_TARGET), freebsd l4 linux solaris)
@@ -29,5 +29,5 @@ if1of ($(KBUILD_TARGET), freebsd l4 linux solaris)
  include $(PATH_SUB_CURRENT)/xmouse/Makefile.kmk
 endif
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

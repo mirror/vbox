@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_HOST),os2)
  ifdef VBOX_WITH_OS2_ADDITIONS
@@ -51,5 +51,5 @@ VBoxService_LIBS.freebsd = \
 	iconv
 VBoxService_LIBPATH.freebsd = \
 	/usr/local/lib
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

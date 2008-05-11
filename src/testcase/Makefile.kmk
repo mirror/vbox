@@ -20,13 +20,13 @@
 #
 
 DEPTH = ../..
-include	$(PATH_KBUILD)/header.kmk
+include	$(KBUILD_PATH)/header.kmk
 
-PROGRAMS = tstRunTestcases 
+PROGRAMS = tstRunTestcases
 
 tstRunTestcases_TEMPLATE = VBOXR3TSTEXE
 tstRunTestcases_LIBS = $(LIB_RUNTIME)
 tstRunTestcases_SOURCES = tstRunTestcases.cpp
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(KBUILD_PATH)/footer.kmk
 

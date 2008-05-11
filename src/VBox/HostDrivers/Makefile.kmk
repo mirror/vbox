@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Support/Makefile.kmk
@@ -32,5 +32,5 @@ ifdef VBOX_WITH_USB
 endif
 
 # Let kBuild generate the rules.
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 LIBRARIES = VBox-libxslt
 
@@ -54,5 +54,5 @@ VBox-libxslt_SOURCES        = \
 # VBox-libxslt_LDFLAGS.win    = /VERSION:$(LIBXSLT_MAJOR_VERSION).$(LIBXSLT_MINOR_VERSION)
 # VBox-libxslt_SDKS.win      += WINPSDK
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 

@@ -21,7 +21,7 @@
 #
 
 DEPTH = ..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
 
@@ -75,7 +75,7 @@ SyntaxVBoxIncludeGC_SOURCES := \
 
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 define def_hdr

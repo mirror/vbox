@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxHeadless
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
@@ -37,5 +37,5 @@ ifdef VBOX_WITH_VRDP
  VBoxHeadless_SOURCES  += Framebuffer.cpp
 endif
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

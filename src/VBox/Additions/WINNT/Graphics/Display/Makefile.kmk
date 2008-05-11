@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../..
 SUB_DEPTH = ../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += VBoxDisp
 VBoxDisp_TEMPLATE    = VBOXW32GUESTR0
@@ -62,5 +62,5 @@ VBoxDisp_LIBS       += \
 endif
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # We setup one 'other' target for executing the structure & alignment
@@ -109,5 +109,5 @@ $(PATH_TARGET)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize)
 run-struct-tests: $(PATH_TARGET)/tstDeviceStructSize.run
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

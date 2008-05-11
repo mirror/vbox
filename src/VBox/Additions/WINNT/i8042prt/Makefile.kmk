@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 
 SYSMODS += VBoxMouseNT
@@ -59,7 +59,7 @@ VBoxMouseNT_CLEAN       = \
 	$(PATH_VBoxMouseNT)/MSG00001.bin
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 
 $(PATH_VBoxMouseNT)/i8042log.rc: $(VBoxMouseNT_PATH)/i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))

@@ -33,7 +33,7 @@
 #
 
 DEPTH = ../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # Make some indicator adjustments to keep things simple in these makefiles.
@@ -85,7 +85,7 @@ ifndef VBOX_WITHOUT_ADDITIONS_ISO
  endif
 endif
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 
 #

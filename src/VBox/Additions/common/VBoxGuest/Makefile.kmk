@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 # PORTME: OSes using mixed case driver names join OS/2, the others join Solaris below.
 
@@ -123,5 +123,5 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
 
 endif
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

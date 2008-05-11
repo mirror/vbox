@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
 
@@ -101,5 +101,5 @@ $(PATH_TARGET)/pcbios-syms.h: $(PATH_TARGET)/pcbios.lst $(MAKEFILE_CURRENT)
 		$(PATH_TARGET)/pcbios.lst
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxService
 VBoxService_TEMPLATE = VBOXW32GUESTR3
@@ -55,7 +55,7 @@ VBoxService.rc_DEPS = $(PATH_VBoxService)/VBoxService-icon.rc
 VBoxService.rc_CLEAN = $(PATH_VBoxService)/VBoxService-icon.rc
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 # Icon include file.
 $(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_ICON_FILE) Makefile.kmk | $$(call DIRDEP,$$(@D))

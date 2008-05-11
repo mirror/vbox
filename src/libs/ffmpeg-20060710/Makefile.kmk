@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 DLLS                       = VBoxFFmpeg
 
@@ -309,5 +309,5 @@ VBoxFFmpegImp_SOURCES = VBoxFFmpeg.def
 endif
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 

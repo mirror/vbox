@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../..
 SUB_DEPTH = ../../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
 #
@@ -37,5 +37,5 @@ tstHook_LIBS     = $(PATH_LIB)/VBoxHook.lib
 
 endif # VBOX_WITH_TESTCASES
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

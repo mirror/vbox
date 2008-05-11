@@ -20,7 +20,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles.
 include $(PATH_SUB_CURRENT)/Graphics/Makefile.kmk
@@ -88,5 +88,5 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
 
 endif # signing
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

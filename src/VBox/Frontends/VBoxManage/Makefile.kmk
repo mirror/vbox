@@ -22,7 +22,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxManage
 VBoxManage_TEMPLATE    = VBOXMAINCLIENTEXE
@@ -41,5 +41,5 @@ VBoxManage_LIBS       += $(LIB_DDU)
 VBoxManageSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxManageSVN.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

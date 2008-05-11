@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 ifneq ($(KBUILD_HOST),solaris)
 $(error "The Solaris installer can only be built on Solaris!") # yeah, right.
@@ -164,7 +164,7 @@ OTHER_CLEAN += \
 	$(addprefix $(SOLARIS_DBG_DIR)/,$(SOLARIS_STRIP_BINS)) \
 	$(SOLARIS_DBG_DIR)/$(DBG_ARCHIVE)
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 ## @todo r=bird: makepackage.sh packing a directory tree, right? So, there is no guarantee that it's not
 #                containing any obsolete files the way packing is performed here. Consider recursivly

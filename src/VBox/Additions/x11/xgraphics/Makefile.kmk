@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # vboxvideo_drv
@@ -183,4 +183,4 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxutils.c
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk

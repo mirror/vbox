@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles
 ifdef VBOX_WITH_MAIN
@@ -47,5 +47,5 @@ ifdef VBOX_WITH_QT4GUI
 SUBDIRS_AFTER += VirtualBox4
 endif
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

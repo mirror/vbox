@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../..
 SUB_DEPTH = ../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 
 # This has to run on NT4!
@@ -49,5 +49,5 @@ VBoxVideo_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

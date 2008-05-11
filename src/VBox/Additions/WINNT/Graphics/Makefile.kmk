@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Miniport/Makefile.kmk
@@ -44,7 +44,7 @@ VBoxVideo-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat
-VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES) 
+VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
 VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
@@ -66,5 +66,5 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 
 endif # signing
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

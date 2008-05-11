@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 #
 # The targets.
@@ -149,7 +149,7 @@ dbghelp_SOURCES.x86 = win32/dbghelp.dll
 dbghelp_SOURCES.amd64 = win64/dbghelp.dll
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 #

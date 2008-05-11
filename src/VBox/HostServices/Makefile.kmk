@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 ifdef VBOX_WITH_SHARED_FOLDERS
@@ -37,5 +37,5 @@ if1of ($(KBUILD_TARGET), win linux solaris darwin)
  endif
 endif
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

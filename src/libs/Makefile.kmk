@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 
 subdirs := liblzf-1.51 $(subdirs.$(KBUILD_TARGET))
@@ -71,4 +71,4 @@ SUBDIRS_OTHERS         = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_CLEAN          = $(subdirs)
 SUBDIRS_NOTHING        = $(subdirs)
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk

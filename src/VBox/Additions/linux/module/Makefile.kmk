@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 INSTALLS += vboxmod-mod vboxmod-sh
 OTHERS.linux += \
@@ -69,5 +69,5 @@ vboxadd_LIBS     = \
 	$(VBOX_LIB_VBGL_R0BASE) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

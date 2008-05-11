@@ -34,7 +34,7 @@
 
 
 DEPTH = ../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 
 BLDPROGS              = dyngen
@@ -319,7 +319,7 @@ $(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET
 
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 #

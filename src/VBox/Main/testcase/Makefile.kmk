@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS       += tstAPI
@@ -94,5 +94,5 @@ tstVBoxAPIWin_DEPS     = \
 	$(VBOX_PATH_SDK)/include/VirtualBox.h
 
 # generate rules.
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

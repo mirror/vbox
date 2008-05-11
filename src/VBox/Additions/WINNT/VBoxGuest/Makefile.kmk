@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # VBoxGuest
@@ -81,5 +81,5 @@ VBoxGuestNT_LIBS      = \
 VBoxGuestInst_TEMPLATE= VBOXW32GUESTR3
 VBoxGuestInst_SOURCES = VBoxGuestInst.cpp
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

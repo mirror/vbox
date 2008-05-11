@@ -4,7 +4,7 @@
 # The global build configuration file for VBox.
 #
 # This file gets included by all makefiles through the
-# include $(PATH_KBUILD)/header.kmk statement.
+# include $(KBUILD_PATH)/header.kmk statement.
 #
 
 #
@@ -94,7 +94,7 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 
 # Notify about important kBuild updates.
 ifneq ($(call int-ge,$(KMK_REVISION),1562),1)
- $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) PATH_KBUILD=$(PATH_KBUILD))
+ $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) PATH_KBUILD=$(KBUILD_PATH))
 endif
 
 #
@@ -1075,9 +1075,9 @@ endif
 # Note! That a harmless warning is printed if the file doesn't exist.
 # Note! Changes in GCC are not detected automatically (yet).
 #
-include $(PATH_KBUILD)/tools/$(VBOX_GCC_TOOL).kmk
+include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
 ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
- include $(PATH_KBUILD)/tools/$(VBOX_GCC32_TOOL).kmk
+ include $(KBUILD_PATH)/tools/$(VBOX_GCC32_TOOL).kmk
 endif
 
 # These tests never worked on Windows because of /dev/null, so, there
@@ -1506,7 +1506,7 @@ endif
 TEMPLATE_VBOXGC_CFLAGS              = $(TEMPLATE_VBOXGC_CXXFLAGS)
 TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:32 -MapInfo:Lines -MapInfo:Exports -NoD
 ifdef VBOX_USE_VCC80
- include $(PATH_KBUILD)/sdks/W2K3DDKX86.kmk
+ include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
  TEMPLATE_VBOXGC_LIBS                = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
 else

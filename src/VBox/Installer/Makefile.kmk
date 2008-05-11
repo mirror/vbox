@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 ifeq ($(KBUILD_HOST),win) # guard when cross-compiling.
  SUBDIRS.win = win
@@ -35,5 +35,5 @@ ifeq ($(KBUILD_HOST),solaris)
  SUBDIRS.solaris = solaris
 endif
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 

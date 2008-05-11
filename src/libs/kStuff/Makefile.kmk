@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 #
 # The library.
@@ -68,5 +68,5 @@ VBox-kStuff_SOURCES = \
 
 #	kStuff/kErr/kErrName.c
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
