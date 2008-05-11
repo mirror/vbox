@@ -27,7 +27,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 # vditool - useful too for manipulating VDIs.
 #
 PROGRAMS += vditool
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
  vditool_TEMPLATE = VBOXLNXHOSTR3EXE
  vditool_LIBS     = \
 	$(PATH_LIB)/VBoxDDULnxHostR3.a \
@@ -44,7 +44,7 @@ vditool_SOURCES  = vditool.cpp
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVDI
- ifeq ($(BUILD_TARGET),l4)
+ ifeq ($(KBUILD_TARGET),l4)
   tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
  else
   tstVDI_TEMPLATE = VBOXR3TSTEXE
@@ -58,7 +58,7 @@ endif
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVD
- ifeq ($(BUILD_TARGET),l4)
+ ifeq ($(KBUILD_TARGET),l4)
   tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
  else
   tstVD_TEMPLATE = VBOXR3TSTEXE

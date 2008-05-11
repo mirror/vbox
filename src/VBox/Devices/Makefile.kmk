@@ -99,7 +99,7 @@ ifdef VBOX_WITH_USB
  VBoxDDU_LIBS           += \
 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
 endif
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
  VBoxDDU_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
@@ -116,7 +116,7 @@ VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
 #
 # VBoxDDULnxHostR3 (Only needed for l4, currently for executing vditool on L4Linux.)
 #
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
  LIBRARIES                += VBoxDDULnxHostR3
  VBoxDDULnxHostR3_TEMPLATE = VBOXLNXHOSTR3LIB
  VBoxDDULnxHostR3_DEFS     = IN_VBOXDDU
@@ -158,7 +158,7 @@ VBoxDD_LIBS             = \
 	$(PATH_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
  VBoxDD_LIBS           += \
 	$(LIB_DDU) \
 	$(PATH_LIB)/VBoxDD2.lib \
@@ -168,11 +168,11 @@ else
 	$(INSTARGET_VBoxDDU) \
 	$(INSTARGET_VBoxDD2)
 endif
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
  ifdef VBOX_WITH_SUID_WRAPPER
   VBoxDD_LIBS          += secdb
@@ -190,7 +190,7 @@ VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
 # damn, fix this.
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 $(PATH_LIB)/VBoxDD2.lib: $(PATH_BIN)/VBoxDD2.dll
 $(PATH_LIB)/VBoxDDU.lib: $(PATH_BIN)/VBoxDDU.dll
 endif
@@ -212,7 +212,7 @@ VBoxDD2_LIBS            = \
 	$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
 VBoxDD2_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
@@ -496,7 +496,7 @@ endif
 #
 # Drivers (library)
 #
-ifeq ($(BUILD_TARGET),l4) # We are using real Linux headers, not the cleaned up user space ones
+ifeq ($(KBUILD_TARGET),l4) # We are using real Linux headers, not the cleaned up user space ones
 Drivers_TEMPLATE   = VBOXR3NP
 else
 Drivers_TEMPLATE   = VBOXR3
@@ -550,7 +550,7 @@ Drivers_SOURCES    = \
 
 # -- OS specific --
 
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHostRaw% \
 	Storage/DrvHostFloppy% \
@@ -559,7 +559,7 @@ Drivers_SOURCES      := $(filter-out \
 Drivers_SOURCES.darwin =
 endif # darwin
 
-ifeq ($(BUILD_TARGET),freebsd)
+ifeq ($(KBUILD_TARGET),freebsd)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
@@ -567,7 +567,7 @@ Drivers_SOURCES.freebsd =
 endif # freebsd
 
 
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
 Drivers_SOURCES       = \
 	Input/DrvMouseQueue.cpp \
 	Input/DrvKeyboardQueue.cpp \
@@ -597,7 +597,7 @@ Drivers_SOURCES.linux = \
 	Parallel/DrvHostParallel.cpp \
 	Serial/DrvHostSerial.cpp
 
-ifeq ($(BUILD_TARGET),os2)
+ifeq ($(KBUILD_TARGET),os2)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
@@ -605,7 +605,7 @@ Drivers_SOURCES.os2   = \
 	Network/DrvTAPOs2.cpp
 endif
 
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))

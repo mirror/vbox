@@ -24,7 +24,7 @@ SUB_DEPTH = ..
 include	$(PATH_KBUILD)/subheader.kmk
 
 # This can only be built on a real Linux system.
-if1of ($(BUILD_TARGET),linux l4)
+if1of ($(KBUILD_TARGET),linux l4)
  include $(PATH_SUB_CURRENT)/module/Makefile.kmk
  include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
  include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk

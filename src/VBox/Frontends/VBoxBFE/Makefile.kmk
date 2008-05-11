@@ -35,7 +35,7 @@ VBoxBFE_TEMPLATE = VBOXR3NPEXE
 ifdef VBOX_WITH_VRDP
 VBoxBFE_DEFS += VBOX_VRDP
 endif
-ifneq ($(BUILD_TARGET).$(VBOX_WITHOUT_COM),win.)
+ifneq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COM),win.)
 VBoxBFE_DEFS += VBOXBFE_WITHOUT_COM
 endif
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
@@ -78,7 +78,7 @@ VBoxBFE_SOURCES.l4 = \
 	EmulCpp.cpp
 
 # SDL
-ifneq ($(BUILD_TARGET),l4)
+ifneq ($(KBUILD_TARGET),l4)
 VBoxBFE_SDKS += LIBSDL
 VBoxBFE_DEFS += USE_SDL
 VBoxBFE_SOURCES += \
@@ -87,7 +87,7 @@ VBoxBFE_SOURCES += \
 endif
 
 # USB Support
-if1of ($(BUILD_TARGET), l4 win)
+if1of ($(KBUILD_TARGET), l4 win)
 VBoxBFE_DEFS += VBOXBFE_WITH_USB
 VBoxBFE_SOURCES += \
 	HostUSBImpl.cpp \
@@ -102,7 +102,7 @@ endif
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \
 	$(VBOX_PATH_SDK)/include
-ifneq ($(filter-out win os2 l4 darwin,$(BUILD_TARGET)),) # X11
+ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
 VBoxBFE_INCS += \
 	$(VBOX_XCURSOR_INCS)
 endif
@@ -113,11 +113,11 @@ VBoxBFE_INCS.freebsd = \
 VBoxBFE_LIBS = \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
-ifneq ($(filter-out win os2 l4,$(BUILD_TARGET)),)
+ifneq ($(filter-out win os2 l4,$(KBUILD_TARGET)),)
 VBoxBFE_LIBS += \
 	$(LIB_REM)
 endif
-ifneq ($(filter-out win os2 l4 darwin,$(BUILD_TARGET)),) # X11
+ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
 VBoxBFE_LIBS += \
 	$(VBOX_XCURSOR_LIBS) \
 	X11

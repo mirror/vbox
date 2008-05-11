@@ -44,7 +44,7 @@ INSTALLS += samples
 #
 samples_INST = $(INST_SDK_SAMPLES)/API/
 samples_MODE = a+r,u+w
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
  samples_SOURCES = tstVBoxAPIWin.cpp
 else
  samples_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
@@ -58,7 +58,7 @@ endif
 #
 tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
 tstAPI_SOURCES  = tstAPI.cpp
-ifeq ($(BUILD_TARGET),win) ## @todo just add this to the template.
+ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
 tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox.h
 else
 tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h

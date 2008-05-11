@@ -27,12 +27,12 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Target lists.
 #
 PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm tstGlobalConfig
-ifneq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
- ifneq ($(BUILD_TARGET),l4)
+ ifneq ($(KBUILD_TARGET),l4)
   PROGRAMS += tstAnimate
  endif
  SYSMODS   += tstMicroGC
@@ -46,8 +46,8 @@ endif
 # We setup two 'other' targets for executing the two structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
 #
-ifeq ($(BUILD_TARGET),$(KBUILD_HOST))
- ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
+ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS          += \
 	$(PATH_TARGET)/tstAsmStructs.run \
 	$(PATH_TARGET)/tstVMStructSize.run
@@ -216,12 +216,12 @@ MY_ASA_ASM_STUFF = \
 		$(addprefix -D, \
 			$(DEFS) \
 			$(DEFS.$(BUILD_TYPE)) \
-			$(DEFS.$(BUILD_TARGET)) \
+			$(DEFS.$(KBUILD_TARGET)) \
 			IN_RING3 \
-			$(DEFS.$(BUILD_TARGET_ARCH)) \
-			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
+			$(DEFS.$(KBUILD_TARGET_ARCH)) \
+			$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(PATH_TARGET),-I$(inc)/)
 
 # 1a. make a header file which makes all the structures+members globals.

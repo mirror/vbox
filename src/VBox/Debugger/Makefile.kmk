@@ -132,7 +132,7 @@ tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
 tstVBoxDbg_LIBS         = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 tstVBoxDbg_LIBS        += \
 	$(PATH_LIB)/VBoxDbg.lib
 else

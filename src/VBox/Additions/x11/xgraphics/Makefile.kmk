@@ -26,7 +26,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 #
 # vboxvideo_drv
 #
-if1of ($(BUILD_TARGET),linux l4)
+if1of ($(KBUILD_TARGET),linux l4)
  SYSMODS += vboxvideo_drv
  vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
  vboxvideo_drv_DEFS.linux = linux
@@ -114,13 +114,13 @@ endif   # target linux, l4
 #
 DLLS += vboxvideo_drv_70
 vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
-if1of ($(BUILD_TARGET), l4 linux)
+if1of ($(KBUILD_TARGET), l4 linux)
  vboxvideo_drv_70_CFLAGS += \
 	-Wno-conversion -Wno-unused-parameter $(VBOX_GCC_Wno-variadic-macros) # template?
 endif
 vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1
-ifeq ($(BUILD_TARGET),solaris) # don't use .solaris or anything here.
+ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_drv_70_DEFS += _XPG6 __EXTENSIONS__
 endif
 vboxvideo_drv_70_INCS = \

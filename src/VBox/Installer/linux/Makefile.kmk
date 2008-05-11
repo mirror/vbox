@@ -88,7 +88,7 @@ LINUXSTRIPOBJ = \
 	VBoxDDR0.r0 \
 	VMMGC.gc \
 	VMMR0.r0
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
 LINUXSTRIPOBJ += \
 	VBoxREM2.rel
 endif
