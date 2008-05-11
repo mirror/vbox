@@ -42,7 +42,7 @@ VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installe
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
-ifeq ($(BUILD_TYPE),debug)
+ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         = $(CP) -f
  BIN_COPY_SYMBOLS = $(CP) -f
 else
@@ -106,7 +106,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION_STRING);g" $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
 		| $(SED) "s;_BUILD_;$(shell date);g" \
 		| $(SED) "s;_OSE_;$(VBOX_OSE);g" \
-		| $(SED) "s;_BUILDTYPE_;$(BUILD_TYPE);g" \
+		| $(SED) "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		> $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/install/install_.sh $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh

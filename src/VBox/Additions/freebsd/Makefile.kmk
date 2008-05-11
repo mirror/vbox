@@ -35,7 +35,7 @@ VBOX_PATH_FREEBSD_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
 VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 FREEBSDINSTDIR := $(PATH_TARGET)/install
 
-ifeq ($(BUILD_TYPE),debug)
+ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         := $(CP) -f
  BIN_COPY_SYMBOLS := $(CP) -f
 else

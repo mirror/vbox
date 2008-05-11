@@ -248,7 +248,7 @@ VBoxSVC_SOURCES.win     +=   win32/USBProxyServiceWin32.cpp
 endif
 
 VBoxSVC_LDFLAGS.darwin  = -framework IOKit
-ifeq ($(BUILD_TYPE),debug)
+ifeq ($(KBUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()
 endif
 

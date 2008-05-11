@@ -1141,7 +1141,7 @@ VBoxXPCOM_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOM.dylib
 
 ifdef VBOX_IPC_RELEASE_LOG
 IPC_LOGGING = 1
-else ifneq ($(BUILD_TYPE),release)
+else ifneq ($(KBUILD_TYPE),release)
 IPC_LOGGING = 1
 endif
 

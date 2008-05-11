@@ -653,7 +653,7 @@ ifeq ($(KBUILD_TARGET),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
-VBoxRT_DEFS.$(BUILD_TYPE)      = $(RuntimeR3_DEFS.$(BUILD_TYPE))
+VBoxRT_DEFS.$(KBUILD_TYPE)      = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)

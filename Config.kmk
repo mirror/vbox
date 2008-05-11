@@ -221,7 +221,7 @@ VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
 #VBOX_WITH_VBOXFB = 1
 # Enable the debugger.
-ifneq ($(BUILD_TYPE),release)
+ifneq ($(KBUILD_TYPE),release)
  VBOX_WITH_DEBUGGER = 1
  # Enable the debugger GUI.
  VBOX_WITH_DEBUGGER_GUI = 1
@@ -270,7 +270,7 @@ VBOX_WITH_SHARED_CLIPBOARD = 1
 # Enable the Intel PXE ROM (replaces Etherboot).
 VBOX_WITH_INTEL_PXE = 1
 # Strip binaries of release and profile builds
-VBOX_DO_STRIP = $(if $(filter release profile,$(BUILD_TYPE)),1,)
+VBOX_DO_STRIP = $(if $(filter release profile,$(KBUILD_TYPE)),1,)
 # Strip R0/GC modules (current requirement for our loader)
 VBOX_DO_STRIP_MODULES = 1
 # Use kStuff for MACH-O and LX binary loading.
@@ -408,8 +408,8 @@ endif
 # Check the build type.
 #
 VBOX_BUILD_TYPES ?= release profile debug kprofile #todo: checked
-ifn1of ($(BUILD_TYPE), $(VBOX_BUILD_TYPES))
- $(error Invalid BUILD_TYPE value '$(BUILD_TYPE)'. Choose one these: $(VBOX_BUILD_TYPES))
+ifn1of ($(KBUILD_TYPE), $(VBOX_BUILD_TYPES))
+ $(error Invalid BUILD_TYPE value '$(KBUILD_TYPE)'. Choose one these: $(VBOX_BUILD_TYPES))
 endif
 
 
@@ -725,7 +725,7 @@ ifdef L4_DIR
 endif # L4_DIR
 
 # Produce debugging information that the Fiasco kernel debugger can read.
-ifeq ($(KBUILD_TARGET).$(BUILD_TYPE),l4.debug)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TYPE),l4.debug)
  DEBUG_L4 = -gstabs+
 endif
 
@@ -778,7 +778,7 @@ endif
 #
 # Compiler optimization flags.
 #
-ifeq ($(BUILD_TYPE),debug)
+ifeq ($(KBUILD_TYPE),debug)
  VBOX_GCC_FP  ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT ?= -O0
  VBOX_VCC_FP  ?= -Oy-
@@ -893,7 +893,7 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 # The kprofile build automagically links with kProfile.
-ifeq ($(BUILD_TYPE),kprofile)
+ifeq ($(KBUILD_TYPE),kprofile)
  LIB_RUNTIME    += $(LIB_KPROFILE)
 endif
 
@@ -2763,11 +2763,11 @@ endif
 #
 TEMPLATE_VBOXGUESTR3XF86MOD         = VBox Guest Program with C++ library dependencies
 TEMPLATE_VBOXGUESTR3XF86MOD_EXTENDS = VBOXGUESTR3EXE
-TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(BUILD_TYPE)      = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.linux              = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
-TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(BUILD_TYPE)   = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux           = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS                 = -r
 if1of ($(KBUILD_TARGET), freebsd linux l4 netbsd openbsd) # the gnu ld guys.
@@ -2789,7 +2789,7 @@ TEMPLATE_VBOXGUESTR3XF86MOD_DEFS     = $(TEMPLATE_VBOXGUESTR3DLL_DEFS) LOG_TO_BA
 #
 TEMPLATE_VBOXGUESTR3XORGMOD         = VBox Guest Program with C++ library dependencies
 TEMPLATE_VBOXGUESTR3XORGMOD_EXTENDS = VBOXGUESTR3DLL
-TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.$(BUILD_TYPE)      = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.linux              = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XORGMOD_CFLAGS                  = $(TEMPLATE_VBOXGUESTR3DLL_CFLAGS) -std=c99
