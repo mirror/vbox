@@ -372,13 +372,13 @@ void RWLockHandle::lockRead()
             Assert (mSelfReadLockCount == 0 /* missing unlockRead()? */);
 
             /* write locks are top priority, so let them go if they are
-             * pending */
-            if (mWriteLockPending != 0)
+             * pending and we're the only reader so far */
+            if (mWriteLockPending != 0 && isFirstReadLock)
             {
                 isWriteLock = true;
-                /* the first postponed reader kicks pending writers */
-                if (isFirstReadLock)
-                    RTSemEventSignal (mGoWriteSem);
+                /* note that we must not signal mGoWriteSem here because it
+                 * has been already signaled by unlockWrite() or by
+                 * unlockRead() */
             }
         }
 
