@@ -215,7 +215,7 @@ endif
 MY_ASA_ASM_STUFF = \
 		$(addprefix -D, \
 			$(DEFS) \
-			$(DEFS.$(BUILD_TYPE)) \
+			$(DEFS.$(KBUILD_TYPE)) \
 			$(DEFS.$(KBUILD_TARGET)) \
 			IN_RING3 \
 			$(DEFS.$(KBUILD_TARGET_ARCH)) \

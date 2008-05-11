@@ -541,7 +541,7 @@ additions-build: \
 	additions-build-os2.x86 \
 	additions-build-linux.x86
 
-VBOX_ADDITIONS_BUILD = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 BUILD_TYPE=$(BUILD_TYPE) all packing
+VBOX_ADDITIONS_BUILD = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 BUILD_TYPE=$(KBUILD_TYPE) all packing
 
 additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)

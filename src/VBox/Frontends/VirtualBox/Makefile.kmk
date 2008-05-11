@@ -335,7 +335,7 @@ VirtualBox_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
-ifneq ($(BUILD_TYPE),release)
+ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
  VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
  VirtualBox_DEFS.linux   += VBOX_GUI_USE_QIMAGE
@@ -369,7 +369,7 @@ VirtualBox_INCS           = \
 	$(PATH_VirtualBox)/include \
 
 
-ifeq ($(BUILD_TYPE),release)
+ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win  += /SUBSYSTEM:windows
 else
  VirtualBox_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()

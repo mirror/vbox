@@ -38,7 +38,7 @@ VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installe
 SOLARISINSTDIR := $(PATH_TARGET)/install
 SOLARISTEMPDIR := $(PATH_TARGET)/tempinstall
 
-ifeq ($(BUILD_TYPE),debug)
+ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         := $(CP) -f
  BIN_COPY_SYMBOLS := $(CP) -f
 else

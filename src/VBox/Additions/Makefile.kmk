@@ -93,7 +93,7 @@ include	$(PATH_KBUILD)/subfooter.kmk
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(BUILD_TYPE)/bin/additions
+  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
  else
   # 32-only hack
   VBOX_PATH_ADDITIONS.win.x86 = $(VBOX_PATH_ADDITIONS)
@@ -129,7 +129,7 @@ endif
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
  ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(BUILD_TYPE)/bin/additions
+  VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
  else
   VBOX_PATH_ADDITIONS.os2.x86 = $(VBOX_PATH_ADDITIONS)
  endif
@@ -155,7 +155,7 @@ endif
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
  ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
+  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions
  else
   # 32-bit only hack
   VBOX_PATH_ADDITIONS.linux.x86 = $(VBOX_PATH_ADDITIONS)
@@ -170,7 +170,7 @@ endif
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
  ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(BUILD_TYPE)/bin/additions
+  VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
  else
   # 32-bit only hack
   VBOX_PATH_ADDITIONS.solaris.x86 = $(VBOX_PATH_ADDITIONS)
@@ -184,7 +184,7 @@ endif
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.x86
  ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.freebsd.x86 = $(PATH_OUT_BASE)/freebsd.x86/$(BUILD_TYPE)/bin/additions
+  VBOX_PATH_ADDITIONS.freebsd.x86 = $(PATH_OUT_BASE)/freebsd.x86/$(KBUILD_TYPE)/bin/additions
  else
   # 32-bit only hack
   VBOX_PATH_ADDITIONS.freebsd.x86 = $(VBOX_PATH_ADDITIONS)
