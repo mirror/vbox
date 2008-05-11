@@ -529,10 +529,10 @@ endif
 #
 additions-fetch:
 	+ $(KMK) -C tools fetch
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=linux
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=os2
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=solaris
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=win
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86 BUILD_TARGET=linux
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86 BUILD_TARGET=os2
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86 BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86 BUILD_TARGET=win
 
 
 additions-build: \
@@ -541,34 +541,37 @@ additions-build: \
 	additions-build-os2.x86 \
 	additions-build-linux.x86
 
-VBOX_ADDITIONS_BUILD = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 KBUILD_TYPE=$(KBUILD_TYPE) all packing
+VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
+	KBUILD_TARGET_ARCH=x86 BUILD_TARGET_ARCH=x86 \
+	all packing
 
 additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(KMK) KBUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD)
+	+ $(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
 else
-	ssh vbox@192.168.27.5 " cd c:/vbox/add && ./tools/env.sh --no-wine kmk KBUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
+	ssh vbox@192.168.27.5 " cd c:/vbox/add && ./tools/env.sh --no-wine kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86) "
 endif
 
 additions-build-solaris.x86:
 ifeq ($(KBUILD_TARGET),solaris)
-	+ $(KMK) KBUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD)
+	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
-	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk KBUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
+	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 endif
 
 additions-build-os2.x86:
 #ifeq ($(KBUILD_TARGET),os2)
-#	+ $(KMK) KBUILD_TARGET_ARCH=x86
+#	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 #else
-#	ssh vbox@192.168.27.3 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk KBUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
+#	ssh vbox@192.168.27.3 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 #endif
 
 additions-build-linux.x86:
 ifeq ($(KBUILD_TARGET),linux)
-	+ $(KMK) KBUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD)
+	+ $(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
 else
-	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk KBUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
+	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86) "
 endif
 
 
