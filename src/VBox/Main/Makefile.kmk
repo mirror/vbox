@@ -37,12 +37,12 @@ LIBRARIES       += VBoxCOM
 DLLS            += VBoxSettings VBoxC
 PROGRAMS        += VBoxSVC
 VBOX_MAIN_DEFS   =
-ifneq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  DLLS           += VBoxSVCM
- ifneq ($(BUILD_TARGET),os2)
+ ifneq ($(KBUILD_TARGET),os2)
   VBOX_MAIN_DEFS+= VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
@@ -59,7 +59,7 @@ endif
 
 #PROGRAMS        += tstCFGLdr
 
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
  OTHERS         += $(PATH_BIN)/comregister.cmd
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
  OTHER_CLEAN    += \
@@ -74,7 +74,7 @@ ifeq ($(BUILD_TARGET),win)
 else
  INSTALLS       += xpcom-components
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
- ifeq ($(BUILD_TARGET),linux)
+ ifeq ($(KBUILD_TARGET),linux)
   IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt
  else
   IDLTYPELIB     = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
@@ -267,7 +267,7 @@ $(PATH_TARGET)/VBoxSVC-icon.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call
 ifdef VBOX_WITH_XPCOM
 
 VBoxSVCM_TEMPLATE       = VBOXMAINDLL
-ifneq ($(BUILD_TARGET),linux)
+ifneq ($(KBUILD_TARGET),linux)
 VBoxSVCM_INST           = $(INST_BIN)components/
 endif
 VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
@@ -283,7 +283,7 @@ endif
 VBoxSVCM_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxSVCM.def
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 VBoxSVCM_ORDERDEPS     += $(PATH_TARGET)/VBoxSVCM.def
 VBoxSVCM_CLEAN         += $(PATH_TARGET)/VBoxSVCM.def
 $(PATH_TARGET)/VBoxSVCM.def:
@@ -298,7 +298,7 @@ endif # VBOX_WITH_XPCOM
 # VBoxC module
 #
 VBoxC_TEMPLATE = VBOXMAINDLL
-ifneq ($(filter-out linux win,$(BUILD_TARGET)),)
+ifneq ($(filter-out linux win,$(KBUILD_TARGET)),)
 VBoxC_INST = $(INST_BIN)components/
 endif
 
@@ -405,7 +405,7 @@ VBoxC_SOURCES += \
 	RemoteUSBBackend.cpp
 endif
 
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 VBoxC_ORDERDEPS += $(PATH_TARGET)/VBoxC.def
 VBoxC_CLEAN += $(PATH_TARGET)/VBoxC.def
 $(PATH_TARGET)/VBoxC.def: $(MAKEFILE_CURRENT)
@@ -418,7 +418,7 @@ endif
 Version.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 Version.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
-ConsoleImpl.cpp_DEFS = VBOX_BUILD_TARGET=\"$(BUILD_TARGET).$(BUILD_TARGET_ARCH)\"
+ConsoleImpl.cpp_DEFS = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 
 win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 
@@ -448,7 +448,7 @@ VBoxCOM_SOURCES         = \
 	glue/string.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
  VBoxCOM_DEFS.x86      += _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64    += _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \
@@ -464,7 +464,7 @@ endif
 #
 # Generate _DEPS on all sources which depends on generated headers.
 #
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
 else
 PREREQS = $(IDLTYPELIB) $(IDLHEADER)
@@ -475,8 +475,8 @@ define def_src_deps
 $(src)_ORDERDEPS += $(PREREQS)
 endef
 $(foreach src,\
-	$(VBoxC_SOURCES)   $(VBoxC_SOURCES.$(BUILD_TARGET)) \
-	$(VBoxSVC_SOURCES) $(VBoxSVC_SOURCES.$(BUILD_TARGET)) \
+	$(VBoxC_SOURCES)   $(VBoxC_SOURCES.$(KBUILD_TARGET)) \
+	$(VBoxSVC_SOURCES) $(VBoxSVC_SOURCES.$(KBUILD_TARGET)) \
 	$(VBoxCOM_SOURCES) \
 	,$(eval $(value def_src_deps)))
 
@@ -502,7 +502,7 @@ VBOX_XML_CONVERTER_TEMPLATE = xml/SettingsConverter.xsl
 VirtualBoxImplExtra.cpp_DEPS = \
 	$(VBOX_XML_SCHEMA_H) $(VBOX_XML_SCHEMA_COMMON_H) $(VBOX_XML_CONVERTER_TEMPLATE_H)
 
-$(VBOX_XML_SCHEMA_H): $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_BIN2C)
+$(VBOX_XML_SCHEMA_H): $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) _xml_VirtualBox_settings_xsd $< $@
 
@@ -532,11 +532,11 @@ VBoxSVC_DEPS    += $(VBOX_XML_SCHEMADEFS_H)
 VBoxSVC_INCS    += $(PATH_TARGET)
 VBoxSVC_SOURCES += $(VBOX_XML_SCHEMADEFS_CPP)
 
-$(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
+$(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
 	$(call MSG_TOOL,xsltproc,SchemaDefs,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode declare -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
 
-$(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
+$(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
 	$(call MSG_TOOL,xsltproc,SchemaDefs,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode define -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
 
@@ -550,7 +550,7 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 ## @todo Figure out why Linux really needs this, darwin doesn't...
 
 xpcom-components_INST = $(INST_BIN)components/
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux)
 xpcom-components_SYMLINKS = \
 	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
 	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt \
@@ -585,7 +585,7 @@ include $(PATH_KBUILD)/subfooter.kmk
 
 XIDLFILE = idl/VirtualBox.xidl
 
-ifneq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_TARGET),win)
 
 linux/helpers.cpp: $(IDLTYPELIB)
 

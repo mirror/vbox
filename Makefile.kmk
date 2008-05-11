@@ -42,7 +42,7 @@ INSTALLS = bin
 bin_INST = $(INST_BIN)
 
 # The SDL DLLs
-if1of ($(BUILD_TARGET), win os2)
+if1of ($(KBUILD_TARGET), win os2)
  ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
   include $(PATH_KBUILD)/sdks/LIBSDL.kmk
   bin_SOURCES += \
@@ -51,7 +51,7 @@ if1of ($(BUILD_TARGET), win os2)
    bin_SOURCES += \
 	$(DLL_SDK_LIBSDL_SDLTTF)
   endif
-  ifeq ($(BUILD_TARGET),os2)
+  ifeq ($(KBUILD_TARGET),os2)
    bin_SOURCES += \
 	$(DLL_SDK_LIBSDL_FSLIB)
   endif
@@ -61,7 +61,7 @@ endif
 
 # The Qt DLLs.
 ifneq ($(VBOX_WITH_QTGUI),)
- if1of ($(BUILD_TARGET), win os2)
+ if1of ($(KBUILD_TARGET), win os2)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
@@ -80,7 +80,7 @@ endif
 
 
 # The compiler runtime DLLs.
-ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
+ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifdef VBOX_USE_VCC80
   include $(PATH_KBUILD)/tools/VCC80X86.kmk
   include $(PATH_KBUILD)/tools/VCC80AMD64.kmk
@@ -102,7 +102,7 @@ ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifndef VBOX_USE_VCC80
   VBOX_INSTALL_VCC70_RT = 1
  endif
- ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.x86)
+ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
   VBOX_INSTALL_VCC70_RT = 1
  endif
  ifdef VBOX_INSTALL_VCC70_RT
@@ -160,7 +160,7 @@ endif
 # Install staged binaries on platforms where we can't cross
 # compile things.
 #
-ifn1of ($(BUILD_TARGET), l4 linux win)
+ifn1of ($(KBUILD_TARGET), l4 linux win)
  VBOX_PATH_STAGED ?= .
 
  # Additions.
@@ -397,7 +397,7 @@ $(PATH_TARGET)/Doxyfile: Doxyfile.Core \
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
 	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(BUILD_TARGET)) $(DEFS.$(BUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
+	$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(KBUILD_TARGET)) $(DEFS.$(KBUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
 	$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
 	$(APPEND) $@.tmp
 	$(MV) -f $@.tmp $@
@@ -544,28 +544,28 @@ additions-build: \
 VBOX_ADDITIONS_BUILD = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 BUILD_TYPE=$(BUILD_TYPE) all packing
 
 additions-build-win.x86:
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD)
 else
 	ssh vbox@192.168.27.5 " cd c:/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
 endif
 
 additions-build-solaris.x86:
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
 	+ $(KMK) BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD)
 else
 	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
 endif
 
 additions-build-os2.x86:
-#ifeq ($(BUILD_TARGET),os2)
+#ifeq ($(KBUILD_TARGET),os2)
 #	+ $(KMK) BUILD_TARGET_ARCH=x86
 #else
 #	ssh vbox@192.168.27.3 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
 #endif
 
 additions-build-linux.x86:
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux)
 	+ $(KMK) BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD)
 else
 	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD) "

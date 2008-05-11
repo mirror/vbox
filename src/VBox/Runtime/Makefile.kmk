@@ -37,14 +37,14 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- ifeq ($(BUILD_TARGET),win)
+ ifeq ($(KBUILD_TARGET),win)
   LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  else
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
   #LIBRARIES.win = RuntimeW32NT4GuestR0
   ifndef VBOX_WITH_ADDITION_DRIVERS
-   if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+   if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
    endif
   endif
@@ -66,12 +66,12 @@ else
   ifdef VBOX_WITH_WIN32_ADDITIONS
    LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
   endif
-  ifneq ($(BUILD_TARGET),win)
+  ifneq ($(KBUILD_TARGET),win)
    LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
    #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
    #LIBRARIES.win = RuntimeW32NT4GuestR0
    ifndef VBOX_WITH_ADDITION_DRIVERS
-    if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+    if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
      LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
     endif
    endif
@@ -241,7 +241,7 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/tcp.cpp
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
 #else
  RuntimeR3_SOURCES += common/time/timesupref.cpp
@@ -257,7 +257,7 @@ RuntimeR3_SOURCES += \
 	VBox/strformat-vbox.cpp \
 	VBox/RTAssertDoBreakpoint-vbox.cpp \
 	VBox/log-vbox.cpp
-ifneq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_TARGET),win)
 RuntimeR3_SOURCES += \
 	common/err/errmsgxpcom.cpp
 endif
@@ -492,7 +492,7 @@ RuntimeR3_SOURCES.solaris = \
 #
 RuntimeR3L4_TEMPLATE      = VBOXR3NP
 RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE
-ifneq ($(BUILD_TARGET_ARCH),amd64)
+ifneq ($(KBUILD_TARGET_ARCH),amd64)
 RuntimeR3L4_DEFS         += __PIC__
 endif
 RuntimeR3L4_INCS          = \
@@ -540,10 +540,10 @@ RuntimeR3L4_SOURCES = \
 RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
-RuntimeGuestR3_DEFS.$(BUILD_TARGET)     := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3_DEFS.$(KBUILD_TARGET)     := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)	:= $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3_INCS.$(KBUILD_TARGET)     := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3_INCS.$(KBUILD_HOST)   := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
@@ -554,11 +554,11 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
-RuntimeGuestR3_SOURCES.$(BUILD_TARGET)  := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST):= $(RuntimeR3_SOURCES.$(KBUILD_HOST))
-RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(BUILD_TARGET_ARCH))
-RuntimeGuestR3_SOURCES.$(BUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(BUILD_TARGET).x86)
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86 := $(RuntimeR3_SOURCES.$(KBUILD_HOST).x86)
 
 
@@ -571,10 +571,10 @@ RuntimeGuestR3Mini_TEMPLATE                 := VBOXGUESTR3DLL
 RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3Mini_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) RT_MINI
-RuntimeGuestR3Mini_DEFS.$(BUILD_TARGET)     := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)     := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)   := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3Mini_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_INCS.$(KBUILD_TARGET)     := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)   := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_SOURCES = \
 	common/err/errmsg.cpp \
@@ -635,11 +635,11 @@ RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 RuntimeLnxHostR3_TEMPLATE      = VBOXLNXHOSTR3LIB
 RuntimeLnxHostR3_DEFS          = IN_RT_R3 IN_SUP_R3 RT_WITH_VBOX RT_NO_GIP
 RuntimeLnxHostR3_SOURCES       = \
-	$(RuntimeR3_SOURCES.linux.$(BUILD_TARGET_ARCH)) \
+	$(RuntimeR3_SOURCES.linux.$(KBUILD_TARGET_ARCH)) \
 	$(RuntimeR3_SOURCES.linux) \
 	$(RuntimeR3_SOURCES)
 RuntimeLnxHostR3_INCS          = \
-	$(RuntimeR3_INCS.linux.$(BUILD_TARGET_ARCH)) \
+	$(RuntimeR3_INCS.linux.$(KBUILD_TARGET_ARCH)) \
 	$(RuntimeR3_INCS.linux) \
 	$(RuntimeR3_INCS)
 
@@ -649,7 +649,7 @@ RuntimeLnxHostR3_INCS          = \
 #
 VBoxRT_TEMPLATE                = VBOXR3
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
@@ -657,14 +657,14 @@ VBoxRT_DEFS.$(BUILD_TYPE)      = $(RuntimeR3_DEFS.$(BUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)
-VBoxRT_SOURCES.$(BUILD_TARGET) = $(RuntimeR3_SOURCES.$(BUILD_TARGET))
-VBoxRT_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
+VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp
 VBoxRT_SOURCES.win.x86        += r3/win/VBoxRT-win32.def
 VBoxRT_SOURCES.win.amd64      += r3/win/VBoxRT-win64.def
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
-VBoxRT_INCS.$(BUILD_TARGET)    = $(RuntimeR3_INCS.$(BUILD_TARGET))
-VBoxRT_INCS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+VBoxRT_INCS.$(KBUILD_TARGET)    = $(RuntimeR3_INCS.$(KBUILD_TARGET))
+VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
@@ -686,7 +686,7 @@ VBoxRT_LDFLAGS.l4              = \
 	-Wl,-whole-archive \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB) \
 	-Wl,-no-whole-archive
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
 VBoxRT_LIBS                   += \
 	$(L4_LIBDIR)/libl4sys.a \
 	$(L4_LIBDIR)/libl4sys.p.a
@@ -817,7 +817,7 @@ RuntimeR0_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR0_SOURCES += common/time/timesupA.asm
 #else
  RuntimeR0_SOURCES += common/time/timesupref.cpp
@@ -830,7 +830,7 @@ RuntimeR0_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm
 
-ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin solaris freebsd,$(KBUILD_TARGET)),)
 RuntimeR0_SOURCES += \
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
@@ -861,7 +861,7 @@ common/string/memset.cpp_CXXFLAGS.win = -Oi-
 common/string/strcpy.cpp_CXXFLAGS.win = -Oi-
 common/string/strlen.cpp_CXXFLAGS.win = -Oi-
 
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(KBUILD_TARGET),l4)
 RuntimeR0Drv_BLD_TRG      = linux
 RuntimeR0Drv_BLD_TRG_ARCH = x86
 RuntimeR0Drv_BLD_TRG_CPU  = i386
@@ -1121,13 +1121,13 @@ RuntimeR0Drv_SOURCES.solaris = \
 RuntimeGuestR0_TEMPLATE                := VBOXGUESTR0LIB
 RuntimeGuestR0_SDKS.win                := W2K3DDKX86 WINPSDKINCS
 RuntimeGuestR0_DEFS                    := $(RuntimeR0Drv_DEFS)
-RuntimeGuestR0_DEFS.$(BUILD_TARGET)    := $(RuntimeR0Drv_DEFS.$(BUILD_TARGET))
+RuntimeGuestR0_DEFS.$(KBUILD_TARGET)    := $(RuntimeR0Drv_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR0_INCS                    := $(PATH_SUB_CURRENT) include
-RuntimeGuestR0_INCS.$(BUILD_TARGET)    := $(RuntimeR0Drv_INCS.$(BUILD_TARGET))
+RuntimeGuestR0_INCS.$(KBUILD_TARGET)    := $(RuntimeR0Drv_INCS.$(KBUILD_TARGET))
 RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
-RuntimeGuestR0_SOURCES.$(BUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET))
-RuntimeGuestR0_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+RuntimeGuestR0_SOURCES.$(KBUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET))
+RuntimeGuestR0_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 ifdef VBOX_USE_VCC80
 RuntimeGuestR0_SOURCES.win += \
 	common/string/memchr.cpp \
@@ -1154,7 +1154,7 @@ RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
 RuntimeW32GuestR0_INCS         := $(PATH_SUB_CURRENT) include
 RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0
-RuntimeW32GuestR0_DEFS.$(BUILD_TARGET) =
+RuntimeW32GuestR0_DEFS.$(KBUILD_TARGET) =
 RuntimeW32GuestR0_SOURCES       = \
 	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
 	$(RuntimeR0Drv_SOURCES.win) \
@@ -1220,7 +1220,7 @@ RuntimeGC_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp \
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeGC_SOURCES += common/time/timesupA.asm
 #else
  RuntimeGC_SOURCES += common/time/timesupref.cpp
@@ -1232,7 +1232,7 @@ ifeq ($(VBOX_LDR_FMT32),lx)
  RuntimeGC_SOURCES += os2/sys0.asm
 endif
 
-if1of ($(BUILD_TARGET), darwin solaris freebsd)
+if1of ($(KBUILD_TARGET), darwin solaris freebsd)
 RuntimeGC_SOURCES += \
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
@@ -1261,11 +1261,11 @@ endif
 #
 RuntimeEFCPP_TEMPLATE   = $(RuntimeR3_TEMPLATE)
 RuntimeEFCPP_SDKS       = $(RuntimeR3_SDKS)
-RuntimeEFCPP_SDKS.$(BUILD_TARGET) = $(RuntimeR3_SDKS.$(BUILD_TARGET))
+RuntimeEFCPP_SDKS.$(KBUILD_TARGET) = $(RuntimeR3_SDKS.$(KBUILD_TARGET))
 RuntimeEFCPP_DEFS       = $(RuntimeR3_DEFS)
-RuntimeEFCPP_DEFS.$(BUILD_TARGET) = $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeEFCPP_DEFS.$(KBUILD_TARGET) = $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeEFCPP_INCS       = $(RuntimeR3_INCS)
-RuntimeEFCPP_INCS.$(BUILD_TARGET) = $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeEFCPP_INCS.$(KBUILD_TARGET) = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 
 

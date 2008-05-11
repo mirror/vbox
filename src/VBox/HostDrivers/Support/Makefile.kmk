@@ -87,7 +87,7 @@ $(PATH_BIN)/src/dkms.conf: \
 #
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
 #
-ifneq ($(filter l4%,$(BUILD_TARGET) $(BUILD_TARGET_SUB)),)
+ifneq ($(filter l4%,$(KBUILD_TARGET) $(BUILD_TARGET_SUB)),)
 # L4 has trouble with -pedantic. It also make trouble when inlining is not enabled.
 SUPR3_TEMPLATE      = VBOXR3NP
 else
@@ -101,7 +101,7 @@ SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
-	$(BUILD_TARGET)/SUPLib-$(BUILD_TARGET).cpp
+	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
 
 #
 # SUPR0 - The Ring-0 Import / Thunk library.
@@ -121,7 +121,7 @@ endif
 #
 # VBoxDrv.sys - The Windows driver.
 #
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
  VBoxDrv_NOINST       = true
@@ -176,7 +176,7 @@ endif # win
 #
 # vboxdrv.ko - The Linux Kernel Module (syntax only).
 #
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC USE_NEW_OS_INTERFACE_FOR_MM
 ifdef VBOX_WITH_IDT_PATCHING
@@ -188,11 +188,11 @@ vboxdrv_INCS         := \
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
-	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDRVShared.c
 ifndef VBOX_LINUX_VERSION_2_4
 vboxdrv_SOURCES      += \
-	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).mod.c
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
 endif
 endif # real linux
 
@@ -200,7 +200,7 @@ endif # real linux
 #
 # VBoxDrv.kext - The Darwin Kernel Extension.
 #
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 ifdef VBOX_WITH_IDT_PATCHING
@@ -213,7 +213,7 @@ VBoxDrv_LDFLAGS       = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrv_INST          = $(INST_VBOXDRV)Contents/MacOS/
 VBoxDrv_SOURCES       = \
 	SUPDRVShared.c \
-	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).cpp
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).cpp
 
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
@@ -243,7 +243,7 @@ endif # darwin
 #
 # VBoxDrv.sys - The OS/2 driver.
 #
-ifeq ($(BUILD_TARGET),os2)
+ifeq ($(KBUILD_TARGET),os2)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
@@ -275,7 +275,7 @@ endif
 #
 # vboxdrv.ko - The FreeBSD Kernel Module.
 #
-ifeq ($(BUILD_TARGET),freebsd)
+ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 ifdef VBOX_WITH_IDT_PATCHING
@@ -284,7 +284,7 @@ endif
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
-	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDRVShared.c
 endif # freebsd
 
@@ -292,7 +292,7 @@ endif # freebsd
 #
 # vboxdrv.o - The Solaris Kernel Module.
 #
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 ifdef VBOX_WITH_IDT_PATCHING
@@ -301,7 +301,7 @@ endif
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
-	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDRVShared.c
 endif # solaris
 

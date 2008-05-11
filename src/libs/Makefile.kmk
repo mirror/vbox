@@ -23,7 +23,7 @@ DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
 
-subdirs := liblzf-1.51 $(subdirs.$(BUILD_TARGET))
+subdirs := liblzf-1.51 $(subdirs.$(KBUILD_TARGET))
 ifdef IPRT_WITH_KSTUFF
  subdirs += kStuff
 endif
@@ -56,7 +56,7 @@ ifdef VBOX_WITH_MAIN
  endif
  # FFmpeg for test videos
  ifdef VBOX_WITH_FFMPEG
-  ifeq ($(BUILD_TARGET),darwin)
+  ifeq ($(KBUILD_TARGET),darwin)
    subdirs += ffmpeg-20060710
   endif
  endif

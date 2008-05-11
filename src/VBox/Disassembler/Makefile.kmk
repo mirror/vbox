@@ -27,10 +27,10 @@ PROGRAMS                = tstDisasmCore tstDisasm
 LIBRARIES               = DisasmR3 DisasmCoreR3 DisasmGC DisasmR0
 
 DisasmR3_TEMPLATE       = VBOXR3
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 DisasmR3_CXXFLAGS      += -EHa
 else
- ifneq ($(BUILD_TARGET),l4)
+ ifneq ($(KBUILD_TARGET),l4)
 DisasmR3_CXXFLAGS      += -fexceptions
  endif
 endif

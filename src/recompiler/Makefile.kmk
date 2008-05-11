@@ -38,7 +38,7 @@ include $(PATH_KBUILD)/header.kmk
 
 
 BLDPROGS              = dyngen
-ifneq ($(or $(eq $(BUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
+ifneq ($(or $(eq $(KBUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
  SYSMODS              = VBoxREM2
  REM_MOD              = VBoxREM2
 else
@@ -61,7 +61,7 @@ DEFS += REM_PHYS_ADDR_IN_TLB
 # All the AMD64 target must use the no-crt path because ELF doesn't like op.c
 # when stuffed into a shared library and windows doesn't have 64-bit gcc (yet).
 #
-ifeq ($(filter-out l4 darwin freebsd,$(BUILD_TARGET)),)
+ifeq ($(filter-out l4 darwin freebsd,$(KBUILD_TARGET)),)
  REM_USE_NOCRT := 1
 endif
 ifeq ($(REM_MOD),VBoxREM2)
@@ -82,7 +82,7 @@ ifeq ($(KBUILD_HOST),win)
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
  dyngen_DEFS         += HOST_X86_64=1
 endif
 dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
@@ -121,7 +121,7 @@ $(REM_MOD)_SOURCES          = \
 	target-i386/translate.c
 $(REM_MOD)_SOURCES.debug = \
 	Sun/testmath.c
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out win os2,$(KBUILD_TARGET)),)
  $(REM_MOD)_SOURCES        += target-i386/op.c
  FILE_OP_OBJ                = $(PATH_$(REM_MOD)_target-i386/op.c)/op.o
 else # The remaining targets can be using gcc-4 and needs checking.
@@ -140,20 +140,20 @@ ifdef REM_USE_NOCRT
  $(REM_MOD)_DEFS           += LOG_USE_C99
  $(REM_MOD)_CFLAGS.amd64    = -O2
  $(REM_MOD)_CFLAGS.debug    = -O0
- ifdef ($(BUILD_TARGET_ARCH),x86)
+ ifdef ($(KBUILD_TARGET_ARCH),x86)
   $(REM_MOD)_CFLAGS.release+= -fomit-frame-pointer -fno-gcse
  endif
 
  # This doesn't fit in IPRT because it requires GAS and is LGPL.
  $(REM_MOD)_SOURCES        += \
-	Sun/e_powl-$(BUILD_TARGET_ARCH).S
+	Sun/e_powl-$(KBUILD_TARGET_ARCH).S
 
  ifeq ($(REM_MOD),VBoxREM)
   $(REM_MOD)_LIBS           = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
-  ifeq ($(BUILD_TARGET),l4)
+  ifeq ($(KBUILD_TARGET),l4)
    $(REM_MOD)_LIBS          += \
 	$(L4_LIBDIR)/libuc.0.s.so
   endif
@@ -183,7 +183,7 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
  $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
  $(REM_MOD)_CFLAGS.l4       = -nostdinc
- ifeq ($(BUILD_TARGET),l4)
+ ifeq ($(KBUILD_TARGET),l4)
   $(REM_MOD)_INCS          += $(VBOX_L4_GCC3_INCS) $(L4_INCDIR)
  endif
 
@@ -199,7 +199,7 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_LDFLAGS.debug   = -g
  $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
  $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=11
- ifeq ($(BUILD_TARGET_ARCH),amd64)
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
   $(REM_MOD)_LIBS           = $(FILE_TOOL_GCC3_LIBGCC)
  else # x86
   $(REM_MOD)_LIBS           = \
@@ -281,16 +281,16 @@ endif
 # The VBoxREM import library.
 #
 VBoxREMImp_TEMPLATE         = VBOXR3
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 VBoxREMImp_INST             = $(INST_LIB)
 endif
 VBoxREMImp_SOURCES.win      = VBoxREM.def
 VBoxREMImp_SOURCES.os2      = $(PATH_TARGET)/VBoxREMOS2.def
-ifeq ($(filter win os2,$(BUILD_TARGET)),)
+ifeq ($(filter win os2,$(KBUILD_TARGET)),)
 VBoxREMImp_SOURCES          = $(PATH_TARGET)/VBoxREMImp.c
 VBoxREMImp_CLEAN            = $(PATH_TARGET)/VBoxREMImp.c
 endif
-ifneq ($(filter-out darwin os2 win,$(BUILD_TARGET)),)
+ifneq ($(filter-out darwin os2 win,$(KBUILD_TARGET)),)
 VBoxREMImp_SONAME           = VBoxREM$(SUFF_DLL)
 endif
 VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
@@ -337,7 +337,7 @@ include $(PATH_KBUILD)/footer.kmk
 # in one (or more) ELF op.o files using nm.
 #
 ifndef VBOX_RECOMPILER_OP_GCC
- ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),darwin.x86)
+ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
   VBOX_RECOMPILER_OP_GCC ?= $(notdir $(firstword $(which i386-elf-gcc-3.4 i386-elf-gcc-3.4.6 i386-elf-gcc-3.4.3 i386-elf-gcc) i386-elf-gcc)) # (port install i386-gcc-elf)
   VBOX_RECOMPILER_OP_GCC_OK := yes
   VBOX_RECOMPILER_OP_GCC_INCS ?= $(abspath $(dir $(shell LC_ALL=C $(VBOX_RECOMPILER_OP_GCC) -print-libgcc-file-name)))/include
@@ -356,16 +356,16 @@ endif
 COMPILE_OP_CMDS = $(VBOX_RECOMPILER_OP_GCC) \
 	-S -s \
 	$(filter-out -g -O0, \
-		$($(REM_MOD)_CFLAGS) $($(REM_MOD)_CFLAGS.$(BUILD_TYPE)) $($(REM_MOD)_CFLAGS.$(BUILD_TARGET)) $($(REM_MOD)_CFLAGS.$(BUILD_TARGET_ARCH)) $($(REM_MOD)_CFLAGS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
-		$(target-i386/op.c_CFLAGS) $(target-i386/op.c_CFLAGS.$(BUILD_TARGET)) $(target-i386/op.c_CFLAGS.$(BUILD_TARGET_ARCH)) $(target-i386/op.c_CFLAGS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
+		$($(REM_MOD)_CFLAGS) $($(REM_MOD)_CFLAGS.$(BUILD_TYPE)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
+		$(target-i386/op.c_CFLAGS) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET_ARCH)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 		) \
 	$(addprefix -I, \
-		$($(REM_MOD)_CINCS.$(BUILD_TARGET_ARCH)) $($(REM_MOD)_CINCS.$(BUILD_TARGET)) $($(REM_MOD)_CINCS) $(CINCS) \
-		$($(REM_MOD)_INCS.$(BUILD_TARGET_ARCH))  $($(REM_MOD)_INCS.$(BUILD_TARGET))  $($(REM_MOD)_INCS) $(INCS) \
+		$($(REM_MOD)_CINCS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CINCS.$(KBUILD_TARGET)) $($(REM_MOD)_CINCS) $(CINCS) \
+		$($(REM_MOD)_INCS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_INCS.$(KBUILD_TARGET))  $($(REM_MOD)_INCS) $(INCS) \
 		) \
 	$(addprefix -D, \
-		$($(REM_MOD)_CDEFS.$(BUILD_TARGET_ARCH)) $($(REM_MOD)_CDEFS.$(BUILD_TARGET)) $($(REM_MOD)_CDEFS) $(CDEFS.$(BUILD_TARGET)) $(CDEFS.$(BUILD_TARGET_ARCH)) $(CDEFS.$(BUILD_TYPE)) $(CDEFS) \
-		$($(REM_MOD)_DEFS.$(BUILD_TARGET_ARCH))  $($(REM_MOD)_DEFS.$(BUILD_TARGET))  $($(REM_MOD)_DEFS)  $(DEFS.$(BUILD_TARGET))  $(DEFS.$(BUILD_TARGET_ARCH))  $(DEFS.$(BUILD_TYPE))  $(DEFS) \
+		$($(REM_MOD)_CDEFS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CDEFS.$(KBUILD_TARGET)) $($(REM_MOD)_CDEFS) $(CDEFS.$(KBUILD_TARGET)) $(CDEFS.$(KBUILD_TARGET_ARCH)) $(CDEFS.$(BUILD_TYPE)) $(CDEFS) \
+		$($(REM_MOD)_DEFS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_DEFS.$(KBUILD_TARGET))  $($(REM_MOD)_DEFS)  $(DEFS.$(KBUILD_TARGET))  $(DEFS.$(KBUILD_TARGET_ARCH))  $(DEFS.$(BUILD_TYPE))  $(DEFS) \
 		) \
 	-Wp,-MD,$(PATH_$(REM_MOD))/op.S.dep \
         -Wp,-MT,$(PATH_$(REM_MOD))/op.S \
@@ -378,11 +378,11 @@ COMPILE_OP_CMDS := $(subst $(VBOX_PATH_GCC_INCS),$(VBOX_RECOMPILER_OP_GCC_INCS),
 endif
 
 # Drop incompatible options when using the cross-compiler on darwin.
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
   COMPILE_OP_CMDS := $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS))
  endif
-else if1of ($(BUILD_TARGET),linux)
+else if1of ($(KBUILD_TARGET),linux)
  ifneq ($(TOOL_$(VBOX_GCC_TOOL)_CC),$(VBOX_RECOMPILER_OP_GCC))
   VBOX_RECOMPILER_OP_CHECK_CC_GCC = $(shell \
     if $(VBOX_RECOMPILER_OP_GCC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -400,7 +400,7 @@ endif
 # The rule.
 $(PATH_$(REM_MOD))/op.S: \
 		target-i386/op.c \
-		Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S \
+		Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S \
 		Sun/op-validate.sed \
 		Sun/op-darwin.sed \
 		Sun/op-undefined.lst \
@@ -420,13 +420,13 @@ else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for no
 		$(addsuffix $(SP)\$(NL)$(TAB)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp; \
 	else \
 		$(ECHO_EXT) "Using staged op.S [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
-		$(CP_EXT) -f Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
+		$(CP_EXT) -f Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S $@.tmp; \
 	fi
 else
-	$(CP) Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp
+	$(CP) Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S $@.tmp
 endif
 	$(SED) -f Sun/op-validate.sed $@.tmp
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 	$(SED) -f Sun/op-darwin.sed $@.tmp > $@.tmp2
 	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' Sun/op-undefined.lst > $@.tmp
 	$(CAT_EXT) $@.tmp2 >> $@.tmp
@@ -441,8 +441,8 @@ endif
 # Hack for crosscompiling.
 DYNGEN = $(PATH_dyngen)/dyngen$(HOSTSUFF_EXE)
 DYNGEN_EXEC = $(DYNGEN)
-ifneq ($(KBUILD_HOST),$(BUILD_TARGET)) # hack for crosscompiling.
- ifeq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_HOST),$(KBUILD_TARGET)) # hack for crosscompiling.
+ ifeq ($(KBUILD_TARGET),win)
   DYNGEN       = $(PATH_dyngen)/dyngen.exe
   DYNGEN_EXEC := $(EXEC_X86_WIN32) $(DYNGEN_EXEC)
  endif

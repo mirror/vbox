@@ -53,10 +53,10 @@ endif
 ifdef VBOX_WITH_LINUX_ADDITIONS
  VBOX_WITH_ADDITIONS_ISO.linux.x86 = 1
 endif
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_ADDITIONS_ISO.solaris.x86 = 1
 endif
-ifeq ($(BUILD_TARGET),freebsd)
+ifeq ($(KBUILD_TARGET),freebsd)
  VBOX_WITH_ADDITIONS_ISO.freebsd.x86 = 1
 endif
 
@@ -71,10 +71,10 @@ endif
 ifdef VBOX_WITH_X11_ADDITIONS
  include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
 endif
-ifeq ($(BUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
  include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
 endif
-ifeq ($(BUILD_TARGET),freebsd)
+ifeq ($(KBUILD_TARGET),freebsd)
  include $(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
 endif
 

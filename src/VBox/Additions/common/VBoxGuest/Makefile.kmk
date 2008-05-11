@@ -25,7 +25,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 # PORTME: OSes using mixed case driver names join OS/2, the others join Solaris below.
 
-if1of ($(BUILD_TARGET), os2)
+if1of ($(KBUILD_TARGET), os2)
  #
  # VBoxGuest - The Guest Additions Driver (mixed case).
  #
@@ -36,9 +36,9 @@ if1of ($(BUILD_TARGET), os2)
  VBoxGuest_TEMPLATE      = VBOXGUESTR0
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
  VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
- ifneq ($(BUILD_TARGET),os2)
+ ifneq ($(KBUILD_TARGET),os2)
   VBoxGuest_SOURCES    = \
-  	VBoxGuest-$(BUILD_TARGET).cpp \
+  	VBoxGuest-$(KBUILD_TARGET).cpp \
   	VBoxGuest.cpp
   VBoxGuest_LIBS          = \
   	$(VBOX_LIB_VBGL_R0BASE) \
@@ -71,7 +71,7 @@ if1of ($(BUILD_TARGET), os2)
   	VBoxGuest.cpp
  endif # OS/2
 
-else if1of ($(BUILD_TARGET), freebsd solaris)
+else if1of ($(KBUILD_TARGET), freebsd solaris)
  #
  # vboxguest - The Guest Additions Driver (lower cased).
  #
@@ -84,7 +84,7 @@ else if1of ($(BUILD_TARGET), freebsd solaris)
  vboxguest_INCS.freebsd  = \
 	$(PATH_TARGET)
  vboxguest_SOURCES       = \
- 	VBoxGuest-$(BUILD_TARGET).c \
+ 	VBoxGuest-$(KBUILD_TARGET).c \
  	VBoxGuest.cpp
  vboxguest_LIBS          = \
  	$(VBOX_LIB_VBGL_R0BASE) \

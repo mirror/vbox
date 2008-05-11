@@ -31,7 +31,7 @@ SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
 SOL_DBG_OBJCOPY  := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 PKGINFO_ARCH     = $(shell uname -p)
-PKG_FILENAME     = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(BUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
+PKG_FILENAME     = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
 DBG_ARCHIVE      = VirtualBox-dbg.tar.bz2
 
 # Targets
@@ -89,7 +89,7 @@ SOLARIS_STRIP_OBJS = \
 	VMMGC.gc \
 	VMMR0.r0
 
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
 SOL64_PKG = 1
 SOLARIS_STRIP_OBJS += \
 	VBoxREM2.rel
@@ -287,12 +287,12 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.space                                                   $(SOLARIS_INST_DIR)/vbox.space
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
-		-e "s/@BUILD_TARGET_ARCH@/$(BUILD_TARGET_ARCH)/g" \
+		-e "s/@BUILD_TARGET_ARCH@/$(KBUILD_TARGET_ARCH)/g" \
 		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
 		--output $(SOLARIS_INST_DIR)/ReadMe.txt \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt
 	$(call MSG_L1,Creating install package: $(PKG_FILENAME).tar.gz)
-	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKG_FILENAME) $(BUILD_TARGET_ARCH)
+	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKG_FILENAME) $(KBUILD_TARGET_ARCH)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(PATH_BIN)
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz

@@ -84,13 +84,13 @@ endif
 # The targets.
 #
 PROGRAMS = VirtualBox
-ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(BUILD_TARGET)),) # X11
+ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
 DLLS = VBoxKeyboard
 OTHERS = $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
 INSTALLS = VirtualBox.nls
 
-ifeq ($(BUILD_TARGET),os2)
+ifeq ($(KBUILD_TARGET),os2)
  DLLS += VBoxHlp
  ifneq ($(strip $(VBOX_DLL_QT)),)
   INSTALLS += qt.dll
@@ -154,12 +154,12 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOU
 #
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
-#ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(BUILD_TARGET)),) - later
-ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(BUILD_TARGET)),) # X11 + os2
+#ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(KBUILD_TARGET)),) - later
+ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2
 VirtualBox_SDKS += LIBSDL
 endif
 
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
 VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 
@@ -172,7 +172,7 @@ VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 
 ifndef VBOX_OSE
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # linux only, yea, right.
 # Note: I'm doing this right here because the GUI will _not_ run
 #       without that file which might be annoying for developers!
 $(VBOX_LICENSE_BIN): $(VBOX_LICENSE_SRC)
@@ -212,7 +212,7 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VirtualBox_QT_MOCSRCS += src/VBoxGlobal.cpp
 endif
 ifdef VBOX_WITH_XPCOM
@@ -276,7 +276,7 @@ VirtualBox_SOURCES = \
 	src/HappyHttp.cpp \
 	src/VBoxNetworkFramework.cpp
 
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
 	src/linux/XKeyboard-new.cpp
 endif
@@ -304,7 +304,7 @@ endif
 # OSE version is always necessary for lupdate/lrelease
 VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 
-ifneq ($(BUILD_TARGET),win)
+ifneq ($(KBUILD_TARGET),win)
 src/HappyHttp.cpp_CXXFLAGS += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
 src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
@@ -389,13 +389,13 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 VirtualBox_LIBS.os2      += $(PATH_DLL)/VBoxHlp$(VBOX_SUFF_DLL)
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VirtualBox_LIBS          += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
 
 ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
- ifeq ($(BUILD_TARGET),win)
+ ifeq ($(KBUILD_TARGET),win)
   VirtualBox_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
  else
   VirtualBox_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)

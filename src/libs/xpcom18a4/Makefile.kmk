@@ -74,7 +74,7 @@ TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
-ifn1of ($(BUILD_TARGET), os2 win)
+ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_CXXFLAGS          += -fPIC
  TEMPLATE_XPCOM_CFLAGS            += -fPIC
  TEMPLATE_XPCOM_LDFLAGS           += -fPIC
@@ -111,7 +111,7 @@ TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOM_LIBS.solaris        = sendfile
 TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
                                      $(PATH_VBox-xpcom-string)/idl_ts
-ifeq ($(BUILD_TARGET),os2)
+ifeq ($(KBUILD_TARGET),os2)
  ifndef USE_OS2_TOOLKIT_HEADERS
   TEMPLATE_XPCOM_DEFS.os2         += OS2EMX_PLAIN_CHAR
  endif
@@ -164,16 +164,16 @@ TEMPLATE_XPCOMBLDPROG                   = XPCOM Build programs executables
 TEMPLATE_XPCOMBLDPROG_EXTENDS           = VBOXBLDPROG
 
 TEMPLATE_XPCOMBLDPROG_DEFS                      = $(TEMPLATE_BLDPROG_DEFS)                      $(TEMPLATE_XPCOMEXE_DEFS)
-TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
-TEMPLATE_XPCOMBLDPROG_CFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_CFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
@@ -184,12 +184,12 @@ TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/include \
                                           $(VBOX_PATH_SDK)/include/xpcom/string \
                                           $(VBOX_PATH_SDK)/include/xpcom/xpcom \
                                           $(VBOX_PATH_SDK)/include/xpcom/ipcd
-TEMPLATE_XPCOMBLDPROG_INCS.$(BUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(BUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_INCS.$(BUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(BUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_LIBPATH.$(BUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(BUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_LIBPATH.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(BUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(BUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(BUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
@@ -271,7 +271,7 @@ PROGRAMS = \
 endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
 
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux)
  XPCOM_TYPELIB = $(PATH_BIN)/VBoxXPCOMBase.xpt
 else
  XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
@@ -576,7 +576,7 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_struct.c \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
-ifeq ($(BUILD_TARGET),os2)
+ifeq ($(KBUILD_TARGET),os2)
  # glib and libIDL needed by XPCOM on OS/2.
  ifeq ($(VBOX_PATH_GLIB),)
  VBOX_PATH_GLIB := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/glibidl/*/glibidl/gcc335)))
@@ -736,7 +736,7 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/libc/src/plerror.c \
 	nsprpub/lib/libc/src/plgetopt.c
 
-ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # unixish
+ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
 VBox-xpcom-nspr_SOURCES += \
 	nsprpub/pr/src/md/unix/unix.c \
 	nsprpub/pr/src/md/unix/unix_errors.c \
@@ -934,7 +934,7 @@ VBox-xpcom-io_SOURCES.darwin = \
 	xpcom/MoreFiles/MoreFilesX.c
 VBox-xpcom-io_SOURCES.l4 = \
 	xpcom/io/nsLocalFileL4.cpp
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),)
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),)
 VBox-xpcom-io_SOURCES += \
 	xpcom/io/nsLocalFileUnix.cpp
 endif
@@ -1100,7 +1100,7 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-nspr) \
 	$(TARGET_VBoxXPCOMGlue_s)
 
-ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(BUILD_TARGET)),) # gnu ld.
+ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-typelib) \
 	$(TARGET_VBox-xpcom-string) \
@@ -1148,7 +1148,7 @@ endif
 TEMPLATE_XPCOMIPC                  = XPCOM IPC libraries
 TEMPLATE_XPCOMIPC_EXTENDS          = XPCOM
 TEMPLATE_XPCOMIPC_DEFS             = $(TEMPLATE_XPCOM_DEFS) BUILD_DCONNECT="1"
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out win os2,$(KBUILD_TARGET)),)
  TEMPLATE_XPCOMIPC_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD.exe\"
 else
  TEMPLATE_XPCOMIPC_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD\"
@@ -1207,7 +1207,7 @@ VBox-xcpom-ipctmgrcom_SOURCES = \
 # DCONNECT client shared object
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
 VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
-ifneq ($(BUILD_TARGET),linux)
+ifneq ($(KBUILD_TARGET),linux)
 VBoxXPCOMIPCC_INST = $(INST_BIN)components/
 endif
 VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS
@@ -1216,7 +1216,7 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 VBoxXPCOMIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionWin.cpp
 else
@@ -1240,7 +1240,7 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 VBoxXPCOMIPCD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdWin.cpp
 else

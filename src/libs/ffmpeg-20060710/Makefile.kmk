@@ -24,7 +24,7 @@ include $(PATH_KBUILD)/header.kmk
 
 DLLS                       = VBoxFFmpeg
 
-ifeq ($(BUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
 VBoxFFmpeg_TOOL.win.x86    = MINGW32
 #VBoxFFmpeg_TOOL.win.amd64  = MINGW64...
 VBoxFFmpeg_SDKS.win.x86    = W32API
@@ -301,8 +301,8 @@ libavcodec/i386/fft_3dn2_CFLAGS.amd64 = -march=k8
 #
 # The import library for Windows builds.
 # The microsoft linker doesn't like the GNU import libraries from this MinGW version.
-# 
-ifeq ($(BUILD_TARGET),win)
+#
+ifeq ($(KBUILD_TARGET),win)
 IMPORT_LIBS += VBoxFFmpegImp
 VBoxFFmpegImp_TEMPLATE = VBOXR3
 VBoxFFmpegImp_SOURCES = VBoxFFmpeg.def

@@ -27,7 +27,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 #
 # vboxmouse_drv
 #
-if1of ($(BUILD_TARGET),linux l4)
+if1of ($(KBUILD_TARGET),linux l4)
  SYSMODS += vboxmouse_drv
  vboxmouse_drv_TEMPLATE = VBOXGUESTR3XF86MOD
  vboxmouse_drv_DEFS.linux = linux
@@ -64,7 +64,7 @@ DLLS += vboxmouse_drv_70
 vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X
-ifeq ($(BUILD_TARGET),solaris) # don't use .solaris or anything here.
+ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxmouse_drv_70_DEFS += _XPG6 __EXTENSIONS__
 endif
 vboxmouse_drv_70_INCS := \
