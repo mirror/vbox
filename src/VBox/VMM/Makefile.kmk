@@ -200,7 +200,7 @@ VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
 VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
 VBoxVMM_LDFLAGS.solaris = -mimpure-text
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
- ifeq ($(BUILD_PLATFORM), linux)
+ ifeq ($(KBUILD_HOST), linux)
 VBoxVMM_LIBS += aio
  endif
 endif

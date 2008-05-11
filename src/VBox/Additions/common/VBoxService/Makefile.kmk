@@ -23,7 +23,7 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-ifeq ($(BUILD_PLATFORM),os2)
+ifeq ($(KBUILD_HOST),os2)
  ifdef VBOX_WITH_OS2_ADDITIONS
   PROGRAMS += VBoxService
  endif

@@ -22,16 +22,16 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifeq ($(BUILD_PLATFORM),win) # guard when cross-compiling.
+ifeq ($(KBUILD_HOST),win) # guard when cross-compiling.
  SUBDIRS.win = win
 endif
-ifeq ($(BUILD_PLATFORM),linux)
+ifeq ($(KBUILD_HOST),linux)
  SUBDIRS.linux = linux
 endif
-ifeq ($(BUILD_PLATFORM),darwin)
+ifeq ($(KBUILD_HOST),darwin)
  SUBDIRS.darwin = darwin
 endif
-ifeq ($(BUILD_PLATFORM),solaris)
+ifeq ($(KBUILD_HOST),solaris)
  SUBDIRS.solaris = solaris
 endif
 

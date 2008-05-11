@@ -72,7 +72,7 @@ endif
 #
 # The dyngen build tool.
 #
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
  dyngen_TOOL          = MINGW32
  dyngen_SDKS          = W32API
  # On 64-bit Windows we pretend to be 32-bit.
@@ -240,14 +240,14 @@ cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
 testmath_TOOL           = GXX3
 testmath_TOOL.win.x86   = MINGW32
 testmath_SDKS.win.x86   = W32API
-ifeq ($(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH),win.amd64)
+ifeq ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),win.amd64)
  # 64-bit windows: Pretend to be 32-bit.
  testmath_BLD_TRG       = win32
  testmath_BLD_TRG_ARCH  = x86
  testmath_BLD_TRG_CPU   = i386
 endif
 testmath_ASTOOL         = $(VBOX_ASTOOL)
-ifeq ($(filter-out win32 win64,$(BUILD_PLATFORM)),)
+ifeq ($(filter-out win32 win64,$(KBUILD_HOST)),)
  testmath_ASFLAGS        = -f win32 -DNASM_FORMAT_PE $(VBOX_ASFLAGS) -w+orphan-labels
 else
  testmath_ASFLAGS        = -f elf -DNASM_FORMAT_ELF $(VBOX_ASFLAGS) -w+orphan-labels
@@ -441,7 +441,7 @@ endif
 # Hack for crosscompiling.
 DYNGEN = $(PATH_dyngen)/dyngen$(HOSTSUFF_EXE)
 DYNGEN_EXEC = $(DYNGEN)
-ifneq ($(BUILD_PLATFORM),$(BUILD_TARGET)) # hack for crosscompiling.
+ifneq ($(KBUILD_HOST),$(BUILD_TARGET)) # hack for crosscompiling.
  ifeq ($(BUILD_TARGET),win)
   DYNGEN       = $(PATH_dyngen)/dyngen.exe
   DYNGEN_EXEC := $(EXEC_X86_WIN32) $(DYNGEN_EXEC)

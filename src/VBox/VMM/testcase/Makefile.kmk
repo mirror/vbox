@@ -46,8 +46,8 @@ endif
 # We setup two 'other' targets for executing the two structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
 #
-ifeq ($(BUILD_TARGET),$(BUILD_PLATFORM))
- ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
+ifeq ($(BUILD_TARGET),$(KBUILD_HOST))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS          += \
 	$(PATH_TARGET)/tstAsmStructs.run \
 	$(PATH_TARGET)/tstVMStructSize.run
@@ -205,7 +205,7 @@ endif
 # Some handcrafted support targets for tstAsmStructs.
 #
 
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
  include $(PATH_KBUILD)/tools/MINGW32.kmk
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
 else

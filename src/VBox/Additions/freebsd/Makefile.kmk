@@ -23,7 +23,7 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include	$(PATH_KBUILD)/subheader.kmk
 
-ifneq ($(BUILD_PLATFORM),freebsd)
+ifneq ($(KBUILD_HOST),freebsd)
 $(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
 endif
 
