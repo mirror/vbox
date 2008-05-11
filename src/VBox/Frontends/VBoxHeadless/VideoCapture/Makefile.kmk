@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxFFmpegFB
 VBoxFFmpegFB_TEMPLATE        = VBOXMAINCLIENTDLL
@@ -29,5 +29,5 @@ VBoxFFmpegFB_SDKS            = VBOX_FFMPEG VBOX_LIBPNG VBOX_ZLIB
 VBoxFFmpegFB_SOURCES         = FFmpegFB.cpp
 VBoxFFmpegFB_CXXFLAGS.linux += -fPIC
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

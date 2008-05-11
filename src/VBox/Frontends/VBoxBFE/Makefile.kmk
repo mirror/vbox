@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxBFE
 
@@ -150,7 +150,7 @@ VBoxBFE_CLEAN = $(PATH_VBoxBFE)/Ico64x01.h
 VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
 
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 # Convert the pnm-file to a byte array.
 $(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxBFE))

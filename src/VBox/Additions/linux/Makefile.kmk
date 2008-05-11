@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 # This can only be built on a real Linux system.
 if1of ($(KBUILD_TARGET),linux l4)
@@ -40,7 +40,7 @@ endif
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         = $(CP) -f

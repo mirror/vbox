@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
 
@@ -124,5 +124,5 @@ $(PATH_TARGET)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/$(VBOX_LOGO_FILE) $(VBOX_BI
 	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

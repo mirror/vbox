@@ -4,7 +4,7 @@
 #
 
 DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+include	$(KBUILD_PATH)/header.kmk
 
 #?DLLS += VBoxSF
 SYSMODS += VBoxSF
@@ -32,5 +32,5 @@ VBoxSF_LIBS          = \
 	$(VBOX_GCC_LIBGCC) \
 	end
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(KBUILD_PATH)/footer.kmk
 

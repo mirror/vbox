@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../../../../
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 BLDPROGS  = nrv2b makerom
 LIBRARIES = NetBiosBin
@@ -96,7 +96,7 @@ NetBiosBin_INCS     = ../..
 NetBiosBin_SOURCES  = $(PATH_TARGET)/NetBiosBin.c
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 #
 # Rule for making the bios

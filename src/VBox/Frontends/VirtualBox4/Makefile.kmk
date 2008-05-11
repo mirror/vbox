@@ -38,7 +38,7 @@ VBOX_WITH_REGISTRATION := 1
 VBOX_WITH_REGISTRATION_REQUEST := 1
 
 DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 # Disable the debugger for now, this is another story.
 VBOX_WITH_DEBUGGER_GUI :=
@@ -752,7 +752,7 @@ VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 #

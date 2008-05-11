@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s) first if we're doing parallel building.
 # This is primarily a hack to try avoid idling all but one cpu when
@@ -576,7 +576,7 @@ ifeq ($(KMK_OPTS_JOBS),1)
 endif
 
 # generate rules
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 #

@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # Target lists.
@@ -192,7 +192,7 @@ tstPDMAsyncCompletion_SOURCES          = tstPDMAsyncCompletion.cpp
 tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 endif
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 
 ifndef USE_MULTI_TARGET
@@ -206,7 +206,7 @@ endif
 #
 
 ifeq ($(KBUILD_HOST),win)
- include $(PATH_KBUILD)/tools/MINGW32.kmk
+ include $(KBUILD_PATH)/tools/MINGW32.kmk
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
 else
  VBOX_NM ?= nm -p

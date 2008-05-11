@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxControl
 VBoxControl_TEMPLATE = VBOXW32GUESTR3
@@ -36,5 +36,5 @@ VBoxControl_SOURCES  = \
 VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxControl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

@@ -40,7 +40,7 @@ VBOX_WITH_REGISTRATION := 1
 VBOX_WITH_REGISTRATION_REQUEST := 1
 
 DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 
 #
@@ -509,7 +509,7 @@ endif
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 

@@ -38,5 +38,5 @@ VBox-zlib_SOURCES = \
 	inffast.c
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/rules.kmk
+include $(KBUILD_PATH)/rules.kmk
 

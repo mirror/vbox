@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 
 ## @todo Replace with VBoxService.
@@ -36,5 +36,5 @@ vboxadd-timesync_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3)
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

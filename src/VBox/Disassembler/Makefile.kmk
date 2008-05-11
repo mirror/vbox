@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 
 PROGRAMS                = tstDisasmCore tstDisasm
@@ -63,5 +63,5 @@ tstDisasmCore_LIBS      = \
 	$(PATH_LIB)/DisasmCoreR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 

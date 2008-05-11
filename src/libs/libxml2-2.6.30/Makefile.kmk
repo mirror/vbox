@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 LIBRARIES = VBox-libxml2
 
@@ -80,4 +80,4 @@ VBox-libxml2_SOURCES        = \
 # VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
 # VBox-libxml2_SDKS.win      += WINPSDK
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk

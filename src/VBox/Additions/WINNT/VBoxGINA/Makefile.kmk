@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH ?= ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxGINA
 VBoxGINA_TEMPLATE = VBOXW32GUESTR3
@@ -35,5 +35,5 @@ VBoxGINA_SOURCES  = \
 VBoxGINA_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3$(VBOXW32GUEST_SUFF_LIB)
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxFB
 
@@ -49,5 +49,5 @@ VBoxFB_CXXFLAGS   =  \
 	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
 	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

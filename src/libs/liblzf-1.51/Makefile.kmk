@@ -30,5 +30,5 @@ VBox-liblzf_SOURCES= \
 	lzf_d.c
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/rules.kmk
+include $(KBUILD_PATH)/rules.kmk
 

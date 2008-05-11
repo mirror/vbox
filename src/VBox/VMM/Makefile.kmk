@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 ## @todo get rid of these.
 # Enable the PDM lock.
@@ -429,7 +429,7 @@ VMMR0_LIBS += \
 endif
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 
 # Alias the PGM templates to the object in which they are defined.

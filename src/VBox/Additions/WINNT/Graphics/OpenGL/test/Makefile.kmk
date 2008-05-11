@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../../..
 SUB_DEPTH = ../../../..
-include $(PATH_KBUILD)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
 #
@@ -36,16 +36,16 @@ tstShOpenGL_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
 
 
 tstOGLSample_TEMPLATE = VBOXW32GUESTR3
-tstOGLSample_DEFS     = 
+tstOGLSample_DEFS     =
 tstOGLSample_SOURCES  = tstOGLSample.cpp
 tstOGLSample_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
 
 tstOGLSphere_TEMPLATE = VBOXW32GUESTR3
-tstOGLSphere_DEFS     = 
+tstOGLSphere_DEFS     =
 tstOGLSphere_SOURCES  = tstOGLSphere.c
 tstOGLSphere_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
 
 endif # VBOX_WITH_TESTCASES
 
-include $(PATH_KBUILD)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

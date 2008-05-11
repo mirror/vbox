@@ -20,11 +20,11 @@
 #
 
 DEPTH = ../..
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 BLDPROGS        = bin2c
 TEMPLATE        = VBOXBLDPROG
 bin2c_SOURCES   = bin2c.c
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 

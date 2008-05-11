@@ -20,7 +20,7 @@
 #
 
 DEPTH = .
-include $(PATH_KBUILD)/header.kmk
+include $(KBUILD_PATH)/header.kmk
 
 ifdef VBOX_WITH_DOCS
  ifndef VBOX_ONLY_ADDITIONS
@@ -44,7 +44,7 @@ bin_INST = $(INST_BIN)
 # The SDL DLLs
 if1of ($(KBUILD_TARGET), win os2)
  ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
-  include $(PATH_KBUILD)/sdks/LIBSDL.kmk
+  include $(KBUILD_PATH)/sdks/LIBSDL.kmk
   bin_SOURCES += \
 	$(DLL_SDK_LIBSDL_SDL)
   ifdef VBOX_WITH_SECURELABEL
@@ -62,7 +62,7 @@ endif
 # The Qt DLLs.
 ifneq ($(VBOX_WITH_QTGUI),)
  if1of ($(KBUILD_TARGET), win os2)
-  #include $(PATH_KBUILD)/sdks/QT3.kmk
+  #include $(KBUILD_PATH)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
   ifneq ($(strip $(VBOX_DLL_QT)),)
@@ -82,8 +82,8 @@ endif
 # The compiler runtime DLLs.
 ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifdef VBOX_USE_VCC80
-  include $(PATH_KBUILD)/tools/VCC80X86.kmk
-  include $(PATH_KBUILD)/tools/VCC80AMD64.kmk
+  include $(KBUILD_PATH)/tools/VCC80X86.kmk
+  include $(KBUILD_PATH)/tools/VCC80AMD64.kmk
   bin_SOURCES.x86 += \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
@@ -106,7 +106,7 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
   VBOX_INSTALL_VCC70_RT = 1
  endif
  ifdef VBOX_INSTALL_VCC70_RT
-  include $(PATH_KBUILD)/tools/VCC70.kmk
+  include $(KBUILD_PATH)/tools/VCC70.kmk
   ## @todo Move these defines to VCC70.
   DLL_TOOL_VCC70_MSVCR71 ?= $(PATH_TOOL_VCC70)/bin/msvcr71.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71)),)
@@ -189,7 +189,7 @@ endif
 endif # !VBOX_ONLY_ADDITIONS
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(KBUILD_PATH)/footer.kmk
 
 
 #

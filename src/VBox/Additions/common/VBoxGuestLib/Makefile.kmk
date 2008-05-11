@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # Target config.
@@ -172,5 +172,5 @@ VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
 #VBoxGuestLibBase_DEFS      += LOG_ENABLED
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

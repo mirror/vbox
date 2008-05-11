@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../../../../..
 SUB_DEPTH = ../../../..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += vrdpdd
 vrdpdd_TEMPLATE    = VBOXW32GUESTR0
@@ -42,5 +42,5 @@ vrdpdd_LIBS        = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 

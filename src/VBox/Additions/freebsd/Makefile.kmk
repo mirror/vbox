@@ -21,7 +21,7 @@
 
 DEPTH ?= ../../../..
 SUB_DEPTH = ..
-include	$(PATH_KBUILD)/subheader.kmk
+include	$(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),freebsd)
 $(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
@@ -46,7 +46,7 @@ endif
 PACKING     += $(PATH_BIN)/additions/$(PKGFILENAME)
 OTHER_CLEAN += $(PACKING)
 
-include	$(PATH_KBUILD)/subfooter.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
 $(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 		$(VBOX_VERSION_STAMP) \
