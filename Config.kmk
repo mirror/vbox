@@ -622,12 +622,12 @@ ifndef VBOX_GCC_TOOL
   VBOX_GCC32_TOOL := GXX3PLAIN
  else
   VBOX_GCC_TOOL := GXX3
-  ifeq ($(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH),x86.amd64)
+  ifeq ($(BUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),x86.amd64) ## @todo mixing target/host here!
    VBOX_GCC_TOOL := GXX32
    VBOX_WITH_VBOXDRV=
    VBOX_WITH_LINUX_ADDITIONS=
    VBOX_WITH_WIN32_ADDITIONS=
-  else ifeq ($(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH),amd64.x86)
+  else ifeq ($(BUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),amd64.x86)
    VBOX_GCC_TOOL := GXX64
    VBOX_WITH_VBOXDRV=
    VBOX_WITH_LINUX_ADDITIONS=
@@ -669,7 +669,7 @@ endif
 #
 PATH_DEVTOOLS ?= $(PATH_ROOT)/tools
 PATH_DEVTOOLS := $(abspath $(PATH_DEVTOOLS))
-PATH_DEVTOOLS_BLD ?= $(PATH_DEVTOOLS)/$(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)
+PATH_DEVTOOLS_BLD ?= $(PATH_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)
 PATH_DEVTOOLS_TRG ?= $(PATH_DEVTOOLS)/$(BUILD_TARGET).$(BUILD_TARGET_ARCH)
 
 ## @todo Remove the default tool crap here!
@@ -932,10 +932,10 @@ VBOX_BCC       ?= $(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE) -B $(PATH_DEVTOOLS
 VBOX_AS86      ?= $(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)
 
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
  VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
-else ifeq ($(BUILD_PLATFORM),os2)
+else ifeq ($(KBUILD_HOST),os2)
  VBOX_XSLTPROC ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
 else
  VBOX_XSLTPROC ?= xsltproc$(HOSTSUFF_EXE)
@@ -945,7 +945,7 @@ endif
 VBOX_BIN2C     ?= $(PATH_OBJ)/src/bldprogs/bin2c/bin2c$(HOSTSUFF_EXE)
 
 # mkisofs
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
  VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe
 else
  VBOX_MKISOFS  ?= mkisofs
@@ -969,7 +969,7 @@ VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.$(BUILD_TARGET_ARCH)/DIFx/v2.1
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
-if1of ($(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH),  win.x86 linux.x86 solaris.x86)
+if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),  win.x86 linux.x86 solaris.x86)
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
@@ -1082,7 +1082,7 @@ endif
 
 # These tests never worked on Windows because of /dev/null, so, there
 # can be no harm in just dropping them until cygwin is mp safe.
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
 VBOX_GCC_CHECK_CC = $(2)
 VBOX_GCC_CHECK_CXX = $(2)
 VBOX_GCC_CHECK_LD = $(2)
@@ -1109,7 +1109,7 @@ VBOX_GCC32_CHECK_CXX = $(shell \
    else echo "$(2)"; fi; )
 endif
 
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
 # This isn't important (yet) on windows, so cook the result until
 # cygwin is feeling better.
 VBOX_GCC_VERSION := $(int-add $(int-mul 10000, 3), $(int-mul 100, 3), 3)
@@ -1158,7 +1158,7 @@ ifneq ($(BUILD_TARGET),l4)
 endif
 # Find the compiler includes for IPRT no-crt.
 # Note that `$(dir $(gcc -print-libgcc-file-name))/include does not work for a 64-bit cross build on a 32-bit build host.
-ifeq ($(BUILD_PLATFORM),win)
+ifeq ($(KBUILD_HOST),win)
 # With the cygwin issues and gcc on windows returning a useless path, just skip this on windows.
 	$(APPEND) '$@' 'VBOX_PATH_GCC_INCS             ?= '
 else
@@ -1177,7 +1177,7 @@ include $(PATH_OUT)/GCCConfig.kmk
 # Code Signing.
 #
 ifdef VBOX_SIGNING_MODE
- ifeq ($(BUILD_PLATFORM),win)
+ ifeq ($(KBUILD_HOST),win)
   # VBOX_PATH_SELFSIGN points to the Vista WDK bin/SelfSign directory.
   ifndef VBOX_PATH_SELFSIGN
    VBOX_PATH_SELFSIGN := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS)/win.x86/selfsign/*)))
@@ -1434,7 +1434,7 @@ ifndef VBOX_PATH_QT
  VBOX_PATH_QT ?= $(QTDIR)
  LIB_QT ?= qt-mt
 endif
-ifeq ($(BUILD_PLATFORM),$(BUILD_TARGET))
+ifeq ($(KBUILD_HOST),$(BUILD_TARGET))
  VBOX_PATH_QT_HOST ?= $(VBOX_PATH_QT)
 else
  VBOX_PATH_QT_HOST ?= $(QTDIR)
@@ -1836,7 +1836,7 @@ endif # FreeBSD
 
 ifdef VBOX_WITH_VBOXDRV
  ifndef TEMPLATE_VBOXR0DRV_TOOL
-  $(warning Warning: VBox Build: Target $(BUILD_PLATFORM) is not officially supported!)
+  $(warning Warning: VBox Build: Target $(KBUILD_HOST) is not officially supported!)
  endif
 endif
 
@@ -2440,8 +2440,8 @@ endif
 #
 TEMPLATE_VBOXBLDPROG  = VBox Build Program
 TEMPLATE_VBOXBLDPROG_DEFS                = IN_RING3
-ifeq ($(BUILD_PLATFORM),win)
- ifeq ($(BUILD_PLATFORM_ARCH),x86)
+ifeq ($(KBUILD_HOST),win)
+ ifeq ($(KBUILD_HOST_ARCH),x86)
   ifdef VBOX_USE_VCC80
    TEMPLATE_VBOXBLDPROG_TOOL             = VCC80X86
   else
@@ -2498,22 +2498,22 @@ TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.relea
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
 TEMPLATE_VBOXBLDPROG_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXBLDPROG_LDFLAGS.amd64       = -m64
- ifeq ($(BUILD_PLATFORM),linux)
+ ifeq ($(KBUILD_HOST),linux)
 TEMPLATE_VBOXBLDPROG_LIBS                = pthread m rt dl
- else ifeq ($(BUILD_PLATFORM),os2)
+ else ifeq ($(KBUILD_HOST),os2)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3OMF
 TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv
- else ifeq ($(BUILD_PLATFORM),darwin)
+ else ifeq ($(KBUILD_HOST),darwin)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX4MACHO
 TEMPLATE_VBOXBLDPROG_LIBS                =
- else if1of ($(BUILD_PLATFORM), freebsd netbsd openbsd)
+ else if1of ($(KBUILD_HOST), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                =
- else ifeq ($(BUILD_PLATFORM),solaris)
+ else ifeq ($(KBUILD_HOST),solaris)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXBLDPROG_LIBS                = rt
  else
-$(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
+$(warning Warning: VBOX Build: Target $(KBUILD_HOST) is not officially supported!)
  endif
 
 endif # !win
@@ -2652,7 +2652,7 @@ TEMPLATE_VBOXW32GUESTR0LIB_INST    = $(INST_ADDITIONS_LIB)
 # Windows rc workaround for crosscompiling.
 # (Some (old) Wine versions fails loading msvcrt.dll from the VCC bin directory.)
 #
-ifneq ($(BUILD_PLATFORM),win)
+ifneq ($(KBUILD_HOST),win)
  TOOL_VCC80X86_RC   := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  TOOL_VCC80AMD64_RC := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  TOOL_VCC70_RC      := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe

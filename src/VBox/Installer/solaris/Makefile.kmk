@@ -22,7 +22,7 @@
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifneq ($(BUILD_PLATFORM),solaris)
+ifneq ($(KBUILD_HOST),solaris)
 $(error "The Solaris installer can only be built on Solaris!") # yeah, right.
 endif
 

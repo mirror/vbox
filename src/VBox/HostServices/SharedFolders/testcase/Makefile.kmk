@@ -42,8 +42,8 @@ tstShflCase_LIBS     = $(LIB_RUNTIME)
 
 endif # VBOX_WITH_TESTCASES
 
-ifeq ($(BUILD_TARGET),$(BUILD_PLATFORM))
- ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
+ifeq ($(BUILD_TARGET),$(KBUILD_HOST))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
    OTHERS += \
     $(PATH_TARGET)/tstShflSizes.run
  endif

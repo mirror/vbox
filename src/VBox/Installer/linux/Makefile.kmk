@@ -22,7 +22,7 @@
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifneq ($(BUILD_PLATFORM),linux)
+ifneq ($(KBUILD_HOST),linux)
 $(error "The Linux installer can only be built on Linux!") # yeah, right.
 endif
 
