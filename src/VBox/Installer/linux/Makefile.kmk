@@ -187,7 +187,7 @@ $(PATH_BIN)/VirtualBox.run: \
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
 		-e "s;_BUILD_;$(shell date);g" \
-		-e "s;_ARCH_;${BUILD_TARGET_ARCH};g" \
+		-e "s;_ARCH_;${KBUILD_TARGET_ARCH};g" \
 		< install.sh > $(PATH_TARGET)/install/install.sh
 	$(QUIET)chmod 0744 $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(INSTALL) -m 0755 routines.sh $(PATH_TARGET)/install
