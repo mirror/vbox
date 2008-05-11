@@ -534,17 +534,17 @@ RuntimeR3L4_SOURCES = \
 
 #
 # RuntimeGuestR3 - Guest Additions Runtime (static).
-# (The BUILD_PLATFORM inheritance here is for l4 cross building the linux
+# (The KBUILD_HOST inheritance here is for l4 cross building the linux
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
 RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
-RuntimeGuestR3_DEFS.$(KBUILD_TARGET)     := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
+RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)	:= $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3_INCS.$(KBUILD_TARGET)     := $(RuntimeR3_INCS.$(KBUILD_TARGET))
-RuntimeGuestR3_INCS.$(KBUILD_HOST)   := $(RuntimeR3_INCS.$(KBUILD_HOST))
+RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
+RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
@@ -555,11 +555,11 @@ RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST):= $(RuntimeR3_SOURCES.$(KBUILD_HOST))
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(KBUILD_HOST)    := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86 := $(RuntimeR3_SOURCES.$(KBUILD_HOST).x86)
+RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).x86)
 
 
 #

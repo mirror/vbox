@@ -34,6 +34,9 @@ KBUILD_DO_AUTO_INSTALL := 1
 PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
 # Modify the order of the INSTALLS and OTHERS passes.
 DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
+# Modify the build types.
+## @todo checked and dbgopt
+KBUILD_BLD_TYPES = release profile debug kprofile
 
 # Install paths.
 PATH_INS            := $(PATH_OUT)
@@ -94,7 +97,7 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 
 # Notify about important kBuild updates.
 ifneq ($(call int-ge,$(KMK_REVISION),1562),1)
- $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) PATH_KBUILD=$(KBUILD_PATH))
+ $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) KBUILD_PATH=$(KBUILD_PATH))
 endif
 
 #
@@ -401,15 +404,6 @@ ifeq ($(LOCALCFG),)
 endif
 ifneq ($(LOCALCFG),)
  include $(LOCALCFG)
-endif
-
-
-#
-# Check the build type.
-#
-VBOX_BUILD_TYPES ?= release profile debug kprofile #todo: checked
-ifn1of ($(KBUILD_TYPE), $(VBOX_BUILD_TYPES))
- $(error Invalid BUILD_TYPE value '$(KBUILD_TYPE)'. Choose one these: $(VBOX_BUILD_TYPES))
 endif
 
 
@@ -721,7 +715,7 @@ ifdef L4_DIR
     $(L4_DIR)/tool/dice/include
   L4_LIBDIR := \
    $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)/lib/$(L4_ARCH)_$(L4_CPU)/$(L4_API)
- endif # BUILD_TARGET == l4
+ endif # KBUILD_TARGET == l4
 endif # L4_DIR
 
 # Produce debugging information that the Fiasco kernel debugger can read.
@@ -743,7 +737,7 @@ DEFS.amd64   = RT_ARCH_AMD64 __AMD64__
 DEFS.darwin  = RT_OS_DARWIN __DARWIN__ MAC_OS_X_VERSION_MIN_REQUIRED=1040 MAC_OS_X_VERSION_MAX_ALLOWED=1040
 DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
 DEFS.freebsd = RT_OS_FREEBSD __FREEBSD__
-DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(BUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
+DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(KBUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
 DEFS.linux   = RT_OS_LINUX _FILE_OFFSET_BITS=64
 DEFS.netbsd  = RT_OS_NETBSD
 DEFS.openbsd = RT_OS_OPENBSD
@@ -816,7 +810,7 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
 else ifeq ($(KBUILD_TARGET_ARCH),x86)
  ARCH_BITS_DEFS := HC_ARCH_BITS=32 GC_ARCH_BITS=32
 else
- error BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)
+ error KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)
 endif
 
 #
@@ -2669,7 +2663,7 @@ endif
 
 
 #
-# Template for building Linux host tools (only for BUILD_TARGET=l4)
+# Template for building Linux host tools (only for KBUILD_TARGET=l4)
 #
 TEMPLATE_VBOXLNXHOSTR3EXE                   = Template for building linux host programs.
 TEMPLATE_VBOXLNXHOSTR3EXE_INST              = $(INST_BIN)
@@ -2702,9 +2696,9 @@ TEMPLATE_VBOXLNXHOSTR3LIB_INST              = $(INST_LIB)
 #
 # For the time being, we force 32-bitness onto this and related
 # templates (via BLD_TRG_ARCH). When we start doing 64-bit guest
-# however, they will be reverted to follow BUILD_TARGET_ARCH.
+# however, they will be reverted to follow KBUILD_TARGET_ARCH.
 # So, if someone sees any weirdness happening in a 64-bit build now,
-# try do a 32-bit cross build (kmk BUILD_TARGET_ARCH=x86) first. It
+# try do a 32-bit cross build (kmk KBUILD_TARGET_ARCH=x86) first. It
 #
 TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(KBUILD_TARGET),win) # quick hack
