@@ -243,14 +243,14 @@ __BEGIN_DECLS
  * @param ppDevices         Receives pointer to list of devices
  * @param pcbNumDevices     Number of USB devices in the list
  */
-VBOXDDU_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
+USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
 
 /**
  * Check for USB device arrivals or removals
  *
  * @returns boolean
  */
-VBOXDDU_DECL(bool) USBLibHasPendingDeviceChanges(void);
+USBLIB_DECL(bool) USBLibHasPendingDeviceChanges(void);
 
 /**
  * Capture specified USB device
@@ -260,7 +260,7 @@ VBOXDDU_DECL(bool) USBLibHasPendingDeviceChanges(void);
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
+USBLIB_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 /**
  * Release specified USB device to the host.
@@ -270,7 +270,7 @@ VBOXDDU_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId,
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
+USBLIB_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 /** @} */
 #endif
