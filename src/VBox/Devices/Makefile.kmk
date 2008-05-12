@@ -622,7 +622,7 @@ Drivers_SOURCES.solaris = \
 endif
 
 Drivers_SOURCES.win   = \
-	Network/DrvTAPWin32.cpp \
+	Network/DrvTAPWin.cpp \
 	Audio/dsoundaudio.c \
 	Serial/DrvHostSerial.cpp
 
