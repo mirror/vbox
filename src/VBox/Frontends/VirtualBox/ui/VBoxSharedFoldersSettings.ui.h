@@ -760,6 +760,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     listView->setCurrentItem (item);
     processCurrentChanged (item);
     listView->setFocus();
+    adjustList();
 
     mIsListViewChanged = true;
 }
