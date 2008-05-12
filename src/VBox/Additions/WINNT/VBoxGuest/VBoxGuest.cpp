@@ -360,9 +360,16 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
 
     while ((pHeader->fu32Flags & VBOX_HGCM_REQ_DONE) == 0)
     {
-        /* Specifying UserMode so killing the user process will abort the wait. */ 
+        /* Specifying UserMode so killing the user process will abort the wait.
+         * @todo Since VbglGRCancel is not yet implemented, the wait itself must
+         *       be not interruptible. The wait can be interrupted only when the
+         *       calling process is being killed.
+         *       When alertable is TRUE, the wait sometimes ends with STATUS_USER_APC.
+         */ 
         NTSTATUS rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive,
-                                             UserMode, TRUE, pTimeout
+                                             UserMode,
+                                             FALSE, /* Not Alertable */
+                                             pTimeout
                                             );
         dprintf(("VBoxHGCMCallback: Wait returned %d fu32Flags=%x\n", rc, pHeader->fu32Flags));
 
