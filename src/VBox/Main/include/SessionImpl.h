@@ -26,7 +26,7 @@
 #include "ConsoleImpl.h"
 
 #ifdef RT_OS_WINDOWS
-#include "win32/resource.h"
+# include "win/resource.h"
 #endif
 
 /** @def VBOX_WITH_SYS_V_IPC_SESSION_WATCHER

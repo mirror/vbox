@@ -33,7 +33,7 @@
 #include <map>
 
 #ifdef RT_OS_WINDOWS
-#include "win32/resource.h"
+# include "win/resource.h"
 #endif
 
 class Machine;

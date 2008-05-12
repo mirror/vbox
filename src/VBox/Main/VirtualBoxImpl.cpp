@@ -36,7 +36,7 @@
 #include "Logging.h"
 
 #ifdef RT_OS_WINDOWS
-#include "win32/svchlp.h"
+# include "win/svchlp.h"
 #endif
 
 #include <stdio.h>

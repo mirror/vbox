@@ -33,7 +33,7 @@ class USBProxyService;
 #endif
 
 #ifdef RT_OS_WINDOWS
-# include "win32/svchlp.h"
+# include "win/svchlp.h"
 #endif
 
 class VirtualBox;

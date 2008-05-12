@@ -220,9 +220,9 @@ VBoxSVC_SOURCES.darwin = \
 
 VBoxSVC_SOURCES.win = \
 	HostNetworkInterfaceImpl.cpp \
-	win32/svcmain.cpp \
-	win32/svchlp.cpp \
-	win32/VBoxSVC.rc
+	win/svcmain.cpp \
+	win/svchlp.cpp \
+	win/VBoxSVC.rc
 
 VBoxSVC_SOURCES.linux = \
 	linux/vbox-libhal.cpp
@@ -244,7 +244,7 @@ VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
 VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
 VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
-VBoxSVC_SOURCES.win     +=   win32/USBProxyServiceWin32.cpp
+VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWin32.cpp
 endif
 
 VBoxSVC_LDFLAGS.darwin  = -framework IOKit
@@ -252,9 +252,9 @@ ifeq ($(KBUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()
 endif
 
-win32/VBoxSVC.rc_INCS   = $(PATH_TARGET)
-win32/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs $(PATH_TARGET)/VBoxSVC-icon.rc
-win32/VBoxSVC.rc_CLEAN  = $(PATH_TARGET)/VBoxSVC-icon.rc
+win/VBoxSVC.rc_INCS   = $(PATH_TARGET)
+win/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs $(PATH_TARGET)/VBoxSVC-icon.rc
+win/VBoxSVC.rc_CLEAN  = $(PATH_TARGET)/VBoxSVC-icon.rc
 
 $(PATH_TARGET)/VBoxSVC-icon.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
 	$(RM) -f $@
@@ -385,9 +385,9 @@ VBoxC_SOURCES = \
 	AudioSnifferInterface.cpp \
 	VMMDevInterface.cpp
 VBoxC_SOURCES.win = \
-	win32/dllmain.cpp \
-	win32/VBoxC.def \
-	win32/VBoxC.rc
+	win/dllmain.cpp \
+	win/VBoxC.def \
+	win/VBoxC.rc
 ifdef VBOX_WITH_XPCOM
 VBoxC_SOURCES += \
 	linux/module.cpp
@@ -420,7 +420,7 @@ Version.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 ConsoleImpl.cpp_DEFS = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 
-win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
+win/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 
 
 #
@@ -619,10 +619,10 @@ $(IDLFILE): idl/midl.xsl $(XIDLFILE)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(PATH_TARGET)/VBoxSVC.rgs: win32/VirtualBox_rgs.xsl $(XIDLFILE)
+$(PATH_TARGET)/VBoxSVC.rgs: win/VirtualBox_rgs.xsl $(XIDLFILE)
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $^
 
-$(PATH_TARGET)/VBoxC.rgs: win32/VirtualBox_rgs.xsl $(XIDLFILE)
+$(PATH_TARGET)/VBoxC.rgs: win/VirtualBox_rgs.xsl $(XIDLFILE)
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $^
 
 ## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
@@ -690,7 +690,7 @@ endif
 
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
-$(PATH_BIN)/comregister.cmd: win32/comregister.cmd
+$(PATH_BIN)/comregister.cmd: win/comregister.cmd
 	$(CP) $< $@
 
 
