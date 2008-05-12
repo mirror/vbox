@@ -825,6 +825,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
         listView->setFocus();
     }
     item->repaint();
+    adjustList();
 
     mIsListViewChanged = true;
 }
@@ -833,6 +834,7 @@ void VBoxSharedFoldersSettings::tbRemovePressed()
 {
     Assert (listView->selectedItem());
     delete listView->selectedItem();
+    adjustList();
     mIsListViewChanged = true;
 }
 
