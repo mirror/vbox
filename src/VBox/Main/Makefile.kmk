@@ -232,7 +232,7 @@ VBoxSVC_SOURCES.solaris = \
 
 ifdef VBOX_WITH_XPCOM
 VBoxSVC_SOURCES += \
-	linux/server.cpp
+	xpcom/server.cpp
 endif
 
 ifdef VBOX_WITH_USB
@@ -276,7 +276,7 @@ VBoxSVCM_INCS           = \
 	$(PATH_VBoxC) \
 	$(PATH_CURRENT)
 VBoxSVCM_SOURCES        = \
-	linux/server_module.cpp
+	xpcom/server_module.cpp
 ifdef VBOX_WITH_ORIGIN
 VBoxSVCM_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
 endif
@@ -390,7 +390,7 @@ VBoxC_SOURCES.win = \
 	win/VBoxC.rc
 ifdef VBOX_WITH_XPCOM
 VBoxC_SOURCES += \
-	linux/module.cpp
+	xpcom/module.cpp
 endif
 
 ifdef VBOX_WITH_HGCM
@@ -457,7 +457,7 @@ else
  VBoxCOM_INCS          += \
 	include
  VBoxCOM_SOURCES       += \
-	linux/helpers.cpp
+	xpcom/helpers.cpp
 endif
 
 
@@ -587,7 +587,7 @@ XIDLFILE = idl/VirtualBox.xidl
 
 ifneq ($(KBUILD_TARGET),win)
 
-linux/helpers.cpp: $(IDLTYPELIB)
+xpcom/helpers.cpp: $(IDLTYPELIB)
 
 $(IDLFILE): idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
