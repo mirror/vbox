@@ -724,10 +724,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
         show();
 
-        str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
-        if (str == "on")
-            vmFullscreenAction->setOn (true);
-
         vmSeamlessAction->setEnabled (false);
         str = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
         if (str == "on")
@@ -940,6 +936,12 @@ void VBoxConsoleWnd::finalizeOpenView()
         dbgShowCommandLine();
     }
 #endif
+
+    /* Currently the machine is started and the guest API could be used...
+     * Checking if the fullscreen mode should be activated */
+    QString str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
+    if (str == "on")
+        vmFullscreenAction->setOn (true);
 
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if seamless is supported */
