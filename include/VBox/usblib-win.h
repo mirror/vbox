@@ -133,7 +133,7 @@ typedef struct USBSUP_FLTADDOUT
     uintptr_t       uId;    /* The ID. */
     int             rc;     /* The return code. */
 } USBSUP_FLTADDOUT, *PUSBSUP_FLTADDOUT;
-    
+
 typedef struct
 {
     uint16_t        usVendorId;
@@ -222,7 +222,7 @@ typedef struct
     size_t                  len;            /* [in/out] may change */
     void                    *buf;           /* [in/out] depends on dir */
     uint32_t                numIsoPkts;     /* [in] number of isochronous packets (8 max) */
-    USBSUP_ISOCPKT          aIsoPkts[8];    /* [in/out] isochronous packet descriptors */    
+    USBSUP_ISOCPKT          aIsoPkts[8];    /* [in/out] isochronous packet descriptors */
 } USBSUP_URB, *PUSBSUP_URB;
 
 #pragma pack()                          /* paranoia */
@@ -237,52 +237,20 @@ __BEGIN_DECLS
  */
 
 /**
- * Initialize the USB library
- *
- * @returns VBox status code.
- */
-VBOXDDU_DECL(int) usbLibInit();
-
-/**
- * Terminate the USB library
- *
- * @returns VBox status code.
- */
-VBOXDDU_DECL(int) usbLibTerm();
-
-/**
- * Add USB device filter
- *
- * @returns VBox status code.
- * @param   pFilter         USB filter structure
- * @param   ppID            Pointer to filter id
- */
-VBOXDDU_DECL(int) usbLibInsertFilter(PCUSBFILTER pFilter, void **ppID);
-
-/**
- * Remove USB device filter
- *
- * @returns VBox status code.
- * @param   aID             Filter id
- */
-VBOXDDU_DECL(int) usbLibRemoveFilter (void *aID);
-
-/**
  * Return all attached USB devices.
  *
  * @returns VBox status code
  * @param ppDevices         Receives pointer to list of devices
  * @param pcbNumDevices     Number of USB devices in the list
  */
-VBOXDDU_DECL(int) usbLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
+VBOXDDU_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
 
 /**
  * Check for USB device arrivals or removals
  *
  * @returns boolean
  */
-VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
-
+VBOXDDU_DECL(bool) USBLibHasPendingDeviceChanges(void);
 
 /**
  * Capture specified USB device
@@ -292,7 +260,7 @@ VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) usbLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
+VBOXDDU_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 /**
  * Release specified USB device to the host.
@@ -302,8 +270,7 @@ VBOXDDU_DECL(int) usbLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId,
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) usbLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
-
+VBOXDDU_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 /** @} */
 #endif
