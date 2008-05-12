@@ -186,6 +186,8 @@ typedef struct VBOXGUESTDEVEXT
     /* Notification semaphore */
     KEVENT keventNotification;
 
+    LARGE_INTEGER HGCMWaitTimeout;
+
     /* Old Windows session id */
     ULONG   ulOldActiveConsoleId;
 

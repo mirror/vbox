@@ -241,6 +241,10 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
     {
         // initialize the event notification semaphore
         KeInitializeEvent(&pDevExt->keventNotification, NotificationEvent, FALSE);
+
+        /* Preallocated constant timeout 250ms for HGCM async waiter. */
+        pDevExt->HGCMWaitTimeout.QuadPart  = 250;
+        pDevExt->HGCMWaitTimeout.QuadPart *= -10000;     /* relative in 100ns units */
     }
 
     rc = hlpVBoxReportGuestInfo (pDevExt);
