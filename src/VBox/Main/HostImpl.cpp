@@ -156,7 +156,7 @@ HRESULT Host::init (VirtualBox *parent)
 # elif defined (RT_OS_SOLARIS) && 0
     mUSBProxyService = new USBProxyServiceSolaris (this);
 # elif defined (RT_OS_WINDOWS)
-    mUSBProxyService = new USBProxyServiceWin32 (this);
+    mUSBProxyService = new USBProxyServiceWindows (this);
 # else
     mUSBProxyService = new USBProxyService (this);
 # endif
