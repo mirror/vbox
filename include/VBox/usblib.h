@@ -53,7 +53,6 @@ __BEGIN_DECLS
  * @{
  */
 
-#ifndef RT_OS_WINDOWS
 #ifdef IN_RING3
 /**
  * Initializes the USBLib component.
@@ -106,7 +105,6 @@ USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter);
 USBLIB_DECL(void) USBLibRemoveFilter(void *pvId);
 
 #endif /* IN_RING3 */
-#endif /* !RT_OS_WINDOWS */
 
 /** @} */
 __END_DECLS
