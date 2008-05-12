@@ -44,7 +44,7 @@
 // generated file
 #include <VirtualBox_XPCOM.h>
 
-#include "linux/server.h"
+#include "xpcom/server.h"
 #include "Logging.h"
 
 #include <VBox/err.h>

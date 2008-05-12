@@ -31,7 +31,7 @@
 #include <nsEventQueueUtils.h>
 #include <nsGenericFactory.h>
 
-#include "linux/server.h"
+#include "xpcom/server.h"
 
 #include "Logging.h"
 
