@@ -88,8 +88,6 @@ VBoxDDU_SOURCES         += \
 	Storage/VHDHDDCore.cpp
 endif
 ifdef VBOX_WITH_USB
- VBoxDDU_SOURCES.win     = \
-	USB/win32/USBLib-win32.cpp
  VBoxDDU_INCS.os2       += \
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
 endif

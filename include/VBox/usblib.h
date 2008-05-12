@@ -104,6 +104,17 @@ USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter);
  */
 USBLIB_DECL(void) USBLibRemoveFilter(void *pvId);
 
+/**
+ * Calculate the hash of the serial string.
+ *
+ * 64bit FNV1a, chosen because it is designed to hash in to a power of two
+ * space, and is much quicker and simpler than, say, a half MD4.
+ *
+ * @returns the hash.
+ * @param   pszSerial       The serial string.
+ */
+USBLIB_DECL(uint64_t) USBLibHashSerial(const char *pszSerial);
+
 #endif /* IN_RING3 */
 
 /** @} */
