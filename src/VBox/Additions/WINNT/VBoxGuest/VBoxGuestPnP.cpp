@@ -239,6 +239,10 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 // initialize the event notification semaphore
                 KeInitializeEvent(&pDevExt->keventNotification, NotificationEvent, FALSE);
 
+                /* Preallocated constant timeout 250ms for HGCM async waiter. */
+                pDevExt->HGCMWaitTimeout.QuadPart  = 250;
+                pDevExt->HGCMWaitTimeout.QuadPart *= -10000;     /* relative in 100ns units */
+
                 VBoxInitMemBalloon(pDevExt);
 
                 // ready to rumble!
