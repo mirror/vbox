@@ -1404,7 +1404,7 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
  * Force async tsc mode.
  * @todo add a module argument for this.
  */
-bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     return force_async_tsc != 0;
 }

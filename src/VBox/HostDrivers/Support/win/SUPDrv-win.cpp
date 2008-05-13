@@ -119,11 +119,18 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         rc = IoCreateSymbolicLink(&DosName, &DevName);
         if (NT_SUCCESS(rc))
         {
+            uint64_t  u64DiffCores;
+
             /*
              * Initialize the device extension.
              */
             PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
             memset(pDevExt, 0, sizeof(*pDevExt));
+
+            /* Make sure the tsc is consistent across cpus/cores. */
+            pDevExt->fForceAsyncTsc = supdrvDetermineAsyncTsc(&u64DiffCores);
+            dprintf(("supdrvDetermineAsyncTsc: fAsync=%d u64DiffCores=%u.\n", pDevExt->fForceAsyncTsc, (uint32_t)u64DiffCores));
+
             int vrc = supdrvInitDevExt(pDevExt);
             if (!vrc)
             {
@@ -766,9 +773,9 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
 /**
  * Force async tsc mode (stub).
  */
-bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
-    return false;
+    return pDevExt->fForceAsyncTsc != 0;
 }
 
 
