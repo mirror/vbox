@@ -399,8 +399,9 @@ void VBoxVMInformationDlg::refreshStatistics()
             tr ("Version %1.%2", "guest additions") 
                 .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) : 
             tr ("Not Detected", "guest additions"); 
-        QString osType = console.GetGuest().GetOSTypeId().isNull() ? 
-            tr ("Not Detected", "guest os type") : console.GetGuest().GetOSTypeId();
+        QString osType = console.GetGuest().GetOSTypeId(); 
+        if (osType.isNull()) 
+            osType = tr ("Not Detected", "guest os type");
 
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
@@ -451,7 +452,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         /* If there are no Hard Disks */ 
         if (hdStat.isNull()) 
         { 
-            hdStat = composeArticle (tr ("Hard Disks not attached")); 
+            hdStat = composeArticle (tr ("No Hard Disks"));
             hdStat += paragraph; 
         } 
 
@@ -485,7 +486,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         /* If there are no Network Adapters */ 
         if (naStat.isNull()) 
         { 
-            naStat = composeArticle (tr ("Network Adapters not attached")); 
+            naStat = composeArticle (tr ("No Network Adapters"));
             naStat += paragraph; 
         } 
 
