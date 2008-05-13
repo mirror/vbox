@@ -3546,7 +3546,7 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         /* Increase the desktop geometry if needed */
         setDesktopGeometry(sz.width(), sz.height());
 
-        if (mIsAdditionsActive && mAutoresizeGuest)
+        if (mAutoresizeGuest)
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
 }
