@@ -325,6 +325,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     mTreeView->setCurrentItem (item);
     processCurrentChanged (item);
     mTreeView->setFocus();
+    adjustList();
 
     mIsListViewChanged = true;
 }
@@ -376,6 +377,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
         processCurrentChanged (item);
         mTreeView->setFocus();
     }
+    adjustList();
 
     mIsListViewChanged = true;
 }
@@ -386,7 +388,7 @@ void VBoxSharedFoldersSettings::tbRemovePressed()
                                     mTreeView->selectedItems() [0] : 0;
     Assert (selectedItem);
     delete selectedItem;
-
+    adjustList();
     mIsListViewChanged = true;
 }
 
