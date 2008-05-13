@@ -230,7 +230,7 @@ void VBoxNewVMWzd::revalidate (QIWidgetValidator *wval)
 
     if (wval == wvalHDD)
     {
-        if (!chd.isNull() && mediaCombo->currentItem() != mediaCombo->count() - 1)
+        if (!chd.isNull() && mediaCombo->getId() != chd.GetId())
             ensureNewHardDiskDeleted();
     }
 
