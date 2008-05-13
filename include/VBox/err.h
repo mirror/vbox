@@ -238,6 +238,10 @@
 #define VINF_DBGF_BP_ALREADY_EXIST          1207
 /** The byte string was not found. */
 #define VERR_DBGF_MEM_NOT_FOUND             (-1208)
+/** The OS was not detected. */
+#define VERR_DBGF_OS_NOT_DETCTED            (-1209)
+/** The OS was not detected. */
+#define VINF_DBGF_OS_NOT_DETCTED            1209
 /** @} */
 
 

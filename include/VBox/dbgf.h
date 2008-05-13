@@ -1549,7 +1549,154 @@ DBGFR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
  */
 DBGFR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress);
 
+
+/**
+ * Guest OS digger interface identifier.
+ *
+ * This is for use together with PDBGFR3QueryInterface and is used to
+ * obtain access to optional interfaces.
+ */
+typedef enum DBGFOSINTERFACE
+{
+    /** The usual invalid entry. */
+    DBGFOSINTERFACE_INVALID = 0,
+    /** Process info. */
+    DBGFOSINTERFACE_PROCESS,
+    /** Thread info. */
+    DBGFOSINTERFACE_THREAD,
+    /** The end of the valid entries. */
+    DBGFOSINTERFACE_END,
+    /** The usual 32-bit type blowup. */
+    DBGFOSINTERFACE_32BIT_HACK = 0x7fffffff
+} DBGFOSINTERFACE;
+/** Pointer to a Guest OS digger interface identifier. */
+typedef DBGFOSINTERFACE *PDBGFOSINTERFACE;
+/** Pointer to a const Guest OS digger interface identifier. */
+typedef DBGFOSINTERFACE const *PCDBGFOSINTERFACE;
+
+
+/**
+ * Guest OS Digger Registration Record.
+ *
+ * This is used with the DBGFR3OSRegister() API.
+ */
+typedef struct DBGFOSREG
+{
+    /** Magic value (DBGFOSREG_MAGIC). */
+    uint32_t u32Magic;
+    /** Flags. Reserved. */
+    uint32_t fFlags;
+    /** The size of the instance data. */
+    uint32_t cbData;
+    /** Operative System name. */
+    char szName[24];
+
+    /**
+     * Constructs the instance.
+     *
+     * @returns VBox status code.
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(int, pfnConstruct)(PVM pVM, void *pvData);
+
+    /**
+     * Destroys the instance.
+     *
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(void, pfnDestruct)(PVM pVM, void *pvData);
+
+    /**
+     * Probes the guest memory for OS finger prints.
+     *
+     * No setup or so is performed, it will be followed by a call to pfnInit
+     * or pfnRefresh that should take care of that.
+     *
+     * @returns true if is an OS handled by this module, otherwise false.
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(bool, pfnProbe)(PVM pVM, void *pvData);
+
+    /**
+     * Initializes a fresly detected guest, loading symbols and such useful stuff.
+     *
+     * This is called after pfnProbe.
+     *
+     * @returns VBox status code.
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(int, pfnInit)(PVM pVM, void *pvData);
+
+    /**
+     * Refreshes symbols and stuff following a redetection of the same OS.
+     *
+     * This is called after pfnProbe.
+     *
+     * @returns VBox status code.
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(int, pfnRefresh)(PVM pVM, void *pvData);
+
+    /**
+     * Terminates an OS when a new (or none) OS has been detected,
+     * and before destruction.
+     *
+     * This is called after pfnProbe and if needed before pfnDestruct.
+     *
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(void, pfnTerm)(PVM pVM, void *pvData);
+
+    /**
+     * Queries the version of the running OS.
+     *
+     * This is only called after pfnInit().
+     *
+     * @returns VBox status code.
+     * @param   pVM         Pointer to the shared VM structure.
+     * @param   pvData      Pointer to the instance data.
+     * @param   pszVersion  Where to store the version string.
+     * @param   cchVersion  The size of the version string buffer.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryVersion)(PVM pVM, void *pvData, char *pszVersion, size_t cchVersion);
+
+    /**
+     * Queries the pointer to a interface.
+     *
+     * This is called after pfnProbe.
+     *
+     * @returns Pointer to the interface if available, NULL if not available.
+     * @param   pVM     Pointer to the shared VM structure.
+     * @param   pvData  Pointer to the instance data.
+     * @param   enmIf   The interface identifier.
+     */
+    DECLCALLBACKMEMBER(void *, pfnQueryInterface)(PVM pVM, void *pvData, DBGFOSINTERFACE enmIf);
+
+    /** Trailing magic (DBGFOSREG_MAGIC). */
+    uint32_t u32EndMagic;
+} DBGFOSREG;
+/** Pointer to a Guest OS digger registration record. */
+typedef DBGFOSREG *PDBGFOSREG;
+/** Pointer to a const Guest OS digger registration record. */
+typedef DBGFOSREG const *PCDBGFOSREG;
+
+/** Magic value for DBGFOSREG::u32Magic and DBGFOSREG::u32EndMagic. (Hitomi Kanehara) */
+#define DBGFOSREG_MAGIC     0x19830808
+
+DBGFR3DECL(int)     DBGFR3OSRegister(PVM pVM, PDBGFOSREG pReg);
+DBGFR3DECL(int)     DBGFR3OSDeregister(PVM pVM, PDBGFOSREG pReg);
+DBGFR3DECL(int)     DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName);
+DBGFR3DECL(int)     DBGFR3OSNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion);
+DBGFR3DECL(void *)  DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf);
+
 /** @} */
+
 
 __END_DECLS
 

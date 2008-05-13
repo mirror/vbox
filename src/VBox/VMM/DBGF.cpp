@@ -202,6 +202,7 @@ DBGFR3DECL(int) DBGFR3Term(PVM pVM)
     /*
      * Terminate the other bits.
      */
+    dbgfR3OSTerm(pVM);
     dbgfR3InfoTerm(pVM);
     return VINF_SUCCESS;
 }

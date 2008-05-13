@@ -64,6 +64,7 @@ VMMR3_SOURCES   = \
 	DBGFInfo.cpp \
 	DBGFLog.cpp \
 	DBGFMem.cpp \
+	DBGFOS.cpp \
 	DBGFStack.cpp \
 	DBGFSym.cpp \
 	EM.cpp \
