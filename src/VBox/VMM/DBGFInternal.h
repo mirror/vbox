@@ -168,6 +168,24 @@ typedef struct DBGFINFO
 
 
 /**
+ * Guest OS digger instance.
+ */
+typedef struct DBGFOS
+{
+    /** Pointer to the registration record. */
+    PCDBGFOSREG pReg;
+    /** Pointer to the next OS we've registered. */
+    struct DBGFOS *pNext;
+    /** The instance data (variable size). */
+    uint8_t abData[16];
+} DBGFOS;
+/** Pointer to guest OS digger instance. */
+typedef DBGFOS *PDBGFOS;
+/** Pointer to const guest OS digger instance. */
+typedef DBGFOS const *PCDBGFOS;
+
+
+/**
  * Converts a DBGF pointer into a VM pointer.
  * @returns Pointer to the VM structure the CPUM is part of.
  * @param   pDBGF   Pointer to DBGF instance data.
@@ -252,6 +270,11 @@ typedef struct DBGF
     /** Set if we're singlestepping in raw mode.
      * This is checked and cleared in the \#DB handler. */
     bool                    fSingleSteppingRaw;
+
+    /** The current Guest OS digger. */
+    PDBGFOS                 pCurOS;
+    /** The head of the Guest OS digger instances. */
+    PDBGFOS                 pOSHead;
 } DBGF;
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;
@@ -259,6 +282,7 @@ typedef DBGF *PDBGF;
 
 extern int  dbgfR3InfoInit(PVM pVM);
 extern int  dbgfR3InfoTerm(PVM pVM);
+extern void dbgfR3OSTerm(PVM pVM);
 extern int  dbgfR3SymInit(PVM pVM);
 extern int  dbgfR3SymTerm(PVM pVM);
 extern int  dbgfR3BpInit(PVM pVM);
