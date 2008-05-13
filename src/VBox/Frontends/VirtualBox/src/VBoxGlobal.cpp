@@ -1151,7 +1151,7 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
 }
 
 /**
- *  Returns the list of all device types (VurtialBox::DeviceType COM enum).
+ *  Returns the list of all device types (VirtualBox::DeviceType COM enum).
  */
 QStringList VBoxGlobal::deviceTypeStrings() const
 {
