@@ -210,14 +210,35 @@ public:
         return sessionStates.value (s);
     }
 
-    QString toString (KStorageBus t) const
+    /**
+     * Returns a string representation of the given KStorageBus enum value.
+     * Complementary to #toStorageBusType (const QString &) const.
+     */
+    QString toString (KStorageBus aBus) const
     {
-        AssertMsg (!storageBuses.value (t).isNull(), ("No text for %d", t));
-        return storageBuses.value (t);
+        AssertMsg (!storageBuses.value (aBus).isNull(), ("No text for %d", aBus));
+        return storageBuses [aBus];
     }
 
-    QString toString (KStorageBus t, LONG c) const;
-    QString toString (KStorageBus t, LONG c, LONG d) const;
+    /**
+     * Returns a KStorageBus enum value corresponding to the given string
+     * representation. Complementary to #toString (KStorageBus) const.
+     */
+    KStorageBus toStorageBusType (const QString &aBus) const
+    {
+        QStringVector::const_iterator it =
+            qFind (storageBuses.begin(), storageBuses.end(), aBus);
+        AssertMsg (it != storageBuses.end(), ("No value for {%s}", aBus.toLatin1().constData()));
+        return KStorageBus (it - storageBuses.begin());
+    }
+
+    QString toString (KStorageBus aBus, LONG aChannel) const;
+    LONG toStorageChannel (KStorageBus aBus, const QString &aChannel) const;
+
+    QString toString (KStorageBus aBus, LONG aChannel, LONG aDevice) const;
+    LONG toStorageDevice (KStorageBus aBus, LONG aChannel, const QString &aDevice) const;
+
+    QString toFullString (KStorageBus aBus, LONG aChannel, LONG aDevice) const;
 
     QString toString (KHardDiskType t) const
     {

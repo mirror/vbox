@@ -740,7 +740,7 @@ VBoxGlobal::VBoxGlobal()
     , sessionStates (KSessionState_COUNT)
     , deviceTypes (KDeviceType_COUNT)
     , storageBuses (KStorageBus_COUNT)
-    , storageBusDevices (3)
+    , storageBusDevices (2)
     , storageBusChannels (3)
     , diskTypes (KHardDiskType_COUNT)
     , diskStorageTypes (KHardDiskStorageType_COUNT)
@@ -969,46 +969,187 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
     return QString::null;
 }
 
-QString VBoxGlobal::toString (KStorageBus t, LONG c, LONG d) const
-{
-    Assert (storageBusDevices.count() == 3);
-    QString dev;
-
-    NOREF(c);
-    switch (t)
-    {
-        case KStorageBus_IDE:
-        {
-            if (d == 0 || d == 1)
-            {
-                dev = storageBusDevices [d];
-                break;
-            }
-        }
-        default:
-            dev = storageBusDevices [2].arg (d);
-    }
-    return dev;
-}
-
-QString VBoxGlobal::toString (KStorageBus t, LONG c) const
+/**
+ * Returns a string representation of the given channel number on the given
+ * storage bus. Complementary to #toStorageChannel (KStorageBus, const
+ * QString &) const.
+ */
+QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
 {
     Assert (storageBusChannels.count() == 3);
-    QString dev;
-    switch (t)
+    QString channel;
+
+    switch (aBus)
     {
         case KStorageBus_IDE:
         {
-            if (c == 0 || c == 1)
+            if (aChannel == 0 || aChannel == 1)
             {
-                dev = storageBusChannels [c];
+                channel = storageBusChannels [aChannel];
                 break;
             }
+
+            AssertMsgFailedBreak (("Invalid channel %d\n", aChannel));
+        }
+        case KStorageBus_SATA:
+        {
+            channel = storageBusChannels [2].arg (aChannel);
+            break;
         }
         default:
-            dev = storageBusChannels [2].arg (c);
+            AssertFailedBreak();
     }
-    return dev;
+
+    return channel;
+}
+
+/**
+ * Returns a channel number on the given storage bus corresponding to the given
+ * string representation. Complementary to #toString (KStorageBus, LONG) const.
+ */
+LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) const
+{
+    LONG channel = 0;
+
+    switch (aBus)
+    {
+        case KStorageBus_IDE:
+        {
+            QStringVector::const_iterator it =
+                qFind (storageBusChannels.begin(), storageBusChannels.end(),
+                       aChannel);
+            AssertMsgBreak (it != storageBusChannels.end(),
+                            ("No value for {%s}\n", aChannel.toLatin1().constData()));
+            channel = (LONG) (it - storageBusChannels.begin());
+            break;
+        }
+        case KStorageBus_SATA:
+        {
+            /// @todo use regexp to properly extract the %1 text
+            QString tpl = storageBusChannels [2].arg ("");
+            if (aChannel.startsWith (tpl))
+            {
+                channel = aChannel.right (aChannel.length() - tpl.length()).toLong();
+                break;
+            }
+
+            AssertMsgFailedBreak (("Invalid channel {%s}\n", aChannel.toLatin1().constData()));
+            break;
+        }
+        default:
+            AssertFailedBreak();
+    }
+
+    return channel;
+}
+
+/**
+ * Returns a string representation of the given device number of the given
+ * channel on the given storage bus. Complementary to #toStorageDevice
+ * (KStorageBus, LONG, const QString &) const.
+ */
+QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) const
+{
+    NOREF (aChannel);
+
+    Assert (storageBusDevices.count() == 2);
+    QString device;
+
+    switch (aBus)
+    {
+        case KStorageBus_IDE:
+        {
+            if (aDevice == 0 || aDevice == 1)
+            {
+                device = storageBusDevices [aDevice];
+                break;
+            }
+
+            AssertMsgFailedBreak (("Invalid device %d\n", aDevice));
+        }
+        case KStorageBus_SATA:
+        {
+            AssertMsgBreak (aDevice == 0, ("Invalid device %d\n", aDevice));
+            /* always zero so far for SATA */
+            break;
+        }
+        default:
+            AssertFailedBreak();
+    }
+
+    return device;
+}
+
+/**
+ * Returns a device number of the given channel on the given storage bus
+ * corresponding to the given string representation. Complementary to #toString
+ * (KStorageBus, LONG, LONG) const.
+ */
+LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
+                                  const QString &aDevice) const
+{
+    NOREF (aChannel);
+
+    LONG device = 0;
+
+    switch (aBus)
+    {
+        case KStorageBus_IDE:
+        {
+            QStringVector::const_iterator it =
+                qFind (storageBusDevices.begin(), storageBusDevices.end(),
+                       aDevice);
+            AssertMsg (it != storageBusDevices.end(),
+                       ("No value for {%s}", aDevice.toLatin1().constData()));
+            device = (LONG) (it - storageBusDevices.begin());
+            break;
+        }
+        case KStorageBus_SATA:
+        {
+            AssertMsgBreak(aDevice.isEmpty(), ("Invalid device {%s}\n", aDevice.toLatin1().constData()));
+            /* always zero for SATA so far. */
+            break;
+        }
+        default:
+            AssertFailedBreak();
+    }
+
+    return device;
+}
+
+/**
+ * Returns a full string representation of the given device of the given channel
+ * on the given storage bus. Complementary to #toStorageParams (KStorageBus,
+ * LONG, LONG) const.
+ */
+QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
+                                  LONG aDevice) const
+{
+    QString device;
+
+    switch (aBus)
+    {
+        case KStorageBus_IDE:
+        {
+            device = QString ("%1 %2 %3")
+                .arg (vboxGlobal().toString (aBus))
+                .arg (vboxGlobal().toString (aBus, aChannel))
+                .arg (vboxGlobal().toString (aBus, aChannel, aDevice));
+            break;
+        }
+        case KStorageBus_SATA:
+        {
+            /* we only have one SATA device so far which is always zero */
+            device = QString ("%1 %2")
+                .arg (vboxGlobal().toString (aBus))
+                .arg (vboxGlobal().toString (aBus, aChannel));
+            break;
+        }
+        default:
+            AssertFailedBreak();
+    }
+
+    return device;
 }
 
 /**
@@ -1400,11 +1541,11 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 if (hd.isOk())
                 {
                     QString src = root.GetLocation();
+                    KStorageBus bus = hda.GetBus();
+                    LONG channel = hda.GetChannel();
+                    LONG device = hda.GetDevice();
                     hardDisks += QString (sSectionItemTpl)
-                        .arg (QString ("%1 %2")
-                              .arg (toString (hda.GetBus(), hda.GetChannel()))
-                              .arg (toString (hda.GetBus(), hda.GetChannel(),
-                                              hda.GetDevice())))
+                        .arg (toFullString (bus, channel, device))
                         .arg (QString ("%1 [<nobr>%2</nobr>]")
                               .arg (prepareFileNameForHTML (src))
                               .arg (details (hd, isNewVM /* predict */, aDoRefresh)));
@@ -2317,12 +2458,11 @@ void VBoxGlobal::languageChange()
     storageBusChannels [1] =
         tr ("Secondary", "StorageBusChannel");
     storageBusChannels [2] =
-        tr ("Channel&nbsp;%1", "StorageBusChannel");
+        tr ("Port %1", "StorageBusChannel");
 
-    Assert (storageBusDevices.count() == 3);
+    Assert (storageBusDevices.count() == 2);
     storageBusDevices [0] = tr ("Master", "StorageBusDevice");
     storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
-    storageBusDevices [2] = tr ("Device&nbsp;%1", "StorageBusDevice");
 
     diskTypes [KHardDiskType_Normal] =
         tr ("Normal", "DiskType");
