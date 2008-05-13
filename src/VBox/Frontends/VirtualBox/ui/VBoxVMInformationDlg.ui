@@ -154,18 +154,18 @@
     <function access="private">init()</function>
     <function access="private">destroy()</function>
     <function>setup( const CSession &amp;, VBoxConsoleView* )</function>
-    <function access="pritave">languageChangeImp()</function>
-    <function access="pritave" returnType="QPushButton*">searchDefaultButton()</function>
+    <function access="private">languageChangeImp()</function>
+    <function access="private" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected" returnType="bool">eventFilter( QObject*, QEvent* )</function>
     <function access="protected" returnType="bool">event( QEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
     <function access="protected">showEvent( QShowEvent* )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
-    <function returnType="QString" access="pritave">parseStatistics( const QString &amp; )</function>
+    <function returnType="QString" access="private">parseStatistics( const QString &amp; )</function>
     <function access="private">refreshStatistics()</function>
-    <function returnType="QString" access="pritave">formatHardDisk( KStorageBus, LONG, LONG, const QString &amp; )</function>
-    <function returnType="QString" access="pritave">formatAdapter( ULONG, const QString &amp; )</function>
-    <function returnType="QString" access="pritave">composeArticle( const QString &amp; )</function>
+    <function returnType="QString" access="private">formatHardDisk( KStorageBus, LONG, LONG, const QString &amp; )</function>
+    <function returnType="QString" access="private">formatAdapter( ULONG, const QString &amp; )</function>
+    <function returnType="QString" access="private">composeArticle( const QString &amp; )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
