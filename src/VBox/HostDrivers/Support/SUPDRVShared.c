@@ -44,6 +44,7 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/log.h>
+#include <VBox/x86.h>
 
 /*
  * Logging assignments:
@@ -235,7 +236,7 @@ static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
-static SUPGIPMODE supdrvGipDeterminTscMode(void);
+static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 #ifdef RT_OS_WINDOWS
 static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
 static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
@@ -3849,7 +3850,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
     memset(pGip, 0, PAGE_SIZE);
     pGip->u32Magic          = SUPGLOBALINFOPAGE_MAGIC;
     pGip->u32Version        = SUPGLOBALINFOPAGE_VERSION;
-    pGip->u32Mode           = supdrvGipDeterminTscMode();
+    pGip->u32Mode           = supdrvGipDeterminTscMode(pDevExt);
     pGip->u32UpdateHz       = uUpdateHz;
     pGip->u32UpdateIntervalNS = 1000000000 / uUpdateHz;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
@@ -3891,8 +3892,9 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  * Determin the GIP TSC mode.
  *
  * @returns The most suitable TSC mode.
+ * @param   pDevExt     Pointer to the device instance data.
  */
-static SUPGIPMODE supdrvGipDeterminTscMode(void)
+static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
 #ifndef USE_NEW_OS_INTERFACE_FOR_GIP
     /*
@@ -3911,12 +3913,15 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
         uint32_t uEAX, uEBX, uECX, uEDX;
 
         /* Permit user users override. */
-        if (supdrvOSGetForcedAsyncTscMode())
+        if (supdrvOSGetForcedAsyncTscMode(pDevExt))
             return SUPGIPMODE_ASYNC_TSC;
 
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-        if (uEAX >= 1 && uEBX == 0x68747541 && uECX == 0x444d4163 && uEDX == 0x69746e65)
+        if (    uEAX >= 1 
+            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX 
+            &&  uECX == X86_CPUID_VENDOR_AMD_ECX 
+            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
         {
             /* Check for APM support and that TscInvariant is cleared. */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
