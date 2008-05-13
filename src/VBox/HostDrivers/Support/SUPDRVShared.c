@@ -44,7 +44,14 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/log.h>
-#include <VBox/x86.h>
+// XXX VBox/x86.h not compatible with the Linux kernel sources
+#ifdef RT_OS_LINUX
+# define X86_CPUID_VENDOR_AMD_EBX       0x68747541
+# define X86_CPUID_VENDOR_AMD_ECX       0x444d4163
+# define X86_CPUID_VENDOR_AMD_EDX       0x69746e65
+#else
+# include <VBox/x86.h>
+#endif
 
 /*
  * Logging assignments:
