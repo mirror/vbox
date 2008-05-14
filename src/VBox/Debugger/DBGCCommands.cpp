@@ -66,6 +66,7 @@ static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 
 
 /*******************************************************************************
@@ -166,6 +167,7 @@ const DBGCCMD    g_aCmds[] =
     { "echo",       1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdEcho,        "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
     { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
     { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
+    { "detect",     0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdDetect,      "",                     "Detects or re-detects the guest os and starts the OS specific digger." },
     { "harakiri",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdHarakiri,    "",                     "Kills debugger process." },
     { "help",       0,        ~0,       &g_aArgHelp[0],     ELEMENTS(g_aArgHelp),       NULL,               0,          dbgcCmdHelp,        "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
     { "info",       1,        2,        &g_aArgInfo[0],     ELEMENTS(g_aArgInfo),       NULL,               0,          dbgcCmdInfo,        "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
@@ -715,6 +717,44 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     fclose(pFile);
 
     NOREF(pCmd); NOREF(pResult); NOREF(pVM);
+    return rc;
+}
+
+
+/**
+ * The 'detect' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /* check that the parser did what it's supposed to do. */
+    if (cArgs != 0)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+
+    /*
+     * Perform the detection.
+     */
+    char szName[64];
+    int rc = DBGFR3OSDetect(pVM, szName, sizeof(szName));
+    if (RT_FAILURE(rc))
+        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Executing DBGFR3OSDetect().");
+    if (rc == VINF_SUCCESS)
+    {
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Guest OS: %s\n", szName);
+        char szVersion[64];
+        int rc2 = DBGFR3OSQueryNameAndVersion(pVM, NULL, 0, szVersion, sizeof(szVersion));
+        if (RT_SUCCESS(rc2))
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Version : %s\n", szVersion);
+    }
+    else
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Unable to figure out which guest OS it is, sorry.\n");
+    NOREF(pCmd); NOREF(pResult); NOREF(paArgs);
     return rc;
 }
 

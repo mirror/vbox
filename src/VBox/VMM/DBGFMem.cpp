@@ -115,3 +115,59 @@ DBGFR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRan
 }
 
 
+/**
+ * Read guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pAddress        Where to start reading.
+ * @param   pvBuf           Where to store the data we've read.
+ * @param   cbRead          The number of bytes to read.
+ */
+static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
+{
+    /*
+     * Validate the input we use, PGM does the rest.
+     */
+    if (!DBGFR3AddrIsValid(pVM, pAddress))
+        return VERR_INVALID_POINTER;
+    if (!VALID_PTR(pvBuf))
+        return VERR_INVALID_POINTER;
+    if (DBGFADDRESS_IS_HMA(pAddress))
+        return VERR_INVALID_POINTER;
+
+    /*
+     * Select DBGF worker by addressing mode.
+     */
+    int rc;
+    PGMMODE enmMode = PGMGetGuestMode(pVM);
+    if (    enmMode == PGMMODE_REAL
+        ||  enmMode == PGMMODE_PROTECTED
+        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+        rc = PGMPhysReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
+    else
+        rc = PGMPhysReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
+    return rc;
+}
+
+
+/**
+ * Read guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pAddress        Where to start reading.
+ * @param   pvBuf           Where to store the data we've read.
+ * @param   cbRead          The number of bytes to read.
+ */
+DBGFR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
+{
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemRead, 4,
+                          pVM, pAddress, pvBuf, cbRead);
+    if (VBOX_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}

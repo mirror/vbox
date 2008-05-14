@@ -55,7 +55,8 @@ Debugger_SOURCES   = \
 	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
-	DBGCTcp.cpp
+	DBGCTcp.cpp \
+	DBGPlugInSolaris.cpp
 
 
 #
