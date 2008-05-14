@@ -228,7 +228,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             recompileUserQueued = enable;
@@ -295,7 +297,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             recompileSupervisorQueued = enable;
@@ -361,7 +365,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled)(BOOL enable)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             patmEnabledQueued = enable;
@@ -413,7 +419,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled)(BOOL enable)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             csamEnabledQueued = enable;
@@ -471,7 +479,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled)(BOOL aEnabled)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             mLogEnabledQueued = aEnabled;
@@ -578,7 +588,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG pct)
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State)(&machineState);
-        if (machineState != MachineState_Running)
+        if (    machineState != MachineState_Running
+            &&  machineState != MachineState_Paused
+            &&  machineState != MachineState_Stuck)
         {
             // queue the request
             mVirtualTimeRateQueued = pct;
