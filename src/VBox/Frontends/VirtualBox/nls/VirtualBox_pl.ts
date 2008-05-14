@@ -311,12 +311,13 @@
     <name>VBoxAboutNonOSEDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">O programie</translation>
+        <translation>O programie</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Graficzny Interfejs Użytkownika VirtualBox
+Wersja %1</translation>
     </message>
 </context>
 <context>
@@ -394,11 +395,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tylko do odczytu</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiedy zaznaczone, system operacyjny gościa nie będzie mógł zapisywać do współdzielonego folderu.</translation>
     </message>
 </context>
 <context>
@@ -732,8 +733,7 @@ Version %1</source>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Pokazuje aktualnie wybrany Klawisz Gospodarza.&lt;br&gt;Klawisz ten, wciśniety pojedynczo, przełącza przechwyca
-nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywołanie akcji dostępnych w menu głównym.</translation>
+        <translation>Pokazuje aktualnie zdefiniowany Klawisz Gospodarza.&lt;br&gt;Klawisz ten, wciśniety pojedynczo, przełącza przechwycanie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywołanie akcji dostępnych w menu głównym.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
@@ -1022,15 +1022,15 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Informacje o sesji</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje okno z informacjami o sesji</translation>
     </message>
 </context>
 <context>
@@ -1941,157 +1941,157 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Włączone</translation>
+        <translation>Włączone</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Włączone</translation>
+        <translation>Włączone</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sterownik gospodarza</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontroler</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączony</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Porty równoległe</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Współdzielony folder</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Pierwszy</translation>
+        <translation>Pierwszy</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Drugi</translation>
+        <translation>Drugi</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Nadrzędny</translation>
+        <translation>Nadrzędny</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Podrzędny</translation>
+        <translation>Podrzędny</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Obraz VHD</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2439,15 +2439,15 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt; Wyświetla wszystkie filtry USB zdefiniowane dla tej maszyny. Przełącznik po lewej stronie każdego z filtrów włącza lub wyłącza filtr. Aby dodać lub usunąć filtr, użyj menu kontekstowego lub przycisków po prawej.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj pusty filtr</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj &amp;pusty filtr</translation>
     </message>
     <message>
         <source>
@@ -2455,87 +2455,87 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Dodaje nowy filtr USB z wszystkimi polami wstępnie ustawionymi na puste. Uwaga: taki filtr będzie pasował do jakiegokolwiek podłączonego urządzenia USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj filtr na podstawie urządzenia</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj &amp;filtr na podstawie urządzenia</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Dodaje nowy filtr USB z polami wypełnionymi wartościami odpowiadającymi wybranemu urządzeniu podłączonemu do Twojego komputera.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń filtr</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Usuń filtr</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Usuwa zaznaczony filtr USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr do góry</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr do &amp;góry</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Przenosi zaznaczony filtr USB do góry.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr w dół</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr w &amp;dół</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Slot</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Dysk twardy</translation>
+        <translation>Dysk twardy</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxHardDiskSettings</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Dyski twarde</translation>
+        <translation>&amp;Dyski twarde</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Włącz kontroler SATA</translation>
     </message>
     <message>
         <source>
@@ -2544,11 +2544,11 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Kiedy zaznaczone, włącza wirtualny kontroler SATA dla tej maszyny. Nie jest możliwe podłączenie dysku twardego do portu SATA jeśli wirtualny kontroler SATA jest wyłączony.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Podłączone dyski twarde</translation>
     </message>
     <message>
         <source>
@@ -2561,74 +2561,74 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Wyświetla wszystkie dyski twarde podłączone do tej maszyny. Kliknij podwójnie lub wciśnij &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Spacja&lt;/tt&gt; na zaznaczonej pozycji, aby rozwinąć listę wyboru. Aby podłączyć lub odłączyć dysk, użyj menu kontekstowego lub przycisków po prawej.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz nowy</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Podłącz nowy</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Podłącza nowy dysk twardy.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Odłącz</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>O&amp;dłącz</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Usuń</translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Odłącza zaznaczony dysk twardy.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz dysk twardy</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Wybierz dysk twardy</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spacja</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Otwiera Menadżer Dysków Wirtualnych, aby umożliwić wybór dysku twardego, który ma być podłączony do wybranego slotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; używa dysku twardego, który jest już podłączony do &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Kliknij podwójnie, aby podłączyć nowy dysk</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie wybrano dysku twardego dla &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -2777,7 +2777,7 @@ z obrazem wirtualnego dysku lub wprowadź jego nazwę bezpośrednio w polu poni�
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wybierz rozmiar obrazu wirtualnego dysku twardego. Będzie on zgłoszony goszczonemu systemowi operacyjnemu
+        <translation>&lt;p&gt;Wybierz rozmiar obrazu wirtualnego dysku twardego. Będzie on zgłoszony goszczonemu systemowi operacyjnemu 
 jako rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2841,7 +2841,7 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wybierz typ obrazu wirtualnego dysku twardego, jaki chcesz utworzyć.&lt;/p&gt;￼&lt;p&gt;&lt;b&gt;Dynamicznie rozszerzany obraz&lt;/b&gt; początkowo zajmuje bardzo niewielką ilość￼miejsca na fizycznym dysku. Będzie on jednak rósł dynamicznie (maksymalnie do￼wskazanego rozmiaru) wraz z zajmowaniem przez goszczony system operacyjny coraz większej przestrzeni dysku.&lt;/p&gt;￼&lt;p&gt;&lt;b&gt;Obraz o stałym rozmiarze&lt;/b&gt; nie rośnie. Jest on od razu zapisywany w pliku o w przybliżeniu￼takim samym rozmiarze, jak wybrany rozmiar wirtualnego dysku. Stworzenie takiego obrazu może zająć dużo czasu, w zależności od wybranego rozmiaru i wydajności Twojego dysku twardego&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2973,8 +2973,8 @@ opuścić ten krok i podłączyć dysk później, korzystając z okna Ustawień 
                             </source>
         <translation>&lt;p&gt;Jeżeli powyższe ustawienia są prawidłowe, wciśnij przycisk &lt;b&gt;Zakończ&lt;/b&gt;.
 Po naciśnięciu, nowa maszyna wirtualna zostanie utworzona. &lt;/p&gt;&lt;p&gt;
-Pamiętaj, że te i inne ustawienia utworzonej maszyny wirtualnej
-możesz zmienić korzystając z przycisku &lt;b&gt;Ustawienia&lt;/b&gt; w
+Pamiętaj, że te i inne ustawienia utworzonej maszyny wirtualnej 
+możesz zmienić korzystając z przycisku &lt;b&gt;Ustawienia&lt;/b&gt; w 
 oknie głównym programu. Zauważ, że należy ją jednak uprzednio wyłączyć.&lt;/p&gt;
                              </translation>
     </message>
@@ -3433,169 +3433,169 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nie udało się  zapisać ustawień globalnych VirtualBox do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nie udało się wczytać ustawień globalnych interfejsu graficznego z &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikacja zostanie zamknięta.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nie udało się zapisać konfiguracji interfejsu graficznego do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikacja zostanie zakończcona.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się zapisać ustawień maszyny writualnej &lt;b&gt;%1&lt;/b&gt; do &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się wczytać ustawień maszyny wirtualnej &lt;b&gt;%1&lt;/b&gt; z &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Usuń</translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyrejestruj</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished">Anuluj</translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontynuuj</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Czy chcesz usunąć plik obrazu dysku twardego &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Wyrejestruj&lt;/b&gt;, wirtualny dysk twardy zostanie wyrejestrowany i usunięty z listy dysków, ale plik obrazu tego dysku pozostanie nienaruszony na dysku twardym Twojego komputera.&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Usuń&lt;/b&gt;, plik ten zostanie  usunięty z dysku twardego. &lt;b&gt;Uwaga:&lt;/b&gt; Usunięcie obrazu z dysku jest operacją nieodwracalną!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Usuń</translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyrejestruj</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Do portów SATA tej maszyny wirtualnej podłączone są dyski twarde. Jeśli wyłączysz kontroler SATA, wszystkie te dyski zostaną automatycznie wysunięte.&lt;/p&gt;&lt;p&gt;Czy jesteś pewien, że chcesz wyłączyć kontroler SATA?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Wyłącz</translation>
+        <translation>Wyłącz</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się podłączyć obrazu dysku twardego o UUID %1 do slotu %2 kanału %3 szyny %4 maszyny wirtualnej &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się wysunąć obrazu dysku twardego ze slotu %1 kanału %2 szyny %3 maszyny wirtualnej &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zamontuj</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Klawisz gospodarza jest aktualnie ustawiony na &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="unfinished"></translation>
+        <translation>Przechwycaj</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Jeden lub więcej z zarejestrowanych wirtualnych twardych dysków, nośników CD/DVD lub dyskietek nie jest w tej chwili dostępny. W wyniku, nie będziesz mógł używać wirtualnych maszyn korzystających z tych nośników dopóki dostęp do nich nie zostanie uzyskany ponownie.&lt;/p&gt;&lt;p&gt;Wciśnij &lt;b&gt;Sprawdź&lt;/b&gt; aby otworzyć Menadżer Wirtualnych Dysków i sprawdzić które z nośników są niedostępne, lub wciśnij &lt;b&gt;Ignoruj&lt;/b&gt;, aby zignorować tę wiadomość.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Następujące pliki konfiguracyjne programu VirtualBox zostały automatycznie skonwertowane do nowej wersji &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wyniki konwersji nie zostały jednak jeszcze zapisane na dysk. Wciśnij: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Zapisz&lt;/b&gt;, jeśli chcesz zapisać wszystkie skonwertowane pliki teraz (nie będzie możliwe używanie tych plików ze starszą wersją programu VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Kopia zapasowa&lt;/b&gt;, aby stworzyć kopie zapasowe starych wersji plików ustawień przed zastąpieniem ich nowszą wersją;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Anuluj&lt;/b&gt;, aby anulować zapis nowych wersji plików.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Anuluj&lt;/b&gt;, pliki konfiguracyjne zostaną mimo wszystko skonwertowane do nowej wersji i zapisane, jeśli dokonasz jakiejś zmiany w ustawieniach lub uruchomisz/zatrzymasz maszynę wirtualną. W takim przypadku jednak kopie zapasowe plików &lt;b&gt;nie zostaną&lt;/b&gt; utworzone.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Zapisz</translation>
+        <translation>&amp;Zapisz</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopia zapasowa</translation>
     </message>
     <message>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Anuluj</translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Przełącz</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Przełącz</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Czy na pewno chcesz zresetować maszynę wirtualną?&lt;/p&gt;&lt;p&gt;Po zresetowaniu wszystkie niezapisane dane aplikacji uruchomionych w maszynie zostaną utracone.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Zresetuj</translation>
+        <translation>Zresetuj</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontynuuj</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cofnij</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się skopiować pliku &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; do &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nie ma wolnych dysków twardych dostępnych dla tego podłączenia. &lt;/p&gt;&lt;p&gt;Wciśnij przycisk &lt;b&gt;Stwórz&lt;/b&gt;, aby uruchomić kreator &lt;i&gt;Nowy Dysk Wirtualny&lt;/i&gt; i utworzyć nowy dysk, lub &lt;b&gt;Wybierz&lt;/b&gt;, aby otworzyć &lt;i&gt;Menadżer Wirtualnych Dysków&lt;/i&gt; i tam dokonać wyboru.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Stwórz</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Wybierz</translation>
+        <translation>Wybierz</translation>
     </message>
 </context>
 <context>
@@ -3650,15 +3650,15 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się ustanowić połączenia.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wypełnij ten formularz w celu poinformowania nas, że korzystasz z programu VirtualBox oraz, opcjonalnie, aby być informowanym o jego uaktualnieniach i nowościach.&lt;/p&gt;&lt;p&gt;Wprowadź poniżej swoje imię i nazwisko używając znaków alfabetu łacińskiego oraz swój adres e-mail. Uwaga: firma Sun Microsystems będzie używała tych danych tylko w celu gromadzenia statystyk popularności programu i wysyłania biuletynów. W szczególności, Sun Microsystems nigdy nie przekaże Twoich danych osobowych podmiotom trzecim. Szczegółowe informacje na temat tego jak korzystamy z Twoich danych osobowych można znaleźć w sekcji &lt;b&gt;Privacy Policy&lt;/b&gt; instrukcji obsługi programu VirtualBox lub na podstronie &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; strony internetowej programu VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaznacz tę opcję, jeśli nie chcesz otrzymywać poczty od firmy Sun Microsystems na adres e-mail, który podałeś powyżej.</translation>
     </message>
 </context>
 <context>
@@ -3913,35 +3913,35 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation type="unfinished">Wz&amp;nów</translation>
+        <translation>Wz&amp;nów</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Wznów</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+P</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Wznów pracę wirtualnej maszyny</translation>
+        <translation>Wznów pracę wirtualnej maszyny</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pauza</translation>
+        <translation>&amp;Pauza</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pauza</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Wstrzymaj pracę wirtualnej maszyny</translation>
+        <translation>Wstrzymaj pracę wirtualnej maszyny</translation>
     </message>
 </context>
 <context>
@@ -4051,23 +4051,23 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Dostęp</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spacja</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Edytuj wybrany współdzielony folder (Spacja)</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Pełny</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Tylko do odczytu</translation>
     </message>
 </context>
 <context>
@@ -4273,7 +4273,7 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spacja</translation>
     </message>
 </context>
 <context>
@@ -4393,7 +4393,7 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Decyduje o tym, czy filtr ten dotyczy urządzeń
+        <translation>&lt;qt&gt;Decyduje o tym, czy filtr ten dotyczy urządzeń 
 USB podłączonych: lokalnie do Twojego komputera (&lt;i&gt;Nie&lt;/i&gt;),
 zdalnie do komputera na którym działa klient VRDP (&lt;i&gt;Tak&lt;/i&gt;)
 lub któregokolwiek z nich (&lt;i&gt;Bez znaczenia&lt;/i&gt;).&lt;/qt&gt;</translation>
@@ -4413,7 +4413,7 @@ użytku przez maszyny wirtualne użytkownika (&lt;i&gt;Przytrzymaj&lt;/i&gt;).&l
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem nazwy producenta sprzętu
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie producenta).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie producenta). 
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4421,15 +4421,15 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem nazwy produktu
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie produktu).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; nazwie produktu). 
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Definicja filtra z użyciem numeru seryjnego urządzenia
-(wpisany łańcuch musi &lt;i&gt;idealnie  odpowiadać&lt;/i&gt; numerowi seryjnemu).
+        <translation>&lt;qt&gt;Definicja filtra z użyciem numeru seryjnego urządzenia 
+(wpisany łańcuch musi &lt;i&gt;idealnie  odpowiadać&lt;/i&gt; numerowi seryjnemu). 
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4438,7 +4438,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem ID dostawcy (vendor ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID dostawcy).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID dostawcy). 
 Filtr powinien mieć format &lt;tt&gt;XXXX&lt;/tt&gt;, gdzie &lt;tt&gt;X&lt;/tt&gt; jest cyfrą szesnastkową.
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
@@ -4448,7 +4448,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem ID produktu (product ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID produktu).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; ID produktu). 
 Filtr powinien mieć format &lt;tt&gt;XXXX&lt;/tt&gt;, gdzie &lt;tt&gt;X&lt;/tt&gt; jest cyfrą szesnastkową.
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
@@ -4459,9 +4459,9 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem numeru wersji (revision ID)
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi wersji).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi wersji). 
 Filtr powinien mieć format &lt;tt&gt;CCDD&lt;/tt&gt;, gdzie &lt;tt&gt;C&lt;/tt&gt; jest cyfrą
-dziesiętna całkowitej części numeru wersji, a &lt;tt&gt;D&lt;/tt&gt; jest cyfra dziesiętną
+dziesiętna całkowitej części numeru wersji, a &lt;tt&gt;D&lt;/tt&gt; jest cyfra dziesiętną 
 części ułamkowej. Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt</translation>
     </message>
     <message>
@@ -4469,7 +4469,7 @@ części ułamkowej. Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wa
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Definicja filtra z użyciem numeru portu USB gospodarza
-(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi portu).
+(wpisany łańcuch musi &lt;i&gt;idealnie odpowiadać&lt;/i&gt; numerowi portu). 
 Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -4635,119 +4635,119 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje o sesji</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">Z&amp;amknij</translation>
+        <translation>Z&amp;amknij</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Informacje o sesji</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Szczegóły</translation>
+        <translation>&amp;Szczegóły</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączny &amp;czas używania</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transfer DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transfer PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Dane odczytane</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished"></translation>
+        <translation>Dane zapisane</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished"></translation>
+        <translation>Dane wysłane</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished"></translation>
+        <translation>Dane odebrane</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Włączone</translation>
+        <translation>Włączone</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Parametry maszyny</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozdzielczość ekranu</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualizacja sprzętu</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statystyki dysków twardych IDE</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statystyki CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statystyki kart sieciowych</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Karta 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Karta 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Karta 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Karta 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation type="unfinished">Niepodłączona</translation>
+        <translation>Niepodłączona</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statystyki dysków twardych</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Pierwszy (Primary, IDE0) Nadrzędny (Master)</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Pierwszy (Primary, IDE0) Podrzędny (Slave)</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi (Secondary, IDE1) Nadrzędny (Master)</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi (Secondary, IDE1) Podrzędny (Slave)</translation>
     </message>
 </context>
 <context>
@@ -4963,66 +4963,66 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>&amp;Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa &amp;Sieci</translation>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Typ karty </translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wskazyje typ wirtualnej karty sieciowej. W zależności od ustawienia, Virtualbox podłączy do maszyny wirtualnej inny typ karty sieciowej.</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje nazwę wewnętrznej sieci wybranej dla tej karty sieciowej.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
         <source>VBoxVMParallelPortSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMParallelPortSettings</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Włącz port równoległy</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiedy zaznaczone, włącza wybrany port równoległy w maszynie wirtualnej.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
-        <translation type="unfinished">&amp;Numer Portu</translation>
+        <translation>&amp;Numer Portu</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje numer portu równoległego. Możesz wybrać jeden ze standardowych portów równoległych lub zaznaczyć opcję &lt;b&gt;Użytkownika&lt;/b&gt; i podać parametry portu ręcznie.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
-        <translation type="unfinished">&amp;IRQ Portu</translation>
+        <translation>&amp;IRQ </translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetla numer przerwania IRQ danego portu równoległego. Poprawne wartości to liczby całkowite od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Wartości większe od &lt;tt&gt;15&lt;/tt&gt; mogą być używane tylko, jeśli opcja &lt;b&gt;IO APIC&lt;/b&gt; zostanie włączona w ustawieniach maszyny wirtualnej.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
-        <translation type="unfinished">&amp;Adres I/O Portu</translation>
+        <translation>&amp;Adres I/O Portu</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetla adres I/O danego portu równoległego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="unfinished">Ścieżka &amp;Portu</translation>
+        <translation>Ścieżka &amp;Portu</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje nazwę urządzenia podłączonego do portu gospodarza.</translation>
     </message>
 </context>
 <context>
@@ -5061,7 +5061,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Wyświetla adres portu I/O danego portu szeregowego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation>Wyświetla adres I/O danego portu szeregowego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode</source>
@@ -5820,59 +5820,59 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>00</source>
-        <translation type="unfinished"></translation>
+        <translation>00</translation>
     </message>
     <message>
         <source>01</source>
-        <translation type="unfinished"></translation>
+        <translation>01</translation>
     </message>
     <message>
         <source>02</source>
-        <translation type="unfinished"></translation>
+        <translation>02</translation>
     </message>
     <message>
         <source>03</source>
-        <translation type="unfinished"></translation>
+        <translation>03</translation>
     </message>
     <message>
         <source>04</source>
-        <translation type="unfinished"></translation>
+        <translation>04</translation>
     </message>
     <message>
         <source>05</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>08</source>
-        <translation type="unfinished"></translation>
+        <translation>08</translation>
     </message>
     <message>
         <source>10</source>
-        <translation type="unfinished"></translation>
+        <translation>10</translation>
     </message>
     <message>
         <source>09</source>
-        <translation type="unfinished"></translation>
+        <translation>09</translation>
     </message>
     <message>
         <source>06</source>
-        <translation type="unfinished"></translation>
+        <translation>06</translation>
     </message>
     <message>
         <source> Parallel Ports </source>
-        <translation type="unfinished"></translation>
+        <translation> Porty równoległe </translation>
     </message>
     <message>
         <source>07</source>
-        <translation type="unfinished"></translation>
+        <translation>07</translation>
     </message>
     <message>
         <source>#parallelPorts</source>
-        <translation type="unfinished"></translation>
+        <translation>#parallelPorts</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz PA&amp;E/NX</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When
@@ -5883,31 +5883,31 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Kiedy zaznaczone, funkcja Physical Address Extension (PAE) procesora gospodarza zostanie udostępniona maszynie wirtualnej.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ kontrolera &amp;IDE</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wskazyje typ wirtualnego kontrolera IDE. W zależności od ustawienia, Virtualbox podłączy do maszyny wirtualnej inny typ kontrolera.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroler &amp;Audio</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wskazyje typ kontrolera karty sieciowej. W zależności od ustawienia, Virtualbox podłączy do maszyny wirtualnej inny typ karty dźwiękowej.</translation>
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz kontroler USB &amp;2.0</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <translation>Kiedy zaznaczone, włącza wirtualny kontroler USB EHCI dla tej maszyny. Kontroler USB EHCI dostarcza obsługę standardu USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5919,15 +5919,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt; Wyświetla wszystkie filtry USB zdefiniowane dla tej maszyny. Przełącznik po lewej stronie każdego z filtrów włącza lub wyłącza filtr. Aby dodać lub usunąć filtr, użyj menu kontekstowego lub przycisków po prawej.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj pusty filtr</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj &amp;pusty filtr</translation>
     </message>
     <message>
         <source>
@@ -5935,81 +5935,81 @@ makes the guest see an audio card, however every access to it will be ignored.&l
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Dodaje nowy filtr USB z wszystkimi polami wstępnie ustawionymi na puste. Uwaga: taki filtr będzie pasował do jakiegokolwiek podłączonego urządzenia USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj filtr na podstawie urządzenia</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj &amp;filtr na podstawie urządzenia</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Dodaje nowy filtr USB z polami wypełnionymi wartościami odpowiadającymi wybranemu urządzeniu podłączonemu do Twojego komputera.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń filtr</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Usuń filtr</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Usuwa zaznaczony filtr USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr do góry</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr do &amp;góry</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Przenosi zaznaczony filtr USB do góry.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr w dół</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesuń filtr w &amp;dół</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Przenosi zaznaczony filtr USB w dół.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa sieci wewnętrznej nie zostałą ustawiona</translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżka portu nie została podana </translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>

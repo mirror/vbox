@@ -1907,7 +1907,7 @@ Version %1</translation>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2437,7 +2437,7 @@ till systemets standardspråk.&lt;/qt&gt;
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -3313,17 +3313,17 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden för &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Skapa</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Välj</translation>
+        <translation>Välj</translation>
     </message>
 </context>
 <context>
@@ -3690,7 +3690,7 @@ Använd
 &lt;tt&gt;net use x: \\vboxsvr\utdelning&lt;/tt&gt;
 för att komma åt en delad mapp med namnet &lt;i&gt;utdelning&lt;/i&gt; från ett DOS-liknande
 operativsystem, eller &lt;tt&gt;mount -t vboxsf utdelning monteringspunkt&lt;/tt&gt;
-för att komma åt den från ett Linux-operativsystem. Den här funktionen kräver
+för att komma åt den från ett Linux-operativsystem. Den här funktionen kräver 
 Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -5074,7 +5074,7 @@ inaktivera inte den här funktionen efter att ett Windows-gästoperativsystem ha
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen
+        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen 
 kräver att tillägget Guest Additions är installerat på gästoperativsystemet.</translation>
     </message>
     <message>
@@ -5307,7 +5307,7 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
                                                           machine.&lt;/qt&gt;
                                                         </source>
         <translation>&lt;qt&gt;När
-                                                          kryssad kommer
+                                                          kryssad kommer 
                                                           funktionen Address
                                                           Extension (PAE) för
                                                           värdprocessorn att
@@ -5460,7 +5460,7 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>
