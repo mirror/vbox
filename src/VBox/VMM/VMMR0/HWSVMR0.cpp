@@ -668,7 +668,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
-    bool        fForceTLBFlush = false;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
 
