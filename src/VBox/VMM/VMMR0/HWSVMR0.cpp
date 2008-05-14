@@ -142,23 +142,33 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
     /* Set all bits to intercept all MSR accesses. */
     ASMMemFill32(pVM->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE*2, 0xffffffff);
 
-    /* Erratum 170 which requires a forced TLB flush for each world switch has been fixed in stepping 1 of the Brisbane core. 
-     * Family = 0x0f
-     * Model[7:0] = {ExtModel[3:0],BaseModel[3:0]} = 0x68 or 0x6b
-     * Stepping >= 1
+    /* Erratum 170 which requires a forced TLB flush for each world switch:
+     * See http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/33610.pdf
+     *
+     * All BH-G1/2 and DH-G1/2 models include a fix:
+     * Athlon X2:   0x6b 1/2
+     *              0x68 1/2
+     * Athlon 64:   0x7f 1
+     *              0x6f 2
+     * Sempron:     0x7f 1/2
+     *              0x6f 2
+     *              0x6c 2
+     *              0x7c 2
+     * Turion 64:   0x68 2
+     *
      */
     uint32_t u32Dummy;
-    uint32_t u32Version, u32Family, u32Model, u32Stepping, u32ExtModel;
+    uint32_t u32Version, u32Family, u32Model, u32Stepping;
     ASMCpuId(1, &u32Version, &u32Dummy, &u32Dummy, &u32Dummy);
-    u32Family    = (u32Version >> 8) & 0x0f;
-    u32Model     = (u32Version >> 4) & 0x0f;
-    u32ExtModel  = (u32Version >> 16) & 0x0f;
+    u32Family    = ((u32Version >> 8) & 0xf) + (((u32Version >> 8) & 0xf) == 0xf ? (u32Version >> 20) & 0x7f : 0);
+    u32Model     = ((u32Version >> 4) & 0xf);
+    u32Model     = u32Model | ((u32Model == 0xf ? (u32Version >> 16) & 0x0f : 0) << 4);
     u32Stepping  = u32Version & 0xf;
     if (    u32Family == 0xf
-        &&  (u32ExtModel == 0x6)
-        &&  (u32Model == 0x8 || u32Model == 0xb)
-        &&  u32Stepping == 0)
+        &&  !((u32Model == 0x68 || u32Model == 0x6b || u32Model == 0x7f) &&  u32Stepping >= 1)
+        &&  !((u32Model == 0x6f || u32Model == 0x6c || u32Model == 0x7c) &&  u32Stepping >= 2))
     {
+        Log(("SVMR0InitVM: AMD cpu with erratum 170 family %x model %x stepping %x\n", u32Family, u32Model, u32Stepping));
         pVM->hwaccm.s.svm.fForceTLBFlush = true;
     }
 
