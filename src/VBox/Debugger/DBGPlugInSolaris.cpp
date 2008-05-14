@@ -23,9 +23,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DBGF ///@todo add new log group.
 #include "DBGPlugIns.h"
+#include "DBGPlugInCommonELF.h"
 #include <VBox/dbgf.h>
 #include <iprt/string.h>
+#include <iprt/mem.h>
+#include <iprt/stream.h>
 
 
 /*******************************************************************************
@@ -65,6 +69,53 @@ typedef struct SOL32_modctl
     uint32_t    mod_requisite_loading;  /**< 4c */
 } SOL32_modctl_t;
 AssertCompileSize(SOL32_modctl_t, 0x50);
+
+typedef struct SOL32_module
+{
+    int32_t     total_allocated;        /**<  0 */
+    Elf32_Ehdr  hdr;                    /**<  4 Easy to validate */
+    uint32_t    shdrs;                  /**< 38 */
+    uint32_t    symhdr;                 /**< 3c */
+    uint32_t    strhdr;                 /**< 40 */
+    uint32_t    depends_on;             /**< 44 */
+    uint32_t    symsize;                /**< 48 */
+    uint32_t    symspace;               /**< 4c */
+    int32_t     flags;                  /**< 50 */
+    uint32_t    text_size;              /**< 54 */
+    uint32_t    data_size;              /**< 58 */
+    uint32_t    text;                   /**< 5c */
+    uint32_t    data;                   /**< 60 */
+    uint32_t    symtbl_section;         /**< 64 */
+    uint32_t    symtbl;                 /**< 68 */
+    uint32_t    strings;                /**< 6c */
+    uint32_t    hashsize;               /**< 70 */
+    uint32_t    buckets;                /**< 74 */
+    uint32_t    chains;                 /**< 78 */
+    uint32_t    nsyms;                  /**< 7c */
+    uint32_t    bss_align;              /**< 80 */
+    uint32_t    bss_size;               /**< 84 */
+    uint32_t    bss;                    /**< 88 */
+    uint32_t    filename;               /**< 8c */
+    uint32_t    head;                   /**< 90 */
+    uint32_t    tail;                   /**< 94 */
+    uint32_t    destination;            /**< 98 */
+    uint32_t    machdata;               /**< 9c */
+    uint32_t    ctfdata;                /**< a0 */
+    uint32_t    ctfsize;                /**< a4 */
+    uint32_t    fbt_tab;                /**< a8 */
+    uint32_t    fbt_size;               /**< ac */
+    uint32_t    fbt_nentries;           /**< b0 */
+    uint32_t    textwin;                /**< b4 */
+    uint32_t    textwin_base;           /**< b8 */
+    uint32_t    sdt_probes;             /**< bc */
+    uint32_t    sdt_nprobes;            /**< c0 */
+    uint32_t    sdt_tab;                /**< c4 */
+    uint32_t    sdt_size;               /**< c8 */
+    uint32_t    sigdata;                /**< cc */
+    uint32_t    sigsize;                /**< d0 */
+} SOL32_module_t;
+AssertCompileSize(Elf32_Ehdr, 0x34);
+AssertCompileSize(SOL32_module_t, 0xd4);
 
 /** @} */
 
@@ -125,6 +176,146 @@ static DECLCALLBACK(int)  dbgDiggerSolarisQueryVersion(PVM pVM, void *pvData, ch
     Assert(pThis->fValid);
 
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+
+/**
+ * Processes a modctl_t.
+ *
+ * @param   pVM     The VM handle.
+ * @param   pThis   Our instance data.
+ * @param   pModCtl Pointer to the modctl structure.
+ */
+static void dbgDiggerSolarisProcessModCtl(PVM pVM, PDBGDIGGERSOLARIS pThis, SOL32_modctl_t const *pModCtl)
+{
+    /* skip it if it's not loaded and installed */
+    if (    !pModCtl->mod_loaded
+        ||  !pModCtl->mod_installed)
+        return;
+
+    /*
+     * Read the module and file names first
+     */
+    char szModName[64];
+    DBGFADDRESS Addr;
+    int rc = DBGFR3MemReadString(pVM, DBGFR3AddrFromFlat(pVM, &Addr, pModCtl->mod_modname), szModName, sizeof(szModName));
+    if (RT_FAILURE(rc))
+        return;
+    if (!memchr(szModName, '\0', sizeof(szModName)))
+        szModName[sizeof(szModName) - 1] = '\0';
+
+    char szFilename[256];
+    rc = DBGFR3MemReadString(pVM, DBGFR3AddrFromFlat(pVM, &Addr, pModCtl->mod_filename), szFilename, sizeof(szFilename));
+    if (RT_FAILURE(rc))
+        strcpy(szFilename, szModName);
+    else if (!memchr(szFilename, '\0', sizeof(szFilename)))
+        szFilename[sizeof(szFilename) - 1] = '\0';
+
+    /*
+     * Then read the module struct and validate it.
+     */
+    struct SOL32_module Module;
+    rc = DBGFR3MemRead(pVM, DBGFR3AddrFromFlat(pVM, &Addr, pModCtl->mod_mp), &Module, sizeof(Module));
+    if (RT_FAILURE(rc))
+        return;
+
+    /* Basic validations of the elf header. */
+    if (    Module.hdr.e_ident[EI_MAG0] != ELFMAG0
+        ||  Module.hdr.e_ident[EI_MAG1] != ELFMAG1
+        ||  Module.hdr.e_ident[EI_MAG2] != ELFMAG2
+        ||  Module.hdr.e_ident[EI_MAG3] != ELFMAG3
+        ||  Module.hdr.e_ident[EI_CLASS] != ELFCLASS32
+        ||  Module.hdr.e_ident[EI_DATA] != ELFDATA2LSB
+        ||  Module.hdr.e_ident[EI_VERSION] != EV_CURRENT
+        ||  ASMMemIsAll8(&Module.hdr.e_ident[EI_PAD], EI_NIDENT - EI_PAD, 0) != NULL
+        )
+        return;
+    if (Module.hdr.e_version != EV_CURRENT)
+        return;
+    if (Module.hdr.e_ehsize != sizeof(Module.hdr))
+        return;
+    if (    Module.hdr.e_type != ET_DYN
+        &&  Module.hdr.e_type != ET_REL
+        &&  Module.hdr.e_type != ET_EXEC) //??
+        return;
+    if (    Module.hdr.e_machine != EM_386
+        &&  Module.hdr.e_machine != EM_486)
+        return;
+    if (    Module.hdr.e_phentsize != sizeof(Elf32_Phdr)
+        &&  Module.hdr.e_phentsize) //??
+        return;
+    if (Module.hdr.e_shentsize != sizeof(Elf32_Shdr))
+        return;
+
+    if (Module.hdr.e_shentsize != sizeof(Elf32_Shdr))
+        return;
+
+    /* Basic validations of the rest of the stuff. */
+    if (    !SOL32_VALID_ADDRESS(Module.shdrs)
+        ||  !SOL32_VALID_ADDRESS(Module.symhdr)
+        ||  !SOL32_VALID_ADDRESS(Module.strhdr)
+        ||  (!SOL32_VALID_ADDRESS(Module.symspace) && Module.symspace)
+        ||  !SOL32_VALID_ADDRESS(Module.text)
+        ||  !SOL32_VALID_ADDRESS(Module.data)
+        ||  (!SOL32_VALID_ADDRESS(Module.symtbl) && Module.symtbl)
+        ||  (!SOL32_VALID_ADDRESS(Module.strings) && Module.strings)
+        ||  (!SOL32_VALID_ADDRESS(Module.head) && Module.head)
+        ||  (!SOL32_VALID_ADDRESS(Module.tail) && Module.tail)
+        ||  !SOL32_VALID_ADDRESS(Module.filename))
+        return;
+    if (    Module.symsize > _4M
+        ||  Module.hdr.e_shnum > 4096
+        ||  Module.nsyms > _256K)
+        return;
+
+    /* Ignore modules without symbols. */
+    if (!Module.symtbl || !Module.strings || !Module.symspace || !Module.symspace)
+        return;
+
+    /* Check that the symtbl and strings points inside the symspace. */
+    if (Module.strings - Module.symspace >= Module.symsize)
+        return;
+    if (Module.symtbl - Module.symspace >= Module.symsize)
+        return;
+
+    /*
+     * Read the section headers, symbol table and string tables.
+     */
+    size_t cb = Module.hdr.e_shnum * sizeof(Elf32_Shdr);
+    Elf32_Shdr *paShdrs = (Elf32_Shdr *)RTMemTmpAlloc(cb);
+    if (!paShdrs)
+        return;
+    rc = DBGFR3MemRead(pVM, DBGFR3AddrFromFlat(pVM, &Addr, Module.shdrs), paShdrs, cb);
+    if (RT_SUCCESS(rc))
+    {
+        void *pvSymSpace = RTMemTmpAlloc(Module.symsize + 1);
+        if (pvSymSpace)
+        {
+            rc = DBGFR3MemRead(pVM, DBGFR3AddrFromFlat(pVM, &Addr, Module.shdrs), pvSymSpace, Module.symsize);
+            if (RT_SUCCESS(rc))
+            {
+                ((uint8_t *)pvSymSpace)[Module.symsize] = 0;
+
+                /*
+                 * Hand it over to the common ELF32 module parser.
+                 */
+                char const *pbStrings = (char const *)pvSymSpace + (Module.strings - Module.symspace);
+                size_t cbMaxStrings = Module.symsize - (Module.strings - Module.symspace);
+
+                Elf32_Sym const *paSyms = (Elf32_Sym const *)((uintptr_t)pvSymSpace + (Module.symtbl - Module.symspace));
+                size_t cMaxSyms = (Module.symsize - (Module.symtbl - Module.symspace)) / sizeof(Elf32_Sym);
+                cMaxSyms = RT_MIN(cMaxSyms, Module.nsyms);
+
+                DBGDiggerCommonParseElf32Mod(pVM, szModName, szFilename, DBG_DIGGER_ELF_FUNNY_SHDRS,
+                                             &Module.hdr, paShdrs, paSyms, cMaxSyms, pbStrings, cbMaxStrings);
+            }
+            RTMemTmpFree(pvSymSpace);
+        }
+    }
+
+    RTMemTmpFree(paShdrs);
+    return;
 }
 
 
@@ -246,7 +437,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PVM pVM, void *pvData)
             }
 
             /* process it. */
-
+            dbgDiggerSolarisProcessModCtl(pVM, pThis, &ModCtl);
 
             /* next */
             if (!SOL32_VALID_ADDRESS(ModCtl.mod_next))
