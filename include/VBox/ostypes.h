@@ -81,7 +81,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_NetBSD      = 0x62000,
     VBOXOSTYPE_Netware     = 0x70000,
     VBOXOSTYPE_Solaris     = 0x80000,
-	VBOXOSTYPE_OpenSolaris = 0x81000,
+    VBOXOSTYPE_OpenSolaris = 0x81000,
     VBOXOSTYPE_L4          = 0x90000,
     /** The usual 32-bit hack. */
     VBOXOSTYPE_32BIT_HACK = 0x7fffffff
