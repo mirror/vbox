@@ -44,7 +44,7 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/log.h>
-// XXX VBox/x86.h not compatible with the Linux kernel sources
+/* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
 # define X86_CPUID_VENDOR_AMD_EBX       0x68747541
 # define X86_CPUID_VENDOR_AMD_ECX       0x444d4163
@@ -3925,9 +3925,9 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-        if (    uEAX >= 1 
-            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX 
-            &&  uECX == X86_CPUID_VENDOR_AMD_ECX 
+        if (    uEAX >= 1
+            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
             &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
         {
             /* Check for APM support and that TscInvariant is cleared. */
