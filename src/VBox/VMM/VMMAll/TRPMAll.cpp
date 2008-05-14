@@ -659,19 +659,18 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     eflags.u32 &= ~(X86_EFL_TF | X86_EFL_VM | X86_EFL_RF | X86_EFL_NT);
 #ifdef DEBUG
                     for (int j=idx;j<0;j++)
-                    {
-                        LogFlow(("Stack %VGv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
-                    }
+                        Log4(("Stack %VGv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
+
                     const char *pszPrefix = "";
                     const char *szEFlags = "";
 
-                    LogFlow((   "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
-                            "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                            "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x                       %seflags=%08x\n",
-                            pszPrefix, pRegFrame->eax, pszPrefix, pRegFrame->ebx, pszPrefix, pRegFrame->ecx, pszPrefix, pRegFrame->edx, pszPrefix, pRegFrame->esi, pszPrefix, pRegFrame->edi,
-                            pszPrefix, pRegFrame->eip, pszPrefix, pRegFrame->esp, pszPrefix, pRegFrame->ebp, pszPrefix, eflags.Bits.u2IOPL, *pszPrefix ? 33 : 31, szEFlags,
-                            pszPrefix, (RTSEL)pRegFrame->cs, pszPrefix, (RTSEL)pRegFrame->ds, pszPrefix, (RTSEL)pRegFrame->es,
-                            pszPrefix, (RTSEL)pRegFrame->fs, pszPrefix, (RTSEL)pRegFrame->gs, pszPrefix, eflags.u32));
+                    Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+                          "eip=%08x esp=%08x ebp=%08x iopl=%d\n"
+                          "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n",
+                          pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx, pRegFrame->esi, pRegFrame->edi,
+                          pRegFrame->eip, pRegFrame->esp, pRegFrame->ebp, eflags.Bits.u2IOPL,
+                          (RTSEL)pRegFrame->cs, (RTSEL)pRegFrame->ds, (RTSEL)pRegFrame->es,
+                          (RTSEL)pRegFrame->fs, (RTSEL)pRegFrame->gs, eflags.u32));
 #endif
 
                     Log(("PATM Handler %VGv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
