@@ -142,6 +142,26 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
     /* Set all bits to intercept all MSR accesses. */
     ASMMemFill32(pVM->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE*2, 0xffffffff);
 
+    /* Erratum 170 which requires a forced TLB flush for each world switch has been fixed in stepping 1 of the Brisbane core. 
+     * Family = 0x0f
+     * Model[7:0] = {ExtModel[3:0],BaseModel[3:0]} = 0x68 or 0x6b
+     * Stepping >= 1
+     */
+    uint32_t u32Dummy;
+    uint32_t u32Version, u32Family, u32Model, u32Stepping, u32ExtModel;
+    ASMCpuId(1, &u32Version, &u32Dummy, &u32Dummy, &u32Dummy);
+    u32Family    = (u32Version >> 8) & 0x0f;
+    u32Model     = (u32Version >> 4) & 0x0f;
+    u32ExtModel  = (u32Version >> 16) & 0x0f;
+    u32Stepping  = u32Version & 0xf;
+    if (    u32Family == 0xf
+        &&  (u32ExtModel == 0x6)
+        &&  (u32Model == 0x8 || u32Model == 0xb)
+        &&  u32Stepping == 0)
+    {
+        pVM->hwaccm.s.svm.fForceTLBFlush = true;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -735,19 +755,14 @@ ResumeExecution:
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
-    /** Erratum #170 -> must force a TLB flush */
-    /** @todo supposed to be fixed in future by AMD */
-    fForceTLBFlush = true;
-
     if (    pVM->hwaccm.s.svm.fResumeVM == false
-        ||  fForceTLBFlush)
+        ||  pVM->hwaccm.s.svm.fForceTLBFlush)
     {
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;
     }
     else
-    {
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 0;
-    }
+
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.svm.fResumeVM = true;
     fForceTLBFlush = false;
