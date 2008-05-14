@@ -157,6 +157,7 @@
 #include <stdio.h>
 
 #include "DBGCInternal.h"
+#include "DBGPlugIns.h"
 
 
 /*******************************************************************************
@@ -2046,18 +2047,44 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
             pDbgc->pVM = pVM;
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                                          "Current VM is %08x\n" /** @todo get and print the VM name! */
-                                         "VBoxDbg> ",
-                                         pDbgc->pVM);
+                                         , pDbgc->pVM);
         }
         else
             rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to attach to VM %p\n", pDbgc->pVM);
     }
-    else
+
+    /*
+     * Load plugins.
+     * This is currently hardcoded simplicity.
+     */
+    if (RT_SUCCESS(rc) && pVM)
+    {
+        static PCDBGFOSREG s_aPlugIns[] =
+        {
+            //&g_DBGDiggerFreeBSD,
+            //&g_DBGDiggerLinux,
+            //&g_DBGDiggerOS2,
+            &g_DBGDiggerSolaris,
+            //&g_DBGDiggerWinNt
+        };
+
+        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Loading Plugins:");
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aPlugIns); i++)
+        {
+            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " %s", s_aPlugIns[i]->szName);
+            rc = DBGFR3OSRegister(pVM, s_aPlugIns[i]);
+            if (RT_FAILURE(rc) && rc != VERR_ALREADY_LOADED)
+                pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "->%Rrc", rc);
+        }
+        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+    }
+
+    if (RT_SUCCESS(rc))
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                                      "VBoxDbg> ");
 
     /*
-     * Run the main loop.
+     * Run the debugger main loop.
      */
     if (RT_SUCCESS(rc))
         rc = dbgcRun(pDbgc);

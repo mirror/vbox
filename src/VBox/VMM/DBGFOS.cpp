@@ -37,38 +37,21 @@
 
 
 /**
- * Registers a guest OS digger.
- *
- * This will instantiate an instance of the digger and add it
- * to the list for us in the next call to DBGFR3OSDetect().
+ * EMT worker function for DBGFR3OSRegister.
  *
  * @returns VBox status code.
  * @param   pVM     Pointer to the shared VM structure.
  * @param   pReg    The registration structure.
  */
-DBGFR3DECL(int) DBGFR3OSRegister(PVM pVM, PDBGFOSREG pReg)
+static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
 {
-    /*
-     * Validate intput.
-     */
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertPtrReturn(pReg, VERR_INVALID_POINTER);
-    AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(!pReg->fFlags, VERR_INVALID_PARAMETER);
-    AssertReturn(pReg->cbData < _2G, VERR_INVALID_PARAMETER);
-    AssertReturn(!pReg->szName[0], VERR_INVALID_NAME);
-    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
-    AssertPtrReturn(pReg->pfnConstruct, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pReg->pfnDestruct, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnProbe, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnInit, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnRefresh, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnTerm, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnQueryVersion, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnQueryInterface, VERR_INVALID_POINTER);
+    /* more validations. */
     for (PDBGFOS pOS = pVM->dbgf.s.pOSHead; pOS; pOS = pOS->pNext)
-        AssertMsgReturn(!strcmp(pOS->pReg->szName, pReg->szName), ("%s\n", pReg->szName), VERR_ALREADY_EXISTS);
+        if (!strcmp(pOS->pReg->szName, pReg->szName))
+        {
+            Log(("dbgfR3OSRegister: %s -> VERR_ALREADY_LOADED\n", pReg->szName));
+            return VERR_ALREADY_LOADED;
+        }
 
     /*
      * Allocate a new structure, call the constructor and link it into the list.
@@ -91,6 +74,51 @@ DBGFR3DECL(int) DBGFR3OSRegister(PVM pVM, PDBGFOSREG pReg)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Registers a guest OS digger.
+ *
+ * This will instantiate an instance of the digger and add it
+ * to the list for us in the next call to DBGFR3OSDetect().
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   pReg    The registration structure.
+ * @thread  Any.
+ */
+DBGFR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
+{
+    /*
+     * Validate intput.
+     */
+    AssertPtrReturn(pReg, VERR_INVALID_POINTER);
+    AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(!pReg->fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pReg->cbData < _2G, VERR_INVALID_PARAMETER);
+    AssertReturn(pReg->szName[0], VERR_INVALID_NAME);
+    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
+    AssertPtrReturn(pReg->pfnConstruct, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pReg->pfnDestruct, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProbe, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnInit, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnRefresh, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnTerm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnQueryVersion, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnQueryInterface, VERR_INVALID_POINTER);
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
 }
 
 
@@ -125,10 +153,7 @@ void dbgfR3OSTerm(PVM pVM)
 
 
 /**
- * Detectes the guest OS and try dig out symbols and useful stuff.
- *
- * When called the 2nd time, symbols will be updated that if the OS
- * is the same.
+ * EMT worker function for DBGFR3OSDetect.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully detected.
@@ -138,16 +163,11 @@ void dbgfR3OSTerm(PVM pVM)
  * @param   pszName     Where to store the OS name. Empty string if not detected.
  * @param   cchName     Size of the buffer.
  */
-DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
+static DECLCALLBACK(int) dbgfR3OSDetect(PVM pVM, char *pszName, size_t cchName)
 {
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
-
     /*
      * Cycle thru the detection routines.
      */
-    if (pszName && cchName)
-        *pszName = '\0';
     PDBGFOS const pOldOS = pVM->dbgf.s.pCurOS;
     pVM->dbgf.s.pCurOS = NULL;
 
@@ -177,10 +197,41 @@ DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
 
 
 /**
- * Queries the name and/or version string for the guest OS.
+ * Detectes the guest OS and try dig out symbols and useful stuff.
  *
- * It goes without saying that this querying is done using the current
- * guest OS digger and not additions or user configuration.
+ * When called the 2nd time, symbols will be updated that if the OS
+ * is the same.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if successfully detected.
+ * @retval  VINF_DBGF_OS_NOT_DETCTED if we cannot figure it out.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pszName     Where to store the OS name. Empty string if not detected.
+ * @param   cchName     Size of the buffer.
+ * @thread  Any.
+ */
+DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
+{
+    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
+    if (pszName && cchName)
+        *pszName = '\0';
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
+
+/**
+ * EMT worker function for DBGFR3OSQueryNameAndVersion
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
@@ -189,20 +240,8 @@ DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
  * @param   pszVersion      Where to store the version string. Optional.
  * @param   cchVersion      The size of the version buffer.
  */
-DBGFR3DECL(int) DBGFR3OSNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int) dbgfR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
 {
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pszVersion, VERR_INVALID_POINTER);
-
-    /*
-     * Initialize the output up front.
-     */
-    if (pszName && cchName)
-        *pszName = '\0';
-    if (pszVersion && cchVersion)
-        *pszVersion = '\0';
-
     /*
      * Any known OS?
      */
@@ -236,18 +275,90 @@ DBGFR3DECL(int) DBGFR3OSNameAndVersion(PVM pVM, char *pszName, size_t cchName, c
 
 
 /**
+ * Queries the name and/or version string for the guest OS.
+ *
+ * It goes without saying that this querying is done using the current
+ * guest OS digger and not additions or user configuration.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pszName         Where to store the OS name. Optional.
+ * @param   cchName         The size of the name buffer.
+ * @param   pszVersion      Where to store the version string. Optional.
+ * @param   cchVersion      The size of the version buffer.
+ * @thread  Any.
+ */
+DBGFR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
+{
+    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszVersion, VERR_INVALID_POINTER);
+
+    /*
+     * Initialize the output up front.
+     */
+    if (pszName && cchName)
+        *pszName = '\0';
+    if (pszVersion && cchVersion)
+        *pszVersion = '\0';
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSQueryNameAndVersion,
+                          5, pVM, pszName, cchName, pszVersion, cchVersion);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
+
+/**
+ * EMT worker for DBGFR3OSQueryInterface.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   enmIf       The interface identifier.
+ * @param   ppvIf       Where to store the interface pointer on success.
+ */
+static DECLCALLBACK(void) dbgfR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf, void **ppvIf)
+{
+    if (pVM->dbgf.s.pCurOS)
+    {
+        *ppvIf = pVM->dbgf.s.pCurOS->pReg->pfnQueryInterface(pVM, pVM->dbgf.s.pCurOS->abData, enmIf);
+        if (*ppvIf)
+        {
+            /** @todo Create EMT wrapper for the returned interface once we've defined one...
+             * Just keep a list of wrapper together with the OS instance. */
+        }
+    }
+    else
+        *ppvIf = NULL;
+}
+
+
+/**
  * Query an optional digger interface.
  *
  * @returns Pointer to the digger interface on success, NULL if the interfaces isn't
  *          available or no active guest OS digger.
  * @param   pVM         Pointer to the shared VM structure.
  * @param   enmIf       The interface identifier.
+ * @thread  Any.
  */
 DBGFR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
 {
     AssertMsgReturn(enmIf > DBGFOSINTERFACE_INVALID && enmIf < DBGFOSINTERFACE_END, ("%d\n", enmIf), NULL);
-    if (pVM->dbgf.s.pCurOS)
-        return pVM->dbgf.s.pCurOS->pReg->pfnQueryInterface(pVM, pVM->dbgf.s.pCurOS->abData, enmIf);
-    return NULL;
+
+    /*
+     * Pass it on to the EMT.
+     */
+    void *pvIf = NULL;
+    PVMREQ pReq;
+    VMR3ReqCallVoidU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3OSQueryInterface, 3, pVM, enmIf, &pvIf);
+    VMR3ReqFree(pReq);
+
+    return pvIf;
 }
 
