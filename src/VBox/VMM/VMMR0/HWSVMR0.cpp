@@ -668,6 +668,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
+    bool        fForceTLBFlush = false;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
 
@@ -755,7 +756,8 @@ ResumeExecution:
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
     if (    pVM->hwaccm.s.svm.fResumeVM == false
-        ||  pVM->hwaccm.s.svm.fForceTLBFlush)
+        ||  pVM->hwaccm.s.svm.fForceTLBFlush
+        ||  fForceTLBFlush)
     {
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;
     }
