@@ -521,7 +521,7 @@ typedef struct VM
 #ifdef ___DBGFInternal_h
         struct DBGF s;
 #endif
-        char        padding[HC_ARCH_BITS == 32 ? 1888 : 1920];      /* multiple of 32 */
+        char        padding[HC_ARCH_BITS == 32 ? 1888 : 1952];      /* multiple of 32 */
     } dbgf;
 
     /** SSM part. */
