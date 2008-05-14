@@ -368,9 +368,8 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
             if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET || rc == VINF_EM_RESCHEDULE)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
-        else
-        /** Note: monitor causes an #UD exception instead of #GP when not executed in ring 0. */
-        if (Cpu.pCurInstr->opcode == OP_MONITOR)
+        /* Note: monitor causes an #UD exception instead of #GP when not executed in ring 0. */
+        else if (Cpu.pCurInstr->opcode == OP_MONITOR)
         {
             uint32_t cbIgnored;
             rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, PC, &cbIgnored);
