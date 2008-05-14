@@ -184,8 +184,10 @@ private slots:
 
     void processGlobalSettingChange (const char *publicName, const char *name);
 
+    void dbgPrepareDebugMenu();
     void dbgShowStatistics();
     void dbgShowCommandLine();
+    void dbgLoggingToggled (bool);
 
     void onEnterFullscreen();
     void onExitFullscreen();
@@ -232,6 +234,7 @@ private:
     // Debugger actions
     QAction *dbgStatisticsAction;
     QAction *dbgCommandLineAction;
+    QAction *dbgLoggingAction;
 #endif
 
     // Help actions
