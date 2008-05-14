@@ -839,9 +839,9 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     {
         uint64_t cBlocks;
         uint32_t cbBlock;
-        if (!ioctl(fd, DKIOCGETBLOCKCOUNT, &cBlocks))
+        if (!ioctl(RawFile, DKIOCGETBLOCKCOUNT, &cBlocks))
         {
-            if (!ioctl(fd, DKIOCGETBLOCKSIZE, &cbBlock))
+            if (!ioctl(RawFile, DKIOCGETBLOCKSIZE, &cbBlock))
                 cbSize = cBlocks * cbBlock;
             else
                 return RTErrConvertFromErrno(errno);
