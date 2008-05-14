@@ -357,8 +357,10 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
         {
             Log2(("Enable irq window exit!\n"));
             /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
-////            pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
-////            AssertRC(rc);
+            pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
+            pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
+            pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 1; /* ignore the priority in the TPR; just deliver it */
+            pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
         }
         else
         if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
@@ -1169,12 +1171,18 @@ ResumeExecution:
         break;
     }
 
+    case SVM_EXIT_VINTR:
+        /* A virtual interrupt is about to be delivered, which means IF=1. */
+        pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 0;
+        pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 0;
+        pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0;
+        goto ResumeExecution;
+
     case SVM_EXIT_FERR_FREEZE:
     case SVM_EXIT_INTR:
     case SVM_EXIT_NMI:
     case SVM_EXIT_SMI:
     case SVM_EXIT_INIT:
-    case SVM_EXIT_VINTR:
         /* External interrupt; leave to allow it to be dispatched again. */
         rc = VINF_EM_RAW_INTERRUPT;
         break;
