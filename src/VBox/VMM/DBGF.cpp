@@ -158,8 +158,11 @@ DBGFR3DECL(int) DBGFR3Term(PVM pVM)
     if (    pVM->dbgf.s.fAttached
         &&  pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
     {
-        do  rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 5000);
-        while (pVM->dbgf.s.fAttached);
+        RTThreadSleep(32); /* Don't want that assertion if we can help it. */
+        while (   pVM->dbgf.s.fAttached
+               && pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
+            if (RTSemPingWait(&pVM->dbgf.s.PingPong, 5000) != VERR_TIMEOUT)
+                break;
     }
 
     /* now, send the event */
@@ -826,6 +829,8 @@ DBGFR3DECL(int) DBGFR3Attach(PVM pVM)
  */
 DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
 {
+    LogFlowFunc(("\n"));
+
     /*
      * Check if attached.
      */
@@ -838,18 +843,23 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
     /*
      * Send detach command.
      */
+    DBGFCMD enmCmd;
     if (pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
     {
-        dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
+        enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
         int rc = RTSemPong(&pVM->dbgf.s.PingPong);
         if (VBOX_FAILURE(rc))
         {
             AssertMsgFailed(("Failed to signal emulation thread. rc=%d\n", rc));
             return rc;
         }
+        LogFunc(("enmCmd=%d (pong -> ping)\n", enmCmd));
     }
     else
-        dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
+    {
+        enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
+        LogFunc(("enmCmd=%d (ping)\n", enmCmd));
+    }
 
     /*
      * Wait for the ok event.
@@ -865,11 +875,12 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
     /*
      * Destroy the ping-pong construct and return.
      */
-    pVM->dbgf.s.fAttached = false;
+    ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, false);
     RTThreadSleep(10);
     rc = RTSemPingPongDestroy(&pVM->dbgf.s.PingPong);
     AssertRC(rc);
 
+    LogFlowFunc(("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
