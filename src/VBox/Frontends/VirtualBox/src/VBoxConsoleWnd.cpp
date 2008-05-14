@@ -111,6 +111,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
     , dbgCommandLineAction (NULL)
+    , dbgLoggingAction (NULL)
     , dbgMenu (NULL)
 #endif
     , console (0)
@@ -259,15 +260,20 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                                                                      "guesttools_disabled_16px.png"));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debug menu actions */
     if (vboxGlobal().isDebuggerEnabled())
     {
         dbgStatisticsAction = new QAction (this, "dbgStatisticsAction");
         dbgCommandLineAction = new QAction (this, "dbgCommandLineAction");
+        dbgLoggingAction = new QAction (this, "dbgLoggingAction");
+        dbgLoggingAction->setToggleAction (true);
+        dbgLoggingAction->setIconSet (VBoxGlobal::iconSet ("start_16px.png")); /// @todo find the default check boxes.
     }
     else
     {
         dbgStatisticsAction = NULL;
         dbgCommandLineAction = NULL;
+        dbgLoggingAction = NULL;
     }
 #endif
 
@@ -377,6 +383,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         dbgMenu = new QPopupMenu (this, "dbgMenu");
         dbgStatisticsAction->addTo (dbgMenu);
         dbgCommandLineAction->addTo (dbgMenu);
+        dbgLoggingAction->addTo (dbgMenu);
         menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
         mMainMenu->insertItem (QString::null, dbgMenu, dbgMenuId);
     }
@@ -581,12 +588,18 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+    if (dbgMenu)
+        connect (dbgMenu, SIGNAL (aboutToShow()),
+                 this, SLOT (dbgPrepareDebugMenu()));
     if (dbgStatisticsAction)
         connect (dbgStatisticsAction, SIGNAL (activated()),
                  this, SLOT (dbgShowStatistics()));
     if (dbgCommandLineAction)
         connect (dbgCommandLineAction, SIGNAL (activated()),
                  this, SLOT (dbgShowCommandLine()));
+    if (dbgLoggingAction)
+        connect (dbgLoggingAction, SIGNAL (toggled (bool)),
+                 this, SLOT (dbgLoggingToggled (bool)));
 #endif
 
 #ifdef Q_WS_MAC
@@ -1550,6 +1563,8 @@ void VBoxConsoleWnd::languageChange()
         dbgStatisticsAction->setMenuText (tr ("&Statistics..."));
     if (dbgCommandLineAction)
         dbgCommandLineAction->setMenuText (tr ("&Command line..."));
+    if (dbgLoggingAction)
+        dbgLoggingAction->setMenuText (tr ("&Logging..."));
 #endif
 
     /* Help actions */
@@ -3362,6 +3377,30 @@ void VBoxConsoleWnd::processGlobalSettingChange (const char * /*publicName*/,
 }
 
 /**
+ * Prepare the Debug menu.
+ */
+void VBoxConsoleWnd::dbgPrepareDebugMenu()
+{
+    /* The "Logging" item. */
+    bool fEnabled = false;
+    bool fChecked = false;
+    CConsole cconsole = csession.GetConsole();
+    if (cconsole.isOk())
+    {
+        CMachineDebugger cdebugger = cconsole.GetDebugger();
+        if (cconsole.isOk())
+        {
+            fEnabled = true;
+            fChecked = cdebugger.GetLogEnabled() != FALSE;
+        }
+    }
+    if (fEnabled != dbgLoggingAction->isEnabled())
+        dbgLoggingAction->setEnabled (fEnabled);
+    if (fChecked != dbgLoggingAction->isOn())
+        dbgLoggingAction->setOn (fChecked);
+}
+
+/**
  * Called when the Debug->Statistics... menu item is selected.
  */
 void VBoxConsoleWnd::dbgShowStatistics()
@@ -3381,6 +3420,21 @@ void VBoxConsoleWnd::dbgShowCommandLine()
     if (dbgCreated())
         DBGGuiShowCommandLine (dbg_gui);
 #endif
+}
+
+/**
+ * Called when the Debug->Logging menu item is selected.
+ */
+void VBoxConsoleWnd::dbgLoggingToggled (bool aState)
+{
+    CConsole cconsole = csession.GetConsole();
+    if (cconsole.isOk())
+    {
+        CMachineDebugger cdebugger = cconsole.GetDebugger();
+        if (cconsole.isOk())
+            cdebugger.SetLogEnabled(aState);
+    }
+
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
