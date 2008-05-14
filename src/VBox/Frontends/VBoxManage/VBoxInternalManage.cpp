@@ -52,15 +52,22 @@
 #ifdef RT_OS_WINDOWS
 #include <windows.h>
 #include <winioctl.h>
-#elif RT_OS_LINUX
+#elif defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
+#endif
+#ifdef RT_OS_LINUX
+#include <sys/utsname.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
-#endif /* !RT_OS_WINDOWS && !RT_OS_LINUX */
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
+#include <sys/disk.h>
+#endif /* RT_OS_DARWIN */
 
 using namespace com;
 
@@ -799,12 +806,46 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     struct stat DevStat;
     if (!fstat(RawFile, &DevStat) && S_ISBLK(DevStat.st_mode))
     {
-        /** @todo add a BLKGETSIZE64 ioctl here, as it eliminates the 2 TByte
-         * limit. But be careful, Linux 2.4.18 is the first revision with
-         * working BLKGETSIZE64, and in 2.5.x it's pretty random. 2.6.0 works. */
-        long cBlocks;
-        if (!ioctl(RawFile, BLKGETSIZE, &cBlocks))
-            cbSize = (uint64_t)cBlocks * 512;
+#ifdef BLKGETSIZE64
+        /* BLKGETSIZE64 is broken up to 2.4.17 and in many 2.5.x. In 2.6.0
+         * it works without problems. */
+        struct utsname utsname;
+        if (    uname(&utsname) == 0
+            &&  (   (strncmp(utsname.release, "2.5.", 4) == 0 && atoi(&utsname.release[4]) >= 18)
+                 || (strncmp(utsname.release, "2.", 2) == 0 && atoi(&utsname.release[2]) >= 6)))
+        {
+            uint64_t cbBlk;
+            if (!ioctl(RawFile, BLKGETSIZE64, &cbBlk))
+                cbSize = cbBlk;
+        }
+#endif /* BLKGETSIZE64 */
+        if (!cbSize)
+        {
+            long cBlocks;
+            if (!ioctl(RawFile, BLKGETSIZE, &cBlocks))
+                cbSize = (uint64_t)cBlocks << 9;
+            else
+                return RTErrConvertFromErrno(errno);
+        }
+    }
+    else
+    {
+        RTPrintf("File '%s' is no disk\n", rawdisk.raw());
+        return VERR_INVALID_PARAMETER;
+    }
+#elif defined(RT_OS_DARWIN)
+    struct stat DevStat;
+    if (!fstat(RawFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+    {
+        uint64_t cBlocks;
+        uint32_t cbBlock;
+        if (!ioctl(fd, DKIOCGETBLOCKCOUNT, &cBlocks))
+        {
+            if (!ioctl(fd, DKIOCGETBLOCKSIZE, &cbBlock))
+                cbSize = cBlocks * cbBlock;
+            else
+                return RTErrConvertFromErrno(errno);
+        }
         else
             return RTErrConvertFromErrno(errno);
     }
@@ -813,7 +854,7 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         RTPrintf("File '%s' is no disk\n", rawdisk.raw());
         return VERR_INVALID_PARAMETER;
     }
-#else /* !RT_OS_WINDOWS && !RT_OS_LINUX */
+#else /* all unrecognized OSes */
     /* Hopefully this works on all other hosts. If it doesn't, it'll just fail
      * creating the VMDK, so no real harm done. */
     vrc = RTFileGetSize(RawFile, &cbSize);
@@ -822,7 +863,7 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         RTPrintf("Error getting the size of the raw disk: %Vrc\n", vrc);
         return vrc;
     }
-#endif /* !RT_OS_WINDOWS && !RT_OS_LINUX */
+#endif
 
     PVBOXHDD pDisk = NULL;
     VBOXHDDRAW RawDescriptor;
