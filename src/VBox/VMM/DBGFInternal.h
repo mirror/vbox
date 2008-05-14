@@ -272,12 +272,9 @@ typedef struct DBGF
     bool                    fSingleSteppingRaw;
 
     /** The current Guest OS digger. */
-    PDBGFOS                 pCurOS;
+    R3PTRTYPE(PDBGFOS)      pCurOS;
     /** The head of the Guest OS digger instances. */
-    PDBGFOS                 pOSHead;
-//#if HC_ARCH_BITS == 64
-//    uint64_t                u64Padding; /**< Size alignment padding. */
-//#endif
+    R3PTRTYPE(PDBGFOS)      pOSHead;
 } DBGF;
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;
