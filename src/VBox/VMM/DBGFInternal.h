@@ -275,7 +275,9 @@ typedef struct DBGF
     PDBGFOS                 pCurOS;
     /** The head of the Guest OS digger instances. */
     PDBGFOS                 pOSHead;
-    uint64_t u64Padding; /**< Size alignment padding. */
+//#if HC_ARCH_BITS == 64
+//    uint64_t                u64Padding; /**< Size alignment padding. */
+//#endif
 } DBGF;
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;
