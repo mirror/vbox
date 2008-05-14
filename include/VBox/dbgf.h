@@ -185,11 +185,12 @@ DBGFR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, 
 /**
  * Creates a mixed address from a flat address.
  *
+ * @returns pAddress.
  * @param   pVM         The VM handle.
  * @param   pAddress    Where to store the mixed address.
  * @param   FlatPtr     The flat pointer.
  */
-DBGFR3DECL(void) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
+DBGFR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
 
 /**
  * Creates a mixed address from a guest physical address.
@@ -1531,6 +1532,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
 
 DBGFR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress);
 DBGFR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead);
+DBGFR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cbBuf);
 
 
 /**

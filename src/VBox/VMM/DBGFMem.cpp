@@ -171,3 +171,92 @@ DBGFR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size
 
     return rc;
 }
+
+
+/**
+ * Read a zero terminated string from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pAddress        Where to start reading.
+ * @param   pszBuf          Where to store the string.
+ * @param   cchBuf          The size of the buffer.
+ */
+static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cchBuf)
+{
+    /*
+     * Validate the input we use, PGM does the rest.
+     */
+    if (!DBGFR3AddrIsValid(pVM, pAddress))
+        return VERR_INVALID_POINTER;
+    if (!VALID_PTR(pszBuf))
+        return VERR_INVALID_POINTER;
+    if (DBGFADDRESS_IS_HMA(pAddress))
+        return VERR_INVALID_POINTER;
+
+    /*
+     * Select DBGF worker by addressing mode.
+     */
+    int rc;
+    PGMMODE enmMode = PGMGetGuestMode(pVM);
+    if (    enmMode == PGMMODE_REAL
+        ||  enmMode == PGMMODE_PROTECTED
+        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+        rc = PGMPhysReadGCPhys(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
+    else
+        rc = PGMPhysReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
+
+    /*
+     * Make sure the result is terminated and that overflow is signaled.
+     */
+    if (!memchr(pszBuf, '\0', cchBuf))
+    {
+        pszBuf[cchBuf - 1] = '\0';
+        rc = VINF_BUFFER_OVERFLOW;
+    }
+    /*
+     * Handle partial reads (not perfect).
+     */
+    else if (RT_FAILURE(rc))
+    {
+        if (pszBuf[0])
+            rc = VINF_SUCCESS;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Read a zero terminated string from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pAddress        Where to start reading.
+ * @param   pszBuf          Where to store the string.
+ * @param   cchBuf          The size of the buffer.
+ */
+DBGFR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cchBuf)
+{
+    /*
+     * Validate and zero output.
+     */
+    if (!VALID_PTR(pszBuf))
+        return VERR_INVALID_POINTER;
+    if (cchBuf <= 0)
+        return VERR_INVALID_PARAMETER;
+    memset(pszBuf, 0, cchBuf);
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemReadString, 4,
+                          pVM, pAddress, pszBuf, cchBuf);
+    if (VBOX_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
