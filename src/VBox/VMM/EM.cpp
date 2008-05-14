@@ -609,6 +609,10 @@ static int emR3Debug(PVM pVM, int rc)
             /*
              * Guru meditation.
              */
+            case VERR_REM_TOO_MANY_TRAPS: /** @todo Make a guru mediation event! */
+                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_REM_TOO_MANY_TRAPS", 0, NULL, NULL);
+                break;
+
             default: /** @todo don't use default for guru, but make special errors code! */
                 rc = DBGFR3Event(pVM, DBGFEVENT_FATAL_ERROR);
                 break;
@@ -812,7 +816,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
                  * Anything which is not known to us means an internal error
                  * and the termination of the VM!
                  */
-                AssertMsgFailed(("Unknown GC return code: %Vra\n", rc));
+                AssertMsg(rc == VERR_REM_TOO_MANY_TRAPS, ("Unknown GC return code: %Vra\n", rc));
                 break;
             }
         }
