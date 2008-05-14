@@ -3381,6 +3381,7 @@ void VBoxConsoleWnd::processGlobalSettingChange (const char * /*publicName*/,
  */
 void VBoxConsoleWnd::dbgPrepareDebugMenu()
 {
+#ifdef VBOX_WITH_DEBUGGER_GUI
     /* The "Logging" item. */
     bool fEnabled = false;
     bool fChecked = false;
@@ -3398,6 +3399,7 @@ void VBoxConsoleWnd::dbgPrepareDebugMenu()
         dbgLoggingAction->setEnabled (fEnabled);
     if (fChecked != dbgLoggingAction->isOn())
         dbgLoggingAction->setOn (fChecked);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 
 /**
@@ -3427,6 +3429,7 @@ void VBoxConsoleWnd::dbgShowCommandLine()
  */
 void VBoxConsoleWnd::dbgLoggingToggled (bool aState)
 {
+#ifdef VBOX_WITH_DEBUGGER_GUI
     CConsole cconsole = csession.GetConsole();
     if (cconsole.isOk())
     {
@@ -3434,7 +3437,7 @@ void VBoxConsoleWnd::dbgLoggingToggled (bool aState)
         if (cconsole.isOk())
             cdebugger.SetLogEnabled(aState);
     }
-
+#endif
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
