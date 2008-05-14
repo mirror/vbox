@@ -209,6 +209,8 @@ typedef struct HWACCM
 
         /** Set if we don't have to flush the TLB on VM entry. */
         bool                        fResumeVM;
+        /** Set if erratum 170 affects the AMD cpu. */
+        bool                        fForceTLBFlush;
 
         /** R0 memory object for the VM control block (VMCB). */
         RTR0MEMOBJ                  pMemObjVMCB;
