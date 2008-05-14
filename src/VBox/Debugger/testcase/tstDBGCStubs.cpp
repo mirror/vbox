@@ -158,7 +158,7 @@ PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
 
 
 #include <VBox/dbgf.h>
-DBGFR3DECL(void) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr)
+DBGFR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr)
 {
 }
 
@@ -285,6 +285,10 @@ DBGFR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size
 {
     return VERR_INTERNAL_ERROR;
 }
+DBGFR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cchBuf)
+{
+    return VERR_INTERNAL_ERROR;
+}
 DBGFR3DECL(void) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr)
 {
 }
@@ -297,6 +301,10 @@ DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
     return VERR_INTERNAL_ERROR;
 }
 DBGFR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
+{
+    return VERR_INTERNAL_ERROR;
+}
+DBGFR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol)
 {
     return VERR_INTERNAL_ERROR;
 }
