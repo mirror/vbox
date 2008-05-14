@@ -170,6 +170,7 @@
     <xsd:enumeration value="netbsd"/>
     <xsd:enumeration value="netware"/>
     <xsd:enumeration value="solaris"/>
+    <xsd:enumeration value="opensolaris"/>
     <xsd:enumeration value="l4"/>
   </xsd:restriction>
 </xsd:simpleType>
