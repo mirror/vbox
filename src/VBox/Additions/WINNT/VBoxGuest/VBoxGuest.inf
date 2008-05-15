@@ -28,19 +28,19 @@ DriverVer=08/21/2006,5.00.2072
 [SourceDisksNames]
 1 = %VBoxGuest.MediaDesc%
 2 = %VBoxControl.MediaDesc%
-3 = %VBoxService.MediaDesc%
+3 = %VBoxTray.MediaDesc%
 4 = %vbcoinst.MediaDesc%
 
 [SourceDisksFiles]
 VBoxGuest.sys = 1
 VBoxControl.exe = 2
-VBoxService.exe = 3
+VBoxTray.exe = 3
 vbcoinst.dll = 4
 
 [DestinationDirs]
 DefaultDestDir = 12 ; drivers
 VBox_CoInstaller_CopyFiles = 11 ; system32
-VBoxService_CopyFiles = 11 ; system32
+VBoxTray_CopyFiles = 11 ; system32
 
 [Manufacturer]
 %SUN_MFG% = VBoxGuest
@@ -49,19 +49,19 @@ VBoxService_CopyFiles = 11 ; system32
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
 
 [VBoxGuest_Install]
-CopyFiles = VBoxGuest_CopyFiles, VBoxService_CopyFiles
-AddReg = VBoxService_Add_Reg
+CopyFiles = VBoxGuest_CopyFiles, VBoxTray_CopyFiles
+AddReg = VBoxTray_Add_Reg
 
 [VBoxGuest_CopyFiles]
 VBoxGuest.sys
 
-[VBoxService_CopyFiles]
-VBoxService.exe
+[VBoxTray_CopyFiles]
+VBoxTray.exe
 VBoxControl.exe
 
 [VBoxGuest_Install.Services]
 AddService = VBoxGuest, 0x00000002, VBoxGuest_ServiceInstallSection
-DelService = VBoxService, 0x00000004
+DelService = VBoxTray, 0x00000004
 
 [VBoxGuest_ServiceInstallSection]
 DisplayName    = %VBoxGuest_svcdesc%
@@ -70,8 +70,8 @@ StartType      = 0x00000003 ; demand start
 ErrorControl   = 0x00000001 ; normal error handling
 ServiceBinary  = %12%\VBoxGuest.sys
 
-[VBoxService_Add_Reg]
-HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxService, 0x00000000, %11%\VBoxService.exe
+[VBoxTray_Add_Reg]
+HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxTray, 0x00000000, %11%\VBoxTray.exe
 
 [VBoxGuest_Install.CoInstallers]
 AddReg = VBoxGuest_Install_CoInstallers_reg
@@ -88,5 +88,5 @@ SUN_MFG = "Sun Microsystems, Inc."
 SUN = "Sun Microsystems, Inc."
 VBoxGuest.DeviceDesc = "VirtualBox Device"
 VBoxGuest_svcdesc = "VirtualBox Guest Driver"
-VBoxService_svcdesc = "VirtualBox Guest Service"
+VBoxTray_svcdesc = "VirtualBox Guest Tray"
 
