@@ -117,6 +117,16 @@ typedef struct SOL32_module
 AssertCompileSize(Elf32_Ehdr, 0x34);
 AssertCompileSize(SOL32_module_t, 0xd4);
 
+typedef struct SOL_utsname
+{
+    char        sysname[257];
+    char        nodename[257];
+    char        release[257];
+    char        version[257];
+    char        machine[257];
+} SOL_utsname_t;
+AssertCompileSize(SOL_utsname_t, 5 * 257);
+
 /** @} */
 
 
@@ -147,8 +157,10 @@ typedef DBGDIGGERSOLARIS *PDBGDIGGERSOLARIS;
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Validates a 32-bit solaris kernel address */
-#define SOL32_VALID_ADDRESS(Addr)   ((Addr) > UINT32_C(0x80000000) && (Addr) < UINT32_C(0xfffff000))
+#define SOL32_VALID_ADDRESS(Addr)       ((Addr) > UINT32_C(0x80000000) && (Addr) < UINT32_C(0xfffff000))
 
+/** The max data segment size of the 'unix' module. */
+#define SOL_UNIX_MAX_DATA_SEG_SIZE      0x01000000
 
 
 /*******************************************************************************
@@ -175,7 +187,51 @@ static DECLCALLBACK(int)  dbgDiggerSolarisQueryVersion(PVM pVM, void *pvData, ch
     PDBGDIGGERSOLARIS pThis = (PDBGDIGGERSOLARIS)pvData;
     Assert(pThis->fValid);
 
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * It's all in the utsname symbol...
+     */
+    DBGFADDRESS Addr;
+    SOL_utsname_t UtsName;
+    DBGFSYMBOL SymUtsName;
+    int rc = DBGFR3SymbolByName(pVM, "utsname", &SymUtsName);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3MemRead(pVM, DBGFR3AddrFromFlat(pVM, &Addr, SymUtsName.Value), &UtsName, sizeof(UtsName));
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * Try searching by the name...
+         */
+        memset(&UtsName, '\0', sizeof(UtsName));
+        strcpy(&UtsName.sysname[0], "SunOS");
+        rc = DBGFR3MemScan(pVM, &pThis->AddrUnixData, SOL_UNIX_MAX_DATA_SEG_SIZE,
+                           (uint8_t *)&UtsName.sysname[0], sizeof(UtsName.sysname), &Addr);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3MemRead(pVM, DBGFR3AddrFromFlat(pVM, &Addr, Addr.FlatPtr - RT_OFFSETOF(SOL_utsname_t, sysname)),
+                               &UtsName, sizeof(UtsName));
+    }
+
+    /*
+     * Copy out the result (if any).
+     */
+    if (RT_SUCCESS(rc))
+    {
+        if (    UtsName.nodename[-1] != '\0'
+            ||  UtsName.release[-1] != '\0'
+            ||  UtsName.version[-1] != '\0'
+            ||  UtsName.machine[-1] != '\0'
+            ||  UtsName.machine[sizeof(UtsName.machine) - 1] != '\0')
+        {
+            //rc = VERR_DBGF_UNEXPECTED_OS_DATA;
+            rc = VERR_GENERAL_FAILURE;
+            RTStrPrintf(pszVersion, cchVersion, "failed - bogus utsname");
+        }
+        else
+            RTStrPrintf(pszVersion, cchVersion, "%s %s", UtsName.version, UtsName.release);
+    }
+    else
+        RTStrPrintf(pszVersion, cchVersion, "failed - %Rrc", rc);
+
+    return rc;
 }
 
 
@@ -364,7 +420,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PVM pVM, void *pvData)
 
     DBGFADDRESS     CurAddr = pThis->AddrUnixData;
     DBGFADDRESS     MaxAddr;
-    DBGFR3AddrFromFlat(pVM, &MaxAddr, CurAddr.FlatPtr + 0x01000000);
+    DBGFR3AddrFromFlat(pVM, &MaxAddr, CurAddr.FlatPtr + SOL_UNIX_MAX_DATA_SEG_SIZE);
     const uint8_t  *pbExpr = (const uint8_t *)&pThis->AddrUnixText.FlatPtr;
     const uint32_t  cbExpr = sizeof(uint32_t);//pThis->AddrUnixText.FlatPtr < _4G ? sizeof(uint32_t) : sizeof(uint64_t)
     while (   CurAddr.FlatPtr < MaxAddr.FlatPtr
