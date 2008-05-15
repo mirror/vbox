@@ -758,6 +758,8 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
  */
 unsigned VBOXCALL supdrvOSGetCPUCount(void)
 {
+    /* KeQueryActiveProcessors must be executed at IRQL < DISPATCH_LEVEL */
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
     KAFFINITY Mask = KeQueryActiveProcessors();
     unsigned cCpus = 0;
     unsigned iBit;
