@@ -690,6 +690,19 @@ static void show_usage()
              "               s           Save state and power off\n"
              "              <del>        Send <ctrl><alt><del>\n"
              "       <F1>...<F12>        Send <ctrl><alt><Fx>\n"
+#if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
+             "\n"
+             "Further key bindings useful for debugging:\n"
+             "  LCtrl + Alt + F12        Reset statistics counter\n"
+             "  LCtrl + Alt + F11        Dump statistics to logfile\n"
+             "  Alt         + F12        Toggle R0 recompiler\n"
+             "  Alt         + F11        Toggle R3 recompiler\n"
+             "  Alt         + F10        Toggle PATM\n"
+             "  Alt         + F9         Toggle CSAM\n"
+             "  Alt         + F8         Toggle single step mode\n"
+             "  LCtrl/RCtrl + F12        Toggle logger\n"
+             "  F12                      Write log marker to logfile\n"
+#endif
              "\n");
 }
 
