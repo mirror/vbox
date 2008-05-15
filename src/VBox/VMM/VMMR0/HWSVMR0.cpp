@@ -1723,17 +1723,21 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
  */
 HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
-    SVM_VMCB   *pVMCB;
+    /* Skip it if a TLB flush is already pending. */
+    if (pVM->hwaccm.s.svm.fForceTLBFlush)
+    {
+        SVM_VMCB   *pVMCB;
 
-    Log2(("SVMR0InvalidatePage %VGv\n", GCVirt));
-    AssertReturn(pVM, VERR_INVALID_PARAMETER);
-    Assert(pVM->hwaccm.s.svm.fSupported);
+        Log2(("SVMR0InvalidatePage %VGv\n", GCVirt));
+        AssertReturn(pVM, VERR_INVALID_PARAMETER);
+        Assert(pVM->hwaccm.s.svm.fSupported);
 
-    pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
-    AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
+        pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
+        AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
-    STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPageManual);
-    SVMInvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPageManual);
+        SVMInvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+    }
     return VINF_SUCCESS;
 }
 
