@@ -725,7 +725,7 @@ REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
  */
 REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
 {
-    Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", pVM->rem.s.pCtx->cs, pVM->rem.s.pCtx->eip));
+    Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
 
     /*
      * Sync the state and enable single instruction / single stepping.
@@ -964,25 +964,6 @@ REMR3DECL(int) REMR3Run(PVM pVM)
 {
     Log2(("REMR3Run: (cs:eip=%04x:%08x)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
-////Keyboard / tb stuff:
-//if (    pVM->rem.s.Env.segs[R_CS].selector == 0xf000
-//    &&  pVM->rem.s.Env.eip >= 0xe860
-//    &&  pVM->rem.s.Env.eip <= 0xe880)
-//    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP;
-////A20:
-//if (    pVM->rem.s.Env.segs[R_CS].selector == 0x9020
-//    &&  pVM->rem.s.Env.eip >= 0x970
-//    &&  pVM->rem.s.Env.eip <= 0x9a0)
-//    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP;
-////Speaker (port 61h)
-//if (    pVM->rem.s.Env.segs[R_CS].selector == 0x0010
-//    &&  (    (pVM->rem.s.Env.eip >= 0x90278c10 && pVM->rem.s.Env.eip <= 0x90278c30)
-//         ||  (pVM->rem.s.Env.eip >= 0x9010e250 && pVM->rem.s.Env.eip <= 0x9010e260)
-//        )
-//    )
-//    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP;
-//DBGFR3InfoLog(pVM, "timers", NULL);
-
 
     int rc = cpu_exec(&pVM->rem.s.Env);
     switch (rc)
