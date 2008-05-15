@@ -932,7 +932,6 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
     s -= tlw->size();
     fr.setRight (fr.right() + s.width());
     fr.setBottom (fr.bottom() + s.height());
-    printf ("bla %d %d %d %d\n", fr.x(), fr.y(), fr.width(), fr.height());
 
     if (adjustPosition)
     {
