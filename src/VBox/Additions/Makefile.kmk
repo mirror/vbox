@@ -102,7 +102,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  GUESTADDITIONS_FILESPEC.win.x86 = \
 	driver/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
-	driver/VBoxGuest/VBoxService.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxService.exe \
+	driver/VBoxGuest/VBoxTray.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxTray.exe \
 	driver/VBoxGuest/VBoxHook.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxHook.dll \
 	driver/VBoxGuest/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxControl.exe \
 	driver/VBoxGuest/VBCoInst.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBCoInst.dll \
