@@ -771,6 +771,12 @@ ResumeExecution:
 
     /* Make sure we flush the TLB when required. */
     pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
+#ifdef VBOX_WITH_STATISTICS
+    if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
+    else
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
+#endif
 
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.svm.fResumeVM      = true;
@@ -1244,7 +1250,10 @@ ResumeExecution:
         /* Truly a pita. Why can't SVM give the same information as VMX? */
         rc = SVMR0InterpretInvpg(pVM, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
         if (rc == VINF_SUCCESS)
+        {
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPageInvlpg);
             goto ResumeExecution;   /* eip already updated */
+        }
         break;
     }
 
@@ -1282,6 +1291,8 @@ ResumeExecution:
             rc = PGMSyncCR3(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
             AssertRC(rc);
 
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
+            
             /** @note Force a TLB flush. SVM requires us to do it manually. */
             pVM->hwaccm.s.svm.fForceTLBFlush = true;
         }
@@ -1721,6 +1732,7 @@ HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
     AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPageManual);
     SVMInvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
     return VINF_SUCCESS;
 }
@@ -1735,6 +1747,6 @@ HWACCMR0DECL(int) SVMR0FlushTLB(PVM pVM)
 {
     Log2(("SVMR0FlushTLB\n"));
     pVM->hwaccm.s.svm.fForceTLBFlush = true;
-
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBManual);
     return VINF_SUCCESS;
 }
