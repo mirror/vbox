@@ -307,6 +307,13 @@ typedef struct HWACCM
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
+    STAMCOUNTER             StatFlushPageManual;
+    STAMCOUNTER             StatFlushTLBManual;
+    STAMCOUNTER             StatFlushPageInvlpg;
+    STAMCOUNTER             StatFlushTLBWorldSwitch;
+    STAMCOUNTER             StatNoFlushTLBWorldSwitch;
+    STAMCOUNTER             StatFlushTLBCRxChange;
+
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;
 
