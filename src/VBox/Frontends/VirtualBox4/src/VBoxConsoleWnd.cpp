@@ -1242,10 +1242,6 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         /* start with ignore the close event */
         e->ignore();
 
-        /* Disable auto closure because we want to have a chance to show the
-         * error dialog on save state / power off failure. */
-        no_auto_close = true;
-
         bool success = true;
 
         bool wasPaused = machine_state == KMachineState_Paused ||
@@ -1298,6 +1294,10 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
             if (dlg.exec() == QDialog::Accepted)
             {
+                /* Disable auto closure because we want to have a chance to show the
+                 * error dialog on save state / power off failure. */
+                no_auto_close = true;
+
                 CConsole cconsole = console->console();
 
                 if (dlg.mRbSave->isChecked())
@@ -3366,13 +3366,29 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
 void VBoxConsoleWnd::tryClose()
 {
 #warning "port me"
-    /* It seems that Qt4 closes all child widgets if the parent widget get
-     * closed. So nothing to do here than to call close. */
-     
-     close();
+    /* First close any open modal & popup widgets. Use a single shot with
+     * timeout 0 to allow the widgets to cleany close and test then again. If
+     * all open widgets are closed destroy ourself. */
+    QWidget *widget = QApplication::activeModalWidget();
+    if (widget)
+    {
+        widget->close();
+        QTimer::singleShot (0, this, SLOT (tryClose()));
+    }
+    else
+    {
+        widget = QApplication::activePopupWidget();
+        if (widget)
+        {
+            widget->close();
+            QTimer::singleShot (0, this, SLOT (tryClose()));
+        }
+        else
+            close();
+    }
 
-    /* We have this to test on Windows and Mac or maybe I forgot something, so
-     * we keep this as a reference: */
+    /* We have this to test on Windows or maybe I forgot something, so we keep
+     * this as a reference: */
 //    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
 //
 //    if (qApp->eventLoop()->loopLevel() > 1)
