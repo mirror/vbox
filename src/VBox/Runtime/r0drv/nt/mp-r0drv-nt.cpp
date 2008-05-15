@@ -164,8 +164,10 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
 
-#ifdef DEBUG_sandervl
-    /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL */
+#if 0
+    /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL according to MSDN, but the
+     * driver verifier doesn't complain... 
+     */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
 #endif
 
