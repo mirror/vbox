@@ -20,7 +20,7 @@
  * additional information or have any questions.
  */
 
-#include "VBoxService.h"
+#include "VBoxTray.h"
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include "helpers.h"
 #include <iprt/asm.h>
