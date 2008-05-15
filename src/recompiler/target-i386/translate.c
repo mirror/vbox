@@ -3237,7 +3237,7 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
         XOR */
 static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int b)
 {
-#if 0 /** @todo test this properly! */
+#if 1 /** @todo test this properly! */
     target_ulong pc = s->pc;
     int modrm, mod, op;
 
@@ -3337,6 +3337,7 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
 
                 /* /1: CMPXCHG8B mem64 or CMPXCHG16B mem128 */
                 case 0xc7:
+                    modrm = ldub_code(pc++);
                     op = (modrm >> 3) & 7;
                     if (op != 1)
                         break;
@@ -3345,9 +3346,9 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
             break;
     }
 
-    /* illegal sequence. */
+    /* illegal sequence. The s->pc is past the lock prefix and that
+       is sufficient for the TB, I think. */
     Log(("illegal lock sequence %VGv (b=%#x)\n", pc_start, b));
-    /* exception 6 (UD) is a fault, therefore the PC must not be changed */
     return true;
 #else
     return false;
