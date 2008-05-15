@@ -3337,6 +3337,9 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
 
                 /* /1: CMPXCHG8B mem64 or CMPXCHG16B mem128 */
                 case 0xc7:
+                    op = (modrm >> 3) & 7;
+                    if (op != 1)
+                        break;
                     return false;
             }
             break;
@@ -3344,7 +3347,7 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
 
     /* illegal sequence. */
     Log(("illegal lock sequence %VGv (b=%#x)\n", pc_start, b));
-    s->pc = pc; /* XXX: What's the correct value here? */
+    /* exception 6 (UD) is a fault, therefore the PC must not be changed */
     return true;
 #else
     return false;
