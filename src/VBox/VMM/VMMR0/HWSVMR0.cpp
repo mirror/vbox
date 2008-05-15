@@ -1724,7 +1724,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
     /* Skip it if a TLB flush is already pending. */
-    if (pVM->hwaccm.s.svm.fForceTLBFlush)
+    if (!pVM->hwaccm.s.svm.fForceTLBFlush)
     {
         SVM_VMCB   *pVMCB;
 
