@@ -75,7 +75,7 @@ trap "sudo chown -R `whoami` $DIR; exit 1" INT
 # On smbfs, this might succeed just fine but make no actual changes,
 # so we might have to temporarily copy the driver to a local directory.
 sudo chown -R root:wheel "$DIR"
-OWNER=`stat -f "%u" "$DIR"`
+OWNER=`/usr/bin/stat -f "%u" "$DIR"`
 if test "$OWNER" -ne 0; then
     TMP_DIR=/tmp/loaddrv.tmp
     echo "load.sh: chown didn't work on $DIR, using temp location $TMP_DIR/$DRVNAME"
