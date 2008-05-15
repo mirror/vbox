@@ -533,6 +533,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetRemReplay,           STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/REMReplay",  STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetVMSetError,          STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/VMSetError", STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMLock,             STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/PGMLock",    STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
+                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetHyperAssertion,      STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/HyperAssert", STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPATMDuplicateFn,     STAMTYPE_COUNTER, "/VMM/GCRet/PATMDuplicateFn",     STAMUNIT_OCCURENCES, "Number of VINF_PATM_DUPLICATE_FUNCTION returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMChangeMode,       STAMTYPE_COUNTER, "/VMM/GCRet/PGMChangeMode",       STAMUNIT_OCCURENCES, "Number of VINF_PGM_CHANGE_MODE returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetEmulHlt,             STAMTYPE_COUNTER, "/VMM/GCRet/EmulHlt",             STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EMULATE_INSTR_HLT returns.");

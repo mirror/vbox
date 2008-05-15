@@ -297,6 +297,7 @@ typedef struct VMM
     STAMCOUNTER                 StatGCRetPendingRequest;
     STAMCOUNTER                 StatGCRetPGMGrowRAM;
     STAMCOUNTER                 StatGCRetPDMLock;
+    STAMCOUNTER                 StatGCRetHyperAssertion;
     STAMCOUNTER                 StatGCRetLogFlush;
     STAMCOUNTER                 StatGCRetPDMQueueFlush;
     STAMCOUNTER                 StatGCRetPGMPoolGrow;
