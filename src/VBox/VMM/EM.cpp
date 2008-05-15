@@ -2178,6 +2178,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VERR_REM_FLUSHED_PAGES_OVERFLOW:
             Assert((pCtx->ss & X86_SEL_RPL) != 1);
             REMR3ReplayInvalidatedPages(pVM);
+            rc = VINF_SUCCESS;
             break;
 
         /*
