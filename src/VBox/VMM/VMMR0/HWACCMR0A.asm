@@ -707,6 +707,7 @@ BEGINPROC SVMVMRun
 %endif
     push    xBP
     mov     xBP, xSP
+    pushf
 
     ;/* Manual save and restore:
     ; * - General purpose registers except RIP, RSP, RAX
@@ -782,6 +783,7 @@ BEGINPROC SVMVMRun
 
     mov     eax, VINF_SUCCESS
 
+    popf
     pop     xBP
 %ifdef RT_ARCH_AMD64
     add     xSP, 4*xS
