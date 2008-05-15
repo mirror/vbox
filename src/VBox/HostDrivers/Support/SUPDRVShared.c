@@ -3915,7 +3915,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
      * identify the older CPUs which don't do different frequency and
      * can be relied upon to have somewhat uniform TSC between the cpus.
      */
-    if (supdrvOSGetCPUCount() > 1)
+    if (supdrvOSGetCPUCount(pDevExt) > 1)
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
 
