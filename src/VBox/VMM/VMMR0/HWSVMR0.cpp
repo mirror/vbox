@@ -1652,7 +1652,7 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         SVMInvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
-    AssertRC(rc);
+    Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
     return rc;
 }
 
