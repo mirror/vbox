@@ -582,7 +582,7 @@ public:
 
 #else
         /* Return the ID of the top-level console window. */
-        *winId = (ULONG64) mView->topLevelWidget()->winId();
+        *winId = (ULONG64) mView->window()->winId();
 #endif
 
         return S_OK;
@@ -915,7 +915,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
     if (mMainWnd->isMaximized() || mMainWnd->isFullScreen())
         return;
 
-    QWidget *tlw = topLevelWidget();
+    QWidget *tlw = window();
 
     /* calculate client window offsets */
     QRect fr = tlw->frameGeometry();
@@ -932,6 +932,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
     s -= tlw->size();
     fr.setRight (fr.right() + s.width());
     fr.setBottom (fr.bottom() + s.height());
+    printf ("bla %d %d %d %d\n", fr.x(), fr.y(), fr.width(), fr.height());
 
     if (adjustPosition)
     {
@@ -1476,8 +1477,8 @@ bool VBoxConsoleView::event (QEvent *e)
                  *  what. So, I'll just always show & activate the stupid window to
                  *  make it get out of the dock when the user wishes to show a VM.
                  */
-                topLevelWidget()->show();
-                topLevelWidget()->activateWindow();
+                window()->show();
+                window()->activateWindow();
                 return true;
             }
 #endif
@@ -3001,11 +3002,11 @@ void VBoxConsoleView::captureKbd (bool aCapture, bool aEmitSignal /* = true */)
 #elif defined (Q_WS_X11)
 	if (aCapture)
 		XGrabKey (QX11Info::display(), AnyKey, AnyModifier,
-                  topLevelWidget()->winId(), False,
+                  window()->winId(), False,
                   GrabModeAsync, GrabModeAsync);
 	else
 		XUngrabKey (QX11Info::display(),  AnyKey, AnyModifier,
-                    topLevelWidget()->winId());
+                    window()->winId());
 #elif defined (Q_WS_MAC)
     if (aCapture)
     {

@@ -264,7 +264,7 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                 }
                 else
                 {
-                    vboxProblem().message (mStatusBar->topLevelWidget(),
+                    vboxProblem().message (mStatusBar->window(),
                         VBoxProblemReporter::Error,
                         tr ("<p>Failed to save the downloaded file as "
                             "<nobr><b>%1</b>.</nobr></p>")
