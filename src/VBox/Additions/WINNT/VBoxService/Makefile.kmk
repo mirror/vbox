@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for VBoxService.
+# Sub-Makefile for VBoxTray.
 #
 
 #
@@ -23,15 +23,15 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxService
-VBoxService_TEMPLATE = VBOXW32GUESTR3
+PROGRAMS += VBoxTray
+VBoxTray_TEMPLATE = VBOXW32GUESTR3
 ifdef VBOX_SIGN_ADDITIONS
- VBoxService_NOINST  = true
+ VBoxTray_NOINST  = true
 endif
-VBoxService_DEFS     = VBOX_HGCM LOG_TO_BACKDOOR
-VBoxService_INCS     = ../include
-VBoxService_SOURCES  = \
-	VBoxService.cpp \
+VBoxTray_DEFS     = VBOX_HGCM LOG_TO_BACKDOOR
+VBoxTray_INCS     = ../include
+VBoxTray_SOURCES  = \
+	VBoxTray.cpp \
 	VBoxSeamless.cpp \
 	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
@@ -40,25 +40,25 @@ VBoxService_SOURCES  = \
         VBoxStatistics.cpp \
         VBoxMemBalloon.cpp \
 	helpers.cpp \
-	VBoxService.rc
+	VBoxTray.rc
 
-VBoxService_LIBS     = \
+VBoxTray_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
 
-# VBoxService.cpp uses VBOX_SVN_REV.
-VBoxService.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxService.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+# VBoxTray.cpp uses VBOX_SVN_REV.
+VBoxTray.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxTray.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 # The icon location is configurable.
-VBoxService.rc_INCS = $(PATH_VBoxService)
-VBoxService.rc_DEPS = $(PATH_VBoxService)/VBoxService-icon.rc
-VBoxService.rc_CLEAN = $(PATH_VBoxService)/VBoxService-icon.rc
+VBoxTray.rc_INCS = $(PATH_VBoxTray)
+VBoxTray.rc_DEPS = $(PATH_VBoxTray)/VBoxTray-icon.rc
+VBoxTray.rc_CLEAN = $(PATH_VBoxTray)/VBoxTray-icon.rc
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
 # Icon include file.
-$(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_ICON_FILE) Makefile.kmk | $$(call DIRDEP,$$(@D))
+$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ICON_FILE) Makefile.kmk | $$(call DIRDEP,$$(@D))
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 

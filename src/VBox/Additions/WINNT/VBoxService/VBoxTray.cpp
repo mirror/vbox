@@ -1,5 +1,5 @@
 /** @file
- * VBoxService - Guest Additions Service
+ * VBoxTray - Guest Additions Tray Application
  */
 
 /*
@@ -18,7 +18,7 @@
  * additional information or have any questions.
  */
 
-#include "VBoxService.h"
+#include "VBoxTray.h"
 #include "VBoxSeamless.h"
 #include "VBoxClipboard.h"
 #include "VBoxDisplay.h"

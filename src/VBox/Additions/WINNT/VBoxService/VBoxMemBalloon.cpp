@@ -22,7 +22,7 @@
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include <psapi.h>
-#include "VBoxService.h"
+#include "VBoxTray.h"
 #include "VBoxMemBalloon.h"
 #include <VBoxDisplay.h>
 #include <VBox/VBoxDev.h>
