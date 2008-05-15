@@ -1385,7 +1385,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
  * Get the current CPU count.
  * @returns Number of cpus.
  */
-unsigned VBOXCALL supdrvOSGetCPUCount(void)
+unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
 {
 #ifdef CONFIG_SMP
 # if defined(num_present_cpus) && !defined(VBOX_REDHAT_KABI)

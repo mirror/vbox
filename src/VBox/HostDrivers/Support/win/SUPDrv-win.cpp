@@ -536,6 +536,10 @@ static NTSTATUS VBoxDrvNtGipInit(PSUPDRVDEVEXT pDevExt)
                     KeSetTargetProcessorDpc(&pDevExt->aGipCpuDpcs[i], i);
                 }
 
+                /* Note: We need to register a callback handler for added cpus (only available in win2k8: KeRegisterProcessorChangeCallback) */
+                /* Note: We are not allowed to call KeQueryActiveProcessors at DPC_LEVEL, so we now assume cpu affinity mask does NOT change. */
+                pDevExt->uAffinityMask = KeQueryActiveProcessors();
+
                 dprintf(("VBoxDrvNtGipInit: ulClockFreq=%ld ulClockInterval=%ld ulClockIntervalActual=%ld Phys=%x%08x\n",
                          ulClockFreq, ulClockInterval, ulClockIntervalActual, Phys.HighPart, Phys.LowPart));
                 return STATUS_SUCCESS;
@@ -625,9 +629,7 @@ static void _stdcall VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID 
         {
             KIRQL oldIrql;
 
-            /* KeQueryActiveProcessors must be executed at IRQL < DISPATCH_LEVEL */
-            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-            KAFFINITY Mask = KeQueryActiveProcessors();
+            KAFFINITY Mask = pDevExt->uAffinityMask;
 
             /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu */
             KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
@@ -755,12 +757,12 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 /**
  * Get the current CPU count.
  * @returns Number of cpus.
+ *
+ * @param   pDevExt     Instance data.
  */
-unsigned VBOXCALL supdrvOSGetCPUCount(void)
+unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
 {
-    /* KeQueryActiveProcessors must be executed at IRQL < DISPATCH_LEVEL */
-    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    KAFFINITY Mask = KeQueryActiveProcessors();
+    KAFFINITY Mask = pDevExt->uAffinityMask;
     unsigned cCpus = 0;
     unsigned iBit;
     for (iBit = 0; iBit < sizeof(Mask) * 8; iBit++)

@@ -710,6 +710,8 @@ typedef struct SUPDRVDEVEXT
     ULONG                   ulGipTimerInterval;
     /** Flag to force async GIP timer mode. */
     BOOLEAN                 fForceAsyncTsc;
+    /** Current CPU affinity mask. */
+    KAFFINITY               uAffinityMask;
 #endif
 #ifdef RT_OS_LINUX
     /** The last jiffies. */
@@ -759,7 +761,7 @@ int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip)
 int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
-unsigned VBOXCALL supdrvOSGetCPUCount(void);
+unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 #endif
 
