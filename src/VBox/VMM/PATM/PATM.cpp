@@ -1375,6 +1375,15 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_
         Log(("Illegal opcode (0xf 0xb) -> return here\n"));
         return VINF_SUCCESS;
 
+#ifdef DTRACE_EXPERIMENT
+    case OP_MOV: /* dtrace changes push ebp; mov ebp, esp; into lock mov ebp, esp */
+        if (pCpu->prefix & PREFIX_LOCK)
+        {
+            Log(("illegal lock sequence -> return here\n"));
+            return VINF_SUCCESS;
+        }
+#endif
+
     case OP_STI:
     case OP_POPF:
         Assert(!(pPatch->flags & (PATMFL_DUPLICATE_FUNCTION)));
@@ -1514,6 +1523,15 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uin
         Log(("Illegal opcode (0xf 0xb) -> return here\n"));
         return VINF_SUCCESS;
 
+#ifdef DTRACE_EXPERIMENT
+    case OP_MOV: /* dtrace changes push ebp; mov ebp, esp; into lock mov ebp, esp */
+        if (pCpu->prefix & PREFIX_LOCK)
+        {
+            Log(("illegal lock sequence -> return here\n"));
+            return VINF_SUCCESS;
+        }
+#endif
+
     case OP_IRET:
     case OP_SYSEXIT: /* will fault or emulated in GC */
     case OP_RETN:
@@ -1652,6 +1670,17 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
     }
 
     case OP_MOV:
+#ifdef DTRACE_EXPERIMENT
+        /* dtrace changes push ebp; mov ebp, esp; into lock mov ebp, esp */
+        if (pCpu->prefix & PREFIX_LOCK)
+        {
+            rc = patmPatchGenIllegalInstr(pVM, pPatch);
+            Log(("illegal lock sequence -> return here\n"));
+            if (VBOX_SUCCESS(rc))
+                rc = VINF_SUCCESS;  /* exit point by definition */
+            break;
+        }
+#endif
         if (pCpu->pCurInstr->optype & OPTYPE_POTENTIALLY_DANGEROUS)
         {
             /* mov ss, src? */
