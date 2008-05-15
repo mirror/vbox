@@ -2943,7 +2943,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
     QWidget *w = aRelative;
     if (w)
     {
-        w = w->topLevelWidget();
+        w = w->window();
         deskGeo = QApplication::desktop()->availableGeometry (w);
         parentGeo = w->frameGeometry();
         /* On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
@@ -3335,7 +3335,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         {
             QString result;
 
-            QWidget *topParent = mParent ? mParent->topLevelWidget() : qApp->mainWidget();
+            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
             QString title = mCaption.isNull() ? tr ("Select a directory") : mCaption;
 
             TCHAR path[MAX_PATH];
@@ -3484,7 +3484,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             QString title = mCaption.isNull() ? tr ("Select a file") : mCaption;
 
-            QWidget *topParent = mParent ? mParent->topLevelWidget() : qApp->mainWidget();
+            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
             QString winFilters = winFilter (mFilters);
             AssertCompile (sizeof (TCHAR) == sizeof (QChar));
             TCHAR buf [1024];
