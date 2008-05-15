@@ -376,8 +376,20 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
             if (RT_LIKELY(VBOX_SUCCESS(rc)))
                 pRegFrame->eip += Cpu.opsize;
         }
+        /* Speed up dtrace and don't entrust invalid lock sequences to the recompiler. */
+        else if (Cpu.prefix & PREFIX_LOCK)
+        {
+            Log(("TRPMGCTrap06Handler: pc=%RGv op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
+            /** @todo Clear this with PATM - it gets upset when returning VINF_EM_RAW_GUEST_TRAP on a patch address. */
+#ifdef DTRACE_EXPERIMENT
+            rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
+            Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+#else
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+#endif
+        }
+        /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         else
-            /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
             rc = VINF_EM_RAW_EMULATE_INSTR;
     }
     else
