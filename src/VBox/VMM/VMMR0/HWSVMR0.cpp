@@ -169,7 +169,7 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
         &&  !((u32Model == 0x6f || u32Model == 0x6c || u32Model == 0x7c) &&  u32Stepping >= 2))
     {
         Log(("SVMR0InitVM: AMD cpu with erratum 170 family %x model %x stepping %x\n", u32Family, u32Model, u32Stepping));
-        pVM->hwaccm.s.svm.fForceTLBFlush = true;
+        pVM->hwaccm.s.svm.fAlwaysFlushTLB = true;
     }
 
     return VINF_SUCCESS;
@@ -680,7 +680,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
-    bool        fForceTLBFlush = false;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
 
@@ -767,9 +766,8 @@ ResumeExecution:
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
-    if (    pVM->hwaccm.s.svm.fResumeVM == false
-        ||  pVM->hwaccm.s.svm.fForceTLBFlush
-        ||  fForceTLBFlush)
+    if (    pVM->hwaccm.s.svm.fForceTLBFlush
+        ||  pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;
     }
@@ -777,8 +775,8 @@ ResumeExecution:
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 0;
 
     /* In case we execute a goto ResumeExecution later on. */
-    pVM->hwaccm.s.svm.fResumeVM = true;
-    fForceTLBFlush = false;
+    pVM->hwaccm.s.svm.fResumeVM      = true;
+    pVM->hwaccm.s.svm.fForceTLBFlush = false;
 
     Assert(sizeof(pVM->hwaccm.s.svm.pVMCBPhys) == 8);
     Assert(pVMCB->ctrl.u32InterceptCtrl2 == ( SVM_CTRL2_INTERCEPT_VMRUN         /* required */
@@ -1286,7 +1284,7 @@ ResumeExecution:
             AssertRC(rc);
 
             /** @note Force a TLB flush. SVM requires us to do it manually. */
-            fForceTLBFlush = true;
+            pVM->hwaccm.s.svm.fForceTLBFlush = true;
         }
         if (rc == VINF_SUCCESS)
         {
@@ -1598,6 +1596,8 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM)
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     /* Force a TLB flush on VM entry. */
+    pVM->hwaccm.s.svm.fForceTLBFlush = true;
+
     pVM->hwaccm.s.svm.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
@@ -1653,7 +1653,7 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         return VINF_SUCCESS;
     }
     Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
-    return (rc == VERR_REM_FLUSHED_PAGES_OVERFLOW) ? VERR_EM_INTERPRETER : rc;
+    return rc;
 }
 
 /**
@@ -1702,3 +1702,39 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
     return VERR_EM_INTERPRETER;
 }
 
+
+/**
+ * Invalidates a guest page
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
+{
+    SVM_VMCB   *pVMCB;
+
+    Log2(("SVMR0InvalidatePage %VGv\n", GCVirt));
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    Assert(pVM->hwaccm.s.svm.fSupported);
+
+    pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
+    AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
+
+    SVMInvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Flushes the guest TLB
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0FlushTLB(PVM pVM)
+{
+    Log2(("SVMR0FlushTLB\n"));
+    pVM->hwaccm.s.svm.fForceTLBFlush = true;
+
+    return VINF_SUCCESS;
+}

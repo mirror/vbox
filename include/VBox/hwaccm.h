@@ -256,6 +256,22 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM);
  */
 HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM);
 
+/**
+ * Invalidates a guest page
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+HWACCMR0DECL(int) HWACCMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
+
+/**
+ * Flushes the guest TLB
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) HWACCMR0FlushTLB(PVM pVM);
 
 /** @} */
 #endif

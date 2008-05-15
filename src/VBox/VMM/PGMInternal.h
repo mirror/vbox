@@ -35,6 +35,7 @@
 #include <VBox/dbgf.h>
 #include <VBox/log.h>
 #include <VBox/gmm.h>
+#include <VBox/hwaccm.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -265,6 +266,8 @@
  */
 #ifdef IN_GC
 # define PGM_INVL_PG(GCVirt)        ASMInvalidatePage((void *)(GCVirt))
+#elif defined(IN_RING0)
+# define PGM_INVL_PG(GCVirt)        HWACCMR0InvalidatePage(pVM, (RTGCPTR)(GCVirt))
 #else
 # define PGM_INVL_PG(GCVirt)        ((void)0)
 #endif
@@ -276,6 +279,8 @@
  */
 #ifdef IN_GC
 # define PGM_INVL_BIG_PG(GCVirt)    ASMReloadCR3()
+#elif defined(IN_RING0)
+# define PGM_INVL_BIG_PG(GCVirt)    HWACCMR0FlushTLB(pVM)
 #else
 # define PGM_INVL_BIG_PG(GCVirt)    ((void)0)
 #endif
@@ -285,6 +290,8 @@
  */
 #ifdef IN_GC
 # define PGM_INVL_GUEST_TLBS()      ASMReloadCR3()
+#elif defined(IN_RING0)
+# define PGM_INVL_GUEST_TLBS()      HWACCMR0FlushTLB(pVM)
 #else
 # define PGM_INVL_GUEST_TLBS()      ((void)0)
 #endif
