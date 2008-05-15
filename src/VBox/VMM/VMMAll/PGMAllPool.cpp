@@ -907,6 +907,9 @@ DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
 {
+#ifdef IN_RING0
+    const PVM pVM = pPool->CTXSUFF(pVM);
+#endif
     Assert(pPool->iAgeHead != pPool->iAgeTail); /* We shouldn't be here if there < 2 cached entries! */
     STAM_COUNTER_INC(&pPool->StatCacheFreeUpOne);
 
@@ -1031,6 +1034,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  */
 static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint16_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
+#ifdef IN_RING0
+    const PVM pVM = pPool->CTXSUFF(pVM);
+#endif
     /*
      * Look up the GCPhys in the hash.
      */
