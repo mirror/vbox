@@ -365,12 +365,15 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
     {
         if (!(pCtx->eflags.u32 & X86_EFL_IF))
         {
-            Log2(("Enable irq window exit!\n"));
-            /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
-            pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
-            pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
-            pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 1; /* ignore the priority in the TPR; just deliver it */
-            pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
+            if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
+            {
+                Log(("Enable irq window exit!\n"));
+                /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
+                pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
+                pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
+                pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 1; /* ignore the priority in the TPR; just deliver it */
+                pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
+            }
         }
         else
         if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
@@ -765,7 +768,6 @@ ResumeExecution:
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
-
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
         ||  pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
@@ -1181,6 +1183,7 @@ ResumeExecution:
 
     case SVM_EXIT_VINTR:
         /* A virtual interrupt is about to be delivered, which means IF=1. */
+        Log(("SVM_EXIT_VINTR IF=%d\n", pCtx->eflags.Bits.u1IF));
         pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 0;
         pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 0;
         pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0;
@@ -1649,6 +1652,7 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     if (VBOX_SUCCESS(rc))
     {
         /* Manually invalidate the page for the VM's TLB. */
+        Log(("SVMInvlpgA %VGv ASID=%d\n", addr, uASID));
         SVMInvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
