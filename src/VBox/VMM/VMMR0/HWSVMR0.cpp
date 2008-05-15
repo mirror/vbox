@@ -1653,7 +1653,7 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         return VINF_SUCCESS;
     }
     Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
-    return rc;
+    return (rc == VERR_REM_FLUSHED_PAGES_OVERFLOW) ? VERR_EM_INTERPRETER : rc;
 }
 
 /**
