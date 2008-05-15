@@ -1652,8 +1652,8 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         SVMInvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
-    /** @todo r=bird: we shouldn't ignore returns codes like this... I'm 99% sure the error is fatal. */
-    return VERR_EM_INTERPRETER;
+    AssertRC(rc);
+    return rc;
 }
 
 /**
