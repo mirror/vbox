@@ -1232,10 +1232,6 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         /* start with ignore the close event */
         e->ignore();
 
-        /* Disable auto closure because we want to have a chance to show the
-         * error dialog on save state / power off failure. */
-        no_auto_close = true;
-
         bool success = true;
 
         bool wasPaused = machine_state == KMachineState_Paused ||
@@ -1288,6 +1284,10 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
             if (dlg.exec() == QDialog::Accepted)
             {
+                /* Disable auto closure because we want to have a chance to show the
+                 * error dialog on save state / power off failure. */
+                no_auto_close = true;
+
                 CConsole cconsole = console->console();
 
                 if (dlg.rbSave->isChecked())
