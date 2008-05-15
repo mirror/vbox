@@ -52,7 +52,7 @@
 #ifdef RT_OS_WINDOWS
 #include <windows.h>
 #include <winioctl.h>
-#elif defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -68,6 +68,11 @@
 #ifdef RT_OS_DARWIN
 #include <sys/disk.h>
 #endif /* RT_OS_DARWIN */
+#ifdef RT_OS_SOLARIS
+#include <stropts.h>
+#include <sys/dkio.h>
+#include <sys/vtoc.h>
+#endif /* RT_OS_SOLARIS */
 
 using namespace com;
 
@@ -830,7 +835,7 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     }
     else
     {
-        RTPrintf("File '%s' is no disk\n", rawdisk.raw());
+        RTPrintf("File '%s' is no block device\n", rawdisk.raw());
         return VERR_INVALID_PARAMETER;
     }
 #elif defined(RT_OS_DARWIN)
@@ -851,7 +856,22 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     }
     else
     {
-        RTPrintf("File '%s' is no disk\n", rawdisk.raw());
+        RTPrintf("File '%s' is no block device\n", rawdisk.raw());
+        return VERR_INVALID_PARAMETER;
+    }
+#elif defined(RT_OS_SOLARIS)
+    struct stat DevStat;
+    if (!fstat(RawFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+    {
+        struct dk_minfo mediainfo;
+        if (!ioctl(RawFile, DKIOCGMEDIAINFO, &mediainfo))
+            cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
+        else
+            return RTErrConvertFromErrno(errno);
+    }
+    else
+    {
+        RTPrintf("File '%s' is no block device\n", rawdisk.raw());
         return VERR_INVALID_PARAMETER;
     }
 #else /* all unrecognized OSes */
