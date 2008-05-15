@@ -1,0 +1,64 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxTray.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += VBoxTray
+VBoxTray_TEMPLATE = VBOXW32GUESTR3
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxTray_NOINST  = true
+endif
+VBoxTray_DEFS     = VBOX_HGCM LOG_TO_BACKDOOR
+VBoxTray_INCS     = ../include
+VBoxTray_SOURCES  = \
+	VBoxTray.cpp \
+	VBoxSeamless.cpp \
+	VBoxClipboard.cpp \
+	VBoxDisplay.cpp \
+	VBoxVRDP.cpp \
+        VBoxRestore.cpp \
+        VBoxStatistics.cpp \
+        VBoxMemBalloon.cpp \
+	helpers.cpp \
+	VBoxTray.rc
+
+VBoxTray_LIBS     = \
+	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
+
+# VBoxTray.cpp uses VBOX_SVN_REV.
+VBoxTray.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxTray.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+# The icon location is configurable.
+VBoxTray.rc_INCS = $(PATH_VBoxTray)
+VBoxTray.rc_DEPS = $(PATH_VBoxTray)/VBoxTray-icon.rc
+VBoxTray.rc_CLEAN = $(PATH_VBoxTray)/VBoxTray-icon.rc
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
+# Icon include file.
+$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ICON_FILE) Makefile.kmk | $$(call DIRDEP,$$(@D))
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
