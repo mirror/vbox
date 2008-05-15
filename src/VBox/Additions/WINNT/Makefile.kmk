@@ -27,7 +27,7 @@ include $(PATH_SUB_CURRENT)/Graphics/Makefile.kmk
 include $(PATH_SUB_CURRENT)/i8042prt/Makefile.kmk
 include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
-include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
@@ -56,7 +56,7 @@ VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
 VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
 VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
@@ -71,7 +71,7 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(TARGET_VBoxControl) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 755 $< $(@D)
 
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe: $$(TARGET_VBoxService) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe: $$(TARGET_VBoxTray) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 755 $< $(@D)
 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(call DIRDEP,$$(@D))
@@ -81,7 +81,7 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
 	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
