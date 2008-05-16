@@ -1307,9 +1307,9 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
                         "Stepping:                        %d\n"
                         "Brand ID:                        %#05x\n",
-                        (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ((uEAX >> 8) & 0xf) + (((uEAX >> 8) & 0xf) == 0xf ? (uEAX >> 20) & 0x7f : 0),
-                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ((uEAX >> 4) & 0xf) | (((uEAX >> 4) & 0xf) == 0xf ? (uEAX >> 16) & 0x0f : 0),
-                        (uEAX >> 0) & 0xf,
+                        (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
+                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX),
+                        ASMGetCpuStepping(uEAX),
                         Guest.ebx & 0xfff);
 
         if (iVerbosity == 1)
