@@ -532,7 +532,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             VM_FF_CLEAR(pVM, VM_FF_TIMER);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {
