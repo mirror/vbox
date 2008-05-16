@@ -31,6 +31,7 @@ include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
 ifndef VBOX_OSE
 include $(PATH_SUB_CURRENT)/Network/Makefile.kmk
 endif
