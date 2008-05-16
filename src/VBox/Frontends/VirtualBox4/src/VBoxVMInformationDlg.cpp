@@ -373,7 +373,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     if (mSession.isNull())
         return;
 
-    QString table = "<table border=0 cellspacing=2 cellpadding=2>%1</table>";
+    QString table = "<table border=0 cellspacing=0 cellpadding=2>%1</table>";
     QString hdrRow = "<tr><td align=left><img src='%1'></td><td colspan=3><b>%2</b></td></tr>";
     QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
     QString paragraph = "<tr><td colspan=4></td></tr>";
