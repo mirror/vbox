@@ -103,6 +103,8 @@ public:
 
     QRect getDesktopGeometry();
 
+    bool isAutoresizeGuestActive();
+
 signals:
 
     void keyboardStateChanged (int state);
