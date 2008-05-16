@@ -534,10 +534,30 @@ void WINAPI VBoxServiceStart(void)
  */
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    dprintf(("VBoxService: WinMain\n"));
+    /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
+    HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, "VBoxTray");
+    if (   (hMutexAppRunning != NULL) 
+        && (GetLastError() == ERROR_ALREADY_EXISTS))
+   {
+      /* Close the mutex for this application instance. */
+      CloseHandle (hMutexAppRunning);
+      hMutexAppRunning = NULL;
+      return 0;
+   }
+
+    dprintf(("VBoxService: Started.\n"));
+
     gInstance = hInstance;
     VBoxServiceStart();
-    
+
+    dprintf(("VBoxService: Ended.\n"));
+
+    /* Release instance mutex. */
+    if (hMutexAppRunning != NULL) {
+        CloseHandle (hMutexAppRunning);
+        hMutexAppRunning = NULL;
+    }
+
     return 0;
 }
 
