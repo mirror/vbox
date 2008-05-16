@@ -31,6 +31,8 @@ if [ -z "$2" ]; then
     # Try obtain a physical NIC that is currently active
     phys_nic=`/usr/sbin/dladm show-dev | /usr/bin/awk 'NF==7 && $3=="up" { print $1 }'`
     if [ -z "$phys_nic" ]; then
+        # Try obtain a physical NIC that is currently active
+        phys_nic=`/usr/sbin/dladm show-dev | /usr/bin/awk 'NF==4 && $2=="up" { print $1 }'`
         # Failed to get a currently active NIC, get the first available NIC.
         phys_nic=`/usr/sbin/dladm show-link | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
         if [ -z "$phys_nic" ]; then
