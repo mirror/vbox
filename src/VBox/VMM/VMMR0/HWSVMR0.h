@@ -46,8 +46,9 @@ __BEGIN_DECLS
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0Enter(PVM pVM);
+HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu);
 
 /**
  * Leaves the AMD-V session
