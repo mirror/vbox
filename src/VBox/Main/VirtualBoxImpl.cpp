@@ -1721,7 +1721,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
         CheckComRCReturnRC (rc);
 
         Key globalNode = tree.rootKey().key ("Global");
-        Key extraDataNode = tree.rootKey().findKey ("ExtraData");
+        Key extraDataNode = globalNode.findKey ("ExtraData");
 
         if (!extraDataNode.isNull())
         {
