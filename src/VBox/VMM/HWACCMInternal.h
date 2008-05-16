@@ -247,6 +247,9 @@ typedef struct HWACCM
 
         /** Maximum ASID allowed. */
         uint32_t                    u32MaxASID;
+
+        /** SVM feature bits from cpuid 0x8000000a */
+        uint32_t                    u32Features;
     } svm;
 
     struct

@@ -466,6 +466,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACMM: cpuid 0x80000001.u32AMDFeatureEDX = %VX32\n", pVM->hwaccm.s.cpuid.u32AMDFeatureEDX));
             LogRel(("HWACCM: SVM revision                      = %X\n", pVM->hwaccm.s.svm.u32Rev));
             LogRel(("HWACCM: SVM max ASID                      = %d\n", pVM->hwaccm.s.svm.u32MaxASID));
+            LogRel(("HWACCM: SVM features                      = %X\n", pVM->hwaccm.s.svm.u32Features));
 
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
