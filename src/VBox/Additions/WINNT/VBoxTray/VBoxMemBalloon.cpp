@@ -55,7 +55,7 @@ int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
     DWORD dwMemBalloonSize;
     if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
     {
-        dprintf(("VBoxMemBalloonInit: new balloon size % MB\n", dwMemBalloonSize));
+        dprintf(("VBoxMemBalloonInit: new balloon size %d MB\n", dwMemBalloonSize));
         gCtx.uMemBalloonSize = dwMemBalloonSize;
     }
     else
