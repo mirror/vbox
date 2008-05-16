@@ -56,14 +56,10 @@ static              int   hwaccmr0CheckCpuRcArray(int *paRc, unsigned cErrorCode
 /*******************************************************************************
 *   Local Variables                                                            *
 *******************************************************************************/
+
 static struct
 {
-    struct
-    {
-        RTR0MEMOBJ  pMemObj;
-        bool        fVMXConfigured;
-        bool        fSVMConfigured;
-    } aCpuInfo[RTCPUSET_MAX_CPUS];
+    HWACCM_CPUINFO aCpuInfo[RTCPUSET_MAX_CPUS];
 
     struct
     {
@@ -535,7 +531,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        paRc[idCpu] = VMXR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = VMXR0EnableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pVM, pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = true;
@@ -543,7 +539,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     else
     if (pVM->hwaccm.s.svm.fSupported)
     {
-        paRc[idCpu] = SVMR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = SVMR0EnableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pVM, pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = true;
@@ -576,14 +572,14 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
 
     if (HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured)
     {
-        paRc[idCpu] = VMXR0DisableCpu(idCpu, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = VMXR0DisableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = false;
     }
     else
     if (HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured)
     {
-        paRc[idCpu] = SVMR0DisableCpu(idCpu, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = SVMR0DisableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = false;
     }
@@ -796,6 +792,7 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
+    RTCPUID  idCpu = RTMpCpuId();
 
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
@@ -803,12 +800,12 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        return VMXR0RunGuestCode(pVM, pCtx);
+        return VMXR0RunGuestCode(pVM, pCtx, &HWACCMR0Globals.aCpuInfo[idCpu]);
     }
     else
     {
         Assert(pVM->hwaccm.s.svm.fSupported);
-        return SVMR0RunGuestCode(pVM, pCtx);
+        return SVMR0RunGuestCode(pVM, pCtx, &HWACCMR0Globals.aCpuInfo[idCpu]);
     }
 }
 

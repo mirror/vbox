@@ -41,6 +41,8 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/cpuset.h>
+#include <iprt/mp.h>
 #include "HWSVMR0.h"
 
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID);
@@ -49,18 +51,22 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID);
  * Sets up and activates AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pVM             The VM to operate on.
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+HWACCMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
     /* We must turn on AMD-V and setup the host state physical address, as those MSRs are per-cpu/core. */
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("SVMR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
+#endif
 
     /* Turn on AMD-V in the EFER MSR. */
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
@@ -69,6 +75,8 @@ HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
 
     /* Write the physical page address where the CPU will store the host state while executing the VM. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, pPageCpuPhys);
+
+    pCpu->uCurrentASID = 0;   /* we'll aways increment this the first time (host uses ASID 0) */
     return VINF_SUCCESS;
 }
 
@@ -76,14 +84,18 @@ HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
  * Deactivates AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+HWACCMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("SVMR0DisableCpu cpu %d\n", pCpu->idCpu);
+#endif
 
     /* Turn off AMD-V in the EFER MSR. */
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
@@ -91,6 +103,8 @@ HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPage
 
     /* Invalidate host state physical address. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
+    pCpu->uCurrentASID = 0;
+
     return VINF_SUCCESS;
 }
 
@@ -299,6 +313,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     /* No LBR virtualization. */
     pVMCB->ctrl.u64LBRVirt      = 0;
+
+    /** The ASID must start at 1; the host uses 0. */
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
 
     return rc;
 }
@@ -637,9 +654,6 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* vmrun will fail otherwise. */
     pVMCB->guest.u64EFER   = MSR_K6_EFER_SVME;
 
-    /** @note We can do more complex things with tagged TLBs. */
-    pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
-
     /** TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
         pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
@@ -677,8 +691,9 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
 {
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
@@ -687,6 +702,8 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     unsigned    cResume = 0;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
+
+    AssertReturn(pCpu->fSVMConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
     AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
@@ -770,7 +787,26 @@ ResumeExecution:
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
     /* Make sure we flush the TLB when required. */
-    pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
+    if (    pVM->hwaccm.s.svm.fForceTLBFlush
+        && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
+    {
+        if (++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID)
+        {
+            pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
+            pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;       /* wrap around; flush TLB */
+        }
+        else
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
+    }
+    else
+    {
+        Assert(pVM->hwaccm.s.svm.fForceTLBFlush == pVM->hwaccm.s.svm.fAlwaysFlushTLB);
+        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
+    }
+
+    Assert(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID);
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = pCpu->uCurrentASID;
+
 #ifdef VBOX_WITH_STATISTICS
     if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);

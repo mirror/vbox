@@ -61,22 +61,22 @@ HWACCMR0DECL(int) SVMR0Leave(PVM pVM);
  * Sets up and activates AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pVM             The VM to operate on.
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Deactivates AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Does Ring-0 per VM AMD-V init.
@@ -111,8 +111,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
+HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
 
 
 /**

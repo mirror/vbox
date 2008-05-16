@@ -62,22 +62,22 @@ HWACCMR0DECL(int) VMXR0Leave(PVM pVM);
  * Sets up and activates VT-x on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pVM             The VM to operate on.
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Deactivates VT-x on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Does Ring-0 per VM VT-x init.
@@ -130,8 +130,9 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
+HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
 
 
 #define VMX_WRITE_SELREG(REG, reg) \

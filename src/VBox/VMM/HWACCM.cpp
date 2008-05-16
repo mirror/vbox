@@ -155,6 +155,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->hwaccm.s.StatFlushPageInvlpg,       STAMTYPE_COUNTER, "/HWACCM/Flush/Page/Invlpg", STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatFlushTLBWorldSwitch,   STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/Switch",  STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatNoFlushTLBWorldSwitch, STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/Skipped", STAMUNIT_OCCURENCES,    "Nr of occurances");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatFlushASID,             STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/ASID",    STAMUNIT_OCCURENCES,    "Nr of occurances");
 
     pVM->hwaccm.s.pStatExitReason = 0;
 
