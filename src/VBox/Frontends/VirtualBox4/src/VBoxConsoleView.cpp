@@ -1126,8 +1126,17 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* resize the guest canvas */
                 resize (re->width(), re->height());
                 updateSliders();
-                /* let our toplevel widget calculate its sizeHint properly */
-                QApplication::sendPostedEvents (0, QEvent::LayoutRequest);
+                /* Let our toplevel widget calculate its sizeHint properly. */
+#ifdef Q_WS_X11
+                /* We use processEvents rather than sendPostedEvents & set the
+                 * time out value to max cause on X11 otherwise the layout
+                 * isn't calculated correctly. Dosn't find the bug in Qt, but
+                 * this could be triggered through the async nature of the X11
+                 * window event system. */
+                QCoreApplication::processEvents (QEventLoop::AllEvents, INT_MAX);
+#else /* Q_WS_X11 */
+                QCoreApplication::sendPostedEvents (0, QEvent::LayoutRequest);
+#endif /* Q_WS_X11 */
 
                 normalizeGeometry (true /* adjustPosition */);
 
