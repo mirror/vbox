@@ -510,14 +510,17 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
  */
 static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PVM      pVM = (PVM)pvUser1;
-    int     *paRc = (int *)pvUser2;
-    void    *pvPageCpu;
-    RTHCPHYS pPageCpuPhys;
+    PVM             pVM = (PVM)pvUser1;
+    int            *paRc = (int *)pvUser2;
+    void           *pvPageCpu;
+    RTHCPHYS        pPageCpuPhys;
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     Assert(pVM);
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+
+    pCpu->idCpu = idCpu;
 
     /* Should never happen */
     if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
@@ -531,7 +534,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        paRc[idCpu] = VMXR0EnableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pVM, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = VMXR0EnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = true;
@@ -539,7 +542,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     else
     if (pVM->hwaccm.s.svm.fSupported)
     {
-        paRc[idCpu] = SVMR0EnableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pVM, pvPageCpu, pPageCpuPhys);
+        paRc[idCpu] = SVMR0EnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
         AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = true;
