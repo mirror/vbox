@@ -230,7 +230,13 @@
 /** ICEBP instruction. */
 #define SVM_EXIT_ICEBP                  0x88
 /** WBINVD instruction. */
-#define SVM_INVD                        0x89
+#define SVM_EXIT_WBINVD                 0x89
+/** MONITOR instruction. */
+#define SVM_EXIT_MONITOR                0x8A
+/** MWAIT instruction uncond. */
+#define SVM_EXIT_MWAIT_UNCOND           0x8B
+/** MWAIT instruction when armed. */
+#define SVM_EXIT_MWAIT_ARMED            0x8C
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault.). */
 #define SVM_EXIT_NPF                    0x400
 
