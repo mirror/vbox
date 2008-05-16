@@ -158,11 +158,12 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
      *
      */
     uint32_t u32Dummy;
-    uint32_t u32Version, u32Family, u32Model, u32Stepping;
+    uint32_t u32Version, u32Family, u32Model, u32Stepping, u32BaseFamily;
     ASMCpuId(1, &u32Version, &u32Dummy, &u32Dummy, &u32Dummy);
-    u32Family    = ((u32Version >> 8) & 0xf) + (((u32Version >> 8) & 0xf) == 0xf ? (u32Version >> 20) & 0x7f : 0);
+    u32BaseFamily= (u32Version >> 8) & 0xf;
+    u32Family    = u32BaseFamily + (u32BaseFamily == 0xf ? ((u32Version >> 20) & 0x7f) : 0);
     u32Model     = ((u32Version >> 4) & 0xf);
-    u32Model     = u32Model | ((u32Model == 0xf ? (u32Version >> 16) & 0x0f : 0) << 4);
+    u32Model     = u32Model | ((u32BaseFamily == 0xf ? (u32Version >> 16) & 0x0f : 0) << 4);
     u32Stepping  = u32Version & 0xf;
     if (    u32Family == 0xf
         &&  !((u32Model == 0x68 || u32Model == 0x6b || u32Model == 0x7f) &&  u32Stepping >= 1)
