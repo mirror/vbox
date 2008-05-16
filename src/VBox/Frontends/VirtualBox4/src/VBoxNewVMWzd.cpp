@@ -328,6 +328,12 @@ bool VBoxNewVMWzd::constructMachine()
     /* Add one network adapter (NAT) by default */
     {
         CNetworkAdapter cadapter = cmachine.GetNetworkAdapter (0);
+#ifdef VBOX_WITH_E1000
+        /* Default to e1k on solaris */
+        if (type.GetId() == "solaris" ||
+            type.GetId() == "opensolaris")
+            cadapter.SetAdapterType (KNetworkAdapterType_I82540EM);
+#endif /* VBOX_WITH_E1000 */
         cadapter.SetEnabled (true);
         cadapter.AttachToNAT();
         cadapter.SetMACAddress (QString::null);
