@@ -187,6 +187,8 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVM->hwaccm.s.svm.fAlwaysFlushTLB = true;
     }
 
+    /* Invalidate the last cpu we were running on. */
+    pVM->hwaccm.s.svm.idLastCpu = NIL_RTCPUID;
     return VINF_SUCCESS;
 }
 
@@ -1642,13 +1644,18 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0Enter(PVM pVM)
+HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
-    /* Force a TLB flush on VM entry. */
-    pVM->hwaccm.s.svm.fForceTLBFlush = true;
+    if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
+    {
+        /* Force a TLB flush on VM entry. */
+        pVM->hwaccm.s.svm.fForceTLBFlush = true;
+    }
+    pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
 
     pVM->hwaccm.s.svm.fResumeVM = false;
 

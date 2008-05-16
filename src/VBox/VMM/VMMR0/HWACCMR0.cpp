@@ -704,6 +704,7 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
+    RTCPUID  idCpu = RTMpCpuId();
 
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
@@ -729,7 +730,7 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     else
     {
         Assert(pVM->hwaccm.s.svm.fSupported);
-        rc  = SVMR0Enter(pVM);
+        rc  = SVMR0Enter(pVM, &HWACCMR0Globals.aCpuInfo[idCpu]);
         AssertRC(rc);
         rc |= SVMR0LoadGuestState(pVM, pCtx);
         AssertRC(rc);

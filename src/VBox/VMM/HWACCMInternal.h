@@ -205,16 +205,17 @@ typedef struct HWACCM
     {
         /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
         bool                        fSupported;
-
         /** Set when we've enabled SVM. */
         bool                        fEnabled;
-
         /** Set if we don't have to flush the TLB on VM entry. */
         bool                        fResumeVM;
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
         /** Set if we need to flush the TLB during the world switch. */
         bool                        fForceTLBFlush;
+
+        /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
+        RTCPUID                     idLastCpu;
 
         /** R0 memory object for the VM control block (VMCB). */
         RTR0MEMOBJ                  pMemObjVMCB;
@@ -328,68 +329,6 @@ typedef struct HWACCM
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
-
-static struct
-{
-    struct
-    {
-        RTR0MEMOBJ  pMemObj;
-        bool        fVMXConfigured;
-        bool        fSVMConfigured;
-    } aCpuInfo[RTCPUSET_MAX_CPUS];
-
-    struct
-    {
-        /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
-        bool                        fSupported;
-
-        /** Host CR4 value (set by ring-0 VMX init) */
-        uint64_t                    hostCR4;
-
-        /** VMX MSR values */
-        struct
-        {
-            uint64_t                feature_ctrl;
-            uint64_t                vmx_basic_info;
-            uint64_t                vmx_pin_ctls;
-            uint64_t                vmx_proc_ctls;
-            uint64_t                vmx_exit;
-            uint64_t                vmx_entry;
-            uint64_t                vmx_misc;
-            uint64_t                vmx_cr0_fixed0;
-            uint64_t                vmx_cr0_fixed1;
-            uint64_t                vmx_cr4_fixed0;
-            uint64_t                vmx_cr4_fixed1;
-            uint64_t                vmx_vmcs_enum;
-        } msr;
-        /* Last instruction error */
-        uint32_t                    ulLastInstrError;
-    } vmx;
-    struct
-    {
-        /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
-        bool                        fSupported;
-
-        /** SVM revision. */
-        uint32_t                    u32Rev;
-
-        /** Maximum ASID allowed. */
-        uint32_t                    u32MaxASID;
-
-        /** SVM feature bits from cpuid 0x8000000a */
-        uint32_t                    u32Features;
-    } svm;
-    /** Saved error from detection */
-    int32_t         lLastError;
-
-    struct
-    {
-        uint32_t                    u32AMDFeatureECX;
-        uint32_t                    u32AMDFeatureEDX;
-    } cpuid;
-
-    HWACCMSTATE     enmHwAccmState;
-} HWACCMR0GLOBALS;
 
 typedef struct
 {
