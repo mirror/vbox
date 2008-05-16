@@ -62,12 +62,12 @@ static void VMXR0CheckError(PVM pVM, int rc)
  * Sets up and activates VT-x on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pVM             The VM to operate on.
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -77,7 +77,7 @@ HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
 #ifdef LOG_ENABLED
-    SUPR0Printf("VMXR0EnableCpu cpu %d page (%x) %x\n", idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
+    SUPR0Printf("VMXR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
 #endif
     /* Set revision dword at the beginning of the VMXON structure. */
     *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
@@ -104,11 +104,11 @@ HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
  * Deactivates VT-x on the current CPU
  *
  * @returns VBox status code.
- * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pCpu            CPU info struct
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
@@ -120,7 +120,7 @@ HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPage
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
 #ifdef LOG_ENABLED
-    SUPR0Printf("VMXR0DisableCpu cpu %d\n", idCpu);
+    SUPR0Printf("VMXR0DisableCpu cpu %d\n", pCpu->idCpu);
 #endif
     return VINF_SUCCESS;
 }
@@ -962,15 +962,16 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 }
 
 /**
- * Runs guest code in a VMX VM.
+ * Runs guest code in a VT-x VM.
  *
  * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the kernel, it might mess things up. (XP kernel traps have been frequently observed)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
 {
     int         rc = VINF_SUCCESS;
     RTCCUINTREG val, valShadow;
@@ -982,6 +983,8 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     unsigned    cResume = 0;
 
     Log2(("\nE"));
+
+    AssertReturn(pCpu->fVMXConfigured, VERR_EM_INTERNAL_ERROR);
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
