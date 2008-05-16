@@ -1133,9 +1133,9 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         "Logical CPUs:                    %d\n"
                         "CLFLUSH Size:                    %d\n"
                         "Brand ID:                        %#04x\n",
-                        (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ((uEAX >> 8) & 0xf) + (((uEAX >> 8) & 0xf) == 0xf ? (uEAX >> 20) & 0x7f : 0),
-                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ((uEAX >> 4) & 0xf) | ((((uEAX >> 8) & 0xf) == 0xf ? (uEAX >> 16) & 0x0f : 0) << 4),
-                        (uEAX >> 0) & 0xf,
+                        (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
+                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX),
+                        ASMGetCpuStepping(uEAX),
                         (Guest.ebx >> 24) & 0xff,
                         (Guest.ebx >> 16) & 0xff,
                         (Guest.ebx >>  8) & 0xff,
