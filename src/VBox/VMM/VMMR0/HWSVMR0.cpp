@@ -252,9 +252,6 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      */
 
     /** @todo nested paging */
-    /* Intercept #NM only; #PF is not relevant due to nested paging (we get a seperate exit code (SVM_EXIT_NPF) for
-     * pagefaults that need our attention).
-     */
     pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
 
     pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
@@ -282,6 +279,8 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                     | SVM_CTRL2_INTERCEPT_CLGI
                                     | SVM_CTRL2_INTERCEPT_SKINIT
                                     | SVM_CTRL2_INTERCEPT_RDTSCP        /* AMD only; we don't support this one */
+                                    | SVM_CTRL2_INTERCEPT_WBINVD
+                                    | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
                                     ;
     Log(("pVMCB->ctrl.u32InterceptException = %x\n", pVMCB->ctrl.u32InterceptException));
     Log(("pVMCB->ctrl.u32InterceptCtrl1 = %x\n", pVMCB->ctrl.u32InterceptCtrl1));
@@ -1201,6 +1200,7 @@ ResumeExecution:
         rc = VINF_EM_RAW_INTERRUPT;
         break;
 
+    case SVM_EXIT_WBINVD:
     case SVM_EXIT_INVD:                 /* Guest software attempted to execute INVD. */
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvd);
         /* Skip instruction and continue directly. */
@@ -1493,7 +1493,6 @@ ResumeExecution:
         rc = VINF_EM_RAW_EMULATE_INSTR_HLT;
         break;
 
-    case SVM_EXIT_RDPMC:
     case SVM_EXIT_RSM:
     case SVM_EXIT_INVLPGA:
     case SVM_EXIT_VMRUN:
@@ -1520,7 +1519,12 @@ ResumeExecution:
         goto ResumeExecution;
     }
 
-    /* Emulate RDMSR & WRMSR in ring 3. */
+    /* Emulate in ring 3. */
+    case SVM_EXIT_MONITOR:
+    case SVM_EXIT_RDPMC:
+    case SVM_EXIT_PAUSE:
+    case SVM_EXIT_MWAIT_UNCOND:
+    case SVM_EXIT_MWAIT_ARMED:
     case SVM_EXIT_MSR:
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
         break;
@@ -1533,7 +1537,6 @@ ResumeExecution:
         rc = VINF_EM_RESET;             /* Triple fault equals a reset. */
         break;
 
-    case SVM_EXIT_PAUSE:
     case SVM_EXIT_IDTR_READ:
     case SVM_EXIT_GDTR_READ:
     case SVM_EXIT_LDTR_READ:
