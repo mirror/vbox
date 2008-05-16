@@ -550,7 +550,7 @@ additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
 else
-	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\\\add && tools\\\\env.cmd && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
+	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\\\add && tools\\\\env.cmd && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
 endif
 
 additions-build-solaris.x86:
