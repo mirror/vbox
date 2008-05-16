@@ -941,6 +941,47 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 }
 #endif
 
+
+/**
+ * Extracts the CPU family from ASMCpuId(1) or ASMCpuId(0x80000001)
+ *
+ * @returns Family.
+ * @param   uEAX    EAX return from ASMCpuId(1) or ASMCpuId(0x80000001).
+ */
+DECLINLINE(uint32_t) ASMGetCpuFamily(uint32_t uEAX)
+{
+    return ((uEAX >> 8) & 0xf) == 0xf
+         ? ((uEAX >> 20) & 0x7f) + 0xf
+         : ((uEAX >> 8) & 0xf);
+}
+
+
+/**
+ * Extracts the CPU model from ASMCpuId(1) or ASMCpuId(0x80000001)
+ *
+ * @returns Model.
+ * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
+ */
+DECLINLINE(uint32_t) ASMGetCpuModel(uint32_t uEAX)
+{
+    return ((uEAX >> 8) & 0xf) == 0xf /* family! */
+         ? ((uEAX >> 4) & 0xf) | ((uEAX >> 12) & 0xf0)
+         : ((uEAX >> 4) & 0xf);
+}
+
+
+/**
+ * Extracts the CPU stepping from ASMCpuId(1) or ASMCpuId(0x80000001)
+ *
+ * @returns Model.
+ * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
+ */
+DECLINLINE(uint32_t) ASMGetCpuStepping(uint32_t uEAX)
+{
+    return uEAX & 0xf;
+}
+
+
 /**
  * Get cr0.
  * @returns cr0.
