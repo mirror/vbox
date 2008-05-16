@@ -580,8 +580,8 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             }
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
-        if (!(val & X86_CR0_CD))
-            val &= ~X86_CR0_NW;     /* Illegal when cache is turned on. */
+        /* Always enable caching. */
+        val &= ~(X86_CR0_CD|X86_CR0_NW);
 
         val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
         val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
