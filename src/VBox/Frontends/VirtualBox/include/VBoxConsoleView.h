@@ -101,7 +101,7 @@ public:
 
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
 
-    QRect getDesktopGeometry();
+    QRect desktopGeometry();
 
     bool isAutoresizeGuestActive();
 
@@ -198,11 +198,14 @@ private slots:
 
 private:
 
-    enum meDesktopGeo {
-        invalid = 0, fixed, automatic, any, unchanged
+    enum DesktopGeo
+    {
+        DesktopGeo_Invalid = 0, DesktopGeo_Fixed,
+        DesktopGeo_Automatic, DesktopGeo_Any, DesktopGeo_Unchanged
     };
-    void setDesktopGeometry(meDesktopGeo type, int width, int height);
-    void setDesktopGeoHint(int width, int height);
+
+    void setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeight);
+    void setDesktopGeoHint (int aWidth, int aHeight);
     void maybeRestrictMinimumSize();
 
     VBoxConsoleWnd *mMainWnd;
@@ -289,7 +292,7 @@ private:
 #if defined(Q_WS_MAC)
     CGImageRef mVirtualBoxLogo;
 #endif
-    meDesktopGeo mDesktopGeoType;
+    DesktopGeo mDesktopGeo;
     QRect mDesktopGeometry;
     QRect mLastSizeHint;
 };
