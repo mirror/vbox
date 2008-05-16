@@ -943,6 +943,35 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 
 
 /**
+ * Tests if it an genuin Intel CPU based on the ASMCpuId(0) output.
+ *
+ * @returns true/false.
+ * @param   uEBX    EBX return from ASMCpuId(0)
+ * @param   uECX    ECX return from ASMCpuId(0)
+ * @param   uEDX    EDX return from ASMCpuId(0)
+ */
+DECLINLINE(bool) ASMIsIntelCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
+{
+    return uEBX == 0x756e6547
+        || uECX == 0x6c65746e
+        || uEDX == 0x49656e69;
+}
+
+
+/**
+ * Tests if this is an genuin Intel CPU.
+ *
+ * @returns true/false.
+ */
+DECLINLINE(bool) ASMIsIntelCpu(void)
+{
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
+    return ASMIsIntelCpuEx(uEBX, uECX, uEDX);
+}
+
+
+/**
  * Extracts the CPU family from ASMCpuId(1) or ASMCpuId(0x80000001)
  *
  * @returns Family.
@@ -957,14 +986,45 @@ DECLINLINE(uint32_t) ASMGetCpuFamily(uint32_t uEAX)
 
 
 /**
+ * Extracts the CPU model from ASMCpuId(1) or ASMCpuId(0x80000001), Intel variant.
+ *
+ * @returns Model.
+ * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
+ * @param   fIntel  Whether it's an intel CPU.
+ */
+DECLINLINE(uint32_t) ASMGetCpuModelIntel(uint32_t uEAX)
+{
+    return ((uEAX >> 8) & 0xf) == 0xf || (((uEAX >> 8) & 0xf) == 0x6) /* family! */
+         ? ((uEAX >> 4) & 0xf) | ((uEAX >> 12) & 0xf0)
+         : ((uEAX >> 4) & 0xf);
+}
+
+
+/**
+ * Extracts the CPU model from ASMCpuId(1) or ASMCpuId(0x80000001), AMD variant.
+ *
+ * @returns Model.
+ * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
+ * @param   fIntel  Whether it's an intel CPU.
+ */
+DECLINLINE(uint32_t) ASMGetCpuModelAMD(uint32_t uEAX)
+{
+    return ((uEAX >> 8) & 0xf) == 0xf
+         ? ((uEAX >> 4) & 0xf) | ((uEAX >> 12) & 0xf0)
+         : ((uEAX >> 4) & 0xf);
+}
+
+
+/**
  * Extracts the CPU model from ASMCpuId(1) or ASMCpuId(0x80000001)
  *
  * @returns Model.
  * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
+ * @param   fIntel  Whether it's an intel CPU. Use ASMIsIntelCpuEx() or ASMIsIntelCpu().
  */
-DECLINLINE(uint32_t) ASMGetCpuModel(uint32_t uEAX)
+DECLINLINE(uint32_t) ASMGetCpuModel(uint32_t uEAX, bool fIntel)
 {
-    return ((uEAX >> 8) & 0xf) == 0xf /* family! */
+    return ((uEAX >> 8) & 0xf) == 0xf || (((uEAX >> 8) & 0xf) == 0x6 && fIntel) /* family! */
          ? ((uEAX >> 4) & 0xf) | ((uEAX >> 12) & 0xf0)
          : ((uEAX >> 4) & 0xf);
 }

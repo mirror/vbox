@@ -174,6 +174,7 @@ void tstASMCpuId(void)
     RTPrintf("Name:                            %.04s%.04s%.04s\n"
              "Support:                         0-%u\n",
              &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
+    bool const fIntel = ASMIsIntelCpuEx(s.uEBX, s.uECX, s.uEDX);
 
     /*
      * Get Features.
@@ -189,7 +190,7 @@ void tstASMCpuId(void)
                  "CLFLUSH Size:                    %d\n"
                  "Brand ID:                        %#04x\n",
                  (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
                  ASMGetCpuStepping(s.uEAX),
                  (s.uEBX >> 24) & 0xff,
                  (s.uEBX >> 16) & 0xff,
@@ -284,7 +285,7 @@ void tstASMCpuId(void)
                  "Stepping:                        %d\n"
                  "Brand ID:                        %#05x\n",
                  (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
                  ASMGetCpuStepping(s.uEAX),
                  s.uEBX & 0xfff);
 
