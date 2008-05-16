@@ -1044,8 +1044,7 @@ const char *getL2CacheAss(unsigned u)
         case 3:  return "res3  ";
         case 4:  return "4 way ";
         case 5:  return "res5  ";
-        case 6:  return "8 way ";
-        case 7:  return "res7  ";
+        case 6:  return "8 way ";                                    case 7:  return "res7  ";
         case 8:  return "16 way";
         case 9:  return "res9  ";
         case 10: return "res10 ";
@@ -1092,7 +1091,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp,
                     "         RAW Standard CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i < ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdStd[i];
         ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
@@ -1120,6 +1119,9 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     /*
      * Get Features.
      */
+    bool const fIntel = ASMIsIntelCpuEx(pVM->cpum.s.aGuestCpuIdStd[0].ebx,
+                                        pVM->cpum.s.aGuestCpuIdStd[0].ecx,
+                                        pVM->cpum.s.aGuestCpuIdStd[0].edx);
     if (cStdMax >= 1 && iVerbosity)
     {
         Guest = pVM->cpum.s.aGuestCpuIdStd[1];
@@ -1134,7 +1136,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         "CLFLUSH Size:                    %d\n"
                         "Brand ID:                        %#04x\n",
                         (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
-                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX),
+                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
                         ASMGetCpuStepping(uEAX),
                         (Guest.ebx >> 24) & 0xff,
                         (Guest.ebx >> 16) & 0xff,
@@ -1308,7 +1310,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         "Stepping:                        %d\n"
                         "Brand ID:                        %#05x\n",
                         (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
-                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX),
+                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
                         ASMGetCpuStepping(uEAX),
                         Guest.ebx & 0xfff);
 
