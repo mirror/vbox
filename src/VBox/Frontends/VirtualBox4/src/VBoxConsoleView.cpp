@@ -666,6 +666,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDarwinKeyModifiers (0)
     , mVirtualBoxLogo (NULL)
 #endif
+    , mDesktopGeoType(invalid)
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
@@ -797,7 +798,20 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     /* Remember the desktop geometry and register for geometry change
        events for telling the guest about video modes we like. */
 
-    doResizeDesktop(0);
+    QString desktopGeometry = vboxGlobal().settings()
+                                  .publicProperty("GUI/MaxGuestResolution");
+    if (   (QString::null == desktopGeometry)
+        || ("auto" == desktopGeometry)
+       )
+        setDesktopGeometry(automatic, 0, 0);
+    else if ("any" == desktopGeometry)
+        setDesktopGeometry(any, 0, 0);
+    else
+    {
+        int width = desktopGeometry.section(',', 0, 0).toInt();
+        int height = desktopGeometry.section(',', 1, 1).toInt();
+        setDesktopGeometry(fixed, width, height);
+    }
     connect (QApplication::desktop(), SIGNAL(workAreaResized(int)),
              this, SLOT(doResizeDesktop(int)));
 
@@ -2288,13 +2302,27 @@ void VBoxConsoleView::toggleFSMode()
 }
 
 /**
- * Get the current desktop geometry for the console view widget
+ * Get the current available desktop geometry for the console/framebuffer
  *
- * @returns the geometry
+ * @returns the geometry.  An empty rectangle means unrestricted.
  */
 QRect VBoxConsoleView::getDesktopGeometry()
 {
-    return mDesktopGeometry;
+    QRect rc;
+    switch (mDesktopGeoType)
+    {
+    case fixed:
+    case automatic:
+        rc = QRect (0, 0, RT_MAX(mDesktopGeometry.width(), mLastSizeHint.width()),
+                    RT_MAX(mDesktopGeometry.height(), mLastSizeHint.height()));
+        break;
+    case any:
+        rc = QRect (0, 0, 0, 0);
+        break;
+    default:
+        AssertMsgFailed (("Bad geometry type %d\n", mDesktopGeoType));
+    }
+    return rc;
 }
 
 /**
@@ -3544,7 +3572,7 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         /* Increase the desktop geometry if needed */
-        setDesktopGeometry(sz.width(), sz.height());
+        setDesktopGeoHint(sz.width(), sz.height());
 
         if (mAutoresizeGuest)
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
@@ -3553,37 +3581,81 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 
 void VBoxConsoleView::doResizeDesktop (int)
 {
-    setDesktopGeometry(0, 0);
+    /* If the desktop geometry is set automatically, this will update it. */
+    setDesktopGeometry(unchanged, 0, 0);
 }
 
 /**
- * Set the maximum size allowed for the guest desktop to the available area
- * minus 100 pixels each way, or to the specified minimum width and height,
- * whichever is greater.
+ * Set the maximum size allowed for the guest desktop.  This can either be
+ * a fixed maximum size, or a lower bound on the maximum.  In the second case,
+ * the maximum will be set to the available desktop area minus 100 pixels each
+ * way, or to the specified lower bound, whichever is greater.
  *
- * @param minWidth   The width that the guest screen should at least be
- *                   allowed to increase to
- * @param minHeight  The height that the guest screen should at least be
- *                   allowed to increase to
+ * @param fixed   Are the parameters a fixed geometry size or a lower bound?
+ * @param width   The maximum width for the guest screen (fixed geometry)
+ *                or a lower bound for the maximum
+ * @param height  The maximum height for the guest screen (fixed geometry)
+ *                or a lower bound for the maximum
  */
-void VBoxConsoleView::setDesktopGeometry(int minWidth, int minHeight)
+void VBoxConsoleView::setDesktopGeoHint(int width, int height)
 {
-    LogFlowThisFunc(("minWidth=%d, minHeight=%d\n", minWidth, minHeight));
-    QRect desktopGeometry = QApplication::desktop()->screenGeometry (this);
-    int width = desktopGeometry.width();
-    if (width - 100 < minWidth)
-        width = minWidth;
-    else
-        width = width - 100;
-    int height = desktopGeometry.height();
-    if (height - 100 < minHeight)
-        height = minHeight;
-    else
-        height = height - 100;
-    LogFlowThisFunc(("Setting %d, %d\n", width, height));
-    mDesktopGeometry = QRect(0, 0, width, height);
+    LogFlowThisFunc(("width=%d, height=%d\n", width, height));
+    mLastSizeHint = QRect (0, 0, width, height);
 }
 
+/**
+ * Set initial desktop geometry restrictions on the guest framebuffer.  These
+ * determine the maximum size the guest framebuffer can take on.  Note that
+ * a hint from the host will always override these restrictions.
+ *
+ * @param type    Values: fixed - the guest has a fixed maximum framebuffer size
+ *                        automatic - we recalculate the maximum size ourselves
+ *                        any - any size is allowed
+ * @param width   The maximum width for the guest screen or zero for no change
+ *                (only used for fixed geometry)
+ * @param height  The maximum height for the guest screen or zero for no change
+ *                (only used for fixed geometry)
+ */
+void VBoxConsoleView::setDesktopGeometry(meDesktopGeo type, int width, int height)
+{
+    LogFlowThisFunc (("type = %s, width=%d, height=%d\n",
+                      (fixed == type ? "fixed"
+                           : (automatic == type ? "automatic"
+                                 : (any == type ? "any"
+                                       : (unchanged == type ? "unchanged" : "invalid")
+                                   )
+                             )
+                      ), width, height
+                    ));
+    Assert((type != unchanged) || (mDesktopGeoType != invalid));
+    if (unchanged == type)
+        type = mDesktopGeoType;
+    switch (type)
+    {
+    case fixed:
+        mDesktopGeoType = fixed;
+        if ((0 != width ) && (0 != height))
+            mDesktopGeometry = QRect (0, 0, width, height);
+        setDesktopGeoHint (0, 0);
+        break;
+    case automatic:
+    {
+        mDesktopGeoType = automatic;
+        QRect desktop = QApplication::desktop()->screenGeometry (this);
+        mDesktopGeometry = QRect(0, 0, desktop.width() - 100, desktop.height() - 100);
+        LogFlowThisFunc(("Setting %d, %d\n", desktop.width() - 100, desktop.height() - 100));
+        setDesktopGeoHint (0, 0);
+        break;
+    }
+    case any:
+        mDesktopGeoType = any;
+        mDesktopGeometry = QRect (0, 0, 0, 0);
+        break;
+    default:
+        AssertMsgFailed(("Invalid desktop geometry type %d\n", type));
+        mDesktopGeoType = invalid;
+    }
+}
 
 /**
  *  Sets the the minimum size restriction depending on the auto-resize feature
