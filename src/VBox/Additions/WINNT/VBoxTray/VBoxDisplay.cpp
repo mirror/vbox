@@ -375,6 +375,16 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         {
             dprintf(("VBoxDisplayThread : DeviceIOControl succeded\n"));
 
+            if (NULL == pCtx) {
+                dprintf(("VBoxDisplayThread : Invalid context detected!\n"));
+                break;
+            }
+
+            if (NULL == pCtx->pEnv) {
+                dprintf(("VBoxDisplayThread : Invalid context environment detected!\n"));
+                break;
+            }
+
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;

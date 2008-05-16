@@ -73,7 +73,7 @@ void WriteLog(char *String, ...)
 
     printf("%s\n", pReq->szString);
 
-    FILE* pFh = fopen("c:\\VBoxServiceDebug.txt", "at");
+    FILE* pFh = fopen("c:\\VBoxTrayDebug.txt", "at");
 
     /* Does maybe not work on Vista (write protection when starting without admin rights), 
        so do this check! */
