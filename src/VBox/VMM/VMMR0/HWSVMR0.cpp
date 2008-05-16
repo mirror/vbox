@@ -251,8 +251,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     /* Program the control fields. Most of them never have to be changed again. */
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
+    /* Note: CR8 reads will refer to V_TPR, so no need to catch them. */
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
-    pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
+    pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
 
     /*
      * CR0/3/4 writes must be intercepted for obvious reasons.
@@ -275,7 +276,6 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                     | SVM_CTRL1_INTERCEPT_NMI
                                     | SVM_CTRL1_INTERCEPT_SMI
                                     | SVM_CTRL1_INTERCEPT_INIT
-                                    | SVM_CTRL1_INTERCEPT_CR0           /** @todo redundant?  */
                                     | SVM_CTRL1_INTERCEPT_RDPMC
                                     | SVM_CTRL1_INTERCEPT_CPUID
                                     | SVM_CTRL1_INTERCEPT_RSM
@@ -302,7 +302,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     Log(("pVMCB->ctrl.u32InterceptCtrl1 = %x\n", pVMCB->ctrl.u32InterceptCtrl1));
     Log(("pVMCB->ctrl.u32InterceptCtrl2 = %x\n", pVMCB->ctrl.u32InterceptCtrl2));
 
-    /* Virtualize masking of INTR interrupts. */
+    /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
     pVMCB->ctrl.IntCtrl.n.u1VIrqMasking = 1;
 
     /* Set IO and MSR bitmap addresses. */
