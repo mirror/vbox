@@ -181,16 +181,16 @@ void tstASMCpuId(void)
     if (cFunctions >= 1)
     {
         ASMCpuId(1, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
-                 "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
+        RTPrintf("Family:                          %#x \tExtended: %#x \tEffectiv: %#x\n"
+                 "Model:                           %#x \tExtended: %#x \tEffectiv: %#x\n"
                  "Stepping:                        %d\n"
                  "APIC ID:                         %#04x\n"
                  "Logical CPUs:                    %d\n"
                  "CLFLUSH Size:                    %d\n"
                  "Brand ID:                        %#04x\n",
-                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ((s.uEAX >> 8) & 0xf) + (((s.uEAX >> 8) & 0xf) == 0xf ? (s.uEAX >> 20) & 0x7f : 0),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ((s.uEAX >> 4) & 0xf) | (((s.uEAX >> 4) & 0xf) == 0xf ? (s.uEAX >> 16) & 0x0f : 0),
-                 (s.uEAX >> 0) & 0xf,
+                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX),
+                 ASMGetCpuStepping(s.uEAX),
                  (s.uEBX >> 24) & 0xff,
                  (s.uEBX >> 16) & 0xff,
                  (s.uEBX >>  8) & 0xff,
@@ -279,13 +279,13 @@ void tstASMCpuId(void)
     if (cExtFunctions >= 0x80000001)
     {
         ASMCpuId(0x80000001, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
-                 "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
+        RTPrintf("Family:                          %#x \tExtended: %#x \tEffectiv: %#x\n"
+                 "Model:                           %#x \tExtended: %#x \tEffectiv: %#x\n"
                  "Stepping:                        %d\n"
                  "Brand ID:                        %#05x\n",
-                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ((s.uEAX >> 8) & 0xf) + (((s.uEAX >> 8) & 0xf) == 0xf ? (s.uEAX >> 20) & 0x7f : 0),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ((s.uEAX >> 4) & 0xf) | (((s.uEAX >> 4) & 0xf) == 0xf ? (s.uEAX >> 16) & 0x0f : 0),
-                 (s.uEAX >> 0) & 0xf,
+                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX),
+                 ASMGetCpuStepping(s.uEAX),
                  s.uEBX & 0xfff);
 
         RTPrintf("Features EDX:                   ");
