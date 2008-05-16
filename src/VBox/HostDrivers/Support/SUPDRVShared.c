@@ -198,6 +198,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadUserWaitNoResume",               (void *)RTThreadUserWaitNoResume },
 #endif
     { "RTLogDefaultInstance",                   (void *)RTLogDefaultInstance },
+    { "RTMpCpuId",                              (void *)RTMpCpuId },
     { "RTMpCpuIdFromSetIndex",                  (void *)RTMpCpuIdFromSetIndex },
     { "RTMpCpuIdToSetIndex",                    (void *)RTMpCpuIdToSetIndex },
     { "RTMpDoesCpuExist",                       (void *)RTMpDoesCpuExist },
@@ -210,7 +211,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpOnAll",                              (void *)RTMpOnAll },
     { "RTMpOnOthers",                           (void *)RTMpOnOthers },
     { "RTMpOnSpecific",                         (void *)RTMpOnSpecific },
-    { "RTMpCpuId",                              (void *)RTMpCpuId },
     { "RTLogRelDefaultInstance",                (void *)RTLogRelDefaultInstance },
     { "RTLogSetDefaultInstanceThread",          (void *)RTLogSetDefaultInstanceThread },
     { "RTLogLogger",                            (void *)RTLogLogger },
