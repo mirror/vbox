@@ -806,7 +806,7 @@ ResumeExecution:
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
     }
 
-    Assert(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID);
+    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
     pVMCB->ctrl.TLBCtrl.n.u32ASID = pCpu->uCurrentASID;
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1650,6 +1650,7 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
+    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.svm.idLastCpu, pCpu->uCurrentASID));
     if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
     {
         /* Force a TLB flush on VM entry. */
