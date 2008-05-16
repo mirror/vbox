@@ -2303,6 +2303,11 @@ QRect VBoxConsoleView::getDesktopGeometry()
     return rc;
 }
 
+bool VBoxConsoleView::isAutoresizeGuestActive()
+{
+    return mIsAdditionsActive && mAutoresizeGuest;
+}
+
 /**
  *  Called on every key press and release (while in focus).
  *
