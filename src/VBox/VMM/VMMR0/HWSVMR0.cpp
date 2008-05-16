@@ -802,7 +802,6 @@ ResumeExecution:
     }
     else
     {
-        Assert(pVM->hwaccm.s.svm.fForceTLBFlush == pVM->hwaccm.s.svm.fAlwaysFlushTLB);
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
     }
 
