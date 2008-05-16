@@ -330,6 +330,12 @@
 #define SVM_CTRL2_INTERCEPT_ICEBP             RT_BIT(8)
 /* 9 Intercept WBINVD instruction */
 #define SVM_CTRL2_INTERCEPT_WBINVD            RT_BIT(9)
+/* 10 Intercept MONITOR instruction */
+#define SVM_CTRL2_INTERCEPT_MONITOR           RT_BIT(10)
+/* 11 Intercept MWAIT instruction unconditionally */
+#define SVM_CTRL2_INTERCEPT_MWAIT_UNCOND      RT_BIT(11)
+/* 12 Intercept MWAIT instruction when armed */
+#define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
 /** @} */
 
 /** @name SVM_VMCB.ctrl.u64NestedPaging
