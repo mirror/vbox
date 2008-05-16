@@ -48,6 +48,12 @@ rm -rf /opt/VirtualBox/etc
 
 /usr/sbin/installf -f $PKGINST
 
+# We need to touch the desktop link inorder to add it to the menu right away
+if test -f /usr/share/applications/virtualbox.desktop; then
+    touch /usr/share/applications/virtualbox.desktop
+fi
+
+# create /dev link for vboxdrv (only possible from global zone)
 if test "$currentzone" = "global"; then
     /usr/sbin/devfsadm -i vboxdrv
 fi

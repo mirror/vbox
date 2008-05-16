@@ -75,7 +75,7 @@ start_module()
         if test ! module_loaded; then
             abort "## Failed to load VirtualBox kernel module."
         elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then
-            info "VirtualBox kernel module successfully loaded."
+            info "VirtualBox kernel module loaded."
         else
             abort "Aborting due to attach failure."
         fi

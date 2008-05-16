@@ -48,7 +48,8 @@ OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
 solaris-doc_INST = bin/
 solaris-doc_MODE = a+r,u+w
 solaris-doc_SOURCES = \
-	$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt=>LICENSE)
+	$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt=>LICENSE) \
+	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
 
 #
 # Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
@@ -106,6 +107,8 @@ SOLARIS_EXTRAS = \
 	$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),License-$(VBOX_LICENSE_VER).html) \
 	$(if $(VBOX_WITH_QTGUI),qtgcc/lib/libqt-mt.so.3,) \
 	$(if $(VBOX_WITH_QTGUI),qtgcc/bin/qtconfig,) \
+	$(if $(VBOX_WITH_QTGUI),virtualbox.desktop,) \
+	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
 	vboxdrv.sh \
@@ -180,6 +183,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		vbox.pkgresponse \
 		vboxdevlink.sed \
 		VBox.sh \
+		virtualbox.desktop \
 		sdkfiles \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		Makefile.kmk \
@@ -279,6 +283,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vboxdrv.sh                                                   $(SOLARIS_INST_DIR)/vboxdrv.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/VBox.sh                                                      $(SOLARIS_INST_DIR)/VBox.sh
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_CURRENT)/virtualbox.desktop                   $(SOLARIS_INST_DIR)/virtualbox.desktop,)
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBox.png                                                         $(SOLARIS_INST_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/postinstall.sh                                               $(SOLARIS_INST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/preremove.sh                                                 $(SOLARIS_INST_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/makepackage.sh                                               $(SOLARIS_INST_DIR)/makepackage.sh

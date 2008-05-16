@@ -72,6 +72,11 @@ fi
 
 $VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf" { $3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf" } { print }' prototype2 > prototype
 
+# desktop links and icons
+$VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/virtualbox.desktop=virtualbox.desktop" { $3 = "usr/share/applications/virtualbox.desktop=virtualbox.desktop" } { print }' prototype > prototype2
+$VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/VBox.png=VBox.png" { $3 = "usr/share/pixmaps/VBox.png=VBox.png" } { print }' prototype2 > prototype
+
+
 rm prototype2
 
 # explicitly set timestamp to shutup warning
