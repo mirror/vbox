@@ -205,7 +205,7 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
     if (!aSupported)
         return E_POINTER;
     *aSupported = TRUE;
-    QRect screen = mView->getDesktopGeometry();
+    QRect screen = mView->desktopGeometry();
     if (   (screen.width() != 0)
         && (aWidth > (ULONG) screen.width())
        )

@@ -666,7 +666,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDarwinKeyModifiers (0)
     , mVirtualBoxLogo (NULL)
 #endif
-    , mDesktopGeoType(invalid)
+    , mDesktopGeo (DesktopGeo_Invalid)
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
@@ -799,21 +799,20 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
        events for telling the guest about video modes we like. */
 
     QString desktopGeometry = vboxGlobal().settings()
-                                  .publicProperty("GUI/MaxGuestResolution");
-    if (   (QString::null == desktopGeometry)
-        || ("auto" == desktopGeometry)
-       )
-        setDesktopGeometry(automatic, 0, 0);
-    else if ("any" == desktopGeometry)
-        setDesktopGeometry(any, 0, 0);
+                                  .publicProperty ("GUI/MaxGuestResolution");
+    if ((desktopGeometry == QString::null) ||
+        (desktopGeometry == "auto"))
+        setDesktopGeometry (DesktopGeo_Automatic, 0, 0);
+    else if (desktopGeometry == "any")
+        setDesktopGeometry (DesktopGeo_Any, 0, 0);
     else
     {
-        int width = desktopGeometry.section(',', 0, 0).toInt();
-        int height = desktopGeometry.section(',', 1, 1).toInt();
-        setDesktopGeometry(fixed, width, height);
+        int width = desktopGeometry.section (',', 0, 0).toInt();
+        int height = desktopGeometry.section (',', 1, 1).toInt();
+        setDesktopGeometry (DesktopGeo_Fixed, width, height);
     }
-    connect (QApplication::desktop(), SIGNAL(workAreaResized(int)),
-             this, SLOT(doResizeDesktop(int)));
+    connect (QApplication::desktop(), SIGNAL (workAreaResized (int)),
+             this, SLOT (doResizeDesktop (int)));
 
 #if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
     VMCPUTimer::calibrate (200);
@@ -2315,21 +2314,22 @@ void VBoxConsoleView::toggleFSMode()
  *
  * @returns the geometry.  An empty rectangle means unrestricted.
  */
-QRect VBoxConsoleView::getDesktopGeometry()
+QRect VBoxConsoleView::desktopGeometry()
 {
     QRect rc;
-    switch (mDesktopGeoType)
+    switch (mDesktopGeo)
     {
-    case fixed:
-    case automatic:
-        rc = QRect (0, 0, RT_MAX(mDesktopGeometry.width(), mLastSizeHint.width()),
-                    RT_MAX(mDesktopGeometry.height(), mLastSizeHint.height()));
-        break;
-    case any:
-        rc = QRect (0, 0, 0, 0);
-        break;
-    default:
-        AssertMsgFailed (("Bad geometry type %d\n", mDesktopGeoType));
+        case DesktopGeo_Fixed:
+        case DesktopGeo_Automatic:
+            rc = QRect (0, 0,
+                        RT_MAX (mDesktopGeometry.width(), mLastSizeHint.width()),
+                        RT_MAX (mDesktopGeometry.height(), mLastSizeHint.height()));
+            break;
+        case DesktopGeo_Any:
+            rc = QRect (0, 0, 0, 0);
+            break;
+        default:
+            AssertMsgFailed (("Bad geometry type %d\n", mDesktopGeo));
     }
     return rc;
 }
@@ -3581,7 +3581,7 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         /* Increase the desktop geometry if needed */
-        setDesktopGeoHint(sz.width(), sz.height());
+        setDesktopGeoHint (sz.width(), sz.height());
 
         if (mAutoresizeGuest)
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
@@ -3591,7 +3591,7 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 void VBoxConsoleView::doResizeDesktop (int)
 {
     /* If the desktop geometry is set automatically, this will update it. */
-    setDesktopGeometry(unchanged, 0, 0);
+    setDesktopGeometry (DesktopGeo_Unchanged, 0, 0);
 }
 
 /**
@@ -3600,16 +3600,15 @@ void VBoxConsoleView::doResizeDesktop (int)
  * the maximum will be set to the available desktop area minus 100 pixels each
  * way, or to the specified lower bound, whichever is greater.
  *
- * @param fixed   Are the parameters a fixed geometry size or a lower bound?
- * @param width   The maximum width for the guest screen (fixed geometry)
- *                or a lower bound for the maximum
- * @param height  The maximum height for the guest screen (fixed geometry)
+ * @param aWidth  The maximum width for the guest screen (fixed geometry) or a
+ *                lower bound for the maximum
+ * @param aHeight The maximum height for the guest screen (fixed geometry)
  *                or a lower bound for the maximum
  */
-void VBoxConsoleView::setDesktopGeoHint(int width, int height)
+void VBoxConsoleView::setDesktopGeoHint (int aWidth, int aHeight)
 {
-    LogFlowThisFunc(("width=%d, height=%d\n", width, height));
-    mLastSizeHint = QRect (0, 0, width, height);
+    LogFlowThisFunc (("aWidth=%d, aHeight=%d\n", aWidth, aHeight));
+    mLastSizeHint = QRect (0, 0, aWidth, aHeight);
 }
 
 /**
@@ -3617,52 +3616,49 @@ void VBoxConsoleView::setDesktopGeoHint(int width, int height)
  * determine the maximum size the guest framebuffer can take on.  Note that
  * a hint from the host will always override these restrictions.
  *
- * @param type    Values: fixed - the guest has a fixed maximum framebuffer size
- *                        automatic - we recalculate the maximum size ourselves
- *                        any - any size is allowed
- * @param width   The maximum width for the guest screen or zero for no change
+ * @param aGeo    Values: fixed - the guest has a fixed maximum framebuffer
+ *                        size automatic - we recalculate the maximum size
+ *                        ourselves any - any size is allowed
+ * @param aWidth  The maximum width for the guest screen or zero for no change
  *                (only used for fixed geometry)
- * @param height  The maximum height for the guest screen or zero for no change
+ * @param aHeight The maximum height for the guest screen or zero for no change
  *                (only used for fixed geometry)
  */
-void VBoxConsoleView::setDesktopGeometry(meDesktopGeo type, int width, int height)
+void VBoxConsoleView::setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeight)
 {
-    LogFlowThisFunc (("type = %s, width=%d, height=%d\n",
-                      (fixed == type ? "fixed"
-                           : (automatic == type ? "automatic"
-                                 : (any == type ? "any"
-                                       : (unchanged == type ? "unchanged" : "invalid")
-                                   )
-                             )
-                      ), width, height
-                    ));
-    Assert((type != unchanged) || (mDesktopGeoType != invalid));
-    if (unchanged == type)
-        type = mDesktopGeoType;
-    switch (type)
+    LogFlowThisFunc (("aGeo=%s, aWidth=%d, aHeight=%d\n",
+                      (aGeo == DesktopGeo_Fixed ? "Fixed" :
+                       aGeo == DesktopGeo_Automatic ? "Automatic" :
+                       aGeo == DesktopGeo_Any ? "Any" :
+                       aGeo == DesktopGeo_Unchanged ? "Unchanged" : "Invalid"),
+                      aWidth, aHeight));
+    Assert ((aGeo != DesktopGeo_Unchanged) || (mDesktopGeo != DesktopGeo_Invalid));
+    if (DesktopGeo_Unchanged == aGeo)
+        aGeo = mDesktopGeo;
+    switch (aGeo)
     {
-    case fixed:
-        mDesktopGeoType = fixed;
-        if ((0 != width ) && (0 != height))
-            mDesktopGeometry = QRect (0, 0, width, height);
-        setDesktopGeoHint (0, 0);
-        break;
-    case automatic:
-    {
-        mDesktopGeoType = automatic;
-        QRect desktop = QApplication::desktop()->screenGeometry (this);
-        mDesktopGeometry = QRect(0, 0, desktop.width() - 100, desktop.height() - 100);
-        LogFlowThisFunc(("Setting %d, %d\n", desktop.width() - 100, desktop.height() - 100));
-        setDesktopGeoHint (0, 0);
-        break;
-    }
-    case any:
-        mDesktopGeoType = any;
-        mDesktopGeometry = QRect (0, 0, 0, 0);
-        break;
-    default:
-        AssertMsgFailed(("Invalid desktop geometry type %d\n", type));
-        mDesktopGeoType = invalid;
+        case DesktopGeo_Fixed:
+            mDesktopGeo = DesktopGeo_Fixed;
+            if (aWidth != 0 && aHeight != 0)
+                mDesktopGeometry = QRect (0, 0, aWidth, aHeight);
+            setDesktopGeoHint (0, 0);
+            break;
+        case DesktopGeo_Automatic:
+        {
+            mDesktopGeo = DesktopGeo_Automatic;
+            QRect desktop = QApplication::desktop()->screenGeometry (this);
+            mDesktopGeometry = QRect (0, 0, desktop.width() - 100, desktop.height() - 100);
+            LogFlowThisFunc (("Setting %d, %d\n", desktop.width() - 100, desktop.height() - 100));
+            setDesktopGeoHint (0, 0);
+            break;
+        }
+        case DesktopGeo_Any:
+            mDesktopGeo = DesktopGeo_Any;
+            mDesktopGeometry = QRect (0, 0, 0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Invalid desktop geometry type %d\n", aGeo));
+            mDesktopGeo = DesktopGeo_Invalid;
     }
 }
 
