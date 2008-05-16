@@ -102,6 +102,9 @@ static struct
 
         /** Maximum ASID allowed. */
         uint32_t                    u32MaxASID;
+
+        /** SVM feature bits from cpuid 0x8000000a */
+        uint32_t                    u32Features;
     } svm;
     /** Saved error from detection */
     int32_t         lLastError;
@@ -294,7 +297,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
                 if (VBOX_SUCCESS(rc))
                 {
                     /* Query AMD features. */
-                    ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.svm.u32MaxASID, &u32Dummy, &u32Dummy);
+                    ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.svm.u32MaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
 
                     HWACCMR0Globals.svm.fSupported = true;
                 }
@@ -625,6 +628,7 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = HWACCMR0Globals.vmx.msr.vmx_vmcs_enum;
     pVM->hwaccm.s.svm.u32Rev                = HWACCMR0Globals.svm.u32Rev;
     pVM->hwaccm.s.svm.u32MaxASID            = HWACCMR0Globals.svm.u32MaxASID;
+    pVM->hwaccm.s.svm.u32Features           = HWACCMR0Globals.svm.u32Features;
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
     pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
     pVM->hwaccm.s.lLastError                = HWACCMR0Globals.lLastError;
