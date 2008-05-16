@@ -45,6 +45,7 @@ private:
     bool autoCapture;
     QString guiFeatures;
     QString languageId;
+    QString maxGuestRes;
 
     friend class VBoxGlobalSettings;
 };
@@ -58,6 +59,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (bool autoCapture READ autoCapture WRITE setAutoCapture)
     Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
+    Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
 
 public:
 
@@ -92,6 +94,12 @@ public:
     void setLanguageId (const QString &aLanguageId)
     {
         mData()->languageId = aLanguageId;
+    }
+
+    QString maxGuestRes() const { return data()->maxGuestRes; }
+    void setMaxGuestRes (const QString &aMaxGuestRes)
+    {
+        mData()->maxGuestRes = aMaxGuestRes;
     }
 
     //

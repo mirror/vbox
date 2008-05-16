@@ -58,6 +58,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     autoCapture = true;
     guiFeatures = QString::null;
     languageId  = QString::null;
+    maxGuestRes = "auto";
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
@@ -66,6 +67,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
+    maxGuestRes = that.maxGuestRes;
 }
 
 VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
@@ -78,7 +80,8 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
         (hostkey == that.hostkey &&
          autoCapture == that.autoCapture &&
          guiFeatures == that.guiFeatures &&
-         languageId  == that.languageId);
+         languageId  == that.languageId &&
+         maxGuestRes == that.maxGuestRes);
 }
 
 /** @class VBoxGlobalSettings
@@ -103,6 +106,7 @@ gPropertyMap[] =
     { "GUI/Input/AutoCapture",  "autoCapture",  "true|false", true },
     { "GUI/Customizations",     "guiFeatures",  "\\S+", true },
     { "GUI/LanguageID",         "languageId",   gVBoxLangIDRegExp, true },
+    { "GUI/MaxGuestResolution", "maxGuestRes",  "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true }
 };
 
 void VBoxGlobalSettings::setHostKey (int key)

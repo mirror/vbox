@@ -214,7 +214,11 @@ private slots:
 
 private:
 
-    void setDesktopGeometry(int minWidth, int minHeight);
+    enum meDesktopGeo {
+        invalid = 0, fixed, automatic, any, unchanged
+    };
+    void setDesktopGeometry(meDesktopGeo type, int width, int height);
+    void setDesktopGeoHint(int width, int height);
     void maybeRestrictMinimumSize();
 
     VBoxConsoleWnd *mMainWnd;
@@ -300,7 +304,9 @@ private:
 #if defined(Q_WS_MAC)
     CGImageRef mVirtualBoxLogo;
 #endif
+    meDesktopGeo mDesktopGeoType;
     QRect mDesktopGeometry;
+    QRect mLastSizeHint;
 };
 
 #endif // __VBoxConsoleView_h__
