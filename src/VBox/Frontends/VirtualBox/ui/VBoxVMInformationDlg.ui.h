@@ -254,6 +254,7 @@ void VBoxVMInformationDlg::languageChangeImp()
         switch (ty)
         {
             case KNetworkAdapterType_I82540EM:
+            case KNetworkAdapterType_I82543GC:
                 name = "E1k";
                 break;
             default:
