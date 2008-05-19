@@ -406,6 +406,10 @@ typedef const RTUINT   *PCRTUINT;
 typedef int64_t         RTFOFF;
 /** Pointer to a file offset / size. */
 typedef RTFOFF         *PRTFOFF;
+/** The max value for RTFOFF. */
+#define RTFOFF_MAX      INT64_MAX
+/** The min value for RTFOFF. */
+#define RTFOFF_MIN      INT64_MIN
 
 /** File mode (see iprt/fs.h). */
 typedef uint32_t        RTFMODE;
