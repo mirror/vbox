@@ -42,6 +42,8 @@ typedef struct MYDISSTATE
     uint64_t        uAddress;           /**< The current instruction address. */
     uint8_t        *pbInstr;            /**< The current instruction (pointer). */
     uint32_t        cbInstr;            /**< The size of the current instruction. */
+    bool            fInvalid;           /**< Whether the instruction is invalid/illegal or not. */
+    bool            fRaw;               /**< Whether invalid instructions are printed as byte defintions or not. */
     int             rc;                 /**< Set if we hit EOF. */
     size_t          cbLeft;             /**< The number of bytes left. (read) */
     uint8_t        *pbNext;             /**< The next byte. (read) */
@@ -190,9 +192,11 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
  * @param   cbFile      How much to disassemble.
  * @param   enmStyle    The assembly output style.
  * @param   fListing    Whether to print in a listing like mode.
+ * @param   fRaw        Whether to output byte definitions for invalid sequences.
+ * @param   fAllInvalid Whether all instructions are expected to be invalid.
  */
 static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAddress, uint8_t *pbFile, size_t cbFile,
-                         ASMSTYLE enmStyle, bool fListing)
+                         ASMSTYLE enmStyle, bool fListing, bool fRaw, bool fAllInvalid)
 {
     /*
      * Initialize the CPU context.
@@ -203,6 +207,8 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
     State.uAddress = uAddress;
     State.pbInstr = pbFile;
     State.cbInstr = 0;
+    State.fInvalid = false;
+    State.fRaw = fRaw;
     State.rc = VINF_SUCCESS;
     State.cbLeft = cbFile;
     State.pbNext = pbFile;
@@ -244,7 +250,16 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         int rc = DISInstr(&State.Cpu, State.uAddress, 0, &State.cbInstr, State.szLine);
         if (RT_SUCCESS(rc))
         {
-            pfnFormatter(&State);
+            State.fInvalid = State.Cpu.pCurInstr->opcode == OP_INVALID
+                          || State.Cpu.pCurInstr->opcode == OP_ILLUD2;
+            if (!State.fInvalid || !fAllInvalid)
+                pfnFormatter(&State);
+            else
+            {
+                RTPrintf("%s: error at %#RX64: unexpected valid instruction\n", argv0, State.uAddress);
+                pfnFormatter(&State);
+                rcRet = VERR_GENERAL_FAILURE;
+            }
         }
         else
         {
@@ -256,7 +271,8 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             else
             {
                 RTPrintf("%s: error at %#RX64: %Rrc cbInstr=%d!\n", argv0, State.uAddress, rc, State.cbInstr);
-                rcRet = rc;
+                if (rcRet == VINF_SUCCESS)
+                    rcRet = rc;
                 break;
             }
         }
@@ -290,10 +306,14 @@ static int Usage(const char *argv0)
 "    The maximum number of bytes to disassemble. Default: 1GB\n"
 "  --cpumode|-c <16|32|64>\n"
 "    The cpu mode. Default: 32\n"
+"  --all-invalid|-i\n"
+"    When specified all instructions are expected to be invalid.\n"
 "  --listing|-l, --no-listing|-L\n"
 "    Enables or disables listing mode. Default: --no-listing\n"
 "  --offset|-o <offset>\n"
 "    The file offset at which to start disassembling. Default: 0\n"
+"  --raw|-r, --no-raw|-R\n"
+"    Whether to employ byte defines for unknown bits. Default: --no-raw\n"
 "  --style|-s <default|yasm|masm>\n"
 "    The assembly output style. Default: default\n"
              , argv0, argv0);
@@ -309,6 +329,8 @@ int main(int argc, char **argv)
     uint64_t uAddress = 0;
     ASMSTYLE enmStyle = kAsmStyle_Default;
     bool fListing = true;
+    bool fRaw = false;
+    bool fAllInvalid = false;
     DISCPUMODE enmCpuMode = CPUMODE_32BIT;
     RTFOFF off = 0;
     RTFOFF cbMax = _1G;
@@ -322,9 +344,12 @@ int main(int argc, char **argv)
         { "--cpumode",      'c', RTGETOPT_REQ_UINT32 },
         { "--help",         'h', 0 },
         { "--bytes",        'b', RTGETOPT_REQ_INT64 },
+        { "--all-invalid",  'i', 0, },
         { "--listing",      'l', 0 },
         { "--no-listing",   'L', 0 },
         { "--offset",       'o', RTGETOPT_REQ_INT64 },
+        { "--raw",          'r', 0 },
+        { "--no-raw",       'R', 0 },
         { "--style",        's', RTGETOPT_REQ_STRING },
     };
 
@@ -360,6 +385,10 @@ int main(int argc, char **argv)
             case 'h':
                 return Usage(argv[0]);
 
+            case 'i':
+                fAllInvalid = true;
+                break;
+
             case 'l':
                 fListing = true;
                 break;
@@ -370,6 +399,14 @@ int main(int argc, char **argv)
 
             case 'o':
                 off = ValueUnion.i;
+                break;
+
+            case 'r':
+                fRaw = true;
+                break;
+
+            case 'R':
+                fRaw = false;
                 break;
 
             case 's':
@@ -419,7 +456,7 @@ int main(int argc, char **argv)
         /*
          * Disassemble it.
          */
-        rc = MyDisasmBlock(argv[0], enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing);
+        rc = MyDisasmBlock(argv[0], enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, fRaw, fAllInvalid);
         if (RT_FAILURE(rc))
             break;
     }
