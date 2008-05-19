@@ -199,6 +199,7 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
     /*
      * Not an option.
      */
+    (*piThis)--;
     /** @todo Sort options and arguments (i.e. stuff that doesn't start with '-'), stop when
      * encountering the first argument. */
 
