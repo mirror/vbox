@@ -68,7 +68,7 @@ int DBGDiggerCommonParseElf32Mod(PVM pVM, const char *pszModName, const char *ps
     AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~DBG_DIGGER_ELF_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(fFlags & (DBG_DIGGER_ELF_FUNNY_SHDRS | DBG_DIGGER_ELF_ADJUST_SYM_VALUE)
+    AssertReturn((fFlags & (DBG_DIGGER_ELF_FUNNY_SHDRS | DBG_DIGGER_ELF_ADJUST_SYM_VALUE))
                  != (DBG_DIGGER_ELF_FUNNY_SHDRS | DBG_DIGGER_ELF_ADJUST_SYM_VALUE), VERR_INVALID_PARAMETER);
     AssertPtrReturn(paShdrs, VERR_INVALID_POINTER);
     AssertPtrReturn(paSyms, VERR_INVALID_POINTER);
