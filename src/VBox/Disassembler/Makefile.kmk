@@ -23,7 +23,7 @@ DEPTH = ../../..
 include $(KBUILD_PATH)/header.kmk
 
 
-PROGRAMS                = tstDisasmCore tstDisasm
+PROGRAMS                = tstDisasmCore tstDisasm tstDisasm-2
 LIBRARIES               = DisasmR3 DisasmCoreR3 DisasmGC DisasmR0
 
 DisasmR3_TEMPLATE       = VBOXR3
@@ -62,6 +62,13 @@ tstDisasmCore_DEFS      = IN_DIS_R3 DIS_CORE_ONLY
 tstDisasmCore_LIBS      = \
 	$(PATH_LIB)/DisasmCoreR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
+
+tstDisasm-2_TEMPLATE    = VBOXR3TSTEXE
+tstDisasm-2_SOURCES     = testcase/tstDisasm-2.cpp
+tstDisasm-2_LIBS        = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME)
+
 
 include $(KBUILD_PATH)/footer.kmk
 
