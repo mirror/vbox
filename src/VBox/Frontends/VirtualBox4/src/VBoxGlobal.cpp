@@ -3767,8 +3767,8 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
         QWidget* w = NULL;
         foreach(w, list)
         {
-            if ((!aName || strcmp (w->name(), aName) == 0) &&
-                (!aClassName || strcmp (w->className(), aClassName) == 0))
+            if ((!aName || strcmp (w->objectName().toAscii().constData(), aName) == 0) &&
+                (!aClassName || strcmp (w->metaObject()->className(), aClassName) == 0))
                 break;
             if (aRecursive)
             {
@@ -3780,14 +3780,16 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
         return w;
     }
 
-    QObjectList list = aParent->queryList (aName, aClassName, false, true);
-    QObject *obj = NULL;
-    foreach(obj, list)
+    /* Find the first children of aParent with the appropriate properties.
+     * Please note that this call is recursivly. */
+    QList<QWidget *> list = qFindChildren<QWidget *> (aParent, aName);
+    QWidget *child = NULL;
+    foreach(child, list)
     {
-        if (obj->isWidgetType())
+        if (!aClassName || strcmp (child->metaObject()->className(), aClassName) == 0)
             break;
     }
-    return (QWidget *) obj;
+    return child;
 }
 
 // Public slots
@@ -4166,14 +4168,6 @@ void VBoxGlobal::init()
     vm_state_color.insert (KMachineState_Saving,         new QColor(Qt::green));
     vm_state_color.insert (KMachineState_Restoring,      new QColor(Qt::green));
     vm_state_color.insert (KMachineState_Discarding,     new QColor(Qt::green));
-
-    /* Redefine default large and small icon sizes. In particular, it is
-     * necessary to consider both 32px and 22px icon sizes as Large when we
-     * explicitly define them as Large (seems to be a bug in
-     * QToolButton::sizeHint()). */
-#warning port me
-//    QIcon::setIconSize (QIcon::Small, QSize (16, 16));
-//    QIcon::setIconSize (QIcon::Large, QSize (22, 22));
 
     qApp->installEventFilter (this);
 
