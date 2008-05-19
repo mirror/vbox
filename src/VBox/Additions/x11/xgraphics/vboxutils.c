@@ -375,6 +375,12 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     return FALSE;
 }
 
+Bool
+vbox_device_available(VBOXPtr pVBox)
+{
+    return pVBox->useDevice;
+}
+
 static void
 vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {

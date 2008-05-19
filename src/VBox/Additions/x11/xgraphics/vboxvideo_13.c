@@ -350,8 +350,10 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
-    if (vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
-                               output->scrn->bitsPerPixel))
+    if (   vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
+                                  output->scrn->bitsPerPixel)
+        || !vbox_device_available(VBOXGetRec(output->scrn))
+       )
         return MODE_OK;
     else
         return MODE_BAD;
