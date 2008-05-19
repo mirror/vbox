@@ -100,6 +100,8 @@ public:
 
     QRect desktopGeometry();
 
+    bool isAutoresizeGuestActive();
+
     /* todo: This are some support functions for the qt4 port. Maybe we get rid
      * of them some day. */
     int contentsX() const { return horizontalScrollBar()->value(); }

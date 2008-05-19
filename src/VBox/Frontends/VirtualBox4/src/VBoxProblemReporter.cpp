@@ -940,16 +940,24 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
     );
 }
 
-void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
-                                                   ULONG aHeight,
-                                                   ULONG aBpp,
-                                                   ULONG64 aMinVRAM)
+void VBoxProblemReporter::cannotEnterFSMode (bool aIsSeamless,
+                                             ULONG /* aWidth */,
+                                             ULONG /* aHeight */,
+                                             ULONG /* aBpp */,
+                                             ULONG64 aMinVRAM)
 {
     message (&vboxGlobal().consoleWnd(), Error,
-             tr ("<p>Could not enter seamless mode due to insufficient guest "
-                 "video memory.</p>"
-                 "<p>You should configure the VM to have at least <b>%1</b> "
-                 "of video memory.</p>")
+             (aIsSeamless ?
+                tr ("<p>Could not enter seamless mode due to insufficient guest "
+                    "video memory.</p>"
+                    "<p>You should configure the virtual machine to have at "
+                    "least <b>%1</b> of video memory.</p>") :
+                tr ("<p>Could not switch the guest display to fullscreen mode due "
+                    "to insufficient guest video memory.</p>"
+                    "<p>You should configure the virtual machine to have at "
+                    "least <b>%1</b> of video memory.</p>"
+                    "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
+                    "or press <b>Cancel</b> to cancel the operation.</p>"))
              .arg (VBoxGlobal::formatSize (aMinVRAM)));
 }
 
