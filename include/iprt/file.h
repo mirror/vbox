@@ -656,6 +656,84 @@ RTR3DECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
  */
 RTR3DECL(int) RTFileIoCtl(RTFILE File, int iRequest, void *pvData, unsigned cbData, int *piRet);
 
+/**
+ * Reads the file into memory.
+ *
+ * The caller must free the memory using RTFileReadAllFree().
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename     The name of the file.
+ * @param   ppvFile         Where to store the pointer to the memory on successful return.
+ * @param   pcbFile         Where to store the size of the file on successful return.
+ *
+ * @remarks Note that this function may be implemented using memory mapping, which means
+ *          that the file may remain open until RTFileReadAllFree() is called. It also
+ *          means that the return memory may reflect the state of the file when it's
+ *          accessed instead of when this call was done. So, in short, don't use this
+ *          API for volatile files, then rather use the extended variant with a
+ *          yet-to-be-defined.
+ */
+RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFile);
+
+/**
+ * Reads the file into memory.
+ *
+ * The caller must free the memory using RTFileReadAllFree().
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename     The name of the file.
+ * @param   off             The offset to start reading at.
+ * @param   cbMax           The maximum number of bytes to read into memory. Specify RTFOFF_MAX
+ *                          to read to the end of the file.
+ * @param   fFlags          Flags for the future, must be 0.
+ * @param   ppvFile         Where to store the pointer to the memory on successful return.
+ * @param   pcbFile         Where to store the size of the file on successful return.
+ *
+ * @remarks See the remarks for RTFileReadAll.
+ */
+RTDECL(int) RTFileReadAllEx(const char *pszFilename, RTFOFF off, RTFOFF cbMax, uint32_t fFlags, void **ppvFile, size_t *pcbFile);
+
+/**
+ * Reads the file into memory.
+ *
+ * The caller must free the memory using RTFileReadAllFree().
+ *
+ * @returns IPRT status code.
+ * @param   File            The handle to the file.
+ * @param   ppvFile         Where to store the pointer to the memory on successful return.
+ * @param   pcbFile         Where to store the size of the file on successful return.
+ *
+ * @remarks See the remarks for RTFileReadAll.
+ */
+RTDECL(int) RTFileReadAllByHandle(RTFILE File, void **ppvFile, size_t *pcbFile);
+
+/**
+ * Reads the file into memory.
+ *
+ * The caller must free the memory using RTFileReadAllFree().
+ *
+ * @returns IPRT status code.
+ * @param   File            The handle to the file.
+ * @param   off             The offset to start reading at.
+ * @param   cbMax           The maximum number of bytes to read into memory. Specify RTFOFF_MAX
+ *                          to read to the end of the file.
+ * @param   fFlags          Flags for the future, must be 0.
+ * @param   ppvFile         Where to store the pointer to the memory on successful return.
+ * @param   pcbFile         Where to store the size of the file on successful return.
+ *
+ * @remarks See the remarks for RTFileReadAll.
+ */
+RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint32_t fFlags, void **ppvFile, size_t *pcbFile);
+
+/**
+ * Frees the memory returned by one of the RTFileReadAll(), RTFileReadAllEx(),
+ * RTFileReadAllByHandle() and RTFileReadAllByHandleEx() functions.
+ *
+ * @param   pvFile          Pointer to the memory.
+ * @param   cbFile          The size of the memory.
+ */
+RTDECL(int) RTFileReadAllFree(void **ppvFile, size_t *pcbFile);
+
 #endif /* IN_RING3 */
 
 /** @} */
