@@ -170,6 +170,7 @@ extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
 extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
+extern Bool vbox_device_available(VBOXPtr pVBox);
 
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern Bool vboxDisableVbva(ScrnInfoPtr pScrn);
