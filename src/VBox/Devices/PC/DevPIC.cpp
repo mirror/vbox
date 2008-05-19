@@ -294,6 +294,13 @@ static int pic_update_irq(PDEVPIC pData)
             return pic_update_irq(pData);
         }
     }
+    else
+    {
+        Log(("pic_update_irq: no interrupt is pending!!\n"));
+
+        /* we must clear the interrupt ff flag */
+        pData->CTXALLSUFF(pPicHlp)->pfnClearInterruptFF(pData->CTXSUFF(pDevIns));
+    }
     return VINF_SUCCESS;
 }
 
