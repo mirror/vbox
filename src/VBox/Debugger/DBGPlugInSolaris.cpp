@@ -393,6 +393,7 @@ static DECLCALLBACK(void)  dbgDiggerSolarisTerm(PVM pVM, void *pvData)
 static DECLCALLBACK(int)  dbgDiggerSolarisRefresh(PVM pVM, void *pvData)
 {
     PDBGDIGGERSOLARIS pThis = (PDBGDIGGERSOLARIS)pvData;
+    NOREF(pThis);
     Assert(pThis->fValid);
 
     /*
