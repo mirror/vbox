@@ -71,8 +71,8 @@ static const unsigned nonchar_key_scan[256] =
     0x0E, 0x0F, 0x00, /*?*/ 0, 0x00, 0x1C, 0x00, 0x00,           /* FF08 */
     0x00, 0x00, 0x00, 0x45, 0x46, 0x00, 0x00, 0x00,              /* FF10 */
     0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,              /* FF18 */
-    /* additional Japanese keys */
-    0x00, 0x00, 0x7b, 0x79, 0x00, 0x00, 0x00, 0x70,              /* FF20 */
+    /* Sun Menu, additional Japanese keys */
+    0x15d, 0x00, 0x7b, 0x79, 0x00, 0x00, 0x00, 0x70,             /* FF20 */
     0x00, 0x00, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF28 */
     /* additional Korean keys */
     0x00, 0xf2, 0x00, 0x00, 0xf1, 0x00, 0x00, 0x00,              /* FF30 */
@@ -85,8 +85,10 @@ static const unsigned nonchar_key_scan[256] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF58 */
     /* misc keys */
 /* VirtualBox FIX */
-    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x15D,     /* FF60 */
-    /*?*/ 0, /*?*/ 0, 0x38, 0x146, 0x00, 0x00, 0x00, 0x00,       /* FF68 */
+                                       /* SunUndo SunAgain WinR */
+    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x107,  0x105,   0x15D,/* FF60 */
+ /* SunFind SunStop SunHelp */
+    0x141,  0x168,  0x175, 0x146, 0x00, 0x00, 0x00, 0x00,        /* FF68 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF70 */
     /* keypad keys */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x138, 0x145,            /* FF78 */
@@ -165,6 +167,52 @@ static const unsigned xfree86_vendor_key_scan[256] =
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFE8 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFF0 */
     0, 0, 0, 0, 0, 0, 0, 0                                      /* 1008FFF8 */
+};
+
+/* VirtualBox FIX */
+/* This list was put together using /usr/include/X11/Sunkeysym.h and
+   comparing the scancodes produced by a Sun type 7 USB keyboard.  Note that
+   Sun call F11 and F12 F36 and F37 respectively, as they already had 35
+   function keys when those two physical keys were added. */
+static const unsigned sun_key_scan[256] =
+{
+ /* FAGrav, FACirc, FATild, FAAcut, FADiae, FACed */
+    0,      0,      0,      0,      0,      0, 0, 0,            /* 1005FF00 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF08 */
+ /* SunF36, SunF37 */
+    0x57,   0x58, 0, 0, 0, 0, 0, 0,                             /* 1005FF10 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF18 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF20 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF28 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF30 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF38 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF40 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF48 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF50 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF58 */
+ /* SysReq */
+    0,     0, 0, 0, 0, 0, 0, 0,                                 /* 1005FF60 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF68 */
+ /* Props  Front  Copy   Paste Cut    Power  Vol-   Mute */
+    0x106, 0x10c, 0x178, 0x65, 0x13c, 0x15e, 0x12e, 0x120,      /* 1005FF70 */
+ /* Vol+ */
+    0x130, 0, 0, 0, 0, 0, 0, 0,                                 /* 1005FF78 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF80 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF88 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF90 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF98 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFA0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFA8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFB0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFB8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFC0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFC8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFD0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFD8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFE0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFE8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FFF0 */
+    0, 0, 0, 0, 0, 0, 0, 0                                      /* 1005FFF8 */
 };
 
 #endif /* ___VBox_keyboard_tables_h */

@@ -120,6 +120,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
          we scan the tables. */
       if (   (0xFF != (keysym >> 8))     /* Non-character key */
           && (0x1008FF != (keysym >> 8)) /* XFree86 vendor keys */
+          && (0x1005FF != (keysym >> 8)) /* Sun keys */
           && (0x20 != keysym)            /* Spacebar */
           && (0xFE03 != keysym)          /* ISO level3 shift, aka AltGr */
          ) {
@@ -262,6 +263,8 @@ int X11DRV_InitKeyboard(Display *display)
             } else if ((keysym >> 8) == 0x1008FF) { /* XFree86 vendor keys */
 /* VirtualBox FIX - multimedia/internet keys */
                 scan = xfree86_vendor_key_scan[keysym & 0xff];
+            } else if ((keysym >> 8) == 0x1005FF) { /* Sun keys */
+                scan = sun_key_scan[keysym & 0xff];
             } else if (keysym == 0x20) {                 /* Spacebar */
 		scan = 0x39;
 /* VirtualBox FIX - AltGr support */
