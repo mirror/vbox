@@ -495,6 +495,18 @@ RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize)
 }
 
 
+RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
+{
+    /** @todo r=bird:
+     * We might have to make this code OS specific...
+     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall
+     * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation) else where, and
+     * check for known file system names. (For LAN shares we'll have to figure out the remote
+     * file system.) */
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTR3DECL(bool) RTFileIsValid(RTFILE File)
 {
     if (File != NIL_RTFILE)

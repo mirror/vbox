@@ -392,6 +392,52 @@ RTR3DECL(int)   RTFileGetSize(RTFILE File, uint64_t *pcbSize)
 }
 
 
+/**
+ * Determine the maximum file size.
+ *
+ * @returns IPRT status code.
+ * @param   File        Handle to the file.
+ * @param   pcbMax      Where to store the max file size.
+ * @see     RTFileGetMaxSize.
+ */
+RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
+{
+    /*
+     * Save the current location
+     */
+    uint64_t offOld;
+    int rc = RTFileSeek(File, 0, RTFILE_SEEK_CURRENT, &offOld);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Perform a binary search for the max file size.
+     */
+    uint64_t offLow  =       0;
+    uint64_t offHigh = 8 * _1T; /* we don't need bigger files */
+    /** @todo Unfortunately this does not work for certain file system types,
+     * for instance cifs mounts. Even worse, statvfs.f_fsid returns 0 for such
+     * file systems. */
+    //uint64_t offHigh = INT64_MAX;
+    for (;;)
+    {
+        uint64_t cbInterval = (offHigh - offLow) >> 1;
+        if (cbInterval == 0)
+        {
+            if (pcbMax)
+                *pcbMax = offLow;
+            return RTFileSeek(File, offOld, RTFILE_SEEK_BEGIN, NULL);
+        }
+
+        rc = RTFileSeek(File, offLow + cbInterval, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_FAILURE(rc))
+            offHigh = offLow + cbInterval;
+        else
+            offLow  = offLow + cbInterval;
+    }
+}
+
+
 RTR3DECL(bool) RTFileIsValid(RTFILE File)
 {
     if (File != NIL_RTFILE)

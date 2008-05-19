@@ -242,56 +242,6 @@ RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File)
 
 
 /**
- * Determine the maximum file size.
- *
- * @returns IPRT status code.
- * @param   File        Handle to the file.
- * @param   pcbMax      Where to store the max file size.
- * @see     RTFileGetMaxSize.
- */
-RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
-{
-    /*
-     * Save the current location
-     */
-    uint64_t offOld;
-    int rc = RTFileSeek(File, 0, RTFILE_SEEK_CURRENT, &offOld);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Perform a binary search for the max file size.
-     */
-    uint64_t offLow  =       0;
-    uint64_t offHigh = 8 * _1T; /* we don't need bigger files */
-    /** @todo r=bird: This isn't doing the trick for windows (at least not vista).
-     * Close to offHigh is returned regardless of NTFS or FAT32.
-     * We might have to make this code OS specific...
-     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall
-     * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation) else where, and
-     * check for known file system names. (For LAN shares we'll have to figure out the remote
-     * file system.) */
-    //uint64_t offHigh = INT64_MAX;
-    for (;;)
-    {
-        uint64_t cbInterval = (offHigh - offLow) >> 1;
-        if (cbInterval == 0)
-        {
-            if (pcbMax)
-                *pcbMax = offLow;
-            return RTFileSeek(File, offOld, RTFILE_SEEK_BEGIN, NULL);
-        }
-
-        rc = RTFileSeek(File, offLow + cbInterval, RTFILE_SEEK_BEGIN, NULL);
-        if (RT_FAILURE(rc))
-            offHigh = offLow + cbInterval;
-        else
-            offLow  = offLow + cbInterval;
-    }
-}
-
-
-/**
  * Copies a file given the handles to both files.
  *
  * @returns VBox Status code.
