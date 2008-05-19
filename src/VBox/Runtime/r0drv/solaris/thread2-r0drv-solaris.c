@@ -68,7 +68,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
     }
 
     thread_lock(curthread);
-    THREAD_CHANGE_PRI(curthread, iPriority);
+    thread_change_pri(curthread, iPriority, 0);
     thread_unlock(curthread);
     return VINF_SUCCESS;
 }
