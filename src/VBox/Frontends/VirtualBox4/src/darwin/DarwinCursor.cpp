@@ -860,7 +860,6 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     CursorTestWindow wnd;
 
-    app.setMainWidget(&wnd);
     //wnd.showMaximized();
     wnd.show();
     return app.exec();

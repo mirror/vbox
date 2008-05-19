@@ -165,6 +165,11 @@ public:
     VBoxSelectorWnd &selectorWnd();
     VBoxConsoleWnd &consoleWnd();
 
+    /* main window handle storage */
+    void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
+    QWidget *mainWindow() const { return mMainWindow; }
+
+
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     QUuid managedVMUuid() const { return vmUuid; }
 
@@ -622,6 +627,7 @@ private:
 
     VBoxSelectorWnd *mSelectorWnd;
     VBoxConsoleWnd *mConsoleWnd;
+    QWidget* mMainWindow;
 
 #ifdef VBOX_WITH_REGISTRATION
     VBoxRegistrationDlg *mRegDlg;

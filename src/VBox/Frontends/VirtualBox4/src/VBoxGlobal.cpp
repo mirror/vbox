@@ -221,7 +221,7 @@ public:
                     if (mIsRegDlgOwner)
                     {
                         if (sVal.isEmpty() ||
-                            sVal == QString ("%1").arg ((long)qApp->mainWidget()->winId()))
+                            sVal == QString ("%1").arg (static_cast<long> (vboxGlobal().mainWindow()->winId())))
                             *allowChange = TRUE;
                         else
                             *allowChange = FALSE;
@@ -271,7 +271,7 @@ public:
                         mIsRegDlgOwner = false;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
                     }
-                    else if (sVal == QString ("%1").arg ((long) qApp->mainWidget()->winId()))
+                    else if (sVal == QString ("%1").arg (static_cast<long> (vboxGlobal().mainWindow()->winId())))
                     {
                         mIsRegDlgOwner = true;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
@@ -3335,7 +3335,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         {
             QString result;
 
-            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
+            QWidget *topParent = mParent ? mParent->window() : vboxGlobal()->mainWindow();
             QString title = mCaption.isNull() ? tr ("Select a directory") : mCaption;
 
             TCHAR path[MAX_PATH];
@@ -3484,7 +3484,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             QString title = mCaption.isNull() ? tr ("Select a file") : mCaption;
 
-            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
+            QWidget *topParent = mParent ? mParent->window() : vboxGlobal()->mainWindow();
             QString winFilters = winFilter (mFilters);
             AssertCompile (sizeof (TCHAR) == sizeof (QChar));
             TCHAR buf [1024];
@@ -3911,7 +3911,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
          * that attempts to set it will win, the rest will get a failure from
          * the SetExtraData() call. */
         mVBox.SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-            QString ("%1").arg ((long) qApp->mainWidget()->winId()));
+            QString ("%1").arg (static_cast<long> (mMainWindow->winId())));
 
         if (mVBox.isOk())
         {

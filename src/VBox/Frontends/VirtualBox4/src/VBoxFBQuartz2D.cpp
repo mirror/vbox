@@ -156,8 +156,8 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
 
     Assert (mImage);
 
-    QWidget *pMain = qApp->mainWidget();
-    Assert (VALID_PTR (pMain));
+    QWidget *main = vboxGlobal().mainWindow();
+    Assert (VALID_PTR (main));
     QWidget* viewport = mView->viewport();
     Assert (VALID_PTR (viewport));
 
@@ -170,7 +170,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
     CGContextRef ctx = ::darwinToCGContextRef (viewport);
     Assert (VALID_PTR (ctx));
     /* We handle the seamless mode as a special case. */
-    if (qobject_cast <VBoxConsoleWnd *> (pMain)->isTrueSeamless())
+    if (qobject_cast <VBoxConsoleWnd *> (main)->isTrueSeamless())
     {
         /* Here we paint the windows without any wallpaper.
          * So the background would be set transparently. */
