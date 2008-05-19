@@ -316,7 +316,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 pCpu->prefix |= PREFIX_ADDRSIZE;
                 if (pCpu->mode == CPUMODE_16BIT)
                     pCpu->addrmode = CPUMODE_32BIT;
-                else 
+                else
                 if (pCpu->mode == CPUMODE_32BIT)
                     pCpu->addrmode = CPUMODE_16BIT;
                 else
@@ -330,7 +330,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 pCpu->prefix |= PREFIX_OPSIZE;
                 if (pCpu->mode == CPUMODE_16BIT)
                     pCpu->opmode = CPUMODE_32BIT;
-                else 
+                else
                     pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
 
                 iByte        += sizeof(uint8_t);
@@ -374,6 +374,9 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
     pCpu->opsize = iByte;
     if (pcbInstruction)
         *pcbInstruction = iByte;
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        disValidateLockSequence(pCpu);
 
     return VINF_SUCCESS;
 }
@@ -421,19 +424,19 @@ unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pC
             pCpu->opsize = CPUMODE_64BIT;
     }
 
-    if (pOp->idxParse1 != IDX_ParseNop) 
+    if (pOp->idxParse1 != IDX_ParseNop)
     {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse1](lpszCodeBlock, pOp, &pCpu->param1, pCpu);
         if (fFiltered == false) pCpu->param1.size = DISGetParamSize(pCpu, &pCpu->param1);
     }
 
-    if (pOp->idxParse2 != IDX_ParseNop) 
+    if (pOp->idxParse2 != IDX_ParseNop)
     {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse2](lpszCodeBlock+size, pOp, &pCpu->param2, pCpu);
         if (fFiltered == false) pCpu->param2.size = DISGetParamSize(pCpu, &pCpu->param2);
     }
 
-    if (pOp->idxParse3 != IDX_ParseNop) 
+    if (pOp->idxParse3 != IDX_ParseNop)
     {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse3](lpszCodeBlock+size, pOp, &pCpu->param3, pCpu);
         if (fFiltered == false) pCpu->param3.size = DISGetParamSize(pCpu, &pCpu->param3);
@@ -611,9 +614,9 @@ unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_X)) << 3);
     }
 
-    if (    pCpu->SIB.Bits.Base == 5 
+    if (    pCpu->SIB.Bits.Base == 5
         &&  pCpu->ModRM.Bits.Mod == 0)
-    {   
+    {
         /* Additional 32 bits displacement. No change in long mode. */
         pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
         size += sizeof(int32_t);
@@ -642,7 +645,7 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER 
         pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_X)) << 3);
     }
 
-    if (    pCpu->SIB.Bits.Base == 5 
+    if (    pCpu->SIB.Bits.Base == 5
         &&  pCpu->ModRM.Bits.Mod == 0)
     {
         /* Additional 32 bits displacement. No change in long mode. */
@@ -734,12 +737,12 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         case 0: //effective address
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if (rm == 4) 
+            if (rm == 4)
             {   /* SIB byte follows ModRM */
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             }
             else
-            if (rm == 5) 
+            if (rm == 5)
             {
                 /* 32 bits displacement */
                 if (pCpu->mode == CPUMODE_32BIT)
@@ -1060,7 +1063,7 @@ unsigned ParseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
-        if (!(    pCpu->ModRM.Bits.Mod != 3 
+        if (!(    pCpu->ModRM.Bits.Mod != 3
               &&  pCpu->ModRM.Bits.Rm  == 4)
             &&
             !(    pCpu->ModRM.Bits.Mod == 0
@@ -1097,7 +1100,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
-        if (!(    pCpu->ModRM.Bits.Mod != 3 
+        if (!(    pCpu->ModRM.Bits.Mod != 3
               &&  pCpu->ModRM.Bits.Rm  == 4)
             &&
             !(    pCpu->ModRM.Bits.Mod == 0
@@ -2072,7 +2075,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     {
     case OP_PARM_b:
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
-        if (idx > RT_ELEMENTS(szModRMReg8))
+        if (idx > (int)RT_ELEMENTS(szModRMReg8))
             disasmAddString(pParam->szParam, szModRMReg8_64[idx]);
         else
             disasmAddString(pParam->szParam, szModRMReg8[idx]);
@@ -2357,3 +2360,86 @@ void disasmAddChar(char *psz, char ch)
     strcat(psz, sz);
 }
 #endif /* !DIS_CORE_ONLY */
+
+
+/**
+ * Validates the lock sequence.
+ *
+ * The AMD manual lists the following instructions:
+ *      ADC
+ *      ADD
+ *      AND
+ *      BTC
+ *      BTR
+ *      BTS
+ *      CMPXCHG
+ *      CMPXCHG8B
+ *      CMPXCHG16B
+ *      DEC
+ *      INC
+ *      NEG
+ *      NOT
+ *      OR
+ *      SBB
+ *      SUB
+ *      XADD
+ *      XCHG
+ *      XOR
+ *
+ * @param   pCpu    Fully dissassembled instruction.
+ */
+void disValidateLockSequence(PDISCPUSTATE pCpu)
+{
+    Assert(pCpu->prefix & PREFIX_LOCK);
+#if 0 /** @todo don't enable before testcases has been finished. */
+
+    /*
+     * Filter out the valid lock sequences.
+     */
+    switch (pCpu->pCurInstr->opcode)
+    {
+        /* simple: no variations */
+        case OP_CMPXCHG8B: /* == OP_CMPXCHG16B? */
+            return;
+
+        /* simple: /r - reject register destination. */
+        case OP_BTC:
+        case OP_BTR:
+        case OP_BTS:
+        case OP_CMPXCHG:
+        case OP_XADD:
+            if (pCpu->ModRM.Bits.Mod == 3)
+                break;
+            return;
+
+        /*
+         * Lots of variants but its sufficient to check that param 1
+         * is a memory operand.
+         */
+        case OP_ADC:
+        case OP_ADD:
+        case OP_AND:
+        case OP_DEC:
+        case OP_INC:
+        case OP_NEG:
+        case OP_NOT:
+        case OP_OR:
+        case OP_SBB:
+        case OP_XCHG:
+        case OP_XOR:
+            if (pCpu->param1.flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT32 | USE_DISPLACEMENT16 | USE_DISPLACEMENT8 | USE_RIPDISPLACEMENT32))
+                return;
+            break;
+
+        default:
+            break;
+    }
+
+    /*
+     * Invalid lock sequence, make it a OP_ILLUD2.
+     */
+    pCpu->pCurInstr = &g_aTwoByteMapX86[11];
+    Assert(pCpu->pCurInstr->opcode == OP_ILLUD2);
+#endif
+}
+
