@@ -788,6 +788,16 @@ ResumeExecution:
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
+    if (!pVM->hwaccm.s.svm.fResumeVM)
+    {
+        if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
+        {
+            /* Force a TLB flush on VM entry. */
+            pVM->hwaccm.s.svm.fForceTLBFlush = true;
+        }
+        pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
+    }
+
     /* Make sure we flush the TLB when required. */
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
         && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
@@ -801,9 +811,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
     }
     else
-    {
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
-    }
 
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
     pVMCB->ctrl.TLBCtrl.n.u32ASID = pCpu->uCurrentASID;
@@ -1140,7 +1148,7 @@ ResumeExecution:
             }
 #ifdef VBOX_STRICT
             if (rc != VINF_EM_RAW_EMULATE_INSTR)
-                Log(("PGMTrap0eHandler failed with %d\n", rc));
+                LogFlow(("PGMTrap0eHandler failed with %d\n", rc));
 #endif
             /* Need to go back to the recompiler to emulate the instruction. */
             TRPMResetTrap(pVM);
@@ -1206,7 +1214,7 @@ ResumeExecution:
                 Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
                 break;
             }
-            Log(("Trap %x at %VGv\n", vector, pCtx->eip));
+            Log(("Trap %x at %VGv esi=%x\n", vector, pCtx->eip, pCtx->esi));
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -1650,13 +1658,6 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.svm.idLastCpu, pCpu->uCurrentASID));
-    if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
-    {
-        /* Force a TLB flush on VM entry. */
-        pVM->hwaccm.s.svm.fForceTLBFlush = true;
-    }
-    pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
-
     pVM->hwaccm.s.svm.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
