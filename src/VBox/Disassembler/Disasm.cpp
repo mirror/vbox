@@ -214,7 +214,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     pCpu->prefix |= PREFIX_ADDRSIZE;
                     if (pCpu->mode == CPUMODE_16BIT)
                         pCpu->addrmode = CPUMODE_32BIT;
-                    else 
+                    else
                     if (pCpu->mode == CPUMODE_32BIT)
                         pCpu->addrmode = CPUMODE_16BIT;
                     else
@@ -229,7 +229,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     pCpu->prefix |= PREFIX_OPSIZE;
                     if (pCpu->mode == CPUMODE_16BIT)
                         pCpu->opmode = CPUMODE_32BIT;
-                    else 
+                    else
                         pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
 
                     i += sizeof(uint8_t);
@@ -296,6 +296,9 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 
     if (pcbSize)
         *pcbSize = i;
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        disValidateLockSequence(pCpu);
 
     return VINF_SUCCESS;
 }
