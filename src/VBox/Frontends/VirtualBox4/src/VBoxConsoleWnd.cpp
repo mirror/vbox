@@ -1979,10 +1979,12 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-    if (aSeamless)
+    /* Check if the Guest Video RAM enough for the fullscreen/seamless mode. */
+    if (aSeamless || console->isAutoresizeGuestActive())
     {
-        /* Check if the Guest Video RAM enough for the seamless mode. */
-        QRect screen = QApplication::desktop()->availableGeometry (this);
+        QRect screen = aSeamless ?
+            QApplication::desktop()->availableGeometry (this) :
+            QApplication::desktop()->screenGeometry (this);
         ULONG64 availBits = csession.GetMachine().GetVRAMSize() /* vram */
                           * _1M /* mb to bytes */
                           * 8; /* to bits */
@@ -1995,7 +1997,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                          + 4096 * 8; /* adapter info */
         if (aOn && (availBits < usedBits))
         {
-            vboxProblem().cannotEnterSeamlessMode (screen.width(),
+            vboxProblem().cannotEnterFSMode (aSeamless, screen.width(),
                 screen.height(), guestBpp, (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             return false;
         }
