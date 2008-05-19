@@ -483,7 +483,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* VM list view */
     mVMListView = new VBoxVMListView();
-    mVMModel = new VBoxVMModel();
+    mVMModel = new VBoxVMModel(mVMListView);
     mVMListView->setModel (mVMModel);
 
     leftVLayout->addWidget (mVMListView);
@@ -621,6 +621,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         }
     }
 
+    /* Update the list */
+    refreshVMList();
     /* Reset to the first item */
     mVMListView->selectItemByRow (0);
     /* restore the position of vm selector */
@@ -715,6 +717,8 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
             QString::null;
         vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
     }
+    /* Delete the items from our model */
+    mVMModel->clear();
 }
 
 //
@@ -882,9 +886,9 @@ void VBoxSelectorWnd::vmDelete()
                 /* delete machine settings */
                 machine.DeleteSettings();
                 /* remove the item shortly: cmachine it refers to is no longer valid! */
-#warning "port me: check this"
                 int row = mVMModel->rowById (item->id());
                 mVMModel->removeItem (item);
+                delete item;
                 mVMListView->ensureSomeRowSelected (row);
             }
             if (!vbox.isOk() || !machine.isOk())
@@ -1056,7 +1060,13 @@ void VBoxSelectorWnd::vmShowLogs()
 
 void VBoxSelectorWnd::refreshVMList()
 {
-    mVMModel->refresh();
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CMachineVector vec = vbox.GetMachines2();
+    for (CMachineVector::ConstIterator m = vec.begin();
+         m != vec.end(); ++ m)
+        mVMModel->addItem (new VBoxVMItem (*m));
+    mVMModel->sort();
+
     vmListViewCurrentChanged();
 }
 
@@ -1480,6 +1490,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
         {
             int row = mVMModel->rowById (item->id());
             mVMModel->removeItem (item);
+            delete item;
             mVMListView->ensureSomeRowSelected (row);
         }
 
