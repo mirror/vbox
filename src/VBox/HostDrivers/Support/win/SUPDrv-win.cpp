@@ -514,6 +514,10 @@ static NTSTATUS VBoxDrvNtGipInit(PSUPDRVDEVEXT pDevExt)
                 ULONG ulClockFreq = 10000000 / ulClockInterval;
                 pDevExt->ulGipTimerInterval = ulClockInterval / 10000; /* ms */
 
+                /* Note: We need to register a callback handler for added cpus (only available in win2k8: KeRegisterProcessorChangeCallback) */
+                /* Note: We are not allowed to call KeQueryActiveProcessors at DPC_LEVEL, so we now assume cpu affinity mask does NOT change. */
+                pDevExt->uAffinityMask = KeQueryActiveProcessors();
+
                 /*
                  * Call common initialization routine.
                  */
@@ -535,10 +539,6 @@ static NTSTATUS VBoxDrvNtGipInit(PSUPDRVDEVEXT pDevExt)
                     KeSetImportanceDpc(&pDevExt->aGipCpuDpcs[i], HighImportance);
                     KeSetTargetProcessorDpc(&pDevExt->aGipCpuDpcs[i], i);
                 }
-
-                /* Note: We need to register a callback handler for added cpus (only available in win2k8: KeRegisterProcessorChangeCallback) */
-                /* Note: We are not allowed to call KeQueryActiveProcessors at DPC_LEVEL, so we now assume cpu affinity mask does NOT change. */
-                pDevExt->uAffinityMask = KeQueryActiveProcessors();
 
                 dprintf(("VBoxDrvNtGipInit: ulClockFreq=%ld ulClockInterval=%ld ulClockIntervalActual=%ld Phys=%x%08x\n",
                          ulClockFreq, ulClockInterval, ulClockIntervalActual, Phys.HighPart, Phys.LowPart));
