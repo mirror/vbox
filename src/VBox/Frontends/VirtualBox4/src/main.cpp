@@ -254,7 +254,7 @@ int main (int argc, char **argv)
 
             if (vboxGlobal().isVMConsoleProcess())
             {
-                a.setMainWidget (&vboxGlobal().consoleWnd());
+                vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                     rc = a.exec();
             }
@@ -264,7 +264,7 @@ int main (int argc, char **argv)
             }
             else
             {
-                a.setMainWidget (&vboxGlobal().selectorWnd());
+                vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
                 vboxGlobal().selectorWnd().show();
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
                 vboxGlobal().showRegistrationDialog (false /* aForce */);
