@@ -252,7 +252,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         {
             State.fInvalid = State.Cpu.pCurInstr->opcode == OP_INVALID
                           || State.Cpu.pCurInstr->opcode == OP_ILLUD2;
-            if (!State.fInvalid || !fAllInvalid)
+            if (!fAllInvalid || State.fInvalid)
                 pfnFormatter(&State);
             else
             {
