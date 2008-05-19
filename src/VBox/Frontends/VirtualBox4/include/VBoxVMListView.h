@@ -99,7 +99,7 @@ public:
            VBoxVMItemPtrRole };
 
     VBoxVMModel(QObject *aParent = 0)
-        :QAbstractListModel (aParent) { refresh(); }
+        :QAbstractListModel (aParent) {}
 
     void addItem (VBoxVMItem *aItem);
     void removeItem (VBoxVMItem *aItem);
@@ -107,7 +107,7 @@ public:
 
     void itemChanged (VBoxVMItem *aItem);
 
-    void refresh();
+    void clear();
 
     VBoxVMItem *itemById (const QUuid &aId) const;
     QModelIndex indexById (const QUuid &aId) const;

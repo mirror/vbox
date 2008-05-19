@@ -437,18 +437,12 @@ void VBoxVMModel::itemChanged (VBoxVMItem *aItem)
 }
 
 /**
- *  Refreshes the model contents by rereading the list of VM's using the
- *  IVirtualBox instance.
+ *  Clear the item model list. Please note that the items itself are also
+ *  deleted. 
  */
-void VBoxVMModel::refresh()
+void VBoxVMModel::clear()
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CMachineVector vec = vbox.GetMachines2();
-    for (CMachineVector::ConstIterator m = vec.begin();
-         m != vec.end(); ++ m)
-        addItem(new VBoxVMItem (*m));
-
-    sort();
+    qDeleteAll (mVMItemList);
 }
 
 /**
