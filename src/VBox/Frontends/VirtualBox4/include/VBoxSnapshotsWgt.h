@@ -42,6 +42,10 @@ public:
 
     void setMachine (const CMachine &aMachine);
 
+
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
+
 private slots:
 
     void onCurrentChanged (QTreeWidgetItem *aNewItem,
@@ -61,9 +65,6 @@ private slots:
     void snapshotChanged (const VBoxSnapshotEvent &aE);
 
 private:
-
-    bool event (QEvent *aEvent);
-    void languageChange();
 
     void refreshAll (bool aKeepSelected = true);
     SnapshotWgtItem* findItem (const QUuid &aSnapshotId);

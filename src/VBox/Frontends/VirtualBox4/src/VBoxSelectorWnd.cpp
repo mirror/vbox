@@ -55,14 +55,12 @@
  */
 class VBoxVMDetailsView : public QStackedWidget
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
     VBoxVMDetailsView (QWidget *aParent,
                        QAction *aRefreshAction = NULL);
-
-    void languageChange();
 
     void setDetailsText (const QString &aText)
     {
@@ -86,6 +84,11 @@ public:
 signals:
 
     void linkClicked (const QString &aURL);
+
+protected:
+
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 
 private slots:
 
@@ -179,10 +182,26 @@ void VBoxVMDetailsView::createErrPage()
 
     addWidget (mErrBox);
 
-    languageChange();
+    retranslateUi();
 }
 
-void VBoxVMDetailsView::languageChange()
+void VBoxVMDetailsView::changeEvent (QEvent *aEvent)
+{
+    QStackedWidget::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+void VBoxVMDetailsView::retranslateUi()
 {
     if (mErrLabel)
         mErrLabel->setText (tr (
@@ -211,7 +230,7 @@ void VBoxVMDetailsView::languageChange()
  */
 class VBoxVMDescriptionPage : public QWidget
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -220,8 +239,12 @@ public:
 
     void setMachineItem (VBoxVMItem *aItem);
 
-    void languageChange();
     void updateState();
+
+protected:
+
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 
 private slots:
 
@@ -288,7 +311,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
                                            QSizePolicy::Minimum));
 
     /* apply language settings */
-    languageChange();
+    retranslateUi();
 
     updateState();
 }
@@ -320,7 +343,23 @@ void VBoxVMDescriptionPage::setMachineItem (VBoxVMItem *aItem)
     updateState();
 }
 
-void VBoxVMDescriptionPage::languageChange()
+void VBoxVMDescriptionPage::changeEvent (QEvent *aEvent)
+{
+    QWidget::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+void VBoxVMDescriptionPage::retranslateUi()
 {
     mLabel->setText (tr ("No description. Press the Edit button below to add it."));
 
@@ -586,7 +625,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mHelpMenu->addSeparator();
     mHelpMenu->addAction (helpResetMessagesAction);
 
-    languageChange();
+    retranslateUi();
 
     /* restore the position of the window */
     {
@@ -1115,11 +1154,6 @@ bool VBoxSelectorWnd::event (QEvent *e)
                 normal_pos = pos();
             break;
         }
-        case QEvent::LanguageChange:
-        {
-            languageChange();
-            break;
-        }
 
         default:
             break;
@@ -1128,14 +1162,27 @@ bool VBoxSelectorWnd::event (QEvent *e)
     return QMainWindow::event (e);
 }
 
-// Private members
-/////////////////////////////////////////////////////////////////////////////
+void VBoxSelectorWnd::changeEvent (QEvent *aEvent)
+{
+    QMainWindow::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
 
 /**
  *  Sets the strings of the subwidgets using the current
  *  language.
  */
-void VBoxSelectorWnd::languageChange()
+void VBoxSelectorWnd::retranslateUi()
 {
 #ifdef VBOX_OSE
     setWindowTitle (tr ("VirtualBox OSE"));
@@ -1230,10 +1277,11 @@ void VBoxSelectorWnd::languageChange()
     mFileMenu->setTitle (tr("&File"));
     mVMMenu->setTitle (tr ("&Machine"));
     mHelpMenu->setTitle (tr ("&Help"));
-
-    vmDetailsView->languageChange();
-    vmDescriptionPage->languageChange();
 }
+
+
+// Private members
+/////////////////////////////////////////////////////////////////////////////
 
 //
 // Private slots

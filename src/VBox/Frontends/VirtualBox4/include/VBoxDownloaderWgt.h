@@ -54,9 +54,12 @@ public:
     VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
                        const QString &aUrl, const QString &aTarget);
 
-    void languageChange();
 
     bool isCheckingPresence() { return mIsChecking; }
+
+protected:
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 
 private slots:
 

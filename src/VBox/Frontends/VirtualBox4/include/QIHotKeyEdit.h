@@ -67,7 +67,7 @@ public:
 #endif
 
 #if defined (Q_WS_PM) || defined (Q_WS_X11)
-    static void languageChange_qt3();
+    static void retranslateUi();
 #endif
     static QString keyName (int aKeyVal);
     static bool isValidKey (int aKeyVal);

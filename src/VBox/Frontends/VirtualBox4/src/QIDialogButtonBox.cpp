@@ -24,42 +24,57 @@
 
 /* Qt includes */
 #include <QPushButton>
+#include <QEvent>
 
 QIDialogButtonBox::QIDialogButtonBox (StandardButtons aButtons, Qt::Orientation aOrientation, QWidget *aParent)
    : QDialogButtonBox (aButtons, aOrientation, aParent)
 {
-    initHelpButton ();
+    retranslateUi();
 }
 
 QPushButton *QIDialogButtonBox::addButton (const QString &aText, ButtonRole aRole)
 {
     QPushButton *btn = QDialogButtonBox::addButton (aText, aRole);
-    initHelpButton();
+    retranslateUi();
     return btn;
 }
 
 QPushButton *QIDialogButtonBox::addButton (StandardButton aButton)
 {
     QPushButton *btn = QDialogButtonBox::addButton (aButton);
-    initHelpButton();
+    retranslateUi();
     return btn;
 }
 
 void QIDialogButtonBox::setStandardButtons (StandardButtons aButtons)
 {
     QDialogButtonBox::setStandardButtons (aButtons);
-    initHelpButton();
+    retranslateUi();
 }
 
-void QIDialogButtonBox::initHelpButton()
+void QIDialogButtonBox::changeEvent (QEvent *aEvent)
+{
+    QDialogButtonBox::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+void QIDialogButtonBox::retranslateUi()
 {
     QPushButton *btn = button (QDialogButtonBox::Help);
     if (btn)
     {
-        if (btn->text() == tr ("Help"))
-            btn->setText (tr ("&Help"));
+        btn->setText (tr ("&Help"));
         if (btn->shortcut().isEmpty())
             btn->setShortcut (QKeySequence (tr ("F1"))); 
     }
 }
-

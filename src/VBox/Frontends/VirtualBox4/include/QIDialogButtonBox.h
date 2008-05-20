@@ -38,8 +38,9 @@ public:
 
     void setStandardButtons (StandardButtons aButtons);
 
-private:
-    void initHelpButton();
+protected:
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 };
 
 #endif /* __QIDialogButtonBox_h__ */

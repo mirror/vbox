@@ -84,11 +84,8 @@ protected:
     /* events */
     bool event (QEvent *e);
 
-protected slots:
-
-private:
-
-    void languageChange();
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 
 private slots:
 

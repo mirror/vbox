@@ -58,7 +58,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     , mStatTimer (new QTimer (this))
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxVMInformationDlg::setupUi (this);
 
     /* Initialize parent defaults */
     initializeDialog();
@@ -87,7 +87,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
              this, SLOT (processStatistics()));
 
     /* Loading language constants */
-    languageChange();
+    retranslateUi();
 
     /* Details page update */
     updateDetails();
@@ -127,9 +127,27 @@ VBoxVMInformationDlg::~VBoxVMInformationDlg()
         mSelfArray.remove (mSession.GetMachine().GetName());
 }
 
-
-void VBoxVMInformationDlg::languageChange()
+void VBoxVMInformationDlg::changeEvent (QEvent *aEvent)
 {
+    QIAbstractDialog::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+void VBoxVMInformationDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMInformationDlg::retranslateUi (this);
+    
     AssertReturnVoid (!mSession.isNull()); 
  	CMachine machine = mSession.GetMachine(); 
  	AssertReturnVoid (!machine.isNull()); 

@@ -213,7 +213,7 @@ QSize QIHotKeyEdit::sizeHint() const
 //    return (style()->sizeFromContents (QStyle::CT_LineEdit, this,
 //                                      QSize (w + m, h + m)
 //                                      .expandedTo(QApplication::globalStrut())));
-    QSize(10,10);
+    return QSize(10,10);
 }
 
 /**
@@ -285,10 +285,9 @@ int QIHotKeyEdit::virtualKey (QMSG *aMsg)
  *  Updates the associative array containing the translations of PM virtual
  *  keys to human readable key names.
  */
-/* static */
-void QIHotKeyEdit::languageChange_qt3()
+void QIHotKeyEdit::retranslateUi()
 {
-    /* Note: strings for the same key must match strings in languageChange()
+    /* Note: strings for the same key must match strings in retranslateUi()
      * versions for all platforms, to keep translators happy. */
 
     sKeyNames [VK_LSHIFT]        = tr ("Left Shift");
@@ -340,10 +339,9 @@ void QIHotKeyEdit::languageChange_qt3()
  *  Updates the associative array containing the translations of X11 key strings to human
  *  readable key names.
  */
-/* static */
-void QIHotKeyEdit::languageChange_qt3()
+void QIHotKeyEdit::retranslateUi()
 {
-    /* Note: strings for the same key must match strings in languageChange()
+    /* Note: strings for the same key must match strings in retranslateUi()
      * versions for all platforms, to keep translators happy. */
 
     sKeyNames ["Shift_L"]          = tr ("Left Shift");

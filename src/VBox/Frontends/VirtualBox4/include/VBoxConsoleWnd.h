@@ -95,6 +95,10 @@ protected:
 #if defined(Q_WS_X11)
     bool x11Event (XEvent *event);
 #endif
+
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool dbgCreated();
     void dbgDestroy();
@@ -119,8 +123,6 @@ private:
         SharedFolderStuff           = 0x200,
         AllStuff                    = 0xFFFF,
     };
-
-    void languageChange();
 
     void updateAppearanceOf (int element);
 
