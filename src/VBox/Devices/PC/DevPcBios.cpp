@@ -954,7 +954,28 @@ static uint8_t pcbiosChecksum(const uint8_t * const au8Data, uint32_t u32Length)
 
 
 /**
- * Construct the MPS table. Only applicable if IOAPIC is active.
+ * Construct the MPS table. Only applicable if IOAPIC is active!
+ *
+ * See ``MultiProcessor Specificatiton Version 1.4 (May 1997)'':
+ *   ``1.3 Scope
+ *     ...
+ *     The hardware required to implement the MP specification is kept to a
+ *     minimum, as follows:
+ *     * One or more processors that are Intel architecture instruction set
+ *       compatible, such as the CPUs in the Intel486 or Pentium processor
+ *       family.
+ *     * One or more APICs, such as the Intel 82489DX Advanced Programmable
+ *       Interrupt Controller or the integrated APIC, such as that on the
+ *       Intel Pentium 735\90 and 815\100 processors, together with a discrete
+ *       I/O APIC unit.''
+ * and later:
+ *   ``4.3.3 I/O APIC Entries
+ *     The configuration table contains one or more entries for I/O APICs.
+ *     ...
+ *     I/O APIC FLAGS: EN 3:0 1 If zero, this I/O APIC is unusable, and the
+ *                              operating system should not attempt to access
+ *                              this I/O APIC.
+ *                              At least one I/O APIC must be enabled.''
  *
  * @param   pDevIns    The device instance data.
  * @param   addr       physical address in guest memory.
