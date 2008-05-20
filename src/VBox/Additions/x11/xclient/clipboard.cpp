@@ -92,6 +92,8 @@ typedef struct
 
     /** X11 atom refering to the clipboard: CLIPBOARD */
     Atom atomClipboard;
+    /** X11 atom refering to the selection: PRIMARY */
+    Atom atomPrimary;
     /** X11 atom refering to the clipboard: TARGETS */
     Atom atomTargets;
     /** X11 atom refering to the clipboard: MULTIPLE */
@@ -1126,7 +1128,9 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
     int rc;
 
     LogFlowFunc(("\n"));
-    if (*atomSelection != g_ctx.atomClipboard)
+    if (   (*atomSelection != g_ctx.atomClipboard)
+        && (*atomSelection != g_ctx.atomPrimary)
+       )
     {
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1216,6 +1220,8 @@ void vboxClipboardFormatAnnounce (uint32_t u32Formats)
         g_ctx.notifyHost = true;
         g_ctx.eOwner = GUEST;
     }
+    XtOwnSelection(g_ctx.widget, g_ctx.atomPrimary, CurrentTime, vboxClipboardConvertProc,
+                   NULL, 0);
     LogFlowFunc(("returning\n"));
 }
 
@@ -1429,6 +1435,7 @@ static int vboxClipboardCreateWindow(void)
 
     /* Get hold of the atoms which we need */
     g_ctx.atomClipboard = XInternAtom(XtDisplay(g_ctx.widget), "CLIPBOARD", false /* only_if_exists */);
+    g_ctx.atomPrimary   = XInternAtom(XtDisplay(g_ctx.widget), "PRIMARY",   false);
     g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
     g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
     g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
