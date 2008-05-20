@@ -96,6 +96,8 @@ struct _VBOXCLIPBOARDCONTEXT
 
     /** X11 atom refering to the clipboard: CLIPBOARD */
     Atom atomClipboard;
+    /** X11 atom refering to the selection: PRIMARY */
+    Atom atomPrimary;
     /** X11 atom refering to the clipboard targets: TARGETS */
     Atom atomTargets;
     /** X11 atom refering to the clipboard multiple target: MULTIPLE */
@@ -723,6 +725,7 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
 
     /* Get hold of the atoms which we need */
     g_ctx.atomClipboard = XInternAtom(XtDisplay(g_ctx.widget), "CLIPBOARD", false /* only_if_exists */);
+    g_ctx.atomPrimary   = XInternAtom(XtDisplay(g_ctx.widget), "PRIMARY",   false);
     g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
     g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
     g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
@@ -1229,7 +1232,9 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
     g_eClipboardFormats eFormat = INVALID;
 
     LogFlowFunc(("\n"));
-    if (*atomSelection != g_ctx.atomClipboard)
+    if (   (*atomSelection != g_ctx.atomClipboard)
+        && (*atomSelection != g_ctx.atomPrimary)
+       )
     {
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1326,6 +1331,8 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
         g_ctx.notifyGuest = true;
         g_ctx.eOwner = HOST;
     }
+    XtOwnSelection(g_ctx.widget, g_ctx.atomPrimary, CurrentTime, vboxClipboardConvertProc,
+                   NULL, 0);
     LogFlowFunc(("returning\n"));
 
 }
