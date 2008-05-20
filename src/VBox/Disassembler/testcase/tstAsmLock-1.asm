@@ -82,8 +82,110 @@
     lock adc qword [r11], rbx
 %endif
 
+    ;
     ; ADD
+    ;
+        ; 80 /0 ib      ADD reg/mem8, imm8 - sans reg dst
+    lock add byte [1000h], byte 8
+    lock add byte [xBX], byte 8
+    lock add byte [xDI], byte 8
+        ; 81 /0 i[wd]   ADD reg/memX, immX - sans reg dst
+    lock add word [1000h], word 090cch
+    lock add word [xBX], word 090cch
+    lock add word [xDI], word 090cch
+    lock add dword [1000h], dword 0cc90cc90h
+    lock add dword [xBX], dword 0cc90cc90h
+    lock add dword [xDI], dword 0cc90cc90h
+%ifdef WITH_64_BIT_TESTS
+    lock add qword [1000h], dword 0cc90cc90h
+    lock add qword [rbx], dword 0cc90cc90h
+    lock add qword [rdi], dword 0cc90cc90h
+    lock add qword [r9], dword 0cc90cc90h
+%endif
+        ; 83 /0 ib      ADD reg/memX, imm8 - sans reg dst
+    lock add word [1000h], byte 07fh
+    lock add word [xBX], byte 07fh
+    lock add word [xDI], byte 07fh
+    lock add dword [1000h], byte 07fh
+    lock add dword [xBX], byte 07fh
+    lock add dword [xDI], byte 07fh
+%ifdef WITH_64_BIT_TESTS
+    lock add qword [1000h], byte 07fh
+    lock add qword [rbx], byte 07fh
+    lock add qword [rdi], byte 07fh
+    lock add qword [r10], byte 07fh
+%endif
+
+        ; 00 /r         ADD reg/mem8, reg8 - sans reg dst
+    lock add byte [1000h], bl
+    lock add byte [xBX], bl
+    lock add byte [xSI], bl
+        ; 01 /r         ADD reg/memX, regX - sans reg dst
+    lock add word [1000h], bx
+    lock add word [xBX], bx
+    lock add word [xSI], bx
+    lock add dword [1000h], ebx
+    lock add dword [xBX], ebx
+    lock add dword [xSI], ebx
+%ifdef WITH_64_BIT_TESTS
+    lock add qword [1000h], rbx
+    lock add qword [rbx], rbx
+    lock add qword [rsi], rbx
+    lock add qword [r11], rbx
+%endif
+
+    ;
     ; AND
+    ;
+        ; 80 /4 ib      AND reg/mem8, imm8 - sans reg dst
+    lock and byte [1000h], byte 8
+    lock and byte [xBX], byte 8
+    lock and byte [xDI], byte 8
+        ; 81 /4 i[wd]   AND reg/memX, immX - sans reg dst
+    lock and word [1000h], word 090cch
+    lock and word [xBX], word 090cch
+    lock and word [xDI], word 090cch
+    lock and dword [1000h], dword 0cc90cc90h
+    lock and dword [xBX], dword 0cc90cc90h
+    lock and dword [xDI], dword 0cc90cc90h
+%ifdef WITH_64_BIT_TESTS
+    lock and qword [1000h], dword 0cc90cc90h
+    lock and qword [rbx], dword 0cc90cc90h
+    lock and qword [rdi], dword 0cc90cc90h
+    lock and qword [r9], dword 0cc90cc90h
+%endif
+        ; 83 /4 ib      AND reg/memX, imm8 - sans reg dst
+    lock and word [1000h], byte 07fh
+    lock and word [xBX], byte 07fh
+    lock and word [xDI], byte 07fh
+    lock and dword [1000h], byte 07fh
+    lock and dword [xBX], byte 07fh
+    lock and dword [xDI], byte 07fh
+%ifdef WITH_64_BIT_TESTS
+    lock and qword [1000h], byte 07fh
+    lock and qword [rbx], byte 07fh
+    lock and qword [rdi], byte 07fh
+    lock and qword [r10], byte 07fh
+%endif
+
+        ; 20 /r         AND reg/mem8, reg8 - sans reg dst
+    lock and byte [1000h], bl
+    lock and byte [xBX], bl
+    lock and byte [xSI], bl
+        ; 21 /r         AND reg/memX, regX - sans reg dst
+    lock and word [1000h], bx
+    lock and word [xBX], bx
+    lock and word [xSI], bx
+    lock and dword [1000h], ebx
+    lock and dword [xBX], ebx
+    lock and dword [xSI], ebx
+%ifdef WITH_64_BIT_TESTS
+    lock and qword [1000h], rbx
+    lock and qword [rbx], rbx
+    lock and qword [rsi], rbx
+    lock and qword [r11], rbx
+%endif
+
     ; BTC
     ; BTR
     ; BTS
@@ -99,7 +201,7 @@
     ; SUB
     ; XADD
 
-%if 1
+%if 0
     ; XCHG
     lock xchg [eax], eax
     lock xchg [ebx], eax
