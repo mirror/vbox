@@ -2,8 +2,9 @@
 ;; @file
 ; Disassembly testcase - Valid lock sequences and related instructions.
 ;
-; The intention is to check in a binary and the disassembler output.
-; Both will be recreated and verified during testing.
+; This is a build test, that means it will be assembled, disassembled,
+; then the disassembly output will be assembled and the new binary will
+; compared with the original.
 ;
 
 ;
@@ -22,7 +23,7 @@
 ; additional information or have any questions.
 ;
 
-    BITS 32
+    BITS TEST_BITS
 
     ; ADC
 

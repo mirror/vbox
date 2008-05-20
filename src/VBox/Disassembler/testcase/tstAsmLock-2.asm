@@ -22,7 +22,7 @@
 ; additional information or have any questions.
 ;
 
-    BITS 32
+    BITS TEST_BITS
 
     ; ADC
     ; ADD
