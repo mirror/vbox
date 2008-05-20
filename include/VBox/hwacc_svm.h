@@ -40,6 +40,16 @@
  * @{
  */
 
+/** @name SVM features for cpuid 0x8000000a
+ * @{
+ */
+#define AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING             RT_BIT(0)
+#define AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT                  RT_BIT(1)
+#define AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK                  RT_BIT(2)
+#define AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE                 RT_BIT(3)
+#define AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE           RT_BIT(9)
+/** @} */
+
 
 /** @name SVM Basic Exit Reasons.
  * @{
