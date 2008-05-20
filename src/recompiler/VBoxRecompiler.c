@@ -3664,7 +3664,7 @@ REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM)
  * Notification about the interrupt FF being set.
  *
  * @param   pVM             VM Handle.
- * @thread  The emulation thread.
+ * @thread  Any.
  */
 REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM)
 {
