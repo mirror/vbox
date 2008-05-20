@@ -28,12 +28,21 @@
 #include "xf86_ansic.h"
 #include "compiler.h"
 
+/* This is an ugly hack, but I can't see anywhere to save this information
+   in the driver context. */
+/** Have we ever failed to open the VBox device? */
+static Bool gDeviceOpenFailed = FALSE;
+
 int VBoxMouseInit(void)
 {
-    int rc = VbglR3Init();
+    int rc;
+    if (gDeviceOpenFailed)
+        return 1;
+    rc = VbglR3Init();
     if (RT_FAILURE(rc))
     {
-        ErrorF("VbglR3Init failed.\n");
+        ErrorF("Failed to open the VirtualBox device, falling back to compatibility mouse mode.\n");
+        gDeviceOpenFailed = TRUE;
         return 1;
     }
 
@@ -42,6 +51,8 @@ int VBoxMouseInit(void)
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
                errno, strerror(errno));
+        gDeviceOpenFailed = TRUE;
+        VbglR3Term();
         return 1;
     }
     xf86Msg(X_INFO, "VirtualBox mouse pointer integration available.\n");
@@ -55,6 +66,8 @@ int VBoxMouseQueryPosition(unsigned int *puAbsXPos, unsigned int *puAbsYPos)
     uint32_t pointerXPos;
     uint32_t pointerYPos;
 
+    if (gDeviceOpenFailed)
+        return 2;
     AssertPtrReturn(puAbsXPos, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puAbsYPos, VERR_INVALID_PARAMETER);
     rc = VbglR3GetMouseStatus(NULL, &pointerXPos, &pointerYPos);
@@ -71,6 +84,8 @@ int VBoxMouseQueryPosition(unsigned int *puAbsXPos, unsigned int *puAbsYPos)
 
 int VBoxMouseFini(void)
 {
+    if (gDeviceOpenFailed)
+        return VINF_SUCCESS;
     int rc = VbglR3SetMouseStatus(0);
     VbglR3Term();
     return rc;
