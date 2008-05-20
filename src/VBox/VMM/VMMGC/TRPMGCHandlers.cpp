@@ -47,11 +47,21 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /* still here. MODR/M byte parsing */
 #define X86_OPCODE_MODRM_MOD_MASK       0xc0
 #define X86_OPCODE_MODRM_REG_MASK       0x38
 #define X86_OPCODE_MODRM_RM_MASK        0x07
 
+/** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
+#define DTRACE_EXPERIMENT
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /** Pointer to a readonly hypervisor trap record. */
 typedef const struct TRPMGCHYPER *PCTRPMGCHYPER;
 
@@ -192,7 +202,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
             Log(("trpmGCExitTrap: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
             AssertFatalMsgRC(rc, ("PDMGetInterrupt failed with %Vrc\n", rc));
-            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT);
+            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT, uOldActiveVector);
             /* can't return if successful */
             Assert(rc != VINF_SUCCESS);
 
@@ -361,14 +371,37 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         if (VBOX_FAILURE(rc))
             return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
 
-        if (    PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
-            &&  Cpu.pCurInstr->opcode == OP_ILLUD2)
+        /*
+         * UD2 in a patch?
+         */
+        if (    Cpu.pCurInstr->opcode == OP_ILLUD2
+            &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
         {
             rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
-            if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET || rc == VINF_EM_RESCHEDULE)
+            if (    rc == VINF_SUCCESS
+                ||  rc == VINF_EM_RAW_EMULATE_INSTR
+                ||  rc == VINF_PATM_DUPLICATE_FUNCTION
+                ||  rc == VINF_PATM_PENDING_IRQ_AFTER_IRET
+                ||  rc == VINF_EM_RESCHEDULE)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
-        /* Note: monitor causes an #UD exception instead of #GP when not executed in ring 0. */
+        /*
+         * Speed up dtrace and don't entrust invalid lock sequences to the recompiler.
+         */
+        else if (Cpu.prefix & PREFIX_LOCK)
+        {
+            Log(("TRPMGCTrap06Handler: pc=%RGv op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
+#ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
+            Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip));
+            rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
+            Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+#else
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+#endif
+        }
+        /*
+         * Handle MONITOR - it causes an #UD exception instead of #GP when not executed in ring 0.
+         */
         else if (Cpu.pCurInstr->opcode == OP_MONITOR)
         {
             uint32_t cbIgnored;
@@ -376,25 +409,13 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
             if (RT_LIKELY(VBOX_SUCCESS(rc)))
                 pRegFrame->eip += Cpu.opsize;
         }
-        /* Speed up dtrace and don't entrust invalid lock sequences to the recompiler. */
-        else if (Cpu.prefix & PREFIX_LOCK)
-        {
-            Log(("TRPMGCTrap06Handler: pc=%RGv op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
-            /** @todo Clear this with PATM - it gets upset when returning VINF_EM_RAW_GUEST_TRAP on a patch address. */
-#ifdef DTRACE_EXPERIMENT
-            rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
-            Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-#else
-            rc = VINF_EM_RAW_EMULATE_INSTR;
-#endif
-        }
         /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         else
             rc = VINF_EM_RAW_EMULATE_INSTR;
     }
     else
     {
-        rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
+        rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
 
@@ -559,7 +580,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
                     return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
                 }
             }
-            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT);
+            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (VBOX_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
                 return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
 
@@ -650,7 +671,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_INT:
         {
             Assert(pCpu->param1.flags & USE_IMMEDIATE8);
-            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT);
+            rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (VBOX_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
                 return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
 
@@ -833,7 +854,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     {
         Assert(eflags.Bits.u2IOPL == 0);
 
-        int rc = TRPMForwardTrap(pVM, pRegFrame, 0xD, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP);
+        int rc = TRPMForwardTrap(pVM, pRegFrame, 0xD, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xd);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
         return trpmGCExitTrap(pVM, rc, pRegFrame);
     }
@@ -931,7 +952,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         if (PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
             return VINF_PATM_PATCH_TRAP_PF;
 
-        rc = TRPMForwardTrap(pVM, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP);
+        rc = TRPMForwardTrap(pVM, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xe);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
         break;
 
