@@ -450,8 +450,88 @@
     lock sub rcx, [0badh]
 %endif
 
+    ;
     ; XADD
-    ; XCHG
-    ; XOR
+    ;
+        ; 0f c0 /r      XADD reg/mem8, reg8 - with reg dst
+    lock xadd al, bl
+        ; 0f c1 /r      XADD reg/memX, immX - with reg dst
+    lock xadd cx, bx
+    lock xadd ecx, ebx
+%ifdef WITH_64_BIT_TESTS
+    lock xadd rcx, rbx
+    lock xadd r8, rbx
+    lock xadd r10, r8
+%endif
 
+    ;
+    ; XCHG
+    ;
+    ; Note: The operands can be switched around but the
+    ;       encoding is the same.
+    ;
+        ; 90 +r[wdq]    XCHG [RE]ax, regX
+    lock xchg ax, bx
+    lock xchg eax, ecx
+%ifdef WITH_64_BIT_TESTS
+    lock xchg rax, rcx
+    lock xchg rax, r10
+%endif
+        ; 86 /r         XCHG reg/mem8, imm8 - with reg dst
+    lock xchg al, bl
+%ifdef WITH_64_BIT_TESTS
+    lock xchg r10b, cl
+    lock xchg r10b, r15b
+%endif
+        ; 87 /r         XCHG reg/memX, immX - with reg dst
+    lock xchg ax, bx
+    lock xchg eax, ebx
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock xchg rax, rbx
+    lock xchg r12, rbx
+    lock xchg r14, r8
+%endif
+
+    ;
+    ; XOR
+    ;
+        ; 34 ib         XOR AL, imm8
+    lock xor al, byte 8
+        ; 35 i[wd]      XOR [ER]AX, immX
+    lock xor ax, word 16
+    lock xor eax, dword 128
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock xor rax, dword 256
+    lock xor rax, dword 0cc90cc90h
+%endif
+        ; 80 /6 ib      XOR reg/mem8, imm8 - with reg dst
+    lock xor cl, byte 8
+        ; 81 /6 i[wd]   XOR reg/memX, immX - with reg dst
+    lock xor cx, word 1000h
+    lock xor ecx, dword 100000h
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock xor rcx, dword 100000h
+%endif
+        ; 83 /6 ib      XOR reg/memX, imm8 - with reg dst
+    lock xor cx, byte 07fh
+    lock xor ecx, byte 07fh
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock xor rcx, byte 07fh
+%endif
+        ; 30 /r         XOR reg/mem8, reg8 - with reg dst
+    lock xor cl, bl
+        ; 31 /r         XOR reg/memX, regX - with reg dst
+    lock xor cx, bx
+    lock xor ecx, ebx
+%ifdef WITH_64_BIT_TESTS
+    lock xor rcx, rbx
+%endif
+        ; 32 /r         XOR reg8, reg/mem8
+    lock xor cl, [0badh]
+        ; 33 /r         XOR regX, reg/memX
+    lock xor cx, [0badh]
+    lock xor ecx, [0badh]
+%ifdef WITH_64_BIT_TESTS
+    lock xor rcx, [0badh]
+%endif
 
