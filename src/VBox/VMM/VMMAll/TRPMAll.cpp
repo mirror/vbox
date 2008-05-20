@@ -1,3 +1,4 @@
+#define VBOX_WITH_STATISTICS
 /* $Id$ */
 /** @file
  * TRPM - Trap Monitor - Any Context.
@@ -29,6 +30,7 @@
 #include <VBox/mm.h>
 #include <VBox/patm.h>
 #include <VBox/selm.h>
+#include <VBox/stam.h>
 #include "TRPMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
@@ -355,9 +357,10 @@ TRPMDECL(void) TRPMRestoreTrap(PVM pVM)
  * @param   opsize      Instruction size (only relevant for software interrupts)
  * @param   enmError    TRPM_TRAP_HAS_ERRORCODE or TRPM_TRAP_NO_ERRORCODE.
  * @param   enmType     TRPM event type
+ * @param   iOrgTrap    The original trap.
  * @internal
  */
-TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType)
+TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap)
 {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     X86EFLAGS eflags;
@@ -413,14 +416,11 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
      * If it's a real guest trap and the guest's page fault handler is marked as safe for GC execution, then we call it directly.
      * Well, only if the IF flag is set.
      */
-    /*
-     * @todo if the trap handler was modified and marked invalid, then we should *now* go back to the host context and install a new patch.
-     *
-     */
+    /** @todo if the trap handler was modified and marked invalid, then we should *now* go back to the host context and install a new patch. */
     if (    pVM->trpm.s.aGuestTrapHandler[iGate]
         && (eflags.Bits.u1IF)
 #ifndef VBOX_RAW_V86
-        && !(eflags.Bits.u1VM) /* @todo implement when needed (illegal for same privilege level transfers). */
+        && !(eflags.Bits.u1VM) /** @todo implement when needed (illegal for same privilege level transfers). */
 #endif
         && !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
        )
@@ -455,7 +455,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #endif
         if (VBOX_FAILURE(rc))
         {
-            /* The page might be out of sync. (@todo might cross a page boundary) */
+            /* The page might be out of sync. */ /** @todo might cross a page boundary) */
             Log(("Page %VGv out of sync -> prefetch and try again\n", pIDTEntry));
             rc = PGMPrefetchPage(pVM, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
             if (rc != VINF_SUCCESS)
@@ -515,7 +515,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #endif
                 if (VBOX_FAILURE(rc))
                 {
-                    /* The page might be out of sync. (@todo might cross a page boundary) */
+                    /* The page might be out of sync. */ /** @todo might cross a page boundary) */
                     Log(("Page %VGv out of sync -> prefetch and try again\n", pGdtEntry));
                     rc = PGMPrefetchPage(pVM, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
                     if (rc != VINF_SUCCESS)
@@ -661,9 +661,6 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     for (int j=idx;j<0;j++)
                         Log4(("Stack %VGv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
 
-                    const char *pszPrefix = "";
-                    const char *szEFlags = "";
-
                     Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
                           "eip=%08x esp=%08x ebp=%08x iopl=%d\n"
                           "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n",
@@ -694,6 +691,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     Assert(eflags.Bits.u2IOPL == 0);
                     STAM_COUNTER_INC(&pVM->trpm.s.CTXALLSUFF(paStatForwardedIRQ)[iGate]);
                     STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+                    if (iOrgTrap >= 0 && iOrgTrap < (int)RT_ELEMENTS(pVM->trpm.s.aStatGCTraps))
+                        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[iOrgTrap], o);
 
                     CPUMGCCallGuestTrapHandler(pRegFrame, GuestIdte.Gen.u16SegSel | 1, pVM->trpm.s.aGuestTrapHandler[iGate], eflags.u32, ss_r0, (RTGCPTR)esp_r0);
                     /* does not return */

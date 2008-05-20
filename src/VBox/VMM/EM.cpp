@@ -2055,7 +2055,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                         /* Must check pending forced actions as our IDT or GDT might be out of sync */
                         EMR3CheckRawForcedActions(pVM);
 
-                        rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, uErrorCode, enmError, TRPM_TRAP);
+                        rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, uErrorCode, enmError, TRPM_TRAP, -1);
                         if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
                         {
                             TRPMResetTrap(pVM);
