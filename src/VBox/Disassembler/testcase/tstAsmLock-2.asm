@@ -241,8 +241,58 @@
     ;
         ; all valid.
 
+    ;
     ; DEC
+    ;
+        ; fe /1         DEC reg8/mem8 - with reg dst
+    lock dec bl
+        ; ff /1         DEC regX/memX - with reg dst
+
+%if TEST_BITS != 64     ; cannot force these two in 32 and 16 bit mode.
+    db 066h, 0f0h, 0ffh, 0cbh
+    db 0f0h, 0ffh, 0cbh
+%else
+    lock dec bx
+    lock dec ebx
+ %ifdef WITH_64_BIT_TESTS
+    lock dec rbx
+    lock dec r8
+    lock dec r14
+ %endif
+%endif
+%if TEST_BITS != 64
+        ; 48 +rw        DEC reg16
+    lock dec dx
+        ; 48 +rd        DEC reg32
+    lock dec edx
+%endif
+
+    ;
     ; INC
+    ;
+        ; fe /1         INC reg8/mem8 - with reg dst
+    lock inc bl
+        ; ff /1         INC regX/memX - with reg dst
+
+%if TEST_BITS != 64     ; cannot force these two in 32 and 16 bit mode.
+    db 066h, 0f0h, 0ffh, 0c3h
+    db 0f0h, 0ffh, 0c3h
+%else
+    lock inc bx
+    lock inc ebx
+ %ifdef WITH_64_BIT_TESTS
+    lock inc rbx
+    lock inc r8
+    lock inc r14
+ %endif
+%endif
+%if TEST_BITS != 64
+        ; 48 +rw        INC reg16
+    lock inc dx
+        ; 48 +rd        INC reg32
+    lock inc edx
+%endif
+
     ; NEG
     ; NOT
     ; OR

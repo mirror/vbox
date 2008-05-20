@@ -320,8 +320,50 @@
     lock cmpxchg16b [xDI+xBX]
 %endif
 
+    ;
     ; DEC
+    ;
+        ; fe /1         DEC reg8/mem8 - sans reg dst
+    lock dec byte [40cc0h]
+    lock dec byte [xBX]
+    lock dec byte [xSI]
+        ; ff /1         DEC regX/memX - sans reg dst
+    lock dec word [40cc0h]
+    lock dec word [xBX]
+    lock dec word [xSI]
+    lock dec dword [40cc0h]
+    lock dec dword [xBX]
+    lock dec dword [xSI]
+%ifdef WITH_64_BIT_TESTS
+    lock dec qword [40cc0h]
+    lock dec qword [xBX]
+    lock dec qword [xSI]
+    lock dec qword [r8]
+    lock dec qword [r12]
+%endif
+
+    ;
     ; INC
+    ;
+        ; fe /0         INC reg8/mem8 - sans reg dst
+    lock inc byte [40cc0h]
+    lock inc byte [xBX]
+    lock inc byte [xSI]
+        ; ff /0         INC regX/memX - sans reg dst
+    lock inc word [40cc0h]
+    lock inc word [xBX]
+    lock inc word [xSI]
+    lock inc dword [40cc0h]
+    lock inc dword [xBX]
+    lock inc dword [xSI]
+%ifdef WITH_64_BIT_TESTS
+    lock inc qword [40cc0h]
+    lock inc qword [xBX]
+    lock inc qword [xSI]
+    lock inc qword [r8]
+    lock inc qword [r12]
+%endif
+
     ; NEG
     ; NOT
     ; OR
