@@ -1,0 +1,174 @@
+# $Id$
+## @file
+# Sub-Makefile for the VBox Disassembler.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
+ifdef VBOX_WITH_TESTCASES
+
+PROGRAMS += tstDisasm-2
+tstDisasm-2_TEMPLATE    = VBOXR3TSTEXE
+tstDisasm-2_DEFS        = IN_DIS_R3
+tstDisasm-2_SOURCES     = \
+	tstDisasm-2.cpp
+tstDisasm-2_LIBS        = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME)
+
+# Tests that
+VBOX_DISAS_TESTS_BUILD = \
+	tstAsmLock-1.asm \
+
+# Tests that makes use of --all-invalid.
+VBOX_DISAS_TESTS_INVALID = \
+	tstAsmLock-2.asm \
+	tstAsmLock-3.asm
+
+
+#
+# The gory bits...
+#
+
+# Where we put the output files from the testcases.
+VBOX_DISAS_TEST_PATH := $(PATH_TARGET)/disas-testcase
+
+$(call DIRDEP,$(VBOX_DISAS_TEST_PATH)):
+	$(MKDIR) -p $@
+
+# Generate the rules for creating the .bin files.
+VBOX_DISAS_TESTS_BIN = $(VBOX_DISAS_TESTS_BUILD) $(VBOX_DISAS_TESTS_INVALID)
+OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+	$(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)\
+	$(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)\
+	$(VBOX_DISAS_TESTS_BIN:.asm=-64.bin))
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-16.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=16 -o $@ $<
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-32.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=32 -o $@ $<
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-64.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-64.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=64 -o $@ $<
+
+
+# Generate the rules for the 'build' tests.
+OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm))
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Generating: $(@F) from $(<F)"
+	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=16 $< > $@
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Generating: $(@F) from $(<F)"
+	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=32 $< > $@
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Generating: $(@F) from $(<F)"
+	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=64 $< > $@
+
+
+OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)\
+	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin))
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=16 -o $@ $<
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=32 -o $@ $<
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
+	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=64 -o $@ $<
+
+
+VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_BUILD:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
+$(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+$(VBOX_DISAS_TESTS_BUILD:.asm=-16.tst)\
+$(VBOX_DISAS_TESTS_BUILD:.asm=-32.tst)\
+$(VBOX_DISAS_TESTS_BUILD:.asm=-64.tst) ): $$(subst .tst,-disas.bin,$$@) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Verifying build: $(<F) and $(@F:.tst=.bin)"
+	@$(RM) -f $@
+	$(CMP) $(@:.tst=.bin) $<
+	@$(APPEND) $@ "done"
+
+
+
+# Generate the rules for the 'invalid' tests.
+VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_INVALID:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-16.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(RM) -f $@
+	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=16 $<
+	@$(APPEND) $@ "done"
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-32.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(RM) -f $@
+	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=32 $<
+	@$(APPEND) $@ "done"
+
+$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(RM) -f $@
+	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=64 $<
+	@$(APPEND) $@ "done"
+
+
+# Add the .tst to the clean up.
+OTHER_CLEAN += $(VBOX_DISAS_TESTS)
+
+
+#
+# The test aliases
+#
+
+# the standard ones for running all.
+.PHONY: check test
+check test: $(addprefix $(VBOX_DISAS_TEST_PATH)/,$(VBOX_DISAS_TESTS))
+
+# individual test and per source file (for the editor).
+$(VBOX_DISAS_TESTS:.tst=.o):: $(VBOX_DISAS_TEST_PATH)/$$(patsubst %.o,%.tst,$$@)
+$(VBOX_DISAS_TESTS:.tst=.obj):: $$(patsubst %.obj,%.o,$$@)
+define def_vbox_test_aliases
+local test_base := $(basename $(test))
+local test_root := $(patsubst %-16,%,$(patsubst %-32,%,$(patsubst %-64,%,$(test_base))))
+$(test_base).o:: $(VBOX_DISAS_TEST_PATH)/$(test)
+$(test_base).obj:: $(VBOX_DISAS_TEST_PATH)/$(test)
+$(test_root).o:: $(test_base).o
+$(test_root).obj:: $(test_base).obj
+endef
+$(foreach test,$(VBOX_DISAS_TESTS),$(evalvalctx def_vbox_test_aliases))
+
+endif # VBOX_WITH_TESTCASES
+include $(KBUILD_PATH)/subfooter.kmk
+
