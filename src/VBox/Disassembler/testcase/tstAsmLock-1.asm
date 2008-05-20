@@ -25,8 +25,11 @@
 
 %include "tstAsm.mac"
 %if TEST_BITS == 64
-; The disassembler doesn't do imm32 right for  64-bit stuff, so disable it for now.
+; The disassembler doesn't do imm32 right for 64-bit stuff, so disable it for now.
 ; %define WITH_64_BIT_TESTS_IMM32
+; The cmpxchg16b/8b stuff isn't handled correctly in 64-bit mode. In the 8b case
+; it could be both yasm and the vbox disassembler. Have to check docs/gas/nasm.
+; %define WITH_64_BIT_TESTS_CMPXCHG16B
  %define WITH_64_BIT_TESTS
 %endif
 
@@ -281,9 +284,42 @@
     lock bts qword [r12], 60
 %endif
 
+    ;
     ; CMPXCHG
+    ;
+        ; 0f b0 /r      CMPXCHG reg8/mem8, regX - with reg dst
+    lock cmpxchg byte [30cch], cl
+    lock cmpxchg byte [xBX], cl
+    lock cmpxchg byte [xSI], cl
+        ; 0f b1 /r      CMPXCHG regX/memX, regX - with reg dst
+    lock cmpxchg word [30cch], cx
+    lock cmpxchg word [xBX], cx
+    lock cmpxchg word [xSI], cx
+    lock cmpxchg dword [30cch], ecx
+    lock cmpxchg dword [xBX], ecx
+    lock cmpxchg dword [xSI], ecx
+%ifdef WITH_64_BIT_TESTS
+    lock cmpxchg qword [30cch], rcx
+    lock cmpxchg qword [xBX], rcx
+    lock cmpxchg qword [xSI], rcx
+    lock cmpxchg qword [rdi], r8
+    lock cmpxchg qword [r12], r9
+%endif
+
+    ;
     ; CMPXCHG8B
     ; CMPXCHG16B
+    ;
+    ;; @todo get back to cmpxchg8b and cmpxchg16b.
+    lock cmpxchg8b qword [1000h]
+    lock cmpxchg8b qword [xDI]
+    lock cmpxchg8b qword [xDI+xBX]
+%ifdef WITH_64_BIT_TESTS_CMPXCHG16B
+    lock cmpxchg16b [1000h]
+    lock cmpxchg16b [xDI]
+    lock cmpxchg16b [xDI+xBX]
+%endif
+
     ; DEC
     ; INC
     ; NEG
