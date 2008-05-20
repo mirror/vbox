@@ -457,11 +457,12 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
     } while (0)
 # endif
 #else
-# define LogIt(pvInst, fFlags, iGroup, fmtargs)     do { } while (0)
-# define LogItAlways(pvInst, fFlags, fmtargs)       do { } while (0)
+# define LogIt(pvInst, fFlags, iGroup, fmtargs)         do { } while (0)
+# define LogItAlways(pvInst, fFlags, iGroup, fmtargs)   do { } while (0)
 # if defined(LOG_USE_C99)
-#  define _LogRemoveParentheseis(...)               __VA_ARGS__
-#  define _LogIt(pvInst, fFlags, iGroup, ...)       do { } while (0)
+#  define _LogRemoveParentheseis(...)                   __VA_ARGS__
+#  define _LogIt(pvInst, fFlags, iGroup, ...)           do { } while (0)
+#  define _LogItAlways(pvInst, fFlags, iGroup, ...)     do { } while (0)
 # endif
 #endif
 
