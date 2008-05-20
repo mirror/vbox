@@ -430,9 +430,12 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_ENABLED
 # if defined(LOG_USE_C99)
-#  define _LogRemoveParentheseis(...)               __VA_ARGS__
-#  define _LogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
-#  define LogIt(pvInst, fFlags, iGroup, fmtargs)    _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
+#  define _LogRemoveParentheseis(...)                   __VA_ARGS__
+#  define _LogIt(pvInst, fFlags, iGroup, ...)           RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
+#  define LogIt(pvInst, fFlags, iGroup, fmtargs)        _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
+#  define _LogItAlways(pvInst, fFlags, iGroup, ...)     RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, ~0U, __VA_ARGS__)
+#  define LogItAlways(pvInst, fFlags, iGroup, fmtargs)  _LogItAlways(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
+        /** @todo invent a flag or something for skipping the group check so we can pass iGroup. LogItAlways. */
 # else
 #  define LogIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
@@ -445,16 +448,14 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
                 LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
-# endif
-#  define LogItAlways(pvInst, fFlags, fmtargs) \
+#  define LogItAlways(pvInst, fFlags, iGroup, fmtargs) \
     do \
     { \
         register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
         if (LogIt_pLogger) \
-        { \
             LogIt_pLogger->pfnLogger fmtargs; \
-        } \
     } while (0)
+# endif
 #else
 # define LogIt(pvInst, fFlags, iGroup, fmtargs)     do { } while (0)
 # define LogItAlways(pvInst, fFlags, fmtargs)       do { } while (0)
@@ -466,9 +467,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 
 /** @def Log
- * Level 1 logging that works regardless of the group settings (used for ring-0 assertion logging)
+ * Level 1 logging that works regardless of the group settings.
  */
-#define LogAlways(a)    LogItAlways(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, a)
+#define LogAlways(a)    LogItAlways(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
 
 /** @def Log
  * Level 1 logging.
