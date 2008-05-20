@@ -23,7 +23,7 @@
 #include "version-generated.h"
 
 /* #define IRQ_DEBUG */
-// #define IOCTL_DEBUG
+/* #define IOCTL_DEBUG */
 #ifdef IOCTL_DEBUG
 # define IOCTL_ENTRY(name, arg) \
 do { \
@@ -675,6 +675,7 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
 #ifdef IRQ_DEBUG
     else
     {
+        /* we might be attached to a shared interrupt together with another device. */
         Log(("vboxadd IRQ_DEBUG: stale IRQ mem=%p events=%d devevents=%#x\n",
              vboxDev->pVMMDevMemory,
              vboxDev->pVMMDevMemory->V.V1_04.fHaveEvents,
@@ -815,10 +816,11 @@ static void free_resources(void)
 {
     if (vboxDev)
     {
+        /* at first detach from IRQ! */
+        if (vboxDev->irq)
+            free_irq(vboxDev->irq, vboxDev);
         if (vboxDev->hypervisorStart)
-        {
             vboxadd_free_hypervisor();
-        }
         if (vboxDev->irqAckRequest)
         {
             VbglGRFree(&vboxDev->irqAckRequest->header);
@@ -828,8 +830,6 @@ static void free_resources(void)
             iounmap(vboxDev->pVMMDevMemory);
         if (vboxDev->vmmdevmem)
             release_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size);
-        if (vboxDev->irq)
-            free_irq(vboxDev->irq, vboxDev);
         kfree(vboxDev);
         vboxDev = NULL;
     }
