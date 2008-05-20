@@ -38,20 +38,19 @@ static RTLDRMOD g_hLibDlpi = NULL;
 static bool g_fCheckedForLibDlpi = false;
 
 /** All the symbols we need from libdlpi.
- * @todo r=bird: rename to g_pfnLibDlpi*.
  * @{
  */
-int (*gLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
-void (*gLibDlpiClose)(dlpi_handle_t);
-int (*gLibDlpiInfo)(dlpi_handle_t, dlpi_info_t *, uint_t);
-int (*gLibDlpiBind)(dlpi_handle_t, uint_t, uint_t *);
-int (*gLibDlpiSetPhysAddr)(dlpi_handle_t, uint_t, const void *, size_t);
-int (*gLibDlpiPromiscon)(dlpi_handle_t, uint_t);
-int (*gLibDlpiRecv)(dlpi_handle_t, void *, size_t *, void *, size_t *, int, dlpi_recvinfo_t *);
-int (*gLibDlpiFd)(dlpi_handle_t);
+int (*g_pfnLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
+void (*g_pfnLibDlpiClose)(dlpi_handle_t);
+int (*g_pfnLibDlpiInfo)(dlpi_handle_t, dlpi_info_t *, uint_t);
+int (*g_pfnLibDlpiBind)(dlpi_handle_t, uint_t, uint_t *);
+int (*g_pfnLibDlpiSetPhysAddr)(dlpi_handle_t, uint_t, const void *, size_t);
+int (*g_pfnLibDlpiPromiscon)(dlpi_handle_t, uint_t);
+int (*g_pfnLibDlpiRecv)(dlpi_handle_t, void *, size_t *, void *, size_t *, int, dlpi_recvinfo_t *);
+int (*g_pfnLibDlpiFd)(dlpi_handle_t);
 /** @} */
 
-bool gLibDlpiFound(void)
+bool VBoxLibDlpiFound(void)
 {
     RTLDRMOD hLibDlpi;
 
@@ -61,14 +60,14 @@ bool gLibDlpiFound(void)
         return false;
     if (!RT_SUCCESS(RTLdrLoad(LIB_DLPI, &hLibDlpi)))
         return false;
-    if (   RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&gLibDlpiOpen))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&gLibDlpiClose))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_info", (void **)&gLibDlpiInfo))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_bind", (void **)&gLibDlpiBind))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_promiscon", (void **)&gLibDlpiPromiscon))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_set_physaddr", (void **)&gLibDlpiSetPhysAddr))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_recv", (void **)&gLibDlpiRecv))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_fd", (void **)&gLibDlpiFd))
+    if (   RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&g_pfnLibDlpiOpen))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&g_pfnLibDlpiClose))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_info", (void **)&g_pfnLibDlpiInfo))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_bind", (void **)&g_pfnLibDlpiBind))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_promiscon", (void **)&g_pfnLibDlpiPromiscon))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_set_physaddr", (void **)&g_pfnLibDlpiSetPhysAddr))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_recv", (void **)&g_pfnLibDlpiRecv))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_fd", (void **)&g_pfnLibDlpiFd))
        )
     {
         g_hLibDlpi = hLibDlpi;

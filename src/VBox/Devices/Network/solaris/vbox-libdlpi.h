@@ -25,16 +25,16 @@
 #define LIB_DLPI "libdlpi.so"
 #include <libdlpi.h>
 
-extern int (*gLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
-extern void (*gLibDlpiClose)(dlpi_handle_t);
-extern int (*gLibDlpiInfo)(dlpi_handle_t, dlpi_info_t *, uint_t);
-extern int (*gLibDlpiBind)(dlpi_handle_t, uint_t, uint_t *);
-extern int (*gLibDlpiSetPhysAddr)(dlpi_handle_t, uint_t, const void *, size_t);
-extern int (*gLibDlpiPromiscon)(dlpi_handle_t, uint_t);
-extern int (*gLibDlpiRecv)(dlpi_handle_t, void *, size_t *, void *, size_t *, int, dlpi_recvinfo_t *);
-extern int (*gLibDlpiFd)(dlpi_handle_t);
+extern int (*g_pfnLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
+extern void (*g_pfnLibDlpiClose)(dlpi_handle_t);
+extern int (*g_pfnLibDlpiInfo)(dlpi_handle_t, dlpi_info_t *, uint_t);
+extern int (*g_pfnLibDlpiBind)(dlpi_handle_t, uint_t, uint_t *);
+extern int (*g_pfnLibDlpiSetPhysAddr)(dlpi_handle_t, uint_t, const void *, size_t);
+extern int (*g_pfnLibDlpiPromiscon)(dlpi_handle_t, uint_t);
+extern int (*g_pfnLibDlpiRecv)(dlpi_handle_t, void *, size_t *, void *, size_t *, int, dlpi_recvinfo_t *);
+extern int (*g_pfnLibDlpiFd)(dlpi_handle_t);
 
-extern bool gLibDlpiFound(void);
+extern bool VBoxLibDlpiFound(void);
 
 #endif /* ____H_VBOX_LIBDLPI not defined */
 
