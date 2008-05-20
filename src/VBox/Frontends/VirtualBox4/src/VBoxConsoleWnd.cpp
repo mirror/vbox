@@ -480,7 +480,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     /////////////////////////////////////////////////////////////////////////
 
-    languageChange();
+    retranslateUi();
 
     setWindowTitle (caption_prefix);
 
@@ -1457,15 +1457,27 @@ bool VBoxConsoleWnd::x11Event (XEvent *event)
 }
 #endif
 
-//
-// Private members
-/////////////////////////////////////////////////////////////////////////////
+void VBoxConsoleWnd::changeEvent (QEvent *aEvent)
+{
+    QMainWindow::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
 
 /**
  *  Sets the strings of the subwidgets using the current
  *  language.
  */
-void VBoxConsoleWnd::languageChange()
+void VBoxConsoleWnd::retranslateUi()
 {
 #ifdef VBOX_OSE
     caption_prefix = tr ("VirtualBox OSE");
@@ -1645,6 +1657,9 @@ void VBoxConsoleWnd::languageChange()
     updateAppearanceOf (AllStuff);
 }
 
+//
+// Private members
+/////////////////////////////////////////////////////////////////////////////
 
 void VBoxConsoleWnd::updateAppearanceOf (int element)
 {

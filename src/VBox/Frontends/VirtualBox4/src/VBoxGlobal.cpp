@@ -2420,7 +2420,7 @@ QString VBoxGlobal::languageTranslators() const
  *  Changes the language of all global string constants according to the
  *  currently installed translations tables.
  */
-void VBoxGlobal::languageChange()
+void VBoxGlobal::retranslateUi()
 {
     machineStates [KMachineState_PoweredOff] =  tr ("Powered Off", "MachineState");
     machineStates [KMachineState_Saved] =       tr ("Saved", "MachineState");
@@ -2577,7 +2577,7 @@ void VBoxGlobal::languageChange()
      * human readable key names, we keep a table of them, which must be
      * updated when the language is changed. */
 #warning port me
-    QIHotKeyEdit::languageChange_qt3();
+    QIHotKeyEdit::retranslateUi();
 #endif
 }
 
@@ -4032,7 +4032,7 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
         {
             /* call this only once per every language change (see
              * QApplication::installTranslator() for details) */
-            languageChange();
+            retranslateUi();
         }
     }
 
@@ -4187,7 +4187,7 @@ void VBoxGlobal::init()
     if (!languageId.isNull())
         loadLanguage (languageId);
 
-    languageChange();
+    retranslateUi();
 
     /* process command line */
 

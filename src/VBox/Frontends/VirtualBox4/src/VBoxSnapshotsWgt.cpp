@@ -257,7 +257,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     , mShowSnapshotDetailsAction (new QAction (this))
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxSnapshotsWgt::setupUi (this);
 
     mTreeWidget->header()->hide();
 
@@ -331,7 +331,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent&)),
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent&)));
 
-    languageChange();
+    retranslateUi();
 }
 
 void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
@@ -664,26 +664,27 @@ void VBoxSnapshotsWgt::snapshotChanged (const VBoxSnapshotEvent &aE)
     }
 }
 
-
-bool VBoxSnapshotsWgt::event (QEvent *aEvent)
+void VBoxSnapshotsWgt::changeEvent (QEvent *aEvent)
 {
+    QWidget::changeEvent (aEvent);
     switch (aEvent->type())
     {
         case QEvent::LanguageChange:
         {
-            languageChange();
+            retranslateUi();
+            aEvent->accept();
             break;
         }
-
-        default:
+        default: 
             break;
     }
-
-    return QWidget::event (aEvent);
 }
 
-void VBoxSnapshotsWgt::languageChange()
+void VBoxSnapshotsWgt::retranslateUi()
 {
+    /* Translate uic generated strings */
+    Ui::VBoxSnapshotsWgt::retranslateUi (this);
+
     mDiscardSnapshotAction->setText ("&Discard Snapshot");
     mTakeSnapshotAction->setText ("Take &Snapshot");
     mRevertToCurSnapAction->setText ("&Revert to Current Snapshot");

@@ -46,11 +46,12 @@ public:
 
     VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession,
                           Qt::WindowFlags aFlags);
-   ~VBoxVMInformationDlg();
+    ~VBoxVMInformationDlg();
 
 protected:
 
-    virtual void languageChange();
+    virtual void changeEvent (QEvent *aEvent);
+    void retranslateUi();
 
     virtual bool event (QEvent *aEvent);
     virtual void resizeEvent (QResizeEvent *aEvent);

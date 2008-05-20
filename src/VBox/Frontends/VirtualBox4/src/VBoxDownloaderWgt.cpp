@@ -166,14 +166,30 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     /* Prepare the connection */
     mConn->setcallbacks (OnBegin, OnData, OnComplete, this);
 
-    languageChange();
+    retranslateUi();
     mStatusBar->addWidget (this, 1);
 
     /* Try to get the required file for the information */
     getFile();
 }
 
-void VBoxDownloaderWgt::languageChange()
+void VBoxDownloaderWgt::changeEvent (QEvent *aEvent)
+{
+    QWidget::changeEvent (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            retranslateUi();
+            aEvent->accept();
+            break;
+        }
+        default: 
+            break;
+    }
+}
+
+void VBoxDownloaderWgt::retranslateUi()
 {
     mCancelButton->setText (tr ("Cancel"));
     /// @todo the below title should be parametrized

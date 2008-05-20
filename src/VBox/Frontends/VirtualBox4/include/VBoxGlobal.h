@@ -487,7 +487,7 @@ public:
     QString languageCountryEnglish() const;
     QString languageTranslators() const;
 
-    void languageChange();
+    void retranslateUi();
 
     /** @internal made public for internal purposes */
     void cleanup();
