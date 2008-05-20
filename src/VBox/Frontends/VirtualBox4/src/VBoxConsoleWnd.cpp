@@ -2012,9 +2012,21 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                          + 4096 * 8; /* adapter info */
         if (aOn && (availBits < usedBits))
         {
-            vboxProblem().cannotEnterFSMode (aSeamless, screen.width(),
-                screen.height(), guestBpp, (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
-            return false;
+            if (aSeamless)
+            {
+                vboxProblem().cannotEnterSeamlessMode (
+                    screen.width(), screen.height(), guestBpp,
+                    (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+                return false;
+            }
+            else
+            {
+                int result = vboxProblem().cannotEnterFullscreenMode (
+                    screen.width(), screen.height(), guestBpp,
+                    (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+                if (result == QIMessageBox::Cancel)
+                    return false;
+            }
         }
     }
 
