@@ -247,7 +247,7 @@
 #define SVM_EXIT_MWAIT_UNCOND           0x8B
 /** MWAIT instruction when armed. */
 #define SVM_EXIT_MWAIT_ARMED            0x8C
-/** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault.). */
+/** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 #define SVM_EXIT_NPF                    0x400
 
 /** @} */
@@ -498,6 +498,19 @@ typedef union
 } SVM_IOIO_EXIT;
 #pragma pack()
 
+/**
+ * SVM nested paging structure
+ */
+#pragma pack(1)
+typedef union
+{
+    struct
+    {
+        uint32_t    u1NestedPaging : 1;             /* enabled/disabled */
+    } n;
+    uint64_t    au64[1];
+} SVM_NPCTRL;
+#pragma pack()
 
 /**
  * SVM VM Control Block. (VMCB)
@@ -545,7 +558,7 @@ typedef struct _SVM_VMCB
         /** Offset 0x88 - Exit Interrupt info. */
         SVM_EVENT   ExitIntInfo;
         /** Offset 0x90 - Nested Paging. */
-        uint64_t    u64NestedPaging;
+        SVM_NPCTRL  NestedPaging;
         /** Offset 0x98-0xA7 - Reserved. */
         uint8_t     u8Reserved2[0xA8-0x98];
         /** Offset 0xA8 - Event injection. */
