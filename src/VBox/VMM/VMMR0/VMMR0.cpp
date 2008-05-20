@@ -1086,9 +1086,6 @@ DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
 
 
 
-# undef LOG_GROUP
-# define LOG_GROUP LOG_GROUP_EM
-
 /**
  * Override this so we can push
  *
@@ -1106,10 +1103,10 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
                 "Location  : %s(%d) %s\n",
                 pszExpr, pszFile, uLine, pszFunction);
 #endif
-    LogRel(("\n!!R0-Assertion Failed!!\n"
-            "Expression: %s\n"
-            "Location  : %s(%d) %s\n",
-            pszExpr, pszFile, uLine, pszFunction));
+    LogAlways(("\n!!R0-Assertion Failed!!\n"
+               "Expression: %s\n"
+               "Location  : %s(%d) %s\n",
+               pszExpr, pszFile, uLine, pszFunction));
 }
 
 
@@ -1121,7 +1118,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 {
     for (size_t i = 0; i < cbChars; i++)
     {
-        LogRel(("%c", pachChars[i])); /** @todo this isn't any release logging in ring-0 from what I can tell... */
+        LogAlways(("%c", pachChars[i])); /** @todo this isn't any release logging in ring-0 from what I can tell... */
 #ifndef DEBUG_sandervl
         SUPR0Printf("%c", pachChars[i]);
 #endif

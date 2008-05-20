@@ -445,15 +445,30 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
                 LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
+#  define LogItAlways(pvInst, fFlags, fmtargs) \
+    do \
+    { \
+        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
+        if (LogIt_pLogger) \
+        { \
+            LogIt_pLogger->pfnLogger fmtargs; \
+        } \
+    } while (0)
 # endif
 #else
 # define LogIt(pvInst, fFlags, iGroup, fmtargs)     do { } while (0)
+# define LogItAlways(pvInst, fFlags, fmtargs)       do { } while (0)
 # if defined(LOG_USE_C99)
 #  define _LogRemoveParentheseis(...)               __VA_ARGS__
 #  define _LogIt(pvInst, fFlags, iGroup, ...)       do { } while (0)
 # endif
 #endif
 
+
+/** @def Log
+ * Level 1 logging that works regardless of the group settings (used for ring-0 assertion logging)
+ */
+#define LogAlways(a)    LogItAlways(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, a)
 
 /** @def Log
  * Level 1 logging.
