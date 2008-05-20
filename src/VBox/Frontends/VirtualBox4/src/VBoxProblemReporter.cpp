@@ -611,12 +611,11 @@ void VBoxProblemReporter::cannotSetSystemProperties (const CSystemProperties &pr
 
 void VBoxProblemReporter::cannotAccessUSB (const COMBase &obj)
 {
-    /* if there is no error info available, it should mean that
-     * IMachine::GetUSBController(), IHost::GetUSBDevices() etc. just returned
-     * E_NOTIMPL, as for the OSE version. Don't show the error message in this
-     * case since it's normal. */
+    /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
+     * E_NOTIMPL, it means the USB support is intentionally missing
+     * (as in the OSE version). Don't show the error message in this case. */
     COMResult res (obj);
-    if (res.rc() == E_NOTIMPL && !res.errorInfo().isBasicAvailable())
+    if (res.rc() == E_NOTIMPL)
         return;
 
     message (mainWindowShown(), res.isWarning() ? Warning : Error,
