@@ -23,9 +23,64 @@
 ; additional information or have any questions.
 ;
 
+%include "tstAsm.mac"
+
     BITS TEST_BITS
 
+; The disassembler doesn't do imm32 right for  64-bit stuff, so disable it for now.
+;%if TEST_BITS == 64
+; %define WITH_64_BIT_TESTS
+;%endif
+
     ; ADC
+        ; 80 /2 ib      ADC reg/mem8, imm8 - sans reg dst
+    lock adc byte [1000h], byte 8
+    lock adc byte [xBX], byte 8
+    lock adc byte [xDI], byte 8
+        ; 81 /2 i[wd]   ADC reg/memX, immX - sans reg dst
+    lock adc word [1000h], word 090cch
+    lock adc word [xBX], word 090cch
+    lock adc word [xDI], word 090cch
+    lock adc dword [1000h], dword 0cc90cc90h
+    lock adc dword [xBX], dword 0cc90cc90h
+    lock adc dword [xDI], dword 0cc90cc90h
+%ifdef WITH_64_BIT_TESTS
+    lock adc qword [1000h], dword 0cc90cc90h
+    lock adc qword [rbx], dword 0cc90cc90h
+    lock adc qword [rdi], dword 0cc90cc90h
+    lock adc qword [r9], dword 0cc90cc90h
+%endif
+        ; 83 /2 ib      ADC reg/memX, imm8 - sans reg dst
+    lock adc word [1000h], byte 07fh
+    lock adc word [xBX], byte 07fh
+    lock adc word [xDI], byte 07fh
+    lock adc dword [1000h], byte 07fh
+    lock adc dword [xBX], byte 07fh
+    lock adc dword [xDI], byte 07fh
+%ifdef WITH_64_BIT_TESTS
+    lock adc qword [1000h], byte 07fh
+    lock adc qword [rbx], byte 07fh
+    lock adc qword [rdi], byte 07fh
+    lock adc qword [r10], byte 07fh
+%endif
+
+        ; 10 /r         ADC reg/mem8, reg8 - sans reg dst
+    lock adc byte [1000h], bl
+    lock adc byte [xBX], bl
+    lock adc byte [xSI], bl
+        ; 11 /r         ADC reg/memX, regX - sans reg dst
+    lock adc word [1000h], bx
+    lock adc word [xBX], bx
+    lock adc word [xSI], bx
+    lock adc dword [1000h], ebx
+    lock adc dword [xBX], ebx
+    lock adc dword [xSI], ebx
+%ifdef WITH_64_BIT_TESTS
+    lock adc qword [1000h], rbx
+    lock adc qword [rbx], rbx
+    lock adc qword [rsi], rbx
+    lock adc qword [r11], rbx
+%endif
 
     ; ADD
     ; AND
@@ -44,6 +99,7 @@
     ; SUB
     ; XADD
 
+%if 1
     ; XCHG
     lock xchg [eax], eax
     lock xchg [ebx], eax
@@ -681,5 +737,4 @@
     xor edi, ebp
     xor edi, esi
     xor edi, edi
-
-
+%endif

@@ -55,26 +55,26 @@ $(call DIRDEP,$(VBOX_DISAS_TEST_PATH)):
 
 # Generate the rules for creating the .bin files.
 VBOX_DISAS_TESTS_BIN = $(VBOX_DISAS_TESTS_BUILD) $(VBOX_DISAS_TESTS_INVALID)
-OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-64.bin))
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-16.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=16 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=16 -o $@ $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-32.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=32 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=32 -o $@ $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-64.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-64.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=64 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=64 -o $@ $<
 
 
 # Generate the rules for the 'build' tests.
-OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm))
@@ -92,22 +92,22 @@ $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.as
 	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=64 $< > $@
 
 
-OTHER_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin))
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=16 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=16 -o $@ $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=32 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=32 -o $@ $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
-	$(TOOL_YASM_AS) -f bin -a x86 -DTEST_BITS=64 -o $@ $<
+	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=64 -o $@ $<
 
 
 VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_BUILD:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
@@ -143,9 +143,13 @@ $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)):
 	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=64 $<
 	@$(APPEND) $@ "done"
 
-
 # Add the .tst to the clean up.
-OTHER_CLEAN += $(VBOX_DISAS_TESTS)
+VBOX_DISAS_TEST_CLEAN += $(VBOX_DISAS_TESTS)
+OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
+
+# We don't want any of the tests rules to run in parallel
+# because the output will be difficult to follow.
+.NOTPARALLEL: $(VBOX_DISAS_TEST_CLEAN)
 
 
 #
