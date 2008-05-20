@@ -24,15 +24,17 @@
 ;
 
 %include "tstAsm.mac"
+%if TEST_BITS == 64
+; The disassembler doesn't do imm32 right for  64-bit stuff, so disable it for now.
+; %define WITH_64_BIT_TESTS_IMM32
+ %define WITH_64_BIT_TESTS
+%endif
 
     BITS TEST_BITS
 
-; The disassembler doesn't do imm32 right for  64-bit stuff, so disable it for now.
-;%if TEST_BITS == 64
-; %define WITH_64_BIT_TESTS
-;%endif
-
+    ;
     ; ADC
+    ;
         ; 80 /2 ib      ADC reg/mem8, imm8 - sans reg dst
     lock adc byte [1000h], byte 8
     lock adc byte [xBX], byte 8
@@ -44,7 +46,7 @@
     lock adc dword [1000h], dword 0cc90cc90h
     lock adc dword [xBX], dword 0cc90cc90h
     lock adc dword [xDI], dword 0cc90cc90h
-%ifdef WITH_64_BIT_TESTS
+%ifdef WITH_64_BIT_TESTS_IMM32
     lock adc qword [1000h], dword 0cc90cc90h
     lock adc qword [rbx], dword 0cc90cc90h
     lock adc qword [rdi], dword 0cc90cc90h
@@ -96,7 +98,7 @@
     lock add dword [1000h], dword 0cc90cc90h
     lock add dword [xBX], dword 0cc90cc90h
     lock add dword [xDI], dword 0cc90cc90h
-%ifdef WITH_64_BIT_TESTS
+%ifdef WITH_64_BIT_TESTS_IMM32
     lock add qword [1000h], dword 0cc90cc90h
     lock add qword [rbx], dword 0cc90cc90h
     lock add qword [rdi], dword 0cc90cc90h
@@ -148,7 +150,7 @@
     lock and dword [1000h], dword 0cc90cc90h
     lock and dword [xBX], dword 0cc90cc90h
     lock and dword [xDI], dword 0cc90cc90h
-%ifdef WITH_64_BIT_TESTS
+%ifdef WITH_64_BIT_TESTS_IMM32
     lock and qword [1000h], dword 0cc90cc90h
     lock and qword [rbx], dword 0cc90cc90h
     lock and qword [rdi], dword 0cc90cc90h
@@ -186,9 +188,99 @@
     lock and qword [r11], rbx
 %endif
 
+    ;
     ; BTC
+    ;
+        ; 0f bb /r      BTC reg/memX, regX (X != 8) - sans reg dst
+    lock btc word [20cch], bx
+    lock btc word [xBX], bx
+    lock btc word [xDI], bx
+    lock btc dword [20cch], ebx
+    lock btc dword [xBX], ebx
+    lock btc dword [xDI], ebx
+%ifdef WITH_64_BIT_TESTS
+    lock btc qword [20cch], rbx
+    lock btc qword [rdx], rbx
+    lock btc qword [rdi], r10
+    lock btc qword [r8], r12
+%endif
+        ; 0f ba /7 ib   BTC reg/memX, imm8 (X != 8) - sans reg dst
+    lock btc word [20cch], 15
+    lock btc word [xBX], 15
+    lock btc word [xDI], 15
+    lock btc dword [20cch], 30
+    lock btc dword [xBX], 30
+    lock btc dword [xDI], 30
+%ifdef WITH_64_BIT_TESTS
+    lock btc qword [20cch], 60
+    lock btc qword [rdx], 60
+    lock btc qword [rdi], 60
+    lock btc qword [r9], 60
+    lock btc qword [r12], 60
+%endif
+
+    ;
     ; BTR
+    ;
+        ; 0f b3 /r      BTR reg/memX, regX (X != 8) - sans reg dst
+    lock btr word [20cch], bx
+    lock btr word [xBX], bx
+    lock btr word [xDI], bx
+    lock btr dword [20cch], ebx
+    lock btr dword [xBX], ebx
+    lock btr dword [xDI], ebx
+%ifdef WITH_64_BIT_TESTS
+    lock btr qword [20cch], rbx
+    lock btr qword [rdx], rbx
+    lock btr qword [rdi], r10
+    lock btr qword [r8], r12
+%endif
+        ; 0f ba /6 ib   BTR reg/memX, imm8 (X != 8) - sans reg dst
+    lock btr word [20cch], 15
+    lock btr word [xBX], 15
+    lock btr word [xDI], 15
+    lock btr dword [20cch], 30
+    lock btr dword [xBX], 30
+    lock btr dword [xDI], 30
+%ifdef WITH_64_BIT_TESTS
+    lock btr qword [20cch], 60
+    lock btr qword [rdx], 60
+    lock btr qword [rdi], 60
+    lock btr qword [r9], 60
+    lock btr qword [r12], 60
+%endif
+
+    ;
     ; BTS
+    ;
+        ; 0f ab /r      BTS reg/memX, regX (X != 8) - sans reg dst
+    lock bts word [20cch], bx
+    lock bts word [xBX], bx
+    lock bts word [xDI], bx
+    lock bts dword [20cch], ebx
+    lock bts dword [xBX], ebx
+    lock bts dword [xDI], ebx
+%if TEST_BITS == 64
+    lock bts qword [20cch], rbx
+    lock bts qword [rdx], rbx
+    lock bts qword [rdi], r10
+    lock bts qword [r8], r12
+%endif
+        ; 0f ba /5 ib   BTS reg/memX, imm8 (X != 8) - sans reg dst
+    lock bts word [20cch], 15
+    lock bts word [xBX], 15
+    lock bts word [xDI], 15
+    lock bts dword [20cch], 30
+    lock bts dword [xBX], 30
+    lock bts dword [xDI], 30
+%if TEST_BITS == 64
+    lock bts qword [20cch], 60
+    lock bts qword [rdx], 60
+    lock bts qword [rdi], 60
+    lock bts qword [r9], 60
+    lock bts qword [r12], 60
+%endif
+
     ; CMPXCHG
     ; CMPXCHG8B
     ; CMPXCHG16B
