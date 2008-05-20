@@ -144,12 +144,14 @@ $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)):
 	@$(APPEND) $@ "done"
 
 # Add the .tst to the clean up.
-VBOX_DISAS_TEST_CLEAN += $(VBOX_DISAS_TESTS)
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS))
 OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 
-# We don't want any of the tests rules to run in parallel
-# because the output will be difficult to follow.
+# We don't want any of the tests rules to run in parallel because the
+# output will be difficult to follow. Abusing VBOX_DISAS_TEST_CLEAN here...
 .NOTPARALLEL: $(VBOX_DISAS_TEST_CLEAN)
+$(warning VBOX_DISAS_TEST_CLEAN:=$(VBOX_DISAS_TEST_CLEAN))
+
 
 
 #
