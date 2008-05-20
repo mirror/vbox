@@ -17,8 +17,7 @@
 # additional information or have any questions.
 #
 
-echo "Sun xVM VirtualBox Guest Additions - postinstall script"
-echo "This script will setup and load the VirtualBox Guest kernel module..."
+echo "Configuring VirtualBox guest kernel module..."
 
 sync
 vboxadditions_path="/opt/VirtualBoxAdditions"
@@ -32,6 +31,7 @@ chmod a+x $vboxadditions_path/VBoxClient
 chmod a+x $vboxadditions_path/VBoxRandR.sh
 
 # create links
+echo "Creating links..."
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s

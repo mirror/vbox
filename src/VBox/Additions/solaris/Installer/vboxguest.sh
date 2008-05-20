@@ -17,8 +17,10 @@
 # additional information or have any questions.
 #
 
-VBOXGUESTFILE=""
 SILENTUNLOAD=""
+MODNAME="vboxguest"
+MODDIR32="/platform/i86pc/kernel/drv"
+MODDIR64=$MODDIR32/amd64
 
 abort()
 {
@@ -31,32 +33,26 @@ info()
     echo 1>&2 "$1"
 }
 
-get_module_path()
-{
-    cputype=`isainfo -k`
-    moduledir="/platform/i86pc/kernel/drv";
-    if test "$cputype" = "amd64"; then
-        moduledir=$moduledir/amd64
-    fi
-    modulepath=$moduledir/vboxguest
-    if test -f "$modulepath"; then
-        VBOXGUESTFILE="$modulepath"
-    else
-        VBOXGUESTFILE=""
-    fi
-}
-
 check_if_installed()
 {
-    if test "$VBOXGUESTFILE" -a -f "$VBOXGUESTFILE"; then
+    cputype=`isainfo -k`
+    modulepath="$MODDIR32/$MODNAME"    
+    if test "$cputype" = "amd64"; then
+        modulepath="$MODDIR64/$MODNAME"
+    fi
+    if test -f "$modulepath"; then
         return 0
     fi
-    abort "VirtualBox kernel module (vboxguest) not installed."
+    abort "VirtualBox kernel module ($MODNAME) NOT installed."
 }
 
 module_loaded()
 {
-    loadentry=`cat /etc/name_to_major | grep vboxguest`
+    if test -f "/etc/name_to_major"; then
+        loadentry=`cat /etc/name_to_major | grep $MODNAME`
+    else
+        loadentry=`/usr/sbin/modinfo | grep $MODNAME`
+    fi
     if test -z "$loadentry"; then
         return 1
     fi
@@ -73,13 +69,13 @@ check_root()
 start_module()
 {
     if module_loaded; then
-        info "vboxguest already loaded..."
+        info "VirtualBox guest kernel module already loaded."
     else
-        /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' vboxguest
+        /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' $MODNAME
         if test ! module_loaded; then
-            abort "Failed to load vboxguest."
-        elif test -c "/devices/pci@0,0/pci80ee,cafe@4:vboxguest"; then
-            info "Loaded vboxguest."
+            abort "## Failed to load VirtualBox guest kernel module."
+        elif test -c "/devices/pci@0,0/pci80ee,cafe@4:$MODNAME"; then
+            info "VirtualBox guest kernel module loaded."
         else
             stop
             abort "Aborting due to attach failure."
@@ -90,10 +86,10 @@ start_module()
 stop_module()
 {
     if module_loaded; then
-        /usr/sbin/rem_drv vboxguest
-        info "Unloaded vboxguest."
+        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox guest kernel module."
+        info "VirtualBox guest kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
-        info "vboxguest not loaded."
+        info "VirtualBox guest kernel module not loaded."
     fi
 }
 
@@ -108,14 +104,13 @@ restart_module()
 status_module()
 {
     if module_loaded; then
-        info "vboxguest running."
+        info "Running."
     else
-        info "vboxguest stopped."
+        info "Stopped."
     fi
 }
 
 check_root
-get_module_path
 check_if_installed
 
 if test "$2" = "silentunload"; then
