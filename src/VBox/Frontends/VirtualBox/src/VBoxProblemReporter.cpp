@@ -666,15 +666,18 @@ void VBoxProblemReporter::cannotSaveMachineSettings (const CMachine &machine,
 }
 
 /**
- *  @param  strict  if |true| then show the message even if there is no basic
- *                  error info available
+ * @param  strict  If |false|, this method will silently return if the COM
+ *                 result code is E_NOTIMPL.
  */
 void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
                                                      bool strict /* = true */,
                                                      QWidget *parent /* = 0 */)
 {
+    /* If COM result code is E_NOTIMPL, it means the requested object or
+     * function is intentionally missing (as in the OSE version). Don't show
+     * the error message in this case. */
     COMResult res (machine);
-    if (!strict && !res.errorInfo().isBasicAvailable())
+    if (!strict && res.rc() == E_NOTIMPL)
         return;
 
     message (parent ? parent : mainWindowShown(), Error,
