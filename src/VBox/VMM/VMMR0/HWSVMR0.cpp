@@ -819,7 +819,13 @@ ResumeExecution:
         pVM->hwaccm.s.svm.cTLBFlushes = pCpu->cTLBFlushes;
     }
     else
+    {
+        /* We never increase uCurrentASID in the fAlwaysFlushTLB case. */
+        if (!pCpu->uCurrentASID)
+            pCpu->uCurrentASID = 1;
+
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
+    }
 
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
     pVMCB->ctrl.TLBCtrl.n.u32ASID = pCpu->uCurrentASID;
