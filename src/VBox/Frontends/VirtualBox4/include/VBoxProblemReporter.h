@@ -181,8 +181,10 @@ public:
 
     void cannotFindMachineByName (const CVirtualBox &vbox, const QString &name);
 
-    void cannotEnterFSMode (bool aIsSeamless, ULONG aWidth, ULONG aHeight,
-                            ULONG aBpp, ULONG64 aMinVRAM);
+    void cannotEnterSeamlessMode (ULONG aWidth, ULONG aHeight,
+                                  ULONG aBpp, ULONG64 aMinVRAM);
+    int cannotEnterFullscreenMode (ULONG aWidth, ULONG aHeight,
+                                   ULONG aBpp, ULONG64 aMinVRAM);
 
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);

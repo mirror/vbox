@@ -940,25 +940,35 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
     );
 }
 
-void VBoxProblemReporter::cannotEnterFSMode (bool aIsSeamless,
-                                             ULONG /* aWidth */,
-                                             ULONG /* aHeight */,
-                                             ULONG /* aBpp */,
-                                             ULONG64 aMinVRAM)
+void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG /* aWidth */,
+                                                   ULONG /* aHeight */,
+                                                   ULONG /* aBpp */,
+                                                   ULONG64 aMinVRAM)
 {
     message (&vboxGlobal().consoleWnd(), Error,
-             (aIsSeamless ?
-                tr ("<p>Could not enter seamless mode due to insufficient guest "
-                    "video memory.</p>"
-                    "<p>You should configure the virtual machine to have at "
-                    "least <b>%1</b> of video memory.</p>") :
-                tr ("<p>Could not switch the guest display to fullscreen mode due "
-                    "to insufficient guest video memory.</p>"
-                    "<p>You should configure the virtual machine to have at "
-                    "least <b>%1</b> of video memory.</p>"
-                    "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
-                    "or press <b>Cancel</b> to cancel the operation.</p>"))
+             tr ("<p>Could not enter seamless mode due to insufficient guest "
+                  "video memory.</p>"
+                  "<p>You should configure the virtual machine to have at "
+                  "least <b>%1</b> of video memory.</p>")
              .arg (VBoxGlobal::formatSize (aMinVRAM)));
+}
+
+int VBoxProblemReporter::cannotEnterFullscreenMode (ULONG /* aWidth */,
+                                                    ULONG /* aHeight */,
+                                                    ULONG /* aBpp */,
+                                                    ULONG64 aMinVRAM)
+{
+    return message (&vboxGlobal().consoleWnd(), Warning,
+             tr ("<p>Could not switch the guest display to fullscreen mode due "
+                 "to insufficient guest video memory.</p>"
+                 "<p>You should configure the virtual machine to have at "
+                 "least <b>%1</b> of video memory.</p>"
+                 "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
+                 "or press <b>Cancel</b> to cancel the operation.</p>")
+             .arg (VBoxGlobal::formatSize (aMinVRAM)),
+             0, /* aAutoConfirmId */
+             QIMessageBox::Ignore | QIMessageBox::Default,
+             QIMessageBox::Cancel | QIMessageBox::Escape);
 }
 
 bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
