@@ -77,6 +77,7 @@ HWACCMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu,
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, pPageCpuPhys);
 
     pCpu->uCurrentASID = 0;   /* we'll aways increment this the first time (host uses ASID 0) */
+    pCpu->cTLBFlushes  = 0;
     return VINF_SUCCESS;
 }
 
@@ -268,8 +269,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      * All breakpoints are automatically cleared when the VM exits.
      */
 
-    /** @todo nested paging */
     pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
+    if (pVM->hwaccm.s.svm.fNestedPaging)
+        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(14);   /* no longer need to intercept pagefaults. */
 
     pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
                                     | SVM_CTRL1_INTERCEPT_VINTR
@@ -309,10 +311,6 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /* Set IO and MSR bitmap addresses. */
     pVMCB->ctrl.u64IOPMPhysAddr  = pVM->hwaccm.s.svm.pIOBitmapPhys;
     pVMCB->ctrl.u64MSRPMPhysAddr = pVM->hwaccm.s.svm.pMSRBitmapPhys;
-
-    /* Enable nested paging. */
-    /** @todo how to detect support for this?? */
-    pVMCB->ctrl.u64NestedPaging = 0; /** @todo SVM_NESTED_PAGING_ENABLE; */
 
     /* No LBR virtualization. */
     pVMCB->ctrl.u64LBRVirt      = 0;
@@ -789,9 +787,15 @@ ResumeExecution:
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
+    /* Enable nested paging (disabled each time after #VMEXIT). */
+    pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.svm.fNestedPaging;
+
+    /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     if (!pVM->hwaccm.s.svm.fResumeVM)
     {
-        if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
+        if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
+                /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
+            ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
         {
             /* Force a TLB flush on VM entry. */
             pVM->hwaccm.s.svm.fForceTLBFlush = true;
@@ -799,7 +803,7 @@ ResumeExecution:
         pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
     }
 
-    /* Make sure we flush the TLB when required. */
+    /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
         && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
@@ -807,9 +811,12 @@ ResumeExecution:
         {
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;       /* wrap around; flush TLB */
+            pCpu->cTLBFlushes++;
         }
         else
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
+
+        pVM->hwaccm.s.svm.cTLBFlushes = pCpu->cTLBFlushes;
     }
     else
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
@@ -843,7 +850,6 @@ ResumeExecution:
     Assert(pVMCB->ctrl.IntCtrl.n.u1VIrqMasking);
     Assert(pVMCB->ctrl.u64IOPMPhysAddr  == pVM->hwaccm.s.svm.pIOBitmapPhys);
     Assert(pVMCB->ctrl.u64MSRPMPhysAddr == pVM->hwaccm.s.svm.pMSRBitmapPhys);
-    Assert(pVMCB->ctrl.u64NestedPaging == 0);
     Assert(pVMCB->ctrl.u64LBRVirt == 0);
 
     SVMVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVM->hwaccm.s.svm.pVMCBPhys, pCtx);
@@ -901,7 +907,7 @@ ResumeExecution:
         Log(("ctrl.ExitIntInfo.u19Reserved      %x\n",      pVMCB->ctrl.ExitIntInfo.n.u19Reserved));
         Log(("ctrl.ExitIntInfo.u1Valid          %x\n",      pVMCB->ctrl.ExitIntInfo.n.u1Valid));
         Log(("ctrl.ExitIntInfo.u32ErrorCode     %x\n",      pVMCB->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log(("ctrl.u64NestedPaging              %VX64\n",   pVMCB->ctrl.u64NestedPaging));
+        Log(("ctrl.NestedPaging                 %VX64\n",   pVMCB->ctrl.NestedPaging.au64));
         Log(("ctrl.EventInject.u8Vector         %x\n",      pVMCB->ctrl.EventInject.n.u8Vector));
         Log(("ctrl.EventInject.u3Type           %x\n",      pVMCB->ctrl.EventInject.n.u3Type));
         Log(("ctrl.EventInject.u1ErrorCodeValid %x\n",      pVMCB->ctrl.EventInject.n.u1ErrorCodeValid));
@@ -1101,6 +1107,8 @@ ResumeExecution:
             uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
             RTGCUINTPTR uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
+            Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+
             Log2(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
             /* Exit qualification contains the linear address of the page fault. */
             TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
@@ -1230,6 +1238,11 @@ ResumeExecution:
         } /* switch (vector) */
         break;
     }
+
+    case SVM_EXIT_NPF:
+        /* EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault. */
+        Assert(pVM->hwaccm.s.svm.fNestedPaging);
+        break;
 
     case SVM_EXIT_VINTR:
         /* A virtual interrupt is about to be delivered, which means IF=1. */
@@ -1574,12 +1587,8 @@ ResumeExecution:
     case SVM_EXIT_MWAIT_UNCOND:
     case SVM_EXIT_MWAIT_ARMED:
     case SVM_EXIT_MSR:
-    case SVM_EXIT_TASK_SWITCH:  /* can change CR3; emulate */
+    case SVM_EXIT_TASK_SWITCH:          /* can change CR3; emulate */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
-        break;
-
-    case SVM_EXIT_NPF:
-        AssertFailed(); /* unexpected */
         break;
 
     case SVM_EXIT_SHUTDOWN:
