@@ -445,6 +445,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
                 LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
+# endif
 #  define LogItAlways(pvInst, fFlags, fmtargs) \
     do \
     { \
@@ -454,7 +455,6 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
             LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
-# endif
 #else
 # define LogIt(pvInst, fFlags, iGroup, fmtargs)     do { } while (0)
 # define LogItAlways(pvInst, fFlags, fmtargs)       do { } while (0)
