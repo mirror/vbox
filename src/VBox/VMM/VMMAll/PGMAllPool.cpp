@@ -1710,7 +1710,9 @@ void pgmPoolClearAll(PVM pVM)
         }
     }
 
+#ifndef DEBUG_michael
     AssertMsg(cModifiedPages == pPool->cModifiedPages, ("%d != %d\n", cModifiedPages, pPool->cModifiedPages));
+#endif
     pPool->iModifiedHead = NIL_PGMPOOL_IDX;
     pPool->cModifiedPages = 0;
 
