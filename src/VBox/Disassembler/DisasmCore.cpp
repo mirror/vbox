@@ -2391,7 +2391,6 @@ void disasmAddChar(char *psz, char ch)
 void disValidateLockSequence(PDISCPUSTATE pCpu)
 {
     Assert(pCpu->prefix & PREFIX_LOCK);
-#if 0 /** @todo don't enable before the testcases have been finished. */
 
     /*
      * Filter out the valid lock sequences.
@@ -2440,6 +2439,5 @@ void disValidateLockSequence(PDISCPUSTATE pCpu)
      */
     pCpu->pCurInstr = &g_aTwoByteMapX86[11];
     Assert(pCpu->pCurInstr->opcode == OP_ILLUD2);
-#endif
 }
 
