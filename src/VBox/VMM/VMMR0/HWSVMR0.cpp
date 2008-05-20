@@ -254,12 +254,18 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
     /* Note: CR8 reads will refer to V_TPR, so no need to catch them. */
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
-    pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
+    if (!pVM->hwaccm.s.svm.fNestedPaging)
+        pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
+    else    
+        pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0);
 
     /*
      * CR0/3/4 writes must be intercepted for obvious reasons.
      */
-    pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
+    if (!pVM->hwaccm.s.svm.fNestedPaging)
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
+    else
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(8);
 
     /* Intercept all DRx reads and writes. */
     pVMCB->ctrl.u16InterceptRdDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
@@ -582,8 +588,13 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* Always enable caching. */
         val &= ~(X86_CR0_CD|X86_CR0_NW);
 
-        val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
-        val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
+        /* Note: WP is not relevant in nested paging mode as we catch accesses on the (host) physical level. */
+        /* Note: In nested paging mode the guest is allowed to run with paging disabled; the guest physical to host physical translation is still active. */
+        if (!pVM->hwaccm.s.svm.fNestedPaging)
+        {
+            val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
+            val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
+        }
         pVMCB->guest.u64CR0 = val;
     }
     /* CR2 as well */
@@ -592,36 +603,42 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
         /* Save our shadow CR3 register. */
-        pVMCB->guest.u64CR3 = PGMGetHyperCR3(pVM);
+        if (!pVM->hwaccm.s.svm.fNestedPaging)
+            pVMCB->guest.u64CR3 = PGMGetHyperCR3(pVM);
+        else
+            pVMCB->guest.u64CR3 = pCtx->cr3;
     }
 
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
     {
         val = pCtx->cr4;
-        switch(pVM->hwaccm.s.enmShadowMode)
+        if (!pVM->hwaccm.s.svm.fNestedPaging)
         {
-        case PGMMODE_REAL:
-        case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            switch(pVM->hwaccm.s.enmShadowMode)
+            {
+            case PGMMODE_REAL:
+            case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
+                AssertFailed();
+                return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
 
-        case PGMMODE_32_BIT:        /* 32-bit paging. */
-            break;
+            case PGMMODE_32_BIT:        /* 32-bit paging. */
+                break;
 
-        case PGMMODE_PAE:           /* PAE paging. */
-        case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
-            /** @todo use normal 32 bits paging */
-            val |= X86_CR4_PAE;
-            break;
+            case PGMMODE_PAE:           /* PAE paging. */
+            case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
+                /** @todo use normal 32 bits paging */
+                val |= X86_CR4_PAE;
+                break;
 
-        case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
-        case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
+            case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
+                AssertFailed();
+                return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
 
-        default:                   /* shut up gcc */
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            default:                   /* shut up gcc */
+                AssertFailed();
+                return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            }
         }
         pVMCB->guest.u64CR4 = val;
     }
@@ -701,6 +718,8 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     SVM_VMCB   *pVMCB;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
+
+    Assert(!pVM->hwaccm.s.svm.fNestedPaging);
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -787,7 +806,7 @@ ResumeExecution:
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
-    /* Enable nested paging (disabled each time after #VMEXIT). */
+    /* Enable nested paging if necessary (disabled each time after #VMEXIT). */
     pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.svm.fNestedPaging;
 
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
@@ -921,7 +940,7 @@ ResumeExecution:
         Log(("ctrl.EventInject.u1Valid          %x\n",      pVMCB->ctrl.EventInject.n.u1Valid));
         Log(("ctrl.EventInject.u32ErrorCode     %x\n",      pVMCB->ctrl.EventInject.n.u32ErrorCode));
 
-        Log(("ctrl.u64HostCR3                   %VX64\n",   pVMCB->ctrl.u64HostCR3));
+        Log(("ctrl.u64NestedPagingCR3           %VX64\n",   pVMCB->ctrl.u64NestedPagingCR3));
         Log(("ctrl.u64LBRVirt                   %VX64\n",   pVMCB->ctrl.u64LBRVirt));
 
         Log(("guest.CS.u16Sel                   %04X\n",    pVMCB->guest.CS.u16Sel));

@@ -564,7 +564,7 @@ typedef struct _SVM_VMCB
         /** Offset 0xA8 - Event injection. */
         SVM_EVENT   EventInject;
         /** Offset 0xB0 - Host CR3 for nested paging. */
-        uint64_t    u64HostCR3;
+        uint64_t    u64NestedPagingCR3;
         /** Offset 0xB8 - LBR Virtualization. */
         uint64_t    u64LBRVirt;
     } ctrl;
