@@ -71,7 +71,24 @@ static void MyDisasDefaultFormatter(PMYDISSTATE pState)
  */
 static void MyDisasYasmFormatter(PMYDISSTATE pState)
 {
-    RTPrintf("yasm not implemented: %s", pState->szLine);
+    /* a very quick hack. */
+    char szTmp[256];
+    strcpy(szTmp, RTStrStripL(strchr(pState->szLine, ':') + 1));
+
+    char *psz = strrchr(szTmp, '[');
+    *psz = '\0';
+    RTStrStripR(szTmp);
+
+    psz = strstr(szTmp, " ptr ");
+    if (psz)
+        memset(psz, ' ', 5);
+
+    char *pszEnd = strchr(szTmp, '\0');
+    while (pszEnd - &szTmp[0] < 71)
+        *pszEnd++ = ' ';
+    *pszEnd = '\0';
+
+    RTPrintf("    %s ; %s", szTmp, pState->szLine);
 }
 
 
@@ -222,6 +239,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             break;
 
         case kAsmStyle_yasm:
+            RTPrintf("    BITS %d\n", enmCpuMode == CPUMODE_16BIT ? 16 : enmCpuMode == CPUMODE_32BIT ? 32 : 64);
             pfnFormatter = MyDisasYasmFormatter;
             break;
 
@@ -256,7 +274,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
                 pfnFormatter(&State);
             else
             {
-                RTPrintf("%s: error at %#RX64: unexpected valid instruction\n", argv0, State.uAddress);
+                RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->opcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }
@@ -324,6 +342,7 @@ static int Usage(const char *argv0)
 int main(int argc, char **argv)
 {
     RTR3Init();
+    const char * const argv0 = RTPathFilename(argv[0]);
 
     /* options */
     uint64_t uAddress = 0;
@@ -377,13 +396,13 @@ int main(int argc, char **argv)
                     enmCpuMode = CPUMODE_64BIT;
                 else
                 {
-                    RTStrmPrintf(g_pStdErr, "%s: Invalid CPU mode value %RU32\n", argv[0], ValueUnion.u32);
+                    RTStrmPrintf(g_pStdErr, "%s: Invalid CPU mode value %RU32\n", argv0, ValueUnion.u32);
                     return 1;
                 }
                 break;
 
             case 'h':
-                return Usage(argv[0]);
+                return Usage(argv0);
 
             case 'i':
                 fAllInvalid = true;
@@ -417,23 +436,23 @@ int main(int argc, char **argv)
                 else if (!strcmp(ValueUnion.psz, "masm"))
                 {
                     enmStyle = kAsmStyle_masm;
-                    RTStrmPrintf(g_pStdErr, "%s: masm style isn't implemented yet\n", argv[0]);
+                    RTStrmPrintf(g_pStdErr, "%s: masm style isn't implemented yet\n", argv0);
                     return 1;
                 }
                 else
                 {
-                    RTStrmPrintf(g_pStdErr, "%s: unknown assembly style: %s\n", argv[0], ValueUnion.psz);
+                    RTStrmPrintf(g_pStdErr, "%s: unknown assembly style: %s\n", argv0, ValueUnion.psz);
                     return 1;
                 }
                 break;
 
             default:
-                RTStrmPrintf(g_pStdErr, "%s: syntax error: %Rrc\n", argv[0], ch);
+                RTStrmPrintf(g_pStdErr, "%s: syntax error: %Rrc\n", argv0, ch);
                 return 1;
         }
     }
     if (iArg >= argc)
-        return Usage(argv[0]);
+        return Usage(argv0);
 
     /*
      * Process the files.
@@ -449,14 +468,14 @@ int main(int argc, char **argv)
         rc = RTFileReadAllEx(argv[iArg], off, cbMax, 0, &pvFile, &cbFile);
         if (RT_FAILURE(rc))
         {
-            RTStrmPrintf(g_pStdErr, "%s: %s: %Rrc\n", argv[0], argv[iArg], rc);
+            RTStrmPrintf(g_pStdErr, "%s: %s: %Rrc\n", argv0, argv[iArg], rc);
             break;
         }
 
         /*
          * Disassemble it.
          */
-        rc = MyDisasmBlock(argv[0], enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, fRaw, fAllInvalid);
+        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, fRaw, fAllInvalid);
         if (RT_FAILURE(rc))
             break;
     }

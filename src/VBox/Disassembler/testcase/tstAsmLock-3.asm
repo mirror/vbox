@@ -22,7 +22,7 @@
 ; additional information or have any questions.
 ;
 
-    BITS 32
+    BITS TEST_BITS
 
     lock mov ebp, esp
     lock mov byte [0], 0
@@ -38,6 +38,11 @@
     lock mov [ebx], dx
     lock mov [ebx], dl
     lock ret
+%if TEST_BITS != 64
     lock pop  ebp
     lock push esp
+%else
+    lock pop  rbp
+    lock push rsp
+%endif
 
