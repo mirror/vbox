@@ -1087,13 +1087,12 @@ DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
 
 
 /**
- * Override this so we can push
+ * Override this so we can push it up to ring-3.
  *
  * @param   pszExpr     Expression. Can be NULL.
  * @param   uLine       Location line number.
  * @param   pszFile     Location file name.
  * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
  */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
@@ -1111,17 +1110,17 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
 
 
 /**
- * Callback for RTLogFormatV which writes to the com port.
+ * Callback for RTLogFormatV which writes to the ring-3 log port.
  * See PFNLOGOUTPUT() for details.
  */
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
 {
     for (size_t i = 0; i < cbChars; i++)
     {
-        LogAlways(("%c", pachChars[i])); /** @todo this isn't any release logging in ring-0 from what I can tell... */
 #ifndef DEBUG_sandervl
         SUPR0Printf("%c", pachChars[i]);
 #endif
+        LogAlways(("%c", pachChars[i]));
     }
 
     return cbChars;
@@ -1130,7 +1129,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 
 DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 {
-    PRTLOGGER pLog = RTLogDefaultInstance();
+    PRTLOGGER pLog = RTLogDefaultInstance(); /** @todo we want this for release as well! */
     if (pLog)
     {
         va_list args;
