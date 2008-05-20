@@ -820,7 +820,7 @@ ResumeExecution:
     }
     else
     {
-        /* We never increase uCurrentASID in the fAlwaysFlushTLB case. */
+        /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
         if (!pCpu->uCurrentASID)
             pCpu->uCurrentASID = 1;
 
