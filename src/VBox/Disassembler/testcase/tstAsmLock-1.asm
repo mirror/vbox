@@ -324,18 +324,18 @@
     ; DEC
     ;
         ; fe /1         DEC reg8/mem8 - sans reg dst
-    lock dec byte [40cc0h]
+    lock dec byte [40cch]
     lock dec byte [xBX]
     lock dec byte [xSI]
         ; ff /1         DEC regX/memX - sans reg dst
-    lock dec word [40cc0h]
+    lock dec word [40cch]
     lock dec word [xBX]
     lock dec word [xSI]
-    lock dec dword [40cc0h]
+    lock dec dword [40cch]
     lock dec dword [xBX]
     lock dec dword [xSI]
 %ifdef WITH_64_BIT_TESTS
-    lock dec qword [40cc0h]
+    lock dec qword [40cch]
     lock dec qword [xBX]
     lock dec qword [xSI]
     lock dec qword [r8]
@@ -346,26 +346,68 @@
     ; INC
     ;
         ; fe /0         INC reg8/mem8 - sans reg dst
-    lock inc byte [40cc0h]
+    lock inc byte [40cch]
     lock inc byte [xBX]
     lock inc byte [xSI]
         ; ff /0         INC regX/memX - sans reg dst
-    lock inc word [40cc0h]
+    lock inc word [40cch]
     lock inc word [xBX]
     lock inc word [xSI]
-    lock inc dword [40cc0h]
+    lock inc dword [40cch]
     lock inc dword [xBX]
     lock inc dword [xSI]
 %ifdef WITH_64_BIT_TESTS
-    lock inc qword [40cc0h]
+    lock inc qword [40cch]
     lock inc qword [xBX]
     lock inc qword [xSI]
     lock inc qword [r8]
     lock inc qword [r12]
 %endif
 
+    ;
     ; NEG
+    ;
+        ; f6 /3         NEG reg8/mem8 - sans reg dst
+    lock neg byte [40cch]
+    lock neg byte [xBX]
+    lock neg byte [xSI]
+        ; f7 /3         NEG regX/memX - sans reg dst
+    lock neg word [40cch]
+    lock neg word [xBX]
+    lock neg word [xSI]
+    lock neg dword [40cch]
+    lock neg dword [xBX]
+    lock neg dword [xSI]
+%ifdef WITH_64_BIT_TESTS
+    lock neg qword [40cch]
+    lock neg qword [xBX]
+    lock neg qword [xSI]
+    lock neg qword [r8]
+    lock neg qword [r12]
+%endif
+
+    ;
     ; NOT
+    ;
+        ; f6 /2         NOT reg8/mem8 - sans reg dst
+    lock not byte [40cch]
+    lock not byte [xBX]
+    lock not byte [xSI]
+        ; f7 /2         NOT regX/memX - sans reg dst
+    lock not word [40cch]
+    lock not word [xBX]
+    lock not word [xSI]
+    lock not dword [40cch]
+    lock not dword [xBX]
+    lock not dword [xSI]
+%ifdef WITH_64_BIT_TESTS
+    lock not qword [40cch]
+    lock not qword [xBX]
+    lock not qword [xSI]
+    lock not qword [r8]
+    lock not qword [r12]
+%endif
+
     ; OR
     ; SBB
     ; SUB
