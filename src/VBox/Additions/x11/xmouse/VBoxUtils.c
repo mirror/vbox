@@ -28,9 +28,12 @@
 #include "xf86_ansic.h"
 #include "compiler.h"
 
-/* This is an ugly hack, but I can't see anywhere to save this information
-   in the driver context. */
-/** Have we ever failed to open the VBox device? */
+/**
+ * Have we ever failed to open the VBox device?  This is an ugly hack
+ * to prevent the driver from being accessed when it is not open, as
+ * I can't see anywhere good to store additional information in the driver
+ * private data.
+ */
 static Bool gDeviceOpenFailed = FALSE;
 
 int VBoxMouseInit(void)
