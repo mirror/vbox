@@ -223,9 +223,24 @@
     lock bts r10, 3
 %endif
 
+    ;
     ; CMPXCHG
+    ;
+        ; 0f b0 /r      CMPXCHG reg8/mem8, regX - with reg dst
+    lock cmpxchg bl, cl
+        ; 0f b1 /r      CMPXCHG regX/memX, regX - with reg dst
+    lock cmpxchg bx, cx
+    lock cmpxchg ebx, ecx
+%ifdef WITH_64_BIT_TESTS
+    lock cmpxchg rbx, rcx
+%endif
+
+    ;
     ; CMPXCHG8B
     ; CMPXCHG16B
+    ;
+        ; all valid.
+
     ; DEC
     ; INC
     ; NEG
