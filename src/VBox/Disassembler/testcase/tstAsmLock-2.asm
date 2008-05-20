@@ -321,9 +321,135 @@
     lock not r14
 %endif
 
+    ;
     ; OR
+    ;
+        ; 0C ib         OR AL, imm8
+    lock or al, byte 8
+        ; 0D i[wd]      OR [ER]AX, immX
+    lock or ax, word 16
+    lock or eax, dword 128
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock or rax, dword 256
+    lock or rax, dword 0cc90cc90h
+%endif
+        ; 80 /1 ib      OR reg/mem8, imm8 - with reg dst
+    lock or cl, byte 8
+        ; 81 /1 i[wd]   OR reg/memX, immX - with reg dst
+    lock or cx, word 1000h
+    lock or ecx, dword 100000h
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock or rcx, dword 100000h
+%endif
+        ; 83 /1 ib      OR reg/memX, imm8 - with reg dst
+    lock or cx, byte 07fh
+    lock or ecx, byte 07fh
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock or rcx, byte 07fh
+%endif
+        ; 08 /r         OR reg/mem8, reg8 - with reg dst
+    lock or cl, bl
+        ; 09 /r         OR reg/memX, regX - with reg dst
+    lock or cx, bx
+    lock or ecx, ebx
+%ifdef WITH_64_BIT_TESTS
+    lock or rcx, rbx
+%endif
+        ; 0A /r         OR reg8, reg/mem8
+    lock or cl, [0badh]
+        ; 0B /r         OR regX, reg/memX
+    lock or cx, [0badh]
+    lock or ecx, [0badh]
+%ifdef WITH_64_BIT_TESTS
+    lock or rcx, [0badh]
+%endif
+
+    ;
     ; SBB
+    ;
+        ; 1C ib         SBB AL, imm8
+    lock sbb al, byte 8
+        ; 1D i[wd]      SBB [ER]AX, immX
+    lock sbb ax, word 16
+    lock sbb eax, dword 128
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sbb rax, dword 256
+    lock sbb rax, dword 0cc90cc90h
+%endif
+        ; 80 /3 ib      SBB reg/mem8, imm8 - with reg dst
+    lock sbb cl, byte 8
+        ; 81 /3 i[wd]   SBB reg/memX, immX - with reg dst
+    lock sbb cx, word 1000h
+    lock sbb ecx, dword 100000h
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sbb rcx, dword 100000h
+%endif
+        ; 83 /3 ib      SBB reg/memX, imm8 - with reg dst
+    lock sbb cx, byte 07fh
+    lock sbb ecx, byte 07fh
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sbb rcx, byte 07fh
+%endif
+        ; 18 /r         SBB reg/mem8, reg8 - with reg dst
+    lock sbb cl, bl
+        ; 19 /r         SBB reg/memX, regX - with reg dst
+    lock sbb cx, bx
+    lock sbb ecx, ebx
+%ifdef WITH_64_BIT_TESTS
+    lock sbb rcx, rbx
+%endif
+        ; 1A /r         SBB reg8, reg/mem8
+    lock sbb cl, [0badh]
+        ; 1B /r         SBB regX, reg/memX
+    lock sbb cx, [0badh]
+    lock sbb ecx, [0badh]
+%ifdef WITH_64_BIT_TESTS
+    lock sbb rcx, [0badh]
+%endif
+
+    ;
     ; SUB
+    ;
+        ; 2C ib         SUB AL, imm8
+    lock sub al, byte 8
+        ; 2D i[wd]      SUB [ER]AX, immX
+    lock sub ax, word 16
+    lock sub eax, dword 128
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sub rax, dword 256
+    lock sub rax, dword 0cc90cc90h
+%endif
+        ; 80 /5 ib      SUB reg/mem8, imm8 - with reg dst
+    lock sub cl, byte 8
+        ; 81 /5 i[wd]   SUB reg/memX, immX - with reg dst
+    lock sub cx, word 1000h
+    lock sub ecx, dword 100000h
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sub rcx, dword 100000h
+%endif
+        ; 83 /5 ib      SUB reg/memX, imm8 - with reg dst
+    lock sub cx, byte 07fh
+    lock sub ecx, byte 07fh
+%ifdef WITH_64_BIT_TESTS_IMM32
+    lock sub rcx, byte 07fh
+%endif
+        ; 28 /r         SUB reg/mem8, reg8 - with reg dst
+    lock sub cl, bl
+        ; 29 /r         SUB reg/memX, regX - with reg dst
+    lock sub cx, bx
+    lock sub ecx, ebx
+%ifdef WITH_64_BIT_TESTS
+    lock sub rcx, rbx
+%endif
+        ; 2A /r         SUB reg8, reg/mem8
+    lock sub cl, [0badh]
+        ; 2B /r         SUB regX, reg/memX
+    lock sub cx, [0badh]
+    lock sub ecx, [0badh]
+%ifdef WITH_64_BIT_TESTS
+    lock sub rcx, [0badh]
+%endif
+
     ; XADD
     ; XCHG
     ; XOR
