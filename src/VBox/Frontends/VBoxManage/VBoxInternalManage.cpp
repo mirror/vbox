@@ -787,10 +787,16 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     uint64_t cbSize = 0;
 #ifdef RT_OS_WINDOWS
+    /* Windows NT has no IOCTL_DISK_GET_LENGTH_INFORMATION ioctl. This was
+     * added to Windows XP, so we have to use the available info from DriveGeo.
+     * Note that we cannot simply use IOCTL_DISK_GET_DRIVE_GEOMETRY as it
+     * yields a slightly different result than IOCTL_DISK_GET_LENGTH_INFO.
+     * We call IOCTL_DISK_GET_DRIVE_GEOMETRY first as we need to check the media
+     * type anyway, and if IOCTL_DISK_GET_LENGTH_INFORMATION is supported
+     * we will later override cbSize.
+     */
     DISK_GEOMETRY DriveGeo;
     DWORD cbDriveGeo;
-    /* Windows NT has no IOCTL_DISK_GET_LENGTH_INFORMATION ioctl. This was
-     * added to Windows XP, so use the available info from DriveGeo. */
     if (DeviceIoControl((HANDLE)RawFile,
                         IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
                         &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
@@ -804,6 +810,16 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         }
         else
             return VERR_MEDIA_NOT_RECOGNIZED;
+
+        GET_LENGTH_INFORMATION DiskLenInfo;
+        DWORD junk;
+        if (DeviceIoControl((HANDLE)RawFile,
+                            IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
+                            &DiskLenInfo, sizeof(DiskLenInfo), &junk, (LPOVERLAPPED)NULL))
+        {
+            /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
+            cbSize = DiskLenInfo.Length.QuadPart;
+        }
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());

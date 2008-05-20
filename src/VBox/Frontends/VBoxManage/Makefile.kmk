@@ -31,6 +31,7 @@ VBoxManage_DEFS       += $(if $(VBOX_WITH_VRDP),VBOX_VRDP,) \
                          $(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,) \
                          $(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
                          $(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,)
+VBoxManage_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxManage_SOURCES     = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
