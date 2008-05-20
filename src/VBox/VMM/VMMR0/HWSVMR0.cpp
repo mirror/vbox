@@ -265,7 +265,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     if (!pVM->hwaccm.s.svm.fNestedPaging)
         pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
     else
-        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(8);
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4) | RT_BIT(8);
 
     /* Intercept all DRx reads and writes. */
     pVMCB->ctrl.u16InterceptRdDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
@@ -726,10 +726,9 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
 
-    Assert(!pVM->hwaccm.s.svm.fNestedPaging);
-
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
+    Assert(!pVM->hwaccm.s.svm.fNestedPaging);
     AssertReturn(pCpu->fSVMConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
@@ -1278,9 +1277,41 @@ ResumeExecution:
     }
 
     case SVM_EXIT_NPF:
+    {
         /* EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault. */
+        uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
+        RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
+
         Assert(pVM->hwaccm.s.svm.fNestedPaging);
+
+        Log2(("Page fault at %VGp cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
+        /* Exit qualification contains the linear address of the page fault. */
+        TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
+        TRPMSetErrorCode(pVM, errCode);
+        TRPMSetFaultAddress(pVM, uFaultAddress);
+
+        /* Handle the pagefault trap for the nested shadow table. */
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMGetShadowMode(pVM), errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
+        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Vrc\n", pCtx->eip, rc));
+        if (rc == VINF_SUCCESS)
+        {   /* We've successfully synced our shadow pages, so let's just continue execution. */
+            Log2(("Shadow page fault at %VGv cr2=%VGp error code %x\n", pCtx->eip, uFaultAddress, errCode));
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
+
+            TRPMResetTrap(pVM);
+
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+
+#ifdef VBOX_STRICT
+        if (rc != VINF_EM_RAW_EMULATE_INSTR)
+            LogFlow(("PGMTrap0eHandlerNestedPaging failed with %d\n", rc));
+#endif
+        /* Need to go back to the recompiler to emulate the instruction. */
+        TRPMResetTrap(pVM);
         break;
+    }
 
     case SVM_EXIT_VINTR:
         /* A virtual interrupt is about to be delivered, which means IF=1. */
@@ -1382,7 +1413,6 @@ ResumeExecution:
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
             break;
         case 4:
-            Assert(!pVM->hwaccm.s.svm.fNestedPaging);
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
             break;
         default:

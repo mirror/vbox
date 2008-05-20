@@ -276,7 +276,6 @@ PGMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
     return rc;
 }
 
-
 /**
  * Prefetch a page
  *

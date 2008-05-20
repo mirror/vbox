@@ -450,6 +450,7 @@ PGMGCDECL(int)  PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
  * @{
  */
 PGMR0DECL(int)  PGMR0PhysAllocateHandyPages(PVM pVM);
+PGMR0DECL(int)  PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
 /** @} */
 #endif /* IN_RING0 */
 
