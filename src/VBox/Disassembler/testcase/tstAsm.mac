@@ -1,9 +1,6 @@
 ; $Id$
 ;; @file
-; Disassembly testcase - Invalid lock sequences for non-locking instructions.
-;
-; The intention is to check in a binary using the --all-invalid mode
-; of tstDisasm-2.
+; Disassembly testcase - Common header for the xREG macros.
 ;
 
 ;
@@ -22,29 +19,40 @@
 ; additional information or have any questions.
 ;
 
-%include "tstAsm.mac"
-
-    BITS TEST_BITS
-
-    lock mov ebp, esp
-    lock mov byte [0], 0
-    lock mov word [0], 0
-    lock mov dword [0], 0
-    lock mov word [0], 01234h
-    lock mov dword [0], 012348765h
-    lock mov byte [ebx], 0
-    lock mov [ebx], eax
-    lock mov [ebx], ax
-    lock mov [ebx], al
-    lock mov [ebx], edx
-    lock mov [ebx], dx
-    lock mov [ebx], dl
-    lock ret
-%if TEST_BITS != 64
-    lock pop  ebp
-    lock push esp
-%else
-    lock pop  rbp
-    lock push rsp
+%if TEST_BITS == 64
+ %define xS  8
+ %define xSP rsp
+ %define xBP rbp
+ %define xAX rax
+ %define xBX rbx
+ %define xCX rcx
+ %define xDX rdx
+ %define xDI rdi
+ %define xSI rsi
+%endif
+%if TEST_BITS == 32
+ %define xS  4
+ %define xSP esp
+ %define xBP ebp
+ %define xAX eax
+ %define xBX ebx
+ %define xCX ecx
+ %define xDX edx
+ %define xDI edi
+ %define xSI esi
+%endif
+%if TEST_BITS == 16
+ %define xS  1
+ %define xSP sp
+ %define xBP bp
+ %define xAX ax
+ %define xBX bx
+ %define xCX cx
+ %define xDX dx
+ %define xDI di
+ %define xSI si
+%endif
+%ifndef xS
+ %error "TEST_BITS is missing or wrong."
 %endif
 
