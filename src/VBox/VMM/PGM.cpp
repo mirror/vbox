@@ -2467,7 +2467,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
 
 
 /**
- * Swtich to different (or relocated in the relocate case) mode data.
+ * Switch to different (or relocated in the relocate case) mode data.
  *
  * @param   pVM         The VM handle.
  * @param   enmShw      The the shadow paging mode.
