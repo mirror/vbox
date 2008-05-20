@@ -157,7 +157,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "       parameter -mbr can be used to specify an alternative MBR to be used\n"
                 "       (the partitioning information in the MBR file is ignored).\n"
                 "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
-                "       \\\\.\\PhysicalDisk0).\n"
+                "       \\\\.\\PhysicalDrive0).\n"
                 "       On Linux host the parameter -relative causes a VMDK file to be created\n"
                 "       which refers to individual partitions instead to the entire disk.\n"
                 "       Optionally the created image can be immediately registered.\n"
