@@ -284,6 +284,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                     | SVM_CTRL1_INTERCEPT_MSR_SHADOW
                                     | SVM_CTRL1_INTERCEPT_INVLPG
                                     | SVM_CTRL1_INTERCEPT_INVLPGA       /* AMD only */
+                                    | SVM_CTRL1_INTERCEPT_TASK_SWITCH
                                     | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
                                     | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */
                                     ;
@@ -1573,6 +1574,7 @@ ResumeExecution:
     case SVM_EXIT_MWAIT_UNCOND:
     case SVM_EXIT_MWAIT_ARMED:
     case SVM_EXIT_MSR:
+    case SVM_EXIT_TASK_SWITCH:  /* can change CR3; emulate */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
         break;
 
