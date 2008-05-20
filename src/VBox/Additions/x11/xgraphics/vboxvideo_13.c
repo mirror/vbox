@@ -51,7 +51,7 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-// #define DEBUG_VIDEO 1
+/* #define DEBUG_VIDEO 1 */
 #ifdef DEBUG_VIDEO
 
 #define TRACE \
@@ -72,9 +72,9 @@ do { \
 
 #else  /* DEBUG_VIDEO not defined */
 
-#define TRACE
-#define TRACE2
-#define TRACE3(...)
+#define TRACE       do { } while(0)
+#define TRACE2      do { } while(0)
+#define TRACE3(...) do { } while(0)
 
 #endif  /* DEBUG_VIDEO not defined */
 
@@ -177,9 +177,6 @@ VBOXGetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate) {
         pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
-#if 0
-        ((VBOXPtr)pScrn->driverPrivate)->vbox_fd = -1;
-#endif
     }
 
     return ((VBOXPtr)pScrn->driverPrivate);
@@ -189,9 +186,6 @@ static void
 VBOXFreeRec(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-#if 0
-    xfree(pVBox->vbeInfo);
-#endif
     xfree(pVBox->savedPal);
     xfree(pVBox->fonts);
     xfree(pScrn->driverPrivate);
@@ -254,7 +248,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualY = height;
         scrn->displayWidth = width;
     }
-    TRACE3("returning %d\n", rc);
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -350,13 +344,15 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
-    if (   vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
-                                  output->scrn->bitsPerPixel)
-        || !vbox_device_available(VBOXGetRec(output->scrn))
+    int rc = MODE_OK;
+    TRACE3("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
+    if (   vbox_device_available(VBOXGetRec(output->scrn))
+        && !vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
+                                   output->scrn->bitsPerPixel)
        )
-        return MODE_OK;
-    else
-        return MODE_BAD;
+        rc = MODE_BAD;
+    TRACE3("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
+    return rc;
 }
 
 static Bool
@@ -414,12 +410,15 @@ vbox_output_get_modes (xf86OutputPtr output)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE;
-    rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display, pVBox);
-    /* @todo - check the display number once we support multiple displays. */
-    if (rc && (0 != x) && (0 != y)) {
-        /* We prefer a slightly smaller size to a slightly larger one */
-        x -= (x % 8);
-        vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
+    if (vbox_device_available(pVBox))
+    {
+        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display, pVBox);
+        /* @todo - check the display number once we support multiple displays. */
+        if (rc && (0 != x) && (0 != y)) {
+            /* We prefer a slightly smaller size to a slightly larger one */
+            x -= (x % 8);
+            vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
+        }
     }
     TRACE2;
     return pModes;
@@ -716,11 +715,15 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         uint32_t cx, cy, iDisplay, cBits = 24;
 
-        /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
-        if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay,
-                                           pVBox)
-            && (cBits != 16))
-            cBits = 24;
+        if (vbox_device_available(pVBox))
+        {
+            /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
+            if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits,
+                                               &iDisplay, pVBox)
+                && (cBits != 16)
+               )
+                cBits = 24;
+        }
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
             return FALSE;
     }
@@ -819,8 +822,10 @@ vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
+    TRACE3("enable=%s\n", enable ? "TRUE" : "FALSE");
     pVBox->accessEnabled = enable;
     pVBox->EnableDisableFBAccess(scrnIndex, enable);
+    TRACE2;
 }
 
 /*
@@ -960,7 +965,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
-    if (vbox_open (pScrn, pScreen, pVBox)) {
+    if (vbox_device_available(pVBox) && vbox_open (pScrn, pScreen, pVBox)) {
         if (vbox_cursor_init(pScreen) != TRUE)
             xf86DrvMsg(scrnIndex, X_ERROR,
                        "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
@@ -978,9 +983,13 @@ VBOXEnterVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+    bool rc;
 
+    TRACE;
     pVBox->vtSwitch = FALSE;
-    return xf86SetDesiredModes(pScrn);
+    rc = xf86SetDesiredModes(pScrn);
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    return rc;
 }
 
 static void
@@ -989,11 +998,16 @@ VBOXLeaveVT(int scrnIndex, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    VBOXSaveRestore(pScrn, MODE_RESTORE);
-    if (pVBox->useVbva == TRUE)
-        vboxDisableVbva(pScrn);
-    vboxDisableGraphicsCap(pVBox);
+    TRACE;
     pVBox->vtSwitch = TRUE;
+    VBOXSaveRestore(pScrn, MODE_RESTORE);
+    if (vbox_device_available(pVBox))
+    {
+        if (pVBox->useVbva == TRUE)
+            vboxDisableVbva(pScrn);
+        vboxDisableGraphicsCap(pVBox);
+    }
+    TRACE2;
 }
 
 static Bool
@@ -1002,9 +1016,12 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    if (pVBox->useVbva == TRUE)
-        vboxDisableVbva(pScrn);
-    vboxDisableGraphicsCap(pVBox);
+    if (vbox_device_available(pVBox))
+    {
+        if (TRUE == pVBox->useVbva)
+            vboxDisableVbva(pScrn);
+        vboxDisableGraphicsCap(pVBox);
+    }
     if (pScrn->vtSema) {
 	VBOXSaveRestore(xf86Screens[scrnIndex], MODE_RESTORE);
 	if (pVBox->savedPal)
@@ -1044,6 +1061,8 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     DisplayModePtr mode;
     float v;
 
+    TRACE3("HDisplay=%d, VDisplay=%d, flag=%s, pass=%d\n",
+           p->HDisplay, p->VDisplay, flag ? "TRUE" : "FALSE", pass);
     if (pass != MODECHECK_FINAL) {
         if (!warned) {
             xf86DrvMsg(scrn, X_WARNING, "VBOXValidMode called unexpectedly\n");
@@ -1076,6 +1095,7 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     {
         xf86DrvMsg(scrn, X_WARNING, "Graphics mode %s rejected by the X server\n", p->name);
     }
+    TRACE3("returning %d\n", ret);
     return ret;
 }
 
@@ -1086,6 +1106,7 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     VBOXPtr pVBox;
     Bool rc;
 
+    TRACE3("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
     pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of refering to the screen? */
     pVBox = VBOXGetRec(pScrn);
     /* We want to disable access to the framebuffer before switching mode.
@@ -1095,52 +1116,66 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     rc = xf86SetSingleMode(pScrn, pMode, 0);
     if (pVBox->accessEnabled)
         pVBox->EnableDisableFBAccess(scrnIndex, TRUE);
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
-/* Set a graphics mode */
+/* Set a graphics mode.  Poke the required values into registers, enable
+   guest-host acceleration functions and tell the host we support advanced
+   graphics functions. */
 static Bool
 VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 {
     VBOXPtr pVBox;
+    Bool rc = TRUE;
 
     int bpp = pScrn->depth == 24 ? 32 : 16;
+    TRACE3("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
     pVBox = VBOXGetRec(pScrn);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
-    if (pVBox->vtSwitch == TRUE)
-        return TRUE;
-    if (pVBox->useVbva == TRUE)
-        if (vboxDisableVbva(pScrn) != TRUE)  /* This would be bad. */
-            return FALSE;
-    pScrn->vtSema = TRUE;
-    /* Disable linear framebuffer mode before making changes to the resolution. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    outw(VBE_DISPI_IOPORT_DATA,
-         VBE_DISPI_DISABLED);
-    /* Unlike the resolution, the depth is fixed for a given screen
-       for the lifetime of the X session. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    outw(VBE_DISPI_IOPORT_DATA, bpp);
-    /* HDisplay and VDisplay are actually monitor information about
-       the display part of the scanlines. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    outw(VBE_DISPI_IOPORT_DATA, pMode->HDisplay);
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    outw(VBE_DISPI_IOPORT_DATA, pMode->VDisplay);
-    /* Set the virtual resolution.  We are still using VESA to control
-       the virtual offset. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
-    outw(VBE_DISPI_IOPORT_DATA, pScrn->displayWidth);
-    /* Enable linear framebuffer mode. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    outw(VBE_DISPI_IOPORT_DATA,
-         VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
-    if (pVBox->useVbva == TRUE)
-        if (vboxEnableVbva(pScrn) != TRUE)  /* Bad but not fatal */
-            pVBox->useVbva = FALSE;
-    vboxEnableGraphicsCap(pVBox);
-    return (TRUE);
+    if (!pVBox->vtSwitch)
+    {
+        if (    vbox_device_available(pVBox)
+            && (TRUE == pVBox->useVbva)
+            && (vboxDisableVbva(pScrn) != TRUE)
+           )  /* This would be bad. */
+            rc = FALSE;
+        if (rc)
+        {
+            /* Disable linear framebuffer mode before making changes to the resolution. */
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+            outw(VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
+            /* Unlike the resolution, the depth is fixed for a given screen
+               for the lifetime of the X session. */
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+            outw(VBE_DISPI_IOPORT_DATA, bpp);
+            /* HDisplay and VDisplay are actually monitor information about
+               the display part of the scanlines. */
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+            outw(VBE_DISPI_IOPORT_DATA, pMode->HDisplay);
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+            outw(VBE_DISPI_IOPORT_DATA, pMode->VDisplay);
+            /* Set the virtual resolution.  We are still using VESA to control
+               the virtual offset. */
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
+            outw(VBE_DISPI_IOPORT_DATA, pScrn->displayWidth);
+            /* Enable linear framebuffer mode. */
+            outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+            outw(VBE_DISPI_IOPORT_DATA,
+                 VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+            /* Enable acceleration and tell the host we support graphics */
+            if (vbox_device_available(pVBox))
+            {
+                if ((TRUE == pVBox->useVbva) && (vboxEnableVbva(pScrn) != TRUE))
+                /* Bad but not fatal */
+                    pVBox->useVbva = FALSE;
+                vboxEnableGraphicsCap(pVBox);
+            }
+        }
+    }
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    return rc;
 }
 
 static void
@@ -1148,11 +1183,12 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
 
+    TRACE;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
-    if (pVBox->vtSwitch == TRUE)
-        return;
-    VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
+    if (!pVBox->vtSwitch)
+        VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
+    TRACE2;
 }
 
 static void
@@ -1165,28 +1201,32 @@ static Bool
 VBOXMapVidMem(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+    Bool rc = TRUE;
 
-    if (pVBox->base != NULL)
-        return (TRUE);
-
-    pScrn->memPhysBase = pVBox->mapPhys;
-    pScrn->fbOffset = pVBox->mapOff;
-
-    pVBox->base = xf86MapPciMem(pScrn->scrnIndex,
-                                VIDMEM_FRAMEBUFFER,
-                                pVBox->pciTag, pVBox->mapPhys,
-                                (unsigned) pVBox->mapSize);
-
-    if (pVBox->base) {
+    TRACE;
+    if (NULL == pVBox->base)
+    {
         pScrn->memPhysBase = pVBox->mapPhys;
-        pVBox->VGAbase = xf86MapDomainMemory(pScrn->scrnIndex, 0,
-                                             pVBox->pciTag,
-                                             0xa0000, 0x10000);
-    }
-    /* We need this for saving/restoring textmode */
-    pVBox->ioBase = pScrn->domainIOBase;
+        pScrn->fbOffset = pVBox->mapOff;
 
-    return (pVBox->base != NULL);
+        pVBox->base = xf86MapPciMem(pScrn->scrnIndex,
+                                    VIDMEM_FRAMEBUFFER,
+                                    pVBox->pciTag, pVBox->mapPhys,
+                                    (unsigned) pVBox->mapSize);
+
+        if (pVBox->base) {
+            pScrn->memPhysBase = pVBox->mapPhys;
+            pVBox->VGAbase = xf86MapDomainMemory(pScrn->scrnIndex, 0,
+                                                 pVBox->pciTag,
+                                                 0xa0000, 0x10000);
+        }
+        /* We need this for saving/restoring textmode */
+        pVBox->ioBase = pScrn->domainIOBase;
+
+        rc = pVBox->base != NULL;
+    }
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    return rc;
 }
 
 static void
@@ -1194,6 +1234,7 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
+    TRACE;
     if (pVBox->base == NULL)
         return;
 
@@ -1201,6 +1242,7 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
                     (unsigned) pVBox->mapSize);
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
     pVBox->base = NULL;
+    TRACE2;
 }
 
 static void
@@ -1215,6 +1257,7 @@ VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 	   (void)inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
     } while (0)
 
+    TRACE;
     for (i = 0; i < numColors; i++) {
 	   idx = indices[i];
 	   outb(pVBox->ioBase + VGA_DAC_WRITE_ADDR, idx);
@@ -1226,6 +1269,7 @@ VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 	   outb(pVBox->ioBase + VGA_DAC_DATA, colors[idx].blue);
 	   VBOXDACDelay();
     }
+    TRACE2;
 }
 
 /*
@@ -1297,64 +1341,73 @@ SaveFonts(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     unsigned char miscOut, attr10, gr4, gr5, gr6, seq2, seq4, scrn;
+    Bool cont = TRUE;
 
+    TRACE;
     if (pVBox->fonts != NULL)
-	return;
+	cont = FALSE;
 
-    /* If in graphics mode, don't save anything */
-    attr10 = ReadAttr(pVBox, 0x10);
-    if (attr10 & 0x01)
-	return;
+    if (cont)
+    {
+        /* If in graphics mode, don't save anything */
+        attr10 = ReadAttr(pVBox, 0x10);
+        if (attr10 & 0x01)
+            cont = FALSE;
+    }
 
-    pVBox->fonts = xalloc(16384);
+    if (cont)
+    {
+        pVBox->fonts = xalloc(16384);
 
-    /* save the registers that are needed here */
-    miscOut = ReadMiscOut();
-    gr4 = ReadGr(pVBox, 0x04);
-    gr5 = ReadGr(pVBox, 0x05);
-    gr6 = ReadGr(pVBox, 0x06);
-    seq2 = ReadSeq(pVBox, 0x02);
-    seq4 = ReadSeq(pVBox, 0x04);
+        /* save the registers that are needed here */
+        miscOut = ReadMiscOut();
+        gr4 = ReadGr(pVBox, 0x04);
+        gr5 = ReadGr(pVBox, 0x05);
+        gr6 = ReadGr(pVBox, 0x06);
+        seq2 = ReadSeq(pVBox, 0x02);
+        seq4 = ReadSeq(pVBox, 0x04);
 
-    /* Force into colour mode */
-    WriteMiscOut(miscOut | 0x01);
+        /* Force into colour mode */
+        WriteMiscOut(miscOut | 0x01);
 
-    scrn = ReadSeq(pVBox, 0x01) | 0x20;
-    SeqReset(pVBox, TRUE);
-    WriteSeq(0x01, scrn);
-    SeqReset(pVBox, FALSE);
+        scrn = ReadSeq(pVBox, 0x01) | 0x20;
+        SeqReset(pVBox, TRUE);
+        WriteSeq(0x01, scrn);
+        SeqReset(pVBox, FALSE);
 
-    WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
+        WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
 
-    /*font1 */
-    WriteSeq(0x02, 0x04);	/* write to plane 2 */
-    WriteSeq(0x04, 0x06);	/* enable plane graphics */
-    WriteGr(0x04, 0x02);	/* read plane 2 */
-    WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
-    WriteGr(0x06, 0x05);	/* set graphics */
-    slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts, 8192);
+        /*font1 */
+        WriteSeq(0x02, 0x04);	/* write to plane 2 */
+        WriteSeq(0x04, 0x06);	/* enable plane graphics */
+        WriteGr(0x04, 0x02);	/* read plane 2 */
+        WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
+        WriteGr(0x06, 0x05);	/* set graphics */
+        slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts, 8192);
 
-    /* font2 */
-    WriteSeq(0x02, 0x08);	/* write to plane 3 */
-    WriteSeq(0x04, 0x06);	/* enable plane graphics */
-    WriteGr(0x04, 0x03);	/* read plane 3 */
-    WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
-    WriteGr(0x06, 0x05);	/* set graphics */
-    slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts + 8192, 8192);
+        /* font2 */
+        WriteSeq(0x02, 0x08);	/* write to plane 3 */
+        WriteSeq(0x04, 0x06);	/* enable plane graphics */
+        WriteGr(0x04, 0x03);	/* read plane 3 */
+        WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
+        WriteGr(0x06, 0x05);	/* set graphics */
+        slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts + 8192, 8192);
 
-    scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-    SeqReset(pVBox, TRUE);
-    WriteSeq(0x01, scrn);
-    SeqReset(pVBox, FALSE);
+        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
+        SeqReset(pVBox, TRUE);
+        WriteSeq(0x01, scrn);
+        SeqReset(pVBox, FALSE);
 
-    /* Restore clobbered registers */
-    WriteAttr(pVBox, 0x10, attr10);
-    WriteSeq(0x02, seq2);
-    WriteSeq(0x04, seq4);
-    WriteGr(0x04, gr4);
-    WriteGr(0x05, gr5);
-    WriteGr(0x06, gr6);
-    WriteMiscOut(miscOut);
+        /* Restore clobbered registers */
+        WriteAttr(pVBox, 0x10, attr10);
+        WriteSeq(0x02, seq2);
+        WriteSeq(0x04, seq4);
+        WriteGr(0x04, gr4);
+        WriteGr(0x05, gr5);
+        WriteGr(0x06, gr6);
+        WriteMiscOut(miscOut);
+    }
+    TRACE2;
 }
 
 static void
@@ -1363,124 +1416,130 @@ RestoreFonts(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     unsigned char miscOut, attr10, gr1, gr3, gr4, gr5, gr6, gr8, seq2, seq4, scrn;
 
-    if (pVBox->fonts == NULL)
-        return;
+    TRACE;
+    if (pVBox->fonts != NULL)
+    {
+        /* save the registers that are needed here */
+        miscOut = ReadMiscOut();
+        attr10 = ReadAttr(pVBox, 0x10);
+        gr1 = ReadGr(pVBox, 0x01);
+        gr3 = ReadGr(pVBox, 0x03);
+        gr4 = ReadGr(pVBox, 0x04);
+        gr5 = ReadGr(pVBox, 0x05);
+        gr6 = ReadGr(pVBox, 0x06);
+        gr8 = ReadGr(pVBox, 0x08);
+        seq2 = ReadSeq(pVBox, 0x02);
+        seq4 = ReadSeq(pVBox, 0x04);
 
-    /* save the registers that are needed here */
-    miscOut = ReadMiscOut();
-    attr10 = ReadAttr(pVBox, 0x10);
-    gr1 = ReadGr(pVBox, 0x01);
-    gr3 = ReadGr(pVBox, 0x03);
-    gr4 = ReadGr(pVBox, 0x04);
-    gr5 = ReadGr(pVBox, 0x05);
-    gr6 = ReadGr(pVBox, 0x06);
-    gr8 = ReadGr(pVBox, 0x08);
-    seq2 = ReadSeq(pVBox, 0x02);
-    seq4 = ReadSeq(pVBox, 0x04);
+        /* Force into colour mode */
+        WriteMiscOut(miscOut | 0x01);
 
-    /* Force into colour mode */
-    WriteMiscOut(miscOut | 0x01);
+        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
+        SeqReset(pVBox, TRUE);
+        WriteSeq(0x01, scrn);
+        SeqReset(pVBox, FALSE);
 
-    scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-    SeqReset(pVBox, TRUE);
-    WriteSeq(0x01, scrn);
-    SeqReset(pVBox, FALSE);
+        WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
+        if (pScrn->depth == 4) {
+	    /* GJA */
+	    WriteGr(0x03, 0x00);	/* don't rotate, write unmodified */
+	    WriteGr(0x08, 0xFF);	/* write all bits in a byte */
+	    WriteGr(0x01, 0x00);	/* all planes come from CPU */
+        }
 
-    WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
-    if (pScrn->depth == 4) {
-	/* GJA */
-	WriteGr(0x03, 0x00);	/* don't rotate, write unmodified */
-	WriteGr(0x08, 0xFF);	/* write all bits in a byte */
-	WriteGr(0x01, 0x00);	/* all planes come from CPU */
+        WriteSeq(0x02, 0x04);   /* write to plane 2 */
+        WriteSeq(0x04, 0x06);   /* enable plane graphics */
+        WriteGr(0x04, 0x02);    /* read plane 2 */
+        WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
+        WriteGr(0x06, 0x05);    /* set graphics */
+        slowbcopy_tobus(pVBox->fonts, pVBox->VGAbase, 8192);
+
+        WriteSeq(0x02, 0x08);   /* write to plane 3 */
+        WriteSeq(0x04, 0x06);   /* enable plane graphics */
+        WriteGr(0x04, 0x03);    /* read plane 3 */
+        WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
+        WriteGr(0x06, 0x05);    /* set graphics */
+        slowbcopy_tobus(pVBox->fonts + 8192, pVBox->VGAbase, 8192);
+
+        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
+        SeqReset(pVBox, TRUE);
+        WriteSeq(0x01, scrn);
+        SeqReset(pVBox, FALSE);
+
+        /* restore the registers that were changed */
+        WriteMiscOut(miscOut);
+        WriteAttr(pVBox, 0x10, attr10);
+        WriteGr(0x01, gr1);
+        WriteGr(0x03, gr3);
+        WriteGr(0x04, gr4);
+        WriteGr(0x05, gr5);
+        WriteGr(0x06, gr6);
+        WriteGr(0x08, gr8);
+        WriteSeq(0x02, seq2);
+        WriteSeq(0x04, seq4);
     }
-
-    WriteSeq(0x02, 0x04);   /* write to plane 2 */
-    WriteSeq(0x04, 0x06);   /* enable plane graphics */
-    WriteGr(0x04, 0x02);    /* read plane 2 */
-    WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
-    WriteGr(0x06, 0x05);    /* set graphics */
-    slowbcopy_tobus(pVBox->fonts, pVBox->VGAbase, 8192);
-
-    WriteSeq(0x02, 0x08);   /* write to plane 3 */
-    WriteSeq(0x04, 0x06);   /* enable plane graphics */
-    WriteGr(0x04, 0x03);    /* read plane 3 */
-    WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
-    WriteGr(0x06, 0x05);    /* set graphics */
-    slowbcopy_tobus(pVBox->fonts + 8192, pVBox->VGAbase, 8192);
-
-    scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-    SeqReset(pVBox, TRUE);
-    WriteSeq(0x01, scrn);
-    SeqReset(pVBox, FALSE);
-
-    /* restore the registers that were changed */
-    WriteMiscOut(miscOut);
-    WriteAttr(pVBox, 0x10, attr10);
-    WriteGr(0x01, gr1);
-    WriteGr(0x03, gr3);
-    WriteGr(0x04, gr4);
-    WriteGr(0x05, gr5);
-    WriteGr(0x06, gr6);
-    WriteGr(0x08, gr8);
-    WriteSeq(0x02, seq2);
-    WriteSeq(0x04, seq4);
+    TRACE2;
 }
 
 Bool
 VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
 {
     VBOXPtr pVBox;
+    Bool rc = TRUE;
 
+    TRACE;
     if (MODE_QUERY < 0 || function > MODE_RESTORE)
-	return (FALSE);
+	rc = FALSE;
 
-    pVBox = VBOXGetRec(pScrn);
-
-
-    /* Query amount of memory to save state */
-    if (function == MODE_QUERY ||
-	(function == MODE_SAVE && pVBox->state == NULL))
+    if (rc)
     {
+        pVBox = VBOXGetRec(pScrn);
 
-	/* Make sure we save at least this information in case of failure */
-	(void)VBEGetVBEMode(pVBox->pVbe, &pVBox->stateMode);
-	SaveFonts(pScrn);
-
-        if (!VBESaveRestore(pVBox->pVbe,function,(pointer)&pVBox->state,
-                            &pVBox->stateSize,&pVBox->statePage))
-            return FALSE;
-    }
-
-    /* Save/Restore Super VGA state */
-    if (function != MODE_QUERY) {
-        Bool retval = TRUE;
-
-        if (function == MODE_RESTORE)
-            memcpy(pVBox->state, pVBox->pstate,
-                   (unsigned) pVBox->stateSize);
-
-        if ((retval = VBESaveRestore(pVBox->pVbe,function,
-                                     (pointer)&pVBox->state,
-                                     &pVBox->stateSize,&pVBox->statePage))
-             && function == MODE_SAVE)
+        /* Query amount of memory to save state */
+        if (function == MODE_QUERY ||
+    	    (function == MODE_SAVE && pVBox->state == NULL))
         {
-            /* don't rely on the memory not being touched */
-            if (pVBox->pstate == NULL)
-                pVBox->pstate = xalloc(pVBox->stateSize);
-            memcpy(pVBox->pstate, pVBox->state,
-                   (unsigned) pVBox->stateSize);
+
+	    /* Make sure we save at least this information in case of failure */
+            (void)VBEGetVBEMode(pVBox->pVbe, &pVBox->stateMode);
+            SaveFonts(pScrn);
+
+            if (!VBESaveRestore(pVBox->pVbe,function,(pointer)&pVBox->state,
+                                &pVBox->stateSize,&pVBox->statePage)
+               )
+                rc = FALSE;
         }
-
-        if (function == MODE_RESTORE)
-        {
-            VBESetVBEMode(pVBox->pVbe, pVBox->stateMode, NULL);
-            RestoreFonts(pScrn);
-        }
-
-	if (!retval)
-	    return (FALSE);
-
     }
+    if (rc)
+    {
+        /* Save/Restore Super VGA state */
+        if (function != MODE_QUERY) {
 
-    return (TRUE);
+            if (function == MODE_RESTORE)
+                memcpy(pVBox->state, pVBox->pstate,
+                       (unsigned) pVBox->stateSize);
+
+            if (   (rc = VBESaveRestore(pVBox->pVbe,function,
+                                        (pointer)&pVBox->state,
+                                        &pVBox->stateSize,&pVBox->statePage)
+                   )
+                && (function == MODE_SAVE)
+               )
+            {
+                /* don't rely on the memory not being touched */
+                if (pVBox->pstate == NULL)
+                    pVBox->pstate = xalloc(pVBox->stateSize);
+                memcpy(pVBox->pstate, pVBox->state,
+                       (unsigned) pVBox->stateSize);
+            }
+
+            if (function == MODE_RESTORE)
+            {
+                VBESetVBEMode(pVBox->pVbe, pVBox->stateMode, NULL);
+                RestoreFonts(pScrn);
+            }
+        }
+    }
+    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    return rc;
 }

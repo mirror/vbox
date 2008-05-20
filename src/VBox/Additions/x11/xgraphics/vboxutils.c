@@ -321,7 +321,9 @@ Bool
 vbox_init(int scrnIndex, VBOXPtr pVBox)
 {
     Bool rc = TRUE;
-    int vrc = VbglR3Init();
+    int vrc;
+    pVBox->useVbva = FALSE;
+    vrc = VbglR3Init();
     if (RT_FAILURE(vrc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
@@ -345,7 +347,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 
     if (!pVBox->useDevice)
         return FALSE;
-    pVBox->useVbva = FALSE;
 
     if (pVBox->reqp)
     {
