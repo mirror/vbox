@@ -5,6 +5,10 @@
 ; The intention is to check in a binary using the --all-invalid mode
 ; of tstDisasm-2.
 ;
+; There are some regX, reg/memX variations that aren't tested as
+; they would require db'ing out the instructions (12 /r and 13 /r
+; for instance).
+;
 
 ;
 ; Copyright (C) 2008 Sun Microsystems, Inc.
