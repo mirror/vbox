@@ -117,7 +117,9 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     else
     {
         if (   !(fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER)
-            && (fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE))
+            && (fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
+            && (fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+           )
             rc = TRUE;
     }
     return rc;
