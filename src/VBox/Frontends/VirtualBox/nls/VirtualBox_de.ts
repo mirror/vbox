@@ -4528,7 +4528,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation>&amp;Aktiviere serielle Schnittstelle</translation>
+        <translation>&amp;Serielle Schnittstelle aktivieren</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
@@ -5224,7 +5224,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation>Aktiviert den USB&amp;2.0-Controller</translation>
+        <translation>USB-&amp;2.0-Controller aktivieren</translation>
     </message>
     <message>
         <source>
