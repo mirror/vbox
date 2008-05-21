@@ -236,7 +236,7 @@ TRPMDECL(void) TRPMRestoreTrap(PVM pVM);
  * @param   enmType     TRPM event type
  * @internal
  */
-TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType);
+TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
 
 /**
  * Raises a cpu exception which doesn't take an error code.
