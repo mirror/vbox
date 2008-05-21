@@ -665,11 +665,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>통계(&amp;S)...</translation>
+        <translation type="obsolete">통계(&amp;S)...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>명령줄(&amp;C)...</translation>
+        <translation type="obsolete">명령줄(&amp;C)...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -1031,6 +1031,21 @@ Version %1</source>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>세션 정보 대화 상자 보이기</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">통계(&amp;S)...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3339,7 +3354,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3570,6 +3585,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Select</source>
         <comment>hard disk</comment>
         <translation type="unfinished">선택</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4681,11 +4704,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>사용 안함</translation>
+        <translation type="obsolete">사용 안함</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4697,11 +4720,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>하드웨어 가상화</translation>
+        <translation type="obsolete">하드웨어 가상화</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>IDE 하드디스크 통계</translation>
+        <translation type="obsolete">IDE 하드디스크 통계</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4713,43 +4736,78 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>어댑터 1</translation>
+        <translation type="obsolete">어댑터 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>어댑터 2</translation>
+        <translation type="obsolete">어댑터 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>어댑터 3</translation>
+        <translation type="obsolete">어댑터 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>어댑터 4</translation>
+        <translation type="obsolete">어댑터 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>연결되지 않음</translation>
+        <translation type="obsolete">연결되지 않음</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>하드디스크 통계</translation>
+        <translation type="obsolete">하드디스크 통계</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>프라이머리 마스터</translation>
+        <translation type="obsolete">프라이머리 마스터</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>프라이머리 슬레이브</translation>
+        <translation type="obsolete">프라이머리 슬레이브</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>세컨더리 마스터</translation>
+        <translation type="obsolete">세컨더리 마스터</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>세컨더리 슬레이브</translation>
+        <translation type="obsolete">세컨더리 슬레이브</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

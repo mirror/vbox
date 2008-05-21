@@ -665,11 +665,11 @@ Wersja %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>&amp;Statystyki...</translation>
+        <translation type="obsolete">&amp;Statystyki...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>Linia pole&amp;ceń...</translation>
+        <translation type="obsolete">Linia pole&amp;ceń...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -1031,6 +1031,21 @@ Wersja %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Pokazuje okno z informacjami o sesji</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">&amp;Statystyki...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3365,7 +3380,7 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nie udało się włączyć trybu zintegrowanego z powodu niewystarczającej ilości pamięci wideo.&lt;/p&gt;&lt;p&gt;Musisz skonfigurować Maszynę Wirtualną, aby miała przynajmniej &lt;b&gt;%1&lt;/b&gt; pamięci wideo.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nie udało się włączyć trybu zintegrowanego z powodu niewystarczającej ilości pamięci wideo.&lt;/p&gt;&lt;p&gt;Musisz skonfigurować Maszynę Wirtualną, aby miała przynajmniej &lt;b&gt;%1&lt;/b&gt; pamięci wideo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3596,6 +3611,14 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Wybierz</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4679,11 +4702,11 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Włączone</translation>
+        <translation type="obsolete">Włączone</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Wyłączone</translation>
+        <translation type="obsolete">Wyłączone</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4695,11 +4718,11 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Wirtualizacja sprzętu</translation>
+        <translation type="obsolete">Wirtualizacja sprzętu</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>Statystyki dysków twardych IDE</translation>
+        <translation type="obsolete">Statystyki dysków twardych IDE</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4711,43 +4734,78 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Karta 1</translation>
+        <translation type="obsolete">Karta 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Karta 2</translation>
+        <translation type="obsolete">Karta 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Karta 3</translation>
+        <translation type="obsolete">Karta 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Karta 4</translation>
+        <translation type="obsolete">Karta 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>Niepodłączona</translation>
+        <translation type="obsolete">Niepodłączona</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>Statystyki dysków twardych</translation>
+        <translation type="obsolete">Statystyki dysków twardych</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>Pierwszy (Primary, IDE0) Nadrzędny (Master)</translation>
+        <translation type="obsolete">Pierwszy (Primary, IDE0) Nadrzędny (Master)</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>Pierwszy (Primary, IDE0) Podrzędny (Slave)</translation>
+        <translation type="obsolete">Pierwszy (Primary, IDE0) Podrzędny (Slave)</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>Drugi (Secondary, IDE1) Nadrzędny (Master)</translation>
+        <translation type="obsolete">Drugi (Secondary, IDE1) Nadrzędny (Master)</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>Drugi (Secondary, IDE1) Podrzędny (Slave)</translation>
+        <translation type="obsolete">Drugi (Secondary, IDE1) Podrzędny (Slave)</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5907,7 +5965,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation>Kiedy zaznaczone, włącza wirtualny kontroler USB EHCI dla tej maszyny. Kontroler USB EHCI dostarcza obsługę standardu USB 2.0.</translation>
+        <translation type="obsolete">Kiedy zaznaczone, włącza wirtualny kontroler USB EHCI dla tej maszyny. Kontroler USB EHCI dostarcza obsługę standardu USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -6010,6 +6068,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>USBActionGroup</source>
         <translation>USBActionGroup</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

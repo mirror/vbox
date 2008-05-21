@@ -626,11 +626,11 @@ Versió %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>E&amp;stadístiques...</translation>
+        <translation type="obsolete">E&amp;stadístiques...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>&amp;Línia d&apos;ordres...</translation>
+        <translation type="obsolete">&amp;Línia d&apos;ordres...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -914,6 +914,21 @@ Versió %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Mostra el Diàleg Informatiu de la Sessió</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">E&amp;stadístiques...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3108,7 +3123,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la MV per tal que tinga almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la MV per tal que tinga almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -3434,6 +3449,14 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Selecciona</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4471,11 +4494,11 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Activat</translation>
+        <translation type="obsolete">Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Desactivat</translation>
+        <translation type="obsolete">Desactivat</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4487,11 +4510,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Virtualització per Maquinari</translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
-        <translation></translation>
+        <translation type="obsolete">Virtualització per Maquinari</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4503,43 +4522,78 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Adaptador 1</translation>
+        <translation type="obsolete">Adaptador 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Adaptador 2</translation>
+        <translation type="obsolete">Adaptador 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Adaptador 3</translation>
+        <translation type="obsolete">Adaptador 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Adaptador 4</translation>
+        <translation type="obsolete">Adaptador 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>No connectat</translation>
+        <translation type="obsolete">No connectat</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>Estadístiques de Discs Durs</translation>
+        <translation type="obsolete">Estadístiques de Discs Durs</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>Primari Mestre</translation>
+        <translation type="obsolete">Primari Mestre</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>Primari Esclau</translation>
+        <translation type="obsolete">Primari Esclau</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>Secundari Mestre</translation>
+        <translation type="obsolete">Secundari Mestre</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>Secundari Esclau</translation>
+        <translation type="obsolete">Secundari Esclau</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

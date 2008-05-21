@@ -665,11 +665,11 @@ Versão %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>E&amp;statísticas...</translation>
+        <translation type="obsolete">E&amp;statísticas...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>Linha de &amp;Comando...</translation>
+        <translation type="obsolete">Linha de &amp;Comando...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -1031,6 +1031,21 @@ Versão %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Mostrar Diálogo de Informações Sobre a Sessão</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">E&amp;statísticas...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3404,7 +3419,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível entrar no modo &quot;seamless&quot; devido à falta de memória de vídeo do sistema Convidado.&lt;/p&gt;&lt;p&gt;Você deve configurar a VM para ter pelo menos &lt;b&gt;%1&lt;/b&gt; de memória de vídeo.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Não foi possível entrar no modo &quot;seamless&quot; devido à falta de memória de vídeo do sistema Convidado.&lt;/p&gt;&lt;p&gt;Você deve configurar a VM para ter pelo menos &lt;b&gt;%1&lt;/b&gt; de memória de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3635,6 +3650,14 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Selecionar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4751,11 +4774,11 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Desabilitado</translation>
+        <translation type="obsolete">Desabilitado</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4767,11 +4790,11 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Virtualização de Hardware</translation>
+        <translation type="obsolete">Virtualização de Hardware</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>Estatísticas de Disco Rígido IDE</translation>
+        <translation type="obsolete">Estatísticas de Disco Rígido IDE</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4783,43 +4806,78 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Adaptador %1</translation>
+        <translation type="obsolete">Adaptador %1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Adaptador %1</translation>
+        <translation type="obsolete">Adaptador %1</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Adaptador %1</translation>
+        <translation type="obsolete">Adaptador %1</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Adaptador %1</translation>
+        <translation type="obsolete">Adaptador %1</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>Não conectado</translation>
+        <translation type="obsolete">Não conectado</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>Estatísticas de Disco Rígido</translation>
+        <translation type="obsolete">Estatísticas de Disco Rígido</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>Primário Master</translation>
+        <translation type="obsolete">Primário Master</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>Primário Slave</translation>
+        <translation type="obsolete">Primário Slave</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>Secundário Master</translation>
+        <translation type="obsolete">Secundário Master</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>Secundário Slave</translation>
+        <translation type="obsolete">Secundário Slave</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

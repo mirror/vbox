@@ -636,11 +636,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>E&amp;statistikak...</translation>
+        <translation type="obsolete">E&amp;statistikak...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>&amp;Komando lerroa...</translation>
+        <translation type="obsolete">&amp;Komando lerroa...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -928,6 +928,21 @@ Version %1</source>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">E&amp;statistikak...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3232,7 +3247,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ezin da integratu garden moduan sartu bezero bideo memoria askieza dela eta.&lt;/p&gt;&lt;p&gt;Makina birtuala behintzat &lt;b&gt;%1&lt;/b&gt; bideo memoria edukitzeko konfiguratu beharko zenuke.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ezin da integratu garden moduan sartu bezero bideo memoria askieza dela eta.&lt;/p&gt;&lt;p&gt;Makina birtuala behintzat &lt;b&gt;%1&lt;/b&gt; bideo memoria edukitzeko konfiguratu beharko zenuke.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3463,6 +3478,14 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <source>Select</source>
         <comment>hard disk</comment>
         <translation type="unfinished">Hautatu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4513,11 +4536,11 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Gaiturik</translation>
+        <translation type="obsolete">Gaiturik</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished">Ezgaiturik</translation>
+        <translation type="obsolete">Ezgaiturik</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4525,14 +4548,6 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4544,43 +4559,42 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Not attached</source>
-        <translation type="unfinished">Ez erantsia</translation>
+        <translation type="obsolete">Ez erantsia</translation>
     </message>
     <message>
-        <source>Hard Disks Statistics</source>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Master</source>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Slave</source>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Master</source>
+        <source>Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Slave</source>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

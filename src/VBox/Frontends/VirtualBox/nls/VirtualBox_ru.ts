@@ -622,11 +622,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>&amp;Статистика...</translation>
+        <translation type="obsolete">&amp;Статистика...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>&amp;Командная строка...</translation>
+        <translation type="obsolete">&amp;Командная строка...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -906,6 +906,21 @@ Version %1</source>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Показать диалог с информацией о сессии</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">&amp;Статистика...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3050,7 +3065,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключиться в режим интеграции дисплея из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось переключиться в режим интеграции дисплея из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3281,6 +3296,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Выбрать</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4292,11 +4315,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Включено</translation>
+        <translation type="obsolete">Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Выключено</translation>
+        <translation type="obsolete">Выключено</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4308,11 +4331,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Аппаратная виртуализация</translation>
+        <translation type="obsolete">Аппаратная виртуализация</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>Статистика жестких дисков IDE</translation>
+        <translation type="obsolete">Статистика жестких дисков IDE</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4324,43 +4347,58 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Адаптер 1</translation>
+        <translation type="obsolete">Адаптер 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Адаптер 2</translation>
+        <translation type="obsolete">Адаптер 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Адаптер 3</translation>
+        <translation type="obsolete">Адаптер 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Адаптер 4</translation>
+        <translation type="obsolete">Адаптер 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>Не подсоединен</translation>
+        <translation type="obsolete">Не подсоединен</translation>
     </message>
     <message>
-        <source>Hard Disks Statistics</source>
-        <translation></translation>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Master</source>
-        <translation></translation>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Slave</source>
-        <translation></translation>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Master</source>
-        <translation></translation>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Slave</source>
-        <translation></translation>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
