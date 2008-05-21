@@ -1,4 +1,3 @@
-#define VBOX_WITH_STATISTICS
 /* $Id$ */
 /** @file
  * TRPM - Trap Monitor - Any Context.
