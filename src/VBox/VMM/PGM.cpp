@@ -620,7 +620,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int               pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
 static void              pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst);
-static PGMMODE           pgmR3CalcShadowMode(PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
+static PGMMODE           pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_STATISTICS
 static void pgmR3InitStats(PVM pVM);
@@ -1339,7 +1339,7 @@ static int pgmR3InitPaging(PVM pVM)
     }
     rc = pgmR3ModeDataInit(pVM, false /* don't resolve GC and R0 syms yet */);
     if (VBOX_SUCCESS(rc))
-        rc = pgmR3ChangeMode(pVM, PGMMODE_REAL);
+        rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
     if (VBOX_SUCCESS(rc))
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
@@ -1904,7 +1904,7 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
             /*
              * Switch mode back to real mode.
              */
-            rc = pgmR3ChangeMode(pVM, PGMMODE_REAL);
+            rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
             STAM_REL_COUNTER_RESET(&pVM->pgm.s.cGuestModeChanges);
         }
     }
@@ -2278,7 +2278,7 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
     /*
      * Change the paging mode.
      */
-    return pgmR3ChangeMode(pVM, pPGM->enmGuestMode);
+    return PGMR3ChangeMode(pVM, pPGM->enmGuestMode);
 }
 
 
@@ -2724,13 +2724,14 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
  * Calculates the shadow paging mode.
  *
  * @returns The shadow paging mode.
+ * @param   pVM             VM handle.
  * @param   enmGuestMode    The guest mode.
  * @param   enmHostMode     The host mode.
  * @param   enmShadowMode   The current shadow mode.
  * @param   penmSwitcher    Where to store the switcher to use.
  *                          VMMSWITCHER_INVALID means no change.
  */
-static PGMMODE pgmR3CalcShadowMode(PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher)
+static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher)
 {
     VMMSWITCHER enmSwitcher = VMMSWITCHER_INVALID;
     switch (enmGuestMode)
@@ -2883,6 +2884,9 @@ if (getenv("VBOX_32BIT"))
             AssertReleaseMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
             return PGMMODE_INVALID;
     }
+    /* Override the shadow mode is nested paging is active. */
+    if (HWACCMIsNestedPagingActive(pVM))
+        enmShadowMode = PGMMODE_NESTED;
 
     *penmSwitcher = enmSwitcher;
     return enmShadowMode;
@@ -2898,16 +2902,16 @@ if (getenv("VBOX_32BIT"))
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
  */
-int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
+PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 {
-    LogFlow(("pgmR3ChangeMode: Guest mode: %d -> %d\n", pVM->pgm.s.enmGuestMode, enmGuestMode));
+    LogFlow(("PGMR3ChangeMode: Guest mode: %d -> %d\n", pVM->pgm.s.enmGuestMode, enmGuestMode));
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cGuestModeChanges);
 
     /*
      * Calc the shadow mode and switcher.
      */
     VMMSWITCHER enmSwitcher;
-    PGMMODE     enmShadowMode = pgmR3CalcShadowMode(enmGuestMode, pVM->pgm.s.enmHostMode, pVM->pgm.s.enmShadowMode, &enmSwitcher);
+    PGMMODE     enmShadowMode = pgmR3CalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVM->pgm.s.enmShadowMode, &enmSwitcher);
     if (enmSwitcher != VMMSWITCHER_INVALID)
     {
         /*
@@ -2927,7 +2931,7 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     /* shadow */
     if (enmShadowMode != pVM->pgm.s.enmShadowMode)
     {
-        LogFlow(("pgmR3ChangeMode: Shadow mode: %d -> %d\n",  pVM->pgm.s.enmShadowMode, enmShadowMode));
+        LogFlow(("PGMR3ChangeMode: Shadow mode: %d -> %d\n",  pVM->pgm.s.enmShadowMode, enmShadowMode));
         if (PGM_SHW_PFN(Exit, pVM))
         {
             int rc = PGM_SHW_PFN(Exit, pVM)(pVM);

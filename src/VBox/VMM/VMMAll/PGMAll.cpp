@@ -907,7 +907,8 @@ PGMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  */
 PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
 {
-    switch (pVM->pgm.s.enmShadowMode)
+    PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
+    switch (enmShadowMode)
     {
         case PGMMODE_32_BIT:
             return pVM->pgm.s.HCPhys32BitPD;
@@ -921,7 +922,33 @@ PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
             return pVM->pgm.s.HCPhysPaePML4;
 
         default:
-            AssertMsgFailed(("enmShadowMode=%d\n", pVM->pgm.s.enmShadowMode));
+            AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
+            return ~0;
+    }
+}
+
+/**
+ * Gets the current CR3 register value for the nested memory context.
+ * @returns CR3 value.
+ * @param   pVM         The VM handle.
+ */
+PGMDECL(uint32_t) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
+{
+    switch (enmShadowMode)
+    {
+        case PGMMODE_32_BIT:
+            return pVM->pgm.s.HCPhys32BitPD;
+
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            return pVM->pgm.s.HCPhysPaePDPT;
+
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            return pVM->pgm.s.HCPhysPaePML4;
+
+        default:
+            AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
             return ~0;
     }
 }
@@ -1244,7 +1271,7 @@ PGMDECL(int) PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer)
     if (pVM->pgm.s.enmGuestMode == enmGuestMode)
         return VINF_SUCCESS;
 #ifdef IN_RING3
-    return pgmR3ChangeMode(pVM, enmGuestMode);
+    return PGMR3ChangeMode(pVM, enmGuestMode);
 #else
     Log(("PGMChangeMode: returns VINF_PGM_CHANGE_MODE.\n"));
     return VINF_PGM_CHANGE_MODE;

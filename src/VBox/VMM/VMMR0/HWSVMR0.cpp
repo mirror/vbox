@@ -609,7 +609,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* Save our shadow CR3 register. */
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            pVMCB->ctrl.u64NestedPagingCR3  = PGMGetHyperCR3(pVM);
+            pVMCB->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
             pVMCB->guest.u64CR3             = pCtx->cr3;
         }
         else
@@ -1291,7 +1291,7 @@ ResumeExecution:
         TRPMSetFaultAddress(pVM, uFaultAddress);
 
         /* Handle the pagefault trap for the nested shadow table. */
-        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMGetShadowMode(pVM), errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMGetHostMode(pVM), errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
         Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Vrc\n", pCtx->eip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
