@@ -77,7 +77,7 @@ __END_DECLS
  */
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-#if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64) \
+#if   (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64) \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED
 
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_PAE
@@ -564,7 +564,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             }
             else
             {
-                /* When the guest accesses invalid physical memory (e.g. probing of RAM or accessing a remapped MMIO range), then we'll fall 
+                /* When the guest accesses invalid physical memory (e.g. probing of RAM or accessing a remapped MMIO range), then we'll fall
                  * back to the recompiler to emulate the instruction.
                  */
                 LogFlow(("pgmPhysGetPageEx %VGp failed with %Vrc\n", GCPhys, rc));
@@ -1417,8 +1417,8 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 {
     LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%d uErr=%#x\n", GCPtrPage, cPages, uErr));
 
-#if    (PGM_GST_TYPE == PGM_TYPE_32BIT \
-    ||  PGM_GST_TYPE == PGM_TYPE_PAE) \
+#if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+        || PGM_GST_TYPE == PGM_TYPE_PAE) \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED
 
 # if PGM_WITH_NX(PGM_GST_TYPE)
@@ -1661,7 +1661,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     return VINF_PGM_SYNCPAGE_MODIFIED_PDE;
 
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
-      && PGM_SHW_TYPE != PGM_TYPE_NESTED
+    && PGM_SHW_TYPE != PGM_TYPE_NESTED
 
 # ifdef PGM_SYNC_N_PAGES
     /*
@@ -2027,7 +2027,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 
 
 UpperLevelPageFault:
-    /* Pagefault detected while checking the PML4E, PDPE or PDE. 
+    /* Pagefault detected while checking the PML4E, PDPE or PDE.
      * Single exit handler to get rid of duplicate code paths.
      */
 #  ifdef IN_GC
@@ -2036,7 +2036,7 @@ UpperLevelPageFault:
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat, DirtyBitTracking), a);
     LogFlow(("CheckPageFault: real page fault at %VGv (%d)\n", GCPtrPage, uPageFaultLevel));
 
-    if (    
+    if (
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
             pPml4eSrc->n.u1Present &&
 #  endif
@@ -2522,7 +2522,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
  */
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 {
-#if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) \
+#if   (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) \
     && PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED
     /*
      * Check that all Guest levels thru the PDE are present, getting the
@@ -2602,7 +2602,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     LogFlow(("VerifyAccessSyncPage: GCPtrPage=%VGv fPage=%#x uErr=%#x\n", GCPtrPage, fPage, uErr));
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
-#if (PGM_GST_TYPE == PGM_TYPE_32BIT ||  PGM_GST_TYPE == PGM_TYPE_REAL ||  PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) \
+#if   (PGM_GST_TYPE == PGM_TYPE_32BIT ||  PGM_GST_TYPE == PGM_TYPE_REAL ||  PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) \
     && PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED
 
 # ifndef IN_RING0
@@ -2759,10 +2759,11 @@ DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32
 PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
-    /* @todo check if this is really necessary */
+    /** @todo check if this is really necessary */
     HWACCMFlushTLB(pVM);
     return VINF_SUCCESS;
-#else
+
+#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
     if (VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
         fGlobal = true; /* Change this CR3 reload to be a global one. */
 
@@ -2779,7 +2780,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3Handlers), h);
 
-#ifdef PGMPOOL_WITH_MONITORING
+# ifdef PGMPOOL_WITH_MONITORING
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
      * Occationally we will have to clear all the shadow page tables because we wanted
@@ -2790,20 +2791,20 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifdef IN_RING3
+#  ifdef IN_RING3
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
-# else
+#  else
         LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         return VINF_PGM_SYNC_CR3;
-# endif
+#  endif
     }
-#endif
+# endif
 
     Assert(fGlobal || (cr4 & X86_CR4_PGE));
     MY_STAM_COUNTER_INC(fGlobal ? &pVM->pgm.s.CTXMID(Stat,SyncCR3Global) : &pVM->pgm.s.CTXMID(Stat,SyncCR3NotGlobal));
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
+# if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
     /*
      * Get page directory addresses.
      */
@@ -2862,7 +2863,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             {
                 for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
                 {
-                    if (   pPDEDst[iPD].n.u1Present 
+                    if (   pPDEDst[iPD].n.u1Present
                         && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
                     {
                         pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPDPTE * X86_PG_PAE_ENTRIES + iPD);
@@ -3022,11 +3023,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     pPDEDst++;
                 }
             }
-#   if PGM_GST_TYPE == PGM_TYPE_PAE
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
             else if (iPD + iPDPTE * X86_PG_PAE_ENTRIES != iPdNoMapping)
-#   else
+#  else
             else if (iPD != iPdNoMapping)
-#   endif
+#  endif
             {
                 /*
                  * Check if there is any page directory to mark not present here.
