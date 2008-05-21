@@ -35,6 +35,7 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 typedef enum { kAsmStyle_Default, kAsmStyle_yasm, kAsmStyle_masm, kAsmStyle_invalid } ASMSTYLE;
+typedef enum { kUndefOp_Fail, kUndefOp_All, kUndefOp_DefineByte, kUndefOp_End } UNDEFOPHANDLING;
 
 typedef struct MYDISSTATE
 {
@@ -42,8 +43,8 @@ typedef struct MYDISSTATE
     uint64_t        uAddress;           /**< The current instruction address. */
     uint8_t        *pbInstr;            /**< The current instruction (pointer). */
     uint32_t        cbInstr;            /**< The size of the current instruction. */
-    bool            fInvalid;           /**< Whether the instruction is invalid/illegal or not. */
-    bool            fRaw;               /**< Whether invalid instructions are printed as byte defintions or not. */
+    bool            fUndefOp;           /**< Whether the current instruction is really an undefined opcode.*/
+    UNDEFOPHANDLING enmUndefOp;         /**< How to treat undefined opcodes. */
     int             rc;                 /**< Set if we hit EOF. */
     size_t          cbLeft;             /**< The number of bytes left. (read) */
     uint8_t        *pbNext;             /**< The next byte. (read) */
@@ -134,6 +135,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
     {
         /*
          * Jumping up the stream.
+         * This occures when the byte sequence is added to the output string.
          */
         uint64_t offReq64 = uSrcAddr - pState->uAddress;
         if (offReq64 < 32)
@@ -209,11 +211,10 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
  * @param   cbFile      How much to disassemble.
  * @param   enmStyle    The assembly output style.
  * @param   fListing    Whether to print in a listing like mode.
- * @param   fRaw        Whether to output byte definitions for invalid sequences.
- * @param   fAllInvalid Whether all instructions are expected to be invalid.
+ * @param   enmUndefOp  How to deal with undefined opcodes.
  */
 static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAddress, uint8_t *pbFile, size_t cbFile,
-                         ASMSTYLE enmStyle, bool fListing, bool fRaw, bool fAllInvalid)
+                         ASMSTYLE enmStyle, bool fListing, UNDEFOPHANDLING enmUndefOp)
 {
     /*
      * Initialize the CPU context.
@@ -224,8 +225,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
     State.uAddress = uAddress;
     State.pbInstr = pbFile;
     State.cbInstr = 0;
-    State.fInvalid = false;
-    State.fRaw = fRaw;
+    State.enmUndefOp = enmUndefOp;
     State.rc = VINF_SUCCESS;
     State.cbLeft = cbFile;
     State.pbNext = pbFile;
@@ -268,16 +268,22 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         int rc = DISInstr(&State.Cpu, State.uAddress, 0, &State.cbInstr, State.szLine);
         if (RT_SUCCESS(rc))
         {
-            State.fInvalid = State.Cpu.pCurInstr->opcode == OP_INVALID
+            State.fUndefOp = State.Cpu.pCurInstr->opcode == OP_INVALID
                           || State.Cpu.pCurInstr->opcode == OP_ILLUD2;
-            if (!fAllInvalid || State.fInvalid)
-                pfnFormatter(&State);
-            else
+            if (!State.fUndefOp && State.enmUndefOp == kUndefOp_All)
             {
                 RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->opcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }
+            else if (State.fUndefOp && State.enmUndefOp == kUndefOp_Fail)
+            {
+                RTPrintf("%s: error at %#RX64: undefined opcode (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->opcode);
+                pfnFormatter(&State);
+                rcRet = VERR_GENERAL_FAILURE;
+            }
+            else
+                pfnFormatter(&State);
         }
         else
         {
@@ -324,16 +330,14 @@ static int Usage(const char *argv0)
 "    The maximum number of bytes to disassemble. Default: 1GB\n"
 "  --cpumode|-c <16|32|64>\n"
 "    The cpu mode. Default: 32\n"
-"  --all-invalid|-i\n"
-"    When specified all instructions are expected to be invalid.\n"
 "  --listing|-l, --no-listing|-L\n"
 "    Enables or disables listing mode. Default: --no-listing\n"
 "  --offset|-o <offset>\n"
 "    The file offset at which to start disassembling. Default: 0\n"
-"  --raw|-r, --no-raw|-R\n"
-"    Whether to employ byte defines for unknown bits. Default: --no-raw\n"
 "  --style|-s <default|yasm|masm>\n"
 "    The assembly output style. Default: default\n"
+"  --undef-op|-u <fail|all|db>\n"
+"    How to treat undefined opcodes. Default: fail\n"
              , argv0, argv0);
     return 1;
 }
@@ -347,9 +351,8 @@ int main(int argc, char **argv)
     /* options */
     uint64_t uAddress = 0;
     ASMSTYLE enmStyle = kAsmStyle_Default;
+    UNDEFOPHANDLING enmUndefOp = kUndefOp_Fail;
     bool fListing = true;
-    bool fRaw = false;
-    bool fAllInvalid = false;
     DISCPUMODE enmCpuMode = CPUMODE_32BIT;
     RTFOFF off = 0;
     RTFOFF cbMax = _1G;
@@ -363,13 +366,11 @@ int main(int argc, char **argv)
         { "--cpumode",      'c', RTGETOPT_REQ_UINT32 },
         { "--help",         'h', 0 },
         { "--bytes",        'b', RTGETOPT_REQ_INT64 },
-        { "--all-invalid",  'i', 0, },
         { "--listing",      'l', 0 },
         { "--no-listing",   'L', 0 },
         { "--offset",       'o', RTGETOPT_REQ_INT64 },
-        { "--raw",          'r', 0 },
-        { "--no-raw",       'R', 0 },
         { "--style",        's', RTGETOPT_REQ_STRING },
+        { "--undef-op",     'u', RTGETOPT_REQ_STRING },
     };
 
     int ch;
@@ -404,10 +405,6 @@ int main(int argc, char **argv)
             case 'h':
                 return Usage(argv0);
 
-            case 'i':
-                fAllInvalid = true;
-                break;
-
             case 'l':
                 fListing = true;
                 break;
@@ -418,14 +415,6 @@ int main(int argc, char **argv)
 
             case 'o':
                 off = ValueUnion.i;
-                break;
-
-            case 'r':
-                fRaw = true;
-                break;
-
-            case 'R':
-                fRaw = false;
                 break;
 
             case 's':
@@ -442,6 +431,20 @@ int main(int argc, char **argv)
                 else
                 {
                     RTStrmPrintf(g_pStdErr, "%s: unknown assembly style: %s\n", argv0, ValueUnion.psz);
+                    return 1;
+                }
+                break;
+
+            case 'u':
+                if (!strcmp(ValueUnion.psz, "fail"))
+                    enmUndefOp = kUndefOp_Fail;
+                else if (!strcmp(ValueUnion.psz, "all"))
+                    enmUndefOp = kUndefOp_All;
+                else if (!strcmp(ValueUnion.psz, "db"))
+                    enmUndefOp = kUndefOp_DefineByte;
+                else
+                {
+                    RTStrmPrintf(g_pStdErr, "%s: unknown undefined opcode handling method: %s\n", argv0, ValueUnion.psz);
                     return 1;
                 }
                 break;
@@ -475,7 +478,7 @@ int main(int argc, char **argv)
         /*
          * Disassemble it.
          */
-        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, fRaw, fAllInvalid);
+        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
         if (RT_FAILURE(rc))
             break;
     }
