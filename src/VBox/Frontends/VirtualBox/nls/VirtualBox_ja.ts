@@ -621,11 +621,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>統計(&amp;S)...</translation>
+        <translation type="obsolete">統計(&amp;S)...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>コマンドライン(&amp;C)...</translation>
+        <translation type="obsolete">コマンドライン(&amp;C)...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -907,6 +907,21 @@ Version %1</source>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>セッション情報ダイアログを表示</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">統計(&amp;S)...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3029,7 +3044,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを&lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ゲストOSのビデオメモリ不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを&lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3274,6 +3289,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>選択</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4274,11 +4297,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>有効</translation>
+        <translation type="obsolete">有効</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>無効</translation>
+        <translation type="obsolete">無効</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4290,11 +4313,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>ハードウェア仮想化</translation>
+        <translation type="obsolete">ハードウェア仮想化</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>IDE ハードディスク統計</translation>
+        <translation type="obsolete">IDE ハードディスク統計</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4306,43 +4329,78 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>アダプタ 1</translation>
+        <translation type="obsolete">アダプタ 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>アダプタ 2</translation>
+        <translation type="obsolete">アダプタ 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>アダプタ 3</translation>
+        <translation type="obsolete">アダプタ 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>アダプタ 4</translation>
+        <translation type="obsolete">アダプタ 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>未割り当て</translation>
+        <translation type="obsolete">未割り当て</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>ハードディスク統計</translation>
+        <translation type="obsolete">ハードディスク統計</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>プライマリ マスター</translation>
+        <translation type="obsolete">プライマリ マスター</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>プライマリ スレーブ</translation>
+        <translation type="obsolete">プライマリ スレーブ</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>セカンダリ マスター</translation>
+        <translation type="obsolete">セカンダリ マスター</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>セカンダリ スレーブ</translation>
+        <translation type="obsolete">セカンダリ スレーブ</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

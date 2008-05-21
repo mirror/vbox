@@ -693,11 +693,11 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>E&amp;stadísticas...</translation>
+        <translation type="obsolete">E&amp;stadísticas...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>Línea de &amp;Comando...</translation>
+        <translation type="obsolete">Línea de &amp;Comando...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -1067,6 +1067,21 @@ Versión %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Muestra el Diálogo de Información de Sesión</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">E&amp;stadísticas...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2732,7 +2747,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Espacio</translation>
     </message>
     <message>
         <source>
@@ -3465,7 +3480,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No se pudo activar el modeo fluído debido a memoria de video huésped insuficiente.&lt;/p&gt;&lt;p&gt;Se debe configurar la Máquina Virtual con al menos &lt;b&gt;%1&lt;/b&gt; de memoria de video.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;No se pudo activar el modeo fluído debido a memoria de video huésped insuficiente.&lt;/p&gt;&lt;p&gt;Se debe configurar la Máquina Virtual con al menos &lt;b&gt;%1&lt;/b&gt; de memoria de video.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3697,6 +3712,14 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Select</source>
         <comment>hard disk</comment>
         <translation type="unfinished">Seleccionar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4026,7 +4049,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox xVM de Sun</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -4816,11 +4839,11 @@ cualquier valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished">Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="unfinished">Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4828,14 +4851,6 @@ cualquier valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4847,43 +4862,42 @@ cualquier valor.&lt;/qt&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Not attached</source>
-        <translation type="unfinished">No conectado</translation>
+        <translation type="obsolete">No conectado</translation>
     </message>
     <message>
-        <source>Hard Disks Statistics</source>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Master</source>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Slave</source>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Master</source>
+        <source>Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Slave</source>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6133,11 +6147,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover el Filtro hacia Arriba</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Mover Filtro hacia Arriba</translation>
     </message>
     <message>
         <source>
@@ -6147,11 +6161,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover el Filtro hacia Abajo</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">M&amp;over Filtro hacia Abajo</translation>
     </message>
     <message>
         <source>

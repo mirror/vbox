@@ -622,11 +622,11 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>&amp;Statistik...</translation>
+        <translation type="obsolete">&amp;Statistik...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>&amp;Kommandorad...</translation>
+        <translation type="obsolete">&amp;Kommandorad...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -906,6 +906,21 @@ Version %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Visa sessionsinformation</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">&amp;Statistik...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3093,7 +3108,7 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kunde inte använda sömlöst läge på grund av otillräckligt grafikminne i gästoperativsystemet.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att minst använda &lt;b&gt;%1&lt;/b&gt; grafikminne.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kunde inte använda sömlöst läge på grund av otillräckligt grafikminne i gästoperativsystemet.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att minst använda &lt;b&gt;%1&lt;/b&gt; grafikminne.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3324,6 +3339,14 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Välj</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4336,11 +4359,11 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Aktiverat</translation>
+        <translation type="obsolete">Aktiverat</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Inaktiverat</translation>
+        <translation type="obsolete">Inaktiverat</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4352,11 +4375,11 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Hårdvaruvirtualisering</translation>
+        <translation type="obsolete">Hårdvaruvirtualisering</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>Statistik för IDE-hårddisk</translation>
+        <translation type="obsolete">Statistik för IDE-hårddisk</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4368,43 +4391,78 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Adapter 1</translation>
+        <translation type="obsolete">Adapter 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Adapter 2</translation>
+        <translation type="obsolete">Adapter 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Adapter 3</translation>
+        <translation type="obsolete">Adapter 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Adapter 4</translation>
+        <translation type="obsolete">Adapter 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>Inte ansluten</translation>
+        <translation type="obsolete">Inte ansluten</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>Statistik för hårddiskar</translation>
+        <translation type="obsolete">Statistik för hårddiskar</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>Primär master</translation>
+        <translation type="obsolete">Primär master</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>Primär slave</translation>
+        <translation type="obsolete">Primär slave</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>Sekundär master</translation>
+        <translation type="obsolete">Sekundär master</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>Sekundär slave</translation>
+        <translation type="obsolete">Sekundär slave</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -692,11 +692,11 @@ Versiunea %1</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>&amp;Statistici...</translation>
+        <translation type="obsolete">&amp;Statistici...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>Linie de &amp;comandă...</translation>
+        <translation type="obsolete">Linie de &amp;comandă...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -1078,6 +1078,21 @@ Versiunea %1</translation>
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Arată dialogul de informații despre sesiune</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">&amp;Statistici...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3515,7 +3530,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putu intra în mod continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nu am putu intra în mod continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3746,6 +3761,14 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4932,11 +4955,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>Activat</translation>
+        <translation type="obsolete">Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>Dezactivat</translation>
+        <translation type="obsolete">Dezactivat</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
@@ -4948,11 +4971,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Hardware Virtualization</source>
-        <translation>Virtualizare hardware</translation>
+        <translation type="obsolete">Virtualizare hardware</translation>
     </message>
     <message>
         <source>IDE Hard Disk Statistics</source>
-        <translation>Statistici disc hard ID</translation>
+        <translation type="obsolete">Statistici disc hard ID</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4964,43 +4987,78 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adapter 1</source>
-        <translation>Placă 1</translation>
+        <translation type="obsolete">Placă 1</translation>
     </message>
     <message>
         <source>Adapter 2</source>
-        <translation>Placă 2</translation>
+        <translation type="obsolete">Placă 2</translation>
     </message>
     <message>
         <source>Adapter 3</source>
-        <translation>Placă 3</translation>
+        <translation type="obsolete">Placă 3</translation>
     </message>
     <message>
         <source>Adapter 4</source>
-        <translation>Placă 4</translation>
+        <translation type="obsolete">Placă 4</translation>
     </message>
     <message>
         <source>Not attached</source>
-        <translation>Neconectat</translation>
+        <translation type="obsolete">Neconectat</translation>
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation>Statistici discuri hard</translation>
+        <translation type="obsolete">Statistici discuri hard</translation>
     </message>
     <message>
         <source>Primary Master</source>
-        <translation>Primar master</translation>
+        <translation type="obsolete">Primar master</translation>
     </message>
     <message>
         <source>Primary Slave</source>
-        <translation>Primar slave</translation>
+        <translation type="obsolete">Primar slave</translation>
     </message>
     <message>
         <source>Secondary Master</source>
-        <translation>Secundar master</translation>
+        <translation type="obsolete">Secundar master</translation>
     </message>
     <message>
         <source>Secondary Slave</source>
-        <translation>Secundar slave</translation>
+        <translation type="obsolete">Secundar slave</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
