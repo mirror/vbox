@@ -172,8 +172,12 @@ typedef struct DMIBIOSINF
     uint64_t        u64Characteristics;
     uint8_t         u8CharacteristicsByte1;
     uint8_t         u8CharacteristicsByte2;
+    uint8_t         u8ReleaseMajor;
+    uint8_t         u8ReleaseMinor;
+    uint8_t         u8FirmwareMajor;
+    uint8_t         u8FirmwareMinor;
 } *PDMIBIOSINF;
-AssertCompileSize(DMIBIOSINF, 0x14);
+AssertCompileSize(DMIBIOSINF, 0x18);
 
 /** DMI system information */
 typedef struct DMISYSTEMINF
@@ -817,7 +821,9 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     char *pszStr = (char *)pTable;
     int iStrNr;
     int rc;
-    char *pszDmiVendor, *pszDmiProduct, *pszDmiVersion, *pszDmiRelease, *pszDmiSerial, *pszDmiUuid, *pszDmiFamily;
+    char *pszDmiBIOSVendor, *pszDmiBIOSVersion, *pszDmiBIOSReleaseDate;
+    int  iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor, iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
+    char *pszDmiSystemVendor, *pszDmiSystemProduct, *pszDmiSystemVersion, *pszDmiSystemSerial, *pszDmiSystemUuid, *pszDmiSystemFamily;
 
 #define STRCPY(p, s) \
     do { \
@@ -829,7 +835,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
         memcpy(p, s, _len); \
         p += _len; \
     } while (0)
-#define READCFG(name, variable, default_value) \
+#define READCFGSTR(name, variable, default_value) \
     do { \
         rc = CFGMR3QueryStringAlloc(pCfgHandle, name, & variable); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
@@ -838,35 +844,68 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
                     N_("Configuration error: Querying \"" name "\" as a string failed")); \
     } while (0)
+#define READCFGINT(name, variable, default_value) \
+    do { \
+        rc = CFGMR3QueryS32(pCfgHandle, name, & variable); \
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
+            variable = default_value; \
+        else if (VBOX_FAILURE(rc)) \
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
+                    N_("Configuration error: Querying \"" name "\" as a Int failed")); \
+    } while (0)
 
 
-    READCFG("DmiVendor",  pszDmiVendor,  "innotek GmbH");
-    READCFG("DmiProduct", pszDmiProduct, "VirtualBox");
-    READCFG("DmiVersion", pszDmiVersion, "1.2");
-    READCFG("DmiRelease", pszDmiRelease, "12/01/2006");
-    READCFG("DmiSerial",  pszDmiSerial,  "0");
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiUuid", &pszDmiUuid);
+    READCFGSTR("DmiBIOSVendor",        pszDmiBIOSVendor,      "innotek GmbH");
+    READCFGSTR("DmiBIOSVersion",       pszDmiBIOSVersion,     "VirtualBox");
+    READCFGSTR("DmiBIOSReleaseDate",   pszDmiBIOSReleaseDate, "12/01/2006");
+    READCFGINT("DmiBIOSReleaseMajor",  iDmiBIOSReleaseMajor,   0);
+    READCFGINT("DmiBIOSReleaseMinor",  iDmiBIOSReleaseMinor,   0);
+    READCFGINT("DmiBIOSFirmwareMajor", iDmiBIOSFirmwareMajor,  0);
+    READCFGINT("DmiBIOSFirmwareMinor", iDmiBIOSFirmwareMinor,  0);
+    READCFGSTR("DmiSystemVendor",      pszDmiSystemVendor,    "innotek GmbH");
+    READCFGSTR("DmiSystemProduct",     pszDmiSystemProduct,   "VirtualBox");
+    READCFGSTR("DmiSystemVersion",     pszDmiSystemVersion,   "1.2");
+    READCFGSTR("DmiSystemSerial",      pszDmiSystemSerial,    "0");
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiSystemUuid", &pszDmiSystemUuid);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pszDmiUuid = NULL;
+        pszDmiSystemUuid = NULL;
     else if (VBOX_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
-    READCFG("DmiFamily",  pszDmiFamily,   "Virtual Machine");
+    READCFGSTR("DmiSystemFamily",    pszDmiSystemFamily,    "Virtual Machine");
 
     /* DMI BIOS information */
     PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
-    pszStr                       = (char *)(pBIOSInf + 1);
+
+    pszStr = (char *)&pBIOSInf->u8ReleaseMajor;
+    pBIOSInf->header.u8Length    = RT_OFFSETOF(DMIBIOSINF, u8ReleaseMajor);
+
+    /* don't set these fields by default for legacy compatibility */
+    if (iDmiBIOSReleaseMajor != 0 || iDmiBIOSReleaseMinor != 0)
+    {
+        pszStr = (char *)&pBIOSInf->u8FirmwareMajor;
+        pBIOSInf->header.u8Length = RT_OFFSETOF(DMIBIOSINF, u8FirmwareMajor);
+        pBIOSInf->u8ReleaseMajor  = iDmiBIOSReleaseMajor;
+        pBIOSInf->u8ReleaseMinor  = iDmiBIOSReleaseMinor;
+        if (iDmiBIOSFirmwareMajor != 0 || iDmiBIOSFirmwareMinor != 0)
+        {
+            pszStr = (char *)(pBIOSInf + 1);
+            pBIOSInf->header.u8Length = sizeof(DMIBIOSINF);
+            pBIOSInf->u8FirmwareMajor = iDmiBIOSFirmwareMajor;
+            pBIOSInf->u8FirmwareMinor = iDmiBIOSFirmwareMinor;
+        }
+    }
+
     iStrNr                       = 1;
     pBIOSInf->header.u8Type      = 0; /* BIOS Information */
-    pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
     pBIOSInf->header.u16Handle   = 0x0000;
     pBIOSInf->u8Vendor           = iStrNr++;
-    STRCPY(pszStr, pszDmiVendor);
+    STRCPY(pszStr, pszDmiBIOSVendor);
     pBIOSInf->u8Version          = iStrNr++;
-    STRCPY(pszStr, pszDmiProduct);
+    STRCPY(pszStr, pszDmiBIOSVersion);
     pBIOSInf->u16Start           = 0xE000;
     pBIOSInf->u8Release          = iStrNr++;
-    STRCPY(pszStr, pszDmiRelease);
+    STRCPY(pszStr, pszDmiBIOSReleaseDate);
     pBIOSInf->u8ROMSize          = 1; /* 128K */
     pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
                                  | RT_BIT(7)   /* PCI is supported */
@@ -892,18 +931,18 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     pSystemInf->header.u8Length  = sizeof(*pSystemInf);
     pSystemInf->header.u16Handle = 0x0001;
     pSystemInf->u8Manufacturer   = iStrNr++;
-    STRCPY(pszStr, pszDmiVendor);
+    STRCPY(pszStr, pszDmiSystemVendor);
     pSystemInf->u8ProductName    = iStrNr++;
-    STRCPY(pszStr, pszDmiProduct);
+    STRCPY(pszStr, pszDmiSystemProduct);
     pSystemInf->u8Version        = iStrNr++;
-    STRCPY(pszStr, pszDmiVersion);
+    STRCPY(pszStr, pszDmiSystemVersion);
     pSystemInf->u8SerialNumber   = iStrNr++;
-    STRCPY(pszStr, pszDmiSerial);
+    STRCPY(pszStr, pszDmiSystemSerial);
 
     RTUUID uuid;
-    if (pszDmiUuid)
+    if (pszDmiSystemUuid)
     {
-        int rc = RTUuidFromStr(&uuid, pszDmiUuid);
+        int rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Invalid UUID for DMI tables specified"));
@@ -917,7 +956,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     pSystemInf->u8WakeupType     = 6; /* Power Switch */
     pSystemInf->u8SKUNumber      = 0;
     pSystemInf->u8Family         = iStrNr++;
-    STRCPY(pszStr, pszDmiFamily);
+    STRCPY(pszStr, pszDmiSystemFamily);
     *pszStr++                    = '\0';
 
     /* If more fields are added here, fix the size check in STRCPY */
@@ -925,13 +964,15 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
 #undef STRCPY
 #undef READCFG
 
-    MMR3HeapFree(pszDmiVendor);
-    MMR3HeapFree(pszDmiProduct);
-    MMR3HeapFree(pszDmiVersion);
-    MMR3HeapFree(pszDmiRelease);
-    MMR3HeapFree(pszDmiSerial);
-    MMR3HeapFree(pszDmiUuid);
-    MMR3HeapFree(pszDmiFamily);
+    MMR3HeapFree(pszDmiBIOSVendor);
+    MMR3HeapFree(pszDmiBIOSVersion);
+    MMR3HeapFree(pszDmiBIOSReleaseDate);
+    MMR3HeapFree(pszDmiSystemVendor);
+    MMR3HeapFree(pszDmiSystemProduct);
+    MMR3HeapFree(pszDmiSystemVersion);
+    MMR3HeapFree(pszDmiSystemSerial);
+    MMR3HeapFree(pszDmiSystemUuid);
+    MMR3HeapFree(pszDmiSystemFamily);
 
     return VINF_SUCCESS;
 }
@@ -1221,12 +1262,19 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "PXEDebug\0"
                               "UUID\0"
                               "IOAPIC\0"
-                              "DmiVendor\0"
-                              "DmiProduct\0"
-                              "DmiVersion\0"
-                              "DmiSerial\0"
-                              "DmiUuid\0"
-                              "DmiFamily\0"))
+                              "DmiBIOSVendor\0"
+                              "DmiBIOSVersion\0"
+                              "DmiBIOSReleaseDate\0"
+                              "DmiBIOSReleaseMajor\0"
+                              "DmiBIOSReleaseMinor\0"
+                              "DmiBIOSFirmwareMajor\0"
+                              "DmiBIOSFirmwareMinor\0"
+                              "DmiSystemFamily\0"
+                              "DmiSystemProduct\0"
+                              "DmiSystemSerial\0"
+                              "DmiSystemUuid\0"
+                              "DmiSystemVendor\0"
+                              "DmiSystemVersion\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
