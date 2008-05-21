@@ -39,10 +39,14 @@ if test ! -z "$found"; then
     fi
 fi
 
+# If we were called with the --test parameter, we check whether the display
+# we are running on is really using the VBox video driver (and RandR 1.2).
 if test "$1" = "--test"; then
-  version=`$randrbin -v 2>&1 | sed -n 's/[^0-9]*version 1\.\([0-9]*\)/\1/p'`
-  expr "$version" '>=' 2 2>&1 > /dev/null
+  $randrbin 2> /dev/null | grep VBOX1
   exit
 fi
-$randrbin --output Virtual\ Output --preferred
+
+# Otherwise we just switch the guest display into its preferred resolution,
+# which is the one corresponding to the last video mode hint sent by the host.
+$randrbin --output VBOX1 --preferred
 xrefresh 2>&1 > /dev/null
