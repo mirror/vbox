@@ -165,6 +165,7 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
         }
         pVM->pgm.s.fPhysCacheFlushPending = true;
+        HWACCMFlushTLB(pVM);
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
@@ -297,6 +298,7 @@ PGMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         /*
          * Clear the page bits and notify the REM about this change.
          */
+        HWACCMFlushTLB(pVM);
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
         pgmUnlock(pVM);
@@ -539,6 +541,7 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                     REMR3NotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
                                                      pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
+                    HWACCMFlushTLB(pVM);
                     pgmUnlock(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%VGp -> GCPhys=%VGp GCPhysLast=%VGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
@@ -630,7 +633,7 @@ PGMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
 
 
 /**
- * Splitts a physical access handler in two.
+ * Splits a physical access handler in two.
  *
  * @returns VBox status code.
  * @param   pVM             VM Handle.
@@ -812,6 +815,7 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
                 }
                 pVM->pgm.s.fPhysCacheFlushPending = true;
+                HWACCMFlushTLB(pVM);
 
                 rc = VINF_SUCCESS;
                 break;

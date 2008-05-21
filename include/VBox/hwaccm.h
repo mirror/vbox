@@ -65,6 +65,28 @@ __BEGIN_DECLS
  */
 #define HWACCMIsEnabled(a)    (a->fHWACCMEnabled)
 
+/**
+ * Invalidates a guest page
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
+
+#ifndef IN_GC
+/**
+ * Flushes the guest TLB
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMDECL(int) HWACCMFlushTLB(PVM pVM);
+#else
+/* Nop in GC */
+#define HWACCMFlushTLB(pVM)     do { } while (0)
+#endif
+
 #ifdef IN_RING0
 /** @defgroup grp_hwaccm_r0    The VM Hardware Manager API
  * @ingroup grp_hwaccm
