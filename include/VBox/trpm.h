@@ -234,6 +234,7 @@ TRPMDECL(void) TRPMRestoreTrap(PVM pVM);
  * @param   opsize      Instruction size (only relevant for software interrupts)
  * @param   enmError    TRPM_TRAP_HAS_ERRORCODE or TRPM_TRAP_NO_ERRORCODE.
  * @param   enmType     TRPM event type
+ * @param   iOrgTrap    Original trap.
  * @internal
  */
 TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
