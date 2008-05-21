@@ -3285,8 +3285,12 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
             && aGraphicsSupported)
             toggleFullscreenMode (true, true);
         /* Disable auto-resizing if advanced graphics are not available */
+        /* See #2844#c10. This is just not necessary here and may lead to
+         * invalid video mode hints. */
+#if 0
         console->setAutoresizeGuest (   mIsGraphicsSupported
                                      && vmAutoresizeGuestAction->isOn());
+#endif
         vmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);
     }
 
