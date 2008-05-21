@@ -2625,7 +2625,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
  */
 static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
 {
-    PPGMMODEDATA pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(enmShw, enmGst)];
+    PPGMMODEDATA pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndexByMode(enmShw, enmGst)];
 
     Assert(pModeData->uGstType == pgmModeToType(enmGst));
     Assert(pModeData->uShwType == pgmModeToType(enmShw));
@@ -2980,6 +2980,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             case PGMMODE_AMD64_NX:
                 rc = PGM_SHW_NAME_AMD64(Enter)(pVM);
                 break;
+            case PGMMODE_NESTED:
+                rc = PGM_SHW_NAME_NESTED(Enter)(pVM);
+                break;
             case PGMMODE_REAL:
             case PGMMODE_PROTECTED:
             default:
@@ -3014,6 +3017,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_PAE_NX:
                     rc2 = PGM_BTH_NAME_PAE_REAL(Enter)(pVM, NIL_RTGCPHYS);
                     break;
+                case PGMMODE_NESTED:
+                    rc2 = PGM_BTH_NAME_NESTED_REAL(Enter)(pVM, NIL_RTGCPHYS);
+                    break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
                     AssertMsgFailed(("Should use PAE shadow mode!\n"));
@@ -3031,6 +3037,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_PAE:
                 case PGMMODE_PAE_NX:
                     rc2 = PGM_BTH_NAME_PAE_PROT(Enter)(pVM, NIL_RTGCPHYS);
+                    break;
+                case PGMMODE_NESTED:
+                    rc2 = PGM_BTH_NAME_NESTED_PROT(Enter)(pVM, NIL_RTGCPHYS);
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
@@ -3050,6 +3059,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_PAE:
                 case PGMMODE_PAE_NX:
                     rc2 = PGM_BTH_NAME_PAE_32BIT(Enter)(pVM, GCPhysCR3);
+                    break;
+                case PGMMODE_NESTED:
+                    rc2 = PGM_BTH_NAME_NESTED_32BIT(Enter)(pVM, GCPhysCR3);
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
@@ -3083,6 +3095,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_PAE_NX:
                     rc2 = PGM_BTH_NAME_PAE_PAE(Enter)(pVM, GCPhysCR3);
                     break;
+                case PGMMODE_NESTED:
+                    rc2 = PGM_BTH_NAME_NESTED_PAE(Enter)(pVM, GCPhysCR3);
+                    break;
                 case PGMMODE_32_BIT:
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
@@ -3101,6 +3116,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
                     rc2 = PGM_BTH_NAME_AMD64_AMD64(Enter)(pVM, GCPhysCR3);
+                    break;
+                case PGMMODE_NESTED:
+                    rc2 = PGM_BTH_NAME_NESTED_AMD64(Enter)(pVM, GCPhysCR3);
                     break;
                 case PGMMODE_32_BIT:
                 case PGMMODE_PAE:
