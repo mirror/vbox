@@ -48,7 +48,7 @@ __END_DECLS
 #endif
 
 #if     (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE)
+    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64)
 # error "Invalid combination; real or protected mode without paging implies 32 bits or PAE shadow paging."
 #endif
 
