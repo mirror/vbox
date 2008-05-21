@@ -121,6 +121,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , mIsSeamless (false)
     , mIsSeamlessSupported (false)
     , mIsGraphicsSupported (false)
+    , mIsWaitingModeResize (false)
     , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
@@ -1033,43 +1034,26 @@ void VBoxConsoleWnd::refreshView()
 }
 
 /**
- *  This slot is called just after entering the fullscreen/seamless mode,
- *  when the console was resized to required size.
- */
-void VBoxConsoleWnd::onEnterFullscreen()
-{
-    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-    /* It isn't guaranteed that the guest os set the video mode that
-     * we requested. So after all the resizing stuff set the clipping
-     * mask and the spacing shifter to the corresponding values. */
-    setViewInSeamlessMode (QRect (console->mapToGlobal (QPoint (0, 0)), console->size()));
-#ifdef Q_WS_MAC
-    if (!mIsSeamless)
-    {
-        /* Fade back to the normal gamma */
-        CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
-        CGReleaseDisplayFadeReservation (mFadeToken);
-    }
-#endif
-
-    vmSeamlessAction->setEnabled (mIsSeamless);
-    vmFullscreenAction->setEnabled (mIsFullscreen);
-    if (mIsSeamless)
-        connect (console, SIGNAL (resizeHintDone()),
-                 this, SLOT (exitSeamless()));
-    /* disabled for now */
-    //else if (mIsFullscreen)
-    //    connect (console, SIGNAL (resizeHintDone()),
-    //             this, SLOT (exitFullscreen()));
-}
-
-/**
  *  This slot is called just after leaving the fullscreen/seamless mode,
  *  when the console was resized to previous size.
  */
 void VBoxConsoleWnd::onExitFullscreen()
 {
-    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
+    console->setIgnoreMainwndResize (false);
+}
+
+void VBoxConsoleWnd::unlockActionsSwitch()
+{
+    if (mIsSeamless)
+        vmSeamlessAction->setEnabled (true);
+    else if (mIsFullscreen)
+        vmFullscreenAction->setEnabled (true);
+    else
+    {
+        vmSeamlessAction->setEnabled (mIsSeamlessSupported && mIsGraphicsSupported);
+        vmFullscreenAction->setEnabled (true);
+    }
+
 #ifdef Q_WS_MAC
     if (!mIsSeamless)
     {
@@ -1078,33 +1062,6 @@ void VBoxConsoleWnd::onExitFullscreen()
         CGReleaseDisplayFadeReservation (mFadeToken);
     }
 #endif
-
-    vmSeamlessAction->setEnabled (mIsSeamlessSupported && mIsGraphicsSupported);
-    vmFullscreenAction->setEnabled (true);
-
-    console->setIgnoreMainwndResize (false);
-    console->normalizeGeometry (true /* adjustPosition */);
-}
-
-/**
- *  This slot is called if the guest changes resolution while in fullscreen
- *  mode.
- */
-void VBoxConsoleWnd::exitFullscreen()
-{
-    Assert (0); /* disabled for now */
-    if (mIsFullscreen && vmFullscreenAction->isEnabled())
-        vmFullscreenAction->toggle();
-}
-
-/**
- *  This slot is called if the guest changes resolution while in seamless
- *  mode.
- */
-void VBoxConsoleWnd::exitSeamless()
-{
-    if (mIsSeamless && vmSeamlessAction->isEnabled())
-        vmSeamlessAction->toggle();
 }
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
@@ -1157,12 +1114,22 @@ bool VBoxConsoleWnd::event (QEvent *e)
         {
             QResizeEvent *re = (QResizeEvent *) e;
 
-            if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
+            if (!mIsWaitingModeResize && !isMaximized() &&
+                !isTrueFullscreen() && !isTrueSeamless())
             {
                 normal_size = re->size();
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 dbgAdjustRelativePos();
 #endif
+            }
+
+            if (mIsWaitingModeResize)
+            {
+                if (!mIsFullscreen && !mIsSeamless)
+                {
+                    mIsWaitingModeResize = false;
+                    QTimer::singleShot (0, this, SLOT (onExitFullscreen()));
+                }
             }
             break;
         }
@@ -1974,8 +1941,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
-    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-    /* Check if the Guest Video RAM enough for the fullscreen/seamless mode. */
+    QSize initialSize = size();
     if (aSeamless || console->isAutoresizeGuestActive())
     {
         QRect screen = aSeamless ?
@@ -2072,16 +2038,21 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     bool wasHidden = isHidden();
 
+    /* Temporarily disable the mode-related action to make sure
+     * user can not leave the mode before he enter it and inside out. */
+    aSeamless ? vmSeamlessAction->setEnabled (false) :
+                vmFullscreenAction->setEnabled (false);
+
+    /* Calculate initial console size */
+    QSize consoleSize;
+
     if (aOn)
     {
-        /* Temporarily disable the mode-related action to make sure
-         * user can not leave the mode before he enter it. */
-        aSeamless ? vmSeamlessAction->setEnabled (false) :
-                    vmFullscreenAction->setEnabled (false);
+        consoleSize = console->frameSize();
+        consoleSize -= QSize (console->frameWidth() * 2, console->frameWidth() * 2);
+
         /* Toggle console to manual resize mode. */
         console->setIgnoreMainwndResize (true);
-        connect (console, SIGNAL (resizeHintDone()),
-                 this, SLOT (onEnterFullscreen()));
 
         /* Memorize the maximized state. */
         QDesktopWidget *dtw = QApplication::desktop();
@@ -2103,7 +2074,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /* It isn't guaranteed that the guest os set the video mode that
          * we requested. So after all the resizing stuff set the clipping
          * mask and the spacing shifter to the corresponding values. */
-        setViewInSeamlessMode (dtw->availableGeometry (this));
+        if (aSeamless)
+            setViewInSeamlessMode (scrGeo);
 
 #ifdef Q_WS_WIN32
         mPrevRegion = dtw->screenGeometry (this);
@@ -2144,8 +2116,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setVScrollBarMode (QScrollView::AlwaysOff);
         console->setHScrollBarMode (QScrollView::AlwaysOff);
 
-        /* Going fullscreen */
-        setWindowState (windowState() ^ WindowFullScreen);
 #ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
 //        QRect maskRect = dtw->screenGeometry (this);
 //        maskRect.setRight (maskRect.right() + 1);
@@ -2179,20 +2149,10 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #else
 //        setMask (dtw->screenGeometry (this));
 #endif
-
-        qApp->processEvents();
-        console->toggleFSMode();
     }
     else
     {
-        /* Temporarily disable the mode-related action to make sure
-         * user can not enter the mode before he leave it. */
-        aSeamless ? vmSeamlessAction->setEnabled (false) :
-                    vmFullscreenAction->setEnabled (false);
-        /* Toggle console to manual resize mode. */
-        connect (console, SIGNAL (resizeHintDone()), this, SLOT (onExitFullscreen()));
-
-        /* Reset the shifting spacer. */
+        /* Reset the shifting spacers. */
         mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
         mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
         mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -2235,13 +2195,25 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
              obj = hidden_children.next())
             ((QWidget *) obj)->show();
         hidden_children.clear();
-
-        /* Going normal || maximized */
-        setWindowState (windowState() ^ WindowFullScreen);
-
-        qApp->processEvents();
-        console->toggleFSMode();
     }
+
+    /* Process all console attributes changes and sub-widget hidings */
+    qApp->processEvents();
+
+    /* Send guest size hint */
+    console->toggleFSMode (consoleSize);
+
+    /* Waiting for host resize if it awaited during mode entering/exiting */
+    if ((mIsFullscreen || mIsSeamless) && (consoleSize != initialSize))
+        mIsWaitingModeResize = true;
+
+    if (!mIsWaitingModeResize)
+        onExitFullscreen();
+
+    setWindowState (windowState() ^ WindowFullScreen);
+
+    /* Unlock FS actions locked during modes toggling */
+    QTimer::singleShot (300, this, SLOT (unlockActionsSwitch()));
 
 #ifdef Q_WS_MAC /* wasHidden is wrong on the mac it seems. */
     /** @todo figure out what is really wrong here... */
@@ -2275,34 +2247,29 @@ CGImageRef VBoxConsoleWnd::dockImageState() const
 /////////////////////////////////////////////////////////////////////////////
 void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
 {
-	LogFlowThisFunc(("mIsSeamless=%s\n", mIsSeamless ? "true" : "false"));
-    if (mIsSeamless)
-    {
-        /* It isn't guaranteed that the guest os set the video mode that
-         * we requested. So after all the resizing stuff set the clipping
-         * mask and the spacing shifter to the corresponding values. */
-        QDesktopWidget *dtw = QApplication::desktop();
-        QRect sRect = dtw->screenGeometry (this);
-        QRect aRect (aTargetRect);
-        mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), QSize::ScaleFree);
+    /* It isn't guaranteed that the guest os set the video mode that
+     * we requested. So after all the resizing stuff set the clipping
+     * mask and the spacing shifter to the corresponding values. */
+    QDesktopWidget *dtw = QApplication::desktop();
+    QRect sRect = dtw->screenGeometry (this);
+    QRect aRect (aTargetRect);
+    mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), QSize::ScaleFree);
 #ifdef Q_WS_MAC
-        /* On mac os x this isn't necessary cause the screen starts
-         * by y=0 always regardless if there is the global menubar or not. */
-        aRect.setRect (aRect.left(), 0, aRect.width(), aRect.height() + aRect.top());
+    /* On mac os x this isn't necessary cause the screen starts
+     * by y=0 always regardless if there is the global menubar or not. */
+    aRect.setRect (aRect.left(), 0, aRect.width(), aRect.height() + aRect.top());
 #endif // Q_WS_MAC
-        /* Set the clipping mask */
-        mStrictedRegion = aRect;
-        /* Set the shifting spacer */
-        mShiftingSpacerLeft->changeSize (RT_ABS (sRect.left() - aRect.left()), 0,
-                                         QSizePolicy::Fixed, QSizePolicy::Preferred);
-        mShiftingSpacerTop->changeSize (0, RT_ABS (sRect.top() - aRect.top()),
-                                        QSizePolicy::Preferred, QSizePolicy::Fixed);
-        mShiftingSpacerRight->changeSize (RT_ABS (sRect.right() - aRect.right()), 0,
-                                          QSizePolicy::Fixed, QSizePolicy::Preferred);
-        mShiftingSpacerBottom->changeSize (0, RT_ABS (sRect.bottom() - aRect.bottom()),
-                                           QSizePolicy::Preferred, QSizePolicy::Fixed);
-    }
-    LogFlowFuncLeave();
+    /* Set the clipping mask */
+    mStrictedRegion = aRect;
+    /* Set the shifting spacer */
+    mShiftingSpacerLeft->changeSize (RT_ABS (sRect.left() - aRect.left()), 0,
+                                     QSizePolicy::Fixed, QSizePolicy::Preferred);
+    mShiftingSpacerTop->changeSize (0, RT_ABS (sRect.top() - aRect.top()),
+                                    QSizePolicy::Preferred, QSizePolicy::Fixed);
+    mShiftingSpacerRight->changeSize (RT_ABS (sRect.right() - aRect.right()), 0,
+                                      QSizePolicy::Fixed, QSizePolicy::Preferred);
+    mShiftingSpacerBottom->changeSize (0, RT_ABS (sRect.bottom() - aRect.bottom()),
+                                       QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)
