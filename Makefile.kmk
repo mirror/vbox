@@ -550,7 +550,7 @@ additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
 else
-	rsync -av --delete --delete-excluded --exclude .svn/ . 192.168.27.5:/cygdrive/c/vbox
+	rsync -av --delete --delete-excluded --exclude .svn/ --exclude out/ . 192.168.27.5:/cygdrive/c/vbox
 	ssh vbox@192.168.27.5 " cd /cygdrive/c/vbox && PATH_OUT_BASE=Z:/add/out tools/env.sh kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
 #	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\add && set PATH_DEVTOOLS=c:\\vbox\\tools && c:\\vbox\\tools\\env.cmd -KBUILD c:\\vbox\\kBuild && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
 endif
