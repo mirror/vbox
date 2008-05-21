@@ -1560,11 +1560,11 @@ void VBoxConsoleWnd::languageChange()
     /* Debug actions */
 
     if (dbgStatisticsAction)
-        dbgStatisticsAction->setMenuText (tr ("&Statistics..."));
+        dbgStatisticsAction->setMenuText (tr ("&Statistics...", "debug action"));
     if (dbgCommandLineAction)
-        dbgCommandLineAction->setMenuText (tr ("&Command line..."));
+        dbgCommandLineAction->setMenuText (tr ("&Command Line...", "debug action"));
     if (dbgLoggingAction)
-        dbgLoggingAction->setMenuText (tr ("&Logging..."));
+        dbgLoggingAction->setMenuText (tr ("&Logging...", "debug action"));
 #endif
 
     /* Help actions */
