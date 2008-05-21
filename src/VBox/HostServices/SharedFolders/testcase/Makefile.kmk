@@ -49,6 +49,9 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  endif
 endif
 
+TESTING += \
+    $(PATH_TARGET)/tstShflSizes.run
+
 OTHER_CLEAN += \
 	$(PATH_TARGET)/tstShflSizes.run
 
