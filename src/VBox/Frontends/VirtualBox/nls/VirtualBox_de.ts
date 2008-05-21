@@ -2193,7 +2193,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Aktiviert &amp;VT-x/AMD-V</translation>
+        <translation>&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
