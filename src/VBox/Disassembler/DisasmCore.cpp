@@ -111,7 +111,8 @@ PFNDISPARSE  pfnFullDisasm[IDX_ParseMax] =
     ParseXb,
     ParseEscFP,
     ParseNopPause,
-    ParseImmByteSX
+    ParseImmByteSX,
+    ParseImmZ
 };
 
 PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
@@ -152,7 +153,8 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
     ParseXb,
     ParseEscFP,
     ParseNopPause,
-    ParseImmByteSX_SizeOnly
+    ParseImmByteSX_SizeOnly,
+    ParseImmZ_SizeOnly
 };
 
 /**
@@ -1226,6 +1228,15 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
         return sizeof(uint32_t);
     }
     else
+    if (pCpu->opmode == CPUMODE_64BIT)
+    {
+        pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE64;
+
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
+        return sizeof(uint64_t);
+    }
+    else
     {
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16;
@@ -1240,8 +1251,44 @@ unsigned ParseImmV_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER
 {
     if (pCpu->opmode == CPUMODE_32BIT)
         return sizeof(uint32_t);
+    else
+    if (pCpu->opmode == CPUMODE_64BIT)
+        return sizeof(uint64_t);
+
     return sizeof(uint16_t);
 }
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
+    if (pCpu->opmode == CPUMODE_16BIT)
+    {
+        pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE16;
+
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint32_t)pParam->parval);
+        return sizeof(uint16_t);
+    }
+    else
+    {
+        pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE32;
+
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
+        return sizeof(uint32_t);
+    }
+}
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseImmZ_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
+    if (pCpu->opmode == CPUMODE_16BIT)
+        return sizeof(uint16_t);
+    return sizeof(uint32_t);
+}
+
 //*****************************************************************************
 // Relative displacement for branches (rel. to next instruction)
 //*****************************************************************************
@@ -1274,6 +1321,15 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
         return sizeof(int32_t);
     }
     else
+    if (pCpu->opmode == CPUMODE_64BIT)
+    {
+        pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE64_REL;
+
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%VX64h)", pParam->parval);
+        return sizeof(int64_t);
+    }
+    else
     {
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16_REL;
@@ -1289,6 +1345,9 @@ unsigned ParseImmVRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
 {
     if (pCpu->opmode == CPUMODE_32BIT)
         return sizeof(int32_t);
+    else
+    if (pCpu->opmode == CPUMODE_64BIT)
+        return sizeof(int64_t);
     return sizeof(uint16_t);
 }
 //*****************************************************************************
