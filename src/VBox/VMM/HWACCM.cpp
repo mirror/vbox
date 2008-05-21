@@ -47,6 +47,8 @@
 #include <iprt/thread.h>
 
 
+#define VBOX_WITH_NESTED_PAGING
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -418,10 +420,10 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
-                hwaccmr3DisableRawMode(pVM);
-
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.vmx.fEnabled = true;
+                hwaccmr3DisableRawMode(pVM);
+
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
                 LogRel(("HWACCM: VMX enabled!\n"));
             }
@@ -499,11 +501,11 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
-                hwaccmr3DisableRawMode(pVM);
-                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.svm.fEnabled = true;
+
+                hwaccmr3DisableRawMode(pVM);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
             }
             else
             {
