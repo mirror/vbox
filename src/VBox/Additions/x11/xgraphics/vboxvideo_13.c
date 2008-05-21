@@ -749,7 +749,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
 
     /* Set up our single virtual output. */
-    output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "Virtual Output");
+    output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "VBOX1");
 
     /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
     {
