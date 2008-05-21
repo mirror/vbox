@@ -214,7 +214,6 @@ typedef struct PGMHVUSTATE
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
-#endif
 
 /*
  * Shadow - Nested paging mode
@@ -271,7 +270,6 @@ typedef struct PGMHVUSTATE
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
 
-#ifndef IN_GC /* AMD64 implies VT-x/AMD-V */
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
