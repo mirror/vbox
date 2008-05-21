@@ -256,7 +256,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
     if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
-    else    
+    else
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0);
 
     /*
@@ -1036,7 +1036,7 @@ ResumeExecution:
     SVM_READ_SELREG(GS, gs);
 
     /* Note: no reason to sync back the CRx and DRx registers. They can't be changed by the guest. */
-    /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */ 
+    /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */
     if (pVM->hwaccm.s.fNestedPaging)
     {
         CPUMSetGuestCR3(pVM, pVMCB->guest.u64CR3);
@@ -1055,6 +1055,11 @@ ResumeExecution:
         VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
 
     Log2(("exitCode = %x\n", exitCode));
+
+    /* Sync back the debug registers. */
+    /** @todo Implement debug registers correctly. */
+    pCtx->dr6 = pVMCB->guest.u64DR6;
+    pCtx->dr7 = pVMCB->guest.u64DR7;
 
     /* Check if an injected event was interrupted prematurely. */
     pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
@@ -1431,7 +1436,7 @@ ResumeExecution:
             AssertRC(rc);
 
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
-            
+
             /** @note Force a TLB flush. SVM requires us to do it manually. */
             pVM->hwaccm.s.svm.fForceTLBFlush = true;
         }
