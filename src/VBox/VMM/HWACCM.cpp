@@ -101,6 +101,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     pVM->hwaccm.s.svm.fEnabled   = false;
 
     pVM->hwaccm.s.fActive        = false;
+    pVM->hwaccm.s.fNestedPaging  = false;
 
     /* On first entry we'll sync everything. */
     pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
