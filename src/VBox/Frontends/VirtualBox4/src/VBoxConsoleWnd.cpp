@@ -1468,7 +1468,7 @@ void VBoxConsoleWnd::changeEvent (QEvent *aEvent)
             aEvent->accept();
             break;
         }
-        default: 
+        default:
             break;
     }
 }
@@ -1582,9 +1582,9 @@ void VBoxConsoleWnd::retranslateUi()
     /* Debug actions */
 
     if (dbgStatisticsAction)
-        dbgStatisticsAction->setText (tr ("&Statistics..."));
+        dbgStatisticsAction->setText (tr ("&Statistics...", "debug action"));
     if (dbgCommandLineAction)
-        dbgCommandLineAction->setText (tr ("&Command line..."));
+        dbgCommandLineAction->setText (tr ("&Command Line...", "debug action"));
 #endif
 
     /* Help actions */
@@ -1616,7 +1616,7 @@ void VBoxConsoleWnd::retranslateUi()
 
     /* main menu & seamless popup menu */
 
-    mVMMenu->setTitle (tr ("&Machine")); 
+    mVMMenu->setTitle (tr ("&Machine"));
 //    mVMMenu->setIcon (VBoxGlobal::iconSet (":/machine_16px.png"));
 
     mDevicesMenu->setTitle (tr ("&Devices"));
@@ -2237,7 +2237,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             OSStatus status;
             WindowRef windowRef = ::darwinToWindowRef (this);
             Assert (VALID_PTR (windowRef));
-            /* See above. 
+            /* See above.
             status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
             AssertCarbonOSStatus (status);
             */
@@ -3324,7 +3324,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
         /* Disable auto-resizing if advanced graphics are not available */
         console->setAutoresizeGuest (   mIsGraphicsSupported
                                      && vmAutoresizeGuestAction->isChecked());
-        vmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);        
+        vmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);
     }
 
     /* Check the GA version only in case of additions are active */
