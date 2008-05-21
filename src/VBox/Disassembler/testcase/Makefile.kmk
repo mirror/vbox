@@ -33,11 +33,11 @@ tstDisasm-2_LIBS        = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
 
-# Tests that
+# Tests that will be build, disassembled and re-build from disassembly.
 VBOX_DISAS_TESTS_BUILD = \
 	tstAsmLock-1.asm \
 
-# Tests that makes use of --all-invalid.
+# Tests that only contains invalid/undefined instructions.
 VBOX_DISAS_TESTS_INVALID = \
 	tstAsmLock-2.asm \
 	tstAsmLock-3.asm
@@ -119,6 +119,7 @@ $(VBOX_DISAS_TESTS_BUILD:.asm=-64.tst) ): $$(subst .tst,-disas.bin,$$@) | $$(cal
 	@$(RM) -f $@
 	$(CMP) $(@:.tst=.bin) $<
 	@$(APPEND) $@ "done"
+	@$(ECHO) "PASSED:  $(<F) [re-assembled]"
 
 
 
@@ -126,22 +127,25 @@ $(VBOX_DISAS_TESTS_BUILD:.asm=-64.tst) ): $$(subst .tst,-disas.bin,$$@) | $$(cal
 VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_INVALID:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-16.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
-	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=16 $<
+	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=16 $<
 	@$(APPEND) $@ "done"
+	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-32.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
-	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=32 $<
+	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=32 $<
 	@$(APPEND) $@ "done"
+	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
-	@$(ECHO) "Verifying all-invalid: $(@F)"
+	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --all-invalid --cpumode=64 $<
+	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=64 $<
 	@$(APPEND) $@ "done"
+	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
 # Add the .tst to the clean up.
 VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS))
