@@ -101,6 +101,7 @@ VMMR3_SOURCES   = \
 	HWACCM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/DBGFAll.cpp \
+	VMMAll/HWACCMAll.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/MMAll.cpp \
@@ -389,6 +390,7 @@ VMMR0_SOURCES   = \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
+	VMMAll/HWACCMAll.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/MMAll.cpp \

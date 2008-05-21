@@ -685,6 +685,19 @@ DECLASM(int) SVMVMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
  */
 DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
+#ifdef IN_RING0
+
+/**
+ * Invalidates a guest page
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
+
+#endif /* IN_RING0 */
+
 /** @} */
 
 #endif
