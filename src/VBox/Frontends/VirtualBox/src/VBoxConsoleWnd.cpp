@@ -2197,20 +2197,21 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         hidden_children.clear();
     }
 
+    /* Set flag for waiting host resize if it awaited during mode entering */
+    if ((mIsFullscreen || mIsSeamless) && (consoleSize != initialSize))
+        mIsWaitingModeResize = true;
+
+    /* Toggle qt full-screen mode */
+    setWindowState (windowState() ^ WindowFullScreen);
+
     /* Process all console attributes changes and sub-widget hidings */
     qApp->processEvents();
 
     /* Send guest size hint */
     console->toggleFSMode (consoleSize);
 
-    /* Waiting for host resize if it awaited during mode entering/exiting */
-    if ((mIsFullscreen || mIsSeamless) && (consoleSize != initialSize))
-        mIsWaitingModeResize = true;
-
     if (!mIsWaitingModeResize)
         onExitFullscreen();
-
-    setWindowState (windowState() ^ WindowFullScreen);
 
     /* Unlock FS actions locked during modes toggling */
     QTimer::singleShot (300, this, SLOT (unlockActionsSwitch()));
