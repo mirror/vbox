@@ -157,6 +157,7 @@ typedef struct _VBOXRec
     size_t pointerHeaderSize;
     size_t pointerSize;
     Bool pointerOffscreen;
+    Bool usingHWCursor;
     Bool useDevice;
     /** Are we currently switched to a virtual terminal?  If so, it is not
      * safe to touch the hardware. */

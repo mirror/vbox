@@ -436,10 +436,25 @@ vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
 static void
 vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
-    /* VBOXPtr pVBox = pScrn->driverPrivate; */
+    VBOXPtr pVBox = pScrn->driverPrivate;
+    int vrc;
+    uint32_t fFeatures;
 
-    /* TRACE_ENTRY(); */
-
+    TRACE_ENTRY();
+    /* Check whether we are using the hardware cursor or not, and whether this
+       has changed since the last time we checked. */
+    vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+    if (!!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE) != pVBox->usingHWCursor)
+    {
+        pVBox->usingHWCursor = !!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE);
+        /* This triggers a cursor image reload */
+        if (pVBox->accessEnabled)
+        {
+            pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
+            pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
+        }
+    }
+    
     /* don't disable the mouse cursor if we go out of our visible area
      * since the mouse cursor is drawn by the host anyway */
 #if 0
@@ -752,6 +767,9 @@ vbox_cursor_init(ScreenPtr pScreen)
 
     if (!pVBox->useDevice)
         return FALSE;
+    /* Initially assume we are using a hardware cursor, but this is
+       updated every time the mouse moves anyway. */
+    pVBox->usingHWCursor = TRUE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs)
         RETERROR(pScrn->scrnIndex, FALSE,
