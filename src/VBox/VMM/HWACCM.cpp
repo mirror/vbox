@@ -214,6 +214,12 @@ static void hwaccmr3DisableRawMode(PVM pVM)
 
     /* Disable the switcher */
     VMMR3DisableSwitcher(pVM);
+
+    if (pVM->hwaccm.s.fNestedPaging)
+    {
+        /* Reinit the paging mode to force the new shadow mode. */
+        PGMR3ChangeMode(pVM, PGMMODE_REAL);
+    }
 }
 
 /**

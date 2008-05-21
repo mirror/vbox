@@ -307,6 +307,7 @@ typedef enum PGMROMPROT
 
 
 PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM);
+PGMDECL(uint32_t) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode);
 PGMDECL(uint32_t) PGMGetHyper32BitCR3(PVM pVM);
 PGMDECL(uint32_t) PGMGetHyperPaeCR3(PVM pVM);
 PGMDECL(uint32_t) PGMGetHyperAmd64CR3(PVM pVM);
@@ -471,6 +472,8 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM);
 PGMR3DECL(int)  PGMR3Term(PVM pVM);
 PDMR3DECL(int)  PGMR3LockCall(PVM pVM);
 PGMR3DECL(int)  PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
+PGMR3DECL(int)  PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
+
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 PGMR3DECL(int)  PGM3PhysGrowRange(PVM pVM, PCRTGCPHYS GCPhys);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
