@@ -728,7 +728,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
-    Assert(!pVM->hwaccm.s.fNestedPaging);
     AssertReturn(pCpu->fSVMConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
