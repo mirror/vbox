@@ -113,11 +113,12 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
-#else
+
+#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
     /*
      * Get the PDE.
      */
-#if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
     bool      fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
     X86PDEPAE Pde;
 
@@ -151,16 +152,16 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     Pde.n.u1User      &= Pml4e.n.u1User & Pdpe.lm.u1User;
     Pde.n.u1NoExecute &= Pml4e.n.u1NoExecute & Pdpe.lm.u1NoExecute;
 
-#elif PGM_SHW_TYPE == PGM_TYPE_PAE
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
     bool           fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
     const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
     X86PDEPAE      Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
 
-#else /* PGM_TYPE_32BIT */
+# else /* PGM_TYPE_32BIT */
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
     X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
-#endif
+# endif
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -178,19 +179,19 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     }
     else /* mapping: */
     {
-#if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
         AssertFailed(); /* can't happen */
-#else
+# else
         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
 
         PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
         AssertMsgReturn(pMap, ("GCPtr=%VGv\n", GCPtr), VERR_INTERNAL_ERROR);
-# if PGM_SHW_TYPE == PGM_TYPE_32BIT
+#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTXALLSUFF(pPT);
-# else /* PAE */
+#  else /* PAE */
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTXALLSUFF(paPaePTs);
+#  endif
 # endif
-#endif 
     }
     const unsigned iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
     SHWPTE Pte = pPT->a[iPt];
@@ -217,7 +218,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
         *pHCPhys = Pte.u & SHW_PTE_PG_MASK;
 
     return VINF_SUCCESS;
-#endif /* PGM_SHW_TYPE == PGM_TYPE_NESTED */
+#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 
 
@@ -237,9 +238,10 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
  */
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
-#else
+
+# else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
     int rc;
 
     /*
@@ -250,7 +252,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         /*
          * Get the PDE.
          */
-#if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
         X86PDEPAE Pde;
         /* PML4 */
         const unsigned iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -276,15 +278,15 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
         Pde = pPd->a[iPd];
 
-#elif PGM_SHW_TYPE == PGM_TYPE_PAE
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
         const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
         const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
         X86PDEPAE Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
 
-#else /* PGM_TYPE_32BIT */
+# else /* PGM_TYPE_32BIT */
         const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
         X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
-#endif
+# endif
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -314,6 +316,6 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             iPTE++;
         }
     }
-#endif /* PGM_SHW_TYPE == PGM_TYPE_NESTED */
+# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 
