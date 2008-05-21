@@ -1046,7 +1046,11 @@ extern "C" int main(void)
 }
 EOF
   if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
-    test_execute nofatal
+    if ! test_execute nofatal; then
+      cnf_append "VBOX_WITH_SECURELABEL" ""
+    fi
+  else
+    cnf_append "VBOX_WITH_SECURELABEL" ""
   fi
 }
 
