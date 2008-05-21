@@ -44,6 +44,8 @@
  %endmacro
 %endif
 
+;; This is too risky wrt. stability, performance and correctness.
+;%define VBOX_WITH_DR6_EXPERIMENT 1
 
 ;; @def MYPUSHAD
 ; Macro generating an equivalent to pushad
@@ -227,6 +229,12 @@ BEGINPROC VMXStartVM
     sub     xSP, xS*2
     sidt    [xSP]
 
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
     ; Restore CR2
     mov     ebx, [xSI + CPUMCTX.cr2]
     mov     cr2, xBX
@@ -273,6 +281,12 @@ ALIGNCODE(16)
     mov     dword [ss:xDI + CPUMCTX.edi], eax
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
+%endif
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [ss:xDI + CPUMCTX.dr6], xAX
 %endif
 
     pop     xAX         ; saved LDTR
@@ -406,6 +420,12 @@ BEGINPROC VMXResumeVM
     sub     xSP, xS*2
     sidt    [xSP]
 
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
     ; Restore CR2
     mov     xBX, [xSI + CPUMCTX.cr2]
     mov     cr2, xBX
@@ -452,6 +472,12 @@ ALIGNCODE(16)
     mov     dword [ss:xDI + CPUMCTX.edi], eax
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
+%endif
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [ss:xDI + CPUMCTX.dr6], xAX
 %endif
 
     pop     xAX          ; saved LDTR
