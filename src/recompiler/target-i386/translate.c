@@ -3237,7 +3237,6 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
         XOR */
 static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int b)
 {
-#if 1 /** @todo test this properly! */
     target_ulong pc = s->pc;
     int modrm, mod, op;
 
@@ -3350,9 +3349,6 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
        is sufficient for the TB, I think. */
     Log(("illegal lock sequence %VGv (b=%#x)\n", pc_start, b));
     return true;
-#else
-    return false;
-#endif
 }
 #endif /* VBOX */
 
