@@ -156,14 +156,20 @@ OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 .NOTPARALLEL: $(VBOX_DISAS_TEST_CLEAN)
 
 
+#
+# Add the tests to the target list for the testing pass.
+# (kBuild r1646)
+#
+TESTING += $(addprefix $(VBOX_DISAS_TEST_PATH)/,$(VBOX_DISAS_TESTS))
+
+# Aliases for use till kBuild gets updated.
+.PHONY: check test
+check test: $(TESTING)
+
 
 #
 # The test aliases
 #
-
-# the standard ones for running all.
-.PHONY: check test
-check test: $(addprefix $(VBOX_DISAS_TEST_PATH)/,$(VBOX_DISAS_TESTS))
 
 # individual test and per source file (for the editor).
 $(VBOX_DISAS_TESTS:.tst=.o):: $(VBOX_DISAS_TEST_PATH)/$$(patsubst %.o,%.tst,$$@)
