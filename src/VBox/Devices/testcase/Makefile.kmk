@@ -34,6 +34,11 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  endif
 endif
 
+# The normal testing pass.
+TESTING += \
+	$(PATH_TARGET)/tstDeviceStructSize.run
+
+
 #
 # Globals
 #
