@@ -1132,6 +1132,7 @@ unsigned ParseImmByte(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 {
     pParam->parval = DISReadByte(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE8;
+    pParam->size   = sizeof(uint8_t);
 
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%02Xh", (uint32_t)pParam->parval);
     return sizeof(uint8_t);
@@ -1150,12 +1151,14 @@ unsigned ParseImmByteSX(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
     {
         pParam->parval = (uint32_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_SX8;
+        pParam->size   = sizeof(uint32_t);
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
     }
     else
     {
         pParam->parval = (uint16_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16_SX8;
+        pParam->size   = sizeof(uint16_t);
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint16_t)pParam->parval);
     }
     return sizeof(uint8_t);
@@ -1172,6 +1175,7 @@ unsigned ParseImmUshort(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
 {
     pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE16;
+    pParam->size   = sizeof(uint16_t);
 
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint16_t)pParam->parval);
     return sizeof(uint16_t);
@@ -1188,6 +1192,7 @@ unsigned ParseImmUlong(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
 {
     pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE32;
+    pParam->size   = sizeof(uint32_t);
 
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
     return sizeof(uint32_t);
@@ -1204,6 +1209,7 @@ unsigned ParseImmQword(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
 {
     pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE64;
+    pParam->size   = sizeof(uint64_t);
 
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08X", (uint32_t)pParam->parval);
     disasmAddStringF(&pParam->szParam[9], sizeof(pParam->szParam)-9, "%08Xh", (uint32_t)(pParam->parval >> 32));
@@ -1223,6 +1229,7 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32;
+        pParam->size   = sizeof(uint32_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
         return sizeof(uint32_t);
@@ -1232,6 +1239,7 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE64;
+        pParam->size   = sizeof(uint64_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
         return sizeof(uint64_t);
@@ -1240,6 +1248,7 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16;
+        pParam->size   = sizeof(uint16_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint32_t)pParam->parval);
         return sizeof(uint16_t);
@@ -1266,6 +1275,7 @@ unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16;
+        pParam->size   = sizeof(uint16_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint32_t)pParam->parval);
         return sizeof(uint16_t);
@@ -1274,6 +1284,7 @@ unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32;
+        pParam->size   = sizeof(uint32_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
         return sizeof(uint32_t);
@@ -1296,6 +1307,7 @@ unsigned ParseImmBRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 {
     pParam->parval = DISReadByte(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE8_REL;
+    pParam->size   = sizeof(uint8_t);
 
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%02Xh)", (uint32_t)pParam->parval);
     return sizeof(char);
@@ -1316,6 +1328,7 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     {
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_REL;
+        pParam->size   = sizeof(int32_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%08Xh)", (uint32_t)pParam->parval);
         return sizeof(int32_t);
@@ -1325,6 +1338,7 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     {
         pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE64_REL;
+        pParam->size   = sizeof(int64_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%VX64h)", pParam->parval);
         return sizeof(int64_t);
@@ -1333,6 +1347,7 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     {
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16_REL;
+        pParam->size   = sizeof(int16_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%04Xh)", (uint32_t)pParam->parval);
         return sizeof(uint16_t);
@@ -1362,6 +1377,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
             pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, lpszCodeBlock+sizeof(uint32_t));
             pParam->flags  |= USE_IMMEDIATE_ADDR_16_32;
+            pParam->size   = sizeof(uint16_t) + sizeof(uint32_t);
 
             disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04X:0%08Xh", (uint32_t)(pParam->parval>>32), (uint32_t)pParam->parval);
             return sizeof(uint32_t) + sizeof(uint16_t);
@@ -1374,6 +1390,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
              */
             pParam->disp32 = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT32;
+            pParam->size   = sizeof(uint32_t);
 
             disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%08Xh]", pParam->disp32);
             return sizeof(uint32_t);
@@ -1390,6 +1407,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
          */
         pParam->disp64 = DISReadQWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_DISPLACEMENT64;
+        pParam->size   = sizeof(uint64_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%08X%08Xh]", (uint32_t)(pParam->disp64 >> 32), (uint32_t)pParam->disp64);
         return sizeof(uint64_t);
@@ -1400,6 +1418,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
         {// far 16:16 pointer
             pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE_ADDR_16_16;
+            pParam->size   = 2*sizeof(uint16_t);
 
             disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04X:0%04Xh", (uint32_t)(pParam->parval>>16), (uint16_t)pParam->parval );
             return sizeof(uint32_t);
@@ -1412,6 +1431,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
              */
             pParam->disp16 = DISReadWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT16;
+            pParam->size   = sizeof(uint16_t);
 
             disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%04Xh]", (uint32_t)pParam->disp16);
             return sizeof(uint16_t);
