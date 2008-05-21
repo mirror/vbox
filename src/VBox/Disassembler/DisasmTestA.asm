@@ -33,6 +33,7 @@ BEGINCODE
 
 align 16
 BEGINPROC   TestProc
+      mov   word [edi], 0123ah
       movzx eax,byte  [edx]
       movzx eax,word  [edx]
 ;      mov dword es:[ebx + 1234h], 0789h
