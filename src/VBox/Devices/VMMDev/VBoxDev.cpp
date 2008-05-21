@@ -858,18 +858,19 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VMMDevDisplayChangeRequest *displayChangeRequest = (VMMDevDisplayChangeRequest*)pRequestHeader;
-                /* just pass on the information */
-                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
-                     pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp));
-                displayChangeRequest->xres = pData->displayChangeRequest.xres;
-                displayChangeRequest->yres = pData->displayChangeRequest.yres;
-                displayChangeRequest->bpp  = pData->displayChangeRequest.bpp;
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client has queried. */
+                    /* Remember which resolution the client has queried, subsequent reads will return the same values. */
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
+
+                /* just pass on the information */
+                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
+                     pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp));
+                displayChangeRequest->xres = pData->lastReadDisplayChangeRequest.xres;
+                displayChangeRequest->yres = pData->lastReadDisplayChangeRequest.yres;
+                displayChangeRequest->bpp  = pData->lastReadDisplayChangeRequest.bpp;
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
@@ -885,19 +886,20 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VMMDevDisplayChangeRequest2 *displayChangeRequest = (VMMDevDisplayChangeRequest2*)pRequestHeader;
-                /* just pass on the information */
-                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
-                     pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp, pData->displayChangeRequest.display));
-                displayChangeRequest->xres    = pData->displayChangeRequest.xres;
-                displayChangeRequest->yres    = pData->displayChangeRequest.yres;
-                displayChangeRequest->bpp     = pData->displayChangeRequest.bpp;
-                displayChangeRequest->display = pData->displayChangeRequest.display;
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client has queried. */
+                    /* Remember which resolution the client has queried, subsequent reads will return the same values. */
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
+
+                /* just pass on the information */
+                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
+                     pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp, pData->displayChangeRequest.display));
+                displayChangeRequest->xres    = pData->lastReadDisplayChangeRequest.xres;
+                displayChangeRequest->yres    = pData->lastReadDisplayChangeRequest.yres;
+                displayChangeRequest->bpp     = pData->lastReadDisplayChangeRequest.bpp;
+                displayChangeRequest->display = pData->lastReadDisplayChangeRequest.display;
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
