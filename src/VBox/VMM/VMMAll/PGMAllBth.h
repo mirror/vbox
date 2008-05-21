@@ -2522,7 +2522,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
  */
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 {
-    Assert(!HWACCMIsNestedPagingActive(pVM));
 #if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) \
     && PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED
     /*
@@ -2578,7 +2577,8 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         }
     }
     return rc;
-
+#elif PGM_SHW_TYPE == PGM_TYPE_NESTED
+    return VINF_SUCCESS; /* ignore */
 #else /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
