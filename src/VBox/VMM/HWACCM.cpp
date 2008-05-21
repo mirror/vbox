@@ -490,15 +490,17 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
+#ifdef VBOX_WITH_NESTED_PAGING
+            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                pVM->hwaccm.s.fNestedPaging = true;
+#endif
+
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
                 hwaccmr3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-#if 0 /* not yet */
-                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-#endif
 
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.svm.fEnabled = true;
