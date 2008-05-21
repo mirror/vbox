@@ -3443,6 +3443,7 @@ void VBoxConsoleWnd::dbgShowCommandLine()
  */
 void VBoxConsoleWnd::dbgLoggingToggled (bool aState)
 {
+    NOREF(aState);
 #ifdef VBOX_WITH_DEBUGGER_GUI
     CConsole cconsole = csession.GetConsole();
     if (cconsole.isOk())
