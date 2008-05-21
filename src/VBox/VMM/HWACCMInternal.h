@@ -330,6 +330,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;
 
+    STAMCOUNTER             StatExitReasonNPF;
     R3PTRTYPE(PSTAMCOUNTER) pStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) pStatExitReasonR0;
 } HWACCM;
