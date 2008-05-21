@@ -308,9 +308,9 @@ const OPCODE g_aOneByteMapX86[256] =
     OP("retn",               0,                  0,                 0,          OP_RETN,        OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW | OPTYPE_FORCED_64_OP_SIZE),
     OP("les %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LES,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_INVALID_64),
     OP("lds %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LDS,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_RRM_DANGEROUS | OPTYPE_INVALID_64),
-    /* @todo these two are groups */
+    /* @todo these two are actually group11 */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,  0,          OP_MOV,         OP_PARM_Eb,      OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("mov %Ev,%Iv",        IDX_ParseModRM,     IDX_ParseImmV,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("mov %Ev,%Iz",        IDX_ParseModRM,     IDX_ParseImmZ,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iz,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("enter %Iw,%Ib",      IDX_ParseImmUshort, IDX_ParseImmByte,  0,          OP_ENTER,       OP_PARM_Iw,      OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("leave",              0,                  0,                 0,          OP_LEAVE,       OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
     OP("retf %Iw",           IDX_ParseImmUshort, 0,                 0,          OP_RETF,        OP_PARM_Iw,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
@@ -2294,7 +2294,7 @@ const OPCODE g_aMapX86_Group11[8*2] =
     INVALID_OPCODE,
     INVALID_OPCODE,
     /* 0F C7 */
-    OP("mov %Ev,%Iv",        IDX_ParseModRM,     IDX_ParseImmV,      0,          OP_MOV,     OP_PARM_Ev,         OP_PARM_Iz ,    OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("mov %Ev,%Iz",        IDX_ParseModRM,     IDX_ParseImmZ,      0,          OP_MOV,     OP_PARM_Ev,         OP_PARM_Iz ,    OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
