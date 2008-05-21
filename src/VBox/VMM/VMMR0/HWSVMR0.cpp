@@ -254,7 +254,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
     /* Note: CR8 reads will refer to V_TPR, so no need to catch them. */
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
-    if (!pVM->hwaccm.s.svm.fNestedPaging)
+    if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
     else    
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0);
@@ -262,7 +262,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /*
      * CR0/3/4 writes must be intercepted for obvious reasons.
      */
-    if (!pVM->hwaccm.s.svm.fNestedPaging)
+    if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
     else
         pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(8);
@@ -276,7 +276,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      */
 
     pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
-    if (pVM->hwaccm.s.svm.fNestedPaging)
+    if (pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(14);   /* no longer need to intercept #PF. */
 
     pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
@@ -297,7 +297,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                     | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */
                                     ;
     /* With nested paging we don't care about invlpg anymore. */
-    if (pVM->hwaccm.s.svm.fNestedPaging)
+    if (pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_INVLPG;
 
     pVMCB->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* required */
@@ -594,7 +594,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
         /* Note: WP is not relevant in nested paging mode as we catch accesses on the (host) physical level. */
         /* Note: In nested paging mode the guest is allowed to run with paging disabled; the guest physical to host physical translation will remain active. */
-        if (!pVM->hwaccm.s.svm.fNestedPaging)
+        if (!pVM->hwaccm.s.fNestedPaging)
         {
             val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
             val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
@@ -607,7 +607,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
         /* Save our shadow CR3 register. */
-        if (pVM->hwaccm.s.svm.fNestedPaging)
+        if (pVM->hwaccm.s.fNestedPaging)
         {
             pVMCB->ctrl.u64NestedPagingCR3  = PGMGetHyperCR3(pVM);
             pVMCB->guest.u64CR3             = pCtx->cr3;
@@ -619,7 +619,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
     {
         val = pCtx->cr4;
-        if (!pVM->hwaccm.s.svm.fNestedPaging)
+        if (!pVM->hwaccm.s.fNestedPaging)
         {
             switch(pVM->hwaccm.s.enmShadowMode)
             {
@@ -728,7 +728,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
-    Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+    Assert(!pVM->hwaccm.s.fNestedPaging);
     AssertReturn(pCpu->fSVMConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
@@ -813,7 +813,7 @@ ResumeExecution:
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
 
     /* Enable nested paging if necessary (disabled each time after #VMEXIT). */
-    pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.svm.fNestedPaging;
+    pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.fNestedPaging;
 
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     if (!pVM->hwaccm.s.svm.fResumeVM)
@@ -1038,7 +1038,7 @@ ResumeExecution:
 
     /* Note: no reason to sync back the CRx and DRx registers. They can't be changed by the guest. */
     /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */ 
-    if (pVM->hwaccm.s.svm.fNestedPaging)
+    if (pVM->hwaccm.s.fNestedPaging)
     {
         CPUMSetGuestCR3(pVM, pVMCB->guest.u64CR3);
         CPUMSetGuestCR4(pVM, pVMCB->guest.u64CR4);
@@ -1144,7 +1144,7 @@ ResumeExecution:
             uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
             RTGCUINTPTR uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
-            Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+            Assert(!pVM->hwaccm.s.fNestedPaging);
 
             Log2(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
             /* Exit qualification contains the linear address of the page fault. */
@@ -1282,7 +1282,7 @@ ResumeExecution:
         uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
         RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
-        Assert(pVM->hwaccm.s.svm.fNestedPaging);
+        Assert(pVM->hwaccm.s.fNestedPaging);
 
         Log2(("Page fault at %VGp cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
         /* Exit qualification contains the linear address of the page fault. */
@@ -1378,7 +1378,7 @@ ResumeExecution:
         Log2(("SVM: invlpg\n"));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvpg);
 
-        Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+        Assert(!pVM->hwaccm.s.fNestedPaging);
 
         /* Truly a pita. Why can't SVM give the same information as VMX? */
         rc = SVMR0InterpretInvpg(pVM, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
@@ -1409,11 +1409,11 @@ ResumeExecution:
         case 2:
             break;
         case 3:
-            Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+            Assert(!pVM->hwaccm.s.fNestedPaging);
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
             break;
         case 4:
-            Assert(!pVM->hwaccm.s.svm.fNestedPaging);
+            Assert(!pVM->hwaccm.s.fNestedPaging);
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
             break;
         default:

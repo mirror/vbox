@@ -214,6 +214,78 @@ typedef struct PGMHVUSTATE
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
+
+/*
+ * Shadow - Nested paging mode
+ */
+#define PGM_SHW_TYPE                PGM_TYPE_NESTED
+#define PGM_SHW_NAME(name)          PGM_SHW_NAME_NESTED(name)
+#include "PGMAllShw.h"
+
+/* Guest - real mode */
+#define PGM_GST_TYPE                PGM_TYPE_REAL
+#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_REAL(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - protected mode */
+#define PGM_GST_TYPE                PGM_TYPE_PROT
+#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PROT(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - 32-bit mode */
+#define PGM_GST_TYPE                PGM_TYPE_32BIT
+#define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_32BIT(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_32BIT_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - PAE mode */
+#define PGM_GST_TYPE                PGM_TYPE_PAE
+#define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PAE(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - AMD64 mode */
+#define PGM_GST_TYPE                PGM_TYPE_AMD64
+#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_AMD64(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+#undef PGM_SHW_TYPE
+#undef PGM_SHW_NAME
+
 #endif
 
 
@@ -432,25 +504,28 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
-    /*
-     * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
-     */
-    rc = PGMShwGetPage(pVM, (RTGCPTR)Addr, NULL, NULL);
-    if (    rc == VERR_PAGE_NOT_PRESENT
-        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
+    if (!HWACCMIsNestedPagingActive(pVM))
     {
         /*
-         * Page is not present in our page tables.
-         * Try to sync it!
-         */
-        Assert(X86_TRAP_PF_RW == X86_PTE_RW && X86_TRAP_PF_US == X86_PTE_US);
-        uint32_t uErr = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
-        rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVM)(pVM, Addr, fPageGst, uErr);
-        if (rc != VINF_SUCCESS)
-            return rc;
+        * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
+        */
+        rc = PGMShwGetPage(pVM, (RTGCPTR)Addr, NULL, NULL);
+        if (    rc == VERR_PAGE_NOT_PRESENT
+            ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
+        {
+            /*
+            * Page is not present in our page tables.
+            * Try to sync it!
+            */
+            Assert(X86_TRAP_PF_RW == X86_PTE_RW && X86_TRAP_PF_US == X86_PTE_US);
+            uint32_t uErr = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
+            rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVM)(pVM, Addr, fPageGst, uErr);
+            if (rc != VINF_SUCCESS)
+                return rc;
+        }
+        else
+            AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Vrc\n", Addr, rc));
     }
-    else
-        AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Vrc\n", Addr, rc));
 
 #if 0 /* def VBOX_STRICT; triggers too often now */
     /*
@@ -665,6 +740,8 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppP
     PX86PML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
     int            rc;
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
 
     pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
     if (    !pPml4e->n.u1Present
@@ -1350,6 +1427,7 @@ PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4)
     unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCUINTPTR)0);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
     return cErrors;
+    return 0;
 }
 
 #endif /* VBOX_STRICT */

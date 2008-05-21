@@ -138,6 +138,9 @@ typedef struct HWACCM
     /** Set when hardware acceleration is allowed. */
     bool                        fAllowed;
 
+    /** Set if nested paging is enabled. */
+    bool                        fNestedPaging;
+
     /** HWACCM_CHANGED_* flags. */
     uint32_t                    fContextUseFlags;
 
@@ -213,8 +216,6 @@ typedef struct HWACCM
         bool                        fAlwaysFlushTLB;
         /** Set if we need to flush the TLB during the world switch. */
         bool                        fForceTLBFlush;
-        /** Set if nested paging is enabled. */
-        bool                        fNestedPaging;
 
         /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
         RTCPUID                     idLastCpu;

@@ -82,9 +82,19 @@ HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
  * @param   pVM         The VM to operate on.
  */
 HWACCMDECL(int) HWACCMFlushTLB(PVM pVM);
+
+/**
+ * Checks if nested paging is enabled
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM);
+
 #else
 /* Nop in GC */
-#define HWACCMFlushTLB(pVM)     do { } while (0)
+#define HWACCMFlushTLB(pVM)                     do { } while (0)
+#define HWACCMIsNestedPagingActive(pVM)         false
 #endif
 
 #ifdef IN_RING0
