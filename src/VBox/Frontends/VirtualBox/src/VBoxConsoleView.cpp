@@ -2487,7 +2487,13 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                         {
                             captureKbd (!captured, false);
                             if (!(mMouseAbsolute && mMouseIntegration))
+                            {
+                                /* make sure that pending FocusOut events from the
+                                 * previous message box are handled, otherwise the
+                                 * mouse is immediately ungrabbed. */
+                                qApp->processEvents();
                                 captureMouse (mKbdCaptured);
+                            }
                         }
                     }
                 }
@@ -2833,6 +2839,10 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 
                     if (ok)
                     {
+                        /* make sure that pending FocusOut events from the
+                         * previous message box are handled, otherwise the
+                         * mouse is immediately ungrabbed again */
+                        qApp->processEvents();
                         captureKbd (true);
                         captureMouse (true);
                     }
