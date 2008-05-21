@@ -81,15 +81,15 @@ VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
-	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=16 $< > $@
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=16 $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
-	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=32 $< > $@
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=32 $<
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
-	$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=64 $< > $@
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=64 $<
 
 
 VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
@@ -129,21 +129,21 @@ VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_INVALID:.asm=), $(test)-1
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-16.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=16 $<
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=16 $<
 	@$(APPEND) $@ "done"
 	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-32.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=32 $<
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=32 $<
 	@$(APPEND) $@ "done"
 	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
 $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
-	$(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=64 $<
+	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=64 $<
 	@$(APPEND) $@ "done"
 	@$(ECHO) "PASSED:  $(@F) [--undef-op=all]"
 
