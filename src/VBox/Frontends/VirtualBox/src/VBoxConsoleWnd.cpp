@@ -1941,6 +1941,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
+    /* Please note: For some platforms like the Mac, the calling order of the
+     * functions in this methods is vital. So please be carefull on changing
+     * this. */
+
     QSize initialSize = size();
     if (aSeamless || console->isAutoresizeGuestActive())
     {
@@ -2115,40 +2119,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setMaximumSize (scrGeo.size());
         console->setVScrollBarMode (QScrollView::AlwaysOff);
         console->setHScrollBarMode (QScrollView::AlwaysOff);
-
-#ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
-//        QRect maskRect = dtw->screenGeometry (this);
-//        maskRect.setRight (maskRect.right() + 1);
-//        maskRect.setBottom (maskRect.bottom() + 1);
-//        setMask (maskRect);
-        if (aSeamless)
-        {
-            OSStatus status;
-            WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
-            EventTypeSpec wNonCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
-            status = InstallWindowEventHandler (WindowRef, DarwinRegionHandler, GetEventTypeCount (wNonCompositingEvent), &wNonCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
-            Assert (status == noErr);
-            status = ReshapeCustomWindow (WindowRef);
-            Assert (status == noErr);
-            UInt32 features;
-            status = GetWindowFeatures (WindowRef, &features);
-            Assert (status == noErr);
-            if (( features & kWindowIsOpaque ) != 0)
-            {
-                status = HIWindowChangeFeatures (WindowRef, 0, kWindowIsOpaque);
-                Assert(status == noErr);
-            }
-            status = SetWindowAlpha(WindowRef, 0.999);
-            Assert (status == noErr);
-            /* For now disable the shadow of the window. This feature cause errors
-             * if a window in vbox looses focus, is reselected and than moved. */
-            /** @todo Search for an option to enable this again. A shadow on every
-             * window has a big coolness factor. */
-            ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
-        }
-#else
-//        setMask (dtw->screenGeometry (this));
-#endif
     }
     else
     {
@@ -2169,6 +2139,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         if (aSeamless)
         {
+            /* Please note: All the stuff below has to be done before the
+             * window switch back to normal size. Qt changes the winId on the
+             * fullscreen switch and make this stuff useless with the old
+             * winId. So please be carefull on rearrangement of the method
+             * calls. */
             /* Undo all mac specific installations */
             OSStatus status;
             WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
@@ -2203,6 +2178,38 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     /* Toggle qt full-screen mode */
     setWindowState (windowState() ^ WindowFullScreen);
+
+#ifdef Q_WS_MAC 
+    if (aOn && aSeamless)
+    {
+        /* Please note: All the stuff below has to be done after the window has
+         * switched to fullscreen. Qt changes the winId on the fullscreen
+         * switch and make this stuff useless with the old winId. So please be
+         * carefull on rearrangement of the method calls. */
+        OSStatus status;
+        WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
+        EventTypeSpec wNonCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
+        status = InstallWindowEventHandler (WindowRef, DarwinRegionHandler, GetEventTypeCount (wNonCompositingEvent), &wNonCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
+        Assert (status == noErr);
+        status = ReshapeCustomWindow (WindowRef);
+        Assert (status == noErr);
+        UInt32 features;
+        status = GetWindowFeatures (WindowRef, &features);
+        Assert (status == noErr);
+        if (( features & kWindowIsOpaque ) != 0)
+        {
+            status = HIWindowChangeFeatures (WindowRef, 0, kWindowIsOpaque);
+            Assert(status == noErr);
+        }
+        status = SetWindowAlpha(WindowRef, 0.999);
+        Assert (status == noErr);
+        /* For now disable the shadow of the window. This feature cause errors
+         * if a window in vbox looses focus, is reselected and than moved. */
+        /** @todo Search for an option to enable this again. A shadow on every
+         * window has a big coolness factor. */
+        ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
+    }
+#endif
 
     /* Process all console attributes changes and sub-widget hidings */
     qApp->processEvents();
