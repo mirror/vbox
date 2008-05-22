@@ -4110,6 +4110,7 @@ void VBoxGlobal::init()
         {"linux26",     "os_linux26.png"},
         {"archlinux",   "os_archlinux.png"},
         {"debian",      "os_debian.png"},
+        {"opensolaris", "os_opensolaris.png"},
         {"opensuse",    "os_opensuse.png"},
         {"fedoracore"  ,"os_fedoracore.png"},
         {"gentoo",      "os_gentoo.png"},
@@ -4122,7 +4123,6 @@ void VBoxGlobal::init()
         {"netbsd",      "os_netbsd.png"},
         {"netware",     "os_netware.png"},
         {"solaris",     "os_solaris.png"},
-        {"opensolaris", "os_solaris.png"},
         {"l4",          "os_l4.png"},
     };
     vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
