@@ -29,7 +29,7 @@
 #
 
 # Attempt to build using DKMS first
-DKMS=`which dkms` 
+DKMS=`which dkms 2>/dev/null` 
 if [ -n "$DKMS" ]
 then
     echo "Attempting to install using DKMS"
