@@ -56,7 +56,9 @@ echo 'i pkginfo=./vbox.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vbox.space' >> prototype
-echo 'i copyright=./vbox.copyright' >> prototype
+if test -f "./vbox.copyright"; then
+    echo 'i copyright=./vbox.copyright' >> prototype
+fi
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
 find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright' | pkgproto >> prototype
 

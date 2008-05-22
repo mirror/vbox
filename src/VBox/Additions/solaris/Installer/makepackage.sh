@@ -45,8 +45,11 @@ echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vboxguest.space' >> prototype
+if test -f "./vboxguest.copyright"; then
+    echo 'i copyright=./vboxguest.copyright' >> prototype
+fi
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
-find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space' | pkgproto >> prototype
+find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.copyright' | pkgproto >> prototype
 
 # don't grok for the sed class files
 $MY_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
