@@ -38,7 +38,7 @@ DBG_ARCHIVE      = VirtualBox-dbg.tar.bz2
 INSTALLS         = solaris-doc
 PACKING          = $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
-	vbox.pkginfo vbox.space vbox.pkgresponse \
+	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
         makepackage.sh prototype postinstall.sh preremove.sh etc/devlink.tab )
 
 
@@ -115,6 +115,7 @@ SOLARIS_EXTRAS = \
 	VBox.sh \
 	vnic_setup.sh \
 	vnic_term.sh \
+	vbox.copyright \
 	ReadMe.txt
 
 SOLARIS_NLS = \
@@ -187,6 +188,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		sdkfiles \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		Makefile.kmk \
+		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(PATH_BIN)/License-$(VBOX_LICENSE_VER).html) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
@@ -273,6 +275,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf  $(SOLARIS_INST_DIR)/UserManual.pdf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARIS_INST_DIR)/License-$(VBOX_LICENSE_VER).html,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARIS_INST_DIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARIS_INST_DIR)/components/VirtualBox_XPCOM.xpt
