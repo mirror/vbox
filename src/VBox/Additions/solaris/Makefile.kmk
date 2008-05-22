@@ -31,12 +31,13 @@ ifeq ($(KBUILD_HOST),solaris)
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
 endif
 
-PKGFILENAME    := VBoxSolarisAdditions.pkg
-PKGINFO_ARCH    = $(shell uname -p)
+PKGFILENAME     := VBoxSolarisAdditions.pkg
+PKGINFO_ARCH     = $(shell uname -p)
+PKGINFO_REVSTAMP = $(shell date '+%Y.%m.%d.%H.%M')
 VBOX_PATH_SOLARIS_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
-VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
-SOLARISINSTDIR := $(PATH_TARGET)/install
-SOLARISTEMPDIR := $(PATH_TARGET)/tempinstall
+VBOX_PATH_X11_ADDITION_INSTALLER     := $(PATH_ROOT)/src/VBox/Additions/x11/installer
+SOLARISINSTDIR  := $(PATH_TARGET)/install
+SOLARISTEMPDIR  := $(PATH_TARGET)/tempinstall
 
 ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         := $(CP) -f
@@ -86,6 +87,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(MKDIR) -p $(SOLARISTEMPDIR)
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
+		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
 		--output $(SOLARISINSTDIR)/vboxguest.pkginfo \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.pkginfo
