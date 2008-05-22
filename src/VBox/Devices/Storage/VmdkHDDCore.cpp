@@ -3644,12 +3644,237 @@ out:
     return rc;
 }
 
+/**
+ * Allocates a new copy of the given UTF-8 string using RTMemTmpAlloc().
+ *
+ * @returns Pointer to the allocated UTF-8 string.
+ * @param   pszString       UTF-8 string to duplicate.
+ */
+static char * vmdkStrTmpDup(const char *pszString)
+{
+    Assert(VALID_PTR(pszString));
+    size_t cch = strlen(pszString) + 1;
+    char *psz = (char *)RTMemTmpAlloc(cch);
+    if (psz)
+        memcpy(psz, pszString, cch);
+    return psz;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnRename */
 static int vmdkRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
-    int rc = VERR_NOT_IMPLEMENTED;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
+    int rc = VINF_SUCCESS;
+    char **apszOldExtentBaseNames; 
+    char **apszOldExtentFullNames; 
+    char **apszNewExtentFullNames; 
+    char *pszOldImageName;
+    char *pszNewImageName;
+    bool fImageFreed = false;
 
+    /* Check arguments. */
+    if (   !pImage
+        || (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+        || !VALID_PTR(pszFilename)
+        || !*pszFilename)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /*
+     * Allocate an array to store old extent names in case we have to roll back the changes.
+     * Everything is initialized with zeros. We actually save stuff when and if we change it.
+     */
+    apszOldExtentBaseNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
+    apszOldExtentFullNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
+    apszNewExtentFullNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
+    if (!apszOldExtentBaseNames || !apszOldExtentFullNames || !apszNewExtentFullNames)
+    {
+        if (apszOldExtentBaseNames)
+            RTMemTmpFree(apszOldExtentBaseNames);
+        if (apszOldExtentFullNames)
+            RTMemTmpFree(apszOldExtentFullNames);
+        if (apszNewExtentFullNames)
+            RTMemTmpFree(apszNewExtentFullNames);
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+    pszOldImageName = NULL;
+    pszNewImageName = NULL;
+
+    do {
+        /* Basename strings needed for constructing the extent names. */
+        char *pszBasenameSubstr = RTPathFilename(pszFilename);
+        Assert(pszBasenameSubstr);
+        size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
+
+        /* Loop through each VMDKEXTENT in VMDKIMAGE->pExtents using VMDKIMAGE->cExtents. */
+        for (unsigned i = 0; i < pImage->cExtents; i++)
+        {
+            PVMDKEXTENT pExtent = &pImage->pExtents[i];
+
+            /* @todo Store pExtent->pszFullname in array for future reference. */
+            /* @todo Store pExtent->pszBasename in array for future reference. */
+
+            /* @todo This is copy/paste code, move to seperate function. */
+            /* Determine the new file name. */
+            /* Set up fullname/basename for extent description. Cannot use StrDup
+             * for basename, as it is not guaranteed that the memory can be freed
+             * with RTMemTmpFree, which must be used as in other code paths
+             * StrDup is not usable. */
+            if (pImage->cExtents == 1 && pImage->enmImageType != VD_IMAGE_TYPE_FIXED)
+            {
+                char *pszBasename = (char *)RTMemTmpAlloc(cbBasenameSubstr);
+                if (!pszBasename)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+                memcpy(pszBasename, pszBasenameSubstr, cbBasenameSubstr);
+                /* Save the old name in case we need to roll back. */
+                apszOldExtentBaseNames[i] = vmdkStrTmpDup(pExtent->pszBasename);
+                pExtent->pszBasename = pszBasename;
+            }
+            else
+            {
+                char *pszBasenameExt = RTPathExt(pszBasenameSubstr);
+                char *pszBasenameBase = RTStrDup(pszBasenameSubstr);
+                RTPathStripExt(pszBasenameBase);
+                char *pszTmp;
+                size_t cbTmp;
+                if (pImage->enmImageType == VD_IMAGE_TYPE_FIXED)
+                {
+                    if (pImage->cExtents == 1)
+                        rc = RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
+                                          pszBasenameExt);
+                    else
+                        rc = RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
+                                          i+1, pszBasenameExt);
+                }
+                else
+                    rc = RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, i+1,
+                                      pszBasenameExt);
+                RTStrFree(pszBasenameBase);
+                if (VBOX_FAILURE(rc))
+                    break;
+                cbTmp = strlen(pszTmp) + 1;
+                char *pszBasename = (char *)RTMemTmpAlloc(cbTmp);
+                if (!pszBasename)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+                memcpy(pszBasename, pszTmp, cbTmp);
+                RTStrFree(pszTmp);
+                /* Save the old name in case we need to roll back. */
+                apszOldExtentBaseNames[i] = vmdkStrTmpDup(pExtent->pszBasename);
+                pExtent->pszBasename = pszBasename;
+                /* @todo ??? cbExtent = RT_MIN(cbRemaining, VMDK_2G_SPLIT_SIZE); */
+            }
+            char *pszBasedirectory = RTStrDup(pImage->pszFilename);
+            RTPathStripFilename(pszBasedirectory);
+            char *pszFN;
+            rc = RTStrAPrintf(&pszFN, "%s%c%s", pszBasedirectory, RTPATH_SLASH,
+                              pExtent->pszBasename);
+            RTStrFree(pszBasedirectory);
+            if (VBOX_FAILURE(rc))
+                break;
+
+            /* Close the VMDKEXTENT. */
+            vmdkFileClose(pImage, &pExtent->File, false);
+
+            /* Rename the file. */
+            rc = RTFileMove(pExtent->pszFullname, pszFN, 0);
+            if (VBOX_FAILURE(rc))
+                break;
+
+            /* Save both names in case we need to roll back. */
+            apszOldExtentFullNames[i] = RTStrDup(pExtent->pszFullname);
+            apszNewExtentFullNames[i] = RTStrDup(pszFN);
+            pExtent->pszFullname = pszFN;
+        }
+
+        if (VBOX_FAILURE(rc))
+            break;
+
+        /* After looping through all of them close the VMDKIMAGE. */
+        vmdkFreeImage(pImage, false);
+
+        fImageFreed = true;
+
+        /* Rename the descriptor file if it's separate. */ 
+        if (pImage->pDescData)
+        {
+            rc = RTFileCopy(pImage->pszFilename, pszFilename);
+            if (VBOX_FAILURE(rc))
+                break;
+            /* Save new name only if we may need to change it back. */
+            pszNewImageName = RTStrDup(pszFilename);
+        }
+
+        /* Save the old name in case we need to roll back. */
+        pszOldImageName = RTStrDup(pImage->pszFilename);
+        /* Update pImage with the new information. */
+        pImage->pszFilename = pszFilename;
+
+        /* Open the new image. */
+        rc = vmdkOpenImage(pImage, pImage->uOpenFlags);
+        if (VBOX_FAILURE(rc))
+            break;
+        /* Remove the old descriptor file. */
+        if (pszNewImageName)
+        {
+            rc = RTFileDelete(pszOldImageName);
+            AssertRC(rc);
+        }
+    } while (0);
+
+    /* Roll back all changes in case of failure. */
+    if (VBOX_FAILURE(rc))
+    {
+        int rrc;
+        if (!fImageFreed)
+        {
+            /*
+             * Some extents may have been closed, close the rest. We will 
+             * re-open the whole thing later. 
+             */
+            vmdkFreeImage(pImage, false);
+        }
+        if (pszNewImageName)
+        {
+            /* The image was actually copied, destroy the copy. */
+            rrc = RTFileDelete(pszNewImageName);
+            AssertRC(rrc);
+            RTStrFree(pszNewImageName);
+        }
+        if (pszOldImageName)
+        {
+            /* We end up here only if vmdkOpenImage() has failed, restore the old image name. */
+            pImage->pszFilename = pszOldImageName;
+        }
+        /* Restore renamed extents. */
+        for (unsigned i = 0; i < pImage->cExtents; i++)
+        {
+            if (apszOldExtentFullNames[i])
+            {
+                rrc = RTFileMove(apszNewExtentFullNames[i], apszOldExtentFullNames[i], 0);
+                AssertRC(rrc);
+                RTStrFree(apszNewExtentFullNames[i]);
+                RTStrFree(apszOldExtentFullNames[i]);
+            }
+        }
+        rrc = vmdkOpenImage(pImage, pImage->uOpenFlags);
+        AssertRC(rrc);
+    }
+
+    RTMemTmpFree(apszOldExtentBaseNames);
+    RTMemTmpFree(apszOldExtentFullNames);
+    RTMemTmpFree(apszNewExtentFullNames);
+
+out:
     LogFlowFunc(("returns %Vrc\n", rc));
     return rc;
 }

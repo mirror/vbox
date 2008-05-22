@@ -165,6 +165,13 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "         VBoxManage internalcommands listpartitions\n"
                 "\n"
                 : "",
+#if 0
+             (u64Cmd & USAGE_RENAMEVMDK) ?
+                 "  renamevmdk -from <filename> -to <filename>\n"
+                 "       Renames an existing VMDK image, including the base file and all its extents.\n"
+                 "\n"
+                 : "",
+#endif
 #ifdef RT_OS_WINDOWS
             (u64Cmd & USAGE_MODINSTALL) ?
                 "  modinstall\n"
@@ -1130,6 +1137,72 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+#if 0
+HRESULT CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    Bstr src;
+    Bstr dst;
+    /* Parse the arguments. */
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-from") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            src = argv[i];
+        }
+        else if (strcmp(argv[i], "-to") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            dst = argv[i];
+        }
+        else
+        {
+            return errorSyntax(USAGE_RENAMEVMDK, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+        }
+    }
+
+    if (src.isEmpty())
+        return errorSyntax(USAGE_RENAMEVMDK, "Mandatory parameter -from missing");
+    if (dst.isEmpty())
+        return errorSyntax(USAGE_RENAMEVMDK, "Mandatory parameter -to missing");
+
+    PVBOXHDD pDisk = NULL;
+
+    int vrc = VDCreate(handleVDError, NULL, &pDisk);
+    if (VBOX_FAILURE(vrc))
+    {
+        RTPrintf("Error while creating the virtual disk container: %Vrc\n", vrc);
+        return vrc;
+    }
+    else
+    {
+        vrc = VDOpen(pDisk, "VMDK", Utf8Str(src).raw(), VD_OPEN_FLAGS_NORMAL);
+        if (VBOX_FAILURE(vrc))
+        {
+            RTPrintf("Error while opening the source image: %Vrc\n", vrc);
+        }
+        else
+        {
+            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", Utf8Str(dst).raw(), true, 0, NULL, NULL);
+            if (VBOX_FAILURE(vrc))
+            {
+                RTPrintf("Error while renaming the image: %Vrc\n", vrc);
+            }
+        }
+    }
+    VDCloseAll(pDisk);
+    return vrc;
+}
+#endif
+
 /**
  * Unloads the neccessary driver.
  *
@@ -1190,6 +1263,10 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdListPartitions(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "createrawvmdk"))
         return CmdCreateRawVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
+#if 0
+    if (!strcmp(pszCmd, "renamevmdk"))
+        return CmdRenameVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
+#endif
 
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
