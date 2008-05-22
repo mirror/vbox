@@ -2295,7 +2295,7 @@ void VBoxConsoleWnd::vmFullscreen (bool aOn)
 void VBoxConsoleWnd::vmSeamless (bool aOn)
 {
     /* check if it is possible to enter/leave seamless mode */
-    if (mIsSeamlessSupported && mIsGraphicsSupported || !aOn)
+    if ((mIsSeamlessSupported && mIsGraphicsSupported) || !aOn)
     {
         bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
         if (!ok)
