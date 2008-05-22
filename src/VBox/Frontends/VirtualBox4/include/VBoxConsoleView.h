@@ -257,7 +257,7 @@ private:
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
 
-    bool mIsAdditionsActive : 1;
+    bool mGuestSupportsGraphics : 1;
 
     bool mNumLock : 1;
     bool mScrollLock : 1;
