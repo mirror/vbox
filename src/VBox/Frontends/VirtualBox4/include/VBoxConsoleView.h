@@ -256,6 +256,7 @@ private:
 
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
+    bool mDoResize : 1;
 
     bool mGuestSupportsGraphics : 1;
 
