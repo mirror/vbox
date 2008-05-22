@@ -1302,22 +1302,22 @@ Version %1</translation>
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>Aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Not mounted</source>
@@ -1367,7 +1367,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Audio</source>
@@ -1382,7 +1382,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Network</source>
@@ -1402,7 +1402,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>VRDP Server Port</source>
@@ -1417,7 +1417,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -1611,7 +1611,7 @@ Version %1</translation>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Nicht angeschlossen</translation>
+        <translation>nicht angeschlossen</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -1671,7 +1671,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Host To Guest</source>
@@ -1704,7 +1704,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Serial Ports</source>
@@ -1729,7 +1729,7 @@ Version %1</translation>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation>Keine</translation>
+        <translation>keine</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -1744,7 +1744,7 @@ Version %1</translation>
     <message>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>Nicht verbunden</translation>
+        <translation>nicht verbunden</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -1774,12 +1774,12 @@ Version %1</translation>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -1794,7 +1794,7 @@ Version %1</translation>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
@@ -1839,12 +1839,12 @@ Version %1</translation>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>USB</source>
@@ -4266,12 +4266,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation>Nicht erkannt</translation>
+        <translation>nicht erkannt</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation>Nicht erkannt</translation>
+        <translation>nicht erkannt</translation>
     </message>
     <message>
         <source>Guest Additions</source>
