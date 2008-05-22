@@ -23,16 +23,19 @@
 #ifndef __VBoxSnapshotsWgt_h__
 #define __VBoxSnapshotsWgt_h__
 
-#include <VBoxSnapshotsWgt.gen.h>
-#include <VBoxGlobal.h>
+#include "VBoxSnapshotsWgt.gen.h"
+#include "VBoxGlobal.h"
+#include "QIWithRetranslateUI.h"
+
+/* Qt includes */
 #include <QUuid>
-#include <COMDefs.h>
 
 class SnapshotWgtItem;
 
 class QMenu;
 
-class VBoxSnapshotsWgt : public QWidget, public Ui::VBoxSnapshotsWgt
+class VBoxSnapshotsWgt : public QIWithRetranslateUI<QWidget>,
+                         public Ui::VBoxSnapshotsWgt
 {
     Q_OBJECT;
 
@@ -42,8 +45,8 @@ public:
 
     void setMachine (const CMachine &aMachine);
 
+protected:
 
-    virtual void changeEvent (QEvent *aEvent);
     void retranslateUi();
 
 private slots:

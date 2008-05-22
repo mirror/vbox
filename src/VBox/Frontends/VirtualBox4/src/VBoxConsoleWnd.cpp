@@ -111,7 +111,7 @@ class Q3HttpResponseHeader;
 VBoxConsoleWnd::
 VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                 Qt::WFlags aFlags)
-    : QMainWindow (aParent, aFlags)
+    : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
@@ -1456,22 +1456,6 @@ bool VBoxConsoleWnd::x11Event (XEvent *event)
     return false;
 }
 #endif
-
-void VBoxConsoleWnd::changeEvent (QEvent *aEvent)
-{
-    QMainWindow::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default:
-            break;
-    }
-}
 
 /**
  *  Sets the strings of the subwidgets using the current

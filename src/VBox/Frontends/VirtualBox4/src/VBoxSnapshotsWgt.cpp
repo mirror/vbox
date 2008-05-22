@@ -243,7 +243,7 @@ private:
 
 
 VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
     , mCurSnapshotItem (0)
     , mContextMenu (new QMenu (this))
     , mContextMenuDirty (true)
@@ -661,22 +661,6 @@ void VBoxSnapshotsWgt::snapshotChanged (const VBoxSnapshotEvent &aE)
                 lvi->recache();
             break;
         }
-    }
-}
-
-void VBoxSnapshotsWgt::changeEvent (QEvent *aEvent)
-{
-    QWidget::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
     }
 }
 

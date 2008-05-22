@@ -138,6 +138,17 @@ public:
     const bool mCanShow;
 };
 
+class VBoxChangeGUILanguageEvent : public QEvent
+{
+public:
+    VBoxChangeGUILanguageEvent (QString aLangId)
+        : QEvent ((QEvent::Type) VBoxDefs::ChangeGUILanguageEventType)
+        , mLangId (aLangId)
+        {}
+
+    const QString mLangId;
+};
+
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 

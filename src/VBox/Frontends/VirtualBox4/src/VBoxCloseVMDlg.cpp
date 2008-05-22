@@ -27,15 +27,21 @@
 #include <QPushButton>
 
 VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
-    : QIDialog (aParent, Qt::Sheet)
+    : QIWithRetranslateUI2<QIDialog> (aParent, Qt::Sheet)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxCloseVMDlg::setupUi (this);
 
     /* Set fixed size */
     setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     connect (mButtonBox, SIGNAL (helpRequested()),
              &vboxProblem(), SLOT (showHelpHelpDialog()));
+}
+
+void VBoxCloseVMDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxCloseVMDlg::retranslateUi (this);
 }
 

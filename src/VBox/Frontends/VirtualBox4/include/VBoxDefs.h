@@ -149,6 +149,7 @@ struct VBoxDefs
 #if defined (Q_WS_MAC)
         ShowWindowEventType,
 #endif
+        ChangeGUILanguageEventType,
     };
 
     static const char* GUI_LastWindowPosition;

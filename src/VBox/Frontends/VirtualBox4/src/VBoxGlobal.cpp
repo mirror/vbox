@@ -279,6 +279,8 @@ public:
                     else
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (false));
                 }
+                if (sKey == "GUI/LanguageID")
+                    QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
 
                 mMutex.lock();
                 mGlobal.gset.setPublicProperty (sKey, sVal);
@@ -4008,6 +4010,11 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::CanShowRegDlgEventType:
         {
             emit canShowRegDlg (((VBoxCanShowRegDlgEvent *) e)->mCanShow);
+            return true;
+        }
+        case VBoxDefs::ChangeGUILanguageEventType:
+        {
+            loadLanguage (static_cast<VBoxChangeGUILanguageEvent*> (e)->mLangId);
             return true;
         }
 

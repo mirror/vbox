@@ -126,7 +126,7 @@ void OnComplete (const happyhttp::Response*, void *aUserdata)
 
 VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
                                       const QString &aUrl, const QString &aTarget)
-    : QWidget ()
+    : QIWithRetranslateUI<QWidget> ()
     , mUrl (aUrl), mTarget (aTarget)
     , mStatusBar (aStatusBar), mAction (aAction)
     , mProgressBar (0), mCancelButton (0)
@@ -171,22 +171,6 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
 
     /* Try to get the required file for the information */
     getFile();
-}
-
-void VBoxDownloaderWgt::changeEvent (QEvent *aEvent)
-{
-    QWidget::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
 }
 
 void VBoxDownloaderWgt::retranslateUi()

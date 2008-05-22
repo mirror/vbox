@@ -53,7 +53,7 @@
  *  Two-page widget stack to represent VM details: one page for normal details
  *  and another one for inaccessibility errors.
  */
-class VBoxVMDetailsView : public QStackedWidget
+class VBoxVMDetailsView : public QIWithRetranslateUI<QStackedWidget>
 {
     Q_OBJECT;
 
@@ -87,7 +87,6 @@ signals:
 
 protected:
 
-    virtual void changeEvent (QEvent *aEvent);
     void retranslateUi();
 
 private slots:
@@ -118,7 +117,7 @@ private:
 
 VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
                                       QAction *aRefreshAction /* = NULL */)
-    : QStackedWidget (aParent)
+    : QIWithRetranslateUI<QStackedWidget> (aParent)
     , mErrBox (NULL), mErrLabel (NULL), mErrText (NULL)
     , mRefreshButton (NULL)
     , mRefreshAction (aRefreshAction)
@@ -185,22 +184,6 @@ void VBoxVMDetailsView::createErrPage()
     retranslateUi();
 }
 
-void VBoxVMDetailsView::changeEvent (QEvent *aEvent)
-{
-    QStackedWidget::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
-}
-
 void VBoxVMDetailsView::retranslateUi()
 {
     if (mErrLabel)
@@ -228,7 +211,7 @@ void VBoxVMDetailsView::retranslateUi()
 /**
  *  Comments page widget to represent VM comments.
  */
-class VBoxVMDescriptionPage : public QWidget
+class VBoxVMDescriptionPage : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -243,7 +226,6 @@ public:
 
 protected:
 
-    virtual void changeEvent (QEvent *aEvent);
     void retranslateUi();
 
 private slots:
@@ -261,7 +243,7 @@ private:
 };
 
 VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
     , mItem (NULL), mParent (aParent)
     , mBtnEdit (0), mBrowser (0), mLabel (0)
 {
@@ -343,22 +325,6 @@ void VBoxVMDescriptionPage::setMachineItem (VBoxVMItem *aItem)
     updateState();
 }
 
-void VBoxVMDescriptionPage::changeEvent (QEvent *aEvent)
-{
-    QWidget::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
-}
-
 void VBoxVMDescriptionPage::retranslateUi()
 {
     mLabel->setText (tr ("No description. Press the Edit button below to add it."));
@@ -420,7 +386,7 @@ void VBoxVMDescriptionPage::goToSettings()
 VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
                  Qt::WFlags aFlags)
-    : QMainWindow (aParent, aFlags)
+    : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , doneInaccessibleWarningOnce (false)
 {
     if (aSelf)
@@ -1160,22 +1126,6 @@ bool VBoxSelectorWnd::event (QEvent *e)
     }
 
     return QMainWindow::event (e);
-}
-
-void VBoxSelectorWnd::changeEvent (QEvent *aEvent)
-{
-    QMainWindow::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
 }
 
 /**
