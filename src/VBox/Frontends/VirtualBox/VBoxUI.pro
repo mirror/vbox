@@ -77,6 +77,7 @@ IMAGES	= images/tpixel.png \
 	images/os_netbsd.png \
 	images/os_netware.png \
 	images/os_openbsd.png \
+	images/os_opensolaris.png \
 	images/os_opensuse.png \
 	images/os_os2warp3.png \
 	images/os_os2warp4.png \

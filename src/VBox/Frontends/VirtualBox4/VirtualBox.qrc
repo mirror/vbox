@@ -33,6 +33,7 @@
     <file alias="os_netbsd.png">images/os_netbsd.png</file>
     <file alias="os_netware.png">images/os_netware.png</file>
     <file alias="os_openbsd.png">images/os_openbsd.png</file>
+    <file alias="os_opensolaris.png">images/os_opensolaris.png</file>
     <file alias="os_opensuse.png">images/os_opensuse.png</file>
     <file alias="os_os2warp3.png">images/os_os2warp3.png</file>
     <file alias="os_os2warp4.png">images/os_os2warp4.png</file>

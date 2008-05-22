@@ -2817,13 +2817,13 @@ QIcon VBoxGlobal::iconSet (const char *aNormal,
 {
     QIcon iconSet;
 
-    iconSet.addFile (aNormal, QSize(), 
+    iconSet.addFile (aNormal, QSize(),
                      QIcon::Normal);
     if (aDisabled != NULL)
-        iconSet.addFile (aDisabled, QSize(), 
+        iconSet.addFile (aDisabled, QSize(),
                          QIcon::Disabled);
     if (aActive != NULL)
-        iconSet.addFile (aActive, QSize(), 
+        iconSet.addFile (aActive, QSize(),
                          QIcon::Active);
     return iconSet;
 }
@@ -3552,7 +3552,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
     QFileDialog::Options o;
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
-    return QFileDialog::getOpenFileName (aParent, aCaption, aStartWith, 
+    return QFileDialog::getOpenFileName (aParent, aCaption, aStartWith,
                                          aFilters, aSelectedFilter, o);
 #endif
 }
@@ -4110,6 +4110,7 @@ void VBoxGlobal::init()
         {"linux26",     ":/os_linux26.png"},
         {"archlinux",   ":/os_archlinux.png"},
         {"debian",      ":/os_debian.png"},
+        {"opensolaris", ":/os_opensolaris.png"},
         {"opensuse",    ":/os_opensuse.png"},
         {"fedoracore",  ":/os_fedoracore.png"},
         {"gentoo",      ":/os_gentoo.png"},
@@ -4122,7 +4123,6 @@ void VBoxGlobal::init()
         {"netbsd",      ":/os_netbsd.png"},
         {"netware",     ":/os_netware.png"},
         {"solaris",     ":/os_solaris.png"},
-        {"opensolaris", ":/os_solaris.png"},
         {"l4",          ":/os_l4.png"},
     };
     for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); n ++)
@@ -4407,7 +4407,7 @@ void VBoxUSBMenu::processAboutToShow()
 bool VBoxUSBMenu::event(QEvent *aEvent)
 {
     /* We provide dynamic tooltips for the usb devices */
-    if (aEvent->type() == QEvent::ToolTip) 
+    if (aEvent->type() == QEvent::ToolTip)
     {
         QHelpEvent *helpEvent = static_cast<QHelpEvent *> (aEvent);
         QAction *action = actionAt (helpEvent->pos());
