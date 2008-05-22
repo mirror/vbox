@@ -1,11 +1,15 @@
 PKG="SUNWvbox"
 NAME="Sun xVM VirtualBox"
+SUNW_PRODNAME="Sun xVM VirtualBox"
 ARCH="@UNAME_P@"
-VERSION="@VBOX_VERSION_STRING@"
+VERSION="@VBOX_VERSION_STRING@,REV=@VBOX_VERSION_REVSTAMP@"
+SUNW_PRODVERS="@VBOX_VERSION_STRING@"
+SUNW_PKGVERS=1.0
 CATEGORY="application"
 VENDOR="Sun Microsystems, Inc."
 EMAIL="info@virtualbox.org"
+HOTLINE="Please contact your local service provider"
 BASEDIR="/"
 CLASSES=none sed
-DESC="A powerful PC virtualization solution."
+DESC="A powerful PC virtualization solution"
 
