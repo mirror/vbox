@@ -628,7 +628,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mIsHostkeyAlone (false)
     , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
-    , mIsAdditionsActive (false)
+    , mGuestSupportsGraphics (false)
     , mNumLock (false)
     , mScrollLock (false)
     , mCapsLock (false)
@@ -996,7 +996,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 
         maybeRestrictMinimumSize();
 
-        if (mIsAdditionsActive && mAutoresizeGuest)
+        if (mGuestSupportsGraphics && mAutoresizeGuest)
             doResizeHint();
     }
 }
@@ -1199,7 +1199,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
                 LogFlowFunc (("AdditionsStateChangeEventType\n"));
 
-                mIsAdditionsActive = ge->additionActive();
+                mGuestSupportsGraphics = ge->supportsGraphics();
 
                 maybeRestrictMinimumSize();
 
@@ -1554,7 +1554,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::Resize:
             {
                 if (!mIgnoreMainwndResize &&
-                    mIsAdditionsActive && mAutoresizeGuest)
+                    mGuestSupportsGraphics && mAutoresizeGuest)
                     resize_hint_timer->start (300, TRUE);
                 break;
             }
@@ -2243,7 +2243,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
  */
 void VBoxConsoleView::toggleFSMode (const QSize &aSize)
 {
-    if ((mIsAdditionsActive && mAutoresizeGuest) ||
+    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
         mMainWnd->isTrueFullscreen())
     {
         QSize newSize;
@@ -2285,7 +2285,7 @@ QRect VBoxConsoleView::desktopGeometry()
 
 bool VBoxConsoleView::isAutoresizeGuestActive()
 {
-    return mIsAdditionsActive && mAutoresizeGuest;
+    return mGuestSupportsGraphics && mAutoresizeGuest;
 }
 
 /**
@@ -3544,7 +3544,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if ((mIsAdditionsActive && mAutoresizeGuest) ||
+    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
         mMainWnd->isTrueFullscreen())
     {
         /* If this slot is invoked directly then use the passed size
@@ -3653,7 +3653,7 @@ void VBoxConsoleView::maybeRestrictMinimumSize()
 {
     if (mode == VBoxDefs::SDLMode)
     {
-        if (!mIsAdditionsActive || !mAutoresizeGuest)
+        if (!mGuestSupportsGraphics || !mAutoresizeGuest)
             setMinimumSize (sizeHint());
         else
             setMinimumSize (0, 0);
