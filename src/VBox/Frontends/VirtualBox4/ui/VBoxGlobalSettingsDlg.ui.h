@@ -761,6 +761,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
     if (mLanguageChanged && selItem)
     {
         gs.setLanguageId (selItem->text (1));
+#warning "port me: check if this is longer necessary (See the ChangeGUILanguageEvent)"
         VBoxGlobal::loadLanguage (selItem->text (1));
     }
 }
