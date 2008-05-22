@@ -23,10 +23,12 @@
 #ifndef __VBoxSnapshotDetailsDlg_h__
 #define __VBoxSnapshotDetailsDlg_h__
 
-#include <VBoxSnapshotDetailsDlg.gen.h>
-#include <COMDefs.h>
+#include "VBoxSnapshotDetailsDlg.gen.h"
+#include "QIWithRetranslateUI.h"
+#include "COMDefs.h"
 
-class VBoxSnapshotDetailsDlg : public QDialog, public Ui::VBoxSnapshotDetailsDlg
+class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI<QDialog>,
+                               public Ui::VBoxSnapshotDetailsDlg
 {
     Q_OBJECT;
 
@@ -36,6 +38,10 @@ public:
 
     void getFromSnapshot (const CSnapshot &aSnapshot);
     void putBackToSnapshot();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

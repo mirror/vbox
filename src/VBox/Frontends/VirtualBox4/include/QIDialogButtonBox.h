@@ -23,14 +23,16 @@
 #ifndef __QIDialogButtonBox_h__
 #define __QIDialogButtonBox_h__
 
+#include "QIWithRetranslateUI.h"
+
 /* Qt includes */
 #include <QDialogButtonBox>
 
-class QIDialogButtonBox: public QDialogButtonBox
+class QIDialogButtonBox: public QIWithRetranslateUI<QDialogButtonBox>
 {
 public:
-    QIDialogButtonBox (QWidget *aParent = 0) :QDialogButtonBox (aParent) {}
-    QIDialogButtonBox (Qt::Orientation aOrientation, QWidget *aParent = 0) :QDialogButtonBox (aOrientation, aParent) {}
+    QIDialogButtonBox (QWidget *aParent = 0) :QIWithRetranslateUI<QDialogButtonBox> (aParent) {}
+    QIDialogButtonBox (Qt::Orientation aOrientation, QWidget *aParent = 0) :QIWithRetranslateUI<QDialogButtonBox> (aParent) { setOrientation (aOrientation); }
     QIDialogButtonBox (StandardButtons aButtons, Qt::Orientation aOrientation = Qt::Horizontal, QWidget *aParent = 0);
 
     QPushButton *addButton (const QString &aText, ButtonRole aRole);
@@ -39,7 +41,7 @@ public:
     void setStandardButtons (StandardButtons aButtons);
 
 protected:
-    virtual void changeEvent (QEvent *aEvent);
+
     void retranslateUi();
 };
 

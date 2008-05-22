@@ -24,6 +24,7 @@
 #define __VBoxDownloaderWgt_h__
 
 #include "HappyHttp.h"
+#include "QIWithRetranslateUI.h"
 
 /* Qt includes */
 #include <QWidget>
@@ -45,9 +46,9 @@ typedef happyhttp::Connection HConnect;
  *  Guest Additions download state through the progress dialog integrated
  *  into the VM console status bar.
  */
-class VBoxDownloaderWgt : public QWidget
+class VBoxDownloaderWgt : public QIWithRetranslateUI<QWidget>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -58,7 +59,7 @@ public:
     bool isCheckingPresence() { return mIsChecking; }
 
 protected:
-    virtual void changeEvent (QEvent *aEvent);
+
     void retranslateUi();
 
 private slots:

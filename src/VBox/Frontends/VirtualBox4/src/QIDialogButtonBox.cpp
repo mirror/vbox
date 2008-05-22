@@ -27,8 +27,11 @@
 #include <QEvent>
 
 QIDialogButtonBox::QIDialogButtonBox (StandardButtons aButtons, Qt::Orientation aOrientation, QWidget *aParent)
-   : QDialogButtonBox (aButtons, aOrientation, aParent)
+   : QIWithRetranslateUI<QDialogButtonBox> (aParent)
 {
+    setOrientation (aOrientation);
+    setStandardButtons (aButtons);
+
     retranslateUi();
 }
 
@@ -50,22 +53,6 @@ void QIDialogButtonBox::setStandardButtons (StandardButtons aButtons)
 {
     QDialogButtonBox::setStandardButtons (aButtons);
     retranslateUi();
-}
-
-void QIDialogButtonBox::changeEvent (QEvent *aEvent)
-{
-    QDialogButtonBox::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
 }
 
 void QIDialogButtonBox::retranslateUi()

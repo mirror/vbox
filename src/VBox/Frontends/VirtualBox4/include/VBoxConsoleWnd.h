@@ -24,6 +24,7 @@
 #define __VBoxConsoleWnd_h__
 
 #include "COMDefs.h"
+#include "QIWithRetranslateUI.h"
 
 /* Qt includes */
 #include <QMainWindow>
@@ -53,9 +54,9 @@ class QIStateIndicator;
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
 
-class VBoxConsoleWnd : public QMainWindow
+class VBoxConsoleWnd : public QIWithRetranslateUI2<QMainWindow>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -96,7 +97,6 @@ protected:
     bool x11Event (XEvent *event);
 #endif
 
-    virtual void changeEvent (QEvent *aEvent);
     void retranslateUi();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

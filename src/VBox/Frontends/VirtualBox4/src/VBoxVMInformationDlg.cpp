@@ -51,7 +51,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
 VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
                                             const CSession &aSession,
                                             Qt::WindowFlags aFlags)
-    : QIAbstractDialog (aConsole, aFlags)
+    : QIWithRetranslateUI2<QIAbstractDialog> (aConsole, aFlags)
     , mIsPolished (false)
     , mConsole (aConsole)
     , mSession (aSession)
@@ -127,26 +127,12 @@ VBoxVMInformationDlg::~VBoxVMInformationDlg()
         mSelfArray.remove (mSession.GetMachine().GetName());
 }
 
-void VBoxVMInformationDlg::changeEvent (QEvent *aEvent)
-{
-    QIAbstractDialog::changeEvent (aEvent);
-    switch (aEvent->type())
-    {
-        case QEvent::LanguageChange:
-        {
-            retranslateUi();
-            aEvent->accept();
-            break;
-        }
-        default: 
-            break;
-    }
-}
-
 void VBoxVMInformationDlg::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxVMInformationDlg::retranslateUi (this);
+
+    updateDetails();
     
     AssertReturnVoid (!mSession.isNull()); 
  	CMachine machine = mSession.GetMachine(); 

@@ -23,16 +23,18 @@
 #ifndef __VBoxVMInformationDlg_h__
 #define __VBoxVMInformationDlg_h__
 
-#include <VBoxVMInformationDlg.gen.h>
-#include <QIAbstractDialog.h>
-#include <COMDefs.h>
+#include "VBoxVMInformationDlg.gen.h"
+#include "QIAbstractDialog.h"
+#include "COMDefs.h"
+#include "QIWithRetranslateUI.h"
 
 class VBoxConsoleView;
 class QTimer;
 
-class VBoxVMInformationDlg : public QIAbstractDialog, public Ui::VBoxVMInformationDlg
+class VBoxVMInformationDlg : public QIWithRetranslateUI2<QIAbstractDialog>,
+                             public Ui::VBoxVMInformationDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -50,7 +52,6 @@ public:
 
 protected:
 
-    virtual void changeEvent (QEvent *aEvent);
     void retranslateUi();
 
     virtual bool event (QEvent *aEvent);

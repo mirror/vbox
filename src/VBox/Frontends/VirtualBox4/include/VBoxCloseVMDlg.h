@@ -23,16 +23,22 @@
 #ifndef __VBoxCloseVMDlg_h__
 #define __VBoxCloseVMDlg_h__
 
-#include <VBoxCloseVMDlg.gen.h>
-#include <QIDialog.h>
+#include "VBoxCloseVMDlg.gen.h"
+#include "QIWithRetranslateUI.h"
+#include "QIDialog.h"
 
-class VBoxCloseVMDlg : public QIDialog, public Ui::VBoxCloseVMDlg
+class VBoxCloseVMDlg : public QIWithRetranslateUI2<QIDialog>,
+                       public Ui::VBoxCloseVMDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
     VBoxCloseVMDlg (QWidget *aParent);
+
+protected:
+
+    void retranslateUi();
 };
 
 #endif // __VBoxCloseVMDlg_h__

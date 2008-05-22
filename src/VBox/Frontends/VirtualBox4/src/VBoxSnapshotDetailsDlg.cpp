@@ -29,10 +29,10 @@
 #include <QPushButton>
 
 VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg (QWidget *aParent)
-    : QDialog (aParent)
+    : QIWithRetranslateUI<QDialog> (aParent)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxSnapshotDetailsDlg::setupUi (this);
 
     /* Setup mTeSummary browser. */
     mTeSummary->viewport()->setAutoFillBackground (false);
@@ -56,12 +56,7 @@ void VBoxSnapshotDetailsDlg::getFromSnapshot (const CSnapshot &aSnapshot)
     mLeName->setText (aSnapshot.GetName());
     mTeDescription->setText (aSnapshot.GetDescription());
 
-    /* Compose summary */
-    mTeSummary->setText (
-        vboxGlobal().detailsReport (machine, false /* isNewVM */,
-                                             false /* withLinks */));
-    setWindowTitle (tr ("Details of %1 (%2)")
-                    .arg (mSnapshot.GetName()).arg (machine.GetName()));
+    retranslateUi();
 }
 
 void VBoxSnapshotDetailsDlg::putBackToSnapshot()
@@ -70,6 +65,25 @@ void VBoxSnapshotDetailsDlg::putBackToSnapshot()
 
     mSnapshot.SetName (mLeName->text());
     mSnapshot.SetDescription (mTeDescription->toPlainText());
+}
+
+void VBoxSnapshotDetailsDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxSnapshotDetailsDlg::retranslateUi (this);
+
+    if(mSnapshot.isNull())
+        return;
+
+    CMachine machine = mSnapshot.GetMachine();
+
+    setWindowTitle (tr ("Details of %1 (%2)")
+                    .arg (mSnapshot.GetName()).arg (machine.GetName()));
+
+    /* Compose summary */
+    mTeSummary->setText (
+        vboxGlobal().detailsReport (machine, false /* isNewVM */,
+                                             false /* withLinks */));
 }
 
 void VBoxSnapshotDetailsDlg::onNameChanged (const QString &aText)
