@@ -67,6 +67,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
 		$(PATH_BIN)/additions/vboxguest \
 		$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf \
+		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(PATH_BIN)/additions/VBoxService \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
@@ -97,6 +98,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARISINSTDIR)/vboxguest.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARISINSTDIR)/vboxservice.xml
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARISINSTDIR)/vboxguest.space
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt                           $(SOLARISINSTDIR)/vboxguest.copyright)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARISINSTDIR)/vboxclient.desktop
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARISINSTDIR)/1099.vboxclient
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARISINSTDIR)/x11config.pl
@@ -106,8 +108,8 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/additions/vboxguest                                          $(SOLARISINSTDIR)/vboxguest
 	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)
-	$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxClient                                              $(SOLARISINSTDIR)/VBoxClient
-	$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxService                                             $(SOLARISINSTDIR)/VBoxService
+	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxClient                                      $(SOLARISINSTDIR)/VBoxClient
+	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxService                                     $(SOLARISINSTDIR)/VBoxService
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_70.so
