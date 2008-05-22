@@ -628,6 +628,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mIsHostkeyAlone (false)
     , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
+    , mDoResize (false)
     , mGuestSupportsGraphics (false)
     , mNumLock (false)
     , mScrollLock (false)
@@ -1553,6 +1554,9 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 #endif /* defined (Q_WS_MAC) */
             case QEvent::Resize:
             {
+                /* Set the "guest needs to resize" hint.  This hint is acted upon
+                 * when (and only when) the autoresize property is set to "true". */
+                mDoResize = mGuestSupportsGraphics || mMainWnd->isTrueFullscreen();
                 if (!mIgnoreMainwndResize &&
                     mGuestSupportsGraphics && mAutoresizeGuest)
                     resize_hint_timer->start (300, TRUE);
@@ -3544,8 +3548,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
-        mMainWnd->isTrueFullscreen())
+    if (mGuestSupportsGraphics && mAutoresizeGuest)
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
@@ -3554,13 +3557,16 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         QSize sz (aToSize.isValid() ? aToSize : mMainWnd->centralWidget()->size());
         if (!aToSize.isValid())
             sz -= QSize (frameWidth() * 2, frameWidth() * 2);
-        LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
+        if (mAutoresizeGuest &&
+            (aToSize.isValid() || mDoResize))
+        {
+            LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-        /* Increase the desktop geometry if needed */
-        setDesktopGeoHint (sz.width(), sz.height());
+            /* Increase the desktop geometry if needed */
+            setDesktopGeoHint (sz.width(), sz.height());
 
-        if (mAutoresizeGuest)
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
+        }
     }
 }
 
