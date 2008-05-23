@@ -704,13 +704,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
 
-    /* This timer is used as 'last resort' which toggles f/s mode
-       in case of guest additions are not responding. */
-    mToggleFSModeTimer = new QTimer (this);
-    mToggleFSModeTimer->setSingleShot (true);
-    connect (mToggleFSModeTimer, SIGNAL (timeout()),
-             this, SIGNAL (resizeHintDone()));
-
     /* setup rendering */
 
     CDisplay display = mConsole.GetDisplay();
@@ -812,7 +805,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         int height = desktopGeometry.section (',', 1, 1).toInt();
         setDesktopGeometry (DesktopGeo_Fixed, width, height);
     }
-    connect (QApplication::desktop(), SIGNAL (workAreaResized (int)),
+    connect (QApplication::desktop(), SIGNAL (resized (int)),
              this, SLOT (doResizeDesktop (int)));
 
 #if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
@@ -1100,9 +1093,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
                 LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
                           re->width(), re->height(), re->bitsPerPixel()));
-
-                if (mToggleFSModeTimer->isActive())
-                    mToggleFSModeTimer->stop();
 
                 /* do frame buffer dependent resize */
                 mFrameBuf->resizeEvent (re);
@@ -2284,29 +2274,20 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
 /**
  *  Called on enter/exit seamless/fullscreen mode.
  */
-void VBoxConsoleView::toggleFSMode()
+void VBoxConsoleView::toggleFSMode (const QSize &aSize)
 {
     if (mAutoresizeGuest || mMainWnd->isTrueFullscreen())
     {
-        QSize newSize = QSize();
-        if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
+        QSize newSize;
+        if (aSize.isValid())
         {
-            mNormalSize = frameSize();
+            mNormalSize = aSize;
             newSize = maximumSize();
         }
         else
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    /* Currently there is a 2000 msec pause before timer transfers
-     * console into desired mode if the auto-resize feature is enabled
-     * and a 100 msec pause before it transfers console into this mode
-     * if it is not enabled. 100 msec pause required for resizing
-     * before normalizing geometry. */
-    mToggleFSModeTimer->start (mAutoresizeGuest ? 2000 : 100);
-
-    /// @todo (r=dsen) perform roll-back after 'entering' mode in case
-    //                 we got no resizing response from the guest.
 }
 
 /**
