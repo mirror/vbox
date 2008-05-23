@@ -238,6 +238,12 @@ private:
 
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
+
+    /** 
+     * This flag indicates whether the last console resize should trigger
+     * a size hint to the guest.  This is important particularly when
+     * enabling the autoresize feature to know whether to send a hint.
+     */
     bool mDoResize : 1;
 
     bool mGuestSupportsGraphics : 1;
