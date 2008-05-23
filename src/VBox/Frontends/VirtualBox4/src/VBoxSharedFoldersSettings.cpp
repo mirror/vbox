@@ -172,14 +172,12 @@ private:
 
 VBoxSharedFoldersSettings::VBoxSharedFoldersSettings (QWidget *aParent,
                                                       int aType)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
     , mDialogType (aType)
     , mIsListViewChanged (false)
-    , mTrFull (tr ("Full"))
-    , mTrReadOnly (tr ("Read-only"))
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxSharedFoldersSettings::setupUi (this);
 
     mTreeView->header()->setMovable (false);
     mTbAdd->setIcon (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
@@ -224,6 +222,8 @@ VBoxSharedFoldersSettings::VBoxSharedFoldersSettings (QWidget *aParent,
         new SFTreeViewItem (mTreeView, fields, SFTreeViewItem::EllipsisEnd);
     }
     mTreeView->sortItems (0, Qt::Ascending);
+
+    retranslateUi();
 }
 
 
@@ -296,6 +296,14 @@ void VBoxSharedFoldersSettings::putBackToConsole()
     putBackTo (en, root);
 }
 
+void VBoxSharedFoldersSettings::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxSharedFoldersSettings::retranslateUi (this);
+
+    mTrFull = tr ("Full");
+    mTrReadOnly = tr ("Read-only");
+}
 
 void VBoxSharedFoldersSettings::tbAddPressed()
 {
@@ -656,64 +664,44 @@ VBoxAddSFDialog::VBoxAddSFDialog (VBoxSharedFoldersSettings *aParent,
                                   VBoxAddSFDialog::DialogType aType,
                                   bool aEnableSelector,
                                   const SFoldersNameList &aUsedNames)
-    : QDialog (aParent)
-    , mLePath (0), mLeName (0), mCbPermanent (0), mCbReadonly (0)
+    : QIWithRetranslateUI<QDialog> (aParent)
+    , mType(aType), mLePath (0), mLeName (0), mCbPermanent (0), mCbReadonly (0)
     , mUsedNames (aUsedNames)
 {
     setModal (true);
-
-    switch (aType)
-    {
-        case AddDialogType:
-            setWindowTitle (tr ("Add Share"));
-            break;
-        case EditDialogType:
-            setWindowTitle (tr ("Edit Share"));
-            break;
-        default:
-            AssertMsgFailed (("Incorrect SF Dialog type\n"));
-    }
 
     QVBoxLayout *mainLayout = new QVBoxLayout (this);
 
     /* Setup Input layout */
     QGridLayout *inputLayout = new QGridLayout ();
     mainLayout->addLayout (inputLayout);
-    QLabel *lbPath = new QLabel (tr ("Folder Path"), this);
+    mLbPath = new QLabel (this);
     mLePath = new QLineEdit (this);
-    QToolButton *tbPath = new QToolButton (this);
-    tbPath->setAutoRaise (true);
-    QLabel *lbName = new QLabel (tr ("Folder Name"), this);
+    mTbPath = new QToolButton (this);
+    mTbPath->setAutoRaise (true);
+    mLbName = new QLabel (this);
     mLeName = new QLineEdit (this);
-    tbPath->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
+    mTbPath->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                           ":/select_file_dis_16px.png"));
-    tbPath->setFocusPolicy (Qt::TabFocus);
+    mTbPath->setFocusPolicy (Qt::TabFocus);
     connect (mLePath, SIGNAL (textChanged (const QString &)),
              this, SLOT (validate()));
     connect (mLeName, SIGNAL (textChanged (const QString &)),
              this, SLOT (validate()));
-    connect (tbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
-    mLePath->setWhatsThis (tr ("Displays the path to an existing folder "
-                               "on the host PC."));
-    mLeName->setWhatsThis (tr ("Displays the name of the shared folder "
-                               "(as it will be seen by the guest OS)."));
-    tbPath->setWhatsThis (tr ("Opens the dialog to select a folder."));
-    mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
+    connect (mTbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
+    mCbReadonly = new QCheckBox (this);
     mCbReadonly->setChecked (false);
-    mCbReadonly->setWhatsThis (tr ("When checked, the guest OS will not "
-                                   "be able to write to the specified "
-                                   "shared folder."));
 
-    inputLayout->addWidget (lbPath,  0, 0);
+    inputLayout->addWidget (mLbPath,  0, 0);
     inputLayout->addWidget (mLePath, 0, 1);
-    inputLayout->addWidget (tbPath,  0, 2);
-    inputLayout->addWidget (lbName,  1, 0);
+    inputLayout->addWidget (mTbPath,  0, 2);
+    inputLayout->addWidget (mLbName,  1, 0);
     inputLayout->addWidget (mLeName, 1, 1, 1, 2);
     inputLayout->addWidget (mCbReadonly, 2, 0, 1, 3);
 
     if (aEnableSelector)
     {
-        mCbPermanent = new QCheckBox (tr ("&Make Permanent"), this);
+        mCbPermanent = new QCheckBox (this);
         mCbPermanent->setChecked (true);
         inputLayout->addWidget (mCbPermanent, 3, 0, 1, 3);
         connect (mCbPermanent, SIGNAL (toggled (bool)),
@@ -729,6 +717,8 @@ VBoxAddSFDialog::VBoxAddSFDialog (VBoxSharedFoldersSettings *aParent,
 
     /* Validate fields */
     validate();
+
+    retranslateUi();
 }
 
 QString VBoxAddSFDialog::getPath()
@@ -767,6 +757,39 @@ void VBoxAddSFDialog::setPermanent (bool aPermanent)
 void VBoxAddSFDialog::setWritable (bool aWritable)
 {
     mCbReadonly->setChecked (!aWritable);
+}
+
+void VBoxAddSFDialog::retranslateUi()
+{
+    switch (mType)
+    {
+        case AddDialogType:
+            setWindowTitle (tr ("Add Share"));
+            break;
+        case EditDialogType:
+            setWindowTitle (tr ("Edit Share"));
+            break;
+        default:
+            AssertMsgFailed (("Incorrect SF Dialog type\n"));
+    }
+
+    mLbPath->setText (tr ("Folder Path"));
+    mLePath->setWhatsThis (tr ("Displays the path to an existing folder "
+                               "on the host PC."));
+
+    mLbName->setText (tr ("Folder Name")); 
+    mLeName->setWhatsThis (tr ("Displays the name of the shared folder "
+                               "(as it will be seen by the guest OS)."));
+
+    mTbPath->setWhatsThis (tr ("Opens the dialog to select a folder."));
+
+    mCbReadonly->setText (tr ("&Read-only"));
+    mCbReadonly->setWhatsThis (tr ("When checked, the guest OS will not "
+                                   "be able to write to the specified "
+                                   "shared folder."));
+
+    if (mCbPermanent)
+        mCbPermanent->setText (tr ("&Make Permanent"));
 }
 
 void VBoxAddSFDialog::validate()

@@ -23,7 +23,8 @@
 #ifndef __VBoxSharedFoldersSettings_h__
 #define __VBoxSharedFoldersSettings_h__
 
-#include <VBoxSharedFoldersSettings.gen.h>
+#include "VBoxSharedFoldersSettings.gen.h"
+#include "QIWithRetranslateUI.h"
 
 /* Qt includes */
 #include <QDialog>
@@ -45,7 +46,8 @@ enum SFDialogType
 typedef QPair<QString, SFDialogType> SFolderName;
 typedef QList<SFolderName> SFoldersNameList;
 
-class VBoxSharedFoldersSettings : public QWidget, public Ui::VBoxSharedFoldersSettings
+class VBoxSharedFoldersSettings : public QIWithRetranslateUI<QWidget>,
+                                  public Ui::VBoxSharedFoldersSettings
 {
     Q_OBJECT;
 
@@ -62,6 +64,10 @@ public:
     void putBackToGlobal();
     void putBackToMachine();
     void putBackToConsole();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -102,7 +108,7 @@ private:
     QString  mTrReadOnly;
 };
 
-class VBoxAddSFDialog : public QDialog
+class VBoxAddSFDialog : public QIWithRetranslateUI<QDialog>
 {
     Q_OBJECT;
 
@@ -130,6 +136,10 @@ public:
     void setPermanent (bool aPermanent);
     void setWritable (bool aWritable);
 
+protected:
+
+    void retranslateUi();
+
 private slots:
 
     void validate();
@@ -139,12 +149,16 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    QIDialogButtonBox *mButtonBox;
-    QLineEdit         *mLePath;
-    QLineEdit         *mLeName;
-    QCheckBox         *mCbPermanent;
-    QCheckBox         *mCbReadonly;
-    SFoldersNameList   mUsedNames;
+    VBoxAddSFDialog::DialogType  mType;
+    QIDialogButtonBox           *mButtonBox;
+    QLabel                      *mLbPath;
+    QLineEdit                   *mLePath;
+    QToolButton                 *mTbPath;
+    QLabel                      *mLbName;
+    QLineEdit                   *mLeName;
+    QCheckBox                   *mCbPermanent;
+    QCheckBox                   *mCbReadonly;
+    SFoldersNameList             mUsedNames;
 };
 
 #endif // __VBoxSharedFoldersSettings_h__

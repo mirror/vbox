@@ -23,12 +23,14 @@
 #ifndef __VBoxNewVMWzd_h__
 #define __VBoxNewVMWzd_h__
 
-#include <QIAbstractWizard.h>
-#include <VBoxNewVMWzd.gen.h>
-#include <COMDefs.h>
-#include <QIWidgetValidator.h>
+#include "QIAbstractWizard.h"
+#include "VBoxNewVMWzd.gen.h"
+#include "COMDefs.h"
+#include "QIWidgetValidator.h"
+#include "QIWithRetranslateUI.h"
 
-class VBoxNewVMWzd : public QIAbstractWizard, public Ui::VBoxNewVMWzd
+class VBoxNewVMWzd : public QIWithRetranslateUI<QIAbstractWizard>,
+                     public Ui::VBoxNewVMWzd
 {
     Q_OBJECT;
 
@@ -38,6 +40,10 @@ public:
    ~VBoxNewVMWzd();
 
     const CMachine& machine() const;
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

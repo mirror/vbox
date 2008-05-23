@@ -20,9 +20,9 @@
  * additional information or have any questions.
  */
 
-#include <VBoxNewHDWzd.h>
-#include <VBoxGlobal.h>
-#include <VBoxProblemReporter.h>
+#include "VBoxNewHDWzd.h"
+#include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 
 /* Qt includes */
 #include <QFileDialog>
@@ -91,10 +91,10 @@ static inline Q_UINT64 sliderToSizeMB (int val, int aSliderScale)
 
 
 VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
-    : QIAbstractWizard (aParent)
+    : QIWithRetranslateUI<QIAbstractWizard> (aParent)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxNewHDWzd::setupUi (this);
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -160,6 +160,8 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
 
     /* Initialize wizard ftr */
     initializeWizardFtr();
+
+    retranslateUi();
 }
 
 void VBoxNewHDWzd::setRecommendedFileName (const QString &aName)
@@ -176,6 +178,37 @@ void VBoxNewHDWzd::setRecommendedSize (Q_UINT64 aSize)
     updateSizeToolTip (mCurrentSize * _1M);
 }
 
+void VBoxNewHDWzd::retranslateUi()
+{
+   /* Translate uic generated strings */
+    Ui::VBoxNewHDWzd::retranslateUi (this);
+
+    QWidget *page = mPageStack->currentWidget();
+
+    if (page == mPageSummary)
+    {
+        QString type = mRbDynamicType->isChecked() ? mRbDynamicType->text()
+                                                   : mRbFixedType->text();
+        type = VBoxGlobal::removeAccelMark (type);
+
+        Q_UINT64 sizeB = imageSize() * _1M;
+
+        /* compose summary */
+        QString summary = QString (tr (
+            "<table cellspacing=0 cellpadding=2>"
+            "<tr><td><nobr>Type:</nobr></td><td><nobr>%1</nobr></td></tr>"
+            "<tr><td><nobr>Location:</nobr></td><td><nobr>%2</nobr></td></tr>"
+            "<tr><td><nobr>Size:</nobr></td><td><nobr>%3&nbsp;(%4&nbsp;Bytes)</nobr></td></tr>"
+            "</table>"
+        ))
+            .arg (type)
+            .arg (composeFullFileName (imageFileName()))
+            .arg (VBoxGlobal::formatSize (sizeB))
+            .arg (sizeB);
+
+        mTeSummary->setText (summary);
+    }
+}
 
 void VBoxNewHDWzd::accept()
 {
@@ -259,6 +292,9 @@ void VBoxNewHDWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxNewHDWzd::onPageShow()
 {
+    /* Make sure all is properly translated & composed */
+    retranslateUi();
+
     QWidget *page = mPageStack->currentWidget();
 
     if (page == mPageWelcome)
@@ -269,29 +305,7 @@ void VBoxNewHDWzd::onPageShow()
     else if (page == mPageNameAndSize)
         mLeName->setFocus();
     else if (page == mPageSummary)
-    {
-        QString type = mRbDynamicType->isChecked() ? mRbDynamicType->text()
-                                                   : mRbFixedType->text();
-        type = VBoxGlobal::removeAccelMark (type);
-
-        Q_UINT64 sizeB = imageSize() * _1M;
-
-        /* compose summary */
-        QString summary = QString (tr (
-            "<table cellspacing=0 cellpadding=2>"
-            "<tr><td><nobr>Type:</nobr></td><td><nobr>%1</nobr></td></tr>"
-            "<tr><td><nobr>Location:</nobr></td><td><nobr>%2</nobr></td></tr>"
-            "<tr><td><nobr>Size:</nobr></td><td><nobr>%3&nbsp;(%4&nbsp;Bytes)</nobr></td></tr>"
-            "</table>"
-        ))
-            .arg (type)
-            .arg (composeFullFileName (imageFileName()))
-            .arg (VBoxGlobal::formatSize (sizeB))
-            .arg (sizeB);
-
-        mTeSummary->setText (summary);
         mTeSummary->setFocus();
-    }
 
     if (page == mPageSummary)
         finishButton()->setDefault (true);

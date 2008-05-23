@@ -23,15 +23,21 @@
 #ifndef __VBoxTakeSnapshotDlg_h__
 #define __VBoxTakeSnapshotDlg_h__
 
-#include <VBoxTakeSnapshotDlg.gen.h>
+#include "VBoxTakeSnapshotDlg.gen.h"
+#include "QIWithRetranslateUI.h"
 
-class VBoxTakeSnapshotDlg : public QDialog, public Ui::VBoxTakeSnapshotDlg
+class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QDialog>,
+                            public Ui::VBoxTakeSnapshotDlg
 {
     Q_OBJECT;
 
 public:
 
     VBoxTakeSnapshotDlg (QWidget *aParent);
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

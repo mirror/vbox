@@ -20,16 +20,16 @@
  * additional information or have any questions.
  */
 
-#include <VBoxVMFirstRunWzd.h>
-#include <VBoxGlobal.h>
-#include <VBoxDiskImageManagerDlg.h>
+#include "VBoxVMFirstRunWzd.h"
+#include "VBoxGlobal.h"
+#include "VBoxDiskImageManagerDlg.h"
 
 VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent)
-    : QIAbstractWizard (aParent)
+    : QIWithRetranslateUI<QIAbstractWizard> (aParent)
     , mMachine (aMachine)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxVMFirstRunWzd::setupUi (this);
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -76,6 +76,38 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
 
     /* Initialize wizard ftr */
     initializeWizardFtr();
+
+    retranslateUi();
+}
+
+void VBoxVMFirstRunWzd::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMFirstRunWzd::retranslateUi (this);
+
+    QWidget *page = mPageStack->currentWidget();
+
+    if (page == mPageSummary)
+    {
+        /* compose summary */
+        QString type =
+            mRbCdType->isChecked() ? tr ("CD/DVD-ROM Device") :
+            mRbFdType->isChecked() ? tr ("Floppy Device") :
+            QString::null;
+        QString source =
+            mRbHost->isChecked() ? tr ("Host Drive %1").arg (mCbHost->currentText()) :
+            mRbImage->isChecked() ? mCbImage->currentText() : QString::null;
+        QString summary = QString (tr (
+            "<table> cellspacing=0 cellpadding=2"
+            "<tr><td>Type:</td><td>%1</td></tr>"
+            "<tr><td>Source:</td><td>%2</td></tr>"
+            "</table>"
+        ))
+            .arg (type)
+            .arg (source);
+
+        mTeSummary->setText (summary);
+    }
 }
 
 void VBoxVMFirstRunWzd::accept()
@@ -230,6 +262,9 @@ void VBoxVMFirstRunWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxVMFirstRunWzd::onPageShow()
 {
+    /* Make sure all is properly translated & composed */
+    retranslateUi();
+
     QWidget *page = mPageStack->currentWidget();
 
     if (page == mPageWelcome)
@@ -238,27 +273,7 @@ void VBoxVMFirstRunWzd::onPageShow()
         mRbCdType->isChecked() ? mRbCdType->setFocus() :
                                  mRbFdType->setFocus();
     else if (page == mPageSummary)
-    {
-        /* compose summary */
-        QString type =
-            mRbCdType->isChecked() ? tr ("CD/DVD-ROM Device") :
-            mRbFdType->isChecked() ? tr ("Floppy Device") :
-            QString::null;
-        QString source =
-            mRbHost->isChecked() ? tr ("Host Drive %1").arg (mCbHost->currentText()) :
-            mRbImage->isChecked() ? mCbImage->currentText() : QString::null;
-        QString summary = QString (tr (
-            "<table> cellspacing=0 cellpadding=2"
-            "<tr><td>Type:</td><td>%1</td></tr>"
-            "<tr><td>Source:</td><td>%2</td></tr>"
-            "</table>"
-        ))
-            .arg (type)
-            .arg (source);
-
-        mTeSummary->setText (summary);
         mTeSummary->setFocus();
-    }
 
     if (page == mPageSummary)
         finishButton()->setDefault (true);

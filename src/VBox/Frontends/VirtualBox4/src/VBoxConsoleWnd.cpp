@@ -3482,13 +3482,12 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 #endif
 
 VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
-    : QDialog (aParent)
+    : QIWithRetranslateUI<QDialog> (aParent)
     , mSettings (0)
     , mSession (aSession)
 {
     setModal (true);
     /* Setup Dialog's options */
-    setWindowTitle (tr ("Shared Folders"));
     setWindowIcon (QIcon (":/select_file_16px.png"));
     setSizeGripEnabled (true);
 
@@ -3510,6 +3509,13 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
     mainLayout->addWidget (buttonBox);
+
+    retranslateUi();
+}
+
+void VBoxSFDialog::retranslateUi()
+{
+    setWindowTitle (tr ("Shared Folders"));
 }
 
 void VBoxSFDialog::accept()

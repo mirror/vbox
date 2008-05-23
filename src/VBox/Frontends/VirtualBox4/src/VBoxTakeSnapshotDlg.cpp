@@ -20,18 +20,18 @@
  * additional information or have any questions.
  */
 
-#include <VBoxTakeSnapshotDlg.h>
-#include <VBoxProblemReporter.h>
-#include <VBoxUtils.h>
+#include "VBoxTakeSnapshotDlg.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxUtils.h"
 
 /* Qt includes */
 #include <QPushButton>
 
 VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg (QWidget *aParent)
-    : QDialog (aParent)
+    : QIWithRetranslateUI<QDialog> (aParent)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxTakeSnapshotDlg::setupUi (this);
 
     QIAltKeyFilter *af = new QIAltKeyFilter (this);
     af->watchOn (mLeName);
@@ -41,6 +41,14 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg (QWidget *aParent)
              &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (mLeName, SIGNAL (textChanged (const QString &)),
              this, SLOT (nameChanged (const QString &)));
+
+    retranslateUi();
+}
+
+void VBoxTakeSnapshotDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxTakeSnapshotDlg::retranslateUi (this);
 }
 
 void VBoxTakeSnapshotDlg::nameChanged (const QString &aName)

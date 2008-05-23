@@ -346,13 +346,17 @@ private:
 
 
 class VBoxSharedFoldersSettings;
-class VBoxSFDialog : public QDialog
+class VBoxSFDialog : public QIWithRetranslateUI<QDialog>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
     VBoxSFDialog (QWidget*, CSession&);
+
+protected:
+
+    void retranslateUi();
 
 protected slots:
 
