@@ -57,6 +57,11 @@ else
   	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared \
   	VBoxGuestR3LibXFree86
+ else ifdef VBOX_WITH_X11_ADDITIONS
+   LIBRARIES += \
+  	VBoxGuestR3Lib \
+	VBoxGuestR3LibShared \
+  	VBoxGuestR3LibXFree86
  endif
 endif
 
