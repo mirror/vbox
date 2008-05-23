@@ -31,7 +31,7 @@ SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
 SOL_DBG_OBJCOPY  := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 PKGINFO_ARCH     = $(shell uname -p)
-PKGINFO_REVSTAMP = $(shell date '+%Y.%m.%d.%H.%M')
+PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
 PKG_FILENAME     = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
 DBG_ARCHIVE      = VirtualBox-dbg.tar.bz2
 
