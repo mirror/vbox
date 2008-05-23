@@ -84,26 +84,26 @@ EMDECL(EMSTATE) EMGetState(PVM pVM)
  * @returns VBox status code.
  * @param   pSrc        GC source pointer
  * @param   pDest       HC destination pointer
- * @param   size        Number of bytes to read
+ * @param   cb          Number of bytes to read
  * @param   dwUserdata  Callback specific user data (pCpu)
  *
  */
-DECLCALLBACK(int) EMReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
+DECLCALLBACK(int) EMReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
 {
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PVM           pVM      = (PVM)pCpu->apvUserData[0];
 #ifdef IN_RING0
-    int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, size);
+    int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, cb);
     AssertRC(rc);
 #else
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
-        int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, size);
+        int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, cb);
         AssertRC(rc);
     }
     else
     {
-        for (uint32_t i = 0; i < size; i++)
+        for (uint32_t i = 0; i < cb; i++)
         {
             uint8_t opcode;
             if (VBOX_SUCCESS(PATMR3QueryOpcode(pVM, (RTGCPTR)pSrc + i, &opcode)))
