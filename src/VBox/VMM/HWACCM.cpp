@@ -46,8 +46,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
-
-#define VBOX_WITH_NESTED_PAGING
+/* Uncomment to enable experimental nested paging. */
+//#define VBOX_WITH_NESTED_PAGING
 
 /*******************************************************************************
 *   Internal Functions                                                         *
