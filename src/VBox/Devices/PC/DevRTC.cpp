@@ -104,7 +104,7 @@ __END_DECLS
 #define REG_B_UIE 0x10
 
 /** @todo Replace struct my_tm with RTTIME. */
-struct my_tm 
+struct my_tm
 {
     int32_t tm_sec;
     int32_t tm_min;
@@ -234,8 +234,8 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
                 /* set mode: reset UIP mode */
                 s->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
 #if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
-                data &= ~REG_B_UIE; 
-#endif 
+                data &= ~REG_B_UIE;
+#endif
             } else {
                 /* if disabling set mode, update the time */
                 if (s->cmos_data[RTC_REG_B] & REG_B_SET) {
@@ -382,11 +382,16 @@ static void rtc_update_second(void *opaque)
             /* update in progress bit */
             s->cmos_data[RTC_REG_A] |= REG_A_UIP;
         }
+#if 0 /* old: winds up waiting for 10ms... */
         /* should be 244 us = 8 / 32768 seconds, but currently the
            timers do not have the necessary resolution. */
         delay = (TMTimerGetFreq(s->CTXSUFF(pSecondTimer2)) * 1) / 100;
         if (delay < 1)
             delay = 1;
+#else
+        /* 244140 ns = 8 / 32768 seconds */
+        delay = TMTimerFromNano(s->CTXSUFF(pSecondTimer2), 244140);
+#endif
         TMTimerSet(s->CTXSUFF(pSecondTimer2), s->next_second_time + delay);
     }
 }
