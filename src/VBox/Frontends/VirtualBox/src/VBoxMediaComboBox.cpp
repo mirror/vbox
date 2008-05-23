@@ -264,7 +264,8 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
 
     int insertPosition = -1;
     for (int i = 0; i < count(); ++ i)
-        if (text (i).localeAwareCompare (aName) > 0)
+        if (text (i).localeAwareCompare (aName) > 0 &&
+            !getId (i).isNull())
         {
             insertPosition = i;
             break;
