@@ -331,6 +331,8 @@ EMDECL(uint32_t) EMEmulateLockCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2
 EMDECL(uint32_t) EMEmulateCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
 EMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 EMDECL(uint32_t) EMEmulateCmpXchg8b32(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+EMDECL(int)      EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame);
+EMDECL(int)      EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 #ifdef IN_RING3
 /** @defgroup grp_em_r3     The EM Host Context Ring-3 API

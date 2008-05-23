@@ -36,6 +36,7 @@
 #include <VBox/vm.h>
 #include <VBox/hwaccm.h>
 #include <VBox/tm.h>
+#include <VBox/pdmapi.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -2041,6 +2042,206 @@ static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     return VINF_EM_HALT;
 }
 
+/**
+ * Interpret RDMSR
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    uint32_t u32Dummy, u32Features, cpl;
+    uint64_t val;
+    CPUMCTX *pCtx;
+    int      rc;
+
+    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
+    AssertRC(rc);
+
+    /* Get the current privilege level. */
+    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    if (cpl != 0)
+        return VERR_EM_INTERPRETER; /* supervisor only */
+
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
+        return VERR_EM_INTERPRETER; /* not supported */
+
+    switch (pRegFrame->ecx)
+    {
+    case MSR_IA32_APICBASE:
+        rc = PDMApicGetBase(pVM, &val);
+        AssertRC(rc);
+        break;
+
+    case MSR_IA32_CR_PAT:
+        val = pCtx->msrPAT;
+        break;
+
+    case MSR_IA32_SYSENTER_CS:
+        val = pCtx->SysEnter.cs;
+        break;
+
+    case MSR_IA32_SYSENTER_EIP:
+        val = pCtx->SysEnter.eip;
+        break;
+
+    case MSR_IA32_SYSENTER_ESP:
+        val = pCtx->SysEnter.esp;
+        break;
+
+    case MSR_K6_EFER:
+        val = pCtx->msrEFER;
+        break;
+
+    case MSR_K8_SF_MASK:
+        val = pCtx->msrSFMASK;
+        break;
+
+    case MSR_K6_STAR:
+        val = pCtx->msrSTAR;
+        break;
+
+    case MSR_K8_LSTAR:
+        val = pCtx->msrLSTAR;
+        break;
+
+    case MSR_K8_CSTAR:
+        val = pCtx->msrCSTAR;
+        break;
+
+    case MSR_K8_FS_BASE:
+        val = pCtx->msrFSBASE;
+        break;
+
+    case MSR_K8_GS_BASE:
+        val = pCtx->msrGSBASE;
+        break;
+
+    case MSR_K8_KERNEL_GS_BASE:
+        val = pCtx->msrKERNELGSBASE;
+        break;
+
+    default:
+        /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
+        val = 0;
+        break;
+    }
+    Log(("EMInterpretRdmsr %x -> val=%VX64\n", pRegFrame->ecx, val));
+    pRegFrame->eax = (uint32_t) val;
+    pRegFrame->edx = (uint32_t) (val >> 32ULL);
+    return VINF_SUCCESS;
+}
+
+/**
+ * RDMSR Emulation.
+ */
+static int emInterpretRdmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretRdmsr(pVM, pRegFrame);
+}
+
+/**
+ * Interpret WRMSR
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    uint32_t u32Dummy, u32Features, cpl;
+    uint64_t val;
+    CPUMCTX *pCtx;
+    int      rc;
+
+    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
+    AssertRC(rc);
+
+    /* Get the current privilege level. */
+    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    if (cpl != 0)
+        return VERR_EM_INTERPRETER; /* supervisor only */
+
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
+        return VERR_EM_INTERPRETER; /* not supported */
+
+    val = (uint64_t)pRegFrame->eax | ((uint64_t)pRegFrame->edx << 32ULL);
+    Log(("EMInterpretWrmsr %x val=%VX64\n", pRegFrame->ecx, val));
+    switch (pRegFrame->ecx)
+    {
+    case MSR_IA32_APICBASE:
+        rc = PDMApicSetBase(pVM, val);
+        AssertRC(rc);
+        break;
+
+    case MSR_IA32_CR_PAT:
+        pCtx->msrPAT = val;
+        break;
+
+    case MSR_IA32_SYSENTER_CS:
+        pCtx->SysEnter.cs = val;
+        break;
+
+    case MSR_IA32_SYSENTER_EIP:
+        pCtx->SysEnter.eip = val;
+        break;
+
+    case MSR_IA32_SYSENTER_ESP:
+        pCtx->SysEnter.esp = val;
+        break;
+
+    case MSR_K6_EFER:
+        AssertFailed();
+        pCtx->msrEFER = val;
+        break;
+
+    case MSR_K8_SF_MASK:
+        pCtx->msrSFMASK = val;
+        break;
+
+    case MSR_K6_STAR:
+        pCtx->msrSTAR = val;
+        break;
+
+    case MSR_K8_LSTAR:
+        pCtx->msrLSTAR = val;
+        break;
+
+    case MSR_K8_CSTAR:
+        pCtx->msrCSTAR = val;
+        break;
+
+    case MSR_K8_FS_BASE:
+        pCtx->msrFSBASE = val;
+        break;
+
+    case MSR_K8_GS_BASE:
+        pCtx->msrGSBASE = val;
+        break;
+
+    case MSR_K8_KERNEL_GS_BASE:
+        pCtx->msrKERNELGSBASE = val;
+        break;
+
+    default:
+        /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
+        break;
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * WRMSR Emulation.
+ */
+static int emInterpretWrmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretWrmsr(pVM, pRegFrame);
+}
 
 /**
  * Internal worker.
@@ -2144,6 +2345,10 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_CLTS,Clts);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
+#ifdef VBOX_WITH_MSR_EMULATION
+        INTERPRET_CASE(OP_RDMSR, Rdmsr);
+        INTERPRET_CASE(OP_WRMSR, Wrmsr);
+#endif
         INTERPRET_CASE_EX_PARAM3(OP_ADD,Add, AddSub, EMEmulateAdd);
         INTERPRET_CASE_EX_PARAM3(OP_SUB,Sub, AddSub, EMEmulateSub);
         INTERPRET_CASE(OP_ADC,Adc);

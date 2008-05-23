@@ -259,7 +259,7 @@ typedef struct X86CPUIDFEATEDX
     unsigned    u1MCE : 1;
     /** Bit 8 - CX8 - CMPXCHG8B instruction. */
     unsigned    u1CX8 : 1;
-    /** Bit 9 - APIC - APIC On-Chick. */
+    /** Bit 9 - APIC - APIC On-Chip. */
     unsigned    u1APIC : 1;
     /** Bit 10 - Reserved. */
     unsigned    u1Reserved1 : 1;
@@ -697,6 +697,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @name Machine Specific Registers
  * @{
  */
+#ifndef MSR_IA32_APICBASE /* qemu cpu.h klugde */
+#define MSR_IA32_APICBASE                   0x1b
+#endif
+
 /** CPU Feature control. */
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
@@ -717,7 +721,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #endif
 
 /* Page Attribute Table. */
-#define IA32_CR_PAT                         0x277
+#define MSR_IA32_CR_PAT                     0x277
 
 /** Basic VMX information. */
 #define MSR_IA32_VMX_BASIC_INFO             0x480
