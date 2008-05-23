@@ -3657,7 +3657,7 @@ static char * vmdkStrReplace(const char *pszWhere, const char *pszWhat, const ch
     Assert(VALID_PTR(pszWhere));
     Assert(VALID_PTR(pszWhat));
     Assert(VALID_PTR(pszByWhat));
-    char *pszFoundStr = strstr(pszWhere, pszWhat);
+    const char *pszFoundStr = strstr(pszWhere, pszWhat);
     if (!pszFoundStr)
         return NULL;
     size_t cFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
