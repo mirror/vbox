@@ -1602,7 +1602,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::Resize:
             {
                 /* Set the "guest needs to resize" hint.  This hint is acted upon
-                 * when (and only when) the autoresize property is set to "true". */
+                 * when (and only when) the autoresize property is "true". */
                 mDoResize = mGuestSupportsGraphics || mMainWnd->isTrueFullscreen();
                 if (!mIgnoreMainwndResize &&
                     mGuestSupportsGraphics && mAutoresizeGuest)
@@ -3600,12 +3600,19 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         QSize sz (aToSize.isValid() ? aToSize : mMainWnd->centralWidget()->size());
         if (!aToSize.isValid())
             sz -= QSize (frameWidth() * 2, frameWidth() * 2);
+        /* We only actually send the hint if
+         * 1) the autoresize property is set to true and
+         * 2) either an explicit new size was given (e.g. if the request
+         *    was triggered directly by a console resize event) or if no
+         *    explicit size was specified but a resize is flagged as being
+         *    needed (e.g. the autoresize was just enabled and the console
+         *    was resized while it was disabled). */
         if (mAutoresizeGuest &&
             (aToSize.isValid() || mDoResize))
         {
             LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-            /* Increase the desktop geometry if needed */
+            /* Increase the maximum allowed size to the new size if needed */
             setDesktopGeoHint (sz.width(), sz.height());
 
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
