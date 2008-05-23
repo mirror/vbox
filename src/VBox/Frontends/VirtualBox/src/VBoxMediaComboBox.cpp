@@ -264,6 +264,9 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
 
     int insertPosition = -1;
     for (int i = 0; i < count(); ++ i)
+        /* Searching for the first real (non-null) vdi item
+           which have name greater than the item to be inserted.
+           This is necessary for sorting items alphabetically. */
         if (text (i).localeAwareCompare (aName) > 0 &&
             !getId (i).isNull())
         {
