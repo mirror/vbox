@@ -1855,6 +1855,9 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
     DiskImageItem *item = aItem && aItem->rtti() == DiskImageItem::TypeId ?
         static_cast<DiskImageItem*> (aItem) : 0;
 
+    /* Ensures current item visible every time we are switching page */
+    item->listView()->ensureItemVisible (item);
+
     bool notInEnum      = !vboxGlobal().isMediaEnumerationStarted();
     bool modifyEnabled  = notInEnum &&
                           item &&  item->getUsage().isNull() &&
