@@ -3645,33 +3645,56 @@ out:
 }
 
 /**
- * Allocates a new copy of the given UTF-8 string using RTMemTmpAlloc().
+ * Replaces a fragment of a string with the specified string.
  *
  * @returns Pointer to the allocated UTF-8 string.
- * @param   pszString       UTF-8 string to duplicate.
+ * @param   pszWhere        UTF-8 string to search in.
+ * @param   pszWhat         UTF-8 string to search for.
+ * @param   pszByWhat       UTF-8 string to replace the found string with.
  */
-static char * vmdkStrTmpDup(const char *pszString)
+static char * vmdkStrReplace(const char *pszWhere, const char *pszWhat, const char *pszByWhat)
 {
-    Assert(VALID_PTR(pszString));
-    size_t cch = strlen(pszString) + 1;
-    char *psz = (char *)RTMemTmpAlloc(cch);
-    if (psz)
-        memcpy(psz, pszString, cch);
-    return psz;
+    Assert(VALID_PTR(pszWhere));
+    Assert(VALID_PTR(pszWhat));
+    Assert(VALID_PTR(pszByWhat));
+    char *pszFoundStr = strstr(pszWhere, pszWhat);
+    if (!pszFoundStr)
+        return NULL;
+    size_t cFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
+    char *pszNewStr = (char *)RTMemAlloc(cFinal);
+    if (pszNewStr)
+    {
+        char *pszTmp = pszNewStr;
+        memcpy(pszTmp, pszWhere, pszFoundStr - pszWhere);
+        pszTmp += pszFoundStr - pszWhere;
+        memcpy(pszTmp, pszByWhat, strlen(pszByWhat));
+        pszTmp += strlen(pszByWhat);
+        strcpy(pszTmp, pszFoundStr + strlen(pszWhat));
+    }
+    return pszNewStr;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRename */
 static int vmdkRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-    char **apszOldExtentBaseNames; 
-    char **apszOldExtentFullNames; 
-    char **apszNewExtentFullNames; 
-    char *pszOldImageName;
-    char *pszNewImageName;
-    bool fImageFreed = false;
+
+    PVMDKIMAGE  pImage  = (PVMDKIMAGE)pBackendData;
+    int               rc = VINF_SUCCESS;
+    char   **apszOldName = NULL;
+    char   **apszNewName = NULL;
+    char  **apszNewLines = NULL;
+    char *pszOldDescName = NULL;
+    bool     fImageFreed = false;
+    bool   fEmbeddedDesc = false;
+    unsigned    cExtents = pImage->cExtents;
+    char *pszNewBasename;
+    char *pszOldBasename;
+    unsigned i, line;
+    VMDKDESCRIPTOR DescriptorCopy;
+    VMDKEXTENT     ExtentCopy;
+
+    memset(&DescriptorCopy, 0, sizeof(DescriptorCopy));
 
     /* Check arguments. */
     if (   !pImage
@@ -3684,153 +3707,113 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
     }
 
     /*
-     * Allocate an array to store old extent names in case we have to roll back the changes.
-     * Everything is initialized with zeros. We actually save stuff when and if we change it.
+     * Allocate an array to store both old and new names of renamed files
+     * in case we have to roll back the changes. Arrays are initialized
+     * with zeros. We actually save stuff when and if we change it.
      */
-    apszOldExtentBaseNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
-    apszOldExtentFullNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
-    apszNewExtentFullNames = (char **)RTMemTmpAllocZ(pImage->cExtents * sizeof(char*)); 
-    if (!apszOldExtentBaseNames || !apszOldExtentFullNames || !apszNewExtentFullNames)
+    apszOldName  = (char **)RTMemTmpAllocZ((cExtents + 1) * sizeof(char*)); 
+    apszNewName  = (char **)RTMemTmpAllocZ((cExtents + 1) * sizeof(char*)); 
+    apszNewLines = (char **)RTMemTmpAllocZ((cExtents) * sizeof(char*)); 
+    if (!apszOldName || !apszNewName || !apszNewLines)
     {
-        if (apszOldExtentBaseNames)
-            RTMemTmpFree(apszOldExtentBaseNames);
-        if (apszOldExtentFullNames)
-            RTMemTmpFree(apszOldExtentFullNames);
-        if (apszNewExtentFullNames)
-            RTMemTmpFree(apszNewExtentFullNames);
         rc = VERR_NO_MEMORY;
         goto out;
     }
-    pszOldImageName = NULL;
-    pszNewImageName = NULL;
 
-    do {
-        /* Basename strings needed for constructing the extent names. */
-        char *pszBasenameSubstr = RTPathFilename(pszFilename);
-        Assert(pszBasenameSubstr);
-        size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
-
-        /* Loop through each VMDKEXTENT in VMDKIMAGE->pExtents using VMDKIMAGE->cExtents. */
-        for (unsigned i = 0; i < pImage->cExtents; i++)
+    /* Save the descriptor size and position. */
+    if (pImage->pDescData)
+    {
+        /* Separate descriptor file. */
+        fEmbeddedDesc = false;
+    }
+    else
+    {
+        /* Embedded descriptor file. */
+        ExtentCopy  = pImage->pExtents[0];
+        fEmbeddedDesc = true;
+    }
+    /* Save the descriptor content. */
+    DescriptorCopy.cLines = pImage->Descriptor.cLines;
+    for (i = 0; i < DescriptorCopy.cLines; i++)
+    {
+        DescriptorCopy.aLines[i] = RTStrDup(pImage->Descriptor.aLines[i]);
+        if (!DescriptorCopy.aLines[i])
         {
-            PVMDKEXTENT pExtent = &pImage->pExtents[i];
-
-            /* @todo Store pExtent->pszFullname in array for future reference. */
-            /* @todo Store pExtent->pszBasename in array for future reference. */
-
-            /* @todo This is copy/paste code, move to seperate function. */
-            /* Determine the new file name. */
-            /* Set up fullname/basename for extent description. Cannot use StrDup
-             * for basename, as it is not guaranteed that the memory can be freed
-             * with RTMemTmpFree, which must be used as in other code paths
-             * StrDup is not usable. */
-            if (pImage->cExtents == 1 && pImage->enmImageType != VD_IMAGE_TYPE_FIXED)
-            {
-                char *pszBasename = (char *)RTMemTmpAlloc(cbBasenameSubstr);
-                if (!pszBasename)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                memcpy(pszBasename, pszBasenameSubstr, cbBasenameSubstr);
-                /* Save the old name in case we need to roll back. */
-                apszOldExtentBaseNames[i] = vmdkStrTmpDup(pExtent->pszBasename);
-                pExtent->pszBasename = pszBasename;
-            }
-            else
-            {
-                char *pszBasenameExt = RTPathExt(pszBasenameSubstr);
-                char *pszBasenameBase = RTStrDup(pszBasenameSubstr);
-                RTPathStripExt(pszBasenameBase);
-                char *pszTmp;
-                size_t cbTmp;
-                if (pImage->enmImageType == VD_IMAGE_TYPE_FIXED)
-                {
-                    if (pImage->cExtents == 1)
-                        rc = RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
-                                          pszBasenameExt);
-                    else
-                        rc = RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
-                                          i+1, pszBasenameExt);
-                }
-                else
-                    rc = RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, i+1,
-                                      pszBasenameExt);
-                RTStrFree(pszBasenameBase);
-                if (VBOX_FAILURE(rc))
-                    break;
-                cbTmp = strlen(pszTmp) + 1;
-                char *pszBasename = (char *)RTMemTmpAlloc(cbTmp);
-                if (!pszBasename)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                memcpy(pszBasename, pszTmp, cbTmp);
-                RTStrFree(pszTmp);
-                /* Save the old name in case we need to roll back. */
-                apszOldExtentBaseNames[i] = vmdkStrTmpDup(pExtent->pszBasename);
-                pExtent->pszBasename = pszBasename;
-                /* @todo ??? cbExtent = RT_MIN(cbRemaining, VMDK_2G_SPLIT_SIZE); */
-            }
-            char *pszBasedirectory = RTStrDup(pImage->pszFilename);
-            RTPathStripFilename(pszBasedirectory);
-            char *pszFN;
-            rc = RTStrAPrintf(&pszFN, "%s%c%s", pszBasedirectory, RTPATH_SLASH,
-                              pExtent->pszBasename);
-            RTStrFree(pszBasedirectory);
-            if (VBOX_FAILURE(rc))
-                break;
-
-            /* Close the VMDKEXTENT. */
-            vmdkFileClose(pImage, &pExtent->File, false);
-
-            /* Rename the file. */
-            rc = RTFileMove(pExtent->pszFullname, pszFN, 0);
-            if (VBOX_FAILURE(rc))
-                break;
-
-            /* Save both names in case we need to roll back. */
-            apszOldExtentFullNames[i] = RTStrDup(pExtent->pszFullname);
-            apszNewExtentFullNames[i] = RTStrDup(pszFN);
-            pExtent->pszFullname = pszFN;
+            rc = VERR_NO_MEMORY;
+            goto out;
         }
+    }
 
+    /* Prepare both old and new base names used for string replacement. */
+    pszNewBasename = RTStrDup(RTPathFilename(pszFilename));
+    RTPathStripExt(pszNewBasename);
+    pszOldBasename = RTStrDup(RTPathFilename(pImage->pszFilename));
+    RTPathStripExt(pszOldBasename);
+
+    /* --- Up to this point we have not done any damage yet. --- */
+
+    /* Save the old name for easy access to the old descriptor file. */
+    pszOldDescName = RTStrDup(pImage->pszFilename);
+
+    /* Rename the extents. */
+    for (i = 0, line = pImage->Descriptor.uFirstExtent;
+        i < cExtents;
+        i++, line = pImage->Descriptor.aNextLines[line])
+    {
+        PVMDKEXTENT pExtent = &pImage->pExtents[i];
+        /* Assume that vmdkStrReplace will fail. */
+        rc = VERR_NO_MEMORY;
+        /* Update the descriptor. */
+        apszNewLines[i] = vmdkStrReplace(pImage->Descriptor.aLines[line],
+            pszOldBasename, pszNewBasename);
+        if (!apszNewLines[i])
+            goto rollback;
+        pImage->Descriptor.aLines[line] = apszNewLines[i];
+        /* Compose new name for the extent. */
+        apszNewName[i] = vmdkStrReplace(pExtent->pszFullname, 
+            pszOldBasename, pszNewBasename);
+        if (!apszNewName[i])
+            goto rollback;
+        /* Close the extent file. */
+        vmdkFileClose(pImage, &pExtent->File, false);
+        /* Rename the extent file. */
+        rc = RTFileMove(pExtent->pszFullname, apszNewName[i], 0);
         if (VBOX_FAILURE(rc))
-            break;
+            goto rollback;
+        /* Remember the old name. */
+        apszOldName[i] = RTStrDup(pExtent->pszFullname);
+    }
 
-        /* After looping through all of them close the VMDKIMAGE. */
-        vmdkFreeImage(pImage, false);
+    /* Make sure the descriptor gets written back. */
+    pImage->Descriptor.fDirty = true;
+    /* Release all old stuff and write back the descriptor. */
+    vmdkFreeImage(pImage, false);
 
-        fImageFreed = true;
+    fImageFreed = true;
 
-        /* Rename the descriptor file if it's separate. */ 
-        if (pImage->pDescData)
-        {
-            rc = RTFileCopy(pImage->pszFilename, pszFilename);
-            if (VBOX_FAILURE(rc))
-                break;
-            /* Save new name only if we may need to change it back. */
-            pszNewImageName = RTStrDup(pszFilename);
-        }
-
-        /* Save the old name in case we need to roll back. */
-        pszOldImageName = RTStrDup(pImage->pszFilename);
-        /* Update pImage with the new information. */
-        pImage->pszFilename = pszFilename;
-
-        /* Open the new image. */
-        rc = vmdkOpenImage(pImage, pImage->uOpenFlags);
+    /* Last elements of new/old name arrays are intended for
+     * storing descriptor's names.
+     */
+    apszNewName[cExtents] = RTPathFilename(pszFilename);
+    /* Rename the descriptor file if it's separate. */ 
+    if (!fEmbeddedDesc)
+    {
+        rc = RTFileMove(pImage->pszFilename, apszNewName[cExtents], 0);
         if (VBOX_FAILURE(rc))
-            break;
-        /* Remove the old descriptor file. */
-        if (pszNewImageName)
-        {
-            rc = RTFileDelete(pszOldImageName);
-            AssertRC(rc);
-        }
-    } while (0);
+            goto rollback;
+        /* Save old name only if we may need to change it back. */
+        apszOldName[cExtents] = RTStrDup(pszFilename);
+    }
 
+    /* Update pImage with the new information. */
+    pImage->pszFilename = pszFilename;
+
+    /* Open the new image. */
+    rc = vmdkOpenImage(pImage, pImage->uOpenFlags);
+    if (VBOX_SUCCESS(rc))
+        goto out;
+
+rollback:
     /* Roll back all changes in case of failure. */
     if (VBOX_FAILURE(rc))
     {
@@ -3843,38 +3826,51 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
              */
             vmdkFreeImage(pImage, false);
         }
-        if (pszNewImageName)
+        /* Rename files back and free the memory. */
+        for (i = 0; i < cExtents + 1; i++)
         {
-            /* The image was actually copied, destroy the copy. */
-            rrc = RTFileDelete(pszNewImageName);
-            AssertRC(rrc);
-            RTStrFree(pszNewImageName);
-        }
-        if (pszOldImageName)
-        {
-            /* We end up here only if vmdkOpenImage() has failed, restore the old image name. */
-            pImage->pszFilename = pszOldImageName;
-        }
-        /* Restore renamed extents. */
-        for (unsigned i = 0; i < pImage->cExtents; i++)
-        {
-            if (apszOldExtentFullNames[i])
+            if (apszOldName[i])
             {
-                rrc = RTFileMove(apszNewExtentFullNames[i], apszOldExtentFullNames[i], 0);
+                rrc = RTFileMove(apszNewName[i], apszOldName[i], 0);
                 AssertRC(rrc);
-                RTStrFree(apszNewExtentFullNames[i]);
-                RTStrFree(apszOldExtentFullNames[i]);
+                RTStrFree(apszOldName[i]);
             }
+            if (apszNewName[i])
+                RTStrFree(apszNewName[i]);
+            if (apszNewLines[i])
+                RTStrFree(apszNewLines[i]);
         }
+        /* Restore the old descriptor. */
+        RTFILE File;
+        rrc = RTFileOpen(&File, pszOldDescName,
+            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        AssertRC(rrc);
+        if (fEmbeddedDesc)
+        {
+            ExtentCopy.File   = File;
+            pImage->pExtents = &ExtentCopy;
+        }
+        else
+            pImage->File = File;
+        pImage->Descriptor = DescriptorCopy;
+        vmdkWriteDescriptor(pImage);
+        RTFileClose(File);
+        RTStrFree(pszOldDescName);
+        /* Re-open the image back. */
         rrc = vmdkOpenImage(pImage, pImage->uOpenFlags);
         AssertRC(rrc);
     }
 
-    RTMemTmpFree(apszOldExtentBaseNames);
-    RTMemTmpFree(apszOldExtentFullNames);
-    RTMemTmpFree(apszNewExtentFullNames);
-
 out:
+    for (i = 0; i < DescriptorCopy.cLines; i++)
+        if (DescriptorCopy.aLines[i])
+            RTStrFree(DescriptorCopy.aLines[i]);
+    if (apszOldName)
+        RTMemTmpFree(apszOldName);
+    if (apszNewName)
+        RTMemTmpFree(apszNewName);
+    if (apszNewLines)
+        RTMemTmpFree(apszNewLines);
     LogFlowFunc(("returns %Vrc\n", rc));
     return rc;
 }

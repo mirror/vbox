@@ -165,13 +165,11 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "         VBoxManage internalcommands listpartitions\n"
                 "\n"
                 : "",
-#if 0
              (u64Cmd & USAGE_RENAMEVMDK) ?
                  "  renamevmdk -from <filename> -to <filename>\n"
                  "       Renames an existing VMDK image, including the base file and all its extents.\n"
                  "\n"
                  : "",
-#endif
 #ifdef RT_OS_WINDOWS
             (u64Cmd & USAGE_MODINSTALL) ?
                 "  modinstall\n"
@@ -1137,7 +1135,6 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#if 0
 HRESULT CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     Bstr src;
@@ -1201,7 +1198,6 @@ HRESULT CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, Co
     VDCloseAll(pDisk);
     return vrc;
 }
-#endif
 
 /**
  * Unloads the neccessary driver.
@@ -1263,10 +1259,8 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdListPartitions(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "createrawvmdk"))
         return CmdCreateRawVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
-#if 0
     if (!strcmp(pszCmd, "renamevmdk"))
         return CmdRenameVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
-#endif
 
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
