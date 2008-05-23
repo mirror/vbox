@@ -94,7 +94,7 @@ public:
 
     void fixModifierState (LONG *codes, uint *count);
 
-    void toggleFSMode();
+    void toggleFSMode (const QSize &aSize = QSize());
 
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
 
@@ -272,7 +272,6 @@ private:
     long muNumLockAdaptionCnt;
     long muCapsLockAdaptionCnt;
 
-    QTimer *mToggleFSModeTimer;
 
     VBoxDefs::RenderMode mode;
 

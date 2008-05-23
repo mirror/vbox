@@ -189,10 +189,8 @@ private slots:
     void dbgShowStatistics();
     void dbgShowCommandLine();
 
-    void onEnterFullscreen();
     void onExitFullscreen();
-    void exitFullscreen();
-    void exitSeamless();
+    void unlockActionsSwitch();
 
     void switchToFullscreen (bool aOn, bool aSeamless);
     void setViewInSeamlessMode (const QRect &aTargetRect);
@@ -316,6 +314,7 @@ private:
     bool mIsSeamless : 1;
     bool mIsSeamlessSupported : 1;
     bool mIsGraphicsSupported : 1;
+    bool mIsWaitingModeResize : 1;
     bool was_max : 1;
     QObjectList hidden_children;
     int console_style;
