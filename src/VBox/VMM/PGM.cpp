@@ -2577,41 +2577,71 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_GST_NAME_AMD64(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_AMD64_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
+    /* The nested paging mode. */
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_REAL)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_REAL;
-    rc = PGM_SHW_NAME_NESTED(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_REAL(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_REAL(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGMMODE_PROTECTED)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_PROT;
-    rc = PGM_SHW_NAME_NESTED(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_PROT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_PROT(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_32BIT)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_32BIT;
-    rc = PGM_SHW_NAME_NESTED(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_32BIT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_32BIT(InitData)(pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_PAE)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_PAE;
-    rc = PGM_SHW_NAME_NESTED(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_PAE(InitData)(         pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_PAE(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_AMD64;
-    rc = PGM_SHW_NAME_NESTED(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_AMD64(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
+    /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
+    switch(pVM->pgm.s.enmHostMode)
+    {
+    case SUPPAGINGMODE_32_BIT:
+    case SUPPAGINGMODE_32_BIT_GLOBAL:
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        {
+            pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
+            rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+        }
+        break;
+
+    case SUPPAGINGMODE_PAE:
+    case SUPPAGINGMODE_PAE_NX:
+    case SUPPAGINGMODE_PAE_GLOBAL:
+    case SUPPAGINGMODE_PAE_GLOBAL_NX:
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        {
+            pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
+            rc = PGM_SHW_NAME_PAE(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+        }
+        break;
+
+    case SUPPAGINGMODE_AMD64:
+    case SUPPAGINGMODE_AMD64_GLOBAL:
+    case SUPPAGINGMODE_AMD64_NX:
+    case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        {
+            pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
+            rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+        }
+        break;
+    }
     return VINF_SUCCESS;
 }
 
