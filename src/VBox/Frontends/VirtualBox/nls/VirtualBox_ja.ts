@@ -620,14 +620,6 @@ Version %1</source>
         <translation>Guest Additions インストールイメージをマウントする</translation>
     </message>
     <message>
-        <source>&amp;Statistics...</source>
-        <translation type="obsolete">統計(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>&amp;Command line...</source>
-        <translation type="obsolete">コマンドライン(&amp;C)...</translation>
-    </message>
-    <message>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>VirtualBox Webサイト(&amp;V)...</translation>
     </message>
@@ -911,17 +903,17 @@ Version %1</source>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">統計(&amp;S)...</translation>
+        <translation>統計(&amp;S)...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>コマンドライン(&amp;C)...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>ログ取得(&amp;L)...</translation>
     </message>
 </context>
 <context>
@@ -3043,10 +3035,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想マシン&lt;b&gt;%1&lt;b&gt;のスナップショット保存フォルダのパスを&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;に変更できませんでした。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ゲストOSのビデオメモリ不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを&lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダ&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
     </message>
@@ -3292,11 +3280,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、ゲスト画面をフルスクリーンモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;&lt;p&gt;[&lt;b&gt;無視&lt;/b&gt;]ボタンを押してフルスクリーンモードに切り換えるか、[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンを押して操作を取り消してください。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4296,28 +4284,12 @@ value.&lt;/qt&gt;</source>
         <translation>データ受信</translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <translation type="obsolete">有効</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation type="obsolete">無効</translation>
-    </message>
-    <message>
         <source>Runtime Attributes</source>
         <translation>ランタイム属性</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
         <translation>画面解像度</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">ハードウェア仮想化</translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
-        <translation type="obsolete">IDE ハードディスク統計</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4328,79 +4300,39 @@ value.&lt;/qt&gt;</source>
         <translation>ネットワーク アダプタ統計</translation>
     </message>
     <message>
-        <source>Adapter 1</source>
-        <translation type="obsolete">アダプタ 1</translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="obsolete">アダプタ 2</translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="obsolete">アダプタ 3</translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="obsolete">アダプタ 4</translation>
-    </message>
-    <message>
-        <source>Not attached</source>
-        <translation type="obsolete">未割り当て</translation>
-    </message>
-    <message>
-        <source>Hard Disks Statistics</source>
-        <translation type="obsolete">ハードディスク統計</translation>
-    </message>
-    <message>
-        <source>Primary Master</source>
-        <translation type="obsolete">プライマリ マスター</translation>
-    </message>
-    <message>
-        <source>Primary Slave</source>
-        <translation type="obsolete">プライマリ スレーブ</translation>
-    </message>
-    <message>
-        <source>Secondary Master</source>
-        <translation type="obsolete">セカンダリ マスター</translation>
-    </message>
-    <message>
-        <source>Secondary Slave</source>
-        <translation type="obsolete">セカンダリ スレーブ</translation>
-    </message>
-    <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>バージョン %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>未検出</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>未検出</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストOSのタイプ</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードディスク統計</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードディスクなし</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク アダプタなし</translation>
     </message>
 </context>
 <context>
@@ -5296,7 +5228,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation>&lt;qt&gt;ホストCPUの物理アドレス拡張機能(PAE)を仮想マシンに知らせます。&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;ホストCPUの物理アドレス拡張機能(PAE)を仮想マシンで有効にします。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>

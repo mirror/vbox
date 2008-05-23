@@ -1035,17 +1035,17 @@ Versione %1</translation>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Statistiche...</translation>
+        <translation>&amp;Statistiche...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Riga di &amp;comando...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Logging...</translation>
     </message>
 </context>
 <context>
@@ -3645,11 +3645,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per memoria video insufficente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità a pieno schermo per memoria video insufficente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a pieno schermo oppure premere &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4839,37 +4839,37 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Versione %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevate</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevato</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema operativo Guest</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistiche sul disco rigido</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun disco rigido</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna scheda di rete</translation>
     </message>
 </context>
 <context>
