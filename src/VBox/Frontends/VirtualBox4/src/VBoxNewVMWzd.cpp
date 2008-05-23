@@ -20,12 +20,12 @@
  * additional information or have any questions.
  */
 
-#include <VBoxNewVMWzd.h>
-#include <VBoxUtils.h>
-#include <VBoxGlobal.h>
-#include <VBoxProblemReporter.h>
-#include <VBoxNewHDWzd.h>
-#include <VBoxDiskImageManagerDlg.h>
+#include "VBoxNewVMWzd.h"
+#include "VBoxUtils.h"
+#include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxNewHDWzd.h"
+#include "VBoxDiskImageManagerDlg.h"
 
 /**
  *  Calculates a suitable page step size for the given max value.
@@ -49,10 +49,10 @@ static int calcPageStep (int aMax)
 
 
 VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
-    : QIAbstractWizard (aParent)
+    : QIWithRetranslateUI<QIAbstractWizard> (aParent)
 {
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxNewVMWzd::setupUi (this);
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -109,8 +109,6 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     /* Setup the scale so that ticks are at page step boundaries */
     mSlRAM->setRange ((MinRAM / mSlRAM->pageStep()) * mSlRAM->pageStep(),
                       MaxRAM);
-    mTxRAMMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MinRAM));
-    mTxRAMMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MaxRAM));
     /* Initial RAM value is set in cbOSActivated()
      * limit min/max. size of QLineEdit */
     mLeRAM->setFixedWidthByText ("99999");
@@ -128,6 +126,8 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
 
     /* Initialize wizard ftr */
     initializeWizardFtr();
+
+    retranslateUi();
 }
 
 VBoxNewVMWzd::~VBoxNewVMWzd()
@@ -140,6 +140,49 @@ const CMachine& VBoxNewVMWzd::machine() const
     return cmachine;
 }
 
+void VBoxNewVMWzd::retranslateUi()
+{
+   /* Translate uic generated strings */
+    Ui::VBoxNewVMWzd::retranslateUi (this);
+
+    CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOS->currentIndex());
+
+    mTextRAMBest->setText (
+        tr ("The recommended base memory size is <b>%1</b> MB.")
+            .arg (type.GetRecommendedRAM()));
+    mSlRAM->setValue (type.GetRecommendedRAM());
+    mTextVDIBest->setText (
+        tr ("The recommended size of the boot hard disk is <b>%1</b> MB.")
+            .arg (type.GetRecommendedHDD()));
+
+    CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
+    const uint MinRAM = sysProps.GetMinGuestRAM();
+    const uint MaxRAM = sysProps.GetMaxGuestRAM();
+
+    mTxRAMMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MinRAM));
+    mTxRAMMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MaxRAM));
+
+    QWidget *page = mPageStack->currentWidget();
+
+    if (page == mPageSummary)
+    {
+        /* compose summary */
+        QString summary = QString (tr (
+            "<tr><td><nobr>Name:</nobr></td><td>%1</td></tr>"
+            "<tr><td><nobr>OS Type:</nobr></td><td>%2<</td></tr>"
+            "<tr><td><nobr>Base Memory:</nobr></td><td>%3&nbsp;MB</td></tr>"))
+            .arg (mLeName->text())
+            .arg (vboxGlobal().vmGuestOSType (mCbOS->currentIndex()).GetDescription())
+            .arg (mSlRAM->value());
+
+        if (mMediaCombo->currentIndex())
+            summary += QString (tr (
+                "<tr><td><nobr>Boot Hard Disk:</nobr></td><td>%4</td></tr>"))
+                .arg (mMediaCombo->currentText());
+
+        mTeSummary->setText ("<table cellspacing=0 cellpadding=2>" + summary + "</table>");
+    }
+}
 
 void VBoxNewVMWzd::accept()
 {
@@ -209,13 +252,6 @@ void VBoxNewVMWzd::cbOSActivated (int aItem)
 {
     CGuestOSType type = vboxGlobal().vmGuestOSType (aItem);
     mPmOS->setPixmap (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
-    mTextRAMBest->setText (
-        tr ("The recommended base memory size is <b>%1</b> MB.")
-            .arg (type.GetRecommendedRAM()));
-    mSlRAM->setValue (type.GetRecommendedRAM());
-    mTextVDIBest->setText (
-        tr ("The recommended size of the boot hard disk is <b>%1</b> MB.")
-            .arg (type.GetRecommendedHDD()));
 }
 
 void VBoxNewVMWzd::currentMediaChanged (int /* aItem */)
@@ -246,6 +282,9 @@ void VBoxNewVMWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxNewVMWzd::onPageShow()
 {
+    /* Make sure all is properly translated & composed */
+    retranslateUi();
+
     QWidget *page = mPageStack->currentWidget();
 
     if (page == mPageWelcome)
@@ -257,24 +296,7 @@ void VBoxNewVMWzd::onPageShow()
     else if (page == mPageHDD)
         mMediaCombo->setFocus();
     else if (page == mPageSummary)
-    {
-        /* compose summary */
-        QString summary = QString (tr (
-            "<tr><td><nobr>Name:</nobr></td><td>%1</td></tr>"
-            "<tr><td><nobr>OS Type:</nobr></td><td>%2<</td></tr>"
-            "<tr><td><nobr>Base Memory:</nobr></td><td>%3&nbsp;MB</td></tr>"))
-            .arg (mLeName->text())
-            .arg (vboxGlobal().vmGuestOSType (mCbOS->currentIndex()).GetDescription())
-            .arg (mSlRAM->value());
-
-        if (mMediaCombo->currentIndex())
-            summary += QString (tr (
-                "<tr><td><nobr>Boot Hard Disk:</nobr></td><td>%4</td></tr>"))
-                .arg (mMediaCombo->currentText());
-
-        mTeSummary->setText ("<table cellspacing=0 cellpadding=2>" + summary + "</table>");
         mTeSummary->setFocus();
-    }
 
     if (page == mPageSummary)
         finishButton()->setDefault (true);

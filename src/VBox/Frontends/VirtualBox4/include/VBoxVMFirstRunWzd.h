@@ -23,18 +23,24 @@
 #ifndef __VBoxVMFirstRunWzd_h__
 #define __VBoxVMFirstRunWzd_h__
 
-#include <QIAbstractWizard.h>
-#include <VBoxVMFirstRunWzd.gen.h>
-#include <COMDefs.h>
-#include <QIWidgetValidator.h>
+#include "QIAbstractWizard.h"
+#include "VBoxVMFirstRunWzd.gen.h"
+#include "COMDefs.h"
+#include "QIWidgetValidator.h"
+#include "QIWithRetranslateUI.h"
 
-class VBoxVMFirstRunWzd : public QIAbstractWizard, public Ui::VBoxVMFirstRunWzd
+class VBoxVMFirstRunWzd : public QIWithRetranslateUI<QIAbstractWizard>,
+                          public Ui::VBoxVMFirstRunWzd
 {
     Q_OBJECT;
 
 public:
 
     VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent = 0);
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

@@ -23,17 +23,19 @@
 #ifndef __VBoxRegistrationDlg_h__
 #define __VBoxRegistrationDlg_h__
 
-#include <QIAbstractWizard.h>
-#include <VBoxRegistrationDlg.gen.h>
-#include <COMDefs.h>
-#include <QIWidgetValidator.h>
+#include "QIAbstractWizard.h"
+#include "VBoxRegistrationDlg.gen.h"
+#include "COMDefs.h"
+#include "QIWidgetValidator.h"
+#include "QIWithRetranslateUI.h"
 
 /* Qt includes */
 #include <QUrl>
 
 class VBoxNetworkFramework;
 
-class VBoxRegistrationDlg : public QIAbstractWizard, public Ui::VBoxRegistrationDlg
+class VBoxRegistrationDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
+                            public Ui::VBoxRegistrationDlg
 {
     Q_OBJECT;
 
@@ -44,6 +46,10 @@ public:
    ~VBoxRegistrationDlg();
 
     static bool hasToBeShown();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

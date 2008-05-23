@@ -20,10 +20,10 @@
  * additional information or have any questions.
  */
 
-#include <VBoxRegistrationDlg.h>
-#include <VBoxGlobal.h>
-#include <VBoxProblemReporter.h>
-#include <VBoxNetworkFramework.h>
+#include "VBoxRegistrationDlg.h"
+#include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxNetworkFramework.h"
 
 /* Qt includes */
 #include <QTimer>
@@ -196,7 +196,7 @@ private:
 VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
                                           QWidget *aParent,
                                           Qt::WindowFlags aFlags)
-    : QIAbstractWizard (aParent, aFlags)
+    : QIWithRetranslateUI2<QIAbstractWizard> (aParent, aFlags)
     , mSelf (aSelf)
     , mWvalReg (0)
     , mUrl ("http://www.innotek.de/register762.php")
@@ -210,7 +210,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
     *mSelf = this;
 
     /* Apply UI decorations */
-    setupUi (this);
+    Ui::VBoxRegistrationDlg::setupUi (this);
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -260,6 +260,8 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
 
     /* Initialize wizard hdr */
     initializeWizardFtr();
+
+    retranslateUi();
 }
 
 VBoxRegistrationDlg::~VBoxRegistrationDlg()
@@ -283,6 +285,12 @@ bool VBoxRegistrationDlg::hasToBeShown()
 
     return !regData.isValid() ||
            (!regData.isRegistered() && regData.triesLeft() > 0);
+}
+
+void VBoxRegistrationDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxRegistrationDlg::retranslateUi (this);
 }
 
 /* Post the handshake request into the register site. */
