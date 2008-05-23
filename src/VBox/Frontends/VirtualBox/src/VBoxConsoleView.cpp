@@ -997,7 +997,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 
         maybeRestrictMinimumSize();
 
-        if (mGuestSupportsGraphics && mAutoresizeGuest)
+        if (mAutoresizeGuest)
             doResizeHint();
     }
 }
@@ -1557,8 +1557,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 /* Set the "guest needs to resize" hint.  This hint is acted upon
                  * when (and only when) the autoresize property is "true". */
                 mDoResize = mGuestSupportsGraphics || mMainWnd->isTrueFullscreen();
-                if (!mIgnoreMainwndResize &&
-                    mGuestSupportsGraphics && mAutoresizeGuest)
+                if (!mIgnoreMainwndResize && mAutoresizeGuest)
                     resize_hint_timer->start (300, TRUE);
                 break;
             }
@@ -2247,8 +2246,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
  */
 void VBoxConsoleView::toggleFSMode (const QSize &aSize)
 {
-    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
-        mMainWnd->isTrueFullscreen())
+    if (mAutoresizeGuest || mMainWnd->isTrueFullscreen())
     {
         QSize newSize;
         if (aSize.isValid())
@@ -2289,7 +2287,7 @@ QRect VBoxConsoleView::desktopGeometry()
 
 bool VBoxConsoleView::isAutoresizeGuestActive()
 {
-    return mGuestSupportsGraphics && mAutoresizeGuest;
+    return mAutoresizeGuest;
 }
 
 /**
@@ -3548,7 +3546,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if (mGuestSupportsGraphics && mAutoresizeGuest)
+    if (mAutoresizeGuest)
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
@@ -3666,7 +3664,7 @@ void VBoxConsoleView::maybeRestrictMinimumSize()
 {
     if (mode == VBoxDefs::SDLMode)
     {
-        if (!mGuestSupportsGraphics || !mAutoresizeGuest)
+        if (!mAutoresizeGuest)
             setMinimumSize (sizeHint());
         else
             setMinimumSize (0, 0);

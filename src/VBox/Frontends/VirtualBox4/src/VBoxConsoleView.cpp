@@ -1032,7 +1032,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 
         maybeRestrictMinimumSize();
 
-        if (mGuestSupportsGraphics && mAutoresizeGuest)
+        if (mAutoresizeGuest)
             doResizeHint();
     }
 }
@@ -1604,8 +1604,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 /* Set the "guest needs to resize" hint.  This hint is acted upon
                  * when (and only when) the autoresize property is "true". */
                 mDoResize = mGuestSupportsGraphics || mMainWnd->isTrueFullscreen();
-                if (!mIgnoreMainwndResize &&
-                    mGuestSupportsGraphics && mAutoresizeGuest)
+                if (!mIgnoreMainwndResize && mAutoresizeGuest)
                     QTimer::singleShot (300, this, SLOT (doResizeHint()));
                 break;
             }
@@ -2287,8 +2286,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
  */
 void VBoxConsoleView::toggleFSMode()
 {
-    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
-        mMainWnd->isTrueFullscreen())
+    if (mAutoresizeGuest || mMainWnd->isTrueFullscreen())
     {
         QSize newSize = QSize();
         if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
@@ -2300,14 +2298,12 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    /* Currently there is 2000 msec pause before timer transfers
-     * console into desired mode "if GA are active and auto-resize
-     * feature enabled" and 100 msec pause before it transfers
-     * console into this mode "if GA are not active or auto-resize
-     * feature disabled". 100 msec pause required for resizing
+    /* Currently there is a 2000 msec pause before timer transfers
+     * console into desired mode if the auto-resize feature is enabled
+     * and a 100 msec pause before it transfers console into this mode
+     * if it is not enabled. 100 msec pause required for resizing
      * before normalizing geometry. */
-    mToggleFSModeTimer->start (mGuestSupportsGraphics && mAutoresizeGuest ?
-        2000 : 100);
+    mToggleFSModeTimer->start (mAutoresizeGuest ? 2000 : 100);
 
     /// @todo (r=dsen) perform roll-back after 'entering' mode in case
     //                 we got no resizing response from the guest.
@@ -2340,7 +2336,7 @@ QRect VBoxConsoleView::desktopGeometry()
 
 bool VBoxConsoleView::isAutoresizeGuestActive()
 {
-    return mGuestSupportsGraphics && mAutoresizeGuest;
+    return mAutoresizeGuest;
 }
 
 /**
@@ -3591,7 +3587,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if (mGuestSupportsGraphics && mAutoresizeGuest)
+    if (mAutoresizeGuest)
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
@@ -3709,7 +3705,7 @@ void VBoxConsoleView::maybeRestrictMinimumSize()
 {
     if (mode == VBoxDefs::SDLMode)
     {
-        if (!mGuestSupportsGraphics || !mAutoresizeGuest)
+        if (!mAutoresizeGuest)
             setMinimumSize (sizeHint());
         else
             setMinimumSize (0, 0);
