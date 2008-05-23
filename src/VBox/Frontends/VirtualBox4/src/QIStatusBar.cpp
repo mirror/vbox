@@ -69,3 +69,4 @@ void QIStatusBar::paintEvent (QPaintEvent *e)
 //        p.drawText (6, 0, psx, height(), Qt::AlignVCenter | Qt::TextSingleLine, message);
 //    }
 }
+

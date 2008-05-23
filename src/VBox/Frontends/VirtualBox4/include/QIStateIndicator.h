@@ -29,7 +29,7 @@
 
 class QIStateIndicator : public QFrame
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -88,3 +88,4 @@ private:
 };
 
 #endif // __QIStateIndicator_h__
+
