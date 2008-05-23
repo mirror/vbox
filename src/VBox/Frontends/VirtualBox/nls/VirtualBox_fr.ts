@@ -2926,7 +2926,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
                             Once you press it, a new hard disk image will be created.
                             </source>
         <translation>Si les paramètres ci dessus sont corrects, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;.
-Le nouveau disque dur sera créer.</translation>
+Le nouveau disque dur sera crée.</translation>
     </message>
     <message>
         <source>Summary</source>
