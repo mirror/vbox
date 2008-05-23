@@ -276,8 +276,10 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      */
 
     pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
+#ifndef DEBUG
     if (pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(14);   /* no longer need to intercept #PF. */
+#endif
 
     pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
                                     | SVM_CTRL1_INTERCEPT_VINTR
@@ -1153,6 +1155,32 @@ ResumeExecution:
             uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
             RTGCUINTPTR uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
+#ifdef DEBUG
+            if (pVM->hwaccm.s.fNestedPaging)
+            {   /* A genuine pagefault.
+                 * Forward the trap to the guest by injecting the exception and resuming execution.
+                 */
+                Log2(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
+
+                TRPMResetTrap(pVM);
+
+                /* Now we must update CR2. */
+                pCtx->cr2 = uFaultAddress;
+
+                Event.au64[0]               = 0;
+                Event.n.u3Type              = SVM_EVENT_EXCEPTION;
+                Event.n.u1Valid             = 1;
+                Event.n.u8Vector            = X86_XCPT_PF;
+                Event.n.u1ErrorCodeValid    = 1;
+                Event.n.u32ErrorCode        = errCode;
+
+                SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
+
+                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                goto ResumeExecution;
+            }
+#endif
             Assert(!pVM->hwaccm.s.fNestedPaging);
 
             Log2(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
