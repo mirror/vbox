@@ -19,6 +19,7 @@
  * additional information or have any questions.
  */
 
+#if !defined(RT_OS_SOLARIS) || SOLARIS2 >= 11
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -1092,3 +1093,4 @@ const PDMDRVREG g_DrvHostInterface =
     NULL
 };
 
+#endif /* !defined(RT_OS_SOLARIS) || SOLARIS2 >= 11 */
