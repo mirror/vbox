@@ -1846,6 +1846,7 @@ void VBoxDiskImageManagerDlg::setCurrentItem (Q3ListView *aListView,
 
     aListView->setCurrentItem (aItem);
     aListView->setSelected (aListView->currentItem(), true);
+    aListView->ensureItemVisible (aListView->currentItem());
 }
 
 
