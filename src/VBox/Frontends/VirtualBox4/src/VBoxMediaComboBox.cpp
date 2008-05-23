@@ -257,9 +257,11 @@ void VBoxMediaComboBox::processOnItem (Q3ListBoxItem* aItem)
 //    QToolTip::add (listBox()->viewport(), mTipList [index]);
 }
 
-QUuid VBoxMediaComboBox::getId()
+QUuid VBoxMediaComboBox::getId (int aId)
 {
-    return mUuidList.isEmpty() ? QUuid() : QUuid (mUuidList [currentItem()]);
+    return mUuidList.isEmpty() ? QUuid() :
+           aId == -1 ? QUuid (mUuidList [currentItem()]) :
+           QUuid (mUuidList [aId]);
 }
 
 void VBoxMediaComboBox::appendItem (const QString &aName,
@@ -267,9 +269,31 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
                                     const QString &aTip,
                                     QPixmap       *aPixmap)
 {
-    aPixmap ? insertItem (*aPixmap, aName) : insertItem (aName);
-    mUuidList << aId;
-    mTipList  << aTip;
+    int currentIndex = currentItem();
+
+    int insertPosition = -1;
+    for (int i = 0; i < count(); ++ i)
+        /* Searching for the first real (non-null) vdi item
+           which have name greater than the item to be inserted.
+           This is necessary for sorting items alphabetically. */
+        if (text (i).localeAwareCompare (aName) > 0 &&
+            !getId (i).isNull())
+        {
+            insertPosition = i;
+            break;
+        }
+
+    insertPosition == -1 ? mUuidList.append (aId) :
+        mUuidList.insert (insertPosition, aId);
+
+    insertPosition == -1 ? mTipList.append (aId) :
+        mTipList.insert (insertPosition, aTip);
+
+    aPixmap ? insertItem (*aPixmap, aName, insertPosition) :
+              insertItem (aName, insertPosition);
+
+    if (insertPosition != -1 && currentIndex >= insertPosition)
+        QComboBox::setCurrentItem (currentIndex + 1);
 }
 
 void VBoxMediaComboBox::replaceItem (int            aNumber,
