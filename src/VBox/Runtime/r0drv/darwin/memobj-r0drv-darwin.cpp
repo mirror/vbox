@@ -248,7 +248,16 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
      */
     int rc = VERR_NO_CONT_MEMORY;
     AssertCompile(sizeof(IOPhysicalAddress) == 4);
+
+    /// @todo
+    // Use IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task, kIOMemoryKernelUserShared | kIODirectionInOut,
+    //                                                      cb, (_4G - 1) ^ PAGE_OFFSET_MASK);
+#if 1 /* seems to work fine for cb == PAGE_SIZE, the other variant doesn't. */
+    IOPhysicalAddress PhysAddrIgnored = 0;
+    void *pv = IOMallocContiguous(cb, PAGE_SIZE, &PhysAddrIgnored);
+#else
     void *pv = IOMallocContiguous(cb, PAGE_SIZE, NULL);
+#endif
     if (pv)
     {
         IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
@@ -277,6 +286,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
             }
             else
             {
+                printf("rtR0MemObjNativeAllocCont: PhysAddr=%llx cb=%#x\n", (unsigned long long)PhysAddr, cb);
                 AssertMsgFailed(("PhysAddr=%llx\n", (unsigned long long)PhysAddr));
                 rc = VERR_INTERNAL_ERROR;
             }
@@ -286,6 +296,12 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
             rc = VERR_MEMOBJ_INIT_FAILED;
         IOFreeContiguous(pv, cb);
     }
+
+    /*
+     * Workaround for odd IOMallocContiguous behavior, just in case.
+     */
+    if (rc == VERR_INTERNAL_ERROR && cb <= PAGE_SIZE)
+        rc = rtR0MemObjNativeAllocCont(ppMem, cb + PAGE_SIZE, fExecutable);
     return rc;
 }
 
