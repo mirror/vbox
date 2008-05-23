@@ -23,7 +23,8 @@
 #ifndef __QIApplication_h__
 #define __QIApplication_h__
 
-#include <qapplication.h>
+/* Qt includes */
+#include <QApplication>
 
 typedef bool (*QIFilterCallback)(EventRef inEvent, void *inUserArg);
 
