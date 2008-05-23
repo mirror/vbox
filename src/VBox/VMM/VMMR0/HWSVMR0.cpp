@@ -683,9 +683,15 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
     /** TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
+    {
         pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCOffset);
+    }
     else
+    {
         pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCIntercept);
+    }
 
     /** @todo 64 bits stuff (?):
      * - STAR
