@@ -1156,6 +1156,47 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
     return rc;
 }
 
+/**
+ * Performs and schedules necessary updates following a CR3 load or reload, 
+ * without actually the TLB as with PGMFlushTLB.
+ *
+ * This will normally involve mapping the guest PD or nPDPT
+ *
+ * @returns VBox status code.
+ * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync. This can
+ *          safely be ignored and overridden since the FF will be set too then.
+ * @param   pVM         VM handle.
+ * @param   cr3         The new cr3.
+ */
+PGMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
+{
+    LogFlow(("PGMUpdateCR3: cr3=%VX64 OldCr3=%VX64\n", cr3, pVM->pgm.s.GCPhysCR3));
+
+    /* We assume we're only called in nested paging mode. */
+    Assert(pVM->pgm.s.fMappingsFixed);
+    Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
+    Assert(pVM->pgm.s.enmShadowMode == PGMMODE_NESTED);
+
+    /*
+     * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
+     */
+    int rc = VINF_SUCCESS;
+    RTGCPHYS GCPhysCR3;
+    if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
+    else
+        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+    if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
+    {
+        pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+        rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+    }
+    AssertRC(rc);
+    return rc;
+}
 
 /**
  * Synchronize the paging structures.
