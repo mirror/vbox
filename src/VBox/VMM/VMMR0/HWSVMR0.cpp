@@ -257,7 +257,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
     else
-        pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0);
+        pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
 
     /*
      * CR0/3/4 writes must be intercepted for obvious reasons.
@@ -265,7 +265,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
     else
-        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(8);
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4) | RT_BIT(8);
 
     /* Intercept all DRx reads and writes. */
     pVMCB->ctrl.u16InterceptRdDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
@@ -1040,7 +1040,7 @@ ResumeExecution:
     if (pVM->hwaccm.s.fNestedPaging)
     {
         CPUMSetGuestCR3(pVM, pVMCB->guest.u64CR3);
-        CPUMSetGuestCR4(pVM, pVMCB->guest.u64CR4);
+        PGMUpdateCR3(pVM, pVMCB->guest.u64CR3);
     }
 
     /** @note NOW IT'S SAFE FOR LOGGING! */
@@ -1422,7 +1422,6 @@ ResumeExecution:
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
             break;
         case 4:
-            Assert(!pVM->hwaccm.s.fNestedPaging);
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
             break;
         default:

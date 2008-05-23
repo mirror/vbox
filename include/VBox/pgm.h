@@ -333,6 +333,7 @@ PGMDECL(bool)   PGMGstIsPagePresent(PVM pVM, RTGCPTR GCPtr);
 PGMDECL(int)    PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 PGMDECL(int)    PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 PGMDECL(int)    PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal);
+PGMDECL(int)    PGMUpdateCR3(PVM pVM, uint64_t cr3);
 PGMDECL(int)    PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 PGMDECL(int)    PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer);
 PGMDECL(PGMMODE) PGMGetGuestMode(PVM pVM);
