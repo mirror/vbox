@@ -33,7 +33,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 
 
 /**
