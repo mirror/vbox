@@ -525,10 +525,8 @@ VirtualBox_SOURCES += \
 endif
 
 VirtualBox_SOURCES.win += \
-	src/win32/VirtualBox.rc
-
-VirtualBox_SOURCES.win += \
-	src/VBoxFBDDRAW.cpp
+	src/VBoxFBDDRAW.cpp \
+	$(PATH_TARGET)/VirtualBox4.rc
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
@@ -652,6 +650,17 @@ OTHER_CLEAN           = \
 	$(VirtualBox_GENHDRS) \
 	$(WRAPPERSFILE) \
 	$(PATH_BIN)/vboxkeyboard.tar.gz
+
+#
+# On Windows we'll have to generate/edit the resource file.
+# The IDI_ICON1 name is Qt specific.
+#
+$(PATH_TARGET)/VirtualBox4.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+	$(CAT) $@
+
+OTHER_CLEAN.win += $(PATH_TARGET)/VirtualBox4.rc
 
 
 #
