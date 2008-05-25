@@ -48,10 +48,16 @@ VBOX_DISAS_TESTS_INVALID = \
 	tstAsmLock-3.asm
 
 # Tests that will be disassembled and re-build from disassembly (list of binaries).
+## @todo tstBinMovzx-1.bin: does C7 imply 32-bit reg in 16-bit mode, or what exactly does it do?
 VBOX_DISAS_TESTS_BINARIES := \
-	$(PATH_SUB_CURRENT)/tstBinMovzx-1.bin
-#	$(PATH_SUB_CURRENT)/tstBin-1.bin \
+	tstBinMovzx-1.bin
+ifeq ($(USER),bird)
+VBOX_DISAS_TESTS_BINARIES += \
+	tstBin-1.bin \
+	tstBin-2.bin \
+	tstBin-3.bin \
 #	$(PATH_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
+endif
 
 
 #
@@ -161,7 +167,7 @@ $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)):
 
 # Generate the rules for the binary tests.
 define def_vbox_disas_binary_rules
-$(outbase).asm: $(binary) $$$$(INSTARGET_tstDisasm-2) | $(VBOX_DISAS_TEST_PATH)/
+$(outbase).asm: $(full_binary) $$$$(INSTARGET_tstDisasm-2) | $(VBOX_DISAS_TEST_PATH)/
 	@$$(ECHO) "Generating: $$(@F) from $$(<F)"
 	$$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $$@ -- $$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=$(bits) --undef-op=db $$<
 
@@ -170,24 +176,25 @@ $(outbase).bin + $(outbase).lst: $(outbase).asm
 	$$(TOOL_YASM_AS) -f bin -a x86 --force-strict -l $(outbase).lst -o $$@ $$<
 
 $(outbase).tst: $(outbase).bin
-	@$$(ECHO) "Verifying build: $$(<F) against $(not-dir $(binary))"
+	@$$(ECHO) "Verifying build: $$(<F) against $(not-dir $(full_binary))"
 	@$$(RM) -f $$@
-	$$(CMP) -l $(binary) $$<
-	@$$(APPEND) $@ "done"
+	$$(CMP) -l $(full_binary) $$<
+	@$$(APPEND) $$@ "done"
 	@$$(ECHO) " PASSED:  $$(<F) [binary]"
 
 $(name).tst:: $(outbase).tst
 VBOX_DISAS_TEST_CLEAN += $(outbase).tst $(outbase).bin $(outbase).asm
+VBOX_DISAS_TESTS += $(name)-rebuild-$(bits).tst
 endef # def_vbox_disas_binary_rules
 
 define def_vbox_disas_binary
 local name := $(notdir $(basename $(binary)))
-local name := $(notdir $(basename $(binary)))
+local full_binary := $(abspathex $(binary),$(PATH_SUB_CURRENT))
 local outbase := $(VBOX_DISAS_TEST_PATH)/$(name)-rebuild-$(bits)
 $(eval $(def_vbox_disas_binary_rules))
 endef # def_vbox_disas_binary
 
-## @todo 64-bit is problematic because of POP RDI ending up as POP EDI (incorrect default opmode), and the unused REX.X bit when mod != 3.
+## @todo 64-bit is problematic because of bugs like POP RDI ending up as POP EDI (incorrect default opmode).
 #$(foreach bits, 32 16 64, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalvalctx def_vbox_disas_binary)))
 $(foreach bits, 32 16, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalvalctx def_vbox_disas_binary)))
 
@@ -215,17 +222,18 @@ check test: $(TESTING)
 #
 # The test aliases
 #
-
-# individual test and per source file (for the editor).
-$(VBOX_DISAS_TESTS:.tst=.o):: $(VBOX_DISAS_TEST_PATH)/$$(patsubst %.o,%.tst,$$@)
-$(VBOX_DISAS_TESTS:.tst=.obj):: $$(patsubst %.obj,%.o,$$@)
+# To run the tstAsmLock-3.asm test:        kmk tstAsmLock-3.tst
+# To run the 64-bit tstAsmLock-3.asm test: kmk tstAsmLock-3-64.tst
+#
 define def_vbox_test_aliases
 local test_base := $(basename $(test))
 local test_root := $(patsubst %-16,%,$(patsubst %-32,%,$(patsubst %-64,%,$(test_base))))
-$(test_base).o:: $(VBOX_DISAS_TEST_PATH)/$(test)
-$(test_base).obj:: $(VBOX_DISAS_TEST_PATH)/$(test)
-$(test_root).o:: $(test_base).o
-$(test_root).obj:: $(test_base).obj
+$(test_base).tst:: $(VBOX_DISAS_TEST_PATH)/$(test)
+$(test_root).tst:: $(test_base).tst
+$(test_base).o:: $(test_base).tst
+$(test_base).obj:: $(test_base).tst
+$(test_root).o:: $(test_root).tst
+$(test_root).obj:: $(test_root).tst
 endef
 $(foreach test,$(VBOX_DISAS_TESTS),$(evalvalctx def_vbox_test_aliases))
 

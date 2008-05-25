@@ -401,6 +401,12 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
             case OP_STOSWD:
                 pszFmt = pCpu->opmode == CPUMODE_16BIT ? "stosw"    : pCpu->opmode == CPUMODE_32BIT ? "stosd" : "stosq";
                 break;
+            case OP_CBW:
+                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "cbw"      : pCpu->opmode == CPUMODE_32BIT ? "cwde"  : "cdqe";
+                break;
+            case OP_CWD:
+                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "cwd"      : pCpu->opmode == CPUMODE_32BIT ? "cdq"   : "cqo";
+                break;
             case OP_SHL:
                 Assert(pszFmt[3] == '/');
                 pszFmt += 4;
@@ -422,9 +428,10 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                     pszFmt = "prefetch %Eb";
                 else if (pCpu->opcode == 0x1f)
                 {
-                    PUT_SZ("db 01fh,");
+                    Assert(pCpu->opsize >= 3);
+                    PUT_SZ("db 00fh, 01fh,");
                     PUT_NUM_8(pCpu->ModRM.u);
-                    for (unsigned i = 2; i < pCpu->opsize; i++)
+                    for (unsigned i = 3; i < pCpu->opsize; i++)
                     {
                         PUT_C(',');
                         PUT_NUM_8(0x90); ///@todo fixme.
@@ -527,6 +534,19 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
             if (pCpu->prefix & PREFIX_SEG) \
                 PUT_STR(s_szSegPrefix[pCpu->prefix_seg], 3); \
         } while (0)
+
+
+        /*
+         * Segment prefixing for instructions that doesn't do memory access.
+         */
+        if (    (pCpu->prefix & PREFIX_SEG)
+            &&  !(pCpu->param1.flags & USE_EFFICIENT_ADDRESS)
+            &&  !(pCpu->param2.flags & USE_EFFICIENT_ADDRESS)
+            &&  !(pCpu->param3.flags & USE_EFFICIENT_ADDRESS))
+        {
+            PUT_STR(s_szSegPrefix[pCpu->prefix_seg], 2);
+            PUT_C(' ');
+        }
 
 
         /*
@@ -988,24 +1008,19 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
     /*
      * Check for multiple prefixes of the same kind.
      */
-    bool fSegmentPrefix = false;
-    bool fLockPrefix = false;
-    bool fAddressSize = false;
-    bool fOperandSize = false;
-    bool fRepPrefix = false;
-    bool fRex = false;
+    uint32_t fPrefixes = 0;
     for (uint8_t const *pu8 = pState->pbInstr;; pu8++)
     {
-        bool *pf;
+        uint32_t f;
         switch (*pu8)
         {
             case 0xf0:
-                pf = &fLockPrefix;
+                f = PREFIX_LOCK;
                 break;
 
             case 0xf2:
             case 0xf3:
-                pf = &fRepPrefix;
+                f = PREFIX_REP; /* yes, both */
                 break;
 
             case 0x2e:
@@ -1014,35 +1029,35 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
             case 0x36:
             case 0x64:
             case 0x65:
-                pf = &fSegmentPrefix;
+                f = PREFIX_SEG;
                 break;
 
             case 0x66:
-                pf = &fOperandSize;
+                f = PREFIX_OPSIZE;
                 break;
 
             case 0x67:
-                pf = &fAddressSize;
+                f = PREFIX_ADDRSIZE;
                 break;
 
             case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
             case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-                pf = pState->Cpu.mode == CPUMODE_64BIT ? &fRex : NULL;
+                f = pState->Cpu.mode == CPUMODE_64BIT ? PREFIX_REX : 0;
                 break;
 
             default:
-                pf = NULL;
+                f = 0;
                 break;
         }
-        if (!pf)
+        if (!f)
             break; /* done */
-        if (*pf)
+        if (fPrefixes & f)
             return true;
-        *pf = true;
+        fPrefixes |= f;
     }
 
     /* segment overrides are fun */
-    if (fSegmentPrefix)
+    if (fPrefixes & PREFIX_SEG)
     {
         /* no efficient address which it may apply to. */
         Assert((pState->Cpu.prefix & PREFIX_SEG) || pState->Cpu.mode == CPUMODE_64BIT);
@@ -1053,7 +1068,7 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
     }
 
     /* fixed register + addr override doesn't go down all that well. */
-    if (fAddressSize)
+    if (fPrefixes & PREFIX_ADDRSIZE)
     {
         Assert(pState->Cpu.prefix & PREFIX_ADDRSIZE);
         if (    pState->Cpu.pCurInstr->param3 == OP_PARM_NONE
@@ -1061,6 +1076,37 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
             &&  (   pState->Cpu.pCurInstr->param1 >= OP_PARM_REG_GEN32_START
                  && pState->Cpu.pCurInstr->param1 <= OP_PARM_REG_GEN32_END))
             return true;
+    }
+
+    /* nop w/ prefix(es). */
+    if (    fPrefixes
+        &&  pState->Cpu.pCurInstr->opcode == OP_NOP)
+        return true;
+
+    /* There are probably a whole bunch of these... */
+    if (fPrefixes & ~PREFIX_SEG)
+    {
+        switch (pState->Cpu.pCurInstr->opcode)
+        {
+            case OP_POP:
+            case OP_PUSH:
+                if (    pState->Cpu.pCurInstr->param1 >= OP_PARM_REG_SEG_START
+                    &&  pState->Cpu.pCurInstr->param1 <= OP_PARM_REG_SEG_END)
+                    return true;
+                if (    (fPrefixes & ~PREFIX_OPSIZE)
+                    &&  pState->Cpu.pCurInstr->param1 >= OP_PARM_REG_GEN32_START
+                    &&  pState->Cpu.pCurInstr->param1 <= OP_PARM_REG_GEN32_END)
+                    return true;
+                break;
+
+            case OP_POPA:
+            case OP_POPF:
+            case OP_PUSHA:
+            case OP_PUSHF:
+                if (fPrefixes & ~PREFIX_OPSIZE)
+                    return true;
+                break;
+        }
     }
 
 
@@ -1071,17 +1117,22 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
     {
         switch (pState->Cpu.pCurInstr->opcode)
         {
-            case OP_ADC:
             case OP_ADD:
-            case OP_AND:
             case OP_OR:
-            case OP_SUB:
+            case OP_ADC:
             case OP_SBB:
+            case OP_AND:
+            case OP_SUB:
             case OP_XOR:
+            case OP_CMP:
                 if (    (    pState->Cpu.pCurInstr->param1 == OP_PARM_Gb /* r8 */
                          && pState->Cpu.pCurInstr->param2 == OP_PARM_Eb /* r8/mem8 */)
                     ||  (    pState->Cpu.pCurInstr->param1 == OP_PARM_Gv /* rX */
                          && pState->Cpu.pCurInstr->param2 == OP_PARM_Ev /* rX/memX */))
+                    return true;
+
+                /* 82 (see table A-6). */
+                if (pState->Cpu.opcode == 0x82)
                     return true;
                 break;
 
@@ -1090,10 +1141,34 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
             case OP_INC:
                 return true;
 
+            case OP_POP:
+            case OP_PUSH:
+                Assert(pState->Cpu.opcode == 0x8f);
+                return true;
+
             default:
                 break;
         }
     }
+
+    /* And some more - see table A-6. */
+    if (pState->Cpu.opcode == 0x82)
+    {
+        switch (pState->Cpu.pCurInstr->opcode)
+        {
+            case OP_ADD:
+            case OP_OR:
+            case OP_ADC:
+            case OP_SBB:
+            case OP_AND:
+            case OP_SUB:
+            case OP_XOR:
+            case OP_CMP:
+                return true;
+                break;
+        }
+    }
+
 
     /* check for REX.X = 1 without SIB. */
 
@@ -1122,6 +1197,15 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
                 return true;
             break;
     }
+
+    /*
+     * The MOVZX reg32,mem16 instruction without an operand size prefix
+     * doesn't quite make sense...
+     */
+    if (    pState->Cpu.pCurInstr->opcode == OP_MOVZX
+        &&  pState->Cpu.opcode == 0xB7
+        &&  (pState->Cpu.mode == CPUMODE_16BIT) != !!(fPrefixes & PREFIX_OPSIZE))
+        return true;
 
     return false;
 }

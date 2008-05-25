@@ -18,7 +18,7 @@
     add ax, strict byte -1
     cmp bx, strict byte -1
 
-%if TEST_BITS == 64
+%if TEST_BITS == 64 ; check that these come out with qword values and not words or dwords.
     add rax, strict byte 8
     add rax, strict byte -1
     cmp rbx, strict byte -1
