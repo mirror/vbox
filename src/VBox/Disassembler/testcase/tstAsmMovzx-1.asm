@@ -7,7 +7,6 @@
     movzx eax, word [ebx]
 %if TEST_BITS != 64
     movzx ax, [bx+si+8]
-    movzx ax, byte [bx+si+8]
     movzx eax, byte [bx+si+8]
     movzx eax, word [bx+si+8]
 %else
