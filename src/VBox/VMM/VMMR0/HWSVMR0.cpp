@@ -1932,6 +1932,8 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
     bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
 
+    Assert(pVM->hwaccm.s.fNestedPaging);
+
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
     {
@@ -1949,9 +1951,52 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPhysPageManual);
+        /*
+        * Only allow 32-bit code.
+        */
+        if (SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid))
+        {
+            RTGCPTR pbCode;
+            int rc = SELMValidateAndConvertCSAddr(pVM, pCtx->eflags, pCtx->ss, pCtx->cs, &pCtx->csHid, (RTGCPTR)pCtx->eip, &pbCode);
+            if (VBOX_SUCCESS(rc))
+            {
+                uint32_t    cbOp;
+                DISCPUSTATE Cpu;
+                OP_PARAMVAL param1;
+                RTGCPTR     addr;
 
-        return SVMR0InterpretInvpg(pVM, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
+                Cpu.mode = CPUMODE_32BIT;
+                rc = EMInterpretDisasOneEx(pVM, pbCode, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                AssertRCReturn(rc, rc);
+                Assert(cbOp == Cpu.opsize);
+
+                int rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), &Cpu, &Cpu.param1, &param1, PARAM_SOURCE);
+                AssertRCReturn(rc, VERR_EM_INTERPRETER);
+
+                switch(param1.type)
+                {
+                case PARMTYPE_IMMEDIATE:
+                case PARMTYPE_ADDRESS:
+                    AssertReturn((param1.flags & PARAM_VAL32), VERR_EM_INTERPRETER);
+
+                    addr = (RTGCPTR)param1.val.val32;
+                    break;
+
+                default:
+                    AssertFailed();
+                    return VERR_EM_INTERPRETER;
+                }
+
+                /* Manually invalidate the page for the VM's TLB. */
+                Log(("SVMR0InvalidatePhysPage %VGv ASID=%d\n", addr, pVMCB->ctrl.TLBCtrl.n.u32ASID));
+                SVMInvlpgA(addr, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPhysPageManual);
+
+                return VINF_SUCCESS;
+            }
+        }
+        AssertFailed();
+        return VERR_EM_INTERPRETER;
     }
     return VINF_SUCCESS;
 }
