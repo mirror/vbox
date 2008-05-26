@@ -520,6 +520,12 @@ VirtualBox_SOURCES = \
 	src/VBoxVMLogViewer.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
+ifndef VBOX_OSE
+VirtualBox_QT_MOCHDRS += \
+	include/VBoxLicenseViewer.h
+VirtualBox_SOURCES += \
+	src/VBoxLicenseViewer.cpp
+endif
 VirtualBox_SOURCES += \
 	src/linux/XKeyboard-new.cpp
 endif
