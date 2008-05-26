@@ -58,7 +58,9 @@ VBOX_DISAS_TESTS_BINARIES += \
 	tstBin-1.bin \
 	tstBin-2.bin \
 	tstBin-3.bin \
-	tstBin-4.bin
+	tstBin-4.bin \
+	tstBin-5.bin \
+	tstBin-6.bin
 #	$(PATH_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
 endif
 
