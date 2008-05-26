@@ -35,6 +35,7 @@ tstDisasm-2_LIBS        = \
 
 # Tests that will be build, disassembled and re-build from disassembly.
 VBOX_DISAS_TESTS_BUILD = \
+	tstAsmFnstsw-1.asm \
 	tstAsmLock-1.asm \
 	tstAsmMovSeg-1.asm \
 	tstAsmMovzx-1.asm \
@@ -50,12 +51,14 @@ VBOX_DISAS_TESTS_INVALID = \
 # Tests that will be disassembled and re-build from disassembly (list of binaries).
 ## @todo tstBinMovzx-1.bin: does C7 imply 32-bit reg in 16-bit mode, or what exactly does it do?
 VBOX_DISAS_TESTS_BINARIES := \
-	tstBinMovzx-1.bin
+	tstBinMovzx-1.bin \
+	tstBinFnstsw-1.bin
 ifeq ($(USER),bird)
 VBOX_DISAS_TESTS_BINARIES += \
 	tstBin-1.bin \
 	tstBin-2.bin \
 	tstBin-3.bin \
+	tstBin-4.bin
 #	$(PATH_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
 endif
 
