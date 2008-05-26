@@ -30,6 +30,8 @@ endif
 SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
 SOL_DBG_OBJCOPY  := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
+SOL_OBJCOPY      := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
+
 PKGINFO_ARCH     = $(shell uname -p)
 PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
 PKG_FILENAME     = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
@@ -261,12 +263,12 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP),strip $(SOLARIS_INST_DIR)/VBoxVRDP.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless,),)
 	$(QUIET)$(call MSG_L1,Installing and stripping relocatable objects $(SOLARIS_INST_DIR))
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VBoxDD2GC.gc   $(SOLARIS_INST_DIR)/VBoxDD2GC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc)
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VBoxDD2R0.r0   $(SOLARIS_INST_DIR)/VBoxDD2R0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2R0.r0 $(SOLARIS_INST_DIR)/VBoxDD2R0.r0)
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VBoxDDGC.gc    $(SOLARIS_INST_DIR)/VBoxDDGC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDDGC.gc $(SOLARIS_INST_DIR)/VBoxDDGC.gc)
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VBoxDDR0.r0    $(SOLARIS_INST_DIR)/VBoxDDR0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDDR0.r0 $(SOLARIS_INST_DIR)/VBoxDDR0.r0)
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VMMGC.gc       $(SOLARIS_INST_DIR)/VMMGC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VMMGC.gc $(SOLARIS_INST_DIR)/VMMGC.gc)
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gobjcopy --strip-unneeded -R .comment $(PATH_BIN)/VMMR0.r0       $(SOLARIS_INST_DIR)/VMMR0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VMMR0.r0 $(SOLARIS_INST_DIR)/VMMR0.r0)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDD2R0.r0 $(SOLARIS_INST_DIR)/VBoxDD2R0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2R0.r0 $(SOLARIS_INST_DIR)/VBoxDD2R0.r0)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDDGC.gc $(SOLARIS_INST_DIR)/VBoxDDGC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDDGC.gc $(SOLARIS_INST_DIR)/VBoxDDGC.gc)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDDR0.r0 $(SOLARIS_INST_DIR)/VBoxDDR0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDDR0.r0 $(SOLARIS_INST_DIR)/VBoxDDR0.r0)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VMMGC.gc $(SOLARIS_INST_DIR)/VMMGC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VMMGC.gc $(SOLARIS_INST_DIR)/VMMGC.gc)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VMMR0.r0 $(SOLARIS_INST_DIR)/VMMR0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VMMR0.r0 $(SOLARIS_INST_DIR)/VMMR0.r0)
 	$(call MSG_L1,Installing files $(SOLARIS_INST_DIR))
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
