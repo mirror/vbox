@@ -46,7 +46,9 @@
 #include <QThread>
 
 #ifdef Q_WS_X11
-#include "VBoxLicenseViewer.h"
+#ifndef VBOX_OSE
+# include "VBoxLicenseViewer.h"
+#endif /* VBOX_OSE */
 
 #include <QTextBrowser>
 #include <QScrollBar>
@@ -1847,7 +1849,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
     return QString (sTableTpl). arg (detailsReport);
 }
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_X11) && !defined(VBOX_OSE)
 bool VBoxGlobal::showVirtualBoxLicense()
 {
     /* get the apps doc path */
@@ -1893,7 +1895,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
         virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, latestVersion);
     return result;
 }
-#endif
+#endif /* defined(Q_WS_X11) && !defined(VBOX_OSE) */
 
 /**
  * Checks if any of the settings files were auto-converted and informs the user
