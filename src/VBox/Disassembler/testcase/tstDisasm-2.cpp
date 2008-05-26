@@ -359,6 +359,12 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
             case OP_POPF:
                 pszFmt = pCpu->opmode == CPUMODE_16BIT ? "popfw"    : pCpu->opmode == CPUMODE_32BIT ? "popfd"       : "popfq";
                 break;
+            case OP_PUSHA:
+                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "pushaw"   : "pushad";
+                break;
+            case OP_POPA:
+                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "popaw"    : "popad";
+                break;
             case OP_INSB:
                 pszFmt = "insb";
                 break;
@@ -702,6 +708,7 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                                 if (    (int8_t)pParam->parval == (int16_t)pParam->parval
                                     ||  (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
                                     ||  (pOp->param2 >= OP_PARM_REG_GEN16_START && pOp->param2 <= OP_PARM_REG_GEN16_END)
+                                    ||  pCpu->mode != pCpu->opmode
                                     )
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
@@ -721,6 +728,7 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                                 if (    (int8_t)pParam->parval == (int32_t)pParam->parval
                                     ||  (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
                                     ||  (pOp->param2 >= OP_PARM_REG_GEN32_START && pOp->param2 <= OP_PARM_REG_GEN32_END)
+                                    ||  pCpu->opmode != (pCpu->mode == CPUMODE_16BIT ? CPUMODE_16BIT : CPUMODE_32BIT) /* not perfect */
                                     )
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
@@ -1078,12 +1086,43 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
             return true;
     }
 
-    /* nop w/ prefix(es). */
-    if (    fPrefixes
-        &&  pState->Cpu.pCurInstr->opcode == OP_NOP)
-        return true;
+    /* Almost all prefixes are bad. */
+    if (fPrefixes)
+    {
+        switch (pState->Cpu.pCurInstr->opcode)
+        {
+            /* nop w/ prefix(es). */
+            case OP_NOP:
+                return true;
 
-    /* There are probably a whole bunch of these... */
+            case OP_JMP:
+                if (    pState->Cpu.pCurInstr->param1 != OP_PARM_Jb
+                    &&  pState->Cpu.pCurInstr->param1 != OP_PARM_Jv)
+                    break;
+                /* fall thru */
+            case OP_JO:
+            case OP_JNO:
+            case OP_JC:
+            case OP_JNC:
+            case OP_JE:
+            case OP_JNE:
+            case OP_JBE:
+            case OP_JNBE:
+            case OP_JS:
+            case OP_JNS:
+            case OP_JP:
+            case OP_JNP:
+            case OP_JL:
+            case OP_JNL:
+            case OP_JLE:
+            case OP_JNLE:
+                /** @todo branch hinting 0x2e/0x3e... */
+                return true;
+        }
+
+    }
+
+    /* All but the segment prefix is bad news. */
     if (fPrefixes & ~PREFIX_SEG)
     {
         switch (pState->Cpu.pCurInstr->opcode)
@@ -1109,10 +1148,38 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
         }
     }
 
+    /* Implicit 8-bit register instructions doesn't mix with operand size. */
+    if (    (fPrefixes & PREFIX_OPSIZE)
+        &&  (   (   pState->Cpu.pCurInstr->param1 == OP_PARM_Gb /* r8 */
+                 && pState->Cpu.pCurInstr->param2 == OP_PARM_Eb /* r8/mem8 */)
+             || (   pState->Cpu.pCurInstr->param2 == OP_PARM_Gb /* r8 */
+                 && pState->Cpu.pCurInstr->param1 == OP_PARM_Eb /* r8/mem8 */))
+       )
+    {
+        switch (pState->Cpu.pCurInstr->opcode)
+        {
+            case OP_ADD:
+            case OP_OR:
+            case OP_ADC:
+            case OP_SBB:
+            case OP_AND:
+            case OP_SUB:
+            case OP_XOR:
+            case OP_CMP:
+                return true;
+            default:
+                break;
+        }
+    }
 
-    /* check for the version of xyz reg,reg instruction that the assembler doesn't use.
-        expected: 1aee   sbb ch, dh     ; SBB r8, r/m8
-        yasm:     18F5   sbb ch, dh     ; SBB r/m8, r8 */
+
+    /*
+     * Check for the version of xyz reg,reg instruction that the assembler doesn't use.
+     *
+     * For example:
+     *    expected: 1aee   sbb ch, dh     ; SBB r8, r/m8
+     *        yasm: 18F5   sbb ch, dh     ; SBB r/m8, r8
+     */
     if (pState->Cpu.ModRM.Bits.Mod == 3 /* reg,reg */)
     {
         switch (pState->Cpu.pCurInstr->opcode)
@@ -1148,6 +1215,23 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
 
             default:
                 break;
+        }
+    }
+
+    /* shl eax,1 will be assembled to the form without the immediate byte. */
+    if (    pState->Cpu.pCurInstr->param2 == OP_PARM_Ib
+        &&  (uint8_t)pState->Cpu.param2.parval == 1)
+    {
+        switch (pState->Cpu.pCurInstr->opcode)
+        {
+            case OP_SHL:
+            case OP_SHR:
+            case OP_SAR:
+            case OP_RCL:
+            case OP_RCR:
+            case OP_ROL:
+            case OP_ROR:
+                return true;
         }
     }
 
