@@ -100,7 +100,7 @@ __END_DECLS
  */
 PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0)
 {
-    Assert(pModeData->uShwType == PGM_SHW_TYPE);
+    Assert(pModeData->uShwType == PGM_SHW_TYPE || pModeData->uShwType == PGM_TYPE_NESTED);
 
     /* Ring-3 */
     pModeData->pfnR3ShwRelocate          = PGM_SHW_NAME(Relocate);
