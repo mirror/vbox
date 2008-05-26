@@ -465,12 +465,8 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         pCpu->pCurInstr = (PCOPCODE)fpop;
 
         // Should contain the parameter type on input
-        pCpu->param1.parval = fpop->param1;
-        pCpu->param2.parval = fpop->param2;
-#if 1 /** @todo bird: why parval above? fmul and similar needs dword/qword data in param. */
         pCpu->param1.param = fpop->param1;
         pCpu->param2.param = fpop->param2;
-#endif
     }
     else
     {
@@ -746,7 +742,6 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             if (rm == 4)
             {   /* SIB byte follows ModRM */
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
-                pParam->flags |= USE_EFFICIENT_ADDRESS;
             }
             else
             if (rm == 5)
@@ -754,20 +749,20 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 /* 32 bits displacement */
                 if (pCpu->mode == CPUMODE_32BIT)
                 {
-                    pParam->flags |= USE_DISPLACEMENT32 | USE_EFFICIENT_ADDRESS;
+                    pParam->flags |= USE_DISPLACEMENT32;
                     pParam->disp32 = pCpu->disp;
                     disasmPrintDisp32(pParam);
                 }
                 else
                 {
-                    pParam->flags |= USE_RIPDISPLACEMENT32 | USE_EFFICIENT_ADDRESS;
+                    pParam->flags |= USE_RIPDISPLACEMENT32;
                     pParam->disp32 = pCpu->disp;
                     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "RIP+");
                     disasmPrintDisp32(pParam);
                 }
             }
             else {//register address
-                pParam->flags |= USE_BASE | USE_EFFICIENT_ADDRESS;
+                pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             disasmAddChar(pParam->szParam, ']');
@@ -785,7 +780,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             pParam->disp8 = pCpu->disp;
-            pParam->flags |= USE_DISPLACEMENT8 | USE_EFFICIENT_ADDRESS;
+            pParam->flags |= USE_DISPLACEMENT8;
 
             if (pParam->disp8 != 0)
             {
@@ -808,7 +803,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             pParam->disp32 = pCpu->disp;
-            pParam->flags |= USE_DISPLACEMENT32 | USE_EFFICIENT_ADDRESS;
+            pParam->flags |= USE_DISPLACEMENT32;
 
             if (pParam->disp32 != 0)
             {
@@ -833,12 +828,12 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             if (rm == 6)
             {//16 bits displacement
                 pParam->disp16 = pCpu->disp;
-                pParam->flags |= USE_DISPLACEMENT16 | USE_EFFICIENT_ADDRESS;
+                pParam->flags |= USE_DISPLACEMENT16;
                 disasmPrintDisp16(pParam);
             }
             else
             {
-                pParam->flags |= USE_BASE | USE_EFFICIENT_ADDRESS;
+                pParam->flags |= USE_BASE;
                 disasmModRMReg16(pCpu, pOp, rm, pParam);
             }
             disasmAddChar(pParam->szParam, ']');
@@ -849,7 +844,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
             pParam->disp8 = pCpu->disp;
-            pParam->flags |= USE_BASE | USE_DISPLACEMENT8 | USE_EFFICIENT_ADDRESS;
+            pParam->flags |= USE_BASE | USE_DISPLACEMENT8;
 
             if (pParam->disp8 != 0)
             {
@@ -865,7 +860,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
             pParam->disp16 = pCpu->disp;
-            pParam->flags |= USE_BASE | USE_DISPLACEMENT16 | USE_EFFICIENT_ADDRESS;
+            pParam->flags |= USE_BASE | USE_DISPLACEMENT16;
 
             if (pParam->disp16 != 0)
             {
