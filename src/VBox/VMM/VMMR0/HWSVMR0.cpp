@@ -1949,6 +1949,8 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPhysPageManual);
+
         return SVMR0InterpretInvpg(pVM, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
     }
     return VINF_SUCCESS;
