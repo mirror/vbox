@@ -28,6 +28,7 @@ include $(KBUILD_PATH)/header.kmk
 #
 TEMPLATE_XPCOM                     = XPCOM libraries (shared)
 TEMPLATE_XPCOM_EXTENDS             = VBOXR3NP
+## @todo correct inheritance here to make it use all the VBOXR3NP settings instead of overriding all of them.
 TEMPLATE_XPCOM_ASTOOL              = $(TEMPLATE_VBOXR3NP_TOOL)
 TEMPLATE_XPCOM_ASFLAGS             = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_ASFLAGS.x86         = -m32
@@ -40,7 +41,7 @@ TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
 TEMPLATE_XPCOM_CXXFLAGS.amd64      = -m64
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
 TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
-TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_XPCOM_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.l4         = -fno-exceptions -nostdinc
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
@@ -59,19 +60,20 @@ TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM \
                                      MOZ_DLL_SUFFIX=\"$(suffix $(LIB_XPCOM))\"
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
-TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1 DARWIN=1
+TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1 DARWIN=1 $(TEMPLATE_VBOXR3NP_DEFS.darwin)
 TEMPLATE_XPCOM_DEFS.freebsd        = OSTYPE=\"FreeBSD5+\"   OSARCH=\"FreeBSD\" XP_UNIX=1 FREEBSD=1 HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1 ## @todo LINUX=1
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
 # Don't define BSD_SELECT because bsdselect() from kLIBC <= 0.6.3 has problems on SMP
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC OS2=4
 TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
+## @todo The LDFLAGS inheriting is being hidden here and below where -fPIC is added.
 ifdef VBOX_WITH_ORIGIN
 TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/'
 endif
 TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
 TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
-TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
+TEMPLATE_XPCOM_LDFLAGS.darwin      = $(TEMPLATE_VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
 ifn1of ($(KBUILD_TARGET), os2 win)
@@ -162,6 +164,7 @@ TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
 #
 TEMPLATE_XPCOMBLDPROG                   = XPCOM Build programs executables
 TEMPLATE_XPCOMBLDPROG_EXTENDS           = VBOXBLDPROG
+## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPCOMEXE is expanded when this is being used.)
 
 TEMPLATE_XPCOMBLDPROG_DEFS                      = $(TEMPLATE_BLDPROG_DEFS)                      $(TEMPLATE_XPCOMEXE_DEFS)
 TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET))
