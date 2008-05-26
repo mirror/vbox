@@ -1772,7 +1772,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = -Wno-trigraphs -Wpointer-arith -Winline
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-O2 -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -msave-args -mno-red-zone -mcmodel=kernel \
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(if $(VBOX_SOLARIS_10),,-msave-args) -mno-red-zone -mcmodel=kernel \
 	-fno-reorder-blocks -fno-asynchronous-unwind-tables -funit-at-a-time
 TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-O2 -nodefaultlibs -fno-strict-aliasing -fno-common
