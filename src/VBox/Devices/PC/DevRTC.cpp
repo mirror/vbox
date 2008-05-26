@@ -369,7 +369,6 @@ static void rtc_next_second(struct my_tm *tm)
 static void rtc_update_second(void *opaque)
 {
     RTCState *s = (RTCState*)opaque;
-    int64_t delay;
 
     /* if the oscillator is not in normal operation, we do not update */
     if ((s->cmos_data[RTC_REG_A] & 0x70) != 0x20) {
@@ -382,16 +381,9 @@ static void rtc_update_second(void *opaque)
             /* update in progress bit */
             s->cmos_data[RTC_REG_A] |= REG_A_UIP;
         }
-#if 0 /* old: winds up waiting for 10ms... */
-        /* should be 244 us = 8 / 32768 seconds, but currently the
-           timers do not have the necessary resolution. */
-        delay = (TMTimerGetFreq(s->CTXSUFF(pSecondTimer2)) * 1) / 100;
-        if (delay < 1)
-            delay = 1;
-#else
+
         /* 244140 ns = 8 / 32768 seconds */
-        delay = TMTimerFromNano(s->CTXSUFF(pSecondTimer2), 244140);
-#endif
+        uint64_t delay = TMTimerFromNano(s->CTXSUFF(pSecondTimer2), 244140);
         TMTimerSet(s->CTXSUFF(pSecondTimer2), s->next_second_time + delay);
     }
 }
