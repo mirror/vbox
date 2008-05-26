@@ -92,7 +92,7 @@ fi
 # darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
 if [ "`uname`" = "Darwin" ]; then
   ECHO_N="/bin/echo -n"
-else 
+else
   ECHO_N="echo -n"
 fi
 
@@ -278,8 +278,8 @@ check_environment()
         # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
         LIB='lib64'
       else
-        # Solaris doesn't seem to subscribe to fhs, libs are usually in 
-        # a '64' subdirectory of the standard 'lib' dirs while some 64-bit 
+        # Solaris doesn't seem to subscribe to fhs, libs are usually in
+        # a '64' subdirectory of the standard 'lib' dirs while some 64-bit
         # alternative binaries can be found in 'amd64' subdirs of the 'bin'
         # ones. So, in order to find the right stuff (esp. sdl-config) we'll
         # have to make sure the */bin/amd64 dirs are searched before the */bin
@@ -428,7 +428,7 @@ check_gcc()
       if [ "$OS" = "solaris" -a "$BUILD_MACHINE" = "amd64" ]; then
         [ "$CC" = "gcc" ] && CC="gcc -m64"
         [ "$CXX" = "g++" ] && CXX="g++ -m64"
-      fi 
+      fi
     fi
   fi
 }
@@ -1444,8 +1444,8 @@ check_kbuild()
 
 #
 # Check for compiler.h
-# Some Linux distributions include "compiler.h" in their libc linux 
-# headers package, some don't.  Most don't need it, building might (!) 
+# Some Linux distributions include "compiler.h" in their libc linux
+# headers package, some don't.  Most don't need it, building might (!)
 # not succeed on openSUSE without it.
 #
 # See http://www.mail-archive.com/qemu-devel%40nongnu.org/msg07980.html
@@ -1546,10 +1546,10 @@ check_darwinversion()
   case "$darwin_ver" in
     9\.*)
       darwin_ver="10.5"
-      cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
+      #cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
       ;;
     8\.*)
-      darwin_ver="10.5"
+      darwin_ver="10.4"
       ;;
     *)
       echo "  failed to determin darwin version. (uname -r: $darwin_ver)"
@@ -1562,8 +1562,8 @@ check_darwinversion()
 
 
 #
-# Checks that i386-elf-gcc-3.4.6, i386-elf-gcc-3.4.3, i386-elf-gcc-3.4 or i386-elf-gcc 
-# is around to prevent confusion when the build fails in src/recompiler. 
+# Checks that i386-elf-gcc-3.4.6, i386-elf-gcc-3.4.3, i386-elf-gcc-3.4 or i386-elf-gcc
+# is around to prevent confusion when the build fails in src/recompiler.
 # Note. Keep the which order in sync with the $(which ) in src/recompiler/Makefile.kmk.
 #
 check_i386elfgcc()
