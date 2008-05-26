@@ -176,55 +176,54 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  *
  * @returns VBox result code
  * @param   u32Format The format of the data being requested
- * @retval  ppv       On success, this will point to a buffer to be freed with RTMemFree
- *                    containing the data read if pcb > 0.
- * @retval  pcb       On success, this contains the number of bytes of data returned
+ * @retval  ppv       On success and if pcb > 0, this will point to a buffer
+ *                    to be freed with RTMemFree containing the data read.
+ * @retval  pcb       On success, this contains the number of bytes of data
+ *                    returned
  */
 static int vboxClipboardReadHostData(uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     uint32_t cb = 1024;
     void *pv = RTMemAlloc(cb);
+
+    *ppv = 0;
     LogFlowFunc(("u32Format=%u\n", u32Format));
     if (RT_UNLIKELY(!pv))
-    {
-        LogFlowFunc(("rc=VERR_NO_MEMORY\n"));
-        return VERR_NO_MEMORY;
-    }
-    rc = VbglR3ClipboardReadData(g_ctx.client, u32Format, pv, cb, pcb);
+        rc = VERR_NO_MEMORY;
     if (RT_SUCCESS(rc))
-    {
+        rc = VbglR3ClipboardReadData(g_ctx.client, u32Format, pv, cb, pcb);
+    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
         *ppv = pv;
-        return rc;
-    }
-    RTMemFree(pv);
+    /* A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
+     * larger buffer.  The size of the buffer needed is placed in *pcb.
+     * So we start all over again. */
     if (rc == VINF_BUFFER_OVERFLOW)
     {
-        /* Supplied buffer of 1024 bytes was not big enough. Try again. */
         cb = *pcb;
-        pv = RTMemAlloc(cb);
-        rc = VbglR3ClipboardReadData(g_ctx.client, u32Format, pv, cb, pcb);
-        if (RT_SUCCESS(rc))
-        {
-            *ppv = pv;
-            return rc;
-        }
-
         RTMemFree(pv);
-        *ppv = 0;
-        *pcb = 0;
-        if (rc == VINF_BUFFER_OVERFLOW)
-        {
-            /* The buffer was to small again.  Perhaps the clipboard contents changed half-way through
-             * the operation.  Since I can't say whether or not this is actually an error, we will just
-             * return size 0.
-             */
-            return VINF_SUCCESS;
-        }
+        pv = RTMemAlloc(cb);
+        if (RT_UNLIKELY(!pv))
+            rc = VERR_NO_MEMORY;
+        if (RT_SUCCESS(rc))
+            rc = VbglR3ClipboardReadData(g_ctx.client, u32Format, pv, cb, pcb);
+        if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+            *ppv = pv;
     }
-    /* Other errors. */
-    *ppv = 0;
-    *pcb = 0;
+    /* Catch other errors. This also catches the case in which the buffer was
+     * too small a second time, possibly because the clipboard contents
+     * changed half-way through the operation.  Since we can't say whether or
+     * not this is actually an error, we just return size 0.
+     */
+    if (RT_FAILURE(rc) || (VINF_BUFFER_OVERFLOW == rc))
+    {
+        *pcb = 0;
+        if (pv != NULL)
+            RTMemFree(pv);
+    }
+    LogFlowFunc(("returning %Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+        LogFlow(("    *pcb=%d\n", *pcb));
     return rc;
 }
 
