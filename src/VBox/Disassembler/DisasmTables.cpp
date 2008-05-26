@@ -1783,7 +1783,7 @@ const OPCODE g_aMapX86_EscF5_Low[8] =
     OP("frstor %M",          IDX_ParseModRM,     0,          0,          OP_FRSTOR,  OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE, OPTYPE_HARMLESS /* fixme: wasn't initialized! */),
     INVALID_OPCODE,
     OP("fsave %M",           IDX_ParseModRM,     0,          0,          OP_FSAVE,   OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE, OPTYPE_HARMLESS /* fixme: wasn't initialized! */),
-    OP("fstsw %Mw",          IDX_ParseModRM,     0,          0,          OP_FSTSW,   OP_PARM_Mw,         OP_PARM_NONE,   OP_PARM_NONE, OPTYPE_HARMLESS /* fixme: wasn't initialized! */),
+    OP("fnstsw %Mw",         IDX_ParseModRM,     0,          0,          OP_FNSTSW,  OP_PARM_Mw,         OP_PARM_NONE,   OP_PARM_NONE, OPTYPE_HARMLESS /* fixme: wasn't initialized! */),
 };
 
 
@@ -1968,7 +1968,7 @@ const OPCODE g_aMapX86_EscF7_High[16*4] =
     INVALID_OPCODE_BLOCK
 
     /* e */
-    OP("fstsw ax",           IDX_ParseFixedReg,  0,          0,          OP_FSTSW,   OP_PARM_REG_AX,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("fnstsw ax",          IDX_ParseFixedReg,  0,          0,          OP_FNSTSW,  OP_PARM_REG_AX,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,

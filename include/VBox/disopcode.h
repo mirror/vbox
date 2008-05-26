@@ -494,7 +494,7 @@
 #define OP_FCOMI        481
 #define OP_FRSTOR       482
 #define OP_FSAVE        483
-#define OP_FSTSW        484
+#define OP_FNSTSW       484
 #define OP_FFREE        485
 #define OP_FUCOM        486
 #define OP_FUCOMP       487
