@@ -1471,6 +1471,16 @@ if1of ($(KBUILD_TARGET), linux)
  endif
 endif
 
+#
+# Determine Solaris version.
+#
+ifeq ($(KBUILD_TARGET),solaris)
+ ifeq ($(origin SOLARIS_VER),undefined)
+   export SOLARIS_VER       := $(shell uname -s)_$(shell uname -r)
+ endif
+ DEFS.solaris += __$(SOLARIS_VER)
+endif
+
 
 #
 # Template for building GC things.
