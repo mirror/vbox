@@ -55,15 +55,16 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
     return bc;
 }
 
-static void release_addr(PNATState pData, struct in_addr *paddr)
+static int release_addr(PNATState pData, struct in_addr *paddr)
 {
-    int i;
+    unsigned i;
 
     i = ntohl(paddr->s_addr) - START_ADDR - ntohl(special_addr.s_addr);
     if (i >= NB_ADDR)
-        return;
+        return 0;
     memset(bootp_clients[i].macaddr, '\0', 6);
     bootp_clients[i].allocated = 0;
+    return 1;
 }
 
 static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint8_t *macaddr)
@@ -150,9 +151,11 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         dhcp_msg_type = DHCPREQUEST; /* Force reply for old BOOTP clients */
 
     if (dhcp_msg_type == DHCPRELEASE) {
+        int rc;
         ipv4_addr = ntohl(bp->bp_ciaddr.s_addr);
-        release_addr(pData, &bp->bp_ciaddr);
-        LogRel(("NAT: DHCP released IP address %u.%u.%u.%u\n",
+        rc = release_addr(pData, &bp->bp_ciaddr);
+        LogRel(("NAT: %s %u.%u.%u.%u\n",
+                rc ? "DHCP released IP address" : "Ignored DHCP release for IP address",
                 ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
         dprintf("released addr=%08x\n", ntohl(bp->bp_ciaddr.s_addr));
         /* This message is not to be answered in any way. */
