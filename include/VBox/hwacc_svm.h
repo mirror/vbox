@@ -696,6 +696,17 @@ DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
  */
 HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
 
+/**
+ * Invalidates a guest page by physical address
+ *
+ * NOTE: Assumes the current instruction references this physical page though a virtual address!!
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPhys      Page to invalidate
+ */
+HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+
 #endif /* IN_RING0 */
 
 /** @} */

@@ -84,6 +84,17 @@ HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 HWACCMDECL(int) HWACCMFlushTLB(PVM pVM);
 
 /**
+ * Invalidates a guest page by physical address
+ *
+ * NOTE: Assumes the current instruction references this physical page though a virtual address!!
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPhys      Page to invalidate
+ */
+HWACCMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+
+/**
  * Checks if nested paging is enabled
  *
  * @returns boolean
