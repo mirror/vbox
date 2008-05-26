@@ -546,9 +546,9 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
          * Segment prefixing for instructions that doesn't do memory access.
          */
         if (    (pCpu->prefix & PREFIX_SEG)
-            &&  !(pCpu->param1.flags & USE_EFFICIENT_ADDRESS)
-            &&  !(pCpu->param2.flags & USE_EFFICIENT_ADDRESS)
-            &&  !(pCpu->param3.flags & USE_EFFICIENT_ADDRESS))
+            &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param1.flags)
+            &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param2.flags)
+            &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param3.flags))
         {
             PUT_STR(s_szSegPrefix[pCpu->prefix_seg], 2);
             PUT_C(' ');
@@ -599,7 +599,7 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                         pszFmt += RT_C_IS_ALPHA(pszFmt[0]) ? RT_C_IS_ALPHA(pszFmt[1]) ? 2 : 1 : 0;
 
                         PUT_FAR();
-                        if (pParam->flags & USE_EFFICIENT_ADDRESS)
+                        if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
                         {
                             /* Work around mov seg,[mem16]  and mov [mem16],seg as these always make a 16-bit mem
                                while the register variants deals with 16, 32 & 64 in the normal fashion. */
@@ -622,12 +622,12 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                                      && (int8_t)pParam->disp32 == (int32_t)pParam->disp32)
                                 PUT_SZ("dword ");
                         }
-                        if (pParam->flags & USE_EFFICIENT_ADDRESS)
+                        if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
                             PUT_SEGMENT_OVERRIDE();
 
                         bool fBase =  (pParam->flags & USE_BASE) /* When exactly is USE_BASE supposed to be set? disasmModRMReg doesn't set it. */
                                    || (   (pParam->flags & (USE_REG_GEN8 | USE_REG_GEN16 | USE_REG_GEN32 | USE_REG_GEN64))
-                                       && !(pParam->flags & USE_EFFICIENT_ADDRESS));
+                                       && !DIS_IS_EFFECTIVE_ADDR(pParam->flags));
                         if (fBase)
                         {
                             size_t cchReg;
@@ -682,7 +682,7 @@ static size_t MyDisasYasmFormat(DISCPUSTATE const *pCpu, char *pszBuf, size_t cc
                             }
                         }
 
-                        if (pParam->flags & USE_EFFICIENT_ADDRESS)
+                        if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
                             PUT_C(']');
                         break;
                     }
@@ -1067,11 +1067,11 @@ static bool MyDisasYasmFormatterIsOddEncoding(PMYDISSTATE pState)
     /* segment overrides are fun */
     if (fPrefixes & PREFIX_SEG)
     {
-        /* no efficient address which it may apply to. */
+        /* no effective address which it may apply to. */
         Assert((pState->Cpu.prefix & PREFIX_SEG) || pState->Cpu.mode == CPUMODE_64BIT);
-        if (    !(pState->Cpu.param1.flags & USE_EFFICIENT_ADDRESS)
-            &&  !(pState->Cpu.param2.flags & USE_EFFICIENT_ADDRESS)
-            &&  !(pState->Cpu.param3.flags & USE_EFFICIENT_ADDRESS))
+        if (    !DIS_IS_EFFECTIVE_ADDR(pState->Cpu.param1.flags)
+            &&  !DIS_IS_EFFECTIVE_ADDR(pState->Cpu.param2.flags)
+            &&  !DIS_IS_EFFECTIVE_ADDR(pState->Cpu.param3.flags))
             return true;
     }
 

@@ -473,7 +473,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
 {
     memset(pParamVal, 0, sizeof(*pParamVal));
 
-    if (pParam->flags & (USE_BASE|USE_INDEX|USE_DISPLACEMENT32|USE_DISPLACEMENT16|USE_DISPLACEMENT8|USE_RIPDISPLACEMENT32))
+    if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
     {
         // Effective address
         pParamVal->type = PARMTYPE_ADDRESS;
