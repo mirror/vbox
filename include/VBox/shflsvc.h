@@ -232,6 +232,9 @@ typedef enum _SHFLCREATERESULT
 /** Create/open a directory. */
 #define SHFL_CF_DIRECTORY             (0x00000004)
 
+/** Append data to a file. */
+#define SHFL_CF_APPEND                (0x00000008)
+
 /** Open/create action to do if object exists
  *  and if the object does not exists.
  *  REPLACE file means atomically DELETE and CREATE.
