@@ -84,7 +84,7 @@ void VBoxVMNetworkSettings::init()
 }
 
 VBoxVMNetworkSettings::CheckPageResult
-VBoxVMNetworkSettings::checkPage (const QStringList &aList)
+VBoxVMNetworkSettings::checkPage (QStringList aList)
 {
     KNetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());

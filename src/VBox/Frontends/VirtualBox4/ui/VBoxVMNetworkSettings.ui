@@ -671,7 +671,7 @@
 </slots>
 <functions>
     <function access="private" specifier="non virtual">init()</function>
-    <function returnType="CheckPageResult">checkPage( const QStringList &amp; )</function>
+    <function returnType="CheckPageResult">checkPage( QStringList aList = QStringList() )</function>
     <function>loadInterfaceList( const QStringList &amp;, const QString &amp; )</function>
     <function>loadNetworksList( const QStringList &amp; )</function>
     <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
