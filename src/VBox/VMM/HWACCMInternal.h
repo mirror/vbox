@@ -320,6 +320,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatPendingHostIrq;
 
     STAMCOUNTER             StatFlushPageManual;
+    STAMCOUNTER             StatFlushPhysPageManual;
     STAMCOUNTER             StatFlushTLBManual;
     STAMCOUNTER             StatFlushPageInvlpg;
     STAMCOUNTER             StatFlushTLBWorldSwitch;
