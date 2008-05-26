@@ -62,22 +62,13 @@
 #define USAGE_UNLOADSYMS            RT_BIT_64(30)
 #define USAGE_SETVDIUUID            RT_BIT_64(31)
 #define USAGE_CONVERTDD             RT_BIT_64(32)
-#ifdef VBOX_OSE
-# define USAGE_LISTPARTITIONS       (0)
-# define USAGE_CREATERAWVMDK        (0)
-#else /* !VBOX_OSE */
-# define USAGE_LISTPARTITIONS       RT_BIT_64(33)
-# define USAGE_CREATERAWVMDK        RT_BIT_64(34)
-#endif /* !VBOX_OSE */
+#define USAGE_LISTPARTITIONS        RT_BIT_64(33)
+#define USAGE_CREATERAWVMDK         RT_BIT_64(34)
 #define USAGE_VM_STATISTICS         RT_BIT_64(35)
 #define USAGE_ADOPTSTATE            RT_BIT_64(36)
 #define USAGE_MODINSTALL            RT_BIT_64(37)
 #define USAGE_MODUNINSTALL          RT_BIT_64(38)
-#ifdef VBOX_OSE
-# define USAGE_RENAMEVMDK           (0)
-#else
-# define USAGE_RENAMEVMDK           RT_BIT_64(39)
-#endif /* !VBOX_OSE */
+#define USAGE_RENAMEVMDK            RT_BIT_64(39)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
