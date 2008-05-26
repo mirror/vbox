@@ -32,134 +32,124 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-[ -f /lib/lsb/init-functions ] || NOLSB=yes
+if [ -f /etc/redhat-release ]; then
+    system=redhat
+elif [ -f /etc/SuSE-release ]; then
+    system=suse
+elif [ -f /etc/gentoo-release ]; then
+    system=gentoo
+else
+    system=other
+fi
 
-if [ -n "$NOLSB" ]; then
-    if [ -f /etc/redhat-release ]; then
-        system=redhat
-    elif [ -f /etc/SuSE-release ]; then
-        system=suse
-    elif [ -f /etc/gentoo-release ]; then
-        system=gentoo
+if [ "$system" = "redhat" ]; then
+    . /etc/init.d/functions
+    fail_msg() {
+        echo_failure
+        echo
+    }
+
+    succ_msg() {
+        echo_success
+        echo
+    }
+
+    begin() {
+        echo -n "$1"
+    }
+fi
+
+if [ "$system" = "suse" ]; then
+    . /etc/rc.status
+    fail_msg() {
+        rc_failed 1
+        rc_status -v
+    }
+
+    succ_msg() {
+        rc_reset
+        rc_status -v
+    }
+
+    begin() {
+        echo -n "$1"
+    }
+fi
+
+if [ "$system" = "gentoo" ]; then
+    . /sbin/functions.sh
+    fail_msg() {
+        eend 1
+    }
+
+    succ_msg() {
+        eend $?
+    }
+
+    begin() {
+        ebegin $1
+    }
+
+    if [ "`which $0`" = "/sbin/rc" ]; then
+        shift
     fi
 fi
 
-if [ -z "$NOLSB" ]; then
-    . /lib/lsb/init-functions
+if [ "$system" = "other" ]; then
     fail_msg() {
-        echo ""
-        log_failure_msg "$1"
+        echo " ...fail!"
     }
+
     succ_msg() {
-        log_end_msg 0
+        echo " ...done."
     }
-    begin_msg() {
-        log_daemon_msg "$@"
+
+    begin() {
+        echo -n $1
     }
-else
-    if [ "$system" = "redhat" ]; then
-        . /etc/init.d/functions
-        fail_msg() {
-            echo -n " "
-            echo_failure
-            echo
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo -n " "
-            echo_success
-            echo
-        }
-    elif [ "$system" = "suse" ]; then
-        . /etc/rc.status
-        fail_msg() {
-            rc_failed 1
-            rc_status -v
-            echo "  ($1)"
-        }
-        succ_msg() {
-            rc_reset
-            rc_status -v
-        }
-    elif [ "$system" = "gentoo" ]; then
-        . /sbin/functions.sh
-        fail_msg() {
-            eerror "$1"
-        }
-        succ_msg() {
-            eend "$?"
-        }
-        begin_msg() {
-            ebegin "$1"
-        }
-        if [ "`which $0`" = "/sbin/rc" ]; then
-            shift
-        fi
-    else
-        fail_msg() {
-            echo " ...failed!"
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo " ...done."
-        }
-    fi
-    if [ "$system" != "gentoo" ]; then
-        begin_msg() {
-            [ -z "${1:-}" ] && return 1
-            if [ -z "${2:-}" ]; then
-                echo -n "$1"
-            else
-                echo -n "$1: $2"
-            fi
-        }
-    fi
 fi
 
 kdir=/lib/modules/`uname -r`/misc
 modname=vboxvfs
 module="$kdir/$modname"
 
-failure()
-{
-    fail_msg "$1"
+fail() {
+    if [ "$system" = "gentoo" ]; then
+        eerror $1
+        exit 1
+    fi
+    fail_msg
+    echo "($1)"
     exit 1
 }
 
 running() {
-    lsmod | grep -q $modname[^_-]
+    lsmod | grep -q "$modname[^_-]"
 }
 
 start() {
-    begin_msg "Starting VirtualBox Additions shared folder support";
+    begin "Starting VirtualBox Additions shared folder support ";
     running || {
         modprobe $modname > /dev/null 2>&1 || {
             if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
-                fail_msg "modprobe $modname failed"
+                fail_msg
                 echo "You may be trying to run Guest Additions from binary release of VirtualBox"
                 echo "in the Open Source Edition."
                 exit 1
             fi
-            failure "modprobe $modname failed"
+            fail "modprobe $modname failed"
         }
     }
-    # Mount all vboxsf filesystems from /etc/fstab
-    mount -a -t vboxsf
     succ_msg
     return 0
 }
 
 stop() {
-    begin_msg "Stopping VirtualBox Additions shared folder support";
-    # At first, unmount all vboxsf filesystems
-    if umount -a -t vboxsf 2>/dev/null; then
-        if running; then
-            rmmod $modname 2>/dev/null || failure "Cannot unload module $modname"
-        fi
-        succ_msg
-    else
-        failure "Cannot unmount vboxvsf filesystems"
+    begin "Stopping VirtualBox Additions shared folder support ";
+    if running; then
+        rmmod $modname 2>/dev/null || fail "Cannot unload module $modname"
     fi
+    succ_msg
     return 0
 }
 

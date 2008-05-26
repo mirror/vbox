@@ -32,88 +32,81 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-[ -f /lib/lsb/init-functions ] || NOLSB=yes
+if [ -f /etc/redhat-release ]; then
+    system=redhat
+elif [ -f /etc/SuSE-release ]; then
+    system=suse
+elif [ -f /etc/gentoo-release ]; then
+    system=gentoo
+else
+    system=other
+fi
 
-if [ -n "$NOLSB" ]; then
-    if [ -f /etc/redhat-release ]; then
-        system=redhat
-    elif [ -f /etc/SuSE-release ]; then
-        system=suse
-    elif [ -f /etc/gentoo-release ]; then
-        system=gentoo
+if [ "$system" = "redhat" ]; then
+    . /etc/init.d/functions
+    fail_msg() {
+        echo_failure
+        echo
+    }
+
+    succ_msg() {
+        echo_success
+        echo
+    }
+
+    begin() {
+        echo -n "$1"
+    }
+fi
+
+if [ "$system" = "suse" ]; then
+    . /etc/rc.status
+    fail_msg() {
+        rc_failed 1
+        rc_status -v
+    }
+
+    succ_msg() {
+        rc_reset
+        rc_status -v
+    }
+
+    begin() {
+        echo -n "$1"
+    }
+fi
+
+if [ "$system" = "gentoo" ]; then
+    . /sbin/functions.sh
+    fail_msg() {
+        eend 1
+    }
+
+    succ_msg() {
+        eend $?
+    }
+
+    begin() {
+        ebegin $1
+    }
+
+    if [ "`which $0`" = "/sbin/rc" ]; then
+        shift
     fi
 fi
 
-if [ -z "$NOLSB" ]; then
-    . /lib/lsb/init-functions
+if [ "$system" = "other" ]; then
     fail_msg() {
-        echo ""
-        log_failure_msg "$1"
+        echo " ...fail!"
     }
+
     succ_msg() {
-        log_end_msg 0
+        echo " ...done."
     }
-    begin_msg() {
-        log_daemon_msg "$@"
+
+    begin() {
+        echo -n $1
     }
-else
-    if [ "$system" = "redhat" ]; then
-        . /etc/init.d/functions
-        fail_msg() {
-            echo -n " "
-            echo_failure
-            echo
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo -n " "
-            echo_success
-            echo
-        }
-    elif [ "$system" = "suse" ]; then
-        . /etc/rc.status
-        fail_msg() {
-            rc_failed 1
-            rc_status -v
-            echo "  ($1)"
-        }
-        succ_msg() {
-            rc_reset
-            rc_status -v
-        }
-    elif [ "$system" = "gentoo" ]; then
-        . /sbin/functions.sh
-        fail_msg() {
-            eerror "$1"
-        }
-        succ_msg() {
-            eend "$?"
-        }
-        begin_msg() {
-            ebegin "$1"
-        }
-        if [ "`which $0`" = "/sbin/rc" ]; then
-            shift
-        fi
-    else
-        fail_msg() {
-            echo " ...failed!"
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo " ...done."
-        }
-    fi
-    if [ "$system" != "gentoo" ]; then
-        begin_msg() {
-            [ -z "${1:-}" ] && return 1
-            if [ -z "${2:-}" ]; then
-                echo -n "$1"
-            else
-                echo -n "$1: $2"
-            fi
-        }
-    fi
 fi
 
 kdir=/lib/modules/`uname -r`/misc
@@ -123,9 +116,13 @@ module=$kdir/$modname
 owner=vboxadd
 group=1
 
-failure()
-{
-    fail_msg "$1"
+fail() {
+    if [ "$system" = "gentoo" ]; then
+        eerror $1
+        exit 1
+    fi
+    fail_msg
+    echo "($1)"
     exit 1
 }
 
@@ -134,14 +131,14 @@ running() {
 }
 
 start() {
-    begin_msg "Starting VirtualBox Additions";
+    begin "Starting VirtualBox Additions ";
     running || {
         rm -f $dev || {
-            failure "Cannot remove $dev"
+            fail "Cannot remove $dev"
         }
 
         modprobe $modname >/dev/null 2>&1 || {
-            failure "modprobe $modname failed"
+            fail "modprobe $modname failed"
         }
 
         sleep .5
@@ -158,18 +155,18 @@ start() {
         fi
         test -z "$maj" && {
             rmmod $modname 2>/dev/null
-            failure "Cannot locate the VirtualBox device"
+            fail "Cannot locate the VirtualBox device"
         }
 
-        mknod -m 0664 $dev c $maj $min 2>/dev/null || {
+        mknod -m 0664 $dev c $maj $min || {
             rmmod $modname 2>/dev/null
-            failure "Cannot create device $dev with major $maj and minor $min"
+            fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
 
     chown $owner:$group $dev 2>/dev/null || {
         rmmod $modname 2>/dev/null
-        failure "Cannot change owner $owner:$group for device $dev"
+        fail "Cannot change owner $owner:$group for device $dev"
     }
 
     succ_msg
@@ -177,10 +174,10 @@ start() {
 }
 
 stop() {
-    begin_msg "Stopping VirtualBox Additions";
+    begin "Stopping VirtualBox Additions ";
     if running; then
-        rmmod $modname 2>/dev/null || failure "Cannot unload module $modname"
-        rm -f $dev || failure "Cannot unlink $dev"
+        rmmod $modname 2>/dev/null || fail "Cannot unload module $modname"
+        rm -f $dev || fail "Cannot unlink $dev"
     fi
     succ_msg
     return 0
