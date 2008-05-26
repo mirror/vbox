@@ -330,6 +330,8 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /** The ASID must start at 1; the host uses 0. */
     pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
 
+    /** Setup the PAT msr (nested paging only) */
+    pVMCB->guest.u64GPAT = 0x0007040600070406ULL;
     return rc;
 }
 
