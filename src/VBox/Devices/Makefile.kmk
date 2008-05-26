@@ -609,7 +609,7 @@ Drivers_SOURCES      := $(filter-out \
 	, $(Drivers_SOURCES))
 Drivers_SOURCES.solaris = \
 	Audio/solaudio.c \
-	Network/DrvTAP.cpp \
+	$(if $(VBOX_SOLARIS_10),,Network/DrvTAP.cpp) \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp
  ifdef VBOX_WITH_CROSSBOW

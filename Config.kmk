@@ -1476,9 +1476,15 @@ endif
 #
 ifeq ($(KBUILD_TARGET),solaris)
  ifeq ($(origin SOLARIS_VER),undefined)
-   export SOLARIS_VER       := $(shell uname -s)_$(subst .,_,$(shell uname -r))
+  export SOLARIS_VER := $(shell uname -r | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)|$$(int-add $$(int-mul 100, \1), \2))
+  ifeq ($(SOLARIS_VER),510)
+   DEFS.solaris += RT_OS_SOLARIS_10
+   # Solaris 10 does not include crossbow.
+   VBOX_WITH_CROSSBOW =
+   VBOX_SOLARIS_10 = 1
+  endif
+  DEFS.solaris += SOLARIS_VER=$(SOLARIS_VER)
  endif
- DEFS.solaris += __$(SOLARIS_VER)
 endif
 
 
