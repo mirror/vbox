@@ -1918,3 +1918,38 @@ HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Invalidates a guest page by physical address
+ *
+ * NOTE: Assumes the current instruction references this physical page though a virtual address!!
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPhys      Page to invalidate
+ */
+HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
+
+    /* Skip it if a TLB flush is already pending. */
+    if (!fFlushPending)
+    {
+        CPUMCTX    *pCtx;
+        int         rc;
+        SVM_VMCB   *pVMCB;
+
+        rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
+        AssertRCReturn(rc, rc);
+
+        Log2(("SVMR0InvalidatePhysPage %VGp\n", GCPhys));
+        AssertReturn(pVM, VERR_INVALID_PARAMETER);
+        Assert(pVM->hwaccm.s.svm.fSupported);
+
+        pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
+        AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
+
+        return SVMR0InterpretInvpg(pVM, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
+    }
+    return VINF_SUCCESS;
+}

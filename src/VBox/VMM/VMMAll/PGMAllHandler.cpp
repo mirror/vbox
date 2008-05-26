@@ -888,6 +888,9 @@ PGMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+#ifdef IN_RING0
+            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+#endif
             return VINF_SUCCESS;
         }
 
