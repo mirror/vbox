@@ -203,9 +203,9 @@ VBGLR3DECL(int) VbglR3Init(void)
     /* Create release logger */
     PRTLOGGER loggerRelease;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    int rrc = RTLogCreate(&loggerRelease, 0, NULL, "VBOXGUEST_RELEASE_LOG",
+    int rrc = RTLogCreate(&loggerRelease, 0, "all", "VBOXGUEST_RELEASE_LOG",
                          RT_ELEMENTS(s_apszGroups), &s_apszGroups[0],
-                         RTLOGDEST_USER, "VBox.log");
+                         RTLOGDEST_USER, NULL);
     /* This may legitimately fail if we are using the mini-runtime. */
     if (RT_SUCCESS(rrc))
         RTLogRelSetDefaultInstance(loggerRelease);
