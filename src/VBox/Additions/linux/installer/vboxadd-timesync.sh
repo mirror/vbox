@@ -153,7 +153,7 @@ test -x "$binary" || {
 }
 
 vboxaddrunning() {
-    lsmod | grep -q vboxadd[^_-]
+    lsmod | grep -q "vboxadd[^_-]"
 }
 
 start() {
@@ -172,7 +172,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        begin_msg "Stopping VirtualBox host to guest time synchronisation ";
+        begin_msg "Stopping VirtualBox host to guest time synchronisation";
         vboxaddrunning || {
             failure "VirtualBox Additions module not loaded!"
         }

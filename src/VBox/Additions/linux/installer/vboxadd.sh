@@ -130,17 +130,17 @@ failure()
 }
 
 running() {
-    lsmod | grep -q $modname[^_-]
+    lsmod | grep -q "$modname[^_-]"
 }
 
 start() {
-    begin_msg "Starting VirtualBox Additions ";
+    begin_msg "Starting VirtualBox Additions";
     running || {
         rm -f $dev || {
             failure "Cannot remove $dev"
         }
 
-        modprobe $modname || {
+        modprobe $modname >/dev/null 2>&1 || {
             failure "modprobe $modname failed"
         }
 
@@ -157,12 +157,12 @@ start() {
             fi
         fi
         test -z "$maj" && {
-            rmmod $modname
+            rmmod $modname 2>/dev/null
             failure "Cannot locate the VirtualBox device"
         }
 
-        mknod -m 0664 $dev c $maj $min || {
-            rmmod $modname
+        mknod -m 0664 $dev c $maj $min 2>/dev/null || {
+            rmmod $modname 2>/dev/null
             failure "Cannot create device $dev with major $maj and minor $min"
         }
     fi
@@ -177,9 +177,9 @@ start() {
 }
 
 stop() {
-    begin_msg "Stopping VirtualBox Additions ";
+    begin_msg "Stopping VirtualBox Additions";
     if running; then
-        rmmod $modname || failure "Cannot unload module $modname"
+        rmmod $modname 2>/dev/null || failure "Cannot unload module $modname"
         rm -f $dev || failure "Cannot unlink $dev"
     fi
     succ_msg
