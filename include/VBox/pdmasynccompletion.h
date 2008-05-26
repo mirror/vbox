@@ -255,15 +255,6 @@ PDMR3DECL(const char *) PDMR3AsyncCompletionGetBackendName(PDMASYNCCOMPLETIONTAS
 PDMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, PDMASYNCCOMPLETIONTASKTYPE enmType, void *pvCtx, void *pvUser);
 
 /**
- * Associate a task with a type specific context.
- *
- * @returns VBox status code.
- * @param   pTask    The task to associate the context with.
- * @param   pvCtx    Pointer to the context.
- */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskAssociate(PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx);
-
-/**
  * Submit an array of tasks for processing
  * The tasks must have a type specific context.
  *
@@ -509,6 +500,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETIONTASK ppTask
     return rc;
 }
 
+#if 0
 /**
  * Modifies a socket completion task.
  *
@@ -540,6 +532,7 @@ DECLINLINE(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETIONTASK pTask, 
 
     return rc;
 }
+#endif
 
 /** @} */
 
