@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#include <VBoxCloseVMDlg.h>
-#include <VBoxProblemReporter.h>
+#include "VBoxCloseVMDlg.h"
+#include "VBoxProblemReporter.h"
 
 /* Qt includes */
 #include <QPushButton>
