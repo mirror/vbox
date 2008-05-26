@@ -458,7 +458,7 @@ public:
 
     /* VirtualBox helpers */
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_X11) && !defined(VBOX_OSE)
     bool showVirtualBoxLicense();
 #endif
 
