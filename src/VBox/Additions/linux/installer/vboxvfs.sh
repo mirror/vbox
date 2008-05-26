@@ -154,7 +154,7 @@ stop() {
     # At first, unmount all vboxsf filesystems
     if umount -a -t vboxsf 2>/dev/null; then
         if running; then
-            rmmod $modname || failure "Cannot unload module $modname"
+            rmmod $modname 2>/dev/null || failure "Cannot unload module $modname"
         fi
         succ_msg
     else
