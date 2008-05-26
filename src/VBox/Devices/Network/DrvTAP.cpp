@@ -19,7 +19,7 @@
  * additional information or have any questions.
  */
 
-#if !defined(RT_OS_SOLARIS) || !defined(__SunOS_5.10)
+#if !defined(RT_OS_SOLARIS) || !defined(__SunOS_5_10)
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -1093,4 +1093,4 @@ const PDMDRVREG g_DrvHostInterface =
     NULL
 };
 
-#endif /* !defined(RT_OS_SOLARIS) || !defined(__SunOS_5.10) */
+#endif /* !defined(RT_OS_SOLARIS) || !defined(__SunOS_5_10) */

@@ -1476,7 +1476,7 @@ endif
 #
 ifeq ($(KBUILD_TARGET),solaris)
  ifeq ($(origin SOLARIS_VER),undefined)
-   export SOLARIS_VER       := $(shell uname -s)_$(shell uname -r)
+   export SOLARIS_VER       := $(shell uname -s)_$(subst .,_,$(shell uname -r))
  endif
  DEFS.solaris += __$(SOLARIS_VER)
 endif
