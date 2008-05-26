@@ -397,7 +397,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
         {
             if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
             {
-                Log(("Enable irq window exit!\n"));
+                LogFlow(("Enable irq window exit!\n"));
                 /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
                 pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
                 pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
@@ -1988,7 +1988,7 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
                 }
 
                 /* Manually invalidate the page for the VM's TLB. */
-                Log(("SVMR0InvalidatePhysPage %VGv ASID=%d\n", addr, pVMCB->ctrl.TLBCtrl.n.u32ASID));
+                Log(("SVMR0InvalidatePhysPage Phys=%VGp Virt=%VGv ASID=%d\n", GCPhys, addr, pVMCB->ctrl.TLBCtrl.n.u32ASID));
                 SVMInvlpgA(addr, pVMCB->ctrl.TLBCtrl.n.u32ASID);
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPhysPageManual);
 
