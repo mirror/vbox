@@ -32,117 +32,109 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-[ -f /lib/lsb/init-functions ] || NOLSB=yes
-
+system=unknown
 if [ -f /etc/redhat-release ]; then
     system=redhat
+    PIDFILE="/var/lock/subsys/vboxadd-timesync"
 elif [ -f /etc/SuSE-release ]; then
     system=suse
+    PIDFILE="/var/lock/subsys/vboxadd-timesync"
 elif [ -f /etc/debian_version ]; then
     system=debian
+    PIDFILE="/var/run/vboxadd-timesync"
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
-fi
-
-if [ -z "$NOLSB" ]; then
-    . /lib/lsb/init-functions
-    fail_msg() {
-        echo ""
-        log_failure_msg "$1"
-    }
-    succ_msg() {
-        log_end_msg 0
-    }
-    begin_msg() {
-        log_daemon_msg "$@"
-    }
+    PIDFILE="/var/run/vboxadd-timesync"
 else
-    if [ "$system" = "redhat" ]; then
-        . /etc/init.d/functions
-        fail_msg() {
-            echo -n " "
-            echo_failure
-            echo
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo -n " "
-            echo_success
-            echo
-        }
-    elif [ "$system" = "suse" ]; then
-        . /etc/rc.status
-        fail_msg() {
-            rc_failed 1
-            rc_status -v
-            echo "  ($1)"
-        }
-        succ_msg() {
-            rc_reset
-            rc_status -v
-        }
-    elif [ "$system" = "gentoo" ]; then
-        . /sbin/functions.sh
-        fail_msg() {
-            eerror "$1"
-        }
-        succ_msg() {
-            eend "$?"
-        }
-        begin_msg() {
-            ebegin "$1"
-        }
-        if [ "`which $0`" = "/sbin/rc" ]; then
-            shift
-        fi
-    else
-        fail_msg() {
-            echo " ...failed!"
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo " ...done."
-        }
-    fi
-    if [ "$system" != "gentoo" ]; then
-        begin_msg() {
-            [ -z "${1:-}" ] && return 1
-            if [ -z "${2:-}" ]; then
-                echo -n "$1"
-            else
-                echo -n "$1: $2"
-            fi
-        }
+    system=other
+    if [ -d /var/run -a -w /var/run ]; then
+        PIDFILE="/var/run/vboxadd-timesync"
     fi
 fi
 
 if [ "$system" = "redhat" ]; then
-    PIDFILE="/var/lock/subsys/vboxadd-timesync"
-elif [ "$system" = "suse" ]; then
-    PIDFILE="/var/lock/subsys/vboxadd-timesync"
+    . /etc/init.d/functions
+    fail_msg() {
+        echo_failure
+        echo
+    }
+
+    succ_msg() {
+        echo_success
+        echo
+    }
+fi
+
+if [ "$system" = "suse" ]; then
+    . /etc/rc.status
     daemon() {
         startproc ${1+"$@"}
     }
-elif [ "$system" = "debian" ]; then
-    PIDFILE="/var/run/vboxadd-timesync"
+
+    fail_msg() {
+        rc_failed 1
+        rc_status -v
+    }
+
+    succ_msg() {
+        rc_reset
+        rc_status -v
+    }
+fi
+
+if [ "$system" = "debian" ]; then
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
     }
+
     killproc() {
         start-stop-daemon --stop --exec $@
     }
-elif [ "$system" = "gentoo" ]; then
-    PIDFILE="/var/run/vboxadd-timesync"
+
+    fail_msg() {
+        echo " ...fail!"
+    }
+
+    succ_msg() {
+        echo " ...done."
+    }
+fi
+
+if [ "$system" = "gentoo" ]; then
+    . /sbin/functions.sh
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
     }
+
     killproc() {
         start-stop-daemon --stop --exec $@
     }
-else
-    if [ -d /var/run -a -w /var/run ]; then
-        PIDFILE="/var/run/vboxadd-timesync"
+
+    fail_msg() {
+        echo " ...fail!"
+    }
+
+    succ_msg() {
+        echo " ...done."
+    }
+
+    if [ "`which $0`" = "/sbin/rc" ]; then
+        shift
     fi
+fi
+
+if [ "$system" = "other" ]; then
+    fail_msg() {
+        echo " ...fail!"
+    }
+
+    succ_msg() {
+        echo " ...done."
+    }
+
+    begin() {
+        echo -n "$1"
+    }
 fi
 
 binary=/usr/sbin/vboxadd-timesync
@@ -158,9 +150,10 @@ vboxaddrunning() {
 
 start() {
     if ! test -f $PIDFILE; then
-        begin_msg "Starting VirtualBox host to guest time synchronisation";
+        echo -n "Starting VirtualBox host to guest time synchronisation ";
         vboxaddrunning || {
-            failure "VirtualBox Additions module not loaded!"
+            echo "VirtualBox Additions module not loaded!"
+            exit 1
         }
         daemon $binary --daemonize
         RETVAL=$?
@@ -172,9 +165,10 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        begin_msg "Stopping VirtualBox host to guest time synchronisation";
+        echo -n "Stopping VirtualBox host to guest time synchronisation ";
         vboxaddrunning || {
-            failure "VirtualBox Additions module not loaded!"
+            echo "VirtualBox Additions module not loaded!"
+            exit 1
         }
         killproc $binary
         RETVAL=$?
