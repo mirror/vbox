@@ -86,6 +86,7 @@ PROGRAMS = \
 PROGRAMS.win = \
 	tstRTProcWait \
 	tstCritSectW32 \
+	tstFileAppendWin-1 \
 	ntGetTimerResolution
 PROGRAMS.linux = \
 	tstRTProcWait \
@@ -139,6 +140,8 @@ tstErrUnique_INCS = $(PATH_TARGET)/
 tstErrUnique.cpp_DEPS = $(PATH_TARGET)/errmsgdata.h
 
 tstFile_SOURCES = tstFile.cpp
+
+tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 
 tstFileLock_SOURCES = tstFileLock.cpp
 
