@@ -19,8 +19,6 @@
  * additional information or have any questions.
  */
 
-#if !defined(RT_OS_SOLARIS) || !defined(__SunOS_5_10)
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -1092,5 +1090,3 @@ const PDMDRVREG g_DrvHostInterface =
     /* pfnPowerOff */
     NULL
 };
-
-#endif /* !defined(RT_OS_SOLARIS) || !defined(__SunOS_5_10) */

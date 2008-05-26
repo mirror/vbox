@@ -19,9 +19,6 @@
  * additional information or have any questions.
  */
 
-/* Solaris 10 and below has no dlpi. */
-#ifndef __SunOS_5_10
-
 #include "vbox-libdlpi.h"
 
 #include <iprt/err.h>
@@ -84,5 +81,3 @@ bool VBoxLibDlpiFound(void)
         return false;
     }
 }
-
-#endif /* __SunOS_5_10 */
