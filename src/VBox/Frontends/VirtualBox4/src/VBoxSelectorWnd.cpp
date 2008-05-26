@@ -811,9 +811,8 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     CMachine m = session.GetMachine();
     AssertMsgReturn (!m.isNull(), ("Machine must not be null"), (void) 0);
 
-    VBoxVMSettingsDlg dlg (this, "VBoxVMSettingsDlg");
+    VBoxVMSettingsDlg dlg (this, aCategory, aControl);
     dlg.getFromMachine (m);
-    dlg.setup (aCategory, aControl);
 
     if (dlg.exec() == QDialog::Accepted)
     {

@@ -290,6 +290,20 @@ VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotsWgt.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMLogViewer.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMLogViewer.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsCD.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsCD.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsFD.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsFD.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsAudio.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsAudio.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsDlg.ui
 
 #
 # The targets.
@@ -435,7 +449,13 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMInformationDlg.h \
 	include/VBoxTakeSnapshotDlg.h \
 	include/VBoxSnapshotsWgt.h \
-	include/VBoxVMLogViewer.h
+	include/VBoxVMLogViewer.h \
+	include/VBoxVMSettingsUtils.h \
+	include/VBoxVMSettingsGeneral.h \
+	include/VBoxVMSettingsCD.h \
+	include/VBoxVMSettingsFD.h \
+	include/VBoxVMSettingsAudio.h \
+	include/VBoxVMSettingsDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -446,12 +466,6 @@ ifdef VBOX_WITH_XPCOM
 VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif
 
-# UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
-VirtualBox_QT_MOCUIHDRS = \
-	ui/VBoxVMSettingsDlg.ui.h \
-	ui/VBoxVMLogViewer.ui.h
-
-
 # All generated sources. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
 VirtualBox_GENSRCS = \
@@ -461,7 +475,6 @@ VirtualBox_GENSRCS = \
 # All generated headers. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
 VirtualBox_GENHDRS = \
-	$(foreach mocui,$(notdir $(basename $(VirtualBox_QT_MOCUIHDRS))), $(PATH_VirtualBox)/moc/$(mocui).moc) \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCSRCS))), $(PATH_VirtualBox)/moc/$(moc).moc) \
 	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).h) \
 	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS4))), $(PATH_VirtualBox)/ui/$(ui).gen.h)
@@ -517,7 +530,12 @@ VirtualBox_SOURCES = \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxSnapshotsWgt.cpp \
-	src/VBoxVMLogViewer.cpp
+	src/VBoxVMLogViewer.cpp \
+	src/VBoxVMSettingsGeneral.cpp \
+	src/VBoxVMSettingsCD.cpp \
+	src/VBoxVMSettingsFD.cpp \
+	src/VBoxVMSettingsAudio.cpp \
+	src/VBoxVMSettingsDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 ifndef VBOX_OSE
