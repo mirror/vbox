@@ -26,8 +26,8 @@ LANGUAGE	= C++
 
 FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
-	ui/VBoxVMSerialPortSettings.ui \
-	ui/VBoxVMParallelPortSettings.ui \
+	ui/VBoxVMSettingsSerial.ui \
+	ui/VBoxVMSettingsParallel.ui \
 	ui/VBoxUSBFilterSettings.ui \
 	ui/VBoxSharedFoldersSettings.ui \
 	ui/VBoxNewVMWzd.ui \

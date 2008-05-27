@@ -84,7 +84,7 @@ endif
 
 # Warn about all what you know about porting qt3->qt4.
 # Disable this if you like to see something on your screen.
-#VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
+VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
 # Some default defs
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
@@ -290,6 +290,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotsWgt.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMLogViewer.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMLogViewer.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
+
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsCD.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsCD.ui
 
@@ -299,8 +302,11 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsFD.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsAudio.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsAudio.ui
 
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsSerial.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSerial.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsParallel.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsParallel.ui
 
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsDlg.ui
@@ -455,6 +461,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsCD.h \
 	include/VBoxVMSettingsFD.h \
 	include/VBoxVMSettingsAudio.h \
+	include/VBoxVMSettingsSerial.h \
+	include/VBoxVMSettingsParallel.h \
 	include/VBoxVMSettingsDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
@@ -535,6 +543,8 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsCD.cpp \
 	src/VBoxVMSettingsFD.cpp \
 	src/VBoxVMSettingsAudio.cpp \
+	src/VBoxVMSettingsSerial.cpp \
+	src/VBoxVMSettingsParallel.cpp \
 	src/VBoxVMSettingsDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
