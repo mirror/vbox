@@ -293,7 +293,7 @@ endif
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Use the new VBI module on Solaris.
-#VBOX_WITH_SOLARIS_VBI = 1
+VBOX_WITH_SOLARIS_VBI = 1
 
 #
 # Skip stuff.
