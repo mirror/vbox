@@ -160,36 +160,37 @@ VBGLR3DECL(int) VbglR3Init(void)
     /*
      * Try open the BSD device.
      */
-#if defined(VBOX_VBGLR3_XFREE86)
+# if defined(VBOX_VBGLR3_XFREE86)
     int File = 0;
-#else
+# else
     RTFILE File = 0;
-#endif
+# endif
     int rc;
     char szDevice[sizeof(VBOXGUEST_DEVICE_NAME) + 16];
     for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
     {
         RTStrPrintf(szDevice, sizeof(szDevice), VBOXGUEST_DEVICE_NAME "%d", iUnit);
-#if defined(VBOX_VBGLR3_XFREE86)
+# if defined(VBOX_VBGLR3_XFREE86)
         File = xf86open(szDevice, XF86_O_RDWR);
         if (File >= 0)
             break;
-#else
+# else
         rc = RTFileOpen(&File, szDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
             break;
-#endif
+# endif
     }
 
-#if defined(VBOX_VBGLR3_XFREE86)
+# if defined(VBOX_VBGLR3_XFREE86)
     if (File == -1)
         return VERR_OPEN_FAILED;
-#else
+# else
     if (RT_FAILURE(rc))
         return rc;
-#endif
+# endif
 
     g_File = File;
+
 #else
     /* the default implemenation. (linux, solaris) */
     RTFILE File;
@@ -200,15 +201,17 @@ VBGLR3DECL(int) VbglR3Init(void)
 
 #endif
 
-    /* Create release logger */
-    PRTLOGGER loggerRelease;
+    /*
+     * Create release logger
+     */
+    PRTLOGGER pReleaseLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    int rrc = RTLogCreate(&loggerRelease, 0, "all", "VBOXGUEST_RELEASE_LOG",
-                         RT_ELEMENTS(s_apszGroups), &s_apszGroups[0],
-                         RTLOGDEST_USER, NULL);
+    int rc2 = RTLogCreate(&pReleaseLogger, 0, "all", "VBOX_RELEASE_LOG",
+                          RT_ELEMENTS(s_apszGroups), &s_apszGroups[0],
+                          RTLOGDEST_USER, NULL);
     /* This may legitimately fail if we are using the mini-runtime. */
-    if (RT_SUCCESS(rrc))
-        RTLogRelSetDefaultInstance(loggerRelease);
+    if (RT_SUCCESS(rc2))
+        RTLogRelSetDefaultInstance(pReleaseLogger);
 
     return VINF_SUCCESS;
 }
