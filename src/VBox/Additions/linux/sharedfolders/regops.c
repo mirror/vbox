@@ -314,13 +314,17 @@ sf_reg_release (struct inode *inode, struct file *file)
         return 0;
 }
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+static int
+sf_reg_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 static struct page *
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
-sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int unused)
-#define SET_TYPE(t)
-#else
 sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
-#define SET_TYPE(t) *type = (t)
+# define SET_TYPE(t) *type = (t)
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0) */
+static struct page *
+sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int unused)
+# define SET_TYPE(t)
 #endif
 {
         struct page *page;
@@ -334,34 +338,53 @@ sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
         struct sf_reg_info *sf_r = file->private_data;
 
         TRACE ();
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+        if (vmf->pgoff > vma->vm_end)
+                return VM_FAULT_SIGBUS;
+#else
         if (vaddr > vma->vm_end) {
                 SET_TYPE (VM_FAULT_SIGBUS);
                 return NOPAGE_SIGBUS;
         }
+#endif
 
         page = alloc_page (GFP_HIGHUSER);
         if (!page) {
                 LogRelFunc(("failed to allocate page\n"));
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+                return VM_FAULT_OOM;
+#else
                 SET_TYPE (VM_FAULT_OOM);
                 return NOPAGE_OOM;
+#endif
         }
 
         buf = kmap (page);
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+        off = (vmf->pgoff << PAGE_SHIFT);
+#else
         off = (vaddr - vma->vm_start) + (vma->vm_pgoff << PAGE_SHIFT);
+#endif
         err = sf_reg_read_aux (__func__, sf_g, sf_r, buf, &nread, off);
         if (err) {
                 kunmap (page);
                 put_page (page);
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+                return VM_FAULT_SIGBUS;
+#else
                 SET_TYPE (VM_FAULT_SIGBUS);
                 return NOPAGE_SIGBUS;
+#endif
         }
 
         BUG_ON (nread > PAGE_SIZE);
         if (!nread) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
-                clear_user_page (page_address (page), vaddr);
-#else
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+                clear_user_page (page_address (page), vmf->pgoff, page);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
                 clear_user_page (page_address (page), vaddr, page);
+#else
+                clear_user_page (page_address (page), vaddr);
 #endif
         }
         else {
@@ -370,12 +393,21 @@ sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
 
         flush_dcache_page (page);
         kunmap (page);
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+        vmf->page = page;
+        return 0;
+#else
         SET_TYPE (VM_FAULT_MAJOR);
         return page;
+#endif
 }
 
 static struct vm_operations_struct sf_vma_ops = {
+#if LINUX_VERSION_CODE > KERNEL_VERSION (2, 6, 25)
+        .fault = sf_reg_fault
+#else
         .nopage = sf_reg_nopage
+#endif
 };
 
 static int
