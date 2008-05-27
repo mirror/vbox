@@ -160,11 +160,11 @@ typedef struct VMM
      * At present this only means the context switcher code. */
     RTR0PTR                     pvHCCoreCodeR0;
     /** Pointer to core code guest context mapping. */
-    RTGCPTR                     pvGCCoreCode;
+    RTGCPTR32                   pvGCCoreCode;
 #ifdef VBOX_WITH_NMI
     /** The guest context address of the APIC (host) mapping. */
-    RTGCPTR                     GCPtrApicBase;
-    RTGCPTR                     pGCPadding0; /**< Alignment padding */
+    RTGCPTR32                   GCPtrApicBase;
+    RTGCPTR32                   pGCPadding0; /**< Alignment padding */
 #endif
     /** The current switcher.
      * This will be set before the VMM is fully initialized. */
@@ -179,12 +179,12 @@ typedef struct VMM
     /** Guest to host switcher entry point. */
     GCPTRTYPE(PFNVMMSWITCHERGC) pfnGCGuestToHost;
     /** Call Trampoline. See vmmGCCallTrampoline(). */
-    RTGCPTR                     pfnGCCallTrampoline;
+    RTGCPTR32                   pfnGCCallTrampoline;
 
     /** Resume Guest Execution. See CPUMGCResumeGuest(). */
-    RTGCPTR                     pfnCPUMGCResumeGuest;
+    RTGCPTR32                   pfnCPUMGCResumeGuest;
     /** Resume Guest Execution in V86 mode. See CPUMGCResumeGuestV86(). */
-    RTGCPTR                     pfnCPUMGCResumeGuestV86;
+    RTGCPTR32                   pfnCPUMGCResumeGuestV86;
     /** The last GC return code. */
     RTINT                       iLastGCRc;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32

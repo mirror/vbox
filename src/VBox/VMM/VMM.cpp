@@ -305,9 +305,11 @@ static int vmmR3InitCoreCode(PVM pVM)
         /*
          * Map the code into the GC address space.
          */
-        rc = MMR3HyperMapHCPhys(pVM, pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, "Core Code", &pVM->vmm.s.pvGCCoreCode);
+        RTGCPTR GCPtr;
+        rc = MMR3HyperMapHCPhys(pVM, pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, "Core Code", &GCPtr);
         if (VBOX_SUCCESS(rc))
         {
+            pVM->vmm.s.pvGCCoreCode = GCPtr;
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
             LogRel(("CoreCode: R3=%VHv R0=%VHv GC=%VGv Phys=%VHp cb=%#x\n",
                     pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
@@ -676,7 +678,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
      *      -# setup stackframe and EIP to use the trampoline.
      *      -# do a generic hypervisor call.
      */
-    RTGCPTR GCPtrEP;
+    RTGCPTR32 GCPtrEP;
     int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
@@ -865,7 +867,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
      * Simply clone the logger instance (for GC).
      */
     int rc = VINF_SUCCESS;
-    RTGCPTR GCPtrLoggerFlush = 0;
+    RTGCPTR32 GCPtrLoggerFlush = 0;
 
     if (pVM->vmm.s.pLoggerHC
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
@@ -879,7 +881,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
 
     if (pVM->vmm.s.pLoggerHC)
     {
-        RTGCPTR GCPtrLoggerWrapper = 0;
+        RTGCPTR32 GCPtrLoggerWrapper = 0;
         rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pLoggerHC);
@@ -891,7 +893,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
     if (pVM->vmm.s.pRelLoggerHC)
     {
-        RTGCPTR GCPtrLoggerWrapper = 0;
+        RTGCPTR32 GCPtrLoggerWrapper = 0;
         rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
@@ -1566,7 +1568,7 @@ DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
  */
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM)
 {
-    RTGCPTR GCPtr;
+    RTGCPTR32 GCPtr;
     int rc = PDMR3GetSymbolGC(pVM, NULL, "g_szRTAssertMsg1", &GCPtr);
     if (VBOX_SUCCESS(rc))
         return (const char *)MMHyperGC2HC(pVM, GCPtr);
@@ -1582,7 +1584,7 @@ VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM)
  */
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg2(PVM pVM)
 {
-    RTGCPTR GCPtr;
+    RTGCPTR32 GCPtr;
     int rc = PDMR3GetSymbolGC(pVM, NULL, "g_szRTAssertMsg2", &GCPtr);
     if (VBOX_SUCCESS(rc))
         return (const char *)MMHyperGC2HC(pVM, GCPtr);

@@ -258,7 +258,7 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
  *                          ordinal value rather than a string pointer.
  * @param   pGCPtrValue     Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR pGCPtrValue);
+PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pGCPtrValue);
 
 /**
  * Same as PDMR3GetSymbolGC except that the module will be attempted loaded if not found.
@@ -270,7 +270,7 @@ PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszS
  *                          ordinal value rather than a string pointer.
  * @param   pGCPtrValue     Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolGCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR pGCPtrValue);
+PDMR3DECL(int) PDMR3GetSymbolGCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pGCPtrValue);
 
 /**
  * Queries module information from an EIP.

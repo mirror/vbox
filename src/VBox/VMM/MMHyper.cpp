@@ -99,18 +99,23 @@ int mmR3HyperInit(PVM pVM)
         /*
          * Map the VM structure into the hypervisor space.
          */
-        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(sizeof(VM), PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &pVM->pVMGC);
+        RTGCPTR GCPtr;
+        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(sizeof(VM), PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
         if (VBOX_SUCCESS(rc))
         {
+            pVM->pVMGC = (RTGCPTR32)GCPtr;
+
             /* Reserve a page for fencing. */
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
             /*
              * Map the heap into the hypervisor space.
              */
-            rc = mmR3HyperHeapMap(pVM, pVM->mm.s.pHyperHeapHC, &pVM->mm.s.pHyperHeapGC);
+            rc = mmR3HyperHeapMap(pVM, pVM->mm.s.pHyperHeapHC, &GCPtr);
             if (VBOX_SUCCESS(rc))
             {
+                pVM->mm.s.pHyperHeapGC = (RTGCPTR32)GCPtr;
+
                 /*
                  * Register info handlers.
                  */

@@ -1587,21 +1587,30 @@ static void pgmR3InitStats(PVM pVM)
  */
 PGMR3DECL(int) PGMR3InitDynMap(PVM pVM)
 {
+    RTGCPTR GCPtr;
     /*
      * Reserve space for mapping the paging pages into guest context.
      */
-    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + ELEMENTS(pVM->pgm.s.apHCPaePDs) + 1 + 2 + 2), "Paging", &pVM->pgm.s.pGC32BitPD);
+    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + ELEMENTS(pVM->pgm.s.apHCPaePDs) + 1 + 2 + 2), "Paging", &GCPtr);
     AssertRCReturn(rc, rc);
+    pVM->pgm.s.pGC32BitPD = GCPtr;
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
     /*
      * Reserve space for the dynamic mappings.
      */
     /** @todo r=bird: Need to verify that the checks for crossing PTs are correct here. They seems to be assuming 4MB PTs.. */
-    rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &pVM->pgm.s.pbDynPageMapBaseGC);
+    rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &GCPtr);
+    if (VBOX_SUCCESS(rc))
+        pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
+
     if (    VBOX_SUCCESS(rc)
         &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT))
-        rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &pVM->pgm.s.pbDynPageMapBaseGC);
+    {
+        rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &GCPtr);
+        if (VBOX_SUCCESS(rc))
+            pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
+    }
     if (VBOX_SUCCESS(rc))
     {
         AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT));
@@ -2121,7 +2130,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         RTGCPTR GCPtr;
         SSMR3GetGCPtr(pSSM,     &GCPtr);
         RTGCUINTPTR cPTs;
-        rc = SSMR3GetU32(pSSM,  &cPTs);
+        rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
         if (VBOX_FAILURE(rc))
             return rc;
 
