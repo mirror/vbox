@@ -37,7 +37,7 @@ VirtualBox from the terminal.
 Un-Installating:
 ----------------
 
-To remove the VirtualBox from your system perform the following steps:
+To remove VirtualBox from your system perform the following steps:
 
 1. Login as root using the "su" command.
 
