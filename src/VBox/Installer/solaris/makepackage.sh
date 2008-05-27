@@ -91,7 +91,12 @@ pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 # translate into package datastream
 pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
-$VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
+# $4 if exist would contain the path to the VBI package to include in the .tar.gz
+if test -f "$4"; then
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" $4 autoresponse ReadMe.txt
+else
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
+fi
 
 echo "## Packaging and transfer completed successfully!"
 rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
