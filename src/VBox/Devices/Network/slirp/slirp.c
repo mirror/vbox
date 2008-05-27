@@ -695,15 +695,17 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     struct arphdr *rah = (struct arphdr *)(arp_reply + ETH_HLEN);
     int ar_op;
     struct ex_list *ex_ptr;
+    uint32_t htip = ntohl(*(in_addr_t*)ah->ar_tip);
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op) {
     case ARPOP_REQUEST:
-        if (!memcmp(ah->ar_tip, &special_addr, 3)) {
-            if (ah->ar_tip[3] == CTL_DNS || ah->ar_tip[3] == CTL_ALIAS)
+        if ((htip & pData->netmask) == ntohl(special_addr.s_addr)) {
+            if (   (htip & ~pData->netmask) == CTL_DNS
+                || (htip & ~pData->netmask) == CTL_ALIAS)
                 goto arp_ok;
             for (ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next) {
-                if (ex_ptr->ex_addr == ah->ar_tip[3])
+                if ((htip & ~pData->netmask) == ex_ptr->ex_addr)
                     goto arp_ok;
             }
             return;
