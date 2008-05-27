@@ -604,12 +604,6 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         Log(("FLAG: SHFL_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
     }
 
-    if (fShflFlags & SHFL_CF_APPEND)
-    {
-        Log(("FLAG: SHFL_CF_APPEND\n"));
-        /** @todo fOpen |= RTFILE_O_APPEND; */
-    }
-
     if (RT_SUCCESS(rc))
     {
         *pfOpen = fOpen;
