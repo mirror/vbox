@@ -501,20 +501,20 @@ GLOBALNAME %1_EndProc
 
 ;; @def RTGCPHYS_DEF
 ; The pesudo-instruction used to declare an initialized guest physical address.
-%define RTGCPHYS_DEF    dd
+%define RTGCPHYS_DEF    dq
 
 ;; @def RTGCPTR_RES
 ; The pesudo-instruction used to declare (=reserve space for) an uninitialized
 ; guest physical address variable
-%define RTGCPHYS_RES    resd
+%define RTGCPHYS_RES    resq
 
 ;; @def RTGCPTR_PRE
 ; The memory operand prefix used for a guest physical address.
-%define RTGCPHYS_PRE    dword
+%define RTGCPHYS_PRE    qword
 
 ;; @def RTGCPHYS_CB
 ; The size in bytes of a guest physical address.
-%define RTGCPHYS_CB     4
+%define RTGCPHYS_CB     8
 
 
 
