@@ -113,7 +113,7 @@ typedef FNIOMIOPORTIN *PFNIOMIOPORTIN;
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-typedef DECLCALLBACK(int) FNIOMIOPORTINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfers, unsigned cb);
+typedef DECLCALLBACK(int) FNIOMIOPORTINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTINSTRING(). */
 typedef FNIOMIOPORTINSTRING *PFNIOMIOPORTINSTRING;
 
@@ -144,7 +144,7 @@ typedef FNIOMIOPORTOUT *PFNIOMIOPORTOUT;
  * @param   pcTransfers Pointer to the number of transfer units to write, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-typedef DECLCALLBACK(int) FNIOMIOPORTOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfers, unsigned cb);
+typedef DECLCALLBACK(int) FNIOMIOPORTOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTOUTSTRING(). */
 typedef FNIOMIOPORTOUTSTRING *PFNIOMIOPORTOUTSTRING;
 

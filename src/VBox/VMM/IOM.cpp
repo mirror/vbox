@@ -78,8 +78,8 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int) iomR3IOPortDummyIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 static DECLCALLBACK(int) iomR3IOPortDummyOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-static DECLCALLBACK(int) iomR3IOPortDummyInStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfer, unsigned cb);
-static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfer, unsigned cb);
+static DECLCALLBACK(int) iomR3IOPortDummyInStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
+static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
 
 #ifdef VBOX_WITH_STATISTICS
 static const char *iomr3IOPortGetStandardName(RTIOPORT Port);
@@ -1164,7 +1164,7 @@ static DECLCALLBACK(int) iomR3IOPortDummyIn(PPDMDEVINS pDevIns, void *pvUser, RT
  * @param   pcTransfer  Pointer to the number of transfer units to read, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-static DECLCALLBACK(int) iomR3IOPortDummyInStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfer, unsigned cb)
+static DECLCALLBACK(int) iomR3IOPortDummyInStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     return VINF_SUCCESS;
 }
@@ -1199,7 +1199,7 @@ static DECLCALLBACK(int) iomR3IOPortDummyOut(PPDMDEVINS pDevIns, void *pvUser, R
  * @param   pcTransfer  Pointer to the number of transfer units to write, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfer, unsigned cb)
+static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     return VINF_SUCCESS;
 }
