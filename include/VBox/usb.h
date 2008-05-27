@@ -131,6 +131,10 @@ typedef struct USBDEVICE
     /** The hub name. */
     char           *pszHubName;
 #endif
+#ifdef RT_OS_SOLARIS
+    /** The /devices path of the device. */
+    char           *pszDevicePath;
+#endif
 } USBDEVICE;
 /** Pointer to a USB device. */
 typedef USBDEVICE *PUSBDEVICE;
