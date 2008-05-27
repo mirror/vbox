@@ -1,0 +1,186 @@
+<ui version="4.0" >
+ <class>VBoxVMSettingsSerial</class>
+ <widget class="QWidget" name="VBoxVMSettingsSerial" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>352</width>
+    <height>163</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QGroupBox" name="mGbSerial" >
+     <property name="whatsThis" >
+      <string>When checked, enables the given serial port of the virtual machine.</string>
+     </property>
+     <property name="title" >
+      <string>&amp;Enable Serial Port</string>
+     </property>
+     <property name="checkable" >
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <widget class="QLabel" name="mLbNumber" >
+        <property name="text" >
+         <string>Port &amp;Number</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbNumber</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" >
+       <widget class="QComboBox" name="mCbNumber" >
+        <property name="whatsThis" >
+         <string>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b>User-defined&lt;/b> and specify port parameters manually.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" >
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="mLbIRQ" >
+          <property name="text" >
+           <string>&amp;IRQ</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeIRQ</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mLeIRQ" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may be used only if the &lt;b>IO APIC&lt;/b> is enabled for this virtual machine.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="3" >
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="mLbIOPort" >
+          <property name="text" >
+           <string>I/O Po&amp;rt</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLbIOPort</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mLeIOPort" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>0xFFFF&lt;/tt>.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="4" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>0</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="mLbMode" >
+        <property name="text" >
+         <string>Port &amp;Mode</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbMode</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" >
+       <widget class="QComboBox" name="mCbMode" >
+        <property name="whatsThis" >
+         <string>Controls the working mode of this serial port. If you select &lt;b>Disconnected&lt;/b>, the guest OS will detect the serial port but will not be able to operate it.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" colspan="2" >
+       <widget class="QCheckBox" name="mCbPipe" >
+        <property name="whatsThis" >
+         <string>If checked, the pipe specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</string>
+        </property>
+        <property name="text" >
+         <string>&amp;Create Pipe</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>0</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="0" >
+       <widget class="QLabel" name="mLbPath" >
+        <property name="text" >
+         <string>Port &amp;Path</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mLePath</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1" colspan="4" >
+       <widget class="QLineEdit" name="mLePath" >
+        <property name="whatsThis" >
+         <string>Displays the path to the serial port's pipe on the host when the port works in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port works in &lt;b>Host Device&lt;/b> mode.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>20</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

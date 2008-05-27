@@ -360,7 +360,7 @@ void VBoxVMDescriptionPage::updateState()
 
 void VBoxVMDescriptionPage::goToSettings()
 {
-    mParent->vmSettings ("#general", "teDescription");
+    mParent->vmSettings ("#general", "mTeDescription");
 }
 
 // VBoxSelectorWnd class
