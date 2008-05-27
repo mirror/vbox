@@ -80,7 +80,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         /** @todo implement &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL*/)
         return VERR_NOT_SUPPORTED;
-    
+
     /*
      * Allocate and initialize the timer handle.
      */
@@ -143,7 +143,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      */
     pTimer->fSuspended = false;
     vbi_timer_start(pTimer->handle, u64First);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -160,7 +160,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     pTimer->fSuspended = true;
     vbi_timer_stop(pTimer->handle);
-    
+
     return VINF_SUCCESS;
 }
 
