@@ -993,12 +993,14 @@ static DECLCALLBACK(void) INTNETIfDestruct(void *pvObj, void *pvUser1, void *pvU
         {
             PINTNETIF pPrev = pNetwork->pIFs;
             while (pPrev)
+            {
                 if (pPrev->pNext == pIf)
                 {
                     pPrev->pNext = pIf->pNext;
                     break;
                 }
-            Assert(pPrev);
+                pPrev = pPrev->pNext;
+            }
         }
         RTSemFastMutexRelease(pNetwork->FastMutex);
         pIf->pNext = NULL;
