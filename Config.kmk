@@ -2251,7 +2251,9 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
  endif
 endif
-TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
+ifeq ($(KBUILD_TARGET),darwin)
+ TEMPLATE_VBOXMAINDLL_LDFLAGS   = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS))
+endif
 
 #
 # Template for building the Main static libraries.
@@ -2280,8 +2282,9 @@ else
 	NDEBUG TRIMMED
  TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
 	-pthread
- TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \
-    -bind_at_load -framework Carbon
+ ifeq ($(KBUILD_TARGET),darwin)
+  TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS = $(TEMPLATE_VBOXMAINEXE_LDFLAGS) -bind_at_load -framework Carbon
+ endif
 endif
 
 #
@@ -2299,7 +2302,9 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS    = -fPIC $(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS)
  endif
 endif
-TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin))
+ifeq ($(KBUILD_TARGET),darwin)
+ TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS     = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS))
+endif
 
 
 #
