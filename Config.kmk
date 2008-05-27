@@ -1484,10 +1484,10 @@ endif
 # Determine Solaris version.
 #
 ifeq ($(KBUILD_TARGET),solaris)
- ifeq ($(origin SOLARIS_VERSION),undefined)
-  $(eval export SOLARIS_VERSION := $(shell uname -r | $(SED_EXT) 's|\([0-9]*\)\.\([0-9]*\)|$$(int-add $$(int-mul 100, \1), \2)|' ))
+ ifeq ($(origin VBOX_SOLARIS_VERSION),undefined)
+  $(eval export VBOX_SOLARIS_VERSION := $(shell uname -r | $(SED_EXT) 's|\([0-9]*\)\.\([0-9]*\)|$$(int-add $$(int-mul 100, \1), \2)|' ))
  endif
- ifeq ($(SOLARIS_VERSION),510)
+ ifeq ($(VBOX_SOLARIS_VERSION),510)
   DEFS.solaris += RT_OS_SOLARIS_10
   # Solaris 10 does not include crossbow.
   VBOX_WITH_CROSSBOW =
