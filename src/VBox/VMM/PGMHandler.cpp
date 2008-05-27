@@ -111,7 +111,7 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
         /*
          * Resolve the GC handler.
          */
-        RTGCPTR pfnHandlerGC = NIL_RTGCPTR;
+        RTGCPTR32 pfnHandlerGC = NIL_RTGCPTR;
         if (pszHandlerGC)
             rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
 
@@ -249,7 +249,7 @@ PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     /*
      * Resolve the GC handler.
      */
-    RTGCPTR pfnHandlerGC;
+    RTGCPTR32 pfnHandlerGC;
     int rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
     if (VBOX_SUCCESS(rc))
         return PGMHandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateHC, pfnHandlerHC, pfnHandlerGC, pszDesc);
