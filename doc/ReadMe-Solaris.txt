@@ -1,6 +1,6 @@
 
-Sun xVM VirtualBox for OpenSolaris
-----------------------------------
+Sun xVM VirtualBox for OpenSolaris (TM) Operating System
+--------------------------------------------------------
 
 Installing:
 -----------
@@ -17,7 +17,9 @@ After extracting the contents of the tar.gz file perform the following steps:
 1. Login as root using the "su" command.
 
 2. Install the packages (in this order):
-     If you have not installed vbi module (check for the file /platform/i86pc/kernel/misc/vbi) run:
+    Newer versions of OpenSolaris may contain a vbi module. If your version does NOT have the
+    vbi module already installed (check for existence of /platform/i86pc/kernel/misc/vbi)
+    then run:
 
         pkgadd -G -d VirtualBoxKern-@VBOX_VERSION_STRING@-SunOS-r@VBOX_SVN_REV@.pkg
 
