@@ -26,8 +26,6 @@ ifneq ($(KBUILD_HOST),solaris)
 $(error "The Solaris installer can only be built on Solaris!") # yeah, right.
 endif
 
-VBOX_WITH_SOLARIS_VBI=1
-
 # Globals
 SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
