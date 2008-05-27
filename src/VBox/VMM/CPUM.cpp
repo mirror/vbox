@@ -1683,7 +1683,7 @@ typedef struct CPUMDISASSTATE
  * @param   uDisCpu     Pointer to the disassembler cpu state.
  *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
  */
-static DECLCALLBACK(int) cpumR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, void *uDisCpu)
+static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, void *uDisCpu)
 {
     PDISCPUSTATE pCpu = (PDISCPUSTATE)uDisCpu;
     PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pCpu->apvUserData[0];
