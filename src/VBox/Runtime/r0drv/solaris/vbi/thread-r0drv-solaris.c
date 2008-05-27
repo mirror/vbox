@@ -47,7 +47,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
     clock_t cTicks;
     unsigned long timeout;
-    
+
     if (!cMillies)
     {
         RTThreadYield();
