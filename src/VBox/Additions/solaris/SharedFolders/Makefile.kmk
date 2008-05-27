@@ -1,0 +1,38 @@
+# $Id$
+## @file
+# Sub-Makefile for the Solaris Shared folder kernel module.
+#
+
+#
+# Copyright (C) 2008 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+ifneq ($(KBUILD_HOST),solaris)
+$(error "The Solaris guest additions can only be built on Solaris!")
+endif
+
+#
+# vboxvfs - The Shared Folder Driver
+#
+SYSMODS.solaris      += vboxvfs
+vboxvfs_TEMPLATE      = VBOXGUESTR0
+vboxvfs_DEFS          = VBOX_HGCM
+vboxvfs_INCS         := \
+       $(PATH_SUB_CURRENT) \
+       $(PATH_TARGET)
+vboxvfs_SOURCES       = \
+	vboxvfs_vfsops.c \
+	vboxvfs_vnops.c
+vboxvfs_LIBS          = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
