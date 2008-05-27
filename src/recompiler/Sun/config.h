@@ -25,3 +25,6 @@
 #define TARGET_I386 1
 #define CONFIG_SOFTMMU 1
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
+#define TARGET_X86_64
+#endif
