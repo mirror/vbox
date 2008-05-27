@@ -2887,7 +2887,7 @@ ifeq ($(KBUILD_TARGET),l4) # cross building linux on l4.
  TEMPLATE_VBOXGUESTR0_SYSSUFF   = .ko
 endif
 ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
- TEMPLATE_VBOXGUESTR0_LDFLAGS := $(filter-out -r -dy -N misc/vbi, $(TEMPLATE_VBOXR0DRV_LDFLAGS))
+ TEMPLATE_VBOXGUESTR0_LDFLAGS   = -r
 endif
 
 #
