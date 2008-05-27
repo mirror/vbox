@@ -213,7 +213,7 @@ const fs_operation_def_t g_VBoxVFS_vnodeops_template[] =
     VOPNAME_MAP,         { .vop_map = VBoxVFS_Map },
     VOPNAME_ADDMAP,      { .vop_addmap = VBoxVFS_Addmap },
     VOPNAME_DELMAP,      { .vop_delmap = VBoxVFS_Delmap },
-	VOPNAME_PATHCONF,	 { .vop_pathconf = VBoxVFS_Pathconf },
+    VOPNAME_PATHCONF,    { .vop_pathconf = VBoxVFS_Pathconf },
     VOPNAME_SHRLOCK,     { .vop_shrlock = VBoxVFS_Shrlock },
     NULL,                NULL
 };
