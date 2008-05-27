@@ -1,0 +1,20 @@
+--- old/usr/src/uts/i86pc/Makefile.i86pc.shared	Tue May 27 01:20:43 2008
++++ new/usr/src/uts/i86pc/Makefile.i86pc.shared	Tue May 27 01:20:43 2008
+@@ -25,7 +25,7 @@
+ # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+ # Use is subject to license terms.
+ #
+-# ident	"@(#)Makefile.i86pc.shared	1.24	08/03/28 SMI"
++# ident	"@(#)Makefile.i86pc.shared	1.25	08/05/26 SMI"
+ #
+ #	This makefile contains the common definitions for the i86pc unix
+ #	and all i86pc implementation architecture dependent modules.
+@@ -298,7 +298,7 @@
+ #
+ #	'Misc' Modules (/kernel/misc):
+ #
+-MISC_KMODS	+= gfx_private pcie hvm_bootstrap
++MISC_KMODS	+= gfx_private pcie hvm_bootstrap vbi
+ 
+ #
+ #	'Dacf' modules (/kernel/dacf)

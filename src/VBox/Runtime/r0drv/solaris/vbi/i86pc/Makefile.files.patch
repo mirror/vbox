@@ -1,0 +1,19 @@
+--- old/usr/src/uts/i86pc/Makefile.files	Tue May 27 01:20:43 2008
++++ new/usr/src/uts/i86pc/Makefile.files	Tue May 27 01:20:43 2008
+@@ -23,7 +23,7 @@
+ # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+ # Use is subject to license terms.
+ #
+-# ident	"@(#)Makefile.files	1.158	08/03/29 SMI"
++# ident	"@(#)Makefile.files	1.159	08/05/26 SMI"
+ #
+ #	This Makefile defines file modules in the directory uts/i86pc
+ #	and its children. These are the source files which are i86pc
+@@ -167,6 +167,7 @@
+ PCI_E_NEXUS_OBJS += pci_common.o pci_kstats.o pci_tools.o
+ PCINEXUS_OBJS += pci.o pci_common.o pci_kstats.o pci_tools.o
+ PCPLUSMP_OBJS += apic.o psm_common.o apic_introp.o mp_platform_common.o
++VBI_OBJS += vbi.o
+ 
+ BATTERY_OBJS	+= battery.o
+ include $(SRC)/common/mc/mc-amd/Makefile.mcamd
