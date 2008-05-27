@@ -26,6 +26,8 @@ ifneq ($(KBUILD_HOST),solaris)
 $(error "The Solaris installer can only be built on Solaris!") # yeah, right.
 endif
 
+VBOX_WITH_SOLARIS_VBI=1
+
 # Globals
 SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
@@ -325,6 +327,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
+		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
+		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		vbi/vboxkern.pkginfo \
 		vbi/makepackage.sh \
 		Makefile.kmk \
@@ -342,6 +346,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
 		--output $(SOLARIS_VBI_DIR)/vboxkern.pkginfo \
 		$(PATH_CURRENT)/vbi/vboxkern.pkginfo
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_VBI_DIR)/vbox.copyright)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vbi/makepackage.sh                                           $(SOLARIS_VBI_DIR)/makepackage.sh
 	$(call MSG_L1,Creating install package: $(VBIPKG_FILENAME).pkg)
 	$(QUIET)$(SOLARIS_VBI_DIR)/makepackage.sh $(SOLARIS_VBI_DIR) $(VBIPKG_FILENAME)
