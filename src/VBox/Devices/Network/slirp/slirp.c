@@ -695,7 +695,7 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     struct arphdr *rah = (struct arphdr *)(arp_reply + ETH_HLEN);
     int ar_op;
     struct ex_list *ex_ptr;
-    uint32_t htip = ntohl(*(in_addr_t*)ah->ar_tip);
+    uint32_t htip = ntohl(*(uint32_t*)ah->ar_tip);
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op) {
