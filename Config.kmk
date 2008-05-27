@@ -761,6 +761,9 @@ endif
 ifdef VBOX_WITH_NEW_PHYS_CODE
  DEFS += VBOX_WITH_NEW_PHYS_CODE
 endif
+ifdef VBOX_WITH_64_BITS_GUESTS
+ DEFS += VBOX_WITH_64_BITS_GUESTS
+endif
 
 #
 # Compiler optimization flags.
