@@ -803,24 +803,6 @@ typedef const RTGCPHYS64 *PCRTGCPHYS64;
  */
 #define NIL_RTGCPHYS64     (~(RTGCPHYS64)0)
 
-/** Guest context pointer.
- * Keep in mind that this type is an unsigned integer in
- * HC and void pointer in GC.
- */
-#ifdef IN_GC
-typedef void           *RTGCPTR;
-#else
-typedef RTGCUINTPTR     RTGCPTR;
-#endif
-/** Pointer to a guest context pointer. */
-typedef RTGCPTR        *PRTGCPTR;
-/** Pointer to a const guest context pointer. */
-typedef const RTGCPTR  *PCRTGCPTR;
-/** @def NIL_RTGCPTR
- * NIL GC pointer.
- */
-#define NIL_RTGCPTR     ((RTGCPTR)0)
-
 /** Guest context pointer, 32 bits.
  * Keep in mind that this type is an unsigned integer in
  * HC and void pointer in GC.
@@ -851,11 +833,39 @@ typedef const RTGCPTR64 *PCRTGCPTR64;
  */
 #define NIL_RTGCPTR64   ((RTGCPTR64)0)
 
+/** Guest context pointer.
+ * Keep in mind that this type is an unsigned integer in
+ * HC and void pointer in GC.
+ */
+#if GC_ARCH_BITS == 64
+typedef RTGCPTR64       RTGCPTR;
+/** Pointer to a guest context pointer. */
+typedef PRTGCPTR64      PRTGCPTR;
+/** Pointer to a const guest context pointer. */
+typedef PCRTGCPTR64    PCRTGCPTR;
+/** @def NIL_RTGCPTR
+ * NIL GC pointer.
+ */
+#define NIL_RTGCPTR     NIL_RTGCPTR64
+#elif GC_ARCH_BITS == 32
+typedef RTGCPTR32       RTGCPTR;
+/** Pointer to a guest context pointer. */
+typedef PRTGCPTR32      PRTGCPTR;
+/** Pointer to a const guest context pointer. */
+typedef PCRTGCPTR32    PCRTGCPTR;
+/** @def NIL_RTGCPTR
+ * NIL GC pointer.
+ */
+#define NIL_RTGCPTR     NIL_RTGCPTR32
+#else
+# error "Unsupported GC_ARCH_BITS!"
+#endif
+
 /** Unsigned integer register in the guest context. */
-#if GC_ARCH_BITS == 32
-typedef uint32_t            RTGCUINTREG;
-#elif GC_ARCH_BITS == 64
+#if GC_ARCH_BITS == 64
 typedef uint64_t            RTGCUINTREG;
+#elif GC_ARCH_BITS == 32
+typedef uint32_t            RTGCUINTREG;
 #else
 # error "Unsupported GC_ARCH_BITS!"
 #endif

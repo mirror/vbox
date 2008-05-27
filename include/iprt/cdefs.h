@@ -166,7 +166,7 @@
 #endif
 
 /** @def HC_ARCH_BITS
- * Defines the host architechture bit count.
+ * Defines the host architecture bit count.
  */
 #if !defined(HC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifndef IN_GC
@@ -177,7 +177,7 @@
 #endif
 
 /** @def R3_ARCH_BITS
- * Defines the host ring-3 architechture bit count.
+ * Defines the host ring-3 architecture bit count.
  */
 #if !defined(R3_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_RING3
@@ -188,7 +188,7 @@
 #endif
 
 /** @def R0_ARCH_BITS
- * Defines the host ring-0 architechture bit count.
+ * Defines the host ring-0 architecture bit count.
  */
 #if !defined(R0_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_RING0
@@ -199,7 +199,7 @@
 #endif
 
 /** @def GC_ARCH_BITS
- * Defines the guest architechture bit count.
+ * Defines the guest architecture bit count.
  */
 #if !defined(GC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_GC
