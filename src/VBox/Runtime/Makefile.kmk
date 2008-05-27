@@ -1178,7 +1178,7 @@ RuntimeGuestR0_SOURCES.solaris = \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	r0drv/memobj-r0drv.cpp
+	r0drv/memobj-r0drv.cpp \
  	generic/RTMpCpuId-generic.cpp \
  	generic/RTMpCpuIdFromSetIndex-generic.cpp \
  	generic/RTMpCpuIdToSetIndex-generic.cpp \
