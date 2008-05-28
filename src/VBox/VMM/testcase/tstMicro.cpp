@@ -208,21 +208,21 @@ static DECLCALLBACK(int) doit(PVM pVM)
         RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR GCPtrEntry;
+    RTGCPTR32 GCPtrEntry;
     rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGC", &GCPtrEntry);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR GCPtrStart;
+    RTGCPTR32 GCPtrStart;
     rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &GCPtrStart);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR GCPtrEnd;
+    RTGCPTR32 GCPtrEnd;
     rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &GCPtrEnd);
     if (VBOX_FAILURE(rc))
     {
