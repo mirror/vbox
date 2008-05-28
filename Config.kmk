@@ -2964,7 +2964,7 @@ VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
 $(VBOX_LICENSE_VER_KMK): $(VBOX_LICENSE_SRC)
 	$(call MSG_GENERATE,,$(VBOX_LICENSE_VER_KMK))
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(SED) -e "s/.*Version \([0-9.]*\),.*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_LICENSE_SRC)
+	$(QUIET)$(SED) -e "s/.*License version \([0-9.]*\),.*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_LICENSE_SRC)
 -include $(VBOX_LICENSE_VER_KMK)
 VBOX_LICENSE_BIN = $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 endif
