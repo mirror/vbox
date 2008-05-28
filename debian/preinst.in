@@ -31,6 +31,18 @@ if false; then
   fi
 fi
 
+# check for old installation
+if [ -r /etc/vbox/vbox.cfg ]; then
+  . /etc/vbox/vbox.cfg
+  if [ "x$INSTALL_DIR" != "x" -a -d "$INSTALL_DIR" ]; then
+    db_fset virtualbox/old-installation-found seen false || true
+    db_input high virtualbox/old-installation-found || true
+    db_go || true
+    exit 1
+  fi
+  # we will remove that file in postinst
+fi
+
 # check for old vboxdrv modules
 if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
   # old modules found
