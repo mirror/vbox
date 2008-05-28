@@ -56,6 +56,6 @@ Template: virtualbox-ose/old-installation-found
 Type: note
 Description: Old installation found
  An old installation of VirtualBox was found. To install this package the old package
- has to be removed first. Have a look at /etc/vbox/vbox.cfg determine the installation
+ has to be removed first. Have a look at /etc/vbox/vbox.cfg to determine the installation
  directory of the previous installation. After uninstalling the old package remove the file
  /etc/vbox/vbox.cfg.
