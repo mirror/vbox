@@ -897,6 +897,111 @@ void tstASMMemZeroPage(void)
 }
 
 
+void tstASMMemZero32(void)
+{
+    struct
+    {
+        uint64_t    u64Magic1;
+        uint8_t     abPage[PAGE_SIZE];
+        uint64_t    u64Magic2;
+    } Buf1, Buf2, Buf3;
+
+    Buf1.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf1.abPage, 0x55, sizeof(Buf1.abPage));
+    Buf1.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    Buf2.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf2.abPage, 0x77, sizeof(Buf2.abPage));
+    Buf2.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    Buf3.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf3.abPage, 0x99, sizeof(Buf3.abPage));
+    Buf3.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    ASMMemZero32(Buf1.abPage, PAGE_SIZE);
+    ASMMemZero32(Buf2.abPage, PAGE_SIZE);
+    ASMMemZero32(Buf3.abPage, PAGE_SIZE);
+    if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff))
+    {
+        RTPrintf("tstInlineAsm: ASMMemZero32 violated one/both magic(s)!\n");
+        g_cErrors++;
+    }
+    for (unsigned i = 0; i < sizeof(Buf1.abPage); i++)
+        if (Buf1.abPage[i])
+        {
+            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
+            g_cErrors++;
+        }
+    for (unsigned i = 0; i < sizeof(Buf2.abPage); i++)
+        if (Buf1.abPage[i])
+        {
+            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
+            g_cErrors++;
+        }
+    for (unsigned i = 0; i < sizeof(Buf3.abPage); i++)
+        if (Buf2.abPage[i])
+        {
+            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
+            g_cErrors++;
+        }
+}
+
+
+void tstASMMemFill32(void)
+{
+    struct
+    {
+        uint64_t    u64Magic1;
+        uint32_t    au32Page[PAGE_SIZE / 4];
+        uint64_t    u64Magic2;
+    } Buf1, Buf2, Buf3;
+
+    Buf1.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf1.au32Page, 0x55, sizeof(Buf1.au32Page));
+    Buf1.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    Buf2.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf2.au32Page, 0x77, sizeof(Buf2.au32Page));
+    Buf2.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    Buf3.u64Magic1 = UINT64_C(0xffffffffffffffff);
+    memset(Buf3.au32Page, 0x99, sizeof(Buf3.au32Page));
+    Buf3.u64Magic2 = UINT64_C(0xffffffffffffffff);
+    ASMMemFill32(Buf1.au32Page, PAGE_SIZE, 0xdeadbeef);
+    ASMMemFill32(Buf2.au32Page, PAGE_SIZE, 0xcafeff01);
+    ASMMemFill32(Buf3.au32Page, PAGE_SIZE, 0xf00dd00f);
+    if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff))
+    {
+        RTPrintf("tstInlineAsm: ASMMemFill32 violated one/both magic(s)!\n");
+        g_cErrors++;
+    }
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf1.au32Page); i++)
+        if (Buf1.au32Page[i] != 0xdeadbeef)
+        {
+            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf1.au32Page[i], 0xdeadbeef);
+            g_cErrors++;
+        }
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf2.au32Page); i++)
+        if (Buf2.au32Page[i] != 0xcafeff01)
+        {
+            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf2.au32Page[i], 0xcafeff01);
+            g_cErrors++;
+        }
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf3.au32Page); i++)
+        if (Buf3.au32Page[i] != 0xf00dd00f)
+        {
+            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf3.au32Page[i], 0xf00dd00f);
+            g_cErrors++;
+        }
+}
+
+
+
 void tstASMMath(void)
 {
     uint64_t u64 = ASMMult2xU32RetU64(UINT32_C(0x80000000), UINT32_C(0x10000000));
@@ -1054,6 +1159,8 @@ int main(int argc, char *argv[])
     tstASMAtomicDecIncS32();
     tstASMAtomicAndOrU32();
     tstASMMemZeroPage();
+    tstASMMemZero32();
+    tstASMMemFill32();
     tstASMMath();
 
     tstASMBench();
