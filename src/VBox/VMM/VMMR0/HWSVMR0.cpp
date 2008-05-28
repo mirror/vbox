@@ -449,7 +449,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
         int         rc;
         TRPMEVENT   enmType;
         SVM_EVENT   Event;
-        uint32_t    u32ErrorCode;
+        RTGCUINT    u32ErrorCode;
 
         Event.au64[0] = 0;
 

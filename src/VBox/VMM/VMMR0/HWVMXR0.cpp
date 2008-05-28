@@ -511,7 +511,8 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
         uint8_t     u8Vector;
         int         rc;
         TRPMEVENT   enmType;
-        RTGCUINTPTR intInfo, errCode;
+        RTGCUINTPTR intInfo;
+        RTGCUINT    errCode;
 
         /* If a new event is pending, then dispatch it now. */
         rc = TRPMQueryTrapAll(pVM, &u8Vector, &enmType, &errCode, 0);
@@ -1920,7 +1921,8 @@ ResumeExecution:
 
     case VMX_EXIT_HLT:                  /* 12 Guest software attempted to execute HLT. */
         /** Check if external interrupts are pending; if so, don't switch back. */
-        if (VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
+        if (    pCtx->eflags.Bits.u1IF
+            &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
         {
             pCtx->eip++;    /* skip hlt */
             goto ResumeExecution;
