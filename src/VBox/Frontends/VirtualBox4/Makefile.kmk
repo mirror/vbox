@@ -677,6 +677,8 @@ WRAPPERSINCFILE     = include/COMDefs.h
 WRAPPERSTEMPLATE    = include/COMWrappers.xsl
 XIDLFILE            = ../../Main/idl/VirtualBox.xidl
 
+VirtualBox_INTERMEDIATES = $(WRAPPERSFILE)
+
 
 # generated files we need to clean manually
 OTHER_CLEAN           = \
@@ -800,6 +802,7 @@ define def_qt_gen_src_moc
 $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(mochdr))).cpp)
 
 $(target)_GENSRCS_REAL += $(mocsrc)
+## @todo The source should be added to GEN_SOURCES: $ (target)_GEN_SOURCES += $ (mocsrc)
 
 $(mocsrc): $(mochdr)
 	$$(call MSG_TOOL,moc,$(target),$(mochdr),$$@)
@@ -821,10 +824,10 @@ $(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(VB
 $(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocsrc))).moc)
 
 $(target)_GENHDRS_REAL += $(mocinc)
+$(target)_INTERMEDIATES += $(mocinc)
 
 $(mocobj): $(mocinc)
 
-.NOTPARALLEL: $(mocinc)
 $(mocinc): $(mocsrc)
 	$$(call MSG_TOOL,moc,$(target),$(mocsrc),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
@@ -846,8 +849,8 @@ $(eval uiobj    := $(PATH_$(target)_$$(uisrc))/$(notdir $(basename $$(uisrc)))$(
 $(eval mocuiinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocuihdr))).moc)
 
 $(target)_GENHDRS_REAL += $(mocuiinc)
+$(target)_INTERMEDIATES += $(mocuiinc)
 
-.NOTPARALLEL: $(mocuiinc)
 $(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
 	$$(call MSG_TOOL,moc,$(target),$(mocuihdr),$$@)
@@ -868,10 +871,12 @@ $(eval uisrc  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).cpp)
 $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).h)
 $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(uifile))).cpp)
 
+
 $(target)_GENSRCS_REAL += $(uisrc) $(mocsrc)
 $(target)_GENHDRS_REAL += $(uihdr)
+$(target)_INTERMEDIATES += $(uihdr)
+## @todo The source should be added to GEN_SOURCES: $ (target)_GEN_SOURCES += $ (uisrc) $ (mocsrc)
 
-.NOTPARALLEL: $(uihdr)
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC3) $(uifile) -o $$@
@@ -899,8 +904,8 @@ define def_qt_gen_src_ui4
 $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).gen.h)
 
 $(target)_GENHDRS_REAL += $(uihdr)
+$(target)_INTERMEDIATES += $(uihdr)
 
-.NOTPARALLEL: $(uihdr)
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC4) $(uifile) -o $$@
@@ -964,8 +969,6 @@ $(foreach target,VirtualBox,$(eval $(def_qt_gen_src)))
 
 
 # Generate COM Wrappers
-.NOTPARALLEL: $(WRAPPERSFILE) $(WRAPPERSINCFILE)
-
 $(WRAPPERSINCFILE): $(WRAPPERSFILE)
 
 $(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualBox)/include/)
@@ -975,13 +978,6 @@ $(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualB
 $(call DIRDEP,$(PATH_VirtualBox)/include/):
 	$(call MSG_MKDIR,$@)
 	$(QUIET)$(MKDIR) -p $@
-
-# this is actually necessary only for Win32 target with disabled dependencies
-define def_wrapper_deps
-$(src): $(WRAPPERSFILE) $(WRAPPERSINCFILE)
-endef
-
-$(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 
 # rules for resources file creation
 $(PATH_VirtualBox)/ui/qrc_application.cpp: VirtualBox.qrc $(VirtualBox_QT_RC)
