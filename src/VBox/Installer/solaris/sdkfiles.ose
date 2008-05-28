@@ -312,7 +312,6 @@ sdk/include/nsIInterfaceInfoManager.h
 sdk/include/nsIXPTLoader.h
 sdk/include/ipcIService.h
 sdk/include/ipcIMessageObserver.h
-sdk/include/VRDPAuth.h
 sdk/include/ipcIClientObserver.h
 sdk/include/ipcILockService.h
 sdk/include/ipcITransactionService.h
@@ -414,8 +413,3 @@ sdk/idl/ipcITransactionObserver.idl
 sdk/idl/VirtualBox_XPCOM.idl
 sdk/samples/API/tstVBoxAPILinux.cpp
 sdk/samples/API/Makefile
-sdk/samples/vrdpauth/VRDPAuthSimple.cpp
-sdk/webservice/vboxweb.wsdl
-sdk/webservice/vboxwebService.wsdl
-sdk/webservice/samples/java/clienttest.java
-sdk/webservice/samples/perl/clienttest.pl
