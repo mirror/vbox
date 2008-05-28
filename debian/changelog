@@ -1,3 +1,7 @@
+virtualbox-ose (1.6.2) unstable; urgency=low
+
+  * rebuild Debian package
+
 virtualbox-ose (1.6.1~svn-1) unstable; urgency=low
 
   * rebuild Debian package
