@@ -29,7 +29,7 @@
 
 
 
-VBoxDbgBase::VBoxDbgBase(PVM pVM) : m_pVM(pVM)
+VBoxDbgBase::VBoxDbgBase(PVM pVM) : m_pVM(pVM), m_hGUIThread(RTThreadNativeSelf())
 {
     /*
      * Register

@@ -27,6 +27,7 @@
 #include <VBox/stam.h>
 #include <VBox/vmapi.h>
 #include <VBox/dbg.h>
+#include <iprt/thread.h>
 
 
 /**
@@ -60,6 +61,15 @@ protected:
     bool isVMOk() const
     {
         return m_pVM != NULL;
+    }
+
+    /**
+     * Checks if the current thread is the GUI thread or not.
+     * @return true/false accordingly.
+     */
+    bool isGUIThread() const
+    {
+        return m_hGUIThread == RTThreadNativeSelf();
     }
 
     /** @name Operations
@@ -106,6 +116,8 @@ private:
 private:
     /** The VM handle. */
     PVM m_pVM;
+    /** The handle of the GUI thread. */
+    RTNATIVETHREAD m_hGUIThread;
 };
 
 

@@ -31,6 +31,7 @@
 
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 
 class VBoxDbgConsoleOutput : public QTextEdit
@@ -65,6 +66,8 @@ protected:
     unsigned m_uCurLine;
     /** The position in the current line. */
     unsigned m_uCurPos;
+    /** The handle to the GUI thread. */
+    RTNATIVETHREAD m_hGUIThread;
 };
 
 
@@ -117,6 +120,8 @@ private slots:
 protected:
     /** The current blank entry. */
     int m_iBlankItem;
+    /** The handle to the GUI thread. */
+    RTNATIVETHREAD m_hGUIThread;
 };
 
 
@@ -223,9 +228,13 @@ protected:
 
 protected:
     /**
-     * Use to get the GUI thread to insert the output data.
+     * Processes GUI command posted by the console thread.
+     *
+     * Qt3 isn't thread safe on any platform, meaning there is no locking, so, as
+     * a result we have to be very careful. All operations on objects which we share
+     * with the main thread has to be posted to it so it can perform it.
      */
-    void customEvent(QCustomEvent *pEvent);
+    bool event(QEvent *pEvent);
 
 protected:
     /** The output widget. */
@@ -248,7 +257,7 @@ protected:
     /** The allocated size of the buffer. */
     size_t m_cbOutputBufAlloc;
     /** The timer object used to process output in a delayed fashion. */
-    QTimer m_Timer;
+    QTimer *m_pTimer;
     /** Set when an output update is pending. */
     bool volatile m_fUpdatePending;
 
@@ -277,4 +286,30 @@ protected:
 };
 
 
+/**
+ * Simple event class for push certain operations over
+ * onto the GUI thread.
+ */
+class VBoxDbgConsoleEvent : public QEvent
+{
+public:
+    typedef enum  { kUpdate, kInputRestoreFocus, kTerminated } VBoxDbgConsoleEventType;
+    enum { kEventNumber = QEvent::User + 42 };
+
+    VBoxDbgConsoleEvent(VBoxDbgConsoleEventType enmCommand)
+        : QEvent((QEvent::Type)kEventNumber), m_enmCommand(enmCommand)
+    {
+    }
+
+    VBoxDbgConsoleEventType command() const
+    {
+        return m_enmCommand;
+    }
+
+private:
+    VBoxDbgConsoleEventType m_enmCommand;
+};
+
+
 #endif
+

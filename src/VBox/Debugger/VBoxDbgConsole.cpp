@@ -57,7 +57,7 @@
 
 
 VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : QTextEdit(pParent, pszName), m_uCurLine(0), m_uCurPos(0)
+    : QTextEdit(pParent, pszName), m_uCurLine(0), m_uCurPos(0), m_hGUIThread(RTThreadNativeSelf())
 {
     setReadOnly(true);
     setUndoRedoEnabled(false);
@@ -68,14 +68,22 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     Font.setStyleHint(QFont::TypeWriter);
     Font.setFamily("Courier [Monotype]");
     setFont(Font);
+
+    /* green on black */
+    setPaper(QBrush(Qt::black));
+    //setColor(Qt::green);
+    setColor(QColor(qRgb(0, 0xe0, 0)));
 }
 
 VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
 {
+    Assert(m_hGUIThread == RTThreadNativeSelf());
 }
 
 void VBoxDbgConsoleOutput::appendText(const QString &rStr)
 {
+    Assert(m_hGUIThread == RTThreadNativeSelf());
+
     if (rStr.isEmpty() || rStr.isNull() || !rStr.length())
         return;
 
@@ -127,7 +135,7 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
 
 
 VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : QComboBox(true, pParent, pszName), m_iBlankItem(0)
+    : QComboBox(true, pParent, pszName), m_iBlankItem(0), m_hGUIThread(RTThreadNativeSelf())
 {
     insertItem("", m_iBlankItem);
     //setInsertionPolicy(AfterCurrent);
@@ -140,10 +148,12 @@ VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char
 
 VBoxDbgConsoleInput::~VBoxDbgConsoleInput()
 {
+    Assert(m_hGUIThread == RTThreadNativeSelf());
 }
 
 void VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
 {
+    Assert(m_hGUIThread == RTThreadNativeSelf());
     QComboBox::setLineEdit(pEdit);
     if (lineEdit() == pEdit && pEdit)
         connect(pEdit, SIGNAL(returnPressed()), this, SLOT(returnPressed()));
@@ -151,6 +161,7 @@ void VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
 
 void VBoxDbgConsoleInput::returnPressed()
 {
+    Assert(m_hGUIThread == RTThreadNativeSelf());
     /* deal with the current command. */
     QString Str = currentText();
     emit commandSubmitted(Str);
@@ -186,7 +197,7 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
-    m_Timer(), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT), m_fTerminate(false)
+    m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT), m_fTerminate(false)
 {
     setCaption("VBoxDbg - Console");
 
@@ -226,6 +237,12 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     setTabOrder(m_pInput, m_pOutput);
 
     /*
+     * Setup the timer.
+     */
+    m_pTimer = new QTimer(this);
+    connect(m_pTimer, SIGNAL(timeout()), SLOT(updateOutput()));
+
+    /*
      * Init the backend structure.
      */
     m_Back.Core.pfnInput = backInput;
@@ -250,6 +267,8 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
 
 VBoxDbgConsole::~VBoxDbgConsole()
 {
+    Assert(isGUIThread());
+
     /*
      * Wait for the thread.
      */
@@ -265,6 +284,8 @@ VBoxDbgConsole::~VBoxDbgConsole()
     /*
      * Free resources.
      */
+    delete m_pTimer;
+    m_pTimer = NULL;
     RTCritSectDelete(&m_Lock);
     RTSemEventDestroy(m_EventSem);
     m_EventSem = 0;
@@ -281,6 +302,8 @@ VBoxDbgConsole::~VBoxDbgConsole()
 
 void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 {
+    Assert(isGUIThread());
+
     lock();
     RTSemEventSignal(m_EventSem);
 
@@ -321,6 +344,8 @@ void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 
 void VBoxDbgConsole::updateOutput()
 {
+    Assert(isGUIThread());
+
     lock();
     m_fUpdatePending = false;
     if (m_cbOutputBuf)
@@ -367,11 +392,7 @@ void VBoxDbgConsole::unlock()
     pThis->m_pInput->setEnabled(true);
     /* dirty focus hack: */
     if (pThis->m_fInputRestoreFocus)
-    {
-        pThis->m_fInputRestoreFocus = false;
-        if (!pThis->m_pInput->hasFocus())
-            pThis->m_pInput->setFocus();
-    }
+        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputRestoreFocus));
 
     bool fRc = true;
     if (!pThis->m_cbInputBuf)
@@ -475,7 +496,7 @@ void VBoxDbgConsole::unlock()
      * We cannot do it from here without frequent crashes.
      */
     if (!pThis->m_fUpdatePending)
-        QApplication::postEvent(pThis, new QCustomEvent(QEvent::User, NULL));
+        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kUpdate));
 
     pThis->unlock();
 
@@ -502,36 +523,51 @@ void VBoxDbgConsole::unlock()
     int rc = pThis->dbgcCreate(&pThis->m_Back.Core, 0);
     LogFlow(("backThread: returns %Vrc\n", rc));
     if (!pThis->m_fTerminate)
-        QApplication::postEvent(pThis, new QCustomEvent(QEvent::User, (void *)1));
+        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kTerminated));
     return rc;
 }
 
-void VBoxDbgConsole::customEvent(QCustomEvent *pEvent)
+bool VBoxDbgConsole::event(QEvent *pGenEvent)
 {
-    if (pEvent->type() == QEvent::User)
+    Assert(isGUIThread());
+    if (pGenEvent->type() == (QEvent::Type)VBoxDbgConsoleEvent::kEventNumber)
     {
-        uintptr_t u = (uintptr_t)pEvent->data(); /** @todo enum! */
-        switch (u)
+        VBoxDbgConsoleEvent *pEvent = (VBoxDbgConsoleEvent *)pGenEvent;
+
+        switch (pEvent->command())
         {
             /* make update pending. */
-            case 0:
+            case VBoxDbgConsoleEvent::kUpdate:
                 if (!m_fUpdatePending)
                 {
                     m_fUpdatePending = true;
-                    m_Timer.singleShot(10, this, SLOT(updateOutput()));
+                    m_pTimer->start(10, true /* single shot */);
+                }
+                break;
+
+            /* dirty hack: restores the focus */
+            case VBoxDbgConsoleEvent::kInputRestoreFocus:
+                if (m_fInputRestoreFocus)
+                {
+                    m_fInputRestoreFocus = false;
+                    if (!m_pInput->hasFocus())
+                        m_pInput->setFocus();
                 }
                 break;
 
             /* the thread terminated */
-            case 1:
+            case VBoxDbgConsoleEvent::kTerminated:
                 m_pInput->setEnabled(false);
                 break;
 
             /* paranoia */
             default:
-                AssertMsgFailed(("u=%d\n", u));
+                AssertMsgFailed(("command=%d\n", pEvent->command()));
                 break;
         }
+        return true;
     }
+
+    return QVBox::event(pGenEvent);
 }
 
