@@ -95,20 +95,20 @@ APP=${APP##/*/}
 case "$APP" in
   VirtualBox)
     exec "/usr/lib/virtualbox-ose/VirtualBox" "$@"
-  ;;
+    ;;
   VBoxManage)
     exec "/usr/lib/virtualbox-ose/VBoxManage" "$@"
-  ;;
+    ;;
   VBoxSDL)
     exec "/usr/lib/virtualbox-ose/VBoxSDL" "$@"
-  ;;
+    ;;
   VBoxVRDP)
     exec "/usr/lib/virtualbox-ose/VBoxVRDP" "$@"
-  ;;
+    ;;
   VBoxHeadless)
     exec "/usr/lib/virtualbox-ose/VBoxHeadless" "$@"
-  ;;
+    ;;
   *)
     echo "Unknown application - $APP"
-  ;;
+    ;;
 esac

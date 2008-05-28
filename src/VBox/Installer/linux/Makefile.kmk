@@ -206,7 +206,7 @@ $(PATH_BIN)/VirtualBox-dbg.tar.bz2: \
 		$(addprefix $(DBGPATH)/,$(LINUXSTRIPBIN))
 
 $(PATH_TARGET)/vboxdrv.sh: vboxdrv.sh.in
-	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g" $< > $@
+	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g; s|%PACKAGE%|virtualbox|g" $< > $@
 
 $(PATH_TARGET)/vboxnet.sh: vboxnet.sh.in
 	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g" $< > $@

@@ -28,6 +28,10 @@ if [ -f /etc/init.d/virtualbox ]; then
   rm /etc/init.d/virtualbox
   update-rc.d virtualbox remove >/dev/null
 fi
+if [ -f /etc/vbox/vbox.cfg ]; then
+  echo "Found old version of /etc/vbox/vbox.cfg, removing."
+  rm /etc/vbox/vbox.cfg
+fi
 
 # install udev rule
 if [ -d /etc/udev/rules.d ]; then

@@ -40,8 +40,8 @@ if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
     BUILDINTMP="$INSTALL_DIR/src/build_in_tmp"
 else
-    VBOXMANAGE="/usr/lib/virtualbox/VBoxManage"
-    BUILDINTMP="/usr/share/virtualbox/src/build_in_tmp"
+    VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
+    BUILDINTMP="/usr/share/%PACKAGE%/src/build_in_tmp"
 fi
 
 if [ -n "$NOLSB" ]; then
@@ -54,7 +54,7 @@ if [ -n "$NOLSB" ]; then
     fi
 fi
 
-[ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
+[ -r /etc/default/%PACKAGE% ] && . /etc/default/%PACKAGE%
 
 if [ -z "$NOLSB" ]; then
     . /lib/lsb/init-functions
@@ -196,7 +196,7 @@ stop()
     succ_msg
 }
 
-# enter the following variables in /etc/default/virtualbox:
+# enter the following variables in /etc/default/%PACKAGE%:
 #   SHUTDOWN_USERS="foo bar"  
 #     check for running VMs of user foo and user bar
 #   SHUTDOWN=poweroff

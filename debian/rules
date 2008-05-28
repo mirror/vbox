@@ -201,10 +201,10 @@ endif
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
-	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
-	    debian/vboxdrv.init.in > debian/vboxdrv.init
+	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g; s|%PACKAGE%|virtualbox-ose|g;' \
+	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
-	    debian/vboxnet.init.in > debian/vboxnet.init
+	    src/VBox/Installer/linux/vboxnet.sh.in > debian/vboxnet.init
 	dh_installinit --name=vboxdrv
 	dh_installinit --name=vboxnet
 	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
