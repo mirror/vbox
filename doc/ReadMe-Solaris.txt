@@ -36,8 +36,8 @@ Now all the necessary files would be installed on your system. Start VirtualBox 
 VirtualBox from the terminal.
 
 
-Un-Installating:
-----------------
+Uninstalling:
+-------------
 
 To remove VirtualBox from your system perform the following steps:
 
