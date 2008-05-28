@@ -3909,7 +3909,12 @@ DECLASM(void) ASMMemZero32(volatile void *pv, size_t cb);
 DECLINLINE(void) ASMMemZero32(volatile void *pv, size_t cb)
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    __stosd((unsigned long *)pv, 0, cb >> 2);
+#  ifdef RT_ARCH_AMD64
+    if (!(cb & 7))
+        __stosq((unsigned __int64 *)pv, 0, cb / 8);
+    else
+#  endif
+        __stosd((unsigned long *)pv, 0, cb / 4);
 
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ ("rep stosl"
@@ -3952,7 +3957,12 @@ DECLASM(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32);
 DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    __stosd((unsigned long *)pv, 0, cb >> 2);
+#  ifdef RT_ARCH_AMD64
+    if (!(cb & 7))
+        __stosq((unsigned __int64 *)pv, RT_MAKE_U64(u32, u32), cb / 8);
+    else
+#  endif
+        __stosd((unsigned long *)pv, u32, cb / 4);
 
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ ("rep stosl"
