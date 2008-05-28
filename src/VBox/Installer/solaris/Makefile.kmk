@@ -135,7 +135,7 @@ SOLARIS_NLS = \
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
 
 SOLARIS_SDK = \
-	$(foreach f, $(shell $(CAT_EXT) sdkfiles), $(f))
+	$(foreach f, $(shell $(CAT_EXT) $(if $(VBOX_OSE),sdkfiles.ose,sdkfiles)), $(f))
 
 ifdef VBOX_WITH_DOCS
  ifndef $(VBOX_OSE)
@@ -197,7 +197,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		vboxdevlink.sed \
 		VBox.sh \
 		virtualbox.desktop \
-		sdkfiles \
+		$(if $(VBOX_OSE),sdkfiles.ose,sdkfiles) \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		Makefile.kmk \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg,) \
