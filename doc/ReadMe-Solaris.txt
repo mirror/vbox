@@ -23,9 +23,15 @@ After extracting the contents of the tar.gz file perform the following steps:
 
         pkgadd -G -d VirtualBoxKern-@VBOX_VERSION_STRING@-SunOS-r@VBOX_SVN_REV@.pkg
 
+        To perform an unattended (non-interactive) installation of this package add
+        "-n -a autoresponse SUNWvboxkern" (without quotes) to the end of the above pkgadd command.
+
      Once the vbi module is installed run:
 
         pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-@BUILD_TARGET_ARCH@-r@VBOX_SVN_REV@.pkg
+
+        To perform an unattended (non-interactive) installation of this package add
+        "-n -a autoresponse SUNWvbox" (without quotes) to the end of the above pkgadd command.
 
 3. For each package the installer would ask you to "Select package(s) you wish to process"
         For this type "1" or "all".
