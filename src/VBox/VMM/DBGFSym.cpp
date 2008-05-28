@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
-#if defined(RT_OS_WINDOWS) && defined(DEBUG_bird) // enabled this is you want to debug win32 guests or the hypervisor.
+#if defined(RT_OS_WINDOWS) && 0 //defined(DEBUG_bird) // enabled this is you want to debug win32 guests or the hypervisor.
 # include <Windows.h>
 # define _IMAGEHLP64
 # include <DbgHelp.h>
@@ -510,7 +510,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
                 {
                     int rc2 = DBGFR3SymbolAdd(pVM, ModuleAddress, Address + AddressDelta, 0, psz);
                     if (VBOX_FAILURE(rc2))
-                        Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %VRc\n", Address, psz, rc2));
+                        Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %Vrc\n", Address, psz, rc2));
                 }
             }
         }
