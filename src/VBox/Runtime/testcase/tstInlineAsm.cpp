@@ -902,7 +902,7 @@ void tstASMMemZero32(void)
     struct
     {
         uint64_t    u64Magic1;
-        uint8_t     abPage[PAGE_SIZE];
+        uint8_t     abPage[PAGE_SIZE - 32];
         uint64_t    u64Magic2;
     } Buf1, Buf2, Buf3;
 
@@ -915,9 +915,9 @@ void tstASMMemZero32(void)
     Buf3.u64Magic1 = UINT64_C(0xffffffffffffffff);
     memset(Buf3.abPage, 0x99, sizeof(Buf3.abPage));
     Buf3.u64Magic2 = UINT64_C(0xffffffffffffffff);
-    ASMMemZero32(Buf1.abPage, PAGE_SIZE);
-    ASMMemZero32(Buf2.abPage, PAGE_SIZE);
-    ASMMemZero32(Buf3.abPage, PAGE_SIZE);
+    ASMMemZero32(Buf1.abPage, sizeof(Buf1.abPage));
+    ASMMemZero32(Buf2.abPage, sizeof(Buf2.abPage));
+    ASMMemZero32(Buf3.abPage, sizeof(Buf3.abPage));
     if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
@@ -928,20 +928,20 @@ void tstASMMemZero32(void)
         RTPrintf("tstInlineAsm: ASMMemZero32 violated one/both magic(s)!\n");
         g_cErrors++;
     }
-    for (unsigned i = 0; i < sizeof(Buf1.abPage); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf1.abPage); i++)
         if (Buf1.abPage[i])
         {
             RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
             g_cErrors++;
         }
-    for (unsigned i = 0; i < sizeof(Buf2.abPage); i++)
-        if (Buf1.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
-            g_cErrors++;
-        }
-    for (unsigned i = 0; i < sizeof(Buf3.abPage); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf2.abPage); i++)
         if (Buf2.abPage[i])
+        {
+            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
+            g_cErrors++;
+        }
+    for (unsigned i = 0; i < RT_ELEMENTS(Buf3.abPage); i++)
+        if (Buf3.abPage[i])
         {
             RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
             g_cErrors++;
@@ -956,7 +956,19 @@ void tstASMMemFill32(void)
         uint64_t    u64Magic1;
         uint32_t    au32Page[PAGE_SIZE / 4];
         uint64_t    u64Magic2;
-    } Buf1, Buf2, Buf3;
+    } Buf1;
+    struct
+    {
+        uint64_t    u64Magic1;
+        uint32_t    au32Page[(PAGE_SIZE / 4) - 3];
+        uint64_t    u64Magic2;
+    } Buf2;
+    struct
+    {
+        uint64_t    u64Magic1;
+        uint32_t    au32Page[(PAGE_SIZE / 4) - 1];
+        uint64_t    u64Magic2;
+    } Buf3;
 
     Buf1.u64Magic1 = UINT64_C(0xffffffffffffffff);
     memset(Buf1.au32Page, 0x55, sizeof(Buf1.au32Page));
@@ -967,9 +979,9 @@ void tstASMMemFill32(void)
     Buf3.u64Magic1 = UINT64_C(0xffffffffffffffff);
     memset(Buf3.au32Page, 0x99, sizeof(Buf3.au32Page));
     Buf3.u64Magic2 = UINT64_C(0xffffffffffffffff);
-    ASMMemFill32(Buf1.au32Page, PAGE_SIZE, 0xdeadbeef);
-    ASMMemFill32(Buf2.au32Page, PAGE_SIZE, 0xcafeff01);
-    ASMMemFill32(Buf3.au32Page, PAGE_SIZE, 0xf00dd00f);
+    ASMMemFill32(Buf1.au32Page, sizeof(Buf1.au32Page), 0xdeadbeef);
+    ASMMemFill32(Buf2.au32Page, sizeof(Buf2.au32Page), 0xcafeff01);
+    ASMMemFill32(Buf3.au32Page, sizeof(Buf3.au32Page), 0xf00dd00f);
     if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
