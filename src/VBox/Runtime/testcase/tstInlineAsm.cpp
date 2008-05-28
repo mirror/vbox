@@ -868,10 +868,10 @@ void tstASMMemZeroPage(void)
     ASMMemZeroPage(Buf3.abPage);
     if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff))
+        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
     {
         RTPrintf("tstInlineAsm: ASMMemZeroPage violated one/both magic(s)!\n");
         g_cErrors++;
@@ -882,14 +882,14 @@ void tstASMMemZeroPage(void)
             RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
             g_cErrors++;
         }
-    for (unsigned i = 0; i < sizeof(Buf1.abPage); i++)
-        if (Buf1.abPage[i])
+    for (unsigned i = 0; i < sizeof(Buf2.abPage); i++)
+        if (Buf2.abPage[i])
         {
             RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
             g_cErrors++;
         }
-    for (unsigned i = 0; i < sizeof(Buf2.abPage); i++)
-        if (Buf2.abPage[i])
+    for (unsigned i = 0; i < sizeof(Buf3.abPage); i++)
+        if (Buf3.abPage[i])
         {
             RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
             g_cErrors++;
@@ -920,10 +920,10 @@ void tstASMMemZero32(void)
     ASMMemZero32(Buf3.abPage, sizeof(Buf3.abPage));
     if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff))
+        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
     {
         RTPrintf("tstInlineAsm: ASMMemZero32 violated one/both magic(s)!\n");
         g_cErrors++;
@@ -984,10 +984,10 @@ void tstASMMemFill32(void)
     ASMMemFill32(Buf3.au32Page, sizeof(Buf3.au32Page), 0xf00dd00f);
     if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff))
+        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
+        ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
     {
         RTPrintf("tstInlineAsm: ASMMemFill32 violated one/both magic(s)!\n");
         g_cErrors++;
