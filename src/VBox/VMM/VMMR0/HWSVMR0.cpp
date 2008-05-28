@@ -1661,7 +1661,8 @@ ResumeExecution:
 
     case SVM_EXIT_HLT:
         /** Check if external interrupts are pending; if so, don't switch back. */
-        if (VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
+        if (    pCtx->eflags.Bits.u1IF
+            &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
         {
             pCtx->eip++;    /* skip hlt */
             goto ResumeExecution;
