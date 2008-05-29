@@ -121,7 +121,7 @@ typedef struct SELM
     VBOXTSS                 TssTrap08;
 
     /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
-    RTGCPTR                 GCPtrTss;
+    RCPTRTYPE(void *)       GCPtrTss;
     /** GC Pointer to the current Guest's TSS. */
     RTGCPTR                 GCPtrGuestTss;
     /** The size of the guest TSS. */
