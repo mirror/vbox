@@ -235,7 +235,7 @@ typedef struct _PATCHINFO
     /* Only valid for PATMFL_JUMP_CONFLICT patches */
     RTGCPTR32       pPatchJumpDestGC;
 
-    RTGCUINTPTR     pPatchBlockOffset;
+    RTGCUINTPTR32   pPatchBlockOffset;
     uint32_t        cbPatchBlockSize;
     uint32_t        uCurPatchOffset;
 #if HC_ARCH_BITS == 64
@@ -292,7 +292,7 @@ typedef struct _PATCHINFO
     uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundrary. */
 } PATCHINFO, *PPATCHINFO;
 
-#define PATCHCODE_PTR_GC(pPatch)    (RTGCPTR)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
+#define PATCHCODE_PTR_GC(pPatch)    (RTGCPTR32)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
 #define PATCHCODE_PTR_HC(pPatch)    (uint8_t *)(pVM->patm.s.pPatchMemHC + (pPatch)->pPatchBlockOffset)
 
 /**
@@ -528,9 +528,9 @@ DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM);
 DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 
 #ifdef IN_RING3
-RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pPatchGC);
-RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC);
-RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC);
+RTGCPTR32 patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pPatchGC);
+RTGCPTR32 patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC);
+RTGCPTR32 patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC);
 #endif
 
 /* Add a patch to guest lookup record
@@ -543,7 +543,7 @@ RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(
  * @param   fDirty          Dirty flag
  *
  */
-void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC, RTGCPTR pInstrGC, PATM_LOOKUP_TYPE enmType, bool fDirty=false);
+void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC, RTGCPTR32 pInstrGC, PATM_LOOKUP_TYPE enmType, bool fDirty=false);
 
 /**
  * Insert page records for all guest pages that contain instructions that were recompiled for this patch
@@ -570,7 +570,7 @@ int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch);
  * @param   pVM         The VM to operate on.
  * @param   pPatch      Patch structure
  */
-RTGCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch);
+RTGCPTR32 patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch);
 
 /**
  * Remove patch for privileged instruction at specified location
@@ -606,7 +606,7 @@ typedef int (VBOXCALL *PFN_PATMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(
  * @param   pPatchRec   Patch structure
  *
  */
-int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec);
+int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec);
 
 /**
  * Convert guest context address to host context pointer
@@ -630,7 +630,7 @@ R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(ui
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
-PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTGCPTR pInstrGC);
+PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTGCPTR32 pInstrGC);
 
 
 /**
@@ -689,11 +689,11 @@ typedef struct
     PVM           pVM;
     PPATCHINFO    pPatchInfo;
     R3PTRTYPE(uint8_t *) pInstrHC;
-    RTGCPTR       pInstrGC;
+    RTGCPTR32       pInstrGC;
     uint32_t      fReadFlags;
 } PATMDISASM, *PPATMDISASM;
 
-inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR InstrGC,
+inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 InstrGC,
                            uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput,
                            uint32_t fReadFlags = PATMREAD_ORGCODE)
 {
@@ -733,7 +733,7 @@ PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
  * @param   fIncludeHints Include hinted patches or not
  *
  */
-PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTGCPTR pInstrGC, bool fIncludeHints=false);
+PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTGCPTR32 pInstrGC, bool fIncludeHints=false);
 
 /**
  * Patch cli/sti pushf/popf instruction block at specified location
@@ -749,7 +749,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTGCPTR pInstrGC, bool fIncl
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
+PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR32 pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
                                  uint32_t uOpcode, uint32_t uOpSize, PPATMPATCHREC pPatchRec);
 
 
@@ -766,7 +766,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *)
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
+PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR32 pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
 
 /**
  * Mark patch as dirty
@@ -787,7 +787,7 @@ PATMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch);
  * @param   pCpu            Disassembly state of instruction.
  * @param   pBranchInstrGC  GC pointer of branch instruction
  */
-inline RTGCPTR PATMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR pBranchInstrGC)
+inline RTGCPTR32 PATMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR32 pBranchInstrGC)
 {
     uint32_t disp;
     if (pCpu->param1.flags & USE_IMMEDIATE8_REL)
@@ -810,7 +810,7 @@ inline RTGCPTR PATMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR pBranchInstrGC)
         return 0;
     }
 #ifdef IN_GC
-    return (RTGCPTR)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
+    return (RTGCPTR32)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
 #else
     return pBranchInstrGC + pCpu->opsize + disp;
 #endif

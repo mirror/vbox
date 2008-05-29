@@ -251,7 +251,7 @@ typedef int (VBOXCALL *PFN_CSAMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(
  * @param   pCpu            Disassembly state of instruction.
  * @param   pBranchInstrGC  GC pointer of branch instruction
  */
-inline RTGCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR pBranchInstrGC)
+inline RTGCPTR32 CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR32 pBranchInstrGC)
 {
     uint32_t disp;
     if (pCpu->param1.flags & USE_IMMEDIATE8_REL)
@@ -274,14 +274,14 @@ inline RTGCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR pBranchInstrGC)
         return 0;
     }
 #ifdef IN_GC
-    return (RTGCPTR)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
+    return (RTGCPTR32)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
 #else
     return pBranchInstrGC + pCpu->opsize + disp;
 #endif
 }
 
 __BEGIN_DECLS
-CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR32 pvFault, RTGCPTR32 pvRange, uintptr_t offRange);
 __END_DECLS
 
 #endif

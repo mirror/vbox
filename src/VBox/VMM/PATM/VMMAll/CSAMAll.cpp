@@ -52,7 +52,7 @@
  * @param   pVM         The VM to operate on.
  * @param   pvFault     Fault address
  */
-CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR pvFault)
+CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR32 pvFault)
 {
     if(!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -79,7 +79,7 @@ CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR pvFault)
  * @param   pVM         The VM to operate on.
  * @param   pPage       GC page address
  */
-CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR pPage)
+CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR32 pPage)
 {
     int pgdir, bit;
     uintptr_t page;
@@ -107,7 +107,7 @@ CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR pPage)
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
+CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned)
 {
     int pgdir, bit;
     uintptr_t page;
@@ -176,7 +176,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR GCPtr)
+CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR32 GCPtr)
 {
     if(!CSAMIsEnabled(pVM))
         return false;
@@ -199,7 +199,7 @@ CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR GCPtr)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR GCPtr)
+CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR32 GCPtr)
 {
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
@@ -246,7 +246,7 @@ CSAMDECL(int) CSAMDisableScanning(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTGCPTR GCPtr)
+CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTGCPTR32 GCPtr)
 {
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {

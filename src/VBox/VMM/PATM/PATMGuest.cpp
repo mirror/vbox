@@ -96,11 +96,11 @@ static uint8_t uFnOpenBSDHandlerPrefix2[6] = { 0x0E, 0x56, 0x6A, 0x00, 0x6A, 0x0
  * @param   pPatchRec   Patch structure
  *
  */
-int PATMPatchSysenterXP(PVM pVM, RTGCPTR pInstrGC, PPATMPATCHREC pPatchRec)
+int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     uint8_t   uTemp[16];
-    RTGCPTR   lpfnKiFastSystemCall, lpfnKiIntSystemCall = 0; /* (initializing it to shut up warning.) */
+    RTGCPTR32   lpfnKiFastSystemCall, lpfnKiIntSystemCall = 0; /* (initializing it to shut up warning.) */
     int       rc, i;
 
     Assert(sizeof(uTemp) > sizeof(uFnKiIntSystemCall));
@@ -150,7 +150,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR pInstrGC, PPATMPATCHREC pPatchRec)
 
     /* Now we simply jump from the fast version to the 'old and slow' system call */
     uTemp[0] = 0xE9;
-    *(RTGCPTR *)&uTemp[1] = lpfnKiIntSystemCall - (pInstrGC + SIZEOF_NEARJUMP32);
+    *(RTGCPTR32 *)&uTemp[1] = lpfnKiIntSystemCall - (pInstrGC + SIZEOF_NEARJUMP32);
     rc = PGMPhysWriteGCPtrDirty(pVM, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
     if (VBOX_FAILURE(rc))
     {
@@ -179,7 +179,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR pInstrGC, PPATMPATCHREC pPatchRec)
  * @param   pPatchRec   Patch structure
  *
  */
-int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec)
+int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec)
 {
     uint8_t   uTemp[16];
     int       rc;
@@ -212,7 +212,7 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, 
  * @param   pPatchRec   Patch structure
  *
  */
-int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec)
+int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC, uint8_t *pInstrHC, PPATMPATCHREC pPatchRec)
 {
     int rc;
 

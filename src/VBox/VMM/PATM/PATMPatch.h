@@ -21,32 +21,32 @@
 #ifndef ___PATMPATCH_H
 #define ___PATMPATCH_H
 
-int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTGCPTR pSource = 0, RTGCPTR pDest = 0);
-int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offset, RTGCPTR pTargetGC, uint32_t opcode);
+int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTGCPTR32 pSource = 0, RTGCPTR32 pDest = 0);
+int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offset, RTGCPTR32 pTargetGC, uint32_t opcode);
 
-int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC);
-int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
-int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
+int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC);
+int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC);
+int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC);
 int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
 int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
-int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
+int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC);
 int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride);
 int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride);
 int patmPatchGenPushf(PVM pVM, PPATCHINFO pPatch, bool fSizeOverride);
 int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fSizeOverride, bool fGenJumpBack);
-int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RTGCPTR pNextInstrGC);
+int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, RTGCPTR32 pNextInstrGC);
 
 int patmPatchGenCli(PVM pVM, PPATCHINFO pPatch);
-int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, bool fSizeOverride);
+int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, bool fSizeOverride);
 int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC);
 int patmPatchGenPushCS(PVM pVM, PPATCHINFO pPatch);
 
-int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
+int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC);
 
-int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pInstrGC, RTGCPTR pTargetGC, bool fIndirect);
+int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pInstrGC, RTGCPTR32 pTargetGC, bool fIndirect);
 int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC);
 
-int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord = true);
+int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, RCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord = true);
 
 /**
  * Generate indirect jump to unknown destination
@@ -57,7 +57,7 @@ int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RCPTR
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Current instruction address
  */
-int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
+int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC);
 
 /**
  * Generate a trap handler entrypoint
@@ -67,7 +67,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
  * @param   pPatch      Patch record
  * @param   pTrapHandlerGC  IDT handler address
  */
-int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR pTrapHandlerGC);
+int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pTrapHandlerGC);
 
 /**
  * Generate an interrupt handler entrypoint
@@ -77,7 +77,7 @@ int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR pTrapHandlerGC);
  * @param   pPatch      Patch record
  * @param   pIntHandlerGC IDT handler address
  */
-int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR pIntHandlerGC);
+int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pIntHandlerGC);
 
 /**
  * Generate the jump from guest to patch code
@@ -109,7 +109,7 @@ int patmPatchGenIllegalInstr(PVM pVM, PPATCHINFO pPatch);
  * @param   pInstrGC    Corresponding guest instruction
  *
  */
-int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
+int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC);
 
 /**
  * Clear PATM interrupt flag
@@ -120,7 +120,7 @@ int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
  * @param   pInstrGC    Corresponding guest instruction
  *
  */
-int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
+int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC);
 
 /**
  * Clear PATM inhibit irq flag
@@ -130,7 +130,7 @@ int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
  * @param   pPatch          Patch structure
  * @param   pNextInstrGC    Next guest instruction
  */
-int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTGCPTR pNextInstrGC);
+int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pNextInstrGC);
 
 /**
  * Check virtual IF flag and jump back to original guest code if set
@@ -141,7 +141,7 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTGCPTR pNextInstrGC
  * @param   pCurInstrGC Guest context pointer to the current instruction
  *
  */
-int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC);
+int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC);
 
 /**
  * Generate all global patm functions

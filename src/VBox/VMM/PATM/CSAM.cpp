@@ -73,12 +73,12 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
 
-bool                csamIsCodeScanned(PVM pVM, RTGCPTR pInstr, PCSAMPAGE *pPage);
-int                 csamR3CheckPageRecord(PVM pVM, RTGCPTR pInstr);
-static PCSAMPAGE    csamCreatePageRecord(PVM pVM, RTGCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation = false);
-static int          csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr);
+bool                csamIsCodeScanned(PVM pVM, RTGCPTR32 pInstr, PCSAMPAGE *pPage);
+int                 csamR3CheckPageRecord(PVM pVM, RTGCPTR32 pInstr);
+static PCSAMPAGE    csamCreatePageRecord(PVM pVM, RTGCPTR32 GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation = false);
+static int          csamRemovePageRecord(PVM pVM, RTGCPTR32 GCPtr);
 static int          csamReinit(PVM pVM);
-static void         csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR pInstr, uint32_t opsize, bool fScanned);
+static void         csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR32 pInstr, uint32_t opsize, bool fScanned);
 static int          csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                           PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec);
 
@@ -117,7 +117,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     /* Allocate bitmap for the page directory. */
     rc = MMR3HyperAllocOnceNoRel(pVM, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR), 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC);
     AssertRCReturn(rc, rc);
-    rc = MMR3HyperAllocOnceNoRel(pVM, CSAM_PGDIRBMP_CHUNKS*sizeof(RTGCPTR), 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDGCBitmapHC);
+    rc = MMR3HyperAllocOnceNoRel(pVM, CSAM_PGDIRBMP_CHUNKS*sizeof(RTGCPTR32), 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDGCBitmapHC);
     AssertRCReturn(rc, rc);
     pVM->csam.s.pPDBitmapGC   = MMHyperHC2GC(pVM, pVM->csam.s.pPDGCBitmapHC);
     pVM->csam.s.pPDHCBitmapGC = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC);
@@ -604,14 +604,14 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigne
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PVM           pVM      = (PVM)pCpu->apvUserData[0];
     RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pCpu->apvUserData[1];
-    RTGCUINTPTR   pInstrGC = (uintptr_t)pCpu->apvUserData[2];
+    RTGCUINTPTR32   pInstrGC = (uintptr_t)pCpu->apvUserData[2];
     int           orgsize  = size;
 
     /* We are not interested in patched instructions, so read the original opcode bytes. */
     /** @note single instruction patches (int3) are checked in CSAMR3AnalyseCallback */
     for (int i=0;i<orgsize;i++)
     {
-        int rc = PATMR3QueryOpcode(pVM, (RTGCPTR)pSrc, pDest);
+        int rc = PATMR3QueryOpcode(pVM, (RTGCPTR32)pSrc, pDest);
         if (VBOX_SUCCESS(rc))
         {
             pSrc++;
@@ -641,7 +641,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigne
     return VINF_SUCCESS;
 }
 
-inline int CSAMR3DISInstr(PVM pVM, DISCPUSTATE *pCpu, RTGCPTR InstrGC, uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput)
+inline int CSAMR3DISInstr(PVM pVM, DISCPUSTATE *pCpu, RTGCPTR32 InstrGC, uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput)
 {
     (pCpu)->pfnReadBytes  = CSAMR3ReadBytes;
     (pCpu)->apvUserData[0] = pVM;
@@ -1269,7 +1269,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             &&  (cpu.param1.flags & (USE_DISPLACEMENT32|USE_INDEX|USE_SCALE)) == (USE_DISPLACEMENT32|USE_INDEX|USE_SCALE)
            )
         {
-            RTGCPTR  pJumpTableGC = (RTGCPTR)cpu.param1.disp32;
+            RTGCPTR32  pJumpTableGC = (RTGCPTR32)cpu.param1.disp32;
             uint8_t *pJumpTableHC;
             int      rc2;
 
@@ -1287,7 +1287,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                     if (PAGE_ADDRESS(addr) != PAGE_ADDRESS(pJumpTableGC))
                         break;
 
-                    addr = *(RTGCPTR *)(pJumpTableHC + cpu.param1.scale * i);
+                    addr = *(RTGCPTR32 *)(pJumpTableHC + cpu.param1.scale * i);
 
                     rc2 = PGMGstGetPage(pVM, addr, &fFlags, NULL);
                     if (    rc2 != VINF_SUCCESS
@@ -1345,7 +1345,7 @@ done:
  * @param   pVM         The VM to operate on.
  * @param   pInstr      Page address
  */
-uint64_t csamR3CalcPageHash(PVM pVM, RTGCPTR pInstr)
+uint64_t csamR3CalcPageHash(PVM pVM, RTGCPTR32 pInstr)
 {
     uint64_t hash   = 0;
     uint32_t val[5];
@@ -1410,7 +1410,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTGCPTR pInstr)
  * @param   addr        GC address of the page to flush
  * @param   fRemovePage Page removal flag
  */
-static int csamFlushPage(PVM pVM, RTGCPTR addr, bool fRemovePage)
+static int csamFlushPage(PVM pVM, RTGCPTR32 addr, bool fRemovePage)
 {
     PCSAMPAGEREC pPageRec;
     int rc;
@@ -1517,7 +1517,7 @@ static int csamFlushPage(PVM pVM, RTGCPTR addr, bool fRemovePage)
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
+CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR32 addr)
 {
     return csamFlushPage(pVM, addr, true /* remove page record */);
 }
@@ -1529,7 +1529,7 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr)
+CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR32 addr)
 {
     PCSAMPAGEREC pPageRec;
     int          rc;
@@ -1554,7 +1554,7 @@ CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr)
  * @param   pVM         The VM to operate on.
  * @param   pInstrGC    GC instruction pointer
  */
-int csamR3CheckPageRecord(PVM pVM, RTGCPTR pInstrGC)
+int csamR3CheckPageRecord(PVM pVM, RTGCPTR32 pInstrGC)
 {
     PCSAMPAGEREC pPageRec;
     uint64_t     u64hash;
@@ -1601,7 +1601,7 @@ const char *csamGetMonitorDescription(CSAMTAG enmTag)
  * @param   fCode32                 16 or 32 bits code
  * @param   fMonitorInvalidation    Monitor page invalidation flag
  */
-static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTGCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation)
+static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTGCPTR32 GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation)
 {
     PCSAMPAGEREC pPage;
     int          rc;
@@ -1702,7 +1702,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTGCPTR GCPtr, CSAMTAG enmTag, bo
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
+CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR32 pPageAddrGC, CSAMTAG enmTag)
 {
     PCSAMPAGEREC pPageRec = NULL;
     int          rc;
@@ -1824,7 +1824,7 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
+CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR32 pPageAddrGC, CSAMTAG enmTag)
 {
     pPageAddrGC &= PAGE_BASE_GC_MASK;
 
@@ -1848,7 +1848,7 @@ CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       Page address
  */
-static int csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr)
+static int csamRemovePageRecord(PVM pVM, RTGCPTR32 GCPtr)
 {
     PCSAMPAGEREC pPageRec;
 
@@ -1983,7 +1983,7 @@ static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr)
  * @param   pInstr      Instruction pointer
  * @param   pPage       CSAM patch structure pointer
  */
-bool csamIsCodeScanned(PVM pVM, RTGCPTR pInstr, PCSAMPAGE *pPage)
+bool csamIsCodeScanned(PVM pVM, RTGCPTR32 pInstr, PCSAMPAGE *pPage)
 {
     PCSAMPAGEREC pPageRec;
     uint32_t offset;
@@ -2035,7 +2035,7 @@ bool csamIsCodeScanned(PVM pVM, RTGCPTR pInstr, PCSAMPAGE *pPage)
  * @param   opsize      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR pInstr, uint32_t opsize, bool fScanned)
+static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR32 pInstr, uint32_t opsize, bool fScanned)
 {
     LogFlow(("csamMarkCodeAsScanned %VGv opsize=%d\n", pInstr, opsize));
     CSAMMarkPage(pVM, pInstr, fScanned);
@@ -2074,7 +2074,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR pInstr, uint32_t opsi
  * @param   opsize      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned)
+CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR32 pInstr, uint32_t opsize, bool fScanned)
 {
     PCSAMPAGE pPage = 0;
 
@@ -2102,7 +2102,7 @@ CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fS
  * @param   pHiddenSel  The hidden selector register.
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR pInstrGC)
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR32 pInstrGC)
 {
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
@@ -2136,7 +2136,7 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel,
  * @param   pVM         The VM to operate on.
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
-CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC)
+CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR32 pInstrGC)
 {
     int rc;
     PCSAMPAGE pPage = NULL;
@@ -2178,7 +2178,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
     {
         int          rc;
         PCSAMPAGEREC pPageRec;
-        RTGCPTR      GCPtr = pVM->csam.s.pvDirtyBasePage[i];
+        RTGCPTR32      GCPtr = pVM->csam.s.pvDirtyBasePage[i];
 
         GCPtr = GCPtr & PAGE_BASE_GC_MASK;
 
@@ -2222,7 +2222,7 @@ static int csamR3FlushCodePages(PVM pVM)
 {
     for (uint32_t i=0;i<pVM->csam.s.cPossibleCodePages;i++)
     {
-        RTGCPTR      GCPtr = pVM->csam.s.pvPossibleCodePage[i];
+        RTGCPTR32      GCPtr = pVM->csam.s.pvPossibleCodePage[i];
 
         GCPtr = GCPtr & PAGE_BASE_GC_MASK;
 
@@ -2261,7 +2261,7 @@ CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
 CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 {
     uint16_t    cbIDT;
-    RTGCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVM, &cbIDT);
+    RTGCPTR32     GCPtrIDT = CPUMGetGuestIDTR(pVM, &cbIDT);
     uint32_t    iGateEnd;
     uint32_t    maxGates;
     VBOXIDTE    aIDT[256];
@@ -2294,7 +2294,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
         pVM->csam.s.fGatesChecked = true;
         for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
         {
-            RTGCPTR pHandler = pVM->csam.s.pvCallInstruction[i];
+            RTGCPTR32 pHandler = pVM->csam.s.pvCallInstruction[i];
 
             if (pHandler)
             {
@@ -2364,7 +2364,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             &&  (pGuestIdte->Gen.u2DPL == 3 || pGuestIdte->Gen.u2DPL == 0)
            )
         {
-            RTGCPTR pHandler;
+            RTGCPTR32 pHandler;
             CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
             X86EFLAGS fakeflags;
@@ -2410,7 +2410,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             {
                 PCPUMCTX    pCtx;
                 DISCPUSTATE cpu;
-                RTGCUINTPTR aOpenBsdPushCSOffset[3] = {0x03,       /* OpenBSD 3.7 & 3.8 */
+                RTGCUINTPTR32 aOpenBsdPushCSOffset[3] = {0x03,       /* OpenBSD 3.7 & 3.8 */
                                                        0x2B,       /* OpenBSD 4.0 installation ISO */
                                                        0x2F};      /* OpenBSD 4.0 after install */
 
@@ -2461,7 +2461,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             {
                 Log(("Gate handler 0x%X is SAFE!\n", iGate));
 
-                RTGCPTR pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
+                RTGCPTR32 pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
                 if (pNewHandlerGC)
                 {
                     rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
@@ -2482,7 +2482,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
  * @param   pVM         The VM to operate on.
  * @param   GCPtrCall   Call address
  */
-CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTGCPTR GCPtrCall)
+CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTGCPTR32 GCPtrCall)
 {
     for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
     {
