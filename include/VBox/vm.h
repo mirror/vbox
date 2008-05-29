@@ -551,7 +551,7 @@ typedef struct VM
 #if GC_ARCH_BITS == 32
         char        padding[HC_ARCH_BITS == 32 ? 0x6f00 : 0xbf00];    /* multiple of 32 */
 #else
-        char        padding[HC_ARCH_BITS == 32 ? 0x8f00 : 0xdf00];    /* multiple of 32 */
+        char        padding[HC_ARCH_BITS == 32 ? 0x9f00 : 0xdf00];    /* multiple of 32 */
 #endif
     } rem;
 } VM;

@@ -187,7 +187,7 @@ else # !REM_USE_NOCRT
   $(REM_MOD)_INCS          += $(VBOX_L4_GCC3_INCS) $(L4_INCDIR)
  endif
 
- $(REM_MOD)_DEFS           += IN_RING3 LOG_USE_C99
+ $(REM_MOD)_DEFS           += IN_RING3 LOG_USE_C99 $(ARCH_BITS_DEFS)
  #$(REM_MOD)_DEFS          += DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
  # these defines are probably all irrelevant now:
  $(REM_MOD)_DEFS           += _GNU_SOURCE _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _REENTRANT
