@@ -76,9 +76,12 @@
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>
+#include <linux/time.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 7)
-# include <linux/time.h>
 # include <linux/jiffies.h>
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+# include <linux/ktime.h>
 #endif
 #include <linux/wait.h>
 /* For the basic additions module */
@@ -245,6 +248,23 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 
 #ifndef PAGE_OFFSET_MASK
 # define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
+#endif
+
+/** @def ONE_MSEC_IN_JIFFIES
+ * The number of jiffies that make up 1 millisecond. Must be at least 1! */
+#if HZ <= 1000
+# define ONE_MSEC_IN_JIFFIES       1
+#elif !(HZ % 1000)
+# define ONE_MSEC_IN_JIFFIES       (HZ / 1000)
+#else
+# define ONE_MSEC_IN_JIFFIES       ((HZ + 999) / 1000)
+# error "HZ is not a multiple of 1000, the GIP stuff won't work right!"
+#endif
+
+/** @def TICK_NSEC
+ * The time between ticks in nsec */
+#ifndef TICK_NSEC
+# define TICK_NSEC (1000000UL / HZ)
 #endif
 
 /*

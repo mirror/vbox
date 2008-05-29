@@ -1,3 +1,4 @@
+/* $Rev:$ */
 /** @file
  * The VirtualBox Support Driver - Linux hosts.
  */
@@ -153,23 +154,6 @@
 # define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c)
 #endif
 
-
-/** @def ONE_MSEC_IN_JIFFIES
- * The number of jiffies that make up 1 millisecond. Must be at least 1! */
-#if HZ <= 1000
-# define ONE_MSEC_IN_JIFFIES       1
-#elif !(HZ % 1000)
-# define ONE_MSEC_IN_JIFFIES       (HZ / 1000)
-#else
-# define ONE_MSEC_IN_JIFFIES       ((HZ + 999) / 1000)
-# error "HZ is not a multiple of 1000, the GIP stuff won't work right!"
-#endif
-
-/** @def TICK_NSEC
- * The time between ticks in nsec */
-#ifndef TICK_NSEC
-# define TICK_NSEC (1000000UL / HZ)
-#endif
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
