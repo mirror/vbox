@@ -76,6 +76,7 @@
  *      - \%RHu             - Takes a #RTHCUINT value.
  *      - \%RHv             - Takes a #RTHCPTR, #RTHCINTPTR or #RTHCUINTPTR value.
  *      - \%RHx             - Takes a #RTHCUINT or #RTHCINT value, formatting it as hex.
+ *      - \%RRv             - Takes a #RTRCPTR, #RTRCINTPTR or #RTRCUINTPTR value.
  *      - \%RCi             - Takes a #RTCCINT value.
  *      - \%RCp             - Takes a #RTCCPHYS value.
  *      - \%RCr             - Takes a #RTCCUINTREG value.
@@ -185,6 +186,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             case 'T':
             case 'G':
             case 'H':
+            case 'R':
             case 'C':
             case 'I':
             case 'X':
@@ -229,6 +231,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     { STRMEM("I32"),     sizeof(int32_t),        10, RTSF_INT,   RTSTR_F_VALSIGNED },
                     { STRMEM("I64"),     sizeof(int64_t),        10, RTSF_INT,   RTSTR_F_VALSIGNED },
                     { STRMEM("I8"),      sizeof(int8_t),         10, RTSF_INT,   RTSTR_F_VALSIGNED },
+                    { STRMEM("Rv"),      sizeof(RTRCPTR),        16, RTSF_INTW,  0 },
                     { STRMEM("Tbool"),   sizeof(bool),           10, RTSF_BOOL,  0 },
                     { STRMEM("Tfile"),   sizeof(RTFILE),         10, RTSF_INT,   0 },
                     { STRMEM("Tfmode"),  sizeof(RTFMODE),        16, RTSF_INTW,  0 },
