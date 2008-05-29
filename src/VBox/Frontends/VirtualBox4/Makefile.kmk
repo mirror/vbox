@@ -311,6 +311,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSerial.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsParallel.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsParallel.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsUSB.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsUSB.ui
+
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsDlg.ui
 
@@ -468,6 +471,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsAudio.h \
 	include/VBoxVMSettingsSerial.h \
 	include/VBoxVMSettingsParallel.h \
+	include/VBoxVMSettingsUSB.h \
 	include/VBoxVMSettingsDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
@@ -552,6 +556,7 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsAudio.cpp \
 	src/VBoxVMSettingsSerial.cpp \
 	src/VBoxVMSettingsParallel.cpp \
+	src/VBoxVMSettingsUSB.cpp \
 	src/VBoxVMSettingsDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11

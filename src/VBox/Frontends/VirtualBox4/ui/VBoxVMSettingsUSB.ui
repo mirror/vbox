@@ -1,0 +1,384 @@
+<ui version="4.0" >
+ <class>VBoxVMSettingsUSB</class>
+ <widget class="QWidget" name="VBoxVMSettingsUSB" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>402</width>
+    <height>424</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>5</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="mGbUSB" >
+     <property name="whatsThis" >
+      <string>When checked, enables the virtual USB controller of this machine.</string>
+     </property>
+     <property name="title" >
+      <string>Enable &amp;USB Controller</string>
+     </property>
+     <property name="checkable" >
+      <bool>true</bool>
+     </property>
+     <property name="checked" >
+      <bool>false</bool>
+     </property>
+     <layout class="QHBoxLayout" >
+      <property name="topMargin" >
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="mCbUSB2" >
+        <property name="whatsThis" >
+         <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
+        </property>
+        <property name="text" >
+         <string>Enable USB E&amp;HCI Controller</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="mGbUSBFilters" >
+     <property name="title" >
+      <string>USB Device &amp;Filters</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <property name="topMargin" >
+       <number>5</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QTreeWidget" name="mTwFilters" >
+          <property name="whatsThis" >
+           <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</string>
+          </property>
+          <property name="rootIsDecorated" >
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text" >
+            <string>[filter]</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" >
+          <property name="spacing" >
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QToolButton" name="mTbNew" >
+            <property name="whatsThis" >
+             <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbAdd" >
+            <property name="whatsThis" >
+             <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbRem" >
+            <property name="whatsThis" >
+             <string>Removes the selected USB filter.</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbUp" >
+            <property name="whatsThis" >
+             <string>Moves the selected USB filter up.</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbDown" >
+            <property name="whatsThis" >
+             <string>Moves the selected USB filter down.</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" native="1" name="mWtProperties" >
+     <layout class="QVBoxLayout" >
+      <property name="leftMargin" >
+       <number>0</number>
+      </property>
+      <property name="topMargin" >
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="mLbName" >
+          <property name="text" >
+           <string>&amp;Name</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeName</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mLeName" >
+          <property name="whatsThis" >
+           <string>Displays the filter name.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <widget class="QLabel" name="mLbVendorID" >
+          <property name="text" >
+           <string>&amp;Vendor ID</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeVendorID</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" >
+         <widget class="QLineEdit" name="mLeVendorID" >
+          <property name="whatsThis" >
+           <string>Defines the vendor ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2" >
+         <widget class="QLabel" name="mLbManufacturer" >
+          <property name="text" >
+           <string>&amp;Manufacturer</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeManufacturer</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3" >
+         <widget class="QLineEdit" name="mLeManufacturer" >
+          <property name="whatsThis" >
+           <string>Defines the manufacturer filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" >
+         <widget class="QLabel" name="mLbProductID" >
+          <property name="text" >
+           <string>&amp;Product ID</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeProductID</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" >
+         <widget class="QLineEdit" name="mLeProductID" >
+          <property name="whatsThis" >
+           <string>Defines the product ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" >
+         <widget class="QLabel" name="mLbProduct" >
+          <property name="text" >
+           <string>Pro&amp;duct</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeProduct</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3" >
+         <widget class="QLineEdit" name="mLeProduct" >
+          <property name="whatsThis" >
+           <string>Defines the product name filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" >
+         <widget class="QLabel" name="mLbRevision" >
+          <property name="text" >
+           <string>&amp;Revision</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeRevision</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1" >
+         <widget class="QLineEdit" name="mLeRevision" >
+          <property name="whatsThis" >
+           <string>Defines the revision number filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>IIFF&lt;/tt> where &lt;tt>I&lt;/tt> is a decimal digit of the integer part and &lt;tt>F&lt;/tt> is a decimal digit of the fractional part. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2" >
+         <widget class="QLabel" name="mLbSerialNo" >
+          <property name="text" >
+           <string>&amp;Serial No.</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeSerialNo</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3" >
+         <widget class="QLineEdit" name="mLeSerialNo" >
+          <property name="whatsThis" >
+           <string>Defines the serial number filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" >
+         <widget class="QLabel" name="mLbPort" >
+          <property name="text" >
+           <string>Por&amp;t</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLePort</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1" >
+         <widget class="QLineEdit" name="mLePort" >
+          <property name="whatsThis" >
+           <string>Defines the host USB port filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2" >
+         <widget class="QLabel" name="mLbRemote" >
+          <property name="text" >
+           <string>R&amp;emote</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mCbRemote</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3" >
+         <widget class="QComboBox" name="mCbRemote" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i>No&lt;/i>), to a VRDP client's computer (&lt;i>Yes&lt;/i>), or both (&lt;i>Any&lt;/i>).</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2" >
+         <widget class="QLabel" name="mLbAction" >
+          <property name="text" >
+           <string>&amp;Action</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mCbAction</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="3" >
+         <widget class="QComboBox" name="mCbAction" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i>Ignore&lt;/i>) or grab it for later usage by virtual machines (&lt;i>Hold&lt;/i>).</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
