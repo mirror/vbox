@@ -58,113 +58,24 @@
      <property name="title" >
       <string>USB Device &amp;Filters</string>
      </property>
-     <layout class="QVBoxLayout" >
-      <property name="topMargin" >
-       <number>5</number>
-      </property>
+     <layout class="QHBoxLayout" >
       <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <widget class="QTreeWidget" name="mTwFilters" >
-          <property name="whatsThis" >
-           <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</string>
-          </property>
-          <property name="rootIsDecorated" >
-           <bool>false</bool>
-          </property>
-          <column>
-           <property name="text" >
-            <string>[filter]</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" >
-          <property name="spacing" >
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QToolButton" name="mTbNew" >
-            <property name="whatsThis" >
-             <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="autoRaise" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="mTbAdd" >
-            <property name="whatsThis" >
-             <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="autoRaise" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="mTbRem" >
-            <property name="whatsThis" >
-             <string>Removes the selected USB filter.</string>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="autoRaise" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="mTbUp" >
-            <property name="whatsThis" >
-             <string>Moves the selected USB filter up.</string>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="autoRaise" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="mTbDown" >
-            <property name="whatsThis" >
-             <string>Moves the selected USB filter down.</string>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="autoRaise" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer>
-            <property name="orientation" >
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" >
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-       </layout>
+       <widget class="QTreeWidget" name="mTwFilters" >
+        <property name="contextMenuPolicy" >
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
+        <property name="whatsThis" >
+         <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</string>
+        </property>
+        <property name="rootIsDecorated" >
+         <bool>false</bool>
+        </property>
+        <column>
+         <property name="text" >
+          <string>[filter]</string>
+         </property>
+        </column>
+       </widget>
       </item>
      </layout>
     </widget>
