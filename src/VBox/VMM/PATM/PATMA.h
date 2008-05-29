@@ -132,8 +132,8 @@ typedef struct
     uint32_t     cAddresses;
     struct
     {
-        RTGCPTR32      pInstrGC;
-        RTGCUINTPTR32  pRelPatchGC; /* relative to patch base */
+        RTRCPTR      pInstrGC;
+        RTRCUINTPTR  pRelPatchGC; /* relative to patch base */
     } Slot[1];
 } PATCHJUMPTABLE, *PPATCHJUMPTABLE;
 

@@ -51,7 +51,7 @@
  */
 PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
-    bool fPatchCode = PATMIsPatchGCAddr(pVM, (RTGCPTR32)pCtxCore->eip);
+    bool fPatchCode = PATMIsPatchGCAddr(pVM, (RTRCPTR)pCtxCore->eip);
 
     /*
      * Currently we don't bother to check whether PATM is enabled or not.
@@ -59,7 +59,7 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
      */
     register uint32_t efl = pCtxCore->eflags.u32;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
-    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTGCPTR32)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%VGv eflags=%08x fPATM=%d pPATMGC=%VGv-%VGv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
+    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTRCPTR)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%VGv eflags=%08x fPATM=%d pPATMGC=%VGv-%VGv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
 
     AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%VGv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
 
@@ -80,7 +80,7 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
         && pCtx->SysEnter.eip != 0
        )
     {
-        if (pVM->patm.s.pfnSysEnterGC != (RTGCPTR32)pCtx->SysEnter.eip)
+        if (pVM->patm.s.pfnSysEnterGC != (RTRCPTR)pCtx->SysEnter.eip)
         {
             pVM->patm.s.pfnSysEnterPatchGC = 0;
             pVM->patm.s.pfnSysEnterGC = 0;
@@ -93,12 +93,12 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
                 if (rc == VINF_SUCCESS)
                 {
                     pVM->patm.s.pfnSysEnterPatchGC  = PATMR3QueryPatchGCPtr(pVM, pCtx->SysEnter.eip);
-                    pVM->patm.s.pfnSysEnterGC       = (RTGCPTR32)pCtx->SysEnter.eip;
+                    pVM->patm.s.pfnSysEnterGC       = (RTRCPTR)pCtx->SysEnter.eip;
                     Assert(pVM->patm.s.pfnSysEnterPatchGC);
                 }
             }
             else
-                pVM->patm.s.pfnSysEnterGC = (RTGCPTR32)pCtx->SysEnter.eip;
+                pVM->patm.s.pfnSysEnterGC = (RTRCPTR)pCtx->SysEnter.eip;
         }
     }
     else
@@ -125,7 +125,7 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
  */
 PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
 {
-    bool fPatchCode = PATMIsPatchGCAddr(pVM, (RTGCPTR32)pCtxCore->eip);
+    bool fPatchCode = PATMIsPatchGCAddr(pVM, (RTRCPTR)pCtxCore->eip);
     /*
      * We will only be called if PATMRawEnter was previously called.
      */
@@ -156,7 +156,7 @@ PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
             if (CTXSUFF(pVM->patm.s.pGCState)->fPIF == 1)            /* consistent patch instruction state */
             {
                 PATMTRANSSTATE  enmState;
-                RTGCPTR32         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtxCore->eip, &enmState);
+                RTRCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtxCore->eip, &enmState);
 
                 AssertRelease(pOrgInstrGC);
 
@@ -190,7 +190,7 @@ PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
 
     if (!fPatchCode)
     {
-        if (CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts == (RTGCPTR32)pCtxCore->eip)
+        if (CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts == (RTRCPTR)pCtxCore->eip)
         {
             EMSetInhibitInterruptsPC(pVM, pCtxCore->eip);
         }
@@ -245,10 +245,10 @@ PATMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
  * @param   pVM         VM handle.
  * @param   pAddrGC     Guest context address
  */
-PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTGCPTR32 pAddrGC)
+PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
 {
     return (    PATMIsEnabled(pVM)
-            && ((pAddrGC >= (RTGCPTR32)pVM->patm.s.pPatchMemGC && pAddrGC < (RTGCPTR32)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem))) ? true : false;
+            && ((pAddrGC >= (RTRCPTR)pVM->patm.s.pPatchMemGC && pAddrGC < (RTRCPTR)((RTRCUINTPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem)))) ? true : false;
 }
 
 /**
@@ -269,11 +269,9 @@ PATMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     Guest context address
  */
-PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTGCPTR32 pAddrGC)
+PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCPTR pAddrGC)
 {
-    RTGCPTR32 pAddrGG32 = (RTGCPTR32)pAddrGC;
-
-    return (PATMIsEnabled(pVM) && pAddrGG32 >= (RTGCPTR32)pVM->patm.s.pPatchMemGC && pAddrGG32 < (RTGCPTR32)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem) ? true : false;
+    return (PATMIsEnabled(pVM) && pAddrGC >= pVM->patm.s.pPatchMemGC && pAddrGC < (RTRCPTR)((RTRCUINTPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem)) ? true : false;
 }
 
 /**
@@ -284,10 +282,10 @@ PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTGCPTR32 pAddrGC)
  * @param   GCPhys          MMIO physical address
  * @param   pCachedData     GC pointer to cached data
  */
-PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTGCPTR32 pCachedData)
+PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
 {
     pVM->patm.s.mmio.GCPhys = GCPhys;
-    pVM->patm.s.mmio.pCachedData = (RTGCPTR32)pCachedData;
+    pVM->patm.s.mmio.pCachedData = (RTRCPTR)pCachedData;
 
     return VINF_SUCCESS;
 }
@@ -324,7 +322,7 @@ PATMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     if (PATMIsEnabled(pVM))
     {
-        if (PATMIsPatchGCAddr(pVM, (RTGCPTR32)pCtxCore->eip))
+        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pCtxCore->eip))
             return false;
     }
     return !!(pCtxCore->eflags.u32 & X86_EFL_IF);
@@ -338,11 +336,12 @@ PATMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
-PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTGCPTR32 pInstrGC)
+PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
 {
     PPATMPATCHREC pRec;
 
-    pRec = (PPATMPATCHREC)RTAvloGCPtrGet(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, pInstrGC);
+    AssertCompile(sizeof(AVLOU32KEY) == sizeof(pInstrGC));
+    pRec = (PPATMPATCHREC)RTAvloU32Get(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (AVLOU32KEY)pInstrGC);
     if (    pRec
         && (pRec->patch.uState == PATCH_ENABLED)
         && (pRec->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CALLABLE_AS_FUNCTION))
@@ -361,11 +360,11 @@ PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTGCPTR32 pInstrGC)
  * @param   pOpcode     Original instruction opcode (out, optional)
  * @param   pSize       Original instruction size (out, optional)
  */
-PATMDECL(bool) PATMIsInt3Patch(PVM pVM, RTGCPTR32 pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
+PATMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
 {
     PPATMPATCHREC pRec;
 
-    pRec = (PPATMPATCHREC)RTAvloGCPtrGet(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, pInstrGC);
+    pRec = (PPATMPATCHREC)RTAvloU32Get(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (AVLOU32KEY)pInstrGC);
     if (    pRec
         && (pRec->patch.uState == PATCH_ENABLED)
         && (pRec->patch.flags & (PATMFL_INT3_REPLACEMENT|PATMFL_INT3_REPLACEMENT_BLOCK))
@@ -401,7 +400,7 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             ||  pRegFrame->eflags.Bits.u1VM
             ||  (pRegFrame->cs & X86_SEL_RPL) != 3
             ||  pVM->patm.s.pfnSysEnterPatchGC == 0
-            ||  pVM->patm.s.pfnSysEnterGC != (RTGCPTR32)pCtx->SysEnter.eip
+            ||  pVM->patm.s.pfnSysEnterGC != (RTRCPTR)pCtx->SysEnter.eip
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 
@@ -466,7 +465,7 @@ end:
  * @param   pBranchTarget       Original branch target
  * @param   pRelBranchPatch     Relative duplicated function address
  */
-PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTGCPTR32 pJumpTableGC, RTGCPTR32 pBranchTarget, RTGCUINTPTR pRelBranchPatch)
+PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR pBranchTarget, RTGCUINTPTR pRelBranchPatch)
 {
     PPATCHJUMPTABLE pJumpTable;
 

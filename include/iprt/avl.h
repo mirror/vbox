@@ -161,6 +161,51 @@ RTDECL(int)             RTAvlU32Destroy(PPAVLU32NODECORE pTree, PAVLU32CALLBACK 
 
 /** @} */
 
+/**
+ * AVL uint32_t type for the relative offset pointer scheme.
+ */
+typedef int32_t     AVLOU32;
+
+typedef uint32_t     AVLOU32KEY;
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLOU32NodeCore
+{
+    /** Key value. */
+    AVLOU32KEY          Key;
+    /** Offset to the left leaf node, relative to this field. */
+    AVLOU32             pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    AVLOU32             pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLOU32NODECORE, *PAVLOU32NODECORE;
+
+/** A offset base tree with uint32_t keys. */
+typedef AVLOU32         AVLOU32TREE;
+/** Pointer to a offset base tree with uint32_t keys. */
+typedef AVLOU32TREE    *PAVLOU32TREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a relative offset. */
+typedef AVLOU32TREE    *PPAVLOU32NODECORE;
+
+/** Callback function for RTAvloU32DoWithAll(). */
+typedef DECLCALLBACK(int)   AVLOU32CALLBACK(PAVLOU32NODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvloU32DoWithAll(). */
+typedef AVLOU32CALLBACK *PAVLOU32CALLBACK;
+
+RTDECL(bool)                  RTAvloU32Insert(PAVLOU32TREE pTree, PAVLOU32NODECORE pNode);
+RTDECL(PAVLOU32NODECORE)      RTAvloU32Remove(PAVLOU32TREE pTree, AVLOU32KEY Key);
+RTDECL(PAVLOU32NODECORE)      RTAvloU32Get(PAVLOU32TREE pTree, AVLOU32KEY Key);
+RTDECL(int)                   RTAvloU32DoWithAll(PAVLOU32TREE pTree, int fFromLeft, PAVLOU32CALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLOU32NODECORE)      RTAvloU32GetBestFit(PAVLOU32TREE ppTree, AVLOU32KEY Key, bool fAbove);
+RTDECL(PAVLOU32NODECORE)      RTAvloU32RemoveBestFit(PAVLOU32TREE ppTree, AVLOU32KEY Key, bool fAbove);
+RTDECL(int)                   RTAvloU32Destroy(PAVLOU32TREE pTree, PAVLOU32CALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
 
 
 /** AVL tree of uint32_t, list duplicates.
