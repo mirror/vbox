@@ -206,6 +206,7 @@ RuntimeR3_SOURCES       = \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
 	common/table/avllu32.cpp \
+	common/table/avlou32.cpp \
 	common/table/avlogcphys.cpp \
 	common/table/avlogcptr.cpp \
 	common/table/avlohcphys.cpp \
@@ -1269,6 +1270,7 @@ RuntimeGC_SOURCES       = \
 	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
 	common/table/avllu32.cpp \
+	common/table/avlou32.cpp \
 	common/table/avlogcphys.cpp \
 	common/table/avlogcptr.cpp \
 	common/table/avlohcphys.cpp \

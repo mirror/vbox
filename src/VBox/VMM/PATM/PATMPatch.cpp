@@ -58,13 +58,13 @@
 /* internal structure for passing more information about call fixups to patmPatchGenCode */
 typedef struct
 {
-    RTGCPTR32   pTargetGC;
-    RTGCPTR32   pCurInstrGC;
-    RTGCPTR32   pNextInstrGC;
-    RTGCPTR32   pReturnGC;
+    RTRCPTR   pTargetGC;
+    RTRCPTR   pCurInstrGC;
+    RTRCPTR   pNextInstrGC;
+    RTRCPTR   pReturnGC;
 } PATMCALLINFO, *PPATMCALLINFO;
 
-int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTGCPTR32 pSource, RTGCPTR32 pDest)
+int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTRCPTR pSource, RTRCPTR pDest)
 {
     PRELOCREC pRec;
 
@@ -87,7 +87,7 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
     return VINF_SUCCESS;
 }
 
-int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offset, RTGCPTR32 pTargetGC, uint32_t opcode)
+int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offset, RTRCPTR pTargetGC, uint32_t opcode)
 {
     PJUMPREC pRec;
 
@@ -305,9 +305,9 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                 /* Relative address of global patm lookup and call function. */
                 case PATM_LOOKUP_AND_CALL_FUNCTION:
                 {
-                    RTGCPTR32 pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTGCPTR32) - pVM->patm.s.pPatchMemHC);
+                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
                     Assert(pVM->patm.s.pfnHelperCallGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTGCPTR32));
+                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
                     /* Relative value is target minus address of instruction after the actual call instruction. */
                     dest = pVM->patm.s.pfnHelperCallGC - pInstrAfterCall;
@@ -316,9 +316,9 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_RETURN_FUNCTION:
                 {
-                    RTGCPTR32 pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTGCPTR32) - pVM->patm.s.pPatchMemHC);
+                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
                     Assert(pVM->patm.s.pfnHelperRetGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTGCPTR32));
+                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
                     /* Relative value is target minus address of instruction after the actual call instruction. */
                     dest = pVM->patm.s.pfnHelperRetGC - pInstrAfterCall;
@@ -327,9 +327,9 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_IRET_FUNCTION:
                 {
-                    RTGCPTR32 pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTGCPTR32) - pVM->patm.s.pPatchMemHC);
+                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
                     Assert(pVM->patm.s.pfnHelperIretGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTGCPTR32));
+                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
                     /* Relative value is target minus address of instruction after the actual call instruction. */
                     dest = pVM->patm.s.pfnHelperIretGC - pInstrAfterCall;
@@ -338,9 +338,9 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_LOOKUP_AND_JUMP_FUNCTION:
                 {
-                    RTGCPTR32 pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTGCPTR32) - pVM->patm.s.pPatchMemHC);
+                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
                     Assert(pVM->patm.s.pfnHelperJumpGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTGCPTR32));
+                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
                     /* Relative value is target minus address of instruction after the actual call instruction. */
                     dest = pVM->patm.s.pfnHelperJumpGC - pInstrAfterCall;
@@ -353,7 +353,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                     break;
                 }
 
-                *(RTGCPTR32 *)&pPB[j] = dest;
+                *(RTRCPTR *)&pPB[j] = dest;
                 if (pAsmRecord->uReloc[i] < PATM_NO_FIXUP)
                 {
                     patmPatchAddReloc32(pVM, pPatch, &pPB[j], FIXUP_ABSOLUTE);
@@ -392,7 +392,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 }
 
 /* Read bytes and check for overwritten instructions. */
-static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTGCPTR32 pSrc, uint32_t cb)
+static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTRCPTR pSrc, uint32_t cb)
 {
     int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, cb);
     AssertRCReturn(rc, rc);
@@ -425,7 +425,7 @@ int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTY
     return rc;
 }
 
-int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, bool fSizeOverride)
+int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSizeOverride)
 {
     uint32_t size;
     PATMCALLINFO callInfo;
@@ -456,7 +456,7 @@ int patmPatchGenCli(PVM pVM, PPATCHINFO pPatch)
 /*
  * Generate an STI patch
  */
-int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, RTGCPTR32 pNextInstrGC)
+int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RTRCPTR pNextInstrGC)
 {
     PATMCALLINFO callInfo;
     uint32_t     size;
@@ -563,7 +563,7 @@ int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC,
         pPB[pPatchAsmRec->offSizeOverride] = 0x66;  // ecx -> cx or vice versa
     }
 
-    *(RTGCPTR32 *)&pPB[pPatchAsmRec->offRelJump] = 0xDEADBEEF;
+    *(RTRCPTR *)&pPB[pPatchAsmRec->offRelJump] = 0xDEADBEEF;
 
     patmPatchAddJump(pVM, pPatch, &pPB[pPatchAsmRec->offRelJump - 1], 1, pTargetGC, opcode);
 
@@ -656,11 +656,11 @@ int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTarget
     }
     else offset++;
 
-    *(RTGCPTR32 *)&pPB[offset] = 0xDEADBEEF;
+    *(RTRCPTR *)&pPB[offset] = 0xDEADBEEF;
 
     patmPatchAddJump(pVM, pPatch, pPB, offset, pTargetGC, opcode);
 
-    offset += sizeof(RTGCPTR32);
+    offset += sizeof(RTRCPTR);
 
     PATCHGEN_EPILOG(pPatch, offset);
     return VINF_SUCCESS;
@@ -669,7 +669,7 @@ int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTarget
 /*
  * Rewrite call to dynamic or currently unknown function (on-demand patching of function)
  */
-int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC, RTGCPTR32 pTargetGC, bool fIndirect)
+int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCurInstrGC, RTRCPTR pTargetGC, bool fIndirect)
 {
     PATMCALLINFO        callInfo;
     uint32_t            offset;
@@ -709,7 +709,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
         if (pCpu->prefix & PREFIX_SEG)
             i++;    //skip segment prefix
 
-        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTGCPTR32)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
         AssertRCReturn(rc, rc);
         offset += (pCpu->opsize - i);
     }
@@ -729,8 +729,8 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
          */
         offset = 0;
         pPB[offset++] = 0x68;              // push %Iv
-        *(RTGCPTR32 *)&pPB[offset] = pTargetGC;
-        offset += sizeof(RTGCPTR32);
+        *(RTRCPTR *)&pPB[offset] = pTargetGC;
+        offset += sizeof(RTRCPTR);
     }
 
     /* align this block properly to make sure the jump table will not be misaligned. */
@@ -770,7 +770,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Current instruction address
  */
-int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC)
+int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCurInstrGC)
 {
     PATMCALLINFO        callInfo;
     uint32_t            offset;
@@ -806,7 +806,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
     if (pCpu->prefix & PREFIX_SEG)
         i++;    //skip segment prefix
 
-    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTGCPTR32)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
     AssertRCReturn(rc, rc);
     offset += (pCpu->opsize - i);
 
@@ -845,7 +845,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
 int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC)
 {
     int size = 0, rc;
-    RTGCPTR32 pPatchRetInstrGC;
+    RTRCPTR pPatchRetInstrGC;
 
     /* Remember start of this patch for below. */
     pPatchRetInstrGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
@@ -969,7 +969,7 @@ int patmPatchGenIllegalInstr(PVM pVM, PPATCHINFO pPatch)
  * @param   pCurInstrGC Guest context pointer to the current instruction
  *
  */
-int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC)
+int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
 {
     uint32_t size;
 
@@ -994,7 +994,7 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC)
  * @param   pInstrGC    Corresponding guest instruction
  *
  */
-int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC)
+int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     PATCHGEN_PROLOG(pVM, pPatch);
 
@@ -1015,7 +1015,7 @@ int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC)
  * @param   pInstrGC    Corresponding guest instruction
  *
  */
-int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC)
+int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     PATCHGEN_PROLOG(pVM, pPatch);
 
@@ -1036,7 +1036,7 @@ int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC)
  * @param   pPatch          Patch structure
  * @param   pNextInstrGC    Next guest instruction
  */
-int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pNextInstrGC)
+int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC)
 {
     int          size;
     PATMCALLINFO callInfo;
@@ -1069,7 +1069,7 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pNextInstr
  *
  ** @todo must check if virtual IF is already cleared on entry!!!!!!!!!!!!!!!!!!!!!!!
  */
-int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pIntHandlerGC)
+int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
 {
     uint32_t size;
     int rc = VINF_SUCCESS;
@@ -1101,7 +1101,7 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pIntHandlerGC)
  * @param   pPatch      Patch record
  * @param   pTrapHandlerGC  IDT handler address
  */
-int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pTrapHandlerGC)
+int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTrapHandlerGC)
 {
     uint32_t size;
 
@@ -1120,7 +1120,7 @@ int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pTrapHandlerGC)
 }
 
 #ifdef VBOX_WITH_STATISTICS
-int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pInstrGC)
+int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     uint32_t size;
 
@@ -1212,10 +1212,10 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         offset = 0;
         break;
     }
-    *(RTGCPTR32 *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
+    *(RTRCPTR *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
     patmPatchAddReloc32(pVM, pPatch, &pPB[2], FIXUP_ABSOLUTE);
 
-    PATCHGEN_EPILOG(pPatch, 2 + sizeof(RTGCPTR32));
+    PATCHGEN_EPILOG(pPatch, 2 + sizeof(RTRCPTR));
     return rc;
 }
 
@@ -1278,17 +1278,17 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         offset = 0;
         break;
     }
-    *(RTGCPTR32 *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
+    *(RTRCPTR *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
     patmPatchAddReloc32(pVM, pPatch, &pPB[2], FIXUP_ABSOLUTE);
 
-    PATCHGEN_EPILOG(pPatch, 2 + sizeof(RTGCPTR32));
+    PATCHGEN_EPILOG(pPatch, 2 + sizeof(RTRCPTR));
     return rc;
 }
 
 /*
  * mov GPR, SS
  */
-int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC)
+int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCurInstrGC)
 {
     uint32_t size, offset;
 
@@ -1339,7 +1339,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Guest instruction address
  */
-int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC)
+int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCurInstrGC)
 {
     // sldt %Ew
     int rc = VINF_SUCCESS;
@@ -1364,14 +1364,14 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32
         pPB[offset++] = MAKE_MODRM(0, pCpu->param1.base.reg_gen, 5);
         if (pCpu->pCurInstr->opcode == OP_STR)
         {
-            *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
+            *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
         }
         else
         {
-            *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
+            *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
         }
         patmPatchAddReloc32(pVM, pPatch, &pPB[offset], FIXUP_ABSOLUTE);
-        offset += sizeof(RTGCPTR32);
+        offset += sizeof(RTRCPTR);
     }
     else
     {
@@ -1401,7 +1401,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32
         if (pCpu->prefix == PREFIX_SEG)
             i++;    //skip segment prefix
 
-        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTGCPTR32)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
         AssertRCReturn(rc, rc);
         offset += (pCpu->opsize - i);
 
@@ -1409,14 +1409,14 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32
         pPB[offset++] = 0xA1;
         if (pCpu->pCurInstr->opcode == OP_STR)
         {
-            *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
+            *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
         }
         else
         {
-            *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
+            *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
         }
         patmPatchAddReloc32(pVM, pPatch, &pPB[offset], FIXUP_ABSOLUTE);
-        offset += sizeof(RTGCPTR32);
+        offset += sizeof(RTRCPTR);
 
         pPB[offset++] = 0x66;              // mov       word ptr [edx],ax
         pPB[offset++] = 0x89;
@@ -1440,7 +1440,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Guest instruction address
  */
-int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pCurInstrGC)
+int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCurInstrGC)
 {
     int rc = VINF_SUCCESS;
     uint32_t offset = 0, offset_base, offset_limit;
@@ -1495,24 +1495,24 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
         i++;    //skip operand prefix
     if (pCpu->prefix == PREFIX_SEG)
         i++;    //skip segment prefix
-    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTGCPTR32)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
     AssertRCReturn(rc, rc);
     offset += (pCpu->opsize - i);
 
     pPB[offset++] = 0x66;              // mov       ax, CPUMCTX.gdtr.limit
     pPB[offset++] = 0xA1;
-    *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + offset_limit;
+    *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + offset_limit;
     patmPatchAddReloc32(pVM, pPatch, &pPB[offset], FIXUP_ABSOLUTE);
-    offset += sizeof(RTGCPTR32);
+    offset += sizeof(RTRCPTR);
 
     pPB[offset++] = 0x66;              // mov       word ptr [edx],ax
     pPB[offset++] = 0x89;
     pPB[offset++] = 0x02;
 
     pPB[offset++] = 0xA1;              // mov       eax, CPUMCTX.gdtr.base
-    *(RTGCPTR32 *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + offset_base;
+    *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + offset_base;
     patmPatchAddReloc32(pVM, pPatch, &pPB[offset], FIXUP_ABSOLUTE);
-    offset += sizeof(RTGCPTR32);
+    offset += sizeof(RTRCPTR);
 
     pPB[offset++] = 0x89;              // mov       dword ptr [edx+2],eax
     pPB[offset++] = 0x42;
@@ -1534,7 +1534,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR32 pC
  * @param   pPatch      Patch record
  * @param   pCurInstrGC Guest instruction address
  */
-int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC)
+int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
 {
     uint32_t size;
     PATCHGEN_PROLOG(pVM, pPatch);
@@ -1582,7 +1582,7 @@ int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pRe
 /*
  * Relative jump from patch code to patch code (no fixup required)
  */
-int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 pCurInstrGC, RCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord)
+int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord)
 {
     int32_t displ;
     int     rc = VINF_SUCCESS;

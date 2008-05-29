@@ -65,7 +65,7 @@
 CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     PPATMGCSTATE pPATMGCState;
-    bool         fPatchCode = PATMIsPatchGCAddr(pVM, (RTGCPTR32)pRegFrame->eip);
+    bool         fPatchCode = PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip);
     int          rc;
 
     Assert(pVM->csam.s.cDirtyPages < CSAM_MAX_DIRTY_PAGES);
@@ -102,7 +102,7 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     /* If user code is modifying one of our monitored pages, then we can safely make it r/w as it's no longer being used for supervisor code. */
     if (cpl != 3)
     {
-        rc = PATMGCHandleWriteToPatchPage(pVM, pRegFrame, (RTGCPTR32)((RTGCUINTPTR)pvRange + offRange), 4 /** @todo */);
+        rc = PATMGCHandleWriteToPatchPage(pVM, pRegFrame, (RTRCPTR)((RTRCUINTPTR)pvRange + offRange), 4 /** @todo */);
         if (rc == VINF_SUCCESS)
             return rc;
         if (rc == VINF_EM_RAW_EMULATE_INSTR)

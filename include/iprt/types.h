@@ -912,6 +912,10 @@ typedef const RTRCPTR  *PCRTRCPTR;
  * NIL RC pointer.
  */
 #define NIL_RTRCPTR    ((RTRCPTR)0)
+
+typedef int32_t       RTRCINTPTR;
+typedef uint32_t      RTRCUINTPTR;
+
 /** @} */
 
 

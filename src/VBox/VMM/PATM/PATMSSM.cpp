@@ -88,7 +88,7 @@ static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
 #endif /* VBOX_STRICT */
 
 /**
- * Callback function for RTAvloGCPtrDoWithAll
+ * Callback function for RTAvloU32DoWithAll
  *
  * Counts the number of patches in the tree
  *
@@ -96,7 +96,7 @@ static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
  * @param   pNode           Current node
  * @param   pcPatches       Pointer to patch counter
  */
-static DECLCALLBACK(int) patmCountPatch(PAVLOGCPTRNODECORE pNode, void *pcPatches)
+static DECLCALLBACK(int) patmCountPatch(PAVLOU32NODECORE pNode, void *pcPatches)
 {
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
@@ -151,7 +151,7 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
 
 
 /**
- * Callback function for RTAvloGCPtrDoWithAll
+ * Callback function for RTAvloU32DoWithAll
  *
  * Saves the state of the patch that's being enumerated
  *
@@ -159,7 +159,7 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
  * @param   pNode           Current node
  * @param   pVM1            VM Handle
  */
-static DECLCALLBACK(int) patmSavePatchState(PAVLOGCPTRNODECORE pNode, void *pVM1)
+static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
 {
     PVM           pVM    = (PVM)pVM1;
     PPATMPATCHREC pPatch = (PPATMPATCHREC)pNode;
@@ -231,7 +231,7 @@ DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM)
      * Count the number of patches in the tree (feeling lazy)
      */
     patmInfo.savedstate.cPatches = 0;
-    RTAvloGCPtrDoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, patmCountPatch, &patmInfo.savedstate.cPatches);
+    RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, patmCountPatch, &patmInfo.savedstate.cPatches);
 
     /*
      * Save PATM structure
@@ -260,7 +260,7 @@ DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save all patches
      */
-    rc = RTAvloGCPtrDoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, patmSavePatchState, pVM);
+    rc = RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, patmSavePatchState, pVM);
     AssertRCReturn(rc, rc);
 
     /** @note patch statistics are not saved. */
@@ -389,14 +389,14 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         pPatchRec->Core.Key          = patch.Core.Key;
         pPatchRec->CoreOffset.Key    = patch.CoreOffset.Key;
 
-        bool ret = RTAvloGCPtrInsert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
+        bool ret = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
         Assert(ret);
         if (pPatchRec->patch.uState != PATCH_REFUSED)
         {
             if (pPatchRec->patch.pPatchBlockOffset)
             {
                 /* We actually generated code for this patch. */
-                ret = RTAvloGCPtrInsert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
+                ret = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
                 AssertMsg(ret, ("Inserting patch %VGv offset %VGv failed!!\n", pPatchRec->patch.pPrivInstrGC, pPatchRec->CoreOffset.Key));
             }
         }
