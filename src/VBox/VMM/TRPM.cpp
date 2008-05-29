@@ -617,7 +617,7 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     if (!pVM->trpm.s.fDisableMonitoring)
     {
 #ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
-        if (pVM->trpm.s.GCPtrIdt != ~0U)
+        if (pVM->trpm.s.GCPtrIdt != ~0)
         {
             rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GCPtrIdt);
             AssertRC(rc);
@@ -684,14 +684,14 @@ TRPMR3DECL(void) TRPMR3Reset(PVM pVM)
      * Deregister any virtual handlers.
      */
 #ifdef TRPM_TRACK_GUEST_IDT_CHANGES
-    if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
+    if (pVM->trpm.s.GuestIdtr.pIdt != ~0)
     {
         if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
         {
             int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
             AssertRC(rc);
         }
-        pVM->trpm.s.GuestIdtr.pIdt = ~0U;
+        pVM->trpm.s.GuestIdtr.pIdt = ~0;
     }
     pVM->trpm.s.GuestIdtr.cbIdt = 0;
 #endif
@@ -923,7 +923,7 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
             /*
              * [Re]Register write virtual handler for guest's IDT.
              */
-            if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
+            if (pVM->trpm.s.GuestIdtr.pIdt != ~0)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
                 AssertRCReturn(rc, rc);
@@ -988,24 +988,24 @@ TRPMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
      * Deregister any virtual handlers.
      */
 #ifdef TRPM_TRACK_GUEST_IDT_CHANGES
-    if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
+    if (pVM->trpm.s.GuestIdtr.pIdt != ~0)
     {
         if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
         {
             int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
             AssertRC(rc);
         }
-        pVM->trpm.s.GuestIdtr.pIdt = ~0U;
+        pVM->trpm.s.GuestIdtr.pIdt = ~0;
     }
     pVM->trpm.s.GuestIdtr.cbIdt = 0;
 #endif
 
 #ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
-    if (pVM->trpm.s.GCPtrIdt != ~0U)
+    if (pVM->trpm.s.GCPtrIdt != ~0)
     {
         int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GCPtrIdt);
         AssertRC(rc);
-        pVM->trpm.s.GCPtrIdt = ~0U;
+        pVM->trpm.s.GCPtrIdt = ~0;
     }
 #endif
 
