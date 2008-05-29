@@ -150,6 +150,7 @@ struct VBoxDefs
         ShowWindowEventType,
 #endif
         ChangeGUILanguageEventType,
+        AddVDMUrlsEventType
     };
 
     static const char* GUI_LastWindowPosition;

@@ -240,15 +240,14 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 
 void VBoxVMFirstRunWzd::openVdm()
 {
-    VBoxDiskImageManagerDlg vdm (this, "VBoxDiskImageManagerDlg",
-                                 Qt::WType_Dialog | Qt::WShowModal);
+    VBoxDiskImageManagerDlg vdm (this);
     QUuid machineId = mMachine.GetId();
     VBoxDefs::DiskType type = mRbCdType->isChecked() ? VBoxDefs::CD :
         mRbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;
     vdm.setup (type, true, &machineId);
     if (vdm.exec() == VBoxDiskImageManagerDlg::Accepted)
     {
-        mCbImage->setCurrentItem (vdm.getSelectedUuid());
+        mCbImage->setCurrentItem (vdm.selectedUuid());
 
         /* Revalidate updated page */
         mWvalType->revalidate();
