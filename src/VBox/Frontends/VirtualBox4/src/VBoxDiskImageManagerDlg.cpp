@@ -64,47 +64,47 @@ public:
         QTreeWidgetItem (aParent, TypeId), mStatus (VBoxMedia::Unknown) {}
 
     void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
-    const VBoxMedia &getMedia() const { return mMedia; }
+    const VBoxMedia &media() const { return mMedia; }
 
     void setPath (const QString &aPath) { mPath = aPath; }
-    const QString &getPath() const { return mPath; }
+    const QString &path() const { return mPath; }
 
     void setUsage (const QString &aUsage) { mUsage = aUsage; }
-    const QString &getUsage() const { return mUsage; }
+    const QString &usage() const { return mUsage; }
 
     void setSnapshotUsage (const QString &aSnapshotUsage) { mSnapshotUsage = aSnapshotUsage; }
-    const QString &getSnapshotUsage() const { return mSnapshotUsage; }
+    const QString &snapshotUsage() const { return mSnapshotUsage; }
 
-    QString getTotalUsage() const
+    QString totalUsage() const
     {
-        /* should correlate with VBoxDiskImageManagerDlg::compose[Cd/Fd]Tooltip */
+        /* Should correlate with VBoxDiskImageManagerDlg::compose[Cd/Fd]Tooltip */
         return mSnapshotUsage.isNull() ? mUsage :
             QString ("%1 (%2)").arg (mUsage, mSnapshotUsage);
     }
 
     void setSnapshotName (const QString &aSnapshotName) { mSnapshotName = aSnapshotName; }
-    const QString &getSnapshotName() const { return mSnapshotName; }
+    const QString &snapshotName() const { return mSnapshotName; }
 
     void setDiskType (const QString &aDiskType) { mDiskType = aDiskType; }
-    const QString &getDiskType() const { return mDiskType; }
+    const QString &diskType() const { return mDiskType; }
 
     void setStorageType (const QString &aStorageType) { mStorageType = aStorageType; }
-    const QString &getStorageType() const { return mStorageType; }
+    const QString &storageType() const { return mStorageType; }
 
     void setVirtualSize (const QString &aVirtualSize) { mVirtualSize = aVirtualSize; }
-    const QString &getVirtualSize() const { return mVirtualSize; }
+    const QString &virtualSize() const { return mVirtualSize; }
 
     void setActualSize (const QString &aActualSize) { mActualSize = aActualSize; }
-    const QString &getActualSize() const { return mActualSize; }
+    const QString &ActualSize() const { return mActualSize; }
 
     void setUuid (const QUuid &aUuid) { mUuid = aUuid; }
-    const QUuid &getUuid() const { return mUuid; }
+    const QUuid &uuid() const { return mUuid; }
 
     void setMachineId (const QUuid &aMachineId) { mMachineId = aMachineId; }
-    const QUuid &getMachineId() const { return mMachineId; }
+    const QUuid &machineId() const { return mMachineId; }
 
     void setStatus (VBoxMedia::Status aStatus) { mStatus = aStatus; }
-    VBoxMedia::Status getStatus() const { return mStatus; }
+    VBoxMedia::Status status() const { return mStatus; }
 
     void setToolTip (const QString& aToolTip) 
     { 
@@ -112,10 +112,10 @@ public:
         for (int i=0; i < treeWidget()->columnCount(); ++i)
             QTreeWidgetItem::setToolTip (i, mToolTip);
     }
-    const QString &getToolTip() const { return mToolTip; }
+    const QString &toolTip() const { return mToolTip; }
 
-    QString getInformation (const QString &aInfo, bool aCompact = true,
-                            const QString &aElipsis = "middle")
+    QString information (const QString &aInfo, bool aCompact = true,
+                         const QString &aElipsis = "middle")
     {
         QString compactString = QString ("<compact elipsis=\"%1\">").arg (aElipsis);
         QString info = QString ("<nobr>%1%2%3</nobr>")
@@ -149,6 +149,7 @@ public:
 
 protected:
 
+    /* Protected member vars */
     VBoxMedia mMedia;
 
     QString mName;
@@ -185,7 +186,7 @@ public:
 
     DiskImageItemIterator& operator++()
     {
-        return (DiskImageItemIterator&) QTreeWidgetItemIterator::operator++();
+        return static_cast<DiskImageItemIterator&> (QTreeWidgetItemIterator::operator++());
     }
 };
 
@@ -196,10 +197,11 @@ public:
     InfoPaneLabel (QWidget *aParent, QLabel *aLabel = 0)
         : QIRichLabel (aParent), mLabel (aLabel) {}
 
-    QLabel* label() { return mLabel; }
+    QLabel* label() const { return mLabel; }
 
 private:
 
+    /* Private member vars */
     QLabel *mLabel;
 };
 
@@ -408,11 +410,9 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     connect (mButtonBox, SIGNAL (helpRequested()),
              &vboxProblem(), SLOT (showHelpHelpDialog()));
 
-
     /* Applying language settings */
     retranslateUi();
 }
-
 
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
                                      const QUuid *aTargetVMId /* = NULL */,
@@ -524,7 +524,7 @@ void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
 
 int VBoxDiskImageManagerDlg::exec()
 {
-    AssertMsg (!mEventLoop, ("exec is called recursively"));
+    AssertMsg (!mEventLoop, ("exec is called recursively!\n"));
 
     /* Reset the result code */
     setResult (Rejected);
@@ -557,7 +557,7 @@ QUuid VBoxDiskImageManagerDlg::selectedUuid() const
 
     DiskImageItem *item = toDiskImageItem (selectedItem (tree));
     if (item)
-        uuid = item->getUuid();
+        uuid = item->uuid();
 
     return uuid;
 }
@@ -569,7 +569,7 @@ QString VBoxDiskImageManagerDlg::selectedPath() const
 
     DiskImageItem *item = toDiskImageItem (selectedItem (tree));
     if (item)
-        path = item->getPath().trimmed();
+        path = item->path().trimmed();
 
     return path;
 }
@@ -579,27 +579,27 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
                                                    DiskImageItem *aItem)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QUuid machineId = aItem ? aItem->getMachineId() : aHd.GetMachineId();
+    QUuid machineId = aItem ? aItem->machineId() : aHd.GetMachineId();
 
-    QString src = aItem ? aItem->getPath() : aHd.GetLocation();
+    QString src = aItem ? aItem->path() : aHd.GetLocation();
     QString location = aItem || aHd.GetStorageType() == KHardDiskStorageType_ISCSIHardDisk ? src :
         QDir::convertSeparators (QFileInfo (src).absoluteFilePath());
 
-    QString storageType = aItem ? aItem->getStorageType() :
+    QString storageType = aItem ? aItem->storageType() :
         vboxGlobal().toString (aHd.GetStorageType());
-    QString hardDiskType = aItem ? aItem->getDiskType() :
+    QString hardDiskType = aItem ? aItem->diskType() :
         vboxGlobal().hardDiskTypeString (aHd);
 
     QString usage;
     if (aItem)
-        usage = aItem->getUsage();
+        usage = aItem->usage();
     else if (!machineId.isNull())
         usage = vbox.GetMachine (machineId).GetName();
 
-    QUuid snapshotId = aItem ? aItem->getUuid() : aHd.GetSnapshotId();
+    QUuid snapshotId = aItem ? aItem->uuid() : aHd.GetSnapshotId();
     QString snapshotName;
     if (aItem)
-        snapshotName = aItem->getSnapshotName();
+        snapshotName = aItem->snapshotName();
     else if (!machineId.isNull() && !snapshotId.isNull())
     {
         CSnapshot snapshot = vbox.GetMachine (machineId).
@@ -663,12 +663,12 @@ QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
                                                    VBoxMedia::Status aStatus,
                                                    DiskImageItem *aItem)
 {
-    QString location = aItem ? aItem->getPath() :
+    QString location = aItem ? aItem->path() :
         QDir::convertSeparators (QFileInfo (aCd.GetFilePath()).absoluteFilePath());
-    QUuid uuid = aItem ? aItem->getUuid() : aCd.GetId();
+    QUuid uuid = aItem ? aItem->uuid() : aCd.GetId();
     QString usage;
     if (aItem)
-        usage = aItem->getTotalUsage();
+        usage = aItem->totalUsage();
     else
     {
         QString snapshotUsage;
@@ -729,12 +729,12 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
                                                    VBoxMedia::Status aStatus,
                                                    DiskImageItem *aItem)
 {
-    QString location = aItem ? aItem->getPath() :
+    QString location = aItem ? aItem->path() :
         QDir::convertSeparators (QFileInfo (aFd.GetFilePath()).absoluteFilePath());
-    QUuid uuid = aItem ? aItem->getUuid() : aFd.GetId();
+    QUuid uuid = aItem ? aItem->uuid() : aFd.GetId();
     QString usage;
     if (aItem)
-        usage = aItem->getTotalUsage();
+        usage = aItem->totalUsage();
     else
     {
         QString snapshotUsage;
@@ -960,7 +960,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
     {
         case VBoxDefs::HD:
             item = createHdItem (mHdsTree, aMedia);
-            if (item->getUuid() == mHdSelectedId)
+            if (item->uuid() == mHdSelectedId)
             {
                 setCurrentItem (mHdsTree, item);
                 mHdSelectedId = QUuid();
@@ -968,7 +968,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
             break;
         case VBoxDefs::CD:
             item = createCdItem (mCdsTree, aMedia);
-            if (item->getUuid() == mCdSelectedId)
+            if (item->uuid() == mCdSelectedId)
             {
                 setCurrentItem (mCdsTree, item);
                 mCdSelectedId = QUuid();
@@ -976,7 +976,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
             break;
         case VBoxDefs::FD:
             item = createFdItem (mFdsTree, aMedia);
-            if (item->getUuid() == mFdSelectedId)
+            if (item->uuid() == mFdSelectedId)
             {
                 setCurrentItem (mFdsTree, item);
                 mFdSelectedId = QUuid();
@@ -1139,8 +1139,8 @@ void VBoxDiskImageManagerDlg::addImage()
     VBoxDefs::DiskType type = currentTreeWidgetType();
 
     QString dir;
-    if (item && item->getStatus() == VBoxMedia::Ok)
-        dir = QFileInfo (item->getPath().trimmed()).absolutePath ();
+    if (item && item->status() == VBoxMedia::Ok)
+        dir = QFileInfo (item->path().trimmed()).absolutePath ();
 
     if (dir.isEmpty())
         if (type == VBoxDefs::HD)
@@ -1195,10 +1195,10 @@ void VBoxDiskImageManagerDlg::removeImage()
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-    QUuid uuid = item->getUuid();
+    QUuid uuid = item->uuid();
     AssertMsg (!uuid.isNull(), ("Current item must have uuid\n"));
 
-    QString src = item->getPath().trimmed();
+    QString src = item->path().trimmed();
     VBoxDefs::DiskType type = currentTreeWidgetType();
 
     switch (type)
@@ -1210,10 +1210,10 @@ void VBoxDiskImageManagerDlg::removeImage()
                 /// @todo When creation of VMDK is implemented, we should
                 /// enable image deletion for  them as well (use
                 /// GetStorageType() to define the correct cast).
-                CHardDisk disk = item->getMedia().disk;
+                CHardDisk disk = item->media().disk;
                 if (disk.GetStorageType() == KHardDiskStorageType_VirtualDiskImage &&
                     disk.GetParent().isNull() && /* must not be differencing (see below) */
-                    item->getStatus() == VBoxMedia::Ok)
+                    item->status() == VBoxMedia::Ok)
                 {
                     int rc = vboxProblem().confirmHardDiskImageDeletion (this, src);
                     if (rc == QIMessageBox::Cancel)
@@ -1272,7 +1272,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-    QUuid itemId = item->getUuid();
+    QUuid itemId = item->uuid();
     AssertMsg (!itemId.isNull(), ("Current item must have uuid\n"));
 
     switch (currentTreeWidgetType())
@@ -1280,13 +1280,13 @@ void VBoxDiskImageManagerDlg::releaseImage()
         /* If it is a hard disk sub-item: */
         case VBoxDefs::HD:
             {
-                CHardDisk hd = item->getMedia().disk;
+                CHardDisk hd = item->media().disk;
                 QUuid machineId = hd.GetMachineId();
                 if (vboxProblem().confirmReleaseImage (this,
                                                        vbox.GetMachine (machineId).GetName()))
                 {
                     releaseDisk (machineId, itemId, VBoxDefs::HD);
-                    VBoxMedia media (item->getMedia());
+                    VBoxMedia media (item->media());
                     media.status = hd.GetAccessible() ? VBoxMedia::Ok :
                         hd.isOk() ? VBoxMedia::Inaccessible :
                         VBoxMedia::Error;
@@ -1297,7 +1297,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
         /* If it is a cd/dvd sub-item: */
         case VBoxDefs::CD:
             {
-                QString usage = item->getTotalUsage();
+                QString usage = item->totalUsage();
                 if (vboxProblem().confirmReleaseImage (this, usage))
                 {
                     QStringList permMachines =
@@ -1308,7 +1308,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
                         releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
 
                     CDVDImage cd = vbox.GetDVDImage (itemId);
-                    VBoxMedia media (item->getMedia());
+                    VBoxMedia media (item->media());
                     media.status = cd.GetAccessible() ? VBoxMedia::Ok :
                         cd.isOk() ? VBoxMedia::Inaccessible :
                         VBoxMedia::Error;
@@ -1318,7 +1318,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
         /* If it is a floppy sub-item: */
         case VBoxDefs::FD:
             {
-                QString usage = item->getTotalUsage();
+                QString usage = item->totalUsage();
                 if (vboxProblem().confirmReleaseImage (this, usage))
                 {
                     QStringList permMachines =
@@ -1329,7 +1329,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
                         releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
 
                     CFloppyImage fd = vbox.GetFloppyImage (itemId);
-                    VBoxMedia media (item->getMedia());
+                    VBoxMedia media (item->media());
                     media.status = fd.GetAccessible() ? VBoxMedia::Ok :
                         fd.isOk() ? VBoxMedia::Inaccessible :
                         VBoxMedia::Error;
@@ -1557,13 +1557,13 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
 
     bool notInEnum      = !vboxGlobal().isMediaEnumerationStarted();
     bool modifyEnabled  = notInEnum &&
-                          item &&  item->getUsage().isNull() &&
-                          (item->childCount() == 0) && !item->getPath().isNull();
-    bool releaseEnabled = item && !item->getUsage().isNull() &&
-                          item->getSnapshotUsage().isNull() &&
+                          item &&  item->usage().isNull() &&
+                          (item->childCount() == 0) && !item->path().isNull();
+    bool releaseEnabled = item && !item->usage().isNull() &&
+                          item->snapshotUsage().isNull() &&
                           checkImage (item) &&
                           !item->parent() && (item->childCount() == 0) &&
-                          item->getSnapshotName().isNull();
+                          item->snapshotName().isNull();
     bool newEnabled     = notInEnum &&
                           currentTreeWidget() == mHdsTree ? true : false;
     bool addEnabled     = notInEnum;
@@ -1578,8 +1578,8 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
     {
         bool selectEnabled = item && !item->parent() &&
                              (!newEnabled ||
-                                (item->getUsage().isNull() ||
-                                 item->getMachineId() == mTargetVMId));
+                                (item->usage().isNull() ||
+                                 item->machineId() == mTargetVMId));
 
         mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (selectEnabled);
     }
@@ -1588,21 +1588,21 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
     {
         if (item->treeWidget() == mHdsTree)
         {
-            mHdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
-            mHdsPane2->setText (item->getInformation (item->getDiskType(), false));
-            mHdsPane3->setText (item->getInformation (item->getStorageType(), false));
-            mHdsPane4->setText (item->getInformation (item->getUsage()));
-            mHdsPane5->setText (item->getInformation (item->getSnapshotName()));
+            mHdsPane1->setText (item->information (item->path(), true, "end"));
+            mHdsPane2->setText (item->information (item->diskType(), false));
+            mHdsPane3->setText (item->information (item->storageType(), false));
+            mHdsPane4->setText (item->information (item->usage()));
+            mHdsPane5->setText (item->information (item->snapshotName()));
         }
         else if (item->treeWidget() == mCdsTree)
         {
-            mCdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
-            mCdsPane2->setText (item->getInformation (item->getTotalUsage()));
+            mCdsPane1->setText (item->information (item->path(), true, "end"));
+            mCdsPane2->setText (item->information (item->totalUsage()));
         }
         else if (item->treeWidget() == mFdsTree)
         {
-            mFdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
-            mFdsPane2->setText (item->getInformation (item->getTotalUsage()));
+            mFdsPane1->setText (item->information (item->path(), true, "end"));
+            mFdsPane2->setText (item->information (item->totalUsage()));
         }
     }
     else
@@ -1865,7 +1865,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
     DiskImageItemIterator iterator (aTree);
     while (*iterator)
     {
-        if ((*iterator)->getUuid() == aId)
+        if ((*iterator)->uuid() == aId)
             return *iterator;
         ++iterator;
     }
@@ -1878,7 +1878,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
     DiskImageItemIterator iterator (aTree);
     while (*iterator)
     {
-        if ((*iterator)->getStatus() == aStatus)
+        if ((*iterator)->status() == aStatus)
             return *iterator;
         ++iterator;
     }
@@ -1887,7 +1887,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
 
 bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
 {
-    QUuid itemId = aItem ? aItem->getUuid() : QUuid();
+    QUuid itemId = aItem ? aItem->uuid() : QUuid();
     if (itemId.isNull()) 
         return false;
 
@@ -1897,7 +1897,7 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
     {
         case VBoxDefs::HD:
             {
-                CHardDisk hd = aItem->getMedia().disk;
+                CHardDisk hd = aItem->media().disk;
                 QUuid machineId = hd.GetMachineId();
                 if (machineId.isNull() ||
                     (vbox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
@@ -2026,15 +2026,15 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
 
     di = toDiskImageItem (mHdsTree->currentItem());
     if (mHdSelectedId.isNull())
-        mHdSelectedId = di ? di->getUuid() : QUuid();
+        mHdSelectedId = di ? di->uuid() : QUuid();
 
     di = toDiskImageItem (mCdsTree->currentItem());
     if (mCdSelectedId.isNull())
-        mCdSelectedId = di ? di->getUuid() : QUuid();
+        mCdSelectedId = di ? di->uuid() : QUuid();
 
     di = toDiskImageItem (mFdsTree->currentItem());
     if (mFdSelectedId.isNull())
-        mFdSelectedId = di ? di->getUuid() : QUuid();
+        mFdSelectedId = di ? di->uuid() : QUuid();
 
     /* Finally, clear all lists */
     mHdsTree->clear();
