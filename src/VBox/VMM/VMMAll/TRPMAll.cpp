@@ -421,7 +421,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #ifndef VBOX_RAW_V86
         && !(eflags.Bits.u1VM) /** @todo implement when needed (illegal for same privilege level transfers). */
 #endif
-        && !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
+        && !PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip)
        )
     {
         uint16_t    cbIDT;
@@ -727,7 +727,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
         if (pVM->trpm.s.aGuestTrapHandler[iGate] == TRPM_INVALID_HANDLER)
             STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
         else
-        if (PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
+        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
             STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailPatchAddr);
 #endif
     }

@@ -361,7 +361,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmGCDevHlp_PATMSetMMIOPatchInfo: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
 
-    return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMGC, GCPhys, pCachedData);
+    return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMGC, GCPhys, (RTRCPTR)pCachedData);
 }
 
 
