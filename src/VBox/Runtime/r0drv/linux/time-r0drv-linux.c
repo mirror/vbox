@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * IPRT - Time, Ring-0 Driver, Linux.
  */
