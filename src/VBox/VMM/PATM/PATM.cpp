@@ -513,7 +513,7 @@ PATMR3DECL(int) PATMR3Reset(PVM pVM)
  * @param   pvUserdata  Callback specific user data (pCpu)
  *
  */
-int patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
+int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
 {
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PATMDISASM   *pDisInfo = (PATMDISASM *)pCpu->apvUserData[0];

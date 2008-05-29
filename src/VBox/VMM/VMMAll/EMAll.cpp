@@ -88,7 +88,7 @@ EMDECL(EMSTATE) EMGetState(PVM pVM)
  * @param   dwUserdata  Callback specific user data (pCpu)
  *
  */
-DECLCALLBACK(int) EMReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
+DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
 {
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PVM           pVM      = (PVM)pCpu->apvUserData[0];
