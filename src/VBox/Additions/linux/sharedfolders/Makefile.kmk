@@ -39,12 +39,14 @@ include $(PATH_SUB_CURRENT)/files_vboxvfs
 
 $(VBOX_PATH_ADDITIONS)/src/vboxvfs/build_in_tmp: \
 	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+	$(VBOX_VERSION_STAMP) \
 	| $(call DIRDEP,$(VBOX_PATH_ADDITIONS)/src/vboxvfs)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvfs;g" < $< > $@
 	$(QUIET)chmod 0755 $@
 
-$(VBOX_PATH_ADDITIONS)/src/vboxvfs/dkms.conf: $(PATH_SUB_CURRENT)/dkms.conf
+$(VBOX_PATH_ADDITIONS)/src/vboxvfs/dkms.conf: \
+	$(PATH_SUB_CURRENT)/dkms.conf $(VBOX_VERSION_STAMP)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
