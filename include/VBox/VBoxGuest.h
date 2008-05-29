@@ -43,8 +43,10 @@
     hypervisor pointers from within guest additions */
 
 /** Hypervisor linear pointer size type */
-typedef RTGCPTR vmmDevHypPtr;
+/* @todo support 64 bits virtual addresses (interface change) */
+typedef RTGCPTR32 vmmDevHypPtr;
 /** Hypervisor physical pointer size type */
+/* @todo support 64 bits physical addresses (interface change) */
 typedef RTGCPHYS32 vmmDevHypPhys;
 
 #if defined(RT_OS_LINUX)
