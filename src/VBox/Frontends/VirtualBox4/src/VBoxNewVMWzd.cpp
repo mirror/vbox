@@ -194,10 +194,10 @@ void VBoxNewVMWzd::accept()
 
 void VBoxNewVMWzd::showVDIManager()
 {
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
+    VBoxDiskImageManagerDlg dlg (this);
     dlg.setup (VBoxDefs::HD, true);
     QUuid newId = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
-        dlg.getSelectedUuid() : mMediaCombo->getId();
+        dlg.selectedUuid() : mMediaCombo->getId();
 
     if (uuidHD != newId)
     {

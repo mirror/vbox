@@ -290,6 +290,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotsWgt.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMLogViewer.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMLogViewer.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxDiskImageManagerDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxDiskImageManagerDlg.ui
+
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
 
@@ -433,6 +436,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIAbstractWizard.h \
 	include/QIAbstractDialog.h \
 	include/QIListView.h \
+	include/QITreeWidget.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
@@ -456,6 +460,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxTakeSnapshotDlg.h \
 	include/VBoxSnapshotsWgt.h \
 	include/VBoxVMLogViewer.h \
+	include/VBoxDiskImageManagerDlg.h \
 	include/VBoxVMSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
 	include/VBoxVMSettingsCD.h \
@@ -513,6 +518,7 @@ VirtualBox_SOURCES = \
 	src/QIDialog.cpp \
 	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \
+	src/QITreeWidget.cpp \
 	src/QILineEdit.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
@@ -539,6 +545,7 @@ VirtualBox_SOURCES = \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxSnapshotsWgt.cpp \
 	src/VBoxVMLogViewer.cpp \
+	src/VBoxDiskImageManagerDlg.cpp \
 	src/VBoxVMSettingsGeneral.cpp \
 	src/VBoxVMSettingsCD.cpp \
 	src/VBoxVMSettingsFD.cpp \

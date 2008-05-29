@@ -31,6 +31,7 @@
 #include <q3listbox.h>
 //Added by qt3to4:
 #include <QPixmap>
+#include <QMessageBox>
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
                                       bool aUseEmptyItem /* = false */)

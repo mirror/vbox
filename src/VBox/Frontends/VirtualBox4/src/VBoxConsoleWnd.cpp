@@ -30,6 +30,7 @@
 #include "VBoxVMInformationDlg.h"
 #include "VBoxDownloaderWgt.h"
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
@@ -2527,14 +2528,14 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
+    VBoxDiskImageManagerDlg dlg (this);
     QUuid id = csession.GetMachine().GetId();
     dlg.setup (VBoxDefs::FD, true, &id);
 
     if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
     {
         CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
-        drv.MountImage (dlg.getSelectedUuid());
+        drv.MountImage (dlg.selectedUuid());
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
@@ -2571,14 +2572,14 @@ void VBoxConsoleWnd::devicesMountDVDImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
+    VBoxDiskImageManagerDlg dlg (this);
     QUuid id = csession.GetMachine().GetId();
     dlg.setup (VBoxDefs::CD, true, &id);
 
     if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
     {
         CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-        drv.MountImage (dlg.getSelectedUuid());
+        drv.MountImage (dlg.selectedUuid());
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
