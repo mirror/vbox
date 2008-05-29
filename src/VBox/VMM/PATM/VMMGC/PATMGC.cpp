@@ -62,7 +62,7 @@
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
+PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     pVM->patm.s.pvFaultMonitor = (RTGCPTR32)pvFault;
     return VINF_PATM_CHECK_PATCH_PAGE;
@@ -80,7 +80,7 @@ PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
  * @param   cbWrite     Nr of bytes to write
  *
  */
-PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR GCPtr, uint32_t cbWrite)
+PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR32 GCPtr, uint32_t cbWrite)
 {
     RTGCUINTPTR          pWritePageStart, pWritePageEnd;
     PPATMPATCHPAGE       pPatchPage;
@@ -96,12 +96,12 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
     pWritePageStart = (RTGCUINTPTR)GCPtr & PAGE_BASE_GC_MASK;
     pWritePageEnd   = ((RTGCUINTPTR)GCPtr + cbWrite - 1) & PAGE_BASE_GC_MASK;
 
-    pPatchPage = (PPATMPATCHPAGE)RTAvloGCPtrGet(CTXSUFF(&pVM->patm.s.PatchLookupTree)->PatchTreeByPage, (RTGCPTR)pWritePageStart);
+    pPatchPage = (PPATMPATCHPAGE)RTAvloGCPtrGet(CTXSUFF(&pVM->patm.s.PatchLookupTree)->PatchTreeByPage, (RTGCPTR32)pWritePageStart);
     if (    !pPatchPage
         &&  pWritePageStart != pWritePageEnd
        )
     {
-        pPatchPage = (PPATMPATCHPAGE)RTAvloGCPtrGet(CTXSUFF(&pVM->patm.s.PatchLookupTree)->PatchTreeByPage, (RTGCPTR)pWritePageEnd);
+        pPatchPage = (PPATMPATCHPAGE)RTAvloGCPtrGet(CTXSUFF(&pVM->patm.s.PatchLookupTree)->PatchTreeByPage, (RTGCPTR32)pWritePageEnd);
     }
 
 #ifdef LOG_ENABLED
@@ -161,7 +161,7 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     /* Very important check -> otherwise we have a security leak. */
     AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
-    Assert(PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip));
+    Assert(PATMIsPatchGCAddr(pVM, (RTGCPTR32)pRegFrame->eip));
 
     /* OP_ILLUD2 in PATM generated code? */
     if (CTXSUFF(pVM->patm.s.pGCState)->uPendingAction)
@@ -187,17 +187,17 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                  *  edx = GC address to find
                  *  edi = PATCHJUMPTABLE ptr
                  */
-                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->edi), ("edx = %VGv\n", pRegFrame->edi));
+                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, (RTGCPTR32)pRegFrame->edi), ("edx = %VGv\n", pRegFrame->edi));
 
                 Log(("PATMGC: lookup %VGv jump table=%VGv\n", pRegFrame->edx, pRegFrame->edi));
 
-                pRec = PATMQueryFunctionPatch(pVM, (RTGCPTR)(pRegFrame->edx));
+                pRec = PATMQueryFunctionPatch(pVM, (RTGCPTR32)(pRegFrame->edx));
                 if (pRec)
                 {
                     if (pRec->patch.uState == PATCH_ENABLED)
                     {
                         RTGCUINTPTR pRelAddr = pRec->patch.pPatchBlockOffset;   /* make it relative */
-                        rc = PATMAddBranchToLookupCache(pVM, (RTGCPTR)pRegFrame->edi, (RTGCPTR)pRegFrame->edx, pRelAddr);
+                        rc = PATMAddBranchToLookupCache(pVM, (RTGCPTR32)pRegFrame->edi, (RTGCPTR32)pRegFrame->edx, pRelAddr);
                         if (rc == VINF_SUCCESS)
                         {
                             pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
@@ -456,7 +456,7 @@ PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
 
     /* Int 3 in PATM generated code? (most common case) */
-    if (PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
+    if (PATMIsPatchGCAddr(pVM, (RTGCPTR32)pRegFrame->eip))
     {
         /* @note hardcoded assumption about it being a single byte int 3 instruction. */
         pRegFrame->eip--;
@@ -464,7 +464,7 @@ PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     }
 
     /** @todo could use simple caching here to speed things up. */
-    pRec = (PPATMPATCHREC)RTAvloGCPtrGet(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (RTGCPTR)(pRegFrame->eip - 1));  /* eip is pointing to the instruction *after* 'int 3' already */
+    pRec = (PPATMPATCHREC)RTAvloGCPtrGet(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (RTGCPTR32)(pRegFrame->eip - 1));  /* eip is pointing to the instruction *after* 'int 3' already */
     if (pRec && pRec->patch.uState == PATCH_ENABLED)
     {
         if (pRec->patch.flags & PATMFL_INT3_REPLACEMENT_BLOCK)
