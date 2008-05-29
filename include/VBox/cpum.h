@@ -929,7 +929,7 @@ CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
  * This function does not return!
  *
  */
-DECLASM(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTGCPTR32 pHandler, uint32_t eflags, uint32_t selSS, RTGCPTR32 pEsp);
+DECLASM(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
 
 /**
  * Performs an iret to V86 code

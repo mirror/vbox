@@ -890,6 +890,30 @@ typedef const RTGCUINTREG  *PCRTGCUINTREG;
 
 /** @} */
 
+/** @defgroup grp_rt_types_rc  Raw mode Context Basic Types
+ * @ingroup grp_rt_types
+ * @{
+ */
+
+/** Raw mode context pointer; a 32 bits guest context pointer
+ * Keep in mind that this type is an unsigned integer in
+ * HC and void pointer in GC.
+ */
+#ifdef IN_GC
+typedef void *          RTRCPTR;
+#else
+typedef uint32_t        RTRCPTR;
+#endif
+/** Pointer to a raw mode context pointer. */
+typedef RTRCPTR        *PRTRCPTR;
+/** Pointer to a const raw mode context pointer. */
+typedef const RTRCPTR  *PCRTRCPTR;
+/** @def NIL_RTGCPTR 
+ * NIL RC pointer.
+ */
+#define NIL_RTRCPTR    ((RTRCPTR)0)
+/** @} */
+
 
 /** @defgroup grp_rt_types_cc  Current Context Basic Types
  * @ingroup grp_rt_types

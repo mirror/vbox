@@ -448,6 +448,23 @@ GLOBALNAME %1_EndProc
 %endif
 
 
+;; @def RTRCPTR_DEF
+; The pesudo-instruction used to declare an initialized pointer variable in the raw mode context.
+%define RTRCPTR_DEF    dd
+
+;; @def RTRCPTR_RES
+; The pesudo-instruction used to declare (=reserve space for) an uninitialized pointer
+; variable of the raw mode context.
+%define RTRCPTR_RES    resd
+
+;; @def RTRCPTR_PRE
+; The memory operand prefix used for a pointer in the raw mode context.
+%define RTRCPTR_PRE    dword
+
+;; @def RTRCPTR_CB
+; The size in bytes of a pointer in the raw mode context.
+%define RTRCPTR_CB     4
+
 
 ;; @def RT_CCPTR_DEF
 ; The pesudo-instruction used to declare an initialized pointer variable in the current context.
@@ -463,10 +480,10 @@ GLOBALNAME %1_EndProc
 ; The size in bytes of a pointer in the current context.
 
 %ifdef IN_GC
- %define RTCCPTR_DEF        RTGCPTR_DEF
- %define RTCCPTR_RES        RTGCPTR_RES
- %define RTCCPTR_PRE        RTGCPTR_PRE
- %define RTCCPTR_CB         RTGCPTR_CB
+ %define RTCCPTR_DEF        RTRCPTR_DEF
+ %define RTCCPTR_RES        RTRCPTR_RES
+ %define RTCCPTR_PRE        RTRCPTR_PRE
+ %define RTCCPTR_CB         RTRCPTR_CB
 %else
  %ifdef IN_RING0
   %define RTCCPTR_DEF       RTR0PTR_DEF

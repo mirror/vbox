@@ -236,13 +236,13 @@
 #define GCTYPE(GCType, HCType)  CTXTYPE(GCType, HCType, HCType)
 
 /** @def RCPTRTYPE
- * Declare a pointer which is used in GC but appears in structure(s) used by
- * both HC and GC. The main purpose is to make sure structures have the same
+ * Declare a pointer which is used in the raw mode context but appears in structure(s) used by
+ * both HC and RC. The main purpose is to make sure structures have the same
  * size when built for different architectures.
  *
- * @param   GCType  The GC type.
+ * @param   RCType  The RC type.
  */
-#define RCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR32, RTGCPTR32)
+#define RCPTRTYPE(RCType)       CTXTYPE(RCType, RTRCPTR, RTRCPTR)
 
 /** @def R3R0PTRTYPE
  * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0,
