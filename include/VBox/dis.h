@@ -383,7 +383,7 @@ typedef struct _OPCODE *POPCODE;
 /** Pointer to const opcode. */
 typedef const struct _OPCODE *PCOPCODE;
 
-typedef DECLCALLBACK(int) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
+typedef DECLCALLBACK(int) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
 typedef FN_DIS_READBYTES *PFN_DIS_READBYTES;
 
 /* forward decl */

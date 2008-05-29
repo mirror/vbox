@@ -109,7 +109,7 @@ typedef struct SELM
     /** Current LDT offset relative to pvLdt*. */
     RTUINT                  offLdtHyper;
 
-#if HC_ARCH_BITS == 32 || GC_ARCH_BITS == 64
+#if (HC_ARCH_BITS == 32 || GC_ARCH_BITS == 64) && !(HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64)
     /** TSS alignment padding. */
     RTUINT                  auPadding[2];
 #endif

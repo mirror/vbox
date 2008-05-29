@@ -672,7 +672,7 @@ PATMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatch
  * @param   pvUserdata  Callback specific user data (pCpu)
  *
  */
-int patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
+int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
 
 
 #ifndef IN_GC
