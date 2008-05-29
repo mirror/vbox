@@ -51,13 +51,13 @@ struc TRPM
 %endif
     .aIdt               resd 512
     .au32IdtPatched     resd 8
-    .aTmpTrapHandlers   RTGCPTR32_RES 256
+    .aTmpTrapHandlers   RTRCPTR_RES 256
 
-    .GCPtrIdt           RTGCPTR32_RES 1
+    .GCPtrIdt           RTRCPTR_RES 1
     .GuestIdtr          resb 6
     .au8Padding         resb 2
 
-    .aGuestTrapHandler  resd 256
+    .aGuestTrapHandler  RTRCPTR_RES 256
 
     .StatGCWriteGuestIDTFault  resb STAMCOUNTER_size
     .StatGCWriteGuestIDTHandled  resb STAMCOUNTER_size

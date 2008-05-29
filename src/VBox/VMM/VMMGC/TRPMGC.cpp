@@ -68,7 +68,7 @@ TRPMGCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDL
     /*
      * Install handler.
      */
-    pVM->trpm.s.aTmpTrapHandlers[iTrap] = (RTGCPTR32)(RTGCUINTPTR)pfnHandler;
+    pVM->trpm.s.aTmpTrapHandlers[iTrap] = (RTRCPTR)pfnHandler;
     return VINF_SUCCESS;
 }
 

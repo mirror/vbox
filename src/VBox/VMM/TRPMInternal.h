@@ -151,10 +151,10 @@ typedef struct TRPM
 
     /** Temporary Hypervisor trap handlers.
      * NULL means default action. */
-    RTGCPTR32       aTmpTrapHandlers[256];
+    RCPTRTYPE(void *) aTmpTrapHandlers[256];
 
     /** GC Pointer to the IDT shadow area (aIdt) placed in Hypervisor memory arena. */
-    RTGCPTR32       GCPtrIdt;
+    RCPTRTYPE(void *) GCPtrIdt;
     /** Current (last) Guest's IDTR. */
     VBOXIDTR        GuestIdtr;
 
@@ -162,7 +162,7 @@ typedef struct TRPM
     uint8_t         au8Padding[2];
 
     /** Checked trap & interrupt handler array */
-    RTGCPTR32       aGuestTrapHandler[256];
+    RCPTRTYPE(void *) aGuestTrapHandler[256];
 
     /** GC: The number of times writes to the Guest IDT were detected. */
     STAMCOUNTER     StatGCWriteGuestIDTFault;
