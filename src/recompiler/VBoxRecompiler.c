@@ -224,7 +224,9 @@ extern int testmath(void);
 /* Put them here to avoid unused variable warning. */
 AssertCompile(RT_SIZEOFMEMB(VM, rem.padding) >= RT_SIZEOFMEMB(VM, rem.s));
 #if !defined(IPRT_NO_CRT) && (defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS))
-AssertCompileMemberSize(REM, Env, REM_ENV_SIZE);
+//AssertCompileMemberSize(REM, Env, REM_ENV_SIZE);
+/* Why did this have to be identical?? */
+AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #else
 AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #endif
@@ -3329,7 +3331,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     /*
      * Disassemble.
      */
-    RTINTPTR        off = env->eip - (RTINTPTR)pvPC;
+    RTINTPTR        off = env->eip - (RTGCUINTPTR)pvPC;
     DISCPUSTATE     Cpu;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
@@ -3421,7 +3423,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     /*
      * Disassemble.
      */
-    RTINTPTR        off = env->eip - (RTINTPTR)pvPC;
+    RTINTPTR        off = env->eip - (RTGCUINTPTR)pvPC;
     DISCPUSTATE     Cpu;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
