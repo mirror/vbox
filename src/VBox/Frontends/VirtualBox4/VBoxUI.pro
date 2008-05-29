@@ -28,7 +28,7 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
 	ui/VBoxVMSettingsSerial.ui \
 	ui/VBoxVMSettingsParallel.ui \
-	ui/VBoxUSBFilterSettings.ui \
+	ui/VBoxVMSettingsUSB.ui \
 	ui/VBoxSharedFoldersSettings.ui \
 	ui/VBoxNewVMWzd.ui \
 	ui/VBoxCloseVMDlg.ui \

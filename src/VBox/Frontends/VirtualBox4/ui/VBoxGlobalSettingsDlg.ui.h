@@ -379,10 +379,12 @@ void VBoxGlobalSettingsDlg::init()
 #warning port me
 //    grbUSBFiltersLayout->addWidget (wstUSBFilters);
     /* create a default (disabled) filter settings widget at index 0 */
+    /*
     VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
     settings->setup (VBoxUSBFilterSettings::HostType);
     wstUSBFilters->addWidget (settings, 0);
     lvUSBFilters_currentChanged (NULL);
+    */
     /* setup toolbutton icons */
     tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet (":/usb_new_16px.png",
                                                      ":/usb_new_disabled_16px.png"));
@@ -870,6 +872,7 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
 void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
                                           bool aIsNew)
 {
+    /*
     Q3ListViewItem *currentItem = aIsNew
         ? lvUSBFilters->currentItem()
         : lvUSBFilters->lastItem();
@@ -884,7 +887,7 @@ void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
 
     item->mId = wstUSBFilters->addWidget (settings);
 
-    /* fix the tab order so that main dialog's buttons are always the last */
+    // fix the tab order so that main dialog's buttons are always the last
     setTabOrder (settings->focusProxy(), buttonHelp);
     setTabOrder (buttonHelp, buttonOk);
     setTabOrder (buttonOk, buttonCancel);
@@ -899,7 +902,7 @@ void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
     connect (settings->leUSBFilterName, SIGNAL (textChanged (const QString &)),
              this, SLOT (lvUSBFilters_setCurrentText (const QString &)));
 
-    /* setup validation */
+    // setup validation
 
     QIWidgetValidator *wval =
         new QIWidgetValidator (pagePath (pageUSB), settings, settings);
@@ -907,6 +910,7 @@ void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
              this, SLOT (enableOk (const QIWidgetValidator *)));
 
     wval->revalidate();
+    */
 }
 
 void VBoxGlobalSettingsDlg::lvUSBFilters_currentChanged (Q3ListViewItem *item)
