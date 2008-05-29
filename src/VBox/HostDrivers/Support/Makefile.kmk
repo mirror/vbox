@@ -74,13 +74,15 @@ vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
 # Scripts needed for building the kernel modules
 
 $(PATH_BIN)/src/build_in_tmp: \
-		$(PATH_SUB_CURRENT)/linux/build_in_tmp $(VBOX_VERSION_MK)
+		$(PATH_SUB_CURRENT)/linux/build_in_tmp \
+		$(VBOX_VERSION_STAMP)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxdrv;g" < $< > $@
 	$(QUIET)chmod 0755 $@
 
 $(PATH_BIN)/src/dkms.conf: \
-		$(PATH_SUB_CURRENT)/linux/dkms.conf
+		$(PATH_SUB_CURRENT)/linux/dkms.conf \
+		$(VBOX_VERSION_STAMP)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
