@@ -250,7 +250,7 @@ typedef struct VGAState {
     /** The physical address the VRAM was assigned. */
     RTGCPHYS32                  GCPhysVRAM;
     /** Pointer to GC vram mapping. */
-    GCPTRTYPE(uint8_t *)        vram_ptrGC;
+    RCPTRTYPE(uint8_t *)        vram_ptrGC;
 /** @todo r=bird: bool not RTUINT (my fault I guess). */
     /** LFB was updated flag. */
     RTUINT                      fLFBUpdated;
@@ -259,7 +259,7 @@ typedef struct VGAState {
     /** Indicates if the R0 extensions are enabled or not. */
     RTUINT                      fR0Enabled;
     /** Pointer to vgaGCLFBAccessHandler(). */
-    RTGCPTR                     GCPtrLFBHandler;
+    RTGCPTR32                   GCPtrLFBHandler;
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHaveDirtyBits;
     /** Bitmap tracking dirty pages. */
@@ -267,7 +267,7 @@ typedef struct VGAState {
     /** Pointer to the device instance - HC Ptr. */
     R3R0PTRTYPE(PPDMDEVINS)     pDevInsHC;
     /* * Pointer to the device instance - GC Ptr. */
-    /*GCPTRTYPE(PPDMDEVINS)   pDevInsGC;*/
+    /*RCPTRTYPE(PPDMDEVINS)   pDevInsGC;*/
 
     /** The display port base interface. */
     PDMIBASE                    Base;

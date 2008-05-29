@@ -91,7 +91,7 @@ CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR pPage)
     Assert(pgdir < CSAM_PGDIRBMP_CHUNKS);
     Assert(bit < PAGE_SIZE);
 
-    return pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir] && ASMBitTest(pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
+    return pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir] && ASMBitTest((void *)pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
 }
 
 
@@ -137,7 +137,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
             return rc;
         }
 #ifdef IN_GC
-        pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperGC2HC(pVM, pVM->csam.s.pPDBitmapGC[pgdir]);
+        pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperGC2HC(pVM, (RCPTRTYPE(void*))pVM->csam.s.pPDBitmapGC[pgdir]);
         if (!pVM->csam.s.pPDHCBitmapGC[pgdir])
         {
             Log(("MMHyperHC2GC failed for %VGv\n", pVM->csam.s.pPDBitmapGC[pgdir]));
@@ -153,9 +153,9 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
 #endif
     }
     if(fScanned)
-        ASMBitSet(pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
+        ASMBitSet((void *)pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
     else
-        ASMBitClear(pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
+        ASMBitClear((void *)pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
 
     return VINF_SUCCESS;
 }
@@ -203,7 +203,7 @@ CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR GCPtr)
 {
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
-        pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = GCPtr;
+        pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = (RTGCPTR32)GCPtr;
         VM_FF_SET(pVM, VM_FF_CSAM_PENDING_ACTION);
     }
     return;
@@ -250,14 +250,14 @@ CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTGCPTR GCPtr)
 {
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {
-        if (pVM->csam.s.aDangerousInstr[i] == GCPtr)
+        if (pVM->csam.s.aDangerousInstr[i] == (RTGCPTR32)GCPtr)
         {
             STAM_COUNTER_INC(&pVM->csam.s.StatInstrCacheHit);
             return true;
         }
     }
     /* Record that we're about to process it in ring 3. */
-    pVM->csam.s.aDangerousInstr[pVM->csam.s.iDangerousInstr++] = GCPtr;
+    pVM->csam.s.aDangerousInstr[pVM->csam.s.iDangerousInstr++] = (RTGCPTR32)GCPtr;
     pVM->csam.s.iDangerousInstr &= CSAM_MAX_DANGR_INSTR_MASK;
 
     if (++pVM->csam.s.cDangerousInstr > CSAM_MAX_DANGR_INSTR)

@@ -125,7 +125,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     pVM->patm.s.pPatchMemGC = MMHyperHC2GC(pVM, pVM->patm.s.pPatchMemHC);
 
     /* PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
-    pVM->patm.s.pGCStackHC  = (RTGCPTR *)(pVM->patm.s.pPatchMemHC + PATCH_MEMORY_SIZE + PAGE_SIZE);
+    pVM->patm.s.pGCStackHC  = (RTGCPTR32 *)(pVM->patm.s.pPatchMemHC + PATCH_MEMORY_SIZE + PAGE_SIZE);
     pVM->patm.s.pGCStackGC  = MMHyperHC2GC(pVM, pVM->patm.s.pGCStackHC);
 
     /*
@@ -977,7 +977,7 @@ PATMR3DECL(int) PATMR3IsEnabled(PVM pVM)
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr)
+R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
     R3PTRTYPE(uint8_t *) pHCPtr;
@@ -1028,8 +1028,8 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
      */
     while (true)
     {
-        GCPTRTYPE(uint8_t *) pInstrGC;
-        GCPTRTYPE(uint8_t *) pBranchTargetGC = 0;
+        RCPTRTYPE(uint8_t *) pInstrGC;
+        RCPTRTYPE(uint8_t *) pBranchTargetGC = 0;
 
         pRec = (PJUMPREC)RTAvlPVRemoveBestFit(&pPatch->JumpTree, 0, true);
         if (pRec == 0)
@@ -1281,7 +1281,7 @@ void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree)
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
+static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     bool       fIllegalInstr = false;
@@ -1440,7 +1440,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
+static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     bool       fIllegalInstr = false;
@@ -1545,7 +1545,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uin
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
+static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     int rc = VINF_SUCCESS;
@@ -1605,7 +1605,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
         && (pCpu->pCurInstr->opcode != OP_CALL || (pPatch->flags & PATMFL_SUPPORT_CALLS))
         && (OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J))
     {
-        GCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
+        RCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
         if (pTargetGC == 0)
         {
             Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.flags));
@@ -1707,7 +1707,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
             DISCPUSTATE cpu = *pCpu;
             unsigned    opsize;
             int         disret;
-            GCPTRTYPE(uint8_t *) pNextInstrGC, pReturnInstrGC;
+            RCPTRTYPE(uint8_t *) pNextInstrGC, pReturnInstrGC;
             R3PTRTYPE(uint8_t *) pNextInstrHC;
 
             pPatch->flags |= PATMFL_FOUND_PATCHEND;
@@ -2022,7 +2022,7 @@ static bool patmIsKnownDisasmJump(PPATCHINFO pPatch, RTGCPTR pInstrGC)
  * @param   pUserData   User pointer (callback specific)
  *
  */
-int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
+int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, void *pUserData)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
 
@@ -2080,7 +2080,7 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstr
  * @param   pUserData   User pointer (callback specific)
  *
  */
-int patmr3DisasmCode(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Disasm, void *pUserData)
+int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Disasm, void *pUserData)
 {
     DISCPUSTATE cpu;
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
@@ -2207,7 +2207,7 @@ end:
  * @param   pUserData   User pointer (callback specific)
  *
  */
-int patmr3DisasmCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Disasm, void *pUserData)
+int patmr3DisasmCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Disasm, void *pUserData)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
 
@@ -2251,7 +2251,7 @@ PATMR3DECL(int) PATMR3DetectConflict(PVM pVM, RTGCPTR pInstrGC, RTGCPTR pConflic
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Recompile, void *pUserData)
+static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Recompile, void *pUserData)
 {
     DISCPUSTATE cpu;
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
@@ -2369,7 +2369,7 @@ static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTR
             &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
         {
-            GCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
+            RCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
             if (addr == 0)
             {
                 Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
@@ -5624,7 +5624,7 @@ PATMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch)
  * @param   pPatch      Patch block structure pointer
  * @param   pPatchGC    GC address in patch block
  */
-RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pPatchGC)
+RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pPatchGC)
 {
     Assert(pPatch->Patch2GuestAddrTree);
     /* Get the closest record from below. */
@@ -5643,7 +5643,7 @@ RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t 
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC)
+RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC)
 {
     if (pPatch->Guest2PatchAddrTree)
     {
@@ -5663,7 +5663,7 @@ RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC)
+RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t*) pInstrGC)
 {
         PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pInstrGC, false);
         if (pGuestToPatchRec)
@@ -5679,7 +5679,7 @@ RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, GCPTRTYPE(uint8_t*) pInstrGC)
+PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC)
 {
     PPATMPATCHREC pPatchRec = (PPATMPATCHREC)RTAvloGCPtrGetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC, false);
     if (pPatchRec && pPatchRec->patch.uState == PATCH_ENABLED && pInstrGC >= pPatchRec->patch.pPrivInstrGC)

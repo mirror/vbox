@@ -428,6 +428,9 @@ GLOBALNAME %1_EndProc
  %define RTGCPTR_RES    resd
 %endif
 
+%define RTGCPTR32_RES   resd
+%define RTGCPTR64_RES   resq
+
 ;; @def RTGCPTR_PRE
 ; The memory operand prefix used for a pointer in the guest context.
 %if GC_ARCH_BITS == 64
@@ -503,7 +506,7 @@ GLOBALNAME %1_EndProc
 ; The pesudo-instruction used to declare an initialized guest physical address.
 %define RTGCPHYS_DEF    dq
 
-;; @def RTGCPTR_RES
+;; @def RTGCPHYS_RES
 ; The pesudo-instruction used to declare (=reserve space for) an uninitialized
 ; guest physical address variable
 %define RTGCPHYS_RES    resq

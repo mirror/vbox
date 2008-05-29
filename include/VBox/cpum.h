@@ -312,14 +312,14 @@ typedef struct CPUMCTX
     /** System MSRs.
      * @{ */
     uint64_t        msrEFER;
-    uint64_t        msrSTAR;
+    uint64_t        msrSTAR;        /* legacy syscall eip, cs & ss */
     uint64_t        msrPAT;
-    uint64_t        msrLSTAR;
-    uint64_t        msrCSTAR;
-    uint64_t        msrSFMASK;
+    uint64_t        msrLSTAR;       /* 64 bits mode syscall rip */
+    uint64_t        msrCSTAR;       /* compatibility mode syscall rip */
+    uint64_t        msrSFMASK;      /* syscall flag mask */
     uint64_t        msrFSBASE;
     uint64_t        msrGSBASE;
-    uint64_t        msrKERNELGSBASE;
+    uint64_t        msrKERNELGSBASE;/* swapgs exchange value */
     /** @} */
 
     /** Hidden selector registers.
@@ -397,18 +397,18 @@ CPUMDECL(RTSEL)     CPUMGetGuestES(PVM pVM);
 CPUMDECL(RTSEL)     CPUMGetGuestFS(PVM pVM);
 CPUMDECL(RTSEL)     CPUMGetGuestGS(PVM pVM);
 CPUMDECL(RTSEL)     CPUMGetGuestSS(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR0(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR1(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR2(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR3(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR6(PVM pVM);
-CPUMDECL(RTUINTREG) CPUMGetGuestDR7(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR0(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR1(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR2(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR3(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR6(PVM pVM);
+CPUMDECL(RTGCUINTREG) CPUMGetGuestDR7(PVM pVM);
 CPUMDECL(int)       CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint32_t *pValue);
 CPUMDECL(void)      CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
-CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
-CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
-CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
+CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
+CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
+CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
+CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
@@ -881,7 +881,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM);
  * @param   pVM         Handle to the virtual machine.
  * @param   ppCtx       Receives the CPUMCTX GC pointer when successful.
  */
-CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, GCPTRTYPE(PCPUMCTX) *ppCtx);
+CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
 
 
 #ifdef DEBUG
@@ -929,7 +929,7 @@ CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
  * This function does not return!
  *
  */
-DECLASM(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTGCPTR pHandler, uint32_t eflags, uint32_t selSS, RTGCPTR pEsp);
+DECLASM(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTGCPTR32 pHandler, uint32_t eflags, uint32_t selSS, RTGCPTR32 pEsp);
 
 /**
  * Performs an iret to V86 code

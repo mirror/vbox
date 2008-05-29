@@ -379,7 +379,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
             int rc;
             RTGCPTR pCallerGC;
 #ifdef IN_GC
-            rc = MMGCRamRead(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
+            rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
 #else
             rc = PGMPhysReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #endif
@@ -448,7 +448,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
          */
         pIDTEntry = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate);
 #ifdef IN_GC
-        rc = MMGCRamRead(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+        rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
         rc = PGMPhysReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
@@ -463,7 +463,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 goto failure;
             }
 #ifdef IN_GC
-            rc = MMGCRamRead(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+            rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
             rc = PGMPhysReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
@@ -476,8 +476,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
             &&  (enmType == TRPM_TRAP || enmType == TRPM_HARDWARE_INT || cpl <= GuestIdte.Gen.u2DPL)  /* CPL <= DPL if software int */
            )
         {
-            RTGCPTR   pHandler, dummy;
-            GCPTRTYPE(uint32_t *) pTrapStackGC;
+            RTGCPTR pHandler, dummy;
+            RTGCPTR pTrapStackGC;
 
             pHandler = (RTGCPTR)((GuestIdte.Gen.u16OffsetHigh << 16) | GuestIdte.Gen.u16OffsetLow);
 
@@ -508,7 +508,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
                 pGdtEntry = (RTGCPTR)(uintptr_t)&((VBOXDESC *)gdtr.pGdt)[GuestIdte.Gen.u16SegSel >> X86_SEL_SHIFT]; /// @todo fix this
 #ifdef IN_GC
-                rc = MMGCRamRead(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
                 rc = PGMPhysReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
@@ -523,7 +523,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                         goto failure;
                     }
 #ifdef IN_GC
-                    rc = MMGCRamRead(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                    rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
                     rc = PGMPhysReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
@@ -587,7 +587,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
-                pTrapStack = pTrapStackGC;
+                pTrapStack = (uint32_t *)pTrapStackGC;
 #else
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
@@ -693,7 +693,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (iOrgTrap >= 0 && iOrgTrap < (int)RT_ELEMENTS(pVM->trpm.s.aStatGCTraps))
                         STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[iOrgTrap], o);
 
-                    CPUMGCCallGuestTrapHandler(pRegFrame, GuestIdte.Gen.u16SegSel | 1, pVM->trpm.s.aGuestTrapHandler[iGate], eflags.u32, ss_r0, (RTGCPTR)esp_r0);
+                    CPUMGCCallGuestTrapHandler(pRegFrame, GuestIdte.Gen.u16SegSel | 1, pVM->trpm.s.aGuestTrapHandler[iGate], eflags.u32, ss_r0, (RTGCPTR32)esp_r0);
                     /* does not return */
 #else
                     /* Turn off interrupts for interrupt gates. */

@@ -241,7 +241,12 @@ typedef struct REM
     uint32_t                abPadding[HC_ARCH_BITS == 32 ? 0 : 4];
 #endif
 
+#if GC_ARCH_BITS == 32
 #define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6440 : 0xb4a0)
+#else
+#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x8440 : 0xd4a0)
+#endif
+
     /** Recompiler CPU state. */
 #ifdef REM_INCLUDE_CPU_H
     CPUX86State             Env;

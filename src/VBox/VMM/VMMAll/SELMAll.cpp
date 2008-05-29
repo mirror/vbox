@@ -619,10 +619,10 @@ SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
  * @param   ss      Ring1 SS register value.
  * @param   esp     Ring1 ESP register value.
  */
-SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp)
+SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 {
     pVM->selm.s.Tss.ss1  = ss;
-    pVM->selm.s.Tss.esp1 = esp;
+    pVM->selm.s.Tss.esp1 = (uint32_t)esp;
 }
 
 
@@ -634,11 +634,11 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp)
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
+SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {
-        GCPTRTYPE(uint8_t *) GCPtrTss = (GCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
+        RTGCPTR GCPtrTss = pVM->selm.s.GCPtrGuestTss;
         int     rc;
         VBOXTSS tss;
 
@@ -648,10 +648,10 @@ SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
         bool    fTriedAlready = false;
 
 l_tryagain:
-        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
-        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
+        rc  = MMGCRamRead(pVM, &tss.ss0,  (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0)), sizeof(tss.ss0));
+        rc |= MMGCRamRead(pVM, &tss.esp0, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0)), sizeof(tss.esp0));
   #ifdef DEBUG
-        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
+        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap)), sizeof(tss.offIoBitmap));
   #endif
 
         if (VBOX_FAILURE(rc))
@@ -661,7 +661,7 @@ l_tryagain:
                 /* Shadow page might be out of sync. Sync and try again */
                 /** @todo might cross page boundary */
                 fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, GCPtrTss);
+                rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPtrTss);
                 if (rc != VINF_SUCCESS)
                     return rc;
                 goto l_tryagain;
@@ -691,12 +691,12 @@ l_tryagain:
         Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
 #endif
         /* Update our TSS structure for the guest's ring 1 stack */
-        SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
+        SELMSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
         pVM->selm.s.fSyncTSSRing0Stack = false;
     }
 
     *pSS  = pVM->selm.s.Tss.ss1;
-    *pEsp = pVM->selm.s.Tss.esp1;
+    *pEsp = (RTGCPTR32)pVM->selm.s.Tss.esp1;
 
     return VINF_SUCCESS;
 }
@@ -819,7 +819,7 @@ SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
      * called before the first relocation and have to work correctly
      * without having dependencies on the relocation order.
      */
-    return MMHyperHC2GC(pVM, pVM->selm.s.paGdtHC);
+    return (RTGCPTR)MMHyperHC2GC(pVM, pVM->selm.s.paGdtHC);
 }
 #endif /* IN_RING0 */
 

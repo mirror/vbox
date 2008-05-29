@@ -279,7 +279,7 @@ typedef struct VM
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
     /** Guest Context VM Pointer. */
-    GCPTRTYPE(struct VM *)      pVMGC;
+    RCPTRTYPE(struct VM *)      pVMGC;
 
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
@@ -512,7 +512,7 @@ typedef struct VM
 #ifdef ___TMInternal_h
         struct TM   s;
 #endif
-        char        padding[1312];      /* multiple of 32 */
+        char        padding[1344];      /* multiple of 32 */
     } tm;
 
     /** DBGF part. */
@@ -521,7 +521,7 @@ typedef struct VM
 #ifdef ___DBGFInternal_h
         struct DBGF s;
 #endif
-        char        padding[HC_ARCH_BITS == 32 ? 1920 : 1952];      /* multiple of 32 */
+        char        padding[2368];      /* multiple of 32 */
     } dbgf;
 
     /** SSM part. */
@@ -548,7 +548,11 @@ typedef struct VM
 #ifdef ___REMInternal_h
         struct REM  s;
 #endif
+#if GC_ARCH_BITS == 32
         char        padding[HC_ARCH_BITS == 32 ? 0x6f00 : 0xbf00];    /* multiple of 32 */
+#else
+        char        padding[HC_ARCH_BITS == 32 ? 0x8f00 : 0xdf00];    /* multiple of 32 */
+#endif
     } rem;
 } VM;
 

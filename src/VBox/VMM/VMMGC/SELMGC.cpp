@@ -204,7 +204,7 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
          */
         /** @todo should check if any affected selectors are loaded. */
         uint32_t cb;
-        rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+        rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)pvFault, &cb);
         if (VBOX_SUCCESS(rc) && cb)
         {
             unsigned iGDTE1 = offRange / sizeof(VBOXDESC);
@@ -290,7 +290,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
      * I/O map accesses this is safe.
      */
     uint32_t cb;
-    int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+    int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)pvFault, &cb);
     if (VBOX_SUCCESS(rc) && cb)
     {
         PCVBOXTSS pGuestTSS = (PVBOXTSS)pVM->selm.s.GCPtrGuestTss;
@@ -320,7 +320,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
                     if (VBOX_FAILURE(rc))
                     {
                         /* Shadow page table might be out of sync */
-                        rc = PGMPrefetchPage(pVM, (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8);
+                        rc = PGMPrefetchPage(pVM, (RTGCPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
                         if (VBOX_FAILURE(rc))
                         {
                             AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
@@ -403,3 +403,78 @@ SELMGCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
 
+
+/**
+ * Gets ss:esp for ring1 in main Hypervisor's TSS.
+ *
+ * @returns VBox status code.
+ * @param   pVM     VM Handle.
+ * @param   pSS     Ring1 SS register value.
+ * @param   pEsp    Ring1 ESP register value.
+ */
+SELMGCDECL(int) SELMGCGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
+{
+    if (pVM->selm.s.fSyncTSSRing0Stack)
+    {
+        RCPTRTYPE(uint8_t *) GCPtrTss = (RCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
+        int     rc;
+        VBOXTSS tss;
+
+        Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
+
+#ifdef IN_GC
+        bool    fTriedAlready = false;
+
+l_tryagain:
+        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
+        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
+  #ifdef DEBUG
+        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
+  #endif
+
+        if (VBOX_FAILURE(rc))
+        {
+            if (!fTriedAlready)
+            {
+                /* Shadow page might be out of sync. Sync and try again */
+                /** @todo might cross page boundary */
+                fTriedAlready = true;
+                rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPtrTss);
+                if (rc != VINF_SUCCESS)
+                    return rc;
+                goto l_tryagain;
+            }
+            AssertMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+            return rc;
+        }
+
+#else /* !IN_GC */
+        /* Reading too much. Could be cheaper than two seperate calls though. */
+        rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
+        if (VBOX_FAILURE(rc))
+        {
+            AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+            return rc;
+        }
+#endif /* !IN_GC */
+
+#ifdef LOG_ENABLED
+        uint32_t ssr0  = pVM->selm.s.Tss.ss1;
+        uint32_t espr0 = pVM->selm.s.Tss.esp1;
+        ssr0 &= ~1;
+
+        if (ssr0 != tss.ss0 || espr0 != tss.esp0)
+            Log(("SELMGetRing1Stack: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
+
+        Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
+#endif
+        /* Update our TSS structure for the guest's ring 1 stack */
+        SELMSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
+        pVM->selm.s.fSyncTSSRing0Stack = false;
+    }
+
+    *pSS  = pVM->selm.s.Tss.ss1;
+    *pEsp = pVM->selm.s.Tss.esp1;
+
+    return VINF_SUCCESS;
+}

@@ -53,7 +53,7 @@ typedef struct PDMQUEUEITEMCORE
     /** Pointer to the next item in the pending list - HC Pointer. */
     R3R0PTRTYPE(PPDMQUEUEITEMCORE)  pNextHC;
     /** Pointer to the next item in the pending list - GC Pointer. */
-    GCPTRTYPE(PPDMQUEUEITEMCORE)    pNextGC;
+    RCPTRTYPE(PPDMQUEUEITEMCORE)    pNextGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                        Alignment0;
 #endif
@@ -279,7 +279,7 @@ PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
  * @returns NULL if pQueue is invalid.
  * @param   pQueue          The queue handle.
  */
-PDMDECL(GCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue);
+PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue);
 
 /** @} */
 

@@ -54,9 +54,9 @@
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2_UINT32(uint32_t *pu32Param1, uint32_t val2);
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, size_t val2);
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
-typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM2(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, uint32_t *pf);
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM2(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, RTGCUINTREG32 *pf);
 typedef FNEMULATELOCKPARAM2 *PFNEMULATELOCKPARAM2;
-typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM3(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, size_t cb, uint32_t *pf);
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM3(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, size_t cb, RTGCUINTREG32 *pf);
 typedef FNEMULATELOCKPARAM3 *PFNEMULATELOCKPARAM3;
 
 
@@ -290,7 +290,7 @@ EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu,
 DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
 #ifdef IN_GC
-    int rc = MMGCRamRead(pVM, pDest, GCSrc, cb);
+    int rc = MMGCRamRead(pVM, pDest, (void *)GCSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
     /* 
@@ -311,7 +311,7 @@ DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 {
 #ifdef IN_GC
-    int rc = MMGCRamWrite(pVM, GCDest, pSrc, cb);
+    int rc = MMGCRamWrite(pVM, (void *)GCDest, pSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
     /* 
@@ -815,7 +815,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     /* Try emulate it with a one-shot #PF handler in place. */
     Log2(("%s %RGv imm%d=%RGr\n", emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
 
-    RTGCUINTREG eflags = 0;
+    RTGCUINTREG32 eflags = 0;
     MMGCRamRegisterTrapHandler(pVM);
     rc = pfnEmulate(GCPtrPar1, ValPar2, pCpu->param2.size, &eflags);
     MMGCRamDeregisterTrapHandler(pVM);
@@ -1089,7 +1089,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 # endif
 
     /* Try emulate it with a one-shot #PF handler in place. */
-    RTGCUINTREG eflags = 0;
+    RTGCUINTREG32 eflags = 0;
     MMGCRamRegisterTrapHandler(pVM);
     rc = pfnEmulate(GCPtrPar1, ValPar2, &eflags);
     MMGCRamDeregisterTrapHandler(pVM);

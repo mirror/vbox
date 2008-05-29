@@ -416,12 +416,12 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
             pVM->pgm.s.pGuestPDHC = (R3R0PTRTYPE(PX86PD))HCPtrGuestCR3;
-            pVM->pgm.s.pGuestPDGC = (GCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
+            pVM->pgm.s.pGuestPDGC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
             unsigned offset = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
             pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT)) HCPtrGuestCR3;
-            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))   ((GCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + offset);
+            pVM->pgm.s.pGstPaePDPTGC = (RCPTRTYPE(PX86PDPT))   ((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + offset);
             Log(("Cached mapping %VGv\n", pVM->pgm.s.pGstPaePDPTGC));
 
             /*
@@ -441,7 +441,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                         rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
                         AssertRCReturn(rc, rc);
                         pVM->pgm.s.apGstPaePDsHC[i]     = (R3R0PTRTYPE(PX86PDPAE))HCPtr;
-                        pVM->pgm.s.apGstPaePDsGC[i]     = (GCPTRTYPE(PX86PDPAE))GCPtr;
+                        pVM->pgm.s.apGstPaePDsGC[i]     = (RCPTRTYPE(PX86PDPAE))GCPtr;
                         pVM->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
                         PGM_INVL_PG(GCPtr);
                         continue;

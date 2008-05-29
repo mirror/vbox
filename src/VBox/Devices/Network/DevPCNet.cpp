@@ -113,7 +113,7 @@ struct PCNetState_st
     /** Poll timer (address for host context) */
     R3R0PTRTYPE(PTMTIMER)               pTimerPollHC;
     /** Poll timer (address for guest context) */
-    GCPTRTYPE(PTMTIMER)                 pTimerPollGC;
+    RCPTRTYPE(PTMTIMER)                 pTimerPollGC;
 #endif
 
 #if HC_ARCH_BITS == 64
@@ -123,7 +123,7 @@ struct PCNetState_st
     /** Software Interrupt timer (address for host context) */
     R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
     /** Software Interrupt timer (address for guest context) */
-    GCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
+    RCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;
@@ -165,14 +165,14 @@ struct PCNetState_st
     RTGCPHYS32                          GCUpperPhys;
 
     /** Transmit signaller */
-    GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
+    RCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
     R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
 
     /** Receive signaller */
     R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
-    GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
+    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
     /** Pointer to the device instance. */
-    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)               pDevInsGC;
     /** Pointer to the device instance. */
     R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
     /** Restore timer.
@@ -240,7 +240,7 @@ struct PCNetState_st
     /** The host context of the shared memory used for the private interface. */
     R3R0PTRTYPE(PPCNETGUESTSHAREDMEMORY) pSharedMMIOHC;
     /** The hypervisor/guest context of the shared memory used for the private interface. */
-    GCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
+    RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
 
 #if HC_ARCH_BITS == 64
     uint32_t                            Alignment6;
@@ -4744,6 +4744,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     if (fPrivIfEnabled)
     {
+        RTGCPTR pGCMapping;
+
         /*
          * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
          * should not care if there is an additional PCI ressource but just in case we made this configurable.
@@ -4752,10 +4754,11 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pData->pSharedMMIOGC);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pGCMapping);
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
+        pData->pSharedMMIOGC = pGCMapping;
         pcnetInitSharedMemory(pData);
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,
                                           PCI_ADDRESS_SPACE_MEM, pcnetMMIOSharedMap);

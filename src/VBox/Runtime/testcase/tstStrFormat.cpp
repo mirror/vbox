@@ -293,18 +293,18 @@ int main()
         CHECK42("%RTptr", (RTUINTPTR)0x84342134, "84342134");
     }
 
-    if (sizeof(RTUINTREG) == 8)
+    if (sizeof(RTCCUINTREG) == 8)
     {
-        CHECK42("%RTreg", (RTUINTREG)0, "0000000000000000");
-        CHECK42("%RTreg", ~(RTUINTREG)0, "ffffffffffffffff");
-        CHECK42("%RTreg", (RTUINTREG)0x84342134, "0000000084342134");
-        CHECK42("%RTreg", (RTUINTREG)0x23484342134ULL, "0000023484342134");
+        CHECK42("%RTreg", (RTCCUINTREG)0, "0000000000000000");
+        CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffffffffffff");
+        CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "0000000084342134");
+        CHECK42("%RTreg", (RTCCUINTREG)0x23484342134ULL, "0000023484342134");
     }
     else
     {
-        CHECK42("%RTreg", (RTUINTREG)0, "00000000");
-        CHECK42("%RTreg", ~(RTUINTREG)0, "ffffffff");
-        CHECK42("%RTreg", (RTUINTREG)0x84342134, "84342134");
+        CHECK42("%RTreg", (RTCCUINTREG)0, "00000000");
+        CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffff");
+        CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "84342134");
     }
 
     CHECK42("%RTsel", (RTSEL)0x543, "0543");

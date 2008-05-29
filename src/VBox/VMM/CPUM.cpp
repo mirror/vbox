@@ -459,7 +459,7 @@ CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
  * @param   pVM         Handle to the virtual machine.
  * @param   ppCtx       Receives the CPUMCTX GC pointer when successful.
  */
-CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, GCPTRTYPE(PCPUMCTX) *ppCtx)
+CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
 {
     LogFlow(("CPUMR3QueryGuestCtxGCPtr\n"));
     /*

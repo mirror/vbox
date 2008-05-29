@@ -185,7 +185,7 @@ PATMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMDECL(GCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
+PATMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
 
 /**
  * Checks whether the GC address is part of our patch region
@@ -550,7 +550,7 @@ PATMR3DECL(RTGCPTR) PATMR3PatchToGCPtr(PVM pVM, RTGCPTR pPatchGC, PATMTRANSSTATE
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, GCPTRTYPE(uint8_t*) pInstrGC);
+PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC);
 
 /**
  * Query the opcode of the original code that was overwritten by the 5 bytes patch jump

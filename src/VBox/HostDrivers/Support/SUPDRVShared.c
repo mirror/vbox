@@ -2989,8 +2989,8 @@ static void supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch)
  */
 static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry)
 {
-    RTUINTREG   uCR0;
-    RTUINTREG   uFlags;
+    RTR0UINTREG   uCR0;
+    RTR0UINTREG   uFlags;
 
     /*
      * On SMP machines (P4 hyperthreading included) we must preform a
@@ -3005,10 +3005,10 @@ static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTE
 
     /* Save & Clear interrupt flag; Save & clear WP. */
     uFlags = ASMGetFlags();
-    ASMSetFlags(uFlags & ~(RTUINTREG)(1 << 9)); /*X86_EFL_IF*/
+    ASMSetFlags(uFlags & ~(RTR0UINTREG)(1 << 9)); /*X86_EFL_IF*/
     Assert(!(ASMGetFlags() & (1 << 9)));
     uCR0 = ASMGetCR0();
-    ASMSetCR0(uCR0 & ~(RTUINTREG)(1 << 16));    /*X86_CR0_WP*/
+    ASMSetCR0(uCR0 & ~(RTR0UINTREG)(1 << 16));    /*X86_CR0_WP*/
 
     /* Update IDT Entry */
 #ifdef RT_ARCH_AMD64
@@ -3622,12 +3622,12 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
 {
     SUPPAGINGMODE enmMode;
 
-    RTUINTREG cr0 = ASMGetCR0();
+    RTR0UINTREG cr0 = ASMGetCR0();
     if ((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
         enmMode = SUPPAGINGMODE_INVALID;
     else
     {
-        RTUINTREG cr4 = ASMGetCR4();
+        RTR0UINTREG cr4 = ASMGetCR4();
         uint32_t fNXEPlusLMA = 0;
         if (cr4 & X86_CR4_PAE)
         {

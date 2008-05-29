@@ -177,7 +177,7 @@ typedef struct VMM
     /** Host to guest switcher entry point. */
     R0PTRTYPE(PFNVMMSWITCHERHC) pfnR0HostToGuest;
     /** Guest to host switcher entry point. */
-    GCPTRTYPE(PFNVMMSWITCHERGC) pfnGCGuestToHost;
+    RCPTRTYPE(PFNVMMSWITCHERGC) pfnGCGuestToHost;
     /** Call Trampoline. See vmmGCCallTrampoline(). */
     RTGCPTR32                   pfnGCCallTrampoline;
 
@@ -196,13 +196,13 @@ typedef struct VMM
      * and always writable in GC. */
     R3PTRTYPE(uint8_t *)        pbHCStack;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
-    GCPTRTYPE(uint8_t *)        pbGCStack;
+    RCPTRTYPE(uint8_t *)        pbGCStack;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
-    GCPTRTYPE(uint8_t *)        pbGCStackBottom;
+    RCPTRTYPE(uint8_t *)        pbGCStackBottom;
 
     /** Pointer to the GC logger instance - GC Ptr.
      * This is NULL if logging is disabled. */
-    GCPTRTYPE(PRTLOGGERGC)      pLoggerGC;
+    RCPTRTYPE(PRTLOGGERGC)      pLoggerGC;
     /** Size of the allocated logger instance (pLoggerGC/pLoggerHC). */
     RTUINT                      cbLoggerGC;
     /** Pointer to the GC logger instance - HC Ptr.
@@ -215,7 +215,7 @@ typedef struct VMM
 
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
     /** Pointer to the GC release logger instance - GC Ptr. */
-    GCPTRTYPE(PRTLOGGERGC)      pRelLoggerGC;
+    RCPTRTYPE(PRTLOGGERGC)      pRelLoggerGC;
     /** Size of the allocated release logger instance (pRelLoggerGC/pRelLoggerHC).
      * This may differ from cbLoggerGC. */
     RTUINT                      cbRelLoggerGC;

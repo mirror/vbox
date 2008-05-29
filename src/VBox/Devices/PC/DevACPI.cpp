@@ -161,7 +161,7 @@ struct ACPIState
     uint16_t            Alignment0;
     int64_t             pm_timer_initial;
     R3R0PTRTYPE(PTMTIMER) tsHC;
-    GCPTRTYPE(PTMTIMER)   tsGC;
+    RCPTRTYPE(PTMTIMER)   tsGC;
 
     uint32_t            gpe0_en;
     uint32_t            gpe0_sts;

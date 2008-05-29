@@ -5230,8 +5230,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpMMIO2Register(pDevIns, 0 /* iRegion */, pData->vram_size, 0, (void **)&pData->vram_ptrHC, "VRam");
     AssertMsgRC(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pData->vram_size, rc));
 
-    rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pData->vram_ptrGC);
+    RTGCPTR pGCMapping = 0;
+    rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pGCMapping);
     AssertMsgRC(rc, ("MMR3HyperMapGCPhys(%#x,) -> %Rrc\n", pData->vram_size, rc));
+    Assert(!(pGCMapping >> 32ULL));
+    pData->vram_ptrGC = pGCMapping;
 
     /*
      * Register I/O ports, ROM and save state.

@@ -59,7 +59,7 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
      */
     register uint32_t efl = pCtxCore->eflags.u32;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
-    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%VGv eflags=%08x fPATM=%d pPATMGC=%VGv-%VGv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
+    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTGCPTR32)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%VGv eflags=%08x fPATM=%d pPATMGC=%VGv-%VGv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
 
     AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%VGv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
 
@@ -248,7 +248,7 @@ PATMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
 PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTGCPTR pAddrGC)
 {
     return (    PATMIsEnabled(pVM)
-            && ((pAddrGC >= pVM->patm.s.pPatchMemGC && pAddrGC < pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem))) ? true : false;
+            && ((pAddrGC >= (RTGCPTR)pVM->patm.s.pPatchMemGC && pAddrGC < (RTGCPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem))) ? true : false;
 }
 
 /**
@@ -257,7 +257,7 @@ PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTGCPTR pAddrGC)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMDECL(GCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
+PATMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
 {
     return pVM->patm.s.pGCStateGC;
 }
@@ -271,7 +271,9 @@ PATMDECL(GCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
  */
 PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTGCPTR pAddrGC)
 {
-    return (PATMIsEnabled(pVM) && pAddrGC >= pVM->patm.s.pPatchMemGC && pAddrGC < pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem) ? true : false;
+    RTGCPTR32 pAddrGG32 = (RTGCPTR32)pAddrGC;
+
+    return (PATMIsEnabled(pVM) && pAddrGG32 >= (RTGCPTR)pVM->patm.s.pPatchMemGC && pAddrGG32 < (RTGCPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem) ? true : false;
 }
 
 /**
@@ -285,7 +287,7 @@ PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTGCPTR pAddrGC)
 PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTGCPTR pCachedData)
 {
     pVM->patm.s.mmio.GCPhys = GCPhys;
-    pVM->patm.s.mmio.pCachedData = pCachedData;
+    pVM->patm.s.mmio.pCachedData = (RTGCPTR32)pCachedData;
 
     return VINF_SUCCESS;
 }
@@ -399,7 +401,7 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             ||  pRegFrame->eflags.Bits.u1VM
             ||  (pRegFrame->cs & X86_SEL_RPL) != 3
             ||  pVM->patm.s.pfnSysEnterPatchGC == 0
-            ||  pVM->patm.s.pfnSysEnterGC != (RTGCPTR)pCtx->SysEnter.eip
+            ||  pVM->patm.s.pfnSysEnterGC != (RTGCPTR32)pCtx->SysEnter.eip
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 

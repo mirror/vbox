@@ -2042,7 +2042,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             if (TRPMHasTrap(pVM))
             {
                 uint8_t         u8Interrupt;
-                uint32_t        uErrorCode;
+                RTGCUINT        uErrorCode;
                 TRPMERRORCODE   enmError = TRPM_TRAP_NO_ERRORCODE;
 
                 rc = TRPMQueryTrapAll(pVM, &u8Interrupt, NULL, &uErrorCode, NULL);

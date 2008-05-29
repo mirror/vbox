@@ -216,7 +216,7 @@
  * @param   GCType  The GC type.
  * @param   R3Type  The R3 type.
  * @param   R0Type  The R0 type.
- * @remark  For pointers used only in one context use GCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
+ * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
  */
 #ifdef IN_GC
 # define CTXTYPE(GCType, R3Type, R0Type)  GCType
@@ -231,18 +231,18 @@
  *
  * @param   GCType  The GC type.
  * @param   HCType  The HC type.
- * @remark  For pointers used only in one context use GCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
+ * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
  */
 #define GCTYPE(GCType, HCType)  CTXTYPE(GCType, HCType, HCType)
 
-/** @def GCPTRTYPE
+/** @def RCPTRTYPE
  * Declare a pointer which is used in GC but appears in structure(s) used by
  * both HC and GC. The main purpose is to make sure structures have the same
  * size when built for different architectures.
  *
  * @param   GCType  The GC type.
  */
-#define GCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR32, RTGCPTR32)
+#define RCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR32, RTGCPTR32)
 
 /** @def R3R0PTRTYPE
  * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0,

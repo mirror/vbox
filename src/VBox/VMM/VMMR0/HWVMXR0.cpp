@@ -272,22 +272,6 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_CR3_TARGET_COUNT, 0);
     AssertRC(rc);
 
-    /* VMX_VMCS_CTRL_ENTRY_CONTROLS
-     * Set required bits to one and zero according to the MSR capabilities.
-     */
-    val  = (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF);
-    if (pVM->hwaccm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
-    {
-        /** @todo 32 bits guest mode only for now. */
-        /* val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE; */
-    }
-    /* Mask away the bits that the CPU doesn't support */
-    /** @todo make sure they don't conflict with the above requirements. */
-    val &= (pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL);
-    /* else Must be zero when AMD64 is not available. */
-    rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
-    AssertRC(rc);
-
     /* VMX_VMCS_CTRL_EXIT_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
@@ -957,6 +941,22 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         AssertRC(rc);
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCIntercept);
     }
+
+    /* VMX_VMCS_CTRL_ENTRY_CONTROLS
+     * Set required bits to one and zero according to the MSR capabilities.
+     */
+    val = (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF);
+
+    /* 64 bits guest mode? */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
+
+    /* Mask away the bits that the CPU doesn't support */
+    /** @todo make sure they don't conflict with the above requirements. */
+    val &= (pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL);
+    /* else Must be zero when AMD64 is not available. */
+    rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
+    AssertRC(rc);
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;

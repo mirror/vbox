@@ -249,9 +249,9 @@ typedef struct MMHYPERHEAP
     /** The HC Ring-3 address of the heap. */
     R3R0PTRTYPE(uint8_t *)  pbHeapHC;
     /** The GC address of the heap. */
-    GCPTRTYPE(uint8_t *)    pbHeapGC;
+    RCPTRTYPE(uint8_t *)    pbHeapGC;
     /** The GC address of the VM. */
-    GCPTRTYPE(PVM)          pVMGC;
+    RCPTRTYPE(PVM)          pVMGC;
     /** The amount of free memory in the heap. */
     uint32_t                cbFree;
     /** Offset of the first free chunk in the heap.
@@ -674,7 +674,7 @@ typedef struct MM
     RTGCPTR                     pvHyperAreaGC;
 
     /** The hypervisor heap (GC Ptr). */
-    GCPTRTYPE(PMMHYPERHEAP)     pHyperHeapGC;
+    RCPTRTYPE(PMMHYPERHEAP)     pHyperHeapGC;
     /** The hypervisor heap (HC Ptr). */
     R3R0PTRTYPE(PMMHYPERHEAP)   pHyperHeapHC;
 

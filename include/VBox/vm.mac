@@ -48,18 +48,18 @@
 struc VM
     .enmVMState         resd 1
     .fForcedActions     resd 1
-    .paVMPagesR3        RTR3PTR_RES 1
-    .pSession           RTR0PTR_RES 1
-    .pUVM               RTR3PTR_RES 1
-    .pVMR3              RTR3PTR_RES 1
-    .pVMR0              RTR0PTR_RES 1
-    .pVMGC              RTGCPTR_RES 1
+    .paVMPagesR3        RTR3PTR_RES   1
+    .pSession           RTR0PTR_RES   1
+    .pUVM               RTR3PTR_RES   1
+    .pVMR3              RTR3PTR_RES   1
+    .pVMR0              RTR0PTR_RES   1
+    .pVMGC              RTGCPTR32_RES 1
     .hSelf              resd 1
     .u32Reserved        resd 1
 
-    .pfnVMMGCGuestToHostAsmGuestCtx RTGCPTR_RES 1
-    .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR_RES 1
-    .pfnVMMGCGuestToHostAsm         RTGCPTR_RES 1
+    .pfnVMMGCGuestToHostAsmGuestCtx RTGCPTR32_RES 1
+    .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR32_RES 1
+    .pfnVMMGCGuestToHostAsm         RTGCPTR32_RES 1
 
     .ThreadEMT          RTHCPTR_RES 1
     .NativeThreadEMT    RTHCPTR_RES 1

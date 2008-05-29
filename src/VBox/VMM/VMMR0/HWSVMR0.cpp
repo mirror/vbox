@@ -680,8 +680,8 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* RAX/EAX too, as VMRUN uses RAX as an implicit parameter. */
     pVMCB->guest.u64RAX    = pCtx->eax;
 
-    /* vmrun will fail otherwise. */
-    pVMCB->guest.u64EFER   = MSR_K6_EFER_SVME;
+    /* vmrun will fail without MSR_K6_EFER_SVME. */
+    pVMCB->guest.u64EFER   = pCtx->msrEFER | MSR_K6_EFER_SVME;
 
     /** TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
@@ -695,13 +695,12 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCIntercept);
     }
 
-    /** @todo 64 bits stuff (?):
-     * - STAR
-     * - LSTAR
-     * - CSTAR
-     * - SFMASK
-     * - KernelGSBase
-     */
+    /* Sync the various msrs for 64 bits mode. */
+    pVMCB->guest.u64STAR            = pCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
+    pVMCB->guest.u64LSTAR           = pCtx->msrLSTAR;           /* 64 bits mode syscall rip */
+    pVMCB->guest.u64CSTAR           = pCtx->msrCSTAR;           /* compatibility mode syscall rip */
+    pVMCB->guest.u64SFMASK          = pCtx->msrSFMASK;          /* syscall flag mask */
+    pVMCB->guest.u64KernelGSBase    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
 
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */

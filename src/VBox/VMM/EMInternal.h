@@ -284,6 +284,9 @@ typedef struct EM
     /** Pointer to the guest CPUM state. (HC Ptr) */
     R3R0PTRTYPE(PCPUMCTX)     pCtx;
 
+#if GC_ARCH_BITS == 64
+    RTGCPTR                   aPadding1;
+#endif
 
     union
     {
@@ -332,7 +335,7 @@ typedef struct EM
     /** More statistics (HC). */
     R3R0PTRTYPE(PEMSTATS)   pStatsHC;
     /** More statistics (GC). */
-    GCPTRTYPE(PEMSTATS)     pStatsGC;
+    RCPTRTYPE(PEMSTATS)     pStatsGC;
 #if HC_ARCH_BITS != GC_ARCH_BITS && GC_ARCH_BITS == 32
     RTGCPTR                 padding0;
 #endif

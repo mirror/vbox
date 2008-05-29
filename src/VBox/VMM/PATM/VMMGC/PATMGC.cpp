@@ -64,7 +64,7 @@
  */
 PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
 {
-    pVM->patm.s.pvFaultMonitor = pvFault;
+    pVM->patm.s.pvFaultMonitor = (RTGCPTR32)pvFault;
     return VINF_PATM_CHECK_PATCH_PAGE;
 }
 
@@ -111,8 +111,8 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
 
     if (pPatchPage)
     {
-        if (    pPatchPage->pLowestAddrGC  > (RTGCPTR)((RTGCUINTPTR)GCPtr + cbWrite - 1)
-            ||  pPatchPage->pHighestAddrGC < GCPtr)
+        if (    pPatchPage->pLowestAddrGC  > (RTGCPTR32)((RTGCUINTPTR)GCPtr + cbWrite - 1)
+            ||  pPatchPage->pHighestAddrGC < (RTGCPTR32)GCPtr)
         {
             /* This part of the page was not patched; try to emulate the instruction. */
             uint32_t cb;

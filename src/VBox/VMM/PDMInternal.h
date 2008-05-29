@@ -104,11 +104,11 @@ typedef struct PDMDEVINSINT
     R3R0PTRTYPE(PPDMPCIBUS)         pPciBusHC;
 
     /** GC pointer to associated PCI device structure. */
-    GCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;
+    RCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;
     /** Pointer to the VM this instance was created for - GC Ptr. */
-    GCPTRTYPE(PVM)                  pVMGC;
+    RCPTRTYPE(PVM)                  pVMGC;
     /** GC pointer to associated PCI bus structure. */
-    GCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
+    RCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
 #if GC_ARCH_BITS == 32
     uint32_t                        Alignment0;
 #endif
@@ -199,7 +199,7 @@ typedef struct PDMCRITSECTINT
     /** Pointer to the VM - R0Ptr. */
     R0PTRTYPE(PVM)      pVMR0;
     /** Pointer to the VM - GCPtr. */
-    GCPTRTYPE(PVM)      pVMGC;
+    RCPTRTYPE(PVM)      pVMGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t            padding;
 #endif
@@ -369,7 +369,7 @@ typedef struct PDMPIC
     DECLR0CALLBACKMEMBER(int, pfnGetInterruptR0,(PPDMDEVINS pDevIns));
 
     /** Pointer to the PIC device instance - GC. */
-    GCPTRTYPE(PPDMDEVINS)   pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
     /** @copydoc PDMPICREG::pfnSetIrqHC */
     DECLGCCALLBACKMEMBER(void, pfnSetIrqGC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptHC */
@@ -652,9 +652,9 @@ typedef struct PDMQUEUE
     /** Pointer to the GC VM and indicator for GC enabled queue.
      * If this is NULL, the queue cannot be used in GC.
      */
-    GCPTRTYPE(PVM)                          pVMGC;
+    RCPTRTYPE(PVM)                          pVMGC;
     /** LIFO of pending items - GC. */
-    GCPTRTYPE(PPDMQUEUEITEMCORE)            pPendingGC;
+    RCPTRTYPE(PPDMQUEUEITEMCORE)            pPendingGC;
     /** Item size (bytes). */
     RTUINT                                  cbItem;
     /** Number of items in the queue. */
@@ -669,7 +669,7 @@ typedef struct PDMQUEUE
         /** Pointer to the free item - HC Ptr. */
         R3R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pItemHC;
         /** Pointer to the free item - GC Ptr. */
-        GCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemGC;
+        RCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
         uint32_t                              Alignment0;
 #endif
@@ -809,7 +809,7 @@ typedef struct PDM
     /** Queue in which devhlp tasks are queued for R3 execution - HC Ptr. */
     R3R0PTRTYPE(PPDMQUEUE)          pDevHlpQueueHC;
     /** Queue in which devhlp tasks are queued for R3 execution - GC Ptr. */
-    GCPTRTYPE(PPDMQUEUE)            pDevHlpQueueGC;
+    RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueGC;
 
     /** The number of entries in the apQueuedCritSectsLeaves table that's currnetly in use. */
     RTUINT                          cQueuedCritSectLeaves;
@@ -825,7 +825,7 @@ typedef struct PDM
      * Only touched by EMT. */
     R3R0PTRTYPE(struct PDMQUEUE *)  pQueueFlushHC;
     /** Pointer to the queue which should be manually flushed - GCPtr. */
-    GCPTRTYPE(struct PDMQUEUE *)    pQueueFlushGC;
+    RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushGC;
 #if HC_ARCH_BITS == 64
     uint32_t                        padding0;
 #endif

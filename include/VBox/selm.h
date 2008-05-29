@@ -64,7 +64,7 @@ SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
  * @param   ss      Ring1 SS register value.
  * @param   esp     Ring1 ESP register value.
  */
-SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp);
+SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
 
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
@@ -74,7 +74,7 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp);
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp);
+SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
 
 /**
  * Returns Guest TSS pointer
