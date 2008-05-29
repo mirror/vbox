@@ -122,7 +122,7 @@ struct SerialState
     /** Pointer to the device instance. */
     R3PTRTYPE(PPDMDEVINS)           pDevInsHC;
     /** Pointer to the device instance. */
-    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)           pDevInsGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
     RTGCPTR                         Alignment0;
 #endif

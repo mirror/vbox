@@ -92,7 +92,7 @@ typedef struct SELM
     /** Pointer to the GCs - GC Ptr.
      * This is not initialized until the first relocation because it's used to
      * check if the shadow GDT virtual handler requires deregistration. */
-    GCPTRTYPE(PVBOXDESC)    paGdtGC;
+    RCPTRTYPE(PVBOXDESC)    paGdtGC;
     /** Current (last) Guest's GDTR. */
     VBOXGDTR                GuestGdtr;
     /** The current (last) effective Guest GDT size. */
@@ -101,7 +101,7 @@ typedef struct SELM
     /** HC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
     R3PTRTYPE(void *)       HCPtrLdt;
     /** GC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
-    GCPTRTYPE(void *)       GCPtrLdt;
+    RCPTRTYPE(void *)       GCPtrLdt;
     /** GC Pointer to the current Guest's LDT. */
     RTGCPTR                 GCPtrGuestLdt;
     /** Current LDT limit, both Guest and Shadow. */
@@ -109,7 +109,7 @@ typedef struct SELM
     /** Current LDT offset relative to pvLdt*. */
     RTUINT                  offLdtHyper;
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || GC_ARCH_BITS == 64
     /** TSS alignment padding. */
     RTUINT                  auPadding[2];
 #endif

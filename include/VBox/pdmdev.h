@@ -553,9 +553,9 @@ typedef struct PDMPCIHLPGC
     uint32_t                    u32TheEnd;
 } PDMPCIHLPGC;
 /** Pointer to PCI helpers. */
-typedef GCPTRTYPE(PDMPCIHLPGC *) PPDMPCIHLPGC;
+typedef RCPTRTYPE(PDMPCIHLPGC *) PPDMPCIHLPGC;
 /** Pointer to const PCI helpers. */
-typedef GCPTRTYPE(const PDMPCIHLPGC *) PCPDMPCIHLPGC;
+typedef RCPTRTYPE(const PDMPCIHLPGC *) PCPDMPCIHLPGC;
 
 /** Current PDMPCIHLPR3 version number. */
 #define PDM_PCIHLPGC_VERSION  0xe1010000
@@ -798,9 +798,9 @@ typedef struct PDMPICHLPGC
 } PDMPICHLPGC;
 
 /** Pointer to PIC GC helpers. */
-typedef GCPTRTYPE(PDMPICHLPGC *) PPDMPICHLPGC;
+typedef RCPTRTYPE(PDMPICHLPGC *) PPDMPICHLPGC;
 /** Pointer to const PIC GC helpers. */
-typedef GCPTRTYPE(const PDMPICHLPGC *) PCPDMPICHLPGC;
+typedef RCPTRTYPE(const PDMPICHLPGC *) PCPDMPICHLPGC;
 
 /** Current PDMPICHLPGC version number. */
 #define PDM_PICHLPGC_VERSION  0xfc010000
@@ -1091,9 +1091,9 @@ typedef struct PDMAPICHLPGC
     uint32_t                u32TheEnd;
 } PDMAPICHLPGC;
 /** Pointer to APIC GC helpers. */
-typedef GCPTRTYPE(PDMAPICHLPGC *) PPDMAPICHLPGC;
+typedef RCPTRTYPE(PDMAPICHLPGC *) PPDMAPICHLPGC;
 /** Pointer to const APIC helpers. */
-typedef GCPTRTYPE(const PDMAPICHLPGC *) PCPDMAPICHLPGC;
+typedef RCPTRTYPE(const PDMAPICHLPGC *) PCPDMAPICHLPGC;
 
 /** Current PDMAPICHLPGC version number. */
 #define PDM_APICHLPGC_VERSION   0x60010000
@@ -1152,7 +1152,7 @@ typedef struct PDMAPICHLPR0
     uint32_t                u32TheEnd;
 } PDMAPICHLPR0;
 /** Pointer to APIC GC helpers. */
-typedef GCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
+typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 /** Pointer to const APIC helpers. */
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
@@ -1320,9 +1320,9 @@ typedef struct PDMIOAPICHLPGC
     uint32_t                u32TheEnd;
 } PDMIOAPICHLPGC;
 /** Pointer to IOAPIC GC helpers. */
-typedef GCPTRTYPE(PDMAPICHLPGC *)PPDMIOAPICHLPGC;
+typedef RCPTRTYPE(PDMAPICHLPGC *)PPDMIOAPICHLPGC;
 /** Pointer to const IOAPIC helpers. */
-typedef GCPTRTYPE(const PDMIOAPICHLPGC *) PCPDMIOAPICHLPGC;
+typedef RCPTRTYPE(const PDMIOAPICHLPGC *) PCPDMIOAPICHLPGC;
 
 /** Current PDMIOAPICHLPGC version number. */
 #define PDM_IOAPICHLPGC_VERSION   0xfe010000
@@ -2805,9 +2805,9 @@ typedef struct PDMDEVHLPGC
     uint32_t                        u32TheEnd;
 } PDMDEVHLPGC;
 /** Pointer PDM Device GC API. */
-typedef GCPTRTYPE(struct PDMDEVHLPGC *) PPDMDEVHLPGC;
+typedef RCPTRTYPE(struct PDMDEVHLPGC *) PPDMDEVHLPGC;
 /** Pointer PDM Device GC API. */
-typedef GCPTRTYPE(const struct PDMDEVHLPGC *) PCPDMDEVHLPGC;
+typedef RCPTRTYPE(const struct PDMDEVHLPGC *) PCPDMDEVHLPGC;
 
 /** Current PDMDEVHLP version number. */
 #define PDM_DEVHLPGC_VERSION  0xfb010000
@@ -2979,9 +2979,9 @@ typedef struct PDMDEVINS
     /** Pointer to device instance data. */
     R0PTRTYPE(void *)           pvInstanceDataR0;
     /** Pointer the GC PDM Device API. */
-    GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
+    RCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer to device instance data. */
-    GCPTRTYPE(void *)           pvInstanceDataGC;
+    RCPTRTYPE(void *)           pvInstanceDataGC;
     /* padding to make achInstanceData aligned at 32 byte boundrary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 6];
     /** Device instance data. The size of this area is defined
@@ -3038,7 +3038,7 @@ typedef struct PDMDEVINS
 /** @def PDMDEVINS_2_GCPTR
  * Converts a PDM Device instance pointer a GC PDM Device instance pointer.
  */
-#define PDMDEVINS_2_GCPTR(pDevIns)  ( (GCPTRTYPE(PPDMDEVINS))((RTGCUINTPTR)(pDevIns)->pvInstanceDataGC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
+#define PDMDEVINS_2_GCPTR(pDevIns)  ( (RCPTRTYPE(PPDMDEVINS))((RTGCUINTPTR)(pDevIns)->pvInstanceDataGC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
 /** @def PDMDEVINS_2_R3PTR
  * Converts a PDM Device instance pointer a HC PDM Device instance pointer.

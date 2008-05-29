@@ -608,7 +608,7 @@ int pdmR3DevInit(PVM pVM)
     /*
      * Get the GC & R0 devhlps and create the devhlp R3 task queue.
      */
-    GCPTRTYPE(PCPDMDEVHLPGC) pDevHlpGC;
+    RCPTRTYPE(PCPDMDEVHLPGC) pDevHlpGC;
     int rc = PDMR3GetSymbolGC(pVM, NULL, "g_pdmGCDevHlp", &pDevHlpGC);
     AssertReleaseRCReturn(rc, rc);
 

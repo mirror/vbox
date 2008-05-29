@@ -19,6 +19,7 @@
 ; additional information or have any questions.
 ;
 
+%include "VBox/asmdefs.mac"
 %include "VBox/stam.mac"
 
 %define TRPM_TRAP_IN_OP_MASK    0xffff
@@ -30,26 +31,29 @@
 %define TRPM_TRAP_IN_V86        RT_BIT(30)
 %define TRPM_TRAP_IN_HYPER      RT_BIT(31)
 
-
 struc TRPM
     .offVM              resd 1
     .uActiveVector      resd 1
     .enmActiveType      resd 1
-    .uActiveErrorCode   resd 1
-    .uActiveCR2         resd 1
-    .uSavedVector       resd 1
+    .uActiveErrorCode   RTGCPTR_RES 1
+    .uActiveCR2         RTGCPTR_RES 1
+    .uSavedVector       RTGCPTR_RES 1
     .enmSavedType       resd 1
-    .uSavedErrorCode    resd 1
-    .uSavedCR2          resd 1
-    .uPrevVector        resd 1
+    .uSavedErrorCode    RTGCPTR_RES 1
+    .uSavedCR2          RTGCPTR_RES 1
+    .uPrevVector        RTGCPTR_RES 1
     .fDisableMonitoring resb 1
     .fSafeToDropGuestIDTMonitoring resb 1
+%if GC_ARCH_BITS == 32
     .abPadding1         resb 6
+%else
+    .abPadding1         resb 14
+%endif
     .aIdt               resd 512
     .au32IdtPatched     resd 8
-    .aTmpTrapHandlers   resd 256
+    .aTmpTrapHandlers   RTGCPTR32_RES 256
 
-    .GCPtrIdt           resd 1
+    .GCPtrIdt           RTGCPTR32_RES 1
     .GuestIdtr          resb 6
     .au8Padding         resb 2
 
@@ -72,7 +76,7 @@ struc TRPM
 
     .paStatForwardedIRQR3  RTR3PTR_RES 1
     .paStatForwardedIRQR0  RTR0PTR_RES 1
-    .paStatForwardedIRQGC  RTGCPTR_RES 1
+    .paStatForwardedIRQGC  RTGCPTR32_RES 1
 endstruc
 
 struc VBOXTSS

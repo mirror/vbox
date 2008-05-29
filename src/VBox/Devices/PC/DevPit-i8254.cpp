@@ -86,7 +86,7 @@ typedef struct PITChannelState
     /** The timer - HCPtr. */
     R3R0PTRTYPE(PTMTIMER)           pTimerHC;
     /** Pointer to the instance data - GCPtr. */
-    GCPTRTYPE(struct PITState *)    pPitGC;
+    RCPTRTYPE(struct PITState *)    pPitGC;
     /** The timer - HCPtr. */
     PTMTIMERGC                      pTimerGC;
     /** The virtual time stamp at the last reload. (only used in mode 2 for now) */

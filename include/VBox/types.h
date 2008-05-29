@@ -82,7 +82,7 @@ typedef R0PTRTYPE(struct VM *)  PVMR0;
 /** Pointer to a VM - Ring-3 Ptr. */
 typedef R3PTRTYPE(struct VM *)  PVMR3;
 /** Pointer to a VM - GC Ptr. */
-typedef GCPTRTYPE(struct VM *)  PVMGC;
+typedef RCPTRTYPE(struct VM *)  PVMGC;
 
 /** Pointer to a ring-0 (global) VM structure. */
 typedef R0PTRTYPE(struct GVM *) PGVM;
@@ -138,7 +138,7 @@ typedef R3PTRTYPE(PPDMDEVINS) PPDMDEVINSR3;
 /** R0 pointer to a PDM Device Instance. */
 typedef R0PTRTYPE(PPDMDEVINS) PPDMDEVINSR0;
 /** GC pointer to a PDM Device Instance. */
-typedef GCPTRTYPE(PPDMDEVINS) PPDMDEVINSGC;
+typedef RCPTRTYPE(PPDMDEVINS) PPDMDEVINSGC;
 
 /** Pointer to a PDM USB Device Instance. */
 typedef struct PDMUSBINS *PPDMUSBINS;
@@ -166,7 +166,7 @@ typedef R0PTRTYPE(struct TMTIMER *) PTMTIMERR0;
 typedef PTMTIMERR0 *PPTMTIMERR0;
 
 /** GC pointer to a timer. */
-typedef GCPTRTYPE(struct TMTIMER *) PTMTIMERGC;
+typedef RCPTRTYPE(struct TMTIMER *) PTMTIMERGC;
 /** Pointer to a GC pointer to a timer. */
 typedef PTMTIMERGC *PPTMTIMERGC;
 

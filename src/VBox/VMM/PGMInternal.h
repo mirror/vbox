@@ -310,7 +310,7 @@ typedef struct PGMMAPPING
     /** Pointer to next entry. */
     R0PTRTYPE(struct PGMMAPPING *)  pNextR0;
     /** Pointer to next entry. */
-    GCPTRTYPE(struct PGMMAPPING *)  pNextGC;
+    RCPTRTYPE(struct PGMMAPPING *)  pNextGC;
     /** Start Virtual address. */
     RTGCUINTPTR                     GCPtr;
     /** Last Virtual address (inclusive). */
@@ -345,9 +345,9 @@ typedef struct PGMMAPPING
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
         R3PTRTYPE(PX86PTPAE)    paPaePTsR3;
         /** The GC virtual address of the 32-bit page table. */
-        GCPTRTYPE(PX86PT)       pPTGC;
+        RCPTRTYPE(PX86PT)       pPTGC;
         /** The GC virtual address of the two PAE page table. */
-        GCPTRTYPE(PX86PTPAE)    paPaePTsGC;
+        RCPTRTYPE(PX86PTPAE)    paPaePTsGC;
         /** The GC virtual address of the 32-bit page table. */
         R0PTRTYPE(PX86PT)       pPTR0;
         /** The GC virtual address of the two PAE page table. */
@@ -380,9 +380,9 @@ typedef struct PGMPHYSHANDLER
     /** User argument for R0 handlers. */
     R0PTRTYPE(void *)                   pvUserR0;
     /** Pointer to GC callback function. */
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)      pfnHandlerGC;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)      pfnHandlerGC;
     /** User argument for GC handlers. */
-    GCPTRTYPE(void *)                   pvUserGC;
+    RCPTRTYPE(void *)                   pvUserGC;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS
@@ -448,7 +448,7 @@ typedef struct PGMVIRTHANDLER
     /** Size of the range (in bytes). */
     RTGCUINTPTR                         cb;
     /** Pointer to the GC callback function. */
-    GCPTRTYPE(PFNPGMGCVIRTHANDLER)      pfnHandlerGC;
+    RCPTRTYPE(PFNPGMGCVIRTHANDLER)      pfnHandlerGC;
     /** Pointer to the HC callback function for invalidation. */
     R3PTRTYPE(PFNPGMHCVIRTINVALIDATE)   pfnInvalidateHC;
     /** Pointer to the HC callback function. */
@@ -908,7 +908,7 @@ typedef struct PGMRAMRANGE
     /** Pointer to the next RAM range - for R0. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
     /** Pointer to the next RAM range - for GC. */
-    GCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
+    RCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
 #if GC_ARCH_BITS == 32
     /** Pointer alignment. */
     RTGCPTR                             GCPtrAlignment;
@@ -925,7 +925,7 @@ typedef struct PGMRAMRANGE
     uint32_t                            u32Alignment; /**< alignment. */
 #else
     /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
-    GCPTRTYPE(PRTHCPTR)                 pavHCChunkGC;
+    RCPTRTYPE(PRTHCPTR)                 pavHCChunkGC;
     /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
     R3R0PTRTYPE(PRTHCPTR)               pavHCChunkHC;
 #endif
@@ -994,7 +994,7 @@ typedef struct PGMROMRANGE
     /** Pointer to the next range - R0. */
     R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
     /** Pointer to the next range - GC. */
-    GCPTRTYPE(struct PGMROMRANGE *) pNextGC;
+    RCPTRTYPE(struct PGMROMRANGE *) pNextGC;
 #if GC_ARCH_BITS == 32
     RTGCPTR                         GCPtrAlignment; /**< Pointer alignment. */
 #endif
@@ -1467,7 +1467,7 @@ typedef struct PGMPOOL
     /** The VM handle - HC Ptr. */
     R3R0PTRTYPE(PVM) pVMHC;
     /** The VM handle - GC Ptr. */
-    GCPTRTYPE(PVM)  pVMGC;
+    RCPTRTYPE(PVM)  pVMGC;
     /** The max pool size. This includes the special IDs.  */
     uint16_t        cMaxPages;
     /** The current pool size. */
@@ -1484,7 +1484,7 @@ typedef struct PGMPOOL
     /** The number of present page table entries in the entire pool. */
     uint32_t        cPresent;
     /** Pointer to the array of user nodes - GC pointer. */
-    GCPTRTYPE(PPGMPOOLUSER) paUsersGC;
+    RCPTRTYPE(PPGMPOOLUSER) paUsersGC;
     /** Pointer to the array of user nodes - HC pointer. */
     R3R0PTRTYPE(PPGMPOOLUSER) paUsersHC;
 #endif /* PGMPOOL_WITH_USER_TRACKING */
@@ -1494,7 +1494,7 @@ typedef struct PGMPOOL
     /** The number of user nodes we've allocated. */
     uint16_t        cMaxPhysExts;
     /** Pointer to the array of physical xref extent - GC pointer. */
-    GCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsGC;
+    RCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsGC;
     /** Pointer to the array of physical xref extent nodes - HC pointer. */
     R3R0PTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsHC;
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
@@ -1514,7 +1514,7 @@ typedef struct PGMPOOL
     /** The current number of modified pages. */
     uint16_t        cModifiedPages;
     /** Access handler, GC. */
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnAccessHandlerGC;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnAccessHandlerGC;
     /** Access handler, R0. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnAccessHandlerR0;
     /** Access handler, R3. */
@@ -1813,8 +1813,8 @@ typedef struct PGMMODEDATA
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1890,9 +1890,9 @@ typedef struct PGM
      */
 
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    GCPTRTYPE(PX86PTE)          paDynPageMap32BitPTEsGC;
+    RCPTRTYPE(PX86PTE)          paDynPageMap32BitPTEsGC;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    GCPTRTYPE(PX86PTEPAE)       paDynPageMapPaePTEsGC;
+    RCPTRTYPE(PX86PTEPAE)       paDynPageMapPaePTEsGC;
 
     /** The host paging mode. (This is what SUPLib reports.) */
     SUPPAGINGMODE               enmHostMode;
@@ -1919,13 +1919,13 @@ typedef struct PGM
     /** The guest's page directory, HC pointer. */
     R3R0PTRTYPE(PX86PD)         pGuestPDHC;
     /** The guest's page directory, static GC mapping. */
-    GCPTRTYPE(PX86PD)           pGuestPDGC;
+    RCPTRTYPE(PX86PD)           pGuestPDGC;
     /** @} */
 
     /** @name PAE Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, static GC mapping. */
-    GCPTRTYPE(PX86PDPT)         pGstPaePDPTGC;
+    RCPTRTYPE(PX86PDPT)         pGstPaePDPTGC;
     /** The guest's page directory pointer table, HC pointer. */
     R3R0PTRTYPE(PX86PDPT)       pGstPaePDPTHC;
     /** The guest's page directories, HC pointers.
@@ -1935,7 +1935,7 @@ typedef struct PGM
     /** The guest's page directories, static GC mapping.
      * Unlike the HC array the first entry can be accessed as a 2048 entry PD.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-    GCPTRTYPE(PX86PDPAE)        apGstPaePDsGC[4];
+    RCPTRTYPE(PX86PDPAE)        apGstPaePDsGC[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                    aGCPhysGstPaePDs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
@@ -1953,7 +1953,7 @@ typedef struct PGM
     /** The 32-Bit PD - HC Ptr. */
     R3R0PTRTYPE(PX86PD)         pHC32BitPD;
     /** The 32-Bit PD - GC Ptr. */
-    GCPTRTYPE(PX86PD)           pGC32BitPD;
+    RCPTRTYPE(PX86PD)           pGC32BitPD;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                    u32Padding1; /**< alignment padding. */
 #endif
@@ -1969,7 +1969,7 @@ typedef struct PGM
     R3R0PTRTYPE(PX86PDPAE)      apHCPaePDs[4];
     /** The four PDs for the low 4GB - GC Ptr.
      * Same kind of mapping as apHCPaePDs. */
-    GCPTRTYPE(PX86PDPAE)        apGCPaePDs[4];
+    RCPTRTYPE(PX86PDPAE)        apGCPaePDs[4];
     /** The Physical Address (HC) of the four PDs for the low 4GB.
      * These are *NOT* 4 contiguous pages. */
     RTHCPHYS                    aHCPhysPaePDs[4];
@@ -1978,7 +1978,7 @@ typedef struct PGM
     /** The Physical Address (HC) of the PAE PDPT. */
     RTHCPHYS                    HCPhysPaePDPT;
     /** The PAE PDPT - GC Ptr. */
-    GCPTRTYPE(PX86PDPT)         pGCPaePDPT;
+    RCPTRTYPE(PX86PDPT)         pGCPaePDPT;
     /** @} */
 
     /** @name AMD64 Shadow Paging
@@ -2033,8 +2033,8 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 #if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
     RTGCPTR                         alignment3; /**< structure size alignment. */
 #endif
@@ -2092,7 +2092,7 @@ typedef struct PGM
     /** R0 pointer corresponding to PGM::pRamRangesR3. */
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
     /** GC pointer corresponding to PGM::pRamRangesR3. */
-    GCPTRTYPE(PPGMRAMRANGE)         pRamRangesGC;
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesGC;
     /** The configured RAM size. */
     RTUINT                          cbRamSize;
 
@@ -2102,7 +2102,7 @@ typedef struct PGM
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
     R0PTRTYPE(PPGMRAMRANGE)         pRomRangesR0;
     /** GC pointer corresponding to PGM::pRomRangesR3. */
-    GCPTRTYPE(PPGMRAMRANGE)         pRomRangesGC;
+    RCPTRTYPE(PPGMRAMRANGE)         pRomRangesGC;
     /** Alignment padding. */
     RTGCPTR                         GCPtrPadding2;
 
@@ -2113,12 +2113,12 @@ typedef struct PGM
     /** PGM offset based trees - HC Ptr. */
     R3R0PTRTYPE(PPGMTREES)          pTreesHC;
     /** PGM offset based trees - GC Ptr. */
-    GCPTRTYPE(PPGMTREES)            pTreesGC;
+    RCPTRTYPE(PPGMTREES)            pTreesGC;
 
     /** Linked list of GC mappings - for GC.
      * The list is sorted ascending on address.
      */
-    GCPTRTYPE(PPGMMAPPING)          pMappingsGC;
+    RCPTRTYPE(PPGMMAPPING)          pMappingsGC;
     /** Linked list of GC mappings - for HC.
      * The list is sorted ascending on address.
      */
@@ -2170,7 +2170,7 @@ typedef struct PGM
     /** Base address of the dynamic page mapping area.
      * The array is MM_HYPER_DYNAMIC_SIZE bytes big.
      */
-    GCPTRTYPE(uint8_t *)            pbDynPageMapBaseGC;
+    RCPTRTYPE(uint8_t *)            pbDynPageMapBaseGC;
     /** The index of the last entry used in the dynamic page mapping area. */
     RTUINT                          iDynPageMapLast;
     /** Cache containing the last entries in the dynamic page mapping area.
@@ -2199,7 +2199,7 @@ typedef struct PGM
     /** Shadow Page Pool - HC Ptr. */
     R3R0PTRTYPE(PPGMPOOL)           pPoolHC;
     /** Shadow Page Pool - GC Ptr. */
-    GCPTRTYPE(PPGMPOOL)             pPoolGC;
+    RCPTRTYPE(PPGMPOOL)             pPoolGC;
 
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
@@ -2281,7 +2281,7 @@ typedef struct PGM
 
 #ifdef VBOX_WITH_STATISTICS
     /** GC: Which statistic this \#PF should be attributed to. */
-    GCPTRTYPE(PSTAMPROFILE)   pStatTrap0eAttributionGC;
+    RCPTRTYPE(PSTAMPROFILE)   pStatTrap0eAttributionGC;
     RTGCPTR                   padding0;
     /** HC: Which statistic this \#PF should be attributed to. */
     R3R0PTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionHC;

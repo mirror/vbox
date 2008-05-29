@@ -176,7 +176,7 @@ typedef struct ATADevState {
     /** Pointer to the I/O buffer. */
     R3R0PTRTYPE(uint8_t *) pbIOBufferHC;
     /** Pointer to the I/O buffer. */
-    GCPTRTYPE(uint8_t *) pbIOBufferGC;
+    RCPTRTYPE(uint8_t *) pbIOBufferGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
     RTGCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
 #endif
@@ -244,9 +244,9 @@ typedef struct ATADevState {
     /** Pointer to controller instance. */
     R3R0PTRTYPE(struct ATACONTROLLER *) pControllerHC;
     /** Pointer to device instance. */
-    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)               pDevInsGC;
     /** Pointer to controller instance. */
-    GCPTRTYPE(struct ATACONTROLLER *)   pControllerGC;
+    RCPTRTYPE(struct ATACONTROLLER *)   pControllerGC;
 } ATADevState;
 
 
@@ -339,7 +339,7 @@ typedef struct ATACONTROLLER
     /** Pointer to device instance. */
     R3R0PTRTYPE(PPDMDEVINS)         pDevInsHC;
     /** Pointer to device instance. */
-    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)           pDevInsGC;
 
     /** Set when the destroying the device instance and the thread must exit. */
     uint32_t volatile   fShutdown;
@@ -415,8 +415,8 @@ typedef struct PCIATAState {
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfer, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfer, unsigned cb);
+PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
+PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
 PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -4992,7 +4992,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  * Port I/O Handler for primary port range IN string operations.
  * @see FNIOMIOPORTINSTRING for details.
  */
-PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfer, unsigned cb)
+PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
@@ -5049,7 +5049,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  * Port I/O Handler for primary port range OUT string operations.
  * @see FNIOMIOPORTOUTSTRING for details.
  */
-PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfer, unsigned cb)
+PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);

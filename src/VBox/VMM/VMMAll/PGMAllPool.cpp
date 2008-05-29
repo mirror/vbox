@@ -210,7 +210,7 @@ DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFau
 #endif
 {
 #ifdef IN_GC
-    return (RTGCPTR)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
+    return (const void *)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
 
 #elif defined(IN_RING0)
     void *pvRet;
@@ -656,21 +656,17 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
      * This ASSUMES that we're not invoked by Trap0e on in a out-of-sync
      * write situation, meaning that it's safe to write here.
      */
-#ifdef IN_GC
-    uint32_t *pu32 = (uint32_t *)pvFault;
-#else
-    RTGCPTR pu32 = pvFault;
-#endif
+    RTGCUINTPTR pu32 = (RTGCUINTPTR)pvFault;
     while (pRegFrame->ecx)
     {
-        pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, pu32, NULL);
+        pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
 #ifdef IN_GC
-        *pu32++ = pRegFrame->eax;
+        *(uint32_t *)pu32 = pRegFrame->eax;
 #else
         PGMPhysWriteGCPhys(pVM, GCPhysFault, &pRegFrame->eax, 4);
-        pu32 += 4;
 #endif
-        GCPhysFault += 4;
+        pu32           += 4;
+        GCPhysFault    += 4;
         pRegFrame->edi += 4;
         pRegFrame->ecx--;
     }

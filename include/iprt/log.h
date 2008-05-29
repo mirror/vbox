@@ -192,7 +192,7 @@ typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
  */
 typedef DECLCALLBACK(void) FNRTLOGFLUSHGC(PRTLOGGERGC pLogger);
 /** Pointer to logger function. */
-typedef GCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
+typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
 
 
 /**
@@ -211,7 +211,7 @@ struct RTLOGGERGC
      * This is actually pointer to a wrapper which will push a pointer to the
      * instance pointer onto the stack before jumping to the real logger function.
      * A very unfortunate hack to work around the missing variadic macro support in C++. */
-    GCPTRTYPE(PFNRTLOGGER)  pfnLogger;
+    RCPTRTYPE(PFNRTLOGGER)  pfnLogger;
     /** Pointer to the flush function. */
     PFNRTLOGFLUSHGC         pfnFlush;
     /** Magic number (RTLOGGERGC_MAGIC). */

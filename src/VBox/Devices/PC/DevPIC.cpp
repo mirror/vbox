@@ -118,7 +118,7 @@ typedef struct PicState {
     /** Pointer to the device instance, HCPtr. */
     R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the device instance, GCPtr. */
-    GCPTRTYPE(PPDMDEVINS)   pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
     RTGCPTR                 Alignment0;
 #endif
@@ -138,7 +138,7 @@ typedef struct DEVPIC
     /** Pointer to the PIC GC helpers. */
     PCPDMPICHLPGC           pPicHlpGC;
     /** Pointer to the device instance - GC Ptr. */
-    GCPTRTYPE(PPDMDEVINS)   pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
     /** Pointer to the device instance - GC Ptr. */
     R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
 #if HC_ARCH_BITS == 32
@@ -454,7 +454,7 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
 static void pic_reset(PicState *s)
 {
     R3R0PTRTYPE(PPDMDEVINS) pDevInsHC = s->pDevInsHC;
-    GCPTRTYPE(PPDMDEVINS) pDevInsGC = s->pDevInsGC;
+    RCPTRTYPE(PPDMDEVINS) pDevInsGC = s->pDevInsGC;
     int tmp, tmp2;
 
     tmp = s->elcr_mask;

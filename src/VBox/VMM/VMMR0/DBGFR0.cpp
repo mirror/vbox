@@ -44,7 +44,7 @@
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
  */
-DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTUINTREG uDr6)
+DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
 {
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     /*

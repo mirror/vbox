@@ -79,7 +79,7 @@ static PCSAMPAGE    csamCreatePageRecord(PVM pVM, RTGCPTR GCPtr, CSAMTAG enmTag,
 static int          csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr);
 static int          csamReinit(PVM pVM);
 static void         csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR pInstr, uint32_t opsize, bool fScanned);
-static int          csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
+static int          csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                           PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec);
 
 /** @todo Temporary for debugging. */
@@ -554,7 +554,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, GCPTRTYPE(uint8_t *) pGCPtr)
+static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, RCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
     R3PTRTYPE(void *) pHCPtr;
@@ -667,7 +667,7 @@ inline int CSAMR3DISInstr(PVM pVM, DISCPUSTATE *pCpu, RTGCPTR InstrGC, uint8_t *
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC,
+static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC,
                                  PCSAMP2GLOOKUPREC pCacheRec, void *pUserData)
 {
     PCSAMPAGE pPage = (PCSAMPAGE)pUserData;
@@ -863,7 +863,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int csamAnalyseCallCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
+static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                      PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec)
 {
     int                 rc;
@@ -940,7 +940,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCP
 
                 STAM_COUNTER_ADD(&pVM->csam.s.StatNrBytesRead, opsize);
 
-                GCPTRTYPE(uint8_t *) addr = 0;
+                RCPTRTYPE(uint8_t *) addr = 0;
                 PCSAMPAGE pJmpPage = NULL;
 
                 if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + opsize - 1))
@@ -1067,7 +1067,7 @@ done:
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
+static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                    PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec)
 {
     DISCPUSTATE cpu;
@@ -1153,7 +1153,7 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
 
         csamMarkCode(pVM, pPage, pCurInstrGC, opsize, true);
 
-        GCPTRTYPE(uint8_t *) addr = 0;
+        RCPTRTYPE(uint8_t *) addr = 0;
         PCSAMPAGE pJmpPage = NULL;
 
         if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + opsize - 1))
@@ -1910,7 +1910,7 @@ static int csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr)
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   cbBuf           How much it's reading/writing.
  */
-static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTGCPTR GCPtr, size_t cbBuf)
+static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTGCPTR32 GCPtr, size_t cbBuf)
 {
     int rc = PATMR3PatchWrite(pVM, GCPtr, cbBuf);
     AssertRC(rc);
@@ -1950,9 +1950,9 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
          *        (if it writes the same data as the patch jump and we replace it with obsolete opcodes)
          */
         Log(("CSAMCodePageWriteHandler: delayed write!\n"));
-        AssertCompileSize(RTGCPTR, 4);
+        AssertCompileSize(RTGCPTR32, 4);
         rc = VMR3ReqCallEx(pVM, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
-                           (PFNRT)CSAMDelayedWriteHandler, 3, pVM, GCPtr, cbBuf);
+                           (PFNRT)CSAMDelayedWriteHandler, 3, pVM, (RTGCPTR32)GCPtr, cbBuf);
     }
     AssertRC(rc);
 

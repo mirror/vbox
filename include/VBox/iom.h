@@ -239,8 +239,8 @@ IOMR3DECL(int)  IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
                                       const char *pszDesc);
 IOMR3DECL(int)  IOMR3IOPortRegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTGCPTR pvUser,
-                                      GCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, GCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      GCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, GCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+                                      RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                      RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                       const char *pszDesc);
 IOMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
                                       R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
@@ -257,9 +257,9 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                    GCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
-                                    GCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
-                                    GCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
+                                    RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                                    RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
+                                    RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
 /** @} */
 #endif /* IN_RING3 */

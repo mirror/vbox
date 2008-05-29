@@ -706,17 +706,25 @@ typedef const RTR0UINTREG  *PCRTR0UINTREG;
  */
 
 /** Natural signed integer in the GC. */
+#if GC_ARCH_BITS == 32
 typedef int32_t         RTGCINT;
+#elif GC_ARCH_BITS == 64
+typedef int64_t         RTGCINT;
+#endif
 /** Pointer to natural signed interger in GC. */
 typedef RTGCINT        *PRTGCINT;
 /** Pointer to const natural signed interger in GC. */
 typedef const RTGCINT  *PCRTGCINT;
 
-/** Natural signed uninteger in the GC. */
+/** Natural unsigned integer in the GC. */
+#if GC_ARCH_BITS == 32
 typedef uint32_t        RTGCUINT;
-/** Pointer to natural unsigned interger in GC. */
+#elif GC_ARCH_BITS == 64
+typedef uint64_t        RTGCUINT;
+#endif
+/** Pointer to natural unsigned integer in GC. */
 typedef RTGCUINT       *PRTGCUINT;
-/** Pointer to const natural unsigned interger in GC. */
+/** Pointer to const natural unsigned integer in GC. */
 typedef const RTGCUINT *PCRTGCUINT;
 
 /** Signed integer which can contain a GC pointer. */
@@ -724,8 +732,6 @@ typedef const RTGCUINT *PCRTGCUINT;
 typedef int32_t         RTGCINTPTR;
 #elif GC_ARCH_BITS == 64
 typedef int64_t         RTGCINTPTR;
-#else
-#  error Unsupported GC_ARCH_BITS value.
 #endif
 /** Pointer to signed interger which can contain a GC pointer. */
 typedef RTGCINTPTR     *PRTGCINTPTR;
@@ -807,11 +813,7 @@ typedef const RTGCPHYS64 *PCRTGCPHYS64;
  * Keep in mind that this type is an unsigned integer in
  * HC and void pointer in GC.
  */
-#ifdef IN_GC
-typedef void           *RTGCPTR32;
-#else
 typedef RTGCUINTPTR32   RTGCPTR32;
-#endif
 /** Pointer to a guest context pointer. */
 typedef RTGCPTR32      *PRTGCPTR32;
 /** Pointer to a const guest context pointer. */
@@ -862,10 +864,22 @@ typedef PCRTGCPTR32    PCRTGCPTR;
 #endif
 
 /** Unsigned integer register in the guest context. */
+typedef uint32_t              RTGCUINTREG32;
+/** Pointer to an unsigned integer register in the guest context. */
+typedef RTGCUINTREG32        *PRTGCUINTREG32;
+/** Pointer to a const unsigned integer register in the guest context. */
+typedef const RTGCUINTREG32  *PCRTGCUINTREG32;
+
+typedef uint64_t              RTGCUINTREG64;
+/** Pointer to an unsigned integer register in the guest context. */
+typedef RTGCUINTREG64        *PRTGCUINTREG64;
+/** Pointer to a const unsigned integer register in the guest context. */
+typedef const RTGCUINTREG64  *PCRTGCUINTREG64;
+
 #if GC_ARCH_BITS == 64
-typedef uint64_t            RTGCUINTREG;
+typedef RTGCUINTREG64       RTGCUINTREG;
 #elif GC_ARCH_BITS == 32
-typedef uint32_t            RTGCUINTREG;
+typedef RTGCUINTREG32       RTGCUINTREG;
 #else
 # error "Unsupported GC_ARCH_BITS!"
 #endif
@@ -903,25 +917,36 @@ typedef const RTCCPHYS *PCRTCCPHYS;
 # define NIL_RTCCPHYS   NIL_RTHCPHYS
 #endif
 
+/** Unsigned integer register in the current 32 bits context. */
+typedef uint32_t              RTCCUINTREG32;
+/** Pointer to an unsigned integer register in the current context. */
+typedef RTCCUINTREG32        *PRTCCUINTREG32;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef const RTCCUINTREG32  *PCRTCCUINTREG32;
+
+/** Unsigned integer register in the current 64 bits context. */
+typedef uint64_t              RTCCUINTREG64;
+/** Pointer to an unsigned integer register in the current context. */
+typedef RTCCUINTREG64        *PRTCCUINTREG64;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef const RTCCUINTREG64  *PCRTCCUINTREG64;
+
 /** Unsigned integer register in the current context. */
 #if ARCH_BITS == 32
-typedef uint32_t            RTCCUINTREG;
+typedef RTCCUINTREG32         RTCCUINTREG;
+/** Pointer to an unsigned integer register in the current context. */
+typedef PRTCCUINTREG32        PRTCCUINTREG;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef PCRTCCUINTREG32       PCRTCCUINTREG;
 #elif ARCH_BITS == 64
-typedef uint64_t            RTCCUINTREG;
+typedef RTCCUINTREG64         RTCCUINTREG;
+/** Pointer to an unsigned integer register in the current context. */
+typedef PRTCCUINTREG64      PRTCCUINTREG;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef PCRTCCUINTREG64     PCRTCCUINTREG;
 #else
 # error "Unsupported ARCH_BITS!"
 #endif
-/** Pointer to an unsigned integer register in the current context. */
-typedef RTCCUINTREG        *PRTCCUINTREG;
-/** Pointer to a const unsigned integer register in the current context. */
-typedef const RTCCUINTREG  *PCRTCCUINTREG;
-
-/** @deprecated */
-typedef RTCCUINTREG         RTUINTREG;
-/** @deprecated */
-typedef RTCCUINTREG        *PRTUINTREG;
-/** @deprecated */
-typedef const RTCCUINTREG  *PCRTUINTREG;
 
 /** @} */
 

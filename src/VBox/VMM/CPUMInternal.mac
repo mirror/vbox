@@ -49,9 +49,9 @@
 %endif
 
 struc CPUM
-    .offVM          resd    1
-    .pCPUMGC        RTGCPTR_RES  1          ; Guest Context pointer
-    .pCPUMHC        RTHCPTR_RES  1          ; Host Context pointer
+    .offVM          resd           1
+    .pCPUMGC        RTGCPTR32_RES  1          ; Guest Context pointer
+    .pCPUMHC        RTHCPTR_RES    1          ; Host Context pointer
 
 
     ;
@@ -403,9 +403,9 @@ struc CPUM
     ;
     alignb 32
     ; hypervisor core context.
-    .pHyperCoreR3         RTR3PTR_RES 1
-    .pHyperCoreR0         RTR0PTR_RES 1
-    .pHyperCoreGC         RTGCPTR_RES 1
+    .pHyperCoreR3         RTR3PTR_RES   1
+    .pHyperCoreR0         RTR0PTR_RES   1
+    .pHyperCoreGC         RTGCPTR32_RES 1
     ;...
     .fUseFlags            resd    1
     .fChanged             resd    1

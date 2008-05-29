@@ -39,7 +39,7 @@
  */
 RTGCPTR VMMGetStackGC(PVM pVM)
 {
-    return pVM->vmm.s.pbGCStackBottom;
+    return (RTGCPTR)pVM->vmm.s.pbGCStackBottom;
 }
 
 

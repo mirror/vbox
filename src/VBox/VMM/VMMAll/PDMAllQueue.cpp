@@ -136,7 +136,7 @@ PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
  * @returns NULL if pQueue is invalid.
  * @param   pQueue          The queue handle.
  */
-PDMDECL(GCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue)
+PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
     Assert(pQueue->pVMHC && pQueue->pVMGC);

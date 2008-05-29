@@ -3197,9 +3197,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                     false);
 # ifndef IN_RING0
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDGC, NULL, &HCPhysShw);
 #  else
-    rc = PGMShwGetPage(pVM, pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
 #  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;

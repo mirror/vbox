@@ -311,7 +311,7 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Devices.
      */
-    GCPTRTYPE(PCPDMDEVHLPGC) pDevHlpGC;
+    RCPTRTYPE(PCPDMDEVHLPGC) pDevHlpGC;
     int rc = PDMR3GetSymbolGC(pVM, NULL, "g_pdmGCDevHlp", &pDevHlpGC);
     AssertReleaseMsgRC(rc, ("rc=%Vrc when resolving g_pdmGCDevHlp\n", rc));
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)

@@ -173,7 +173,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupGC(PVM pVM, RTGCPTR GCPtr, uint32_t *pof
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
 {
 #ifdef IN_GC
-    return mmHyperLookupGC(pVM, pv, poff);
+    return mmHyperLookupGC(pVM, (RTGCPTR)pv, poff);
 #elif defined(IN_RING0)
     return mmHyperLookupR0(pVM, pv, poff);
 #else
@@ -253,7 +253,7 @@ DECLINLINE(RTGCPTR) mmHyperLookupCalcGC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
 DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
 #ifdef IN_GC
-    return mmHyperLookupCalcGC(pVM, pLookup, off);
+    return (void *)mmHyperLookupCalcGC(pVM, pLookup, off);
 #elif defined(IN_RING0)
     return mmHyperLookupCalcR0(pLookup, off);
 #else
@@ -493,7 +493,7 @@ MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_GC
-MMDECL(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv)
+MMDECL(RCPTRTYPE(void *)) MMHyperCCToGC(PVM pVM, void *pv)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
@@ -515,7 +515,7 @@ MMDECL(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv)
  *                      You'll be damed if this is not in the hypervisor region! :-)
  * @deprecated
  */
-MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
+MMDECL(RCPTRTYPE(void *)) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
 {
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
@@ -526,7 +526,7 @@ MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
             {
                 unsigned    off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pLookup->u.Locked.pvHC;
                 if (off < pLookup->cb)
-                    return (RTGCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+                    return (RCPTRTYPE(void *))((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
                 break;
             }
 
@@ -534,7 +534,7 @@ MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
             {
                 unsigned    off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pLookup->u.HCPhys.pvHC;
                 if (off < pLookup->cb)
-                    return (RTGCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+                    return (RCPTRTYPE(void *))((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
                 break;
             }
 
@@ -555,7 +555,7 @@ MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
     }
 
     AssertMsgFailed(("HCPtr=%p is not inside the hypervisor memory area!\n", HCPtr));
-    return (RTGCPTR)0;
+    return (RCPTRTYPE(void *))0;
 }
 
 
@@ -569,7 +569,7 @@ MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
  *                      You'll be damed if this is not in the hypervisor region! :-)
  * @deprecated
  */
-MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr)
+MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr)
 {
     unsigned        offGC = (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
@@ -614,7 +614,7 @@ MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr)
  */
 MMDECL(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 {
-    return MMHyperGC2HC(pVM, (RTGCPTR)Ptr);
+    return MMHyperGC2HC(pVM, (RCPTRTYPE(void *))Ptr);
 }
 
 #else /* !IN_GC */
@@ -629,7 +629,7 @@ MMDECL(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
  * @thread  The Emulation Thread.
  * @deprecated
  */
-MMDECL(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr)
+MMDECL(RCPTRTYPE(void *)) MMHyper2GC(PVM pVM, uintptr_t Ptr)
 {
     return MMHyperHC2GC(pVM, (RTHCPTR)Ptr);
 }

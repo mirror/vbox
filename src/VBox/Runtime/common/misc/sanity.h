@@ -45,13 +45,13 @@
 #if defined(IN_RING0) && ARCH_BITS != R0_ARCH_BITS
 # error "defined(IN_RING0) && ARCH_BITS != R0_ARCH_BITS"
 #endif
-#if defined(IN_GC) && ARCH_BITS != GC_ARCH_BITS
-# error "defined(IN_GC) && ARCH_BITS != GC_ARCH_BITS"
+#if defined(IN_GC) && ARCH_BITS != 32
+# error "defined(IN_GC) && ARCH_BITS != 32"
 #endif
 #if (defined(IN_RING0) || defined(IN_RING3)) && HC_ARCH_BITS != ARCH_BITS
 # error "(defined(IN_RING0) || defined(IN_RING3)) && HC_ARCH_BITS != ARCH_BITS"
 #endif
-#if defined(IN_GC) && GC_ARCH_BITS != ARCH_BITS
+#if defined(IN_GC) && GC_ARCH_BITS != 64 && GC_ARCH_BITS != ARCH_BITS
 # error "defined(IN_GC) && GC_ARCH_BITS != ARCH_BITS"
 #endif
 
@@ -123,8 +123,8 @@ AssertCompileSize(RTHCPHYS, 8);
  */
 #if GC_ARCH_BITS == 64
 
-AssertCompileSize(RTGCINT, 4);
-AssertCompileSize(RTGCUINT, 4);
+AssertCompileSize(RTGCINT, 8);
+AssertCompileSize(RTGCUINT, 8);
 AssertCompileSize(RTGCINTPTR, 8);
 AssertCompileSize(RTGCUINTPTR, 8);
 /*AssertCompileSize(RTGCINTREG, 8);*/
@@ -132,7 +132,8 @@ AssertCompileSize(RTGCUINTREG, 8);
 
 # ifdef IN_GC
 /*AssertCompileSize(RTCCINTREG, 8);*/
-AssertCompileSize(RTCCUINTREG, 8);
+/* Hack alert: there is no such thing as a GC context when GC_ARCH_BITS == 64; it's still 32 bits */
+AssertCompileSize(RTCCUINTREG, 4);
 # endif
 
 #else

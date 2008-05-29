@@ -3859,7 +3859,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 #   endif
 
 #  elif RT_INLINE_ASM_GNU_STYLE
-    RTUINTREG uDummy;
+    RTCCUINTREG uDummy;
 #   ifdef RT_ARCH_AMD64
     __asm__ __volatile__ ("rep stosq"
                           : "=D" (pv),
@@ -4128,7 +4128,7 @@ DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
     return (uint32_t)(u64 / u32);
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-    RTUINTREG uDummy;
+    RTCCUINTREG uDummy;
     __asm__ __volatile__("divl %3"
                          : "=a" (u32), "=d"(uDummy)
                          : "A" (u64), "r" (u32));
@@ -4162,7 +4162,7 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
     return (int32_t)(i64 / i32);
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-    RTUINTREG iDummy;
+    RTCCUINTREG iDummy;
     __asm__ __volatile__("idivl %3"
                          : "=a" (i32), "=d"(iDummy)
                          : "A" (i64), "r" (i32));

@@ -127,7 +127,7 @@ int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offs
     pPatch->uCurPatchOffset += size;
 
 
-static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATCHASMRECORD pAsmRecord, GCPTRTYPE(uint8_t *) pReturnAddrGC, bool fGenJump,
+static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATCHASMRECORD pAsmRecord, RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fGenJump,
                                  PPATMCALLINFO pCallInfo = 0)
 {
     uint32_t i, j;
@@ -146,7 +146,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
         {
             if (*(uint32_t*)&pPB[j] == pAsmRecord->uReloc[i])
             {
-                GCPTRTYPE(uint32_t *) dest;
+                RCPTRTYPE(uint32_t *) dest;
 
 #ifdef VBOX_STRICT
                 if (pAsmRecord->uReloc[i] == PATM_FIXUP)
@@ -414,7 +414,7 @@ static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTGCPTR pSrc, uint32_t cb
     return VINF_SUCCESS;
 }
 
-int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pCurInstrGC)
+int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC)
 {
     int rc = VINF_SUCCESS;
     PATCHGEN_PROLOG(pVM, pPatch);
@@ -471,7 +471,7 @@ int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RTGCPTR pNe
 }
 
 
-int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pReturnAddrGC, bool fSizeOverride, bool fGenJumpBack)
+int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fSizeOverride, bool fGenJumpBack)
 {
     uint32_t        size;
     PATMCALLINFO    callInfo;
@@ -526,7 +526,7 @@ int patmPatchGenPushCS(PVM pVM, PPATCHINFO pPatch)
     return VINF_SUCCESS;
 }
 
-int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride)
+int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride)
 {
     uint32_t size = 0;
     PPATCHASMRECORD pPatchAsmRec;
@@ -571,7 +571,7 @@ int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pTargetGC,
     return VINF_SUCCESS;
 }
 
-int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride)
+int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride)
 {
     uint32_t offset = 0;
     PATCHGEN_PROLOG(pVM, pPatch);
@@ -842,7 +842,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
  * @param   pCurInstrGC Current instruction pointer
  *
  */
-int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pCurInstrGC)
+int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC)
 {
     int size = 0, rc;
     RTGCPTR pPatchRetInstrGC;
@@ -1554,7 +1554,7 @@ int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC)
  * @param   pTargetGC   Guest target jump
  * @param   fClearInhibitIRQs   Clear inhibit irq flag
  */
-int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pReturnAddrGC, bool fClearInhibitIRQs)
+int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fClearInhibitIRQs)
 {
     int rc = VINF_SUCCESS;
     uint32_t size;
@@ -1582,7 +1582,7 @@ int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pRe
 /*
  * Relative jump from patch code to patch code (no fixup required)
  */
-int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord)
+int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord)
 {
     int32_t displ;
     int     rc = VINF_SUCCESS;

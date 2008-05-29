@@ -238,7 +238,7 @@ MMDECL(void *)      MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr);
 DECLINLINE(void *)  MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr)
 {
     NOREF(pVM);
-    return GCPtr;
+    return (void *)GCPtr;
 }
 #endif
 
@@ -263,12 +263,12 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 #endif
 
 #ifndef IN_GC
-MMDECL(RTGCPTR)     MMHyperCCToGC(PVM pVM, void *pv);
+MMDECL(RCPTRTYPE(void *))     MMHyperCCToGC(PVM pVM, void *pv);
 #else
-DECLINLINE(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv)
+DECLINLINE(RCPTRTYPE(void *)) MMHyperCCToGC(PVM pVM, void *pv)
 {
     NOREF(pVM);
-    return pv;
+    return (RCPTRTYPE(void *))pv;
 }
 #endif
 
@@ -284,17 +284,17 @@ DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 #endif
 
 #ifndef IN_GC
-MMDECL(RTGCPTR)     MMHyper2GC(PVM pVM, uintptr_t Ptr);
+MMDECL(RCPTRTYPE(void *))     MMHyper2GC(PVM pVM, uintptr_t Ptr);
 #else
-DECLINLINE(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr)
+DECLINLINE(RCPTRTYPE(void *)) MMHyper2GC(PVM pVM, uintptr_t Ptr)
 {
     NOREF(pVM);
-    return (RTGCPTR)Ptr;
+    return (RCPTRTYPE(void *))Ptr;
 }
 #endif
 
-MMDECL(RTGCPTR)     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
-MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr);
+MMDECL(RCPTRTYPE(void *))     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
+MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr);
 MMDECL(int)         MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 MMDECL(int)         MMHyperFree(PVM pVM, void *pv);
 MMDECL(void)        MMHyperHeapCheck(PVM pVM);

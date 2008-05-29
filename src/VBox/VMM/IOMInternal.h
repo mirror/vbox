@@ -77,15 +77,15 @@ typedef struct IOMMMIORANGE
     R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
 
     /** Pointer to user argument. */
-    RTGCPTR                     pvUserGC;
+    RCPTRTYPE(void *)           pvUserGC;
     /** Pointer to device instance. */
     PPDMDEVINSGC                pDevInsGC;
     /** Pointer to write callback function. */
-    GCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
+    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
     /** Pointer to read callback function. */
-    GCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackGC;
+    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackGC;
     /** Pointer to fill (memset) callback function. */
-    GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackGC;
+    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackGC;
     RTGCPTR                     GCPtrAlignment; /**< Alignment padding */
 
     /** Description / Name. For easing debugging. */
@@ -218,17 +218,17 @@ typedef struct IOMIOPORTRANGEGC
     /** Size of the range. */
     uint16_t                    cPorts;
     /** Pointer to user argument. */
-    RTGCPTR                     pvUser;
+    RCPTRTYPE(void *)           pvUser;
     /** Pointer to the associated device instance. */
-    GCPTRTYPE(PPDMDEVINS)       pDevIns;
+    RCPTRTYPE(PPDMDEVINS)       pDevIns;
     /** Pointer to OUT callback function. */
-    GCPTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
+    RCPTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
     /** Pointer to IN callback function. */
-    GCPTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
+    RCPTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
     /** Pointer to string OUT callback function. */
-    GCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
+    RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
     /** Pointer to string IN callback function. */
-    GCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
+    RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
 #endif
@@ -332,14 +332,14 @@ typedef struct IOM
     RTINT                           offVM;
 
     /** Pointer to the trees - GC ptr. */
-    GCPTRTYPE(PIOMTREES)            pTreesGC;
+    RCPTRTYPE(PIOMTREES)            pTreesGC;
     /** Pointer to the trees - HC ptr. */
     R3R0PTRTYPE(PIOMTREES)          pTreesHC;
 
     /** The ring-0 address of IOMMMIOHandler. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
     /** The GC address of IOMMMIOHandler. */
-    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
     RTGCPTR                         Alignment;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
@@ -359,12 +359,12 @@ typedef struct IOM
     R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
     R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
 
-    GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastReadGC;
-    GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastWriteGC;
-    GCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadGC;
-    GCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteGC;
-    GCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastGC;
-    GCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastGC;
+    RCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastReadGC;
+    RCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastWriteGC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadGC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteGC;
+    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastGC;
+    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastGC;
     /** @} */
 
     /** @name I/O Port statistics.
