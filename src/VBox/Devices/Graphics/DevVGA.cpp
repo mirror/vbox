@@ -5233,7 +5233,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     RTGCPTR pGCMapping = 0;
     rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pGCMapping);
     AssertMsgRC(rc, ("MMR3HyperMapGCPhys(%#x,) -> %Rrc\n", pData->vram_size, rc));
+#if GC_ARCH_BITS == 64
     Assert(!(pGCMapping >> 32ULL));
+#endif
     pData->vram_ptrGC = pGCMapping;
 
     /*
