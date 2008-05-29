@@ -1821,7 +1821,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     pCpu->apvUserData[0]  = &State;
 
     uint32_t cbInstr;
-#ifdef LOG_ENABLED
+#ifndef LOG_ENABLED
     rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, NULL);
     if (VBOX_SUCCESS(rc))
     {
