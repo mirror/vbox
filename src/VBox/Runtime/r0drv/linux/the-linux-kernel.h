@@ -82,6 +82,7 @@
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 # include <linux/ktime.h>
+# include <linux/hrtimer.h>
 #endif
 #include <linux/wait.h>
 /* For the basic additions module */
