@@ -243,21 +243,6 @@ typedef struct RndCtx RNDCTX;
 typedef RNDCTX *PRNDCTX;
 
 /**
- * @todo I failed to make Windows' sscanf to process %llx format 
- *       specification properly. If someone knows how to do it
- *       please re-write the format spec the way it stays the
- *       same on all platforms. We probably need RTStrScanf()
- *       anyway.
- */
-
-#define RT_PRND_SEED_FSPEC_OUT "%016llx#%016llx#%016llx#%016llx#%016llx#%08x#%08x"
-#ifdef RT_OS_WINDOWS
-# define RT_PRND_SEED_FSPEC_IN "%I64x#%I64x#%I64x#%I64x#%I64x#%x#%x"
-#else
-# define RT_PRND_SEED_FSPEC_IN "%llx#%llx#%llx#%llx#%llx#%x#%x"
-#endif
-
-/**
  * Initialize seeds. 
  *  
  * @remarks You should choose ANY 4 random 64-bit
@@ -266,34 +251,26 @@ typedef RNDCTX *PRNDCTX;
  * There are P=(2^62+2^46+2)*(2^64-1)^4 > 2^318 possible choices
  * for seeds, the period of the RNG.
  */
-RTDECL(int) RTPRandInit(PRNDCTX pCtx, const char *pszSeedInfo)
+RTDECL(int) RTPRandInit(PRNDCTX pCtx, uint32_t u32Seed)
 {
-    if (pszSeedInfo)
-    {
-        int nFieldsRead = sscanf(pszSeedInfo, RT_PRND_SEED_FSPEC_IN,
-               &pCtx->x, &pCtx->y, &pCtx->z, &pCtx->w, &pCtx->c, &pCtx->u32x, &pCtx->u32y);
-        if (nFieldsRead != 7 || pCtx->x > UINT64_MAX-1 || pCtx->y > UINT64_MAX-1 ||
-            pCtx->z > UINT64_MAX-1 || pCtx->w > UINT64_MAX-1 ||
-            pCtx->c > ((1ull << 62) + (1ull << 47) + 1) || pCtx->u32y == 0)
-            return VERR_INVALID_PARAMETER;
-    }
-    else
-    {
-        pCtx->x = RTRandU64Ex(0, UINT64_MAX-1);
-        pCtx->y = RTRandU64Ex(0, UINT64_MAX-1);
-        pCtx->z = RTRandU64Ex(0, UINT64_MAX-1);
-        pCtx->w = RTRandU64Ex(0, UINT64_MAX-1);
-        pCtx->c = RTRandU64Ex(0, (1ull << 62) + (1ull << 47) + 1);
-        pCtx->u32x = RTRandU32();
-        pCtx->u32y = RTRandU32Ex(1, UINT32_MAX);
-    }
+    if (u32Seed == 0)
+        u32Seed = (uint32_t)(ASMReadTSC() >> 8);
+    /* Zero is not a good seed. */
+    if (u32Seed == 0)
+        u32Seed = 362436069;
+    pCtx->x = u32Seed;
+    pCtx->y = 17280675555674358941ll;
+    pCtx->z = 6376492577913983186ll;
+    pCtx->w = 9064188857900113776ll;
+    pCtx->c = 123456789;
+    pCtx->u32x = 2282008;
+    pCtx->u32y = u32Seed;
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTPRandGetSeedInfo(PRNDCTX pCtx, char **ppszSeedInfo)
+RTDECL(uint32_t) RTPRandGetSeedInfo(PRNDCTX pCtx)
 {
-    return RTStrAPrintf(ppszSeedInfo, RT_PRND_SEED_FSPEC_OUT,
-                          pCtx->x, pCtx->y, pCtx->z, pCtx->w, pCtx->c, pCtx->u32x, pCtx->u32y);
+    return pCtx->u32y;
 }
 
 /**
@@ -383,28 +360,16 @@ struct Segment
 };
 typedef struct Segment *PSEGMENT;
 
-static void initializeRandomGenerator(PRNDCTX pCtx, const char *pszSeedInfo)
+static void initializeRandomGenerator(PRNDCTX pCtx, uint32_t u32Seed)
 {
-    int rc = RTPRandInit(pCtx, pszSeedInfo);
+    int rc = RTPRandInit(pCtx, u32Seed);
     if (VBOX_FAILURE(rc))
-    {
         RTPrintf("ERROR: Failed to initialize random generator. RC=%Vrc\n", rc);
-    }
     else
     {
-        char *pszNewSeedInfo = NULL;
-        rc = RTPRandGetSeedInfo(pCtx, &pszNewSeedInfo);
-        if (VBOX_FAILURE(rc))
-        {
-            RTPrintf("ERROR: Failed to get seed values. RC=%Vrc\n", rc);
-        }
-        else
-        {
-            RTPrintf("INFO: Random generator seed used: %s\n", pszNewSeedInfo);
-            RTMemFree(pszNewSeedInfo);
-        }
+        RTPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));    
+        RTLogPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));    
     }
-    
 }
 
 static int compareSegments(const void *left, const void *right)
@@ -419,13 +384,17 @@ static void generateRandomSegments(PRNDCTX pCtx, PSEGMENT pSegment, uint32_t nSe
     /* Generate segment offsets. */
     for (i = 0; i < nSegments; i++)
     {
-        bool fDuplicateFound = false;
+        bool fDuplicateFound;
         do
         {
             pSegment[i].u64Offset = RTPRandU64Ex(pCtx, 0, u64DiskSize / u32SectorSize - 1) * u32SectorSize;
+            fDuplicateFound = false;
             for (uint32_t j = 0; j < i; j++)
                 if (pSegment[i].u64Offset == pSegment[j].u64Offset)
+                {
                     fDuplicateFound = true;
+                    break;
+                }
         } while (fDuplicateFound);
     }
     /* Sort in offset-ascending order. */
@@ -518,6 +487,9 @@ static int readAndCompareSegments(PVBOXHDD pVD, void *pvBuf, PSEGMENT pSegment)
                     RTPrintf("ERROR: Segment at %Lx of %d bytes is corrupt at offset %x (found %x instead of %x)\n",
                              pSegment->u64Offset, pSegment->u32Length, i, ((uint8_t*)pvBuf)[i],
                              pSegment->u8Value);
+                    RTLogPrintf("ERROR: Segment at %Lx of %d bytes is corrupt at offset %x (found %x instead of %x)\n",
+                             pSegment->u64Offset, pSegment->u32Length, i, ((uint8_t*)pvBuf)[i],
+                             pSegment->u8Value);
                     return VERR_INTERNAL_ERROR;
                 }
         }
@@ -530,7 +502,7 @@ static int readAndCompareSegments(PVBOXHDD pVD, void *pvBuf, PSEGMENT pSegment)
 static int tstVDOpenCreateWriteMerge(const char *pszBackend,
                                      const char *pszBaseFilename,
                                      const char *pszDiffFilename,
-                                     const char *pszSeedInfo)
+                                     uint32_t u32Seed)
 {
     int rc;
     PVBOXHDD pVD = NULL;
@@ -591,12 +563,12 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     void *pvBuf = RTMemAlloc(_1M);
 
     RNDCTX ctx;
-    initializeRandomGenerator(&ctx, pszSeedInfo);
+    initializeRandomGenerator(&ctx, u32Seed);
     generateRandomSegments(&ctx, paBaseSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
     generateRandomSegments(&ctx, paDiffSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 128u, 255u);
 
-    PSEGMENT pSegment;
-    /*RTPrintf("Base segments:\n");
+    /*PSEGMENT pSegment;
+    RTPrintf("Base segments:\n");
     for (pSegment = paBaseSegments; pSegment->u32Length; pSegment++)
         RTPrintf("off: %08Lx len: %04x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
     writeSegmentsToDisk(pVD, pvBuf, paBaseSegments);
@@ -640,10 +612,15 @@ int main(int argc, char *argv[])
 {
     int rc;
 
-    const char *pszSeedInfo = NULL;
+    uint32_t u32Seed = 0; // Means choose random
 
     if (argc > 1)
-        pszSeedInfo = argv[1];
+        if (sscanf(argv[1], "%x", &u32Seed) != 1)
+        {
+            RTPrintf("ERROR: Invalid parameter %s. Valid usage is %s <32-bit seed>.\n",
+                     argv[1], argv[0]);
+            return 1;
+        }
 
     RTR3Init();
     RTPrintf("tstVD: TESTING...\n");
@@ -707,25 +684,25 @@ int main(int argc, char *argv[])
         g_cErrors++;
     }
 
-    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", pszSeedInfo);
+    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VDI test failed (new image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", pszSeedInfo);
+    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VDI test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-    rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", pszSeedInfo);
+    rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK test failed (new image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-    rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", pszSeedInfo);
+    rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK test failed (existing image)! rc=%Vrc\n", rc);
@@ -742,7 +719,7 @@ int main(int argc, char *argv[])
     RTFileDelete("tmpVDBase.vmdk");
     RTFileDelete("tmpVDDiff.vmdk");
 #if 0
-    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", pszSeedInfo);
+    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
