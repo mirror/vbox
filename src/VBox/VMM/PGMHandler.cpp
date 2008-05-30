@@ -582,7 +582,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
         default:                                pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp,
-        "%VGp - %VGp  %VHv  %VHv  %VGv  %VGv  %s  %s\n",
+        "%VGp - %VGp  %VHv  %VHv  %VRv  %VRv  %s  %s\n",
         pCur->Core.Key, pCur->Core.KeyLast, pCur->pfnHandlerR3, pCur->pvUserR3, pCur->pfnHandlerGC, pCur->pvUserGC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
@@ -614,7 +614,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
         case PGMVIRTHANDLERTYPE_HYPERVISOR: pszType = "WriteHyp "; break;
         default:                            pszType = "????"; break;
     }
-    pHlp->pfnPrintf(pHlp, "%08x - %08x  %08x  %08x  %s  %s\n",
+    pHlp->pfnPrintf(pHlp, "%VGv - %VGv  %VHv  %VRv  %s  %s\n",
         pCur->GCPtr, pCur->GCPtrLast, pCur->pfnHandlerHC, pCur->pfnHandlerGC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
