@@ -148,7 +148,7 @@ typedef enum RTLOGGROUP
 
 /** Logger structure. */
 #ifdef IN_GC
-typedef struct RTLOGGERGC RTLOGGER;
+typedef struct RTLOGGERRC RTLOGGER;
 #else
 typedef struct RTLOGGER RTLOGGER;
 #endif
@@ -159,11 +159,11 @@ typedef const RTLOGGER *PCRTLOGGER;
 
 
 /** Guest context logger structure. */
-typedef struct RTLOGGERGC RTLOGGERGC;
+typedef struct RTLOGGERRC RTLOGGERRC;
 /** Pointer to guest context logger structure. */
-typedef RTLOGGERGC *PRTLOGGERGC;
+typedef RTLOGGERRC *PRTLOGGERRC;
 /** Pointer to const guest context logger structure. */
-typedef const RTLOGGERGC *PCRTLOGGERGC;
+typedef const RTLOGGERRC *PCRTLOGGERRC;
 
 
 /**
@@ -190,7 +190,7 @@ typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
  *
  * @param   pLogger     Pointer to the logger instance which is to be flushed.
  */
-typedef DECLCALLBACK(void) FNRTLOGFLUSHGC(PRTLOGGERGC pLogger);
+typedef DECLCALLBACK(void) FNRTLOGFLUSHGC(PRTLOGGERRC pLogger);
 /** Pointer to logger function. */
 typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
 
@@ -198,7 +198,7 @@ typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
 /**
  * Logger instance structure for GC.
  */
-struct RTLOGGERGC
+struct RTLOGGERRC
 {
     /** Pointer to temporary scratch buffer.
      * This is used to format the log messages. */
@@ -214,7 +214,7 @@ struct RTLOGGERGC
     RCPTRTYPE(PFNRTLOGGER)  pfnLogger;
     /** Pointer to the flush function. */
     PFNRTLOGFLUSHGC         pfnFlush;
-    /** Magic number (RTLOGGERGC_MAGIC). */
+    /** Magic number (RTLOGGERRC_MAGIC). */
     uint32_t                u32Magic;
     /** Logger instance flags - RTLOGFLAGS. */
     RTUINT                  fFlags;
@@ -226,8 +226,8 @@ struct RTLOGGERGC
     RTUINT                  afGroups[1];
 };
 
-/** RTLOGGERGC::u32Magic value. (John Rogers Searle) */
-#define RTLOGGERGC_MAGIC    0x19320731
+/** RTLOGGERRC::u32Magic value. (John Rogers Searle) */
+#define RTLOGGERRC_MAGIC    0x19320731
 
 
 
@@ -1303,7 +1303,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
 
 /**
- * Create a logger instance clone for GC usage.
+ * Create a logger instance clone for RC usage.
  *
  * @returns iprt status code.
  *
@@ -1314,8 +1314,8 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
  * @param   pfnFlushGCPtr       Pointer to flush function (GC Ptr).
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  */
-RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLoggerGC,
-                         RTGCPTR pfnLoggerGCPtr, RTGCPTR pfnFlushGCPtr, RTUINT fFlags);
+RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC, size_t cbLoggerGC,
+                         RTRCPTR pfnLoggerGCPtr, RTRCPTR pfnFlushGCPtr, RTUINT fFlags);
 
 /**
  * Flushes a GC logger instance to a HC logger.
@@ -1325,7 +1325,7 @@ RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLogg
  *                      If NULL the default logger is used.
  * @param   pLoggerGC   The GC logger instance to flush.
  */
-RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC);
+RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC);
 
 /**
  * Flushes the buffer in one logger instance onto another logger.

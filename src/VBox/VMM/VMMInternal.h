@@ -202,12 +202,12 @@ typedef struct VMM
 
     /** Pointer to the GC logger instance - GC Ptr.
      * This is NULL if logging is disabled. */
-    RCPTRTYPE(PRTLOGGERGC)      pLoggerGC;
+    RCPTRTYPE(PRTLOGGERRC)      pLoggerGC;
     /** Size of the allocated logger instance (pLoggerGC/pLoggerHC). */
     RTUINT                      cbLoggerGC;
     /** Pointer to the GC logger instance - HC Ptr.
      * This is NULL if logging is disabled. */
-    R3PTRTYPE(PRTLOGGERGC)      pLoggerHC;
+    R3PTRTYPE(PRTLOGGERRC)      pLoggerHC;
 
     /** Pointer to the R0 logger instance.
      * This is NULL if logging is disabled. */
@@ -215,12 +215,12 @@ typedef struct VMM
 
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
     /** Pointer to the GC release logger instance - GC Ptr. */
-    RCPTRTYPE(PRTLOGGERGC)      pRelLoggerGC;
+    RCPTRTYPE(PRTLOGGERRC)      pRelLoggerGC;
     /** Size of the allocated release logger instance (pRelLoggerGC/pRelLoggerHC).
      * This may differ from cbLoggerGC. */
     RTUINT                      cbRelLoggerGC;
     /** Pointer to the GC release logger instance - HC Ptr. */
-    R3PTRTYPE(PRTLOGGERGC)      pRelLoggerHC;
+    R3PTRTYPE(PRTLOGGERRC)      pRelLoggerHC;
 #endif /* VBOX_WITH_GC_AND_R0_RELEASE_LOG */
 
     /** Global VM critical section. */
@@ -472,7 +472,7 @@ VMMGCDECL(void) vmmGCRelLoggerWrapper(const char *pszFormat, ...);
  * @param   pLogger     The logger instance to flush.
  * @remark  This function must be exported!
  */
-VMMGCDECL(int) vmmGCLoggerFlush(PRTLOGGERGC pLogger);
+VMMGCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger);
 
 /** @name Trap testcases and related labels.
  * @{ */

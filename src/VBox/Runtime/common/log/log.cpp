@@ -93,9 +93,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 *******************************************************************************/
 #ifdef IN_GC
 /** Default logger instance. */
-extern "C" DECLIMPORT(RTLOGGERGC)   g_Logger;
+extern "C" DECLIMPORT(RTLOGGERRC)   g_Logger;
 /** Default relese logger instance. */
-extern "C" DECLIMPORT(RTLOGGERGC)   g_RelLogger;
+extern "C" DECLIMPORT(RTLOGGERRC)   g_RelLogger;
 #else /* !IN_GC */
 /** Default logger instance. */
 static PRTLOGGER                    g_pLogger;
@@ -597,7 +597,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 
 
 /**
- * Create a logger instance clone for GC usage.
+ * Create a logger instance clone for RC usage.
  *
  * @returns iprt status code.
  *
@@ -608,8 +608,8 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
  * @param   pfnFlushGCPtr       Pointer to flush function (GC Ptr).
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  */
-RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLoggerGC,
-                         RTGCPTR pfnLoggerGCPtr, RTGCPTR pfnFlushGCPtr, RTUINT fFlags)
+RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC, size_t cbLoggerGC,
+                         RTRCPTR pfnLoggerGCPtr, RTRCPTR pfnFlushGCPtr, RTUINT fFlags)
 {
     /*
      * Validate input.
@@ -634,7 +634,7 @@ RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLogg
     pLoggerGC->fPendingPrefix = false;
     pLoggerGC->pfnLogger    = pfnLoggerGCPtr;
     pLoggerGC->pfnFlush     = pfnFlushGCPtr;
-    pLoggerGC->u32Magic     = RTLOGGERGC_MAGIC;
+    pLoggerGC->u32Magic     = RTLOGGERRC_MAGIC;
     pLoggerGC->fFlags       = fFlags | RTLOGFLAGS_DISABLED;
     pLoggerGC->cGroups      = 1;
     pLoggerGC->afGroups[0]  = 0;
@@ -652,9 +652,9 @@ RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLogg
     /*
      * Check if there's enough space for the groups.
      */
-    if (cbLoggerGC < (size_t)RT_OFFSETOF(RTLOGGERGC, afGroups[pLogger->cGroups]))
+    if (cbLoggerGC < (size_t)RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]))
     {
-        AssertMsgFailed(("%d req=%d cGroups=%d\n", cbLoggerGC, RT_OFFSETOF(RTLOGGERGC, afGroups[pLogger->cGroups]), pLogger->cGroups));
+        AssertMsgFailed(("%d req=%d cGroups=%d\n", cbLoggerGC, RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]), pLogger->cGroups));
         return VERR_INVALID_PARAMETER;
     }
     memcpy(&pLoggerGC->afGroups[0], &pLogger->afGroups[0], pLogger->cGroups * sizeof(pLoggerGC->afGroups[0]));
@@ -686,7 +686,7 @@ RTDECL(int) RTLogCloneGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC, size_t cbLogg
  *                      If NULL the default logger is used.
  * @param   pLoggerGC   The GC logger instance to flush.
  */
-RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERGC pLoggerGC)
+RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC)
 {
     /*
      * Resolve defaults.
