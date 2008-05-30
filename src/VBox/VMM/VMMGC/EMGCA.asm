@@ -199,8 +199,10 @@ BEGINPROC   EMGCEmulateLockCmpXchg8b
 %else
     lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
 %endif
-    mov     dword [esp + 08h + 8], eax
-    mov     dword [esp + 0ch + 8], edx
+    mov     ebx, dword [esp + 08h + 8]
+    mov     dword [ebx], eax
+    mov     ebx, dword [esp + 0ch + 8]
+    mov     dword [ebx], edx
 
     ; collect flags and return.
     pushf
@@ -253,8 +255,10 @@ BEGINPROC   EMGCEmulateCmpXchg8b
 %else
     cmpxchg8b qword [ebp]               ; do CMPXCHG8B
 %endif
-    mov     dword [esp + 08h + 8], eax
-    mov     dword [esp + 0ch + 8], edx
+    mov     ebx, dword [esp + 08h + 8]
+    mov     dword [ebx], eax
+    mov     ebx, dword [esp + 0ch + 8]
+    mov     dword [ebx], edx
 
     ; collect flags and return.
     pushf
