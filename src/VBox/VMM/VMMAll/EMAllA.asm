@@ -842,6 +842,8 @@ ENDPROC     EMEmulateBts
 
 
 %if 0
+;; untested code!!
+
 ;;
 ; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateLockCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
@@ -897,18 +899,8 @@ BEGINPROC   EMEmulateLockCmpXchg32
     pushf
     pop     eax
 
-    mov     edx, [esp + 14h + 4]            ; eflags pointer
-    mov     dword [edx], eax
-
     pop     ebx
-    mov     eax, VINF_SUCCESS
     retn
-
-; Read error - we will be here after our page fault handler.
-GLOBALNAME EMEmulateLockCmpXchg32_Error
-    pop     ebx
-    mov     eax, VERR_ACCESS_DENIED
-    ret
 
 ENDPROC     EMEmulateLockCmpXchg32
 
@@ -967,18 +959,9 @@ BEGINPROC   EMEmulateCmpXchg32
     pushf
     pop     eax
 
-    mov     edx, [esp + 14h + 4]        ; eflags pointer
-    mov     dword [edx], eax
-
     pop     ebx
-    mov     eax, VINF_SUCCESS
     retn
 
-; Read error - we will be here after our page fault handler.
-GLOBALNAME EMEmulateCmpXchg32_Error
-    pop     ebx
-    mov     eax, VERR_ACCESS_DENIED
-    ret
 ENDPROC     EMEmulateCmpXchg32
 
 ;;
@@ -1006,27 +989,18 @@ BEGINPROC   EMEmulateLockCmpXchg8b32
     mov     ecx, [esp + 14h + 8]        ; ECX
 
     lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
-    mov     dword [esp + 08h + 8], eax
-    mov     dword [esp + 0ch + 8], edx
+    mov     ebx, dword [esp + 08h + 8]
+    mov     dword [ebx], eax
+    mov     ebx, dword [esp + 0ch + 8]
+    mov     dword [ebx], edx
 
     ; collect flags and return.
     pushf
     pop     eax
 
-    mov     edx, [esp + 18h + 8]            ; eflags pointer
-    mov     dword [edx], eax
-
     pop     ebx
     pop     ebp
-    mov     eax, VINF_SUCCESS
     retn
-
-; Read error - we will be here after our page fault handler.
-GLOBALNAME EMEmulateLockCmpXchg8b32_Error
-    pop     ebx
-    pop     ebp
-    mov     eax, VERR_ACCESS_DENIED
-    ret
 
 ENDPROC     EMEmulateLockCmpXchg8b32
 
@@ -1055,27 +1029,18 @@ BEGINPROC   EMEmulateCmpXchg8b32
     mov     ecx, [esp + 14h + 8]        ; ECX
 
     cmpxchg8b qword [ebp]               ; do CMPXCHG8B
-    mov     dword [esp + 08h + 8], eax
-    mov     dword [esp + 0ch + 8], edx
+    mov     ebx, dword [esp + 08h + 8]
+    mov     dword [ebx], eax
+    mov     ebx, dword [esp + 0ch + 8]
+    mov     dword [ebx], edx
 
     ; collect flags and return.
     pushf
     pop     eax
 
-    mov     edx, [esp + 18h + 8]            ; eflags pointer
-    mov     dword [edx], eax
-
     pop     ebx
     pop     ebp
-    mov     eax, VINF_SUCCESS
     retn
-
-; Read error - we will be here after our page fault handler.
-GLOBALNAME EMEmulateCmpXchg8b32_Error
-    pop     ebx
-    pop     ebp
-    mov     eax, VERR_ACCESS_DENIED
-    ret
 ENDPROC     EMEmulateCmpXchg8b32
 
 %endif
