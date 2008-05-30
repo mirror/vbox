@@ -21,12 +21,18 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxDev.h>
 
-#include <xf86Pci.h>
-#include <Pci.h>
+#ifndef PCIACCESS
+# include <xf86Pci.h>
+# include <Pci.h>
+#endif
 
 #include "xf86.h"
 #define NEED_XF86_TYPES
-#include "xf86_ansic.h"
+#ifdef NO_ANSIC
+# include <string.h>
+#else
+# include "xf86_ansic.h"
+#endif
 #include "compiler.h"
 #include "cursorstr.h"
 
@@ -180,7 +186,7 @@ vboxRecheckHWCursor(ScrnInfoPtr pScrn)
     }
     TRACE_EXIT();
 }
- 
+
 /**
  * Macro to disable VBVA extensions and return, for use when an
  * unexplained error occurs.
@@ -322,6 +328,14 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
     }
 }
 
+#ifdef PCIACCESS
+/* As of X.org server 1.5, we are using the pciaccess library functions to
+ * access PCI.  This structure describes our VMM device. */
+/** Structure describing the VMM device */
+static const struct pci_id_match vboxVMMDevID =
+{ VMMDEV_VENDORID, VMMDEV_DEVICEID, PCI_MATCH_ANY, PCI_MATCH_ANY,
+  PCI_MATCH_ANY, PCI_MATCH_ANY, 0 };
+#endif
 
 /**
  * Initialise VirtualBox's accelerated video extensions.
@@ -331,6 +345,26 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
 static Bool
 vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 {
+#ifdef PCIACCESS
+    struct pci_device_iterator *devIter = NULL;
+
+    TRACE_ENTRY();
+    pVBox->vmmDevInfo = NULL;
+    devIter = pci_id_match_iterator_create(&vboxVMMDevID);
+    if (devIter)
+    {
+        pVBox->vmmDevInfo = pci_device_next(devIter);
+        pci_iterator_destroy(devIter);
+    }
+    if (pVBox->vmmDevInfo)
+    {
+        pci_device_map_range(pVBox->vmmDevInfo,
+                             pVBox->vmmDevInfo->regions[1].base_addr,
+                             pVBox->vmmDevInfo->regions[1].size,
+                             PCI_DEV_MAP_FLAG_WRITABLE,
+                             (void **)&pVBox->pVMMDevMemory);
+    }
+#else
     PCITAG pciTag;
     ADDRESS pciAddress;
 
@@ -358,6 +392,7 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
        function needed to determine it. */
     pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTag, pciAddress,
                                          sizeof(VMMDevMemory));
+#endif
     if (pVBox->pVMMDevMemory == NULL)
     {
         xf86DrvMsg(scrnIndex, X_ERROR,

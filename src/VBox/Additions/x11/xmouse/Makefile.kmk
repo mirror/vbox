@@ -100,7 +100,7 @@ vboxmouse_drv_71_SOURCES = \
 #
 DLLS += vboxmouse_drv_14
 vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
-vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \

@@ -183,4 +183,20 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxutils.c
 
 
+#
+# vboxvideo_drv_15
+#
+DLLS += vboxvideo_drv_15
+vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
+vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS
+vboxvideo_drv_15_INCS = \
+	$(VBOX_PATH_X11_XORG_1_5) \
+	$(VBOX_PATH_X11_XORG_1_5)/X11 \
+	$(VBOX_PATH_X11_XORG_1_5)/xorg
+vboxvideo_drv_15_SOURCES  = \
+	vboxvideo_15.c \
+	vboxutils.c
+
+
 include	$(KBUILD_PATH)/subfooter.kmk
