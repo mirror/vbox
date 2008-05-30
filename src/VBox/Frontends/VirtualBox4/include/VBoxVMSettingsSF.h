@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxSharedFoldersSettings class declaration
+ * VBoxVMSettingsSF class declaration
  */
 
 /*
@@ -20,10 +20,10 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxSharedFoldersSettings_h__
-#define __VBoxSharedFoldersSettings_h__
+#ifndef __VBoxVMSettingsSF_h__
+#define __VBoxVMSettingsSF_h__
 
-#include "VBoxSharedFoldersSettings.gen.h"
+#include "VBoxVMSettingsSF.gen.h"
 #include "QIWithRetranslateUI.h"
 
 /* Qt includes */
@@ -46,14 +46,18 @@ enum SFDialogType
 typedef QPair<QString, SFDialogType> SFolderName;
 typedef QList<SFolderName> SFoldersNameList;
 
-class VBoxSharedFoldersSettings : public QIWithRetranslateUI<QWidget>,
-                                  public Ui::VBoxSharedFoldersSettings
+class VBoxVMSettingsSF : public QIWithRetranslateUI<QWidget>,
+                         public Ui::VBoxVMSettingsSF
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSharedFoldersSettings (QWidget *aParent = 0, int aType = WrongType);
+    static void getFromMachineEx (const CMachine &aMachine,
+                                  QWidget *aParent);
+    static void putBackToMachineEx();
+
+    VBoxVMSettingsSF (QWidget *aParent = 0, int aType = WrongType);
 
     int dialogType() { return mDialogType; }
 
@@ -100,6 +104,8 @@ private:
     bool isEditable (const QString &);
     SFoldersNameList usedList (bool aIncludeSelected);
 
+    static VBoxVMSettingsSF *mSettings;
+
     int      mDialogType;
     bool     mIsListViewChanged;
     CMachine mMachine;
@@ -120,7 +126,7 @@ public:
         EditDialogType
     };
 
-    VBoxAddSFDialog (VBoxSharedFoldersSettings *aParent,
+    VBoxAddSFDialog (VBoxVMSettingsSF *aParent,
                      VBoxAddSFDialog::DialogType aType,
                      bool aEnableSelector /* for "permanent" checkbox */,
                      const SFoldersNameList &aUsedNames);
@@ -161,5 +167,5 @@ private:
     SFoldersNameList             mUsedNames;
 };
 
-#endif // __VBoxSharedFoldersSettings_h__
+#endif // __VBoxVMSettingsSF_h__
 

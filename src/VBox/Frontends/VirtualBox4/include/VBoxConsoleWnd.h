@@ -345,7 +345,7 @@ private:
 };
 
 
-class VBoxSharedFoldersSettings;
+class VBoxVMSettingsSF;
 class VBoxSFDialog : public QIWithRetranslateUI<QDialog>
 {
     Q_OBJECT;
@@ -368,7 +368,7 @@ protected:
 
 private:
 
-    VBoxSharedFoldersSettings *mSettings;
+    VBoxVMSettingsSF *mSettings;
     CSession &mSession;
 };
 

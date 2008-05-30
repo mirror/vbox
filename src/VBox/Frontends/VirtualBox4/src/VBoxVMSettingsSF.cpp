@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxSharedFoldersSettings class implementation
+ * VBoxVMSettingsSF class implementation
  */
 
 /*
@@ -20,7 +20,7 @@
  * additional information or have any questions.
  */
 
-#include "VBoxSharedFoldersSettings.h"
+#include "VBoxVMSettingsSF.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
@@ -170,14 +170,15 @@ private:
 };
 
 
-VBoxSharedFoldersSettings::VBoxSharedFoldersSettings (QWidget *aParent,
-                                                      int aType)
+VBoxVMSettingsSF* VBoxVMSettingsSF::mSettings = 0;
+
+VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mDialogType (aType)
     , mIsListViewChanged (false)
 {
     /* Apply UI decorations */
-    Ui::VBoxSharedFoldersSettings::setupUi (this);
+    Ui::VBoxVMSettingsSF::setupUi (this);
 
     mTreeView->header()->setMovable (false);
     mTbAdd->setIcon (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
@@ -227,7 +228,23 @@ VBoxSharedFoldersSettings::VBoxSharedFoldersSettings (QWidget *aParent,
 }
 
 
-void VBoxSharedFoldersSettings::getFromGlobal()
+void VBoxVMSettingsSF::getFromMachineEx (const CMachine &aMachine,
+                                         QWidget *aPage)
+{
+    mSettings = new VBoxVMSettingsSF (aPage, MachineType);
+    QVBoxLayout *layout = new QVBoxLayout (aPage);
+    layout->setContentsMargins (0, 0, 0, 0);
+    layout->addWidget (mSettings);
+    mSettings->getFromMachine (aMachine);
+}
+
+void VBoxVMSettingsSF::putBackToMachineEx()
+{
+    mSettings->putBackToMachine();
+}
+
+
+void VBoxVMSettingsSF::getFromGlobal()
 {
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
     //SFTreeViewItem *root = searchRoot (true, GlobalType);
@@ -235,7 +252,7 @@ void VBoxSharedFoldersSettings::getFromGlobal()
     //getFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate(), root);
 }
 
-void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
+void VBoxVMSettingsSF::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
     SFTreeViewItem *root = searchRoot (true, MachineType);
@@ -243,7 +260,7 @@ void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
     getFrom (mMachine.GetSharedFolders().Enumerate(), root);
 }
 
-void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
+void VBoxVMSettingsSF::getFromConsole (const CConsole &aConsole)
 {
     mConsole = aConsole;
     SFTreeViewItem *root = searchRoot (true, ConsoleType);
@@ -252,7 +269,7 @@ void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
 }
 
 
-void VBoxSharedFoldersSettings::putBackToGlobal()
+void VBoxVMSettingsSF::putBackToGlobal()
 {
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
     //if (!mIsListViewChanged)
@@ -268,7 +285,7 @@ void VBoxSharedFoldersSettings::putBackToGlobal()
     //putBackTo (en, root);
 }
 
-void VBoxSharedFoldersSettings::putBackToMachine()
+void VBoxVMSettingsSF::putBackToMachine()
 {
     if (!mIsListViewChanged)
         return;
@@ -282,7 +299,7 @@ void VBoxSharedFoldersSettings::putBackToMachine()
     putBackTo (en, root);
 }
 
-void VBoxSharedFoldersSettings::putBackToConsole()
+void VBoxVMSettingsSF::putBackToConsole()
 {
     if (!mIsListViewChanged)
         return;
@@ -296,16 +313,16 @@ void VBoxSharedFoldersSettings::putBackToConsole()
     putBackTo (en, root);
 }
 
-void VBoxSharedFoldersSettings::retranslateUi()
+void VBoxVMSettingsSF::retranslateUi()
 {
     /* Translate uic generated strings */
-    Ui::VBoxSharedFoldersSettings::retranslateUi (this);
+    Ui::VBoxVMSettingsSF::retranslateUi (this);
 
     mTrFull = tr ("Full");
     mTrReadOnly = tr ("Read-only");
 }
 
-void VBoxSharedFoldersSettings::tbAddPressed()
+void VBoxVMSettingsSF::tbAddPressed()
 {
     /* Invoke Add-Box Dialog */
     VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDialogType,
@@ -338,7 +355,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     mIsListViewChanged = true;
 }
 
-void VBoxSharedFoldersSettings::tbEditPressed()
+void VBoxVMSettingsSF::tbEditPressed()
 {
     /* Check selected item */
     QTreeWidgetItem *selectedItem = mTreeView->selectedItems().size() == 1 ?
@@ -390,7 +407,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     mIsListViewChanged = true;
 }
 
-void VBoxSharedFoldersSettings::tbRemovePressed()
+void VBoxVMSettingsSF::tbRemovePressed()
 {
     QTreeWidgetItem *selectedItem = mTreeView->selectedItems().size() == 1 ?
                                     mTreeView->selectedItems() [0] : 0;
@@ -401,7 +418,7 @@ void VBoxSharedFoldersSettings::tbRemovePressed()
 }
 
 
-void VBoxSharedFoldersSettings::processCurrentChanged (
+void VBoxVMSettingsSF::processCurrentChanged (
     QTreeWidgetItem *aCurrentItem, QTreeWidgetItem* /* aPreviousItem */)
 {
     if (aCurrentItem && aCurrentItem->parent() && !aCurrentItem->isSelected())
@@ -416,7 +433,7 @@ void VBoxSharedFoldersSettings::processCurrentChanged (
     mTbRemove->setEnabled (removeEnabled);
 }
 
-void VBoxSharedFoldersSettings::processDoubleClick (QTreeWidgetItem *aItem,
+void VBoxVMSettingsSF::processDoubleClick (QTreeWidgetItem *aItem,
                                                     int /* aColumn */)
 {
     bool editEnabled = aItem && aItem->parent() &&
@@ -426,7 +443,7 @@ void VBoxSharedFoldersSettings::processDoubleClick (QTreeWidgetItem *aItem,
 }
 
 
-void VBoxSharedFoldersSettings::adjustList()
+void VBoxVMSettingsSF::adjustList()
 {
     /* Adjust two columns size.
      * Watching columns 0&2 to feat 1/3 of total width. */
@@ -448,7 +465,7 @@ void VBoxSharedFoldersSettings::adjustList()
     mTreeView->setColumnWidth (2, w2);
 }
 
-void VBoxSharedFoldersSettings::adjustFields()
+void VBoxVMSettingsSF::adjustFields()
 {
     QTreeWidgetItem *mainRoot = mTreeView->invisibleRootItem();
     for (int i = 0; i < mainRoot->childCount(); ++ i)
@@ -466,7 +483,7 @@ void VBoxSharedFoldersSettings::adjustFields()
 }
 
 
-void VBoxSharedFoldersSettings::showEvent (QShowEvent *aEvent)
+void VBoxVMSettingsSF::showEvent (QShowEvent *aEvent)
 {
     QWidget::showEvent (aEvent);
 
@@ -475,7 +492,7 @@ void VBoxSharedFoldersSettings::showEvent (QShowEvent *aEvent)
 }
 
 
-void VBoxSharedFoldersSettings::removeSharedFolder (const QString & aName,
+void VBoxVMSettingsSF::removeSharedFolder (const QString & aName,
                                                     const QString & aPath,
                                                     SFDialogType aType)
 {
@@ -512,7 +529,7 @@ void VBoxSharedFoldersSettings::removeSharedFolder (const QString & aName,
     }
 }
 
-void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
+void VBoxVMSettingsSF::createSharedFolder (const QString & aName,
                                                     const QString & aPath,
                                                     bool aWritable,
                                                     SFDialogType aType)
@@ -551,7 +568,7 @@ void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
 }
 
 
-void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
+void VBoxVMSettingsSF::getFrom (const CSharedFolderEnumerator &aEn,
                                          SFTreeViewItem *aRoot)
 {
     while (aEn.HasMore())
@@ -570,8 +587,8 @@ void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
     processCurrentChanged (aRoot->childCount() ? aRoot->child (0) : aRoot);
 }
 
-void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
-                                           SFTreeViewItem *aRoot)
+void VBoxVMSettingsSF::putBackTo (CSharedFolderEnumerator &aEn,
+                                  SFTreeViewItem *aRoot)
 {
     Assert (!aRoot->text (1).isNull());
     SFDialogType type = (SFDialogType)aRoot->text (1).toInt();
@@ -608,8 +625,8 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
 }
 
 
-SFTreeViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent,
-                                                       SFDialogType aType)
+SFTreeViewItem* VBoxVMSettingsSF::searchRoot (bool aIsPermanent,
+                                              SFDialogType aType)
 {
     QString type = aType != WrongType ? QString::number (aType) :
         !aIsPermanent ? QString::number (ConsoleType) :
@@ -630,7 +647,7 @@ SFTreeViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent,
            static_cast<SFTreeViewItem*> (mainRoot->child (i)) : 0;
 }
 
-bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
+bool VBoxVMSettingsSF::isEditable (const QString &aKey)
 {
     /* mDialogType should be correct */
     Assert (mDialogType);
@@ -640,7 +657,7 @@ bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
     return mDialogType & type;
 }
 
-SFoldersNameList VBoxSharedFoldersSettings::usedList (bool aIncludeSelected)
+SFoldersNameList VBoxVMSettingsSF::usedList (bool aIncludeSelected)
 {
     /* Make the used names list: */
     SFoldersNameList list;
@@ -660,7 +677,7 @@ SFoldersNameList VBoxSharedFoldersSettings::usedList (bool aIncludeSelected)
 }
 
 
-VBoxAddSFDialog::VBoxAddSFDialog (VBoxSharedFoldersSettings *aParent,
+VBoxAddSFDialog::VBoxAddSFDialog (VBoxVMSettingsSF *aParent,
                                   VBoxAddSFDialog::DialogType aType,
                                   bool aEnableSelector,
                                   const SFoldersNameList &aUsedNames)
@@ -777,7 +794,7 @@ void VBoxAddSFDialog::retranslateUi()
     mLePath->setWhatsThis (tr ("Displays the path to an existing folder "
                                "on the host PC."));
 
-    mLbName->setText (tr ("Folder Name")); 
+    mLbName->setText (tr ("Folder Name"));
     mLeName->setWhatsThis (tr ("Displays the name of the shared folder "
                                "(as it will be seen by the guest OS)."));
 
@@ -794,7 +811,7 @@ void VBoxAddSFDialog::retranslateUi()
 
 void VBoxAddSFDialog::validate()
 {
-    int dlgType = static_cast<VBoxSharedFoldersSettings*>
+    int dlgType = static_cast<VBoxVMSettingsSF*>
                   (parent())->dialogType();
     SFDialogType resultType =
         mCbPermanent && !mCbPermanent->isChecked() ? ConsoleType :

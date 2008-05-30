@@ -26,7 +26,7 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxVMFirstRunWzd.h"
-#include "VBoxSharedFoldersSettings.h"
+#include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"
 #include "VBoxDownloaderWgt.h"
 #include "VBoxGlobal.h"
@@ -2176,7 +2176,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     /* Toggle qt full-screen mode */
     switchToFullscreen (aOn, aSeamless);
 
-#ifdef Q_WS_MAC 
+#ifdef Q_WS_MAC
     if (aOn && aSeamless)
     {
         /* Please note: All the stuff below has to be done after the window has
@@ -3498,7 +3498,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     mainLayout->setSpacing (10);
 
     /* Setup settings layout */
-    mSettings = new VBoxSharedFoldersSettings (this, MachineType | ConsoleType);
+    mSettings = new VBoxVMSettingsSF (this, MachineType | ConsoleType);
     mSettings->getFromConsole (aSession.GetConsole());
     mSettings->getFromMachine (aSession.GetMachine());
     mainLayout->addWidget (mSettings);
