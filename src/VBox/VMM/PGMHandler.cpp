@@ -452,7 +452,7 @@ PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, GCPtr);
     if (RT_LIKELY(pCur))
     {
-        Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %#x-%#x %s\n", pCur->enmType,
+        Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %VGv-%VGv %s\n", pCur->enmType,
              pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
         Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
@@ -481,7 +481,7 @@ PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
             return VERR_INVALID_PARAMETER;
         }
 
-        Log(("PGMHandlerVirtualDeregister: Removing Hyper Virtual (%d) Range %#x-%#x %s\n", pCur->enmType,
+        Log(("PGMHandlerVirtualDeregister: Removing Hyper Virtual (%d) Range %VGv-%VGv %s\n", pCur->enmType,
              pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
         Assert(pCur->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
     }
