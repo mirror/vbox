@@ -56,6 +56,9 @@
       </property>
       <item>
        <widget class="QTreeWidget" name="mTreeView" >
+        <property name="contextMenuPolicy" >
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
         <property name="whatsThis" >
          <string>&lt;qt>Lists all shared folders accessible to this machine. Use &lt;tt>net use x: \\vboxsvr\share&lt;/tt> to access a shared folder named &lt;i>share&lt;/i> from a DOS-like OS, or &lt;tt>mount -t vboxsf share mount_point&lt;/tt> to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt></string>
         </property>
@@ -81,95 +84,6 @@
          </property>
         </column>
        </widget>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" >
-        <property name="spacing" >
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QToolButton" name="mTbAdd" >
-          <property name="focusPolicy" >
-           <enum>Qt::TabFocus</enum>
-          </property>
-          <property name="toolTip" >
-           <string>Add a new shared folder (Ins)</string>
-          </property>
-          <property name="whatsThis" >
-           <string>Adds a new shared folder definition.</string>
-          </property>
-          <property name="text" >
-           <string/>
-          </property>
-          <property name="shortcut" >
-           <string>Ins</string>
-          </property>
-          <property name="autoRaise" >
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="mTbEdit" >
-          <property name="focusPolicy" >
-           <enum>Qt::TabFocus</enum>
-          </property>
-          <property name="toolTip" >
-           <string>Edit the selected shared folder (Ctrl+Space)</string>
-          </property>
-          <property name="whatsThis" >
-           <string>Edits the selected shared folder definition.</string>
-          </property>
-          <property name="text" >
-           <string/>
-          </property>
-          <property name="shortcut" >
-           <string>Ctrl+Space</string>
-          </property>
-          <property name="autoRaise" >
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="mTbRemove" >
-          <property name="focusPolicy" >
-           <enum>Qt::TabFocus</enum>
-          </property>
-          <property name="toolTip" >
-           <string>Remove the selected shared folder (Del)</string>
-          </property>
-          <property name="whatsThis" >
-           <string>Removes the selected shared folder definition.</string>
-          </property>
-          <property name="text" >
-           <string/>
-          </property>
-          <property name="shortcut" >
-           <string>Del</string>
-          </property>
-          <property name="autoRaise" >
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType" >
-           <enum>QSizePolicy::Expanding</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>21</width>
-            <height>101</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
       </item>
      </layout>
     </widget>
