@@ -84,7 +84,7 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
                                           RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
                                           R3PTRTYPE(const char *) pszDesc)
 {
-    Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%VGp GCPhysLast=%VGp pfnHandlerR3=%VHv pvUserR3=%VHv pfnHandlerR0=%VHv pvUserR0=%VHv pfnHandlerGC=%VGv pvUserGC=%VGv pszDesc=%s\n",
+    Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%VGp GCPhysLast=%VGp pfnHandlerR3=%VHv pvUserR3=%VHv pfnHandlerR0=%VHv pvUserR0=%VHv pfnHandlerGC=%VRv pvUserGC=%VRv pszDesc=%s\n",
           enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, HCSTRING(pszDesc)));
 
     /*
