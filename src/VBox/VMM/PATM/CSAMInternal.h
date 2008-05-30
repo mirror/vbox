@@ -281,7 +281,7 @@ inline RTGCPTR32 CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR32 pBranchInstrGC)
 }
 
 __BEGIN_DECLS
-CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR32 pvFault, RTGCPTR32 pvRange, uintptr_t offRange);
+CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 __END_DECLS
 
 #endif
