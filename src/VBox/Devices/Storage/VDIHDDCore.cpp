@@ -1064,6 +1064,8 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                            + (pImage->offStartData + pImage->offStartBlockData + offWrite);
         rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
     }
+    if (pcbWriteProcess)
+        *pcbWriteProcess = cbToWrite;
 
 out:
     LogFlowFunc(("returns %Vrc\n", rc));
