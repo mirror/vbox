@@ -1,5 +1,4 @@
 <ui version="4.0" >
- <class>VBoxVMInformationDlg</class>
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
@@ -17,6 +16,7 @@
  Clara, CA 95054 USA or visit http://www.sun.com if you need
  additional information or have any questions.
  </comment>
+ <class>VBoxVMInformationDlg</class>
  <widget class="QMainWindow" name="VBoxVMInformationDlg" >
   <property name="geometry" >
    <rect>
@@ -120,7 +120,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar" />
  </widget>
  <customwidgets>
   <customwidget>

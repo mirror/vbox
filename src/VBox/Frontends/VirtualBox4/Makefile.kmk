@@ -440,7 +440,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIMessageBox.h \
 	include/QIRichLabel.h \
 	include/QIAbstractWizard.h \
-	include/QIAbstractDialog.h \
 	include/QIListView.h \
 	include/QITreeWidget.h \
 	include/QIMainDialog.h \
@@ -523,7 +522,6 @@ VirtualBox_SOURCES = \
 	src/QIMessageBox.cpp \
 	src/QIRichLabel.cpp \
 	src/QIAbstractWizard.cpp \
-	src/QIAbstractDialog.cpp \
 	src/QIDialog.cpp \
 	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \

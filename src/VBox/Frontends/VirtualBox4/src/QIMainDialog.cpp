@@ -33,6 +33,8 @@
 #include <QDir>
 #include <QUrl>
 #include <QMenu>
+#include <QSizeGrip>
+#include <QPushButton>
 
 QIMainDialog::QIMainDialog (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QMainWindow (aParent, aFlags) 
@@ -81,6 +83,23 @@ void QIMainDialog::setFileForProxyIcon (const QString& aFile)
 QString QIMainDialog::fileForProxyIcon () const
 {
     return mFileForProxyIcon;
+}
+
+void QIMainDialog::setSizeGripEnabled (bool aEnabled)
+{
+    if (!mSizeGrip && aEnabled)
+    {
+        mSizeGrip = new QSizeGrip (this);
+        mSizeGrip->resize (mSizeGrip->sizeHint());
+        mSizeGrip->show();
+    }
+    else if (mSizeGrip && !aEnabled)
+        delete mSizeGrip;
+}
+
+bool QIMainDialog::isSizeGripEnabled () const
+{
+    return mSizeGrip;
 }
 
 void QIMainDialog::setVisible (bool aVisible)
@@ -164,6 +183,61 @@ bool QIMainDialog::event (QEvent *aEvent)
      }
 #endif /* Q_WS_MAC */
      return QMainWindow::event (aEvent);
+}
+
+void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
+{
+    QMainWindow::resizeEvent (aEvent);
+
+    /* Adjust the size-grip location for the current resize event */
+    if (mSizeGrip) 
+    {
+        if (isRightToLeft())
+            mSizeGrip->move (rect().bottomLeft() - mSizeGrip->rect().bottomLeft());
+        else
+            mSizeGrip->move (rect().bottomRight() - mSizeGrip->rect().bottomRight());
+        aEvent->accept();
+    }
+}
+
+void QIMainDialog::keyPressEvent (QKeyEvent *aEvent)
+{
+#ifdef Q_WS_MAC
+    if (aEvent->modifiers() == Qt::ControlModifier && 
+        aEvent->key() == Qt::Key_Period) 
+        reject();
+    else
+#endif
+    if (aEvent->modifiers() == Qt::NoModifier ||
+        (aEvent->modifiers() & Qt::KeypadModifier && aEvent->key() == Qt::Key_Enter))
+    {
+        switch (aEvent->key())
+        {
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
+                {
+                    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
+                    for (int i=0; i < list.size(); ++i)
+                    {
+                        QPushButton *pb = list.at (i);
+                        if (pb->isDefault() && pb->isVisible()) 
+                        {
+                            if (pb->isEnabled())
+                                pb->click();
+                            return;
+                        }
+                    }
+                    break;
+                }
+            case Qt::Key_Escape:
+                {
+                    reject();
+                    break;
+                }
+        }
+    }
+    else
+        aEvent->ignore();
 }
 
 void QIMainDialog::accept() 

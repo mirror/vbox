@@ -24,14 +24,14 @@
 #define __VBoxVMInformationDlg_h__
 
 #include "VBoxVMInformationDlg.gen.h"
-#include "QIAbstractDialog.h"
+#include "QIMainDialog.h"
 #include "COMDefs.h"
 #include "QIWithRetranslateUI.h"
 
 class VBoxConsoleView;
 class QTimer;
 
-class VBoxVMInformationDlg : public QIWithRetranslateUI2<QIAbstractDialog>,
+class VBoxVMInformationDlg : public QIWithRetranslateUI2<QIMainDialog>,
                              public Ui::VBoxVMInformationDlg
 {
     Q_OBJECT;
