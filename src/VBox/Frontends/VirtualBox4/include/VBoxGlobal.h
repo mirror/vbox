@@ -33,6 +33,7 @@
 #include <QHash>
 #include <QPixmap>
 #include <QMenu>
+#include <QStyle>
 
 class QAction;
 class QLabel;
@@ -520,6 +521,8 @@ public:
                             const char *aSmallDisabled = NULL,
                             const char *aActive = NULL,
                             const char *aSmallActive = NULL);
+
+    static QIcon standardIcon (QStyle::StandardPixmap aStandard);
 
     static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
