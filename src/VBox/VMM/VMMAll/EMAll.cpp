@@ -2359,7 +2359,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #ifdef IN_GC
         INTERPRET_CASE(OP_STI,Sti);
         INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
-        INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b);
+/*        INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b); */
         INTERPRET_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_CASE(OP_HLT,Hlt);
