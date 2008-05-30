@@ -272,9 +272,6 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMFirstRunWzd.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxRegistrationDlg.ui
 
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSharedFoldersSettings.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxSharedFoldersSettings.ui
-
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSnapshotDetailsDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotDetailsDlg.ui
 
@@ -313,6 +310,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsParallel.ui
 
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsUSB.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsUSB.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsSF.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSF.ui
 
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsVRDP.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsVRDP.ui
@@ -461,7 +461,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxNewHDWzd.h \
 	include/VBoxVMFirstRunWzd.h \
 	include/VBoxRegistrationDlg.h \
-	include/VBoxSharedFoldersSettings.h \
 	include/VBoxSnapshotDetailsDlg.h \
 	include/VBoxVMInformationDlg.h \
 	include/VBoxTakeSnapshotDlg.h \
@@ -476,6 +475,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsSerial.h \
 	include/VBoxVMSettingsParallel.h \
 	include/VBoxVMSettingsUSB.h \
+	include/VBoxVMSettingsSF.h \
 	include/VBoxVMSettingsVRDP.h \
 	include/VBoxVMSettingsDlg.h
 
@@ -549,7 +549,6 @@ VirtualBox_SOURCES = \
 	src/VBoxNewHDWzd.cpp \
 	src/VBoxVMFirstRunWzd.cpp \
 	src/VBoxRegistrationDlg.cpp \
-	src/VBoxSharedFoldersSettings.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
@@ -563,6 +562,7 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsSerial.cpp \
 	src/VBoxVMSettingsParallel.cpp \
 	src/VBoxVMSettingsUSB.cpp \
+	src/VBoxVMSettingsSF.cpp \
 	src/VBoxVMSettingsVRDP.cpp \
 	src/VBoxVMSettingsDlg.cpp
 

@@ -29,7 +29,7 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMSettingsSerial.ui \
 	ui/VBoxVMSettingsParallel.ui \
 	ui/VBoxVMSettingsUSB.ui \
-	ui/VBoxSharedFoldersSettings.ui \
+	ui/VBoxVMSettingsSF.ui \
 	ui/VBoxNewVMWzd.ui \
 	ui/VBoxCloseVMDlg.ui \
 	ui/VBoxTakeSnapshotDlg.ui \
