@@ -102,13 +102,16 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
 {
     QFontMetrics fm (qApp->font());
     QRect tbRect = fm.boundingRect (aText);
-    const int h = qMax (aPixmap.height(), tbRect.height());
+    const int h = qMax (aPixmap.height(), fm.ascent() + 1);
     const int m = 2;
     QPixmap dragPixmap (aPixmap.width() + tbRect.width() + m, h);
     dragPixmap.fill (Qt::transparent);
     QPainter painter (&dragPixmap);
     painter.drawPixmap (0, qAbs (h - aPixmap.height()) / 2.0, aPixmap);
-    painter.drawText (aPixmap.width() + m, qAbs (h - aPixmap.height()) / 2.0 + aPixmap.height(), aText);
+    painter.setPen (Qt::white);
+    painter.drawText (QRect (aPixmap.width() + m, 1, tbRect.width(), h - 1), Qt::AlignLeft | Qt::AlignVCenter, aText);
+    painter.setPen (Qt::black);
+    painter.drawText (QRect (aPixmap.width() + m, 0, tbRect.width(), h - 1), Qt::AlignLeft | Qt::AlignVCenter, aText);
     painter.end();
     return dragPixmap;
 }
