@@ -21,13 +21,15 @@
  */
 
 #include "VBoxVMSettingsSF.h"
+#include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
 #include "QIDialogButtonBox.h"
+#include "VBoxToolBar.h"
 
-/* Qt includes */
 #include <QLineEdit>
+#include <QToolButton>
 #include <QPushButton>
 #include <QDir>
 #include <QHeaderView>
@@ -180,20 +182,65 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
     /* Apply UI decorations */
     Ui::VBoxVMSettingsSF::setupUi (this);
 
+    /* Prepare actions */
+    mNewAction = new QAction (mTreeView);
+    mEdtAction = new QAction (mTreeView);
+    mDelAction = new QAction (mTreeView);
+
+    mNewAction->setText (tr ("&Add New Shared Folder"));
+    mEdtAction->setText (tr ("&Edit Selected Shared Folder"));
+    mDelAction->setText (tr ("&Remove Selected Shared Folder"));
+
+    mNewAction->setShortcut (QKeySequence ("Ins"));
+    mEdtAction->setShortcut (QKeySequence ("Ctrl+Space"));
+    mDelAction->setShortcut (QKeySequence ("Del"));
+
+    mNewAction->setToolTip (mNewAction->text().remove ('&') +
+        QString (" (%1)").arg (mNewAction->shortcut().toString()));
+    mEdtAction->setToolTip (mEdtAction->text().remove ('&') +
+        QString (" (%1)").arg (mEdtAction->shortcut().toString()));
+    mDelAction->setToolTip (mDelAction->text().remove ('&') +
+        QString (" (%1)").arg (mDelAction->shortcut().toString()));
+
+    mNewAction->setWhatsThis (tr ("Adds a new shared folder definition."));
+    mEdtAction->setWhatsThis (tr ("Edits the selected shared folder definition."));
+    mDelAction->setWhatsThis (tr ("Removes the selected shared folder definition."));
+
+    mNewAction->setIcon (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
+                                              ":/add_shared_folder_disabled_16px.png"));
+    mEdtAction->setIcon (VBoxGlobal::iconSet (":/edit_shared_folder_16px.png",
+                                              ":/edit_shared_folder_disabled_16px.png"));
+    mDelAction->setIcon (VBoxGlobal::iconSet (":/revome_shared_folder_16px.png",
+                                              ":/revome_shared_folder_disabled_16px.png"));
+
+    /* Prepare menu and toolbar */
+    mMenu = new QMenu (mTreeView);
+    mMenu->addAction (mNewAction);
+    mMenu->addAction (mEdtAction);
+    mMenu->addSeparator();
+    mMenu->addAction (mDelAction);
+
+    /* Prepare toolbar */
+    VBoxToolBar *toolBar = new VBoxToolBar (mGbSharedFolders);
+    toolBar->setUsesTextLabel (false);
+    toolBar->setUsesBigPixmaps (false);
+    toolBar->setOrientation (Qt::Vertical);
+    toolBar->addAction (mNewAction);
+    toolBar->addAction (mEdtAction);
+    toolBar->addAction (mDelAction);
+    mGbSharedFolders->layout()->addWidget (toolBar);
+
+    /* Setup connections */
     mTreeView->header()->setMovable (false);
-    mTbAdd->setIcon (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
-                                          ":/add_shared_folder_disabled_16px.png"));
-    mTbEdit->setIcon (VBoxGlobal::iconSet (":/edit_shared_folder_16px.png",
-                                           ":/edit_shared_folder_disabled_16px.png"));
-    mTbRemove->setIcon (VBoxGlobal::iconSet (":/revome_shared_folder_16px.png",
-                                             ":/revome_shared_folder_disabled_16px.png"));
-    connect (mTbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
-    connect (mTbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
-    connect (mTbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));
+    connect (mNewAction, SIGNAL (triggered (bool)), this, SLOT (addTriggered()));
+    connect (mEdtAction, SIGNAL (triggered (bool)), this, SLOT (edtTriggered()));
+    connect (mDelAction, SIGNAL (triggered (bool)), this, SLOT (delTriggered()));
     connect (mTreeView, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem*, QTreeWidgetItem*)));
     connect (mTreeView, SIGNAL (itemDoubleClicked (QTreeWidgetItem*, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem*, int)));
+    connect (mTreeView, SIGNAL (customContextMenuRequested (const QPoint &)),
+             this, SLOT (showContextMenu (const QPoint &)));
     connect (mTreeView->header(), SIGNAL (sectionResized (int, int, int)),
              this, SLOT (adjustFields()));
 
@@ -229,13 +276,17 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
 
 
 void VBoxVMSettingsSF::getFromMachineEx (const CMachine &aMachine,
-                                         QWidget *aPage)
+                                         QWidget *aPage,
+                                         VBoxVMSettingsDlg *aDlg)
 {
     mSettings = new VBoxVMSettingsSF (aPage, MachineType);
     QVBoxLayout *layout = new QVBoxLayout (aPage);
     layout->setContentsMargins (0, 0, 0, 0);
     layout->addWidget (mSettings);
     mSettings->getFromMachine (aMachine);
+
+    /* Fixing Tab Order */
+    setTabOrder (aDlg->mTwSelector, mSettings->mTreeView);
 }
 
 void VBoxVMSettingsSF::putBackToMachineEx()
@@ -322,7 +373,7 @@ void VBoxVMSettingsSF::retranslateUi()
     mTrReadOnly = tr ("Read-only");
 }
 
-void VBoxVMSettingsSF::tbAddPressed()
+void VBoxVMSettingsSF::addTriggered()
 {
     /* Invoke Add-Box Dialog */
     VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDialogType,
@@ -355,7 +406,7 @@ void VBoxVMSettingsSF::tbAddPressed()
     mIsListViewChanged = true;
 }
 
-void VBoxVMSettingsSF::tbEditPressed()
+void VBoxVMSettingsSF::edtTriggered()
 {
     /* Check selected item */
     QTreeWidgetItem *selectedItem = mTreeView->selectedItems().size() == 1 ?
@@ -407,7 +458,7 @@ void VBoxVMSettingsSF::tbEditPressed()
     mIsListViewChanged = true;
 }
 
-void VBoxVMSettingsSF::tbRemovePressed()
+void VBoxVMSettingsSF::delTriggered()
 {
     QTreeWidgetItem *selectedItem = mTreeView->selectedItems().size() == 1 ?
                                     mTreeView->selectedItems() [0] : 0;
@@ -428,9 +479,9 @@ void VBoxVMSettingsSF::processCurrentChanged (
         aCurrentItem->text (1);
     bool addEnabled = aCurrentItem && isEditable (key);
     bool removeEnabled = addEnabled && aCurrentItem->parent();
-    mTbAdd->setEnabled (addEnabled);
-    mTbEdit->setEnabled (removeEnabled);
-    mTbRemove->setEnabled (removeEnabled);
+    mNewAction->setEnabled (addEnabled);
+    mEdtAction->setEnabled (removeEnabled);
+    mDelAction->setEnabled (removeEnabled);
 }
 
 void VBoxVMSettingsSF::processDoubleClick (QTreeWidgetItem *aItem,
@@ -439,7 +490,12 @@ void VBoxVMSettingsSF::processDoubleClick (QTreeWidgetItem *aItem,
     bool editEnabled = aItem && aItem->parent() &&
         isEditable (aItem->parent()->text (1));
     if (editEnabled)
-        tbEditPressed();
+        edtTriggered();
+}
+
+void VBoxVMSettingsSF::showContextMenu (const QPoint &aPos)
+{
+    mMenu->exec (mTreeView->mapToGlobal (aPos));
 }
 
 
@@ -726,7 +782,7 @@ VBoxAddSFDialog::VBoxAddSFDialog (VBoxVMSettingsSF *aParent,
     }
 
     /* Setup Button layout */
-    mButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    mButtonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     mButtonBox->setCenterButtons (true);
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));

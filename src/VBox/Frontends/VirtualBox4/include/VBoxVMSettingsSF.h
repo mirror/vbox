@@ -26,15 +26,15 @@
 #include "VBoxVMSettingsSF.gen.h"
 #include "QIWithRetranslateUI.h"
 
-/* Qt includes */
 #include <QDialog>
+
+class VBoxVMSettingsDlg;
+class SFTreeViewItem;
+class QIDialogButtonBox;
 
 class QLineEdit;
 class QPushButton;
 class QCheckBox;
-class SFTreeViewItem;
-
-class QIDialogButtonBox;
 
 enum SFDialogType
 {
@@ -53,11 +53,12 @@ class VBoxVMSettingsSF : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    static void getFromMachineEx (const CMachine &aMachine,
-                                  QWidget *aParent);
-    static void putBackToMachineEx();
-
     VBoxVMSettingsSF (QWidget *aParent = 0, int aType = WrongType);
+
+    static void getFromMachineEx (const CMachine &aMachine,
+                                  QWidget *aParent,
+                                  VBoxVMSettingsDlg *aDlg);
+    static void putBackToMachineEx();
 
     int dialogType() { return mDialogType; }
 
@@ -75,13 +76,14 @@ protected:
 
 private slots:
 
-    void tbAddPressed();
-    void tbEditPressed();
-    void tbRemovePressed();
+    void addTriggered();
+    void edtTriggered();
+    void delTriggered();
 
     void processCurrentChanged (QTreeWidgetItem *aCurrentItem,
                                 QTreeWidgetItem *aPreviousItem = 0);
     void processDoubleClick (QTreeWidgetItem *aItem, int aColumn);
+    void showContextMenu (const QPoint &aPos);
 
     void adjustList();
     void adjustFields();
@@ -106,12 +108,16 @@ private:
 
     static VBoxVMSettingsSF *mSettings;
 
-    int      mDialogType;
-    bool     mIsListViewChanged;
-    CMachine mMachine;
-    CConsole mConsole;
-    QString  mTrFull;
-    QString  mTrReadOnly;
+    int       mDialogType;
+    QMenu    *mMenu;
+    QAction  *mNewAction;
+    QAction  *mEdtAction;
+    QAction  *mDelAction;
+    bool      mIsListViewChanged;
+    CMachine  mMachine;
+    CConsole  mConsole;
+    QString   mTrFull;
+    QString   mTrReadOnly;
 };
 
 class VBoxAddSFDialog : public QIWithRetranslateUI<QDialog>
