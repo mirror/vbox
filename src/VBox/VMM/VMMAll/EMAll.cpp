@@ -1390,9 +1390,9 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
 
             LogFlow(("%s %VGv=%08x eax=%08x ZF=%d\n", pszInstr, pParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
 
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+            /* Update guest's eflags and finish; note that *only* ZF is affected. */
+            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))
+                                  | (eflags                &  (X86_EFL_ZF));
 
             *pcbSize = 8;
             return VINF_SUCCESS;
