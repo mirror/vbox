@@ -66,7 +66,6 @@ protected:
 
     void retranslateUi();
     virtual void closeEvent (QCloseEvent *aEvent);
-    virtual void keyPressEvent (QKeyEvent *aEvent);
     virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
     /* @todo: Currently not used (Ported from Qt3): */
     virtual void machineStateChanged (const VBoxMachineStateChangeEvent &aEvent);

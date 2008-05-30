@@ -51,7 +51,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
 VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
                                             const CSession &aSession,
                                             Qt::WindowFlags aFlags)
-    : QIWithRetranslateUI2<QIAbstractDialog> (aConsole, aFlags)
+    : QIWithRetranslateUI2<QIMainDialog> (aConsole, aFlags)
     , mIsPolished (false)
     , mConsole (aConsole)
     , mSession (aSession)
@@ -60,8 +60,14 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     /* Apply UI decorations */
     Ui::VBoxVMInformationDlg::setupUi (this);
 
-    /* Initialize parent defaults */
-    initializeDialog();
+#ifdef Q_WS_MAC
+    /* No icon for this window on the mac, cause this would act as proxy icon
+     * which isn't necessary here. */
+    setWindowIcon (QIcon());
+#endif
+
+    /* Enable size grip without using a status bar. */
+    setSizeGripEnabled (true);
 
     /* Setup focus-proxy for pages */
     mPage1->setFocusProxy (mDetailsText);
@@ -249,7 +255,7 @@ void VBoxVMInformationDlg::retranslateUi()
 
 bool VBoxVMInformationDlg::event (QEvent *aEvent)
 {
-    bool result = QIAbstractDialog::event (aEvent);
+    bool result = QIMainDialog::event (aEvent);
     switch (aEvent->type())
     {
         case QEvent::WindowStateChange:
@@ -268,7 +274,7 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
 
 void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
 {
-    QIAbstractDialog::resizeEvent (aEvent);
+    QIMainDialog::resizeEvent (aEvent);
 
     /* Store dialog size for this vm */
     if (mIsPolished && !isMaximized())
@@ -280,7 +286,7 @@ void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
 
 void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 {
-    QIAbstractDialog::showEvent (aEvent);
+    QIMainDialog::showEvent (aEvent);
 
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,

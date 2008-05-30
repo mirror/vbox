@@ -29,6 +29,7 @@
 #include <QPointer>
 
 class QEventLoop;
+class QSizeGrip;
 
 class QIMainDialog: public QMainWindow
 {
@@ -44,6 +45,9 @@ public:
     void setFileForProxyIcon (const QString& aFile);
     QString fileForProxyIcon () const;
 
+    void setSizeGripEnabled (bool aEnabled);
+    bool isSizeGripEnabled () const;
+
 public slots:
 
     virtual void setVisible (bool aVisible);
@@ -51,6 +55,8 @@ public slots:
 protected:
 
     virtual bool event (QEvent *aEvent);
+    virtual void resizeEvent (QResizeEvent *aEvent);
+    virtual void keyPressEvent (QKeyEvent *aEvent);
 
 protected slots:
 
@@ -69,6 +75,8 @@ private:
     QPointer<QEventLoop> mEventLoop;
 
     QString mFileForProxyIcon;
+
+    QPointer<QSizeGrip> mSizeGrip;
 };
 
 #endif /* __QIMainDialog_h__ */

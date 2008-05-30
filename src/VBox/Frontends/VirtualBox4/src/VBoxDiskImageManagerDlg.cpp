@@ -818,30 +818,6 @@ void VBoxDiskImageManagerDlg::closeEvent (QCloseEvent *aEvent)
     aEvent->accept();
 }
 
-void VBoxDiskImageManagerDlg::keyPressEvent (QKeyEvent *aEvent)
-{
-    if (aEvent->modifiers() == Qt::NoModifier ||
-        (aEvent->modifiers() != Qt::NoModifier && aEvent->key() == Qt::Key_Enter))
-    {
-        switch (aEvent->key())
-        {
-            case Qt::Key_Enter:
-            case Qt::Key_Return:
-                {
-                    accept();
-                    break;
-                }
-            case Qt::Key_Escape:
-                {
-                    reject();
-                    break;
-                }
-        }
-    }
-    else
-        aEvent->ignore();
-}
-
 bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     switch (aEvent->type())
