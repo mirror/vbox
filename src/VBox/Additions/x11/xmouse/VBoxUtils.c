@@ -25,7 +25,12 @@
 
 #include "xf86.h"
 #define NEED_XF86_TYPES
-#include "xf86_ansic.h"
+#ifdef NO_ANSIC
+# include <errno.h>
+# include <string.h>
+#else
+# include "xf86_ansic.h"
+#endif
 #include "compiler.h"
 
 /**
