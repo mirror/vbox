@@ -421,7 +421,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
             PRTLOGGER pLogger = RTLogDefaultInstance();
             if (pLogger)
             {
-                pVM->vmm.s.cbLoggerGC = RT_OFFSETOF(RTLOGGERGC, afGroups[pLogger->cGroups]);
+                pVM->vmm.s.cbLoggerGC = RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]);
                 rc = MMHyperAlloc(pVM, pVM->vmm.s.cbLoggerGC, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pLoggerHC);
                 if (VBOX_SUCCESS(rc))
                 {
@@ -459,7 +459,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                 PRTLOGGER pRelLogger = RTLogRelDefaultInstance();
                 if (pRelLogger)
                 {
-                    pVM->vmm.s.cbRelLoggerGC = RT_OFFSETOF(RTLOGGERGC, afGroups[pRelLogger->cGroups]);
+                    pVM->vmm.s.cbRelLoggerGC = RT_OFFSETOF(RTLOGGERRC, afGroups[pRelLogger->cGroups]);
                     rc = MMHyperAlloc(pVM, pVM->vmm.s.cbRelLoggerGC, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRelLoggerHC);
                     if (VBOX_SUCCESS(rc))
                         pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
@@ -707,13 +707,13 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
             rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_CALL_HYPERVISOR, NULL);
 #endif
 #ifdef LOG_ENABLED
-            PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+            PRTLOGGERRC pLogger = pVM->vmm.s.pLoggerHC;
             if (    pLogger
                 &&  pLogger->offScratch > 0)
                 RTLogFlushGC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
-            PRTLOGGERGC pRelLogger = pVM->vmm.s.pRelLoggerHC;
+            PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
             if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
                 RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
@@ -885,7 +885,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pLoggerHC);
-        rc = RTLogCloneGC(NULL /* default */, pVM->vmm.s.pLoggerHC, pVM->vmm.s.cbLoggerGC,
+        rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pLoggerHC, pVM->vmm.s.cbLoggerGC,
                           GCPtrLoggerWrapper,  GCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
     }
@@ -897,7 +897,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
-        rc = RTLogCloneGC(RTLogRelDefaultInstance(), pVM->vmm.s.pRelLoggerHC, pVM->vmm.s.cbRelLoggerGC,
+        rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRelLoggerHC, pVM->vmm.s.cbRelLoggerGC,
                           GCPtrLoggerWrapper,  GCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
     }
@@ -1952,13 +1952,13 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+        PRTLOGGERRC pLogger = pVM->vmm.s.pLoggerHC;
         if (    pLogger
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
-        PRTLOGGERGC pRelLogger = pVM->vmm.s.pRelLoggerHC;
+        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
@@ -2081,13 +2081,13 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+        PRTLOGGERRC pLogger = pVM->vmm.s.pLoggerHC;
         if (    pLogger
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
-        PRTLOGGERGC pRelLogger = pVM->vmm.s.pRelLoggerHC;
+        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
@@ -2135,13 +2135,13 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
          * Flush the loggers,
          */
 #ifdef LOG_ENABLED
-        PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+        PRTLOGGERRC pLogger = pVM->vmm.s.pLoggerHC;
         if (    pLogger
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
-        PRTLOGGERGC pRelLogger = pVM->vmm.s.pRelLoggerHC;
+        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
