@@ -24,19 +24,17 @@
 #define __VBoxDiskImageManagerDlg_h__
 
 #include "VBoxDiskImageManagerDlg.gen.h"
+#include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 #include "VBoxDefs.h"
 #include "VBoxMediaComboBox.h"
 
-/* Qt includes */
-#include <QPointer>
-
 class DiskImageItem;
 class VBoxToolBar;
 class InfoPaneLabel;
 
-class VBoxDiskImageManagerDlg : public QIWithRetranslateUI2<QMainWindow>,
+class VBoxDiskImageManagerDlg : public QIWithRetranslateUI2<QIMainDialog>,
                                 public Ui::VBoxDiskImageManagerDlg
 {
     Q_OBJECT;
@@ -47,16 +45,11 @@ class VBoxDiskImageManagerDlg : public QIWithRetranslateUI2<QMainWindow>,
 
 public:
 
-    enum ResultCode { Rejected, 
-                      Accepted };
-
     VBoxDiskImageManagerDlg (QWidget *aParent = NULL, Qt::WindowFlags aFlags = Qt::Dialog);
 
     void setup (int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine aMachine = NULL, const QUuid & aHdId = QUuid(), const QUuid & aCdId = QUuid(), const QUuid & aFdId = QUuid());
 
     static void showModeless (bool aRefresh = true);
-    int exec();
-    int result() const;
 
     QUuid selectedUuid() const;
     QString selectedPath() const;
@@ -68,7 +61,6 @@ public:
 public slots:
 
     void refreshAll();
-    virtual void setVisible (bool aVisible);
 
 protected:
 
@@ -100,12 +92,6 @@ private slots:
     void processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem = NULL);
     void processDoubleClick (QTreeWidgetItem *aItem, int aColumn);
     void processRightClick (const QPoint &aPos, QTreeWidgetItem *aItem, int aColumn);
-
-    void accept();
-    void reject();
-    void done (int aRescode);
-
-    void setResult (int aRescode);
 
 private:
 
@@ -151,9 +137,7 @@ private:
     /* Private member vars */
     /* Window status */
     bool mDoSelect;
-    int mRescode;
     static VBoxDiskImageManagerDlg *mModelessDialog;
-    QPointer<QEventLoop> mEventLoop;
 
     /* Type if we are in the select modus */
     int mType;
