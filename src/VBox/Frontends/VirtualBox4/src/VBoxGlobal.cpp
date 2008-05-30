@@ -2748,6 +2748,18 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
     return iconSet;
 }
 
+QIcon VBoxGlobal::standardIcon (QStyle::StandardPixmap aStandard)
+{
+#ifdef Q_WS_MAC
+    /* At least in Qt 4.3.4/4.4 RC1 SP_MessageBoxWarning is the application
+     * icon. So change this to the critical icon. (Maybe this would be
+     * fixed in a later Qt version) */
+    if (aStandard == QStyle::SP_MessageBoxWarning)
+        return QApplication::style()->standardIcon (QStyle::SP_MessageBoxCritical);
+#endif /* Q_WS_MAC */
+    return QApplication::style()->standardIcon (aStandard);
+}
+
 /**
  *  Replacement for QToolButton::setTextLabel() that handles the shortcut
  *  letter (if it is present in the argument string) as if it were a setText()
