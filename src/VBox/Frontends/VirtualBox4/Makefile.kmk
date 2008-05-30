@@ -443,6 +443,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIAbstractDialog.h \
 	include/QIListView.h \
 	include/QITreeWidget.h \
+	include/QIMainDialog.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
@@ -527,6 +528,7 @@ VirtualBox_SOURCES = \
 	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \
 	src/QITreeWidget.cpp \
+	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \

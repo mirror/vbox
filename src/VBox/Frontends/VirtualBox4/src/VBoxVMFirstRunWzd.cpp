@@ -245,7 +245,7 @@ void VBoxVMFirstRunWzd::openVdm()
     VBoxDefs::DiskType type = mRbCdType->isChecked() ? VBoxDefs::CD :
         mRbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;
     vdm.setup (type, true, &machineId);
-    if (vdm.exec() == VBoxDiskImageManagerDlg::Accepted)
+    if (vdm.exec() == QDialog::Accepted)
     {
         mCbImage->setCurrentItem (vdm.selectedUuid());
 

@@ -208,8 +208,7 @@ private:
 VBoxDiskImageManagerDlg *VBoxDiskImageManagerDlg::mModelessDialog = NULL;
 
 VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,  Qt::WindowFlags aFlags /* = 0 */)
-    : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
-    , mRescode (Rejected)
+    : QIWithRetranslateUI2<QIMainDialog> (aParent, aFlags)
     , mType (VBoxDefs::InvalidType)
 {
     /* Apply UI decorations */
@@ -522,34 +521,6 @@ void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
     mModelessDialog->activateWindow();
 }
 
-int VBoxDiskImageManagerDlg::exec()
-{
-    AssertMsg (!mEventLoop, ("exec is called recursively!\n"));
-
-    /* Reset the result code */
-    setResult (Rejected);
-    bool deleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
-    setAttribute(Qt::WA_DeleteOnClose, false);
-    /* Create a local event loop */
-    mEventLoop = new QEventLoop();
-    /* Show the window */
-    show();
-    /* A guard to ourself for the case we destroy ourself. */
-    QPointer<VBoxDiskImageManagerDlg> guard = this;
-    /* Start the event loop. This blocks. */
-    mEventLoop->exec();
-    /* Delete the event loop */
-    delete mEventLoop;
-    /* Are we valid anymore? */
-    if (guard.isNull())
-        return Rejected;
-     int res = result();
-     if (deleteOnClose)
-         delete this;
-    /* Return the final result */
-    return res;
-}
-
 QUuid VBoxDiskImageManagerDlg::selectedUuid() const
 {
     QTreeWidget *tree = currentTreeWidget();
@@ -795,15 +766,6 @@ void VBoxDiskImageManagerDlg::refreshAll()
 {
     /* Start enumerating media */
     vboxGlobal().startEnumeratingMedia();
-}
-
-void VBoxDiskImageManagerDlg::setVisible (bool aVisible)
-{
-    QMainWindow::setVisible (aVisible);
-    /* Exit from the event loop if there is any and we are changing our state
-     * from visible to invisible. */
-    if(mEventLoop && !aVisible)
-        mEventLoop->exit();
 }
 
 void VBoxDiskImageManagerDlg::retranslateUi()
@@ -1406,36 +1368,6 @@ void VBoxDiskImageManagerDlg::releaseDisk (const QUuid &aMachineId,
         session.Close();
 }
 
-void VBoxDiskImageManagerDlg::accept() 
-{ 
-    done (Accepted); 
-}
-
-void VBoxDiskImageManagerDlg::reject() 
-{ 
-    done (Rejected); 
-}
-
-void VBoxDiskImageManagerDlg::done (int aResult)
-{
-    /* Set the final result */
-    setResult (aResult);
-    /* Hide this window */
-    hide();
-    /* And close the window */
-    close();
-}
-
-int VBoxDiskImageManagerDlg::result() const 
-{ 
-    return mRescode; 
-}
-
-void VBoxDiskImageManagerDlg::setResult (int aRescode) 
-{ 
-    mRescode = aRescode; 
-}
-
 QTreeWidget* VBoxDiskImageManagerDlg::treeWidget (VBoxDefs::DiskType aType) const
 {
     QTreeWidget* tree = NULL;
@@ -1551,6 +1483,9 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
         setCurrentItem (currentTreeWidget(), itemOld);
         return;
     }
+
+    /* Set the file for the proxy icon */ 
+    setFileForProxyIcon (item->path());
 
     /* Ensures current item visible every time we are switching page */
     item->treeWidget()->scrollToItem (item, QAbstractItemView::EnsureVisible);

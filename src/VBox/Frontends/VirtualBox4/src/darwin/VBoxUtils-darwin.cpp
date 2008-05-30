@@ -31,6 +31,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QPainter>
+#include <QApplication>
 
 /**
  * Callback for deleting the QImage object when CGImageCreate is done
@@ -94,6 +95,22 @@ CGImageRef darwinToCGImageRef (const char *aSource)
     QPixmap qpm (QString(":/") + aSource);
     Assert (!qpm.isNull());
     return ::darwinToCGImageRef (&qpm);
+}
+
+/* Proxy icon creation */
+QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
+{
+    QFontMetrics fm (qApp->font());
+    QRect tbRect = fm.boundingRect (aText);
+    const int h = qMax (aPixmap.height(), tbRect.height());
+    const int m = 2;
+    QPixmap dragPixmap (aPixmap.width() + tbRect.width() + m, h);
+    dragPixmap.fill (Qt::transparent);
+    QPainter painter (&dragPixmap);
+    painter.drawPixmap (0, qAbs (h - aPixmap.height()) / 2.0, aPixmap);
+    painter.drawText (aPixmap.width() + m, qAbs (h - aPixmap.height()) / 2.0 + aPixmap.height(), aText);
+    painter.end();
+    return dragPixmap;
 }
 
 /**

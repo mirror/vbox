@@ -268,6 +268,9 @@ inline HIRect darwinToHIRect (const QRect &aRect)
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
 
+/* Proxy icon creation */
+QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
+
 /* Special routines for the dock handling */
 CGImageRef darwinCreateDockBadge (const char *aSource);
 void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
