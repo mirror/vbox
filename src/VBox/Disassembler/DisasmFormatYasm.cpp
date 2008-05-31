@@ -328,6 +328,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     Assert(cchTmp == (cch) || cchDst == 1); \
                  } \
             } while (0)
+/** @todo add two flags for choosing between %X / %x and h / 0x. */
 #define PUT_NUM_8(num)  PUT_NUM(4,  "0%02xh", (uint8_t)(num))
 #define PUT_NUM_16(num) PUT_NUM(6,  "0%04xh", (uint16_t)(num))
 #define PUT_NUM_32(num) PUT_NUM(10, "0%08xh", (uint32_t)(num))
@@ -577,7 +578,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     &&  pOp->opcode != OP_LSS ) \
                     PUT_SZ("far "); \
             } while (0)
-        /** @todo mov ah,ch ends up with a byte 'override'... */
+        /** @todo mov ah,ch ends up with a byte 'override'... - check if this wasn't fixed. */
+        /** @todo drop the work/dword/qword override when the src/dst is a register (except for movsx/movzx). */
 #define PUT_SIZE_OVERRIDE() \
             do { \
                 switch (OP_PARM_VSUBTYPE(pParam->param)) \
