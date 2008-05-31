@@ -313,6 +313,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
             } while (0)
 #define PUT_SZ(sz) \
             PUT_STR((sz), sizeof(sz) - 1)
+#define PUT_SZ_STRICT(szStrict, szRelaxed) \
+            do { if (fFlags & DIS_FMT_FLAGS_STRICT) PUT_SZ(szStrict); else PUT_SZ(szRelaxed); } while (0)
 #define PUT_PSZ(psz) \
             do { const size_t cchTmp = strlen(psz); PUT_STR((psz), cchTmp); } while (0)
 #define PUT_NUM(cch, fmt, num) \
@@ -330,6 +332,25 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_NUM_16(num) PUT_NUM(6,  "0%04xh", (uint16_t)(num))
 #define PUT_NUM_32(num) PUT_NUM(10, "0%08xh", (uint32_t)(num))
 #define PUT_NUM_64(num) PUT_NUM(18, "0%08xh", (uint64_t)(num))
+
+#define PUT_NUM_SIGN(cch, fmt, num, stype, utype) \
+            do { \
+                if ((stype)(num) >= 0) \
+                { \
+                    PUT_C('+'); \
+                    PUT_NUM(cch, fmt, (utype)(num)); \
+                } \
+                else \
+                { \
+                    PUT_C('-'); \
+                    PUT_NUM(cch, fmt, (utype)-(stype)(num)); \
+                } \
+            } while (0)
+#define PUT_NUM_S8(num)  PUT_NUM_SIGN(4,  "0%02xh", num, int8_t,  uint8_t)
+#define PUT_NUM_S16(num) PUT_NUM_SIGN(6,  "0%04xh", num, int16_t, uint16_t)
+#define PUT_NUM_S32(num) PUT_NUM_SIGN(10, "0%08xh", num, int32_t, uint32_t)
+#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%08xh", num, int64_t, uint64_t)
+
 
     /*
      * The address?
@@ -613,6 +634,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * The formatting loop.
          */
+        RTINTPTR off;
+        char szSymbol[128];
         char ch;
         while ((ch = *pszFmt++) != '\0')
         {
@@ -665,7 +688,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_SIZE_OVERRIDE();
                             PUT_C('[');
                         }
-                        if (pParam->flags & (USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_RIPDISPLACEMENT32))
+                        if (    (fFlags & DIS_FMT_FLAGS_STRICT)
+                            &&  (pParam->flags & (USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_RIPDISPLACEMENT32)))
                         {
                             if (   (pParam->flags & USE_DISPLACEMENT8)
                                 && !pParam->disp8)
@@ -752,50 +776,55 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                                  | USE_IMMEDIATE16_SX8 | USE_IMMEDIATE32_SX8))
                         {
                             case USE_IMMEDIATE8:
-                                if (    (pOp->param1 >= OP_PARM_REG_GEN8_START && pOp->param1 <= OP_PARM_REG_GEN8_END)
-                                    ||  (pOp->param2 >= OP_PARM_REG_GEN8_START && pOp->param2 <= OP_PARM_REG_GEN8_END)
-                                    )
+                                if (    (fFlags & DIS_FMT_FLAGS_STRICT)
+                                    &&  (   (pOp->param1 >= OP_PARM_REG_GEN8_START && pOp->param1 <= OP_PARM_REG_GEN8_END)
+                                         || (pOp->param2 >= OP_PARM_REG_GEN8_START && pOp->param2 <= OP_PARM_REG_GEN8_END))
+                                   )
                                     PUT_SZ("strict byte ");
                                 PUT_NUM_8(pParam->parval);
                                 break;
 
                             case USE_IMMEDIATE16:
-                                if (    (int8_t)pParam->parval == (int16_t)pParam->parval
-                                    ||  (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
-                                    ||  (pOp->param2 >= OP_PARM_REG_GEN16_START && pOp->param2 <= OP_PARM_REG_GEN16_END)
-                                    ||  pCpu->mode != pCpu->opmode
-                                    )
+                                if (    pCpu->mode != pCpu->opmode
+                                    ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
+                                         && (   (int8_t)pParam->parval == (int16_t)pParam->parval
+                                             || (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
+                                             || (pOp->param2 >= OP_PARM_REG_GEN16_START && pOp->param2 <= OP_PARM_REG_GEN16_END))
+                                        )
+                                   )
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
-                                        PUT_SZ("strict byte ");
+                                        PUT_SZ_STRICT("strict byte ", "byte ");
                                     else if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v)
-                                        PUT_SZ("strict word ");
+                                        PUT_SZ_STRICT("strict word ", "word ");
                                 }
                                 PUT_NUM_16(pParam->parval);
                                 break;
 
                             case USE_IMMEDIATE16_SX8:
-                                PUT_SZ("strict byte ");
+                                PUT_SZ_STRICT("strict byte ", "byte ");
                                 PUT_NUM_16(pParam->parval);
                                 break;
 
                             case USE_IMMEDIATE32:
-                                if (    (int8_t)pParam->parval == (int32_t)pParam->parval
-                                    ||  (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
-                                    ||  (pOp->param2 >= OP_PARM_REG_GEN32_START && pOp->param2 <= OP_PARM_REG_GEN32_END)
-                                    ||  pCpu->opmode != (pCpu->mode == CPUMODE_16BIT ? CPUMODE_16BIT : CPUMODE_32BIT) /* not perfect */
+                                if (    pCpu->opmode != (pCpu->mode == CPUMODE_16BIT ? CPUMODE_16BIT : CPUMODE_32BIT) /* not perfect */
+                                    ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
+                                         && (   (int8_t)pParam->parval == (int32_t)pParam->parval
+                                             || (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
+                                             || (pOp->param2 >= OP_PARM_REG_GEN32_START && pOp->param2 <= OP_PARM_REG_GEN32_END))
+                                        )
                                     )
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
-                                        PUT_SZ("strict byte ");
+                                        PUT_SZ_STRICT("strict byte ", "byte ");
                                     else if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v)
-                                        PUT_SZ("strict dword ");
+                                        PUT_SZ_STRICT("strict dword ", "dword ");
                                 }
                                 PUT_NUM_32(pParam->parval);
                                 break;
 
                             case USE_IMMEDIATE32_SX8:
-                                PUT_SZ("strict byte ");
+                                PUT_SZ_STRICT("strict byte ", "byte ");
                                 PUT_NUM_32(pParam->parval);
                                 break;
 
@@ -813,7 +842,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     {
                         int32_t offDisplacement;
                         Assert(iParam == 1);
-                        bool fPrefix = pOp->opcode != OP_CALL
+                        bool fPrefix = (fFlags & DIS_FMT_FLAGS_STRICT)
+                                    && pOp->opcode != OP_CALL
                                     && pOp->opcode != OP_LOOP
                                     && pOp->opcode != OP_LOOPE
                                     && pOp->opcode != OP_LOOPNE
@@ -825,6 +855,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_SZ("short ");
                             offDisplacement = (int8_t)pParam->parval;
                             Assert(*pszFmt == 'b'); pszFmt++;
+
+                            if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                                PUT_NUM_S8(offDisplacement);
                         }
                         else if (pParam->flags & USE_IMMEDIATE16_REL)
                         {
@@ -832,6 +865,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_SZ("near ");
                             offDisplacement = (int16_t)pParam->parval;
                             Assert(*pszFmt == 'v'); pszFmt++;
+
+                            if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                                PUT_NUM_S16(offDisplacement);
                         }
                         else
                         {
@@ -840,7 +876,12 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             offDisplacement = (int32_t)pParam->parval;
                             Assert(pParam->flags & USE_IMMEDIATE32_REL);
                             Assert(*pszFmt == 'v'); pszFmt++;
+
+                            if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                                PUT_NUM_S32(offDisplacement);
                         }
+                        if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                            PUT_SZ(" (");
 
                         RTUINTPTR uTrgAddr = pCpu->opaddr + pCpu->opsize + offDisplacement;
                         if (pCpu->mode == CPUMODE_16BIT)
@@ -849,74 +890,161 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             PUT_NUM_32(uTrgAddr);
                         else
                             PUT_NUM_64(uTrgAddr);
+
+                        if (pfnGetSymbol)
+                        {
+                            int rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
+                            if (RT_SUCCESS(rc))
+                            {
+                                PUT_SZ(" [");
+                                PUT_PSZ(szSymbol);
+                                if (off != 0)
+                                {
+                                    if ((int8_t)off == off)
+                                        PUT_NUM_S8(off);
+                                    else if ((int16_t)off == off)
+                                        PUT_NUM_S16(off);
+                                    else if ((int32_t)off == off)
+                                        PUT_NUM_S32(off);
+                                    else
+                                        PUT_NUM_S64(off);
+                                }
+                                PUT_C(']');
+                            }
+                        }
+
+                        if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                            PUT_C(')');
                         break;
                     }
 
                     case 'A': /* Direct (jump/call) address (ParseImmAddr). */
+                    {
                         Assert(*pszFmt == 'p'); pszFmt++;
                         PUT_FAR();
                         PUT_SIZE_OVERRIDE();
                         PUT_SEGMENT_OVERRIDE();
+                        int rc;
                         switch (pParam->flags & (USE_IMMEDIATE_ADDR_16_16 | USE_IMMEDIATE_ADDR_16_32 | USE_DISPLACEMENT64 | USE_DISPLACEMENT32 | USE_DISPLACEMENT16))
                         {
                             case USE_IMMEDIATE_ADDR_16_16:
                                 PUT_NUM_16(pParam->parval >> 16);
                                 PUT_C(':');
                                 PUT_NUM_16(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_IMMEDIATE_ADDR_16_32:
                                 PUT_NUM_16(pParam->parval >> 32);
                                 PUT_C(':');
                                 PUT_NUM_32(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint64_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
                                 break;
                         }
+
+                        if (pfnGetSymbol && RT_SUCCESS(rc))
+                        {
+                            PUT_SZ(" [");
+                            PUT_PSZ(szSymbol);
+                            if (off != 0)
+                            {
+                                if ((int8_t)off == off)
+                                    PUT_NUM_S8(off);
+                                else if ((int16_t)off == off)
+                                    PUT_NUM_S16(off);
+                                else if ((int32_t)off == off)
+                                    PUT_NUM_S32(off);
+                                else
+                                    PUT_NUM_S64(off);
+                            }
+                            PUT_C(']');
+                        }
                         break;
+                    }
 
                     case 'O': /* No ModRM byte (ParseImmAddr). */
+                    {
                         Assert(*pszFmt == 'b' || *pszFmt == 'v'); pszFmt++;
                         PUT_FAR();
                         PUT_SIZE_OVERRIDE();
                         PUT_C('[');
                         PUT_SEGMENT_OVERRIDE();
+                        int rc;
                         switch (pParam->flags & (USE_IMMEDIATE_ADDR_16_16 | USE_IMMEDIATE_ADDR_16_32 | USE_DISPLACEMENT64 | USE_DISPLACEMENT32 | USE_DISPLACEMENT16))
                         {
                             case USE_IMMEDIATE_ADDR_16_16:
                                 PUT_NUM_16(pParam->parval >> 16);
                                 PUT_C(':');
                                 PUT_NUM_16(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_IMMEDIATE_ADDR_16_32:
                                 PUT_NUM_16(pParam->parval >> 32);
                                 PUT_C(':');
                                 PUT_NUM_32(pParam->parval);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->disp16);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint16_t)pParam->disp16, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->disp32);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint32_t)pParam->disp32, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->disp64);
+                                if (pfnGetSymbol)
+                                    rc = pfnGetSymbol(DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint64_t)pParam->disp64, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
                                 break;
                         }
                         PUT_C(']');
+
+                        if (pfnGetSymbol && RT_SUCCESS(rc))
+                        {
+                            PUT_SZ(" (");
+                            PUT_PSZ(szSymbol);
+                            if (off != 0)
+                            {
+                                if ((int8_t)off == off)
+                                    PUT_NUM_S8(off);
+                                else if ((int16_t)off == off)
+                                    PUT_NUM_S16(off);
+                                else if ((int32_t)off == off)
+                                    PUT_NUM_S32(off);
+                                else
+                                    PUT_NUM_S64(off);
+                            }
+                            PUT_C(')');
+                        }
                         break;
+                    }
 
                     case 'X': /* DS:SI (ParseXb, ParseXv). */
                     case 'Y': /* ES:DI (ParseYb, ParseYv). */

@@ -644,7 +644,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg);
  *                      symbol to the specified address is returned.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNDISGETSYMBOL(uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff);
+typedef DECLCALLBACK(int) FNDISGETSYMBOL(uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser);
 /** Pointer to a FNDISGETSYMBOL(). */
 typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
 
@@ -695,9 +695,13 @@ typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
 /** Display the relative +/- offset of branch instructions that uses relative addresses,
  * and put the target address in parenthesis. */
 #define DIS_FMT_FLAGS_RELATIVE_BRANCH       RT_BIT_32(8)
+/** Strict assembly. The assembly should, when ever possible, make the
+ * assembler reproduce the exact same binary. (Refers to the yasm
+ * strict keyword.) */
+#define DIS_FMT_FLAGS_STRICT                RT_BIT_32(9)
 /** Checks if the given flags are a valid combination. */
 #define DIS_FMT_FLAGS_IS_VALID(fFlags) \
-    (   !((fFlags) & ~UINT32_C(0x000001ff)) \
+    (   !((fFlags) & ~UINT32_C(0x000003ff)) \
      && ((fFlags) & (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT))  != (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT) \
      && (   !((fFlags) & DIS_FMT_FLAGS_ADDR_COMMENT) \
          || (fFlags & (DIS_FMT_FLAGS_ADDR_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT)) ) \
