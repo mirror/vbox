@@ -19,6 +19,7 @@
  * additional information or have any questions.
  */
 
+#define USE_DIS_FORMAT
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -91,8 +92,6 @@ typedef struct
  */
 static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode, RTGCPTR GCPtr, PDBGFDISASSTATE pState)
 {
-    pState->Cpu.mode        = pSelInfo->Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
-    pState->Cpu.pfnReadBytes = dbgfR3DisasInstrRead;
     pState->GCPtrSegBase    = pSelInfo->GCPtrBase;
     pState->GCPtrSegEnd     = pSelInfo->cbLimit + 1 + (RTGCUINTPTR)pSelInfo->GCPtrBase;
     pState->cbSegLimit      = pSelInfo->cbLimit;
@@ -103,7 +102,22 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->fLocked         = false;
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
+#ifdef USE_DIS_FORMAT
+    int rc = DISCoreOneEx(GCPtr,
+                          pSelInfo->Raw.Gen.u1DefBig
+                          ? enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Reserved
+                          ? CPUMODE_64BIT
+                          : CPUMODE_32BIT
+                          : CPUMODE_16BIT,
+                          dbgfR3DisasInstrRead,
+                          &pState->Cpu,
+                          &pState->Cpu,
+                          &cbInstr);
+#else
+    pState->Cpu.mode        = pSelInfo->Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+    pState->Cpu.pfnReadBytes = dbgfR3DisasInstrRead;
     int rc = DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL);
+#endif
     if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
@@ -230,6 +244,47 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
 }
 
 
+#ifdef USE_DIS_FORMAT
+/**
+ * @copydoc FNDISGETSYMBOL
+ */
+static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
+{
+    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pCpu;
+    PCSELMSELINFO   pSelInfo = (PCSELMSELINFO)pvUser;
+    DBGFSYMBOL      Sym;
+    RTGCINTPTR      off;
+    int             rc;
+
+    if (DIS_FMT_SEL_IS_REG(u32Sel))
+    {
+        if (DIS_FMT_SEL_GET_REG(u32Sel) == USE_REG_CS)
+            rc = DBGFR3SymbolByAddr(pState->pVM, uAddress + pSelInfo->GCPtrBase, &off, &Sym);
+        else
+            rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
+    }
+    else
+    {
+        if (pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
+            rc = DBGFR3SymbolByAddr(pState->pVM, uAddress + pSelInfo->GCPtrBase, &off, &Sym);
+        else
+            rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchName = strlen(Sym.szName);
+        if (cchName >= cchBuf)
+            cchName = cchBuf - 1;
+        memcpy(pszBuf, Sym.szName, cchName);
+        pszBuf[cchName] = '\0';
+
+        *poff = off;
+    }
+
+    return rc;
+}
+#else
 /**
  * Copy a string and return pointer to the terminator char in the copy.
  */
@@ -239,6 +294,7 @@ inline char *mystrpcpy(char *pszDst, const char *pszSrc)
     memcpy(pszDst, pszSrc, cch + 1);
     return pszDst + cch;
 }
+#endif
 
 
 /**
@@ -360,6 +416,13 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     /*
      * Format it.
      */
+#ifdef USE_DIS_FORMAT
+    char szBuf[512];
+    DISFormatYasmEx(&State.Cpu, szBuf, sizeof(szBuf),
+                    DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                    fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
+                    &SelInfo);
+#else
     char szBuf[512];
     char *psz = &szBuf[0];
 
@@ -428,6 +491,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
                     {
                         case CPUMODE_16BIT: GCPtrTarget &= UINT16_MAX; break;
                         case CPUMODE_32BIT: GCPtrTarget &= UINT32_MAX; break;
+                        case CPUMODE_64BIT: GCPtrTarget &= UINT64_MAX; break;
                         default: break;
                     }
 #ifdef DEBUG_bird   /* an experiment. */
@@ -557,6 +621,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
 #endif
     } /* foreach char in pszFormat */
     *psz = '\0';
+#endif /* !USE_DIS_FORMAT */
 
     /*
      * Print it to the user specified buffer.
