@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox Debugger GUI - Console.
  */
 
@@ -64,14 +64,18 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     setOverwriteMode(true);
     setTextFormat(PlainText);   /* minimal HTML: setTextFormat(LogText); */
 
+#ifdef Q_WS_MAC
+    QFont Font("Monaco", 10, QFont::Normal, FALSE);
+    Font.setStyleStrategy(QFont::NoAntialias);
+#else
     QFont Font = font();
-    Font.setStyleHint(QFont::TypeWriter);
     Font.setFamily("Courier [Monotype]");
+    Font.setStyleHint(QFont::TypeWriter);
+#endif
     setFont(Font);
 
     /* green on black */
     setPaper(QBrush(Qt::black));
-    //setColor(Qt::green);
     setColor(QColor(qRgb(0, 0xe0, 0)));
 }
 
@@ -138,7 +142,6 @@ VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char
     : QComboBox(true, pParent, pszName), m_iBlankItem(0), m_hGUIThread(RTThreadNativeSelf())
 {
     insertItem("", m_iBlankItem);
-    //setInsertionPolicy(AfterCurrent);
     setInsertionPolicy(NoInsertion);
     setMaxCount(50);
     const QLineEdit *pEdit = lineEdit();
@@ -230,6 +233,12 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     m_pInput = new VBoxDbgConsoleInput(pHBox);
     m_pInput->setDuplicatesEnabled(false);
     connect(m_pInput, SIGNAL(commandSubmitted(const QString &)), this, SLOT(commandSubmitted(const QString &)));
+
+#ifdef Q_WS_MAC
+    pLabel = new QLabel(NULL, "  ", pHBox);
+    pLabel->setMaximumSize(20, m_pInput->sizeHint().height() + 6);
+    pLabel->setMinimumSize(20, m_pInput->sizeHint().height() + 6);
+#endif
 
     /*
      * The tab order is from input to output, not the otherway around as it is by default.
