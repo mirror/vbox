@@ -2357,7 +2357,13 @@ REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable)
 {
     LogFlow(("REMR3A20Set: fEnable=%d\n", fEnable));
     VM_ASSERT_EMT(pVM);
+
+    bool fSaved = pVM->rem.s.fIgnoreAll; /* just in case. */
+    pVM->rem.s.fIgnoreAll = fSaved || !pVM->rem.s.fInREM;
+
     cpu_x86_set_a20(&pVM->rem.s.Env, fEnable);
+
+    pVM->rem.s.fIgnoreAll = fSaved;
 }
 
 
