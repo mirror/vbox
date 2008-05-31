@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Debugger TCP backend
+ * DBGC - Debugger Console, TCP backend.
  */
 
 /*
