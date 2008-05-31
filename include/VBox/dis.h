@@ -334,9 +334,12 @@ typedef enum
  */
 typedef struct _OP_PARAMETER
 {
+    /** @todo switch param and parval and move disp64 and flags up here with the other 64-bit vars to get more natural alignment and save space. */
     int             param;
     uint64_t        parval;
+#ifndef DIS_SEPARATE_FORMATTER
     char            szParam[32];
+#endif
 
     int32_t         disp8, disp16, disp32;
     uint32_t        size;
@@ -473,6 +476,9 @@ typedef struct _DISCPUSTATE
     jmp_buf *pJumpBuffer;
 #endif /* __L4ENV__ */
 } DISCPUSTATE;
+
+/** Pointer to a const disassembler CPU state. */
+typedef DISCPUSTATE const *PCDISCPUSTATE;
 
 /** Opcode. */
 #pragma pack(4)
@@ -615,6 +621,101 @@ DISDECL(int) DISPtrReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t **ppReg);
 DISDECL(int) DISPtrReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t **ppReg);
 DISDECL(int) DISPtrReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t **ppReg);
 DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg);
+
+
+/**
+ * Try resolve an address into a symbol name.
+ *
+ * For use with DISFormatYasmEx(), DISFormatMasmEx() and DISFormatGasEx().
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, pszBuf contains the full symbol name.
+ * @retval  VINF_BUFFER_OVERFLOW if pszBuf is too small the symbol name. The
+ *          content of pszBuf is truncated and zero terminated.
+ * @retval  VERR_SYMBOL_NOT_FOUND if no matching symbol was found for the address.
+ *
+ * @param   pCpu        Pointer to the disassembler CPU state.
+ * @param   u32Sel      The selector value. Use DIS_FMT_SEL_IS_REG, DIS_FMT_SEL_GET_VALUE,
+ *                      DIS_FMT_SEL_GET_REG to access this.
+ * @param   uAddress    The segment address.
+ * @param   pszBuf      Where to store the symbol name
+ * @param   cchBuf      The size of the buffer.
+ * @param   poff        If not a perfect match, then this is where the offset from the return
+ *                      symbol to the specified address is returned.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(int) FNDISGETSYMBOL(uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff);
+/** Pointer to a FNDISGETSYMBOL(). */
+typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
+
+/**
+ * Checks if the FNDISGETSYMBOL argument u32Sel is a register or not.
+ */
+#define DIS_FMT_SEL_IS_REG(u32Sel)          ( !!((u32Sel) & RT_BIT(31)) )
+
+/**
+ * Extracts the selector value from the FNDISGETSYMBOL argument u32Sel.
+ * @returns Selector value.
+ */
+#define DIS_FMT_SEL_GET_VALUE(u32Sel)       ( (RTSEL)(u32Sel) )
+
+/**
+ * Extracts the register number from the FNDISGETSYMBOL argument u32Sel.
+ * @returns USE_REG_CS, USE_REG_SS, USE_REG_DS, USE_REG_ES, USE_REG_FS or USE_REG_FS.
+ */
+#define DIS_FMT_SEL_GET_REG(u32Sel)         ( ((u32Sel) >> 16) & 0xf )
+
+/** @internal */
+#define DIS_FMT_SEL_FROM_REG(uReg)          ( ((uReg) << 16) | RT_BIT(31) | 0xffff )
+/** @internal */
+#define DIS_FMT_SEL_FROM_VALUE(Sel)         ( (Sel) & 0xffff )
+
+
+/** @name Flags for use with DISFormatYasmEx(), DISFormatMasmEx() and DISFormatGasEx().
+ * @{
+ */
+/** Put the address to the right. */
+#define DIS_FMT_FLAGS_ADDR_RIGHT            RT_BIT_32(0)
+/** Put the address to the left. */
+#define DIS_FMT_FLAGS_ADDR_LEFT             RT_BIT_32(1)
+/** Put the address in comments.
+ * For some assemblers this implies placing it to the right. */
+#define DIS_FMT_FLAGS_ADDR_COMMENT          RT_BIT_32(2)
+/** Put the instruction bytes to the right of the disassembly. */
+#define DIS_FMT_FLAGS_BYTES_RIGHT           RT_BIT_32(3)
+/** Put the instruction bytes to the left of the disassembly. */
+#define DIS_FMT_FLAGS_BYTES_LEFT            RT_BIT_32(4)
+/** Put the instruction bytes in comments.
+ * For some assemblers this implies placing the bytes to the right. */
+#define DIS_FMT_FLAGS_BYTES_COMMENT         RT_BIT_32(5)
+/** Put the bytes in square brackets. */
+#define DIS_FMT_FLAGS_BYTES_BRACKETS        RT_BIT_32(6)
+/** Put spaces between the bytes. */
+#define DIS_FMT_FLAGS_BYTES_SPACED          RT_BIT_32(7)
+/** Display the relative +/- offset of branch instructions that uses relative addresses,
+ * and put the target address in parenthesis. */
+#define DIS_FMT_FLAGS_RELATIVE_BRANCH       RT_BIT_32(8)
+/** Checks if the given flags are a valid combination. */
+#define DIS_FMT_FLAGS_IS_VALID(fFlags) \
+    (   !((fFlags) & ~UINT32_C(0x000001ff)) \
+     && ((fFlags) & (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT))  != (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT) \
+     && (   !((fFlags) & DIS_FMT_FLAGS_ADDR_COMMENT) \
+         || (fFlags & (DIS_FMT_FLAGS_ADDR_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT)) ) \
+     && ((fFlags) & (DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_LEFT)) != (DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_LEFT) \
+     && (   !((fFlags) & (DIS_FMT_FLAGS_BYTES_COMMENT | DIS_FMT_FLAGS_BYTES_BRACKETS)) \
+         || (fFlags & (DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_LEFT)) ) \
+    )
+/** @} */
+
+DISDECL(size_t) DISFormatYasm(  PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+DISDECL(size_t) DISFormatMasm(  PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatMasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+DISDECL(size_t) DISFormatGas(   PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatGasEx( PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+
+/** @todo DISAnnotate(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, register reader, memory reader); */
+
 
 __END_DECLS
 

@@ -42,7 +42,9 @@ DisasmR3_SOURCES        = \
 	DisasmCore.cpp \
 	DisasmReg.cpp \
 	DisasmTables.cpp \
-	DisasmTablesX64.cpp
+	DisasmTablesX64.cpp \
+	DisasmFormatBytes.cpp \
+	DisasmFormatYasm.cpp
 
 LIBRARIES              += DisasmCoreR3
 DisasmCoreR3_TEMPLATE   = VBOXR3
