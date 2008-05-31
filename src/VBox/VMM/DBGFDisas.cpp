@@ -19,8 +19,6 @@
  * additional information or have any questions.
  */
 
-#define USE_DIS_FORMAT
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -102,7 +100,6 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->fLocked         = false;
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
-#ifdef USE_DIS_FORMAT
     int rc = DISCoreOneEx(GCPtr,
                           pSelInfo->Raw.Gen.u1DefBig
                           ? enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Reserved
@@ -113,11 +110,6 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
                           &pState->Cpu,
                           &pState->Cpu,
                           &cbInstr);
-#else
-    pState->Cpu.mode        = pSelInfo->Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
-    pState->Cpu.pfnReadBytes = dbgfR3DisasInstrRead;
-    int rc = DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL);
-#endif
     if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
@@ -244,7 +236,6 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
 }
 
 
-#ifdef USE_DIS_FORMAT
 /**
  * @copydoc FNDISGETSYMBOL
  */
@@ -284,17 +275,6 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
 
     return rc;
 }
-#else
-/**
- * Copy a string and return pointer to the terminator char in the copy.
- */
-inline char *mystrpcpy(char *pszDst, const char *pszSrc)
-{
-    size_t cch = strlen(pszSrc);
-    memcpy(pszDst, pszSrc, cch + 1);
-    return pszDst + cch;
-}
-#endif
 
 
 /**
@@ -416,212 +396,11 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     /*
      * Format it.
      */
-#ifdef USE_DIS_FORMAT
     char szBuf[512];
     DISFormatYasmEx(&State.Cpu, szBuf, sizeof(szBuf),
                     DIS_FMT_FLAGS_RELATIVE_BRANCH,
                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
                     &SelInfo);
-#else
-    char szBuf[512];
-    char *psz = &szBuf[0];
-
-    /* prefix */
-    if (State.Cpu.prefix & PREFIX_LOCK)
-        psz = (char *)memcpy(psz, "lock ",   sizeof("lock "))   + sizeof("lock ") - 1;
-    if (State.Cpu.prefix & PREFIX_REP)
-        psz = (char *)memcpy(psz, "rep(e) ", sizeof("rep(e) ")) + sizeof("rep(e) ") - 1;
-    else if(State.Cpu.prefix & PREFIX_REPNE)
-        psz = (char *)memcpy(psz, "repne ",  sizeof("repne "))  + sizeof("repne ") - 1;
-
-    /* the instruction */
-    const char *pszFormat = State.Cpu.pszOpcode;
-    char ch;
-    while ((ch = *pszFormat) && !isspace(ch) && ch != '%')
-    {
-        *psz++ = ch;
-        pszFormat++;
-    }
-    if (isspace(ch))
-    {
-        do *psz++ = ' ';
-#ifdef DEBUG_bird /* Not sure if Sander want's this because of log size */
-        while (psz - szBuf < 8);
-#else
-        while (0);
-#endif
-        while (isspace(*pszFormat))
-            pszFormat++;
-    }
-
-    if (fFlags & DBGF_DISAS_FLAGS_NO_ANNOTATION)
-        pCtxCore = NULL;
-
-    /** @todo implement annotation and symbol lookup! */
-    int         iParam = 1;
-    for (;;)
-    {
-        ch = *pszFormat;
-        if (ch == '%')
-        {
-            ch = pszFormat[1];
-            switch (ch)
-            {
-                /*
-                 * Relative jump offset.
-                 */
-                case 'J':
-                {
-                    AssertMsg(iParam == 1, ("Invalid branch parameter nr %d\n", iParam));
-                    int32_t i32Disp;
-                    if (State.Cpu.param1.flags & USE_IMMEDIATE8_REL)
-                        i32Disp = (int32_t)(int8_t)State.Cpu.param1.parval;
-                    else if (State.Cpu.param1.flags & USE_IMMEDIATE16_REL)
-                        i32Disp = (int32_t)(int16_t)State.Cpu.param1.parval;
-                    else if (State.Cpu.param1.flags & USE_IMMEDIATE32_REL)
-                        i32Disp = (int32_t)State.Cpu.param1.parval;
-                    else
-                    {
-                        AssertMsgFailed(("Oops!\n"));
-                        dbgfR3DisasInstrDone(&State);
-                        return VERR_GENERAL_FAILURE;
-                    }
-                    RTGCUINTPTR GCPtrTarget = (RTGCUINTPTR)GCPtr + State.Cpu.opsize + i32Disp;
-                    switch (State.Cpu.opmode)
-                    {
-                        case CPUMODE_16BIT: GCPtrTarget &= UINT16_MAX; break;
-                        case CPUMODE_32BIT: GCPtrTarget &= UINT32_MAX; break;
-                        case CPUMODE_64BIT: GCPtrTarget &= UINT64_MAX; break;
-                        default: break;
-                    }
-#ifdef DEBUG_bird   /* an experiment. */
-                    DBGFSYMBOL  Sym;
-                    RTGCINTPTR  off;
-                    int rc = DBGFR3SymbolByAddr(pVM, GCPtrTarget + SelInfo.GCPtrBase, &off, &Sym);
-                    if (    VBOX_SUCCESS(rc)
-                        &&  Sym.Value - SelInfo.GCPtrBase <= SelInfo.cbLimit
-                        &&  off < _1M * 16 && off > -_1M * 16)
-                    {
-                        psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz, "%s", Sym.szName);
-                        if (off > 0)
-                            psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz, "+%#x", (int)off);
-                        else if (off > 0)
-                            psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz, "-%#x", -(int)off);
-                        switch (State.Cpu.opmode)
-                        {
-                            case CPUMODE_16BIT:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? " (%04VGv/+%x)" : " (%04VGv/-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                            case CPUMODE_32BIT:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? " (%08VGv/+%x)" : " (%08VGv/-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                            default:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? " (%VGv/+%x)"   : " (%VGv/-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                        }
-                    }
-                    else
-#endif /* DEBUG_bird */
-                    {
-                        switch (State.Cpu.opmode)
-                        {
-                            case CPUMODE_16BIT:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? "%04VGv (+%x)" : "%04VGv (-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                            case CPUMODE_32BIT:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? "%08VGv (+%x)" : "%08VGv (-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                            default:
-                                psz += RTStrPrintf(psz, &szBuf[sizeof(szBuf)] - psz,
-                                                   i32Disp >= 0 ? "%VGv (+%x)"   : "%VGv (-%x)",
-                                                   GCPtrTarget, i32Disp >= 0 ? i32Disp : -i32Disp);
-                                break;
-                        }
-                    }
-                    break;
-                }
-
-                case 'A': //direct address
-                case 'C': //control register
-                case 'D': //debug register
-                case 'E': //ModRM specifies parameter
-                case 'F': //Eflags register
-                case 'G': //ModRM selects general register
-                case 'I': //Immediate data
-                case 'M': //ModRM may only refer to memory
-                case 'O': //No ModRM byte
-                case 'P': //ModRM byte selects MMX register
-                case 'Q': //ModRM byte selects MMX register or memory address
-                case 'R': //ModRM byte may only refer to a general register
-                case 'S': //ModRM byte selects a segment register
-                case 'T': //ModRM byte selects a test register
-                case 'V': //ModRM byte selects an XMM/SSE register
-                case 'W': //ModRM byte selects an XMM/SSE register or a memory address
-                case 'X': //DS:SI
-                case 'Y': //ES:DI
-                    switch (iParam)
-                    {
-                        case 1: psz = mystrpcpy(psz, State.Cpu.param1.szParam); break;
-                        case 2: psz = mystrpcpy(psz, State.Cpu.param2.szParam); break;
-                        case 3: psz = mystrpcpy(psz, State.Cpu.param3.szParam); break;
-                    }
-                    pszFormat += 2;
-                    break;
-
-                case 'e': //register based on operand size (e.g. %eAX)
-                    if (State.Cpu.opmode == CPUMODE_32BIT)
-                        *psz++ = 'E';
-                    *psz++ = pszFormat[2];
-                    *psz++ = pszFormat[3];
-                    pszFormat += 4;
-                    break;
-
-                default:
-                    AssertMsgFailed(("Oops! ch=%c\n", ch));
-                    break;
-            }
-
-            /* Skip to the next parameter in the format string. */
-            pszFormat = strchr(pszFormat, ',');
-            if (!pszFormat)
-                break;
-            pszFormat++;
-            *psz++ = ch = ',';
-            iParam++;
-        }
-        else
-        {
-            /* output char, but check for parameter separator first. */
-            if (ch == ',')
-                iParam++;
-            *psz++ = ch;
-            if (!ch)
-                break;
-            pszFormat++;
-        }
-
-#ifdef DEBUG_bird /* Not sure if Sander want's this because of log size */
-        /* space after commas */
-        if (ch == ',')
-        {
-            while (isspace(*pszFormat))
-                pszFormat++;
-            *psz++ = ' ';
-        }
-#endif
-    } /* foreach char in pszFormat */
-    *psz = '\0';
-#endif /* !USE_DIS_FORMAT */
 
     /*
      * Print it to the user specified buffer.
