@@ -69,8 +69,8 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     Font.setStyleStrategy(QFont::NoAntialias);
 #else
     QFont Font = font();
-    Font.setFamily("Courier [Monotype]");
     Font.setStyleHint(QFont::TypeWriter);
+    Font.setFamily("Courier [Monotype]");
 #endif
     setFont(Font);
 
