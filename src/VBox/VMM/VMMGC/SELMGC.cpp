@@ -204,7 +204,7 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
          */
         /** @todo should check if any affected selectors are loaded. */
         uint32_t cb;
-        rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)pvFault, &cb);
+        rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
         if (VBOX_SUCCESS(rc) && cb)
         {
             unsigned iGDTE1 = offRange / sizeof(VBOXDESC);
@@ -290,7 +290,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
      * I/O map accesses this is safe.
      */
     uint32_t cb;
-    int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)pvFault, &cb);
+    int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
     if (VBOX_SUCCESS(rc) && cb)
     {
         PCVBOXTSS pGuestTSS = (PVBOXTSS)pVM->selm.s.GCPtrGuestTss;
@@ -320,7 +320,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
                     if (VBOX_FAILURE(rc))
                     {
                         /* Shadow page table might be out of sync */
-                        rc = PGMPrefetchPage(pVM, (RTGCPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
+                        rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
                         if (VBOX_FAILURE(rc))
                         {
                             AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
@@ -439,7 +439,7 @@ l_tryagain:
                 /* Shadow page might be out of sync. Sync and try again */
                 /** @todo might cross page boundary */
                 fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPtrTss);
+                rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)GCPtrTss);
                 if (rc != VINF_SUCCESS)
                     return rc;
                 goto l_tryagain;
