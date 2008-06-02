@@ -39,11 +39,11 @@ endif
 #endif # !VBOX_OSE
 ifdef VBOX_WITH_VRDP
  ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_ROOT)/src/libs/openssl-0.9.8h/include)
-  if1of ($(KBUILD_TARGET),linux solaris)
-   subdirs += openssl-0.9.8h
-  else
+#  if1of ($(KBUILD_TARGET),linux solaris)
+#   subdirs += openssl-0.9.8h
+#  else
    subdirs += openssl-0.9.7e
-  endif
+#  endif
  endif
 endif
 ifdef VBOX_WITH_MAIN
