@@ -1205,7 +1205,7 @@ void VBoxSelectorWnd::retranslateUi()
         tr ("Show the log files of the selected virtual machine"));
 
     helpContentsAction->setText (tr ("&Contents..."));
-    helpContentsAction->setShortcut (tr ("F1"));
+    helpContentsAction->setShortcut (QKeySequence::HelpContents);
     helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
     helpWebAction->setText (tr ("&VirtualBox Web Site..."));

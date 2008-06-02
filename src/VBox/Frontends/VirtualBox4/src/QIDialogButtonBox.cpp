@@ -102,6 +102,6 @@ void QIDialogButtonBox::retranslateUi()
     {
         btn->setText (tr ("&Help"));
         if (btn->shortcut().isEmpty())
-            btn->setShortcut (QKeySequence (tr ("F1"))); 
+            btn->setShortcut (QKeySequence::HelpContents); 
     }
 }
