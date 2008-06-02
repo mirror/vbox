@@ -32,6 +32,7 @@
 
 #include <iprt/types.h>
 #include <iprt/mp.h> /* RTMpCpuIdToSetIndex */
+#include <iprt/asm.h>
 
 
 __BEGIN_DECLS
@@ -80,13 +81,14 @@ DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
  * @returns 0 on success, -1 if idCpu isn't valid.
  * @param   pSet    Pointer to the set.
  * @param   idCpu   The identifier of the CPU to add.
+ * @remarks The modification is atomic.
  */
 DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     if (RT_UNLIKELY(iCpu < 0))
         return -1;
-    *pSet |= RT_BIT_64(iCpu);
+    ASMAtomicBitSet(pSet, iCpu);
     return 0;
 }
 
@@ -97,13 +99,14 @@ DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
  * @returns 0 on success, -1 if idCpu isn't valid.
  * @param   pSet    Pointer to the set.
  * @param   idCpu   The identifier of the CPU to delete.
+ * @remarks The modification is atomic.
  */
 DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     if (RT_UNLIKELY(iCpu < 0))
         return -1;
-    *pSet &= ~RT_BIT_64(iCpu);
+    ASMAtomicBitClear(pSet, iCpu);
     return 0;
 }
 
@@ -114,13 +117,14 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
  * @returns true / false accordingly.
  * @param   pSet    Pointer to the set.
  * @param   idCpu   The identifier of the CPU to look for.
+ * @remarks The test is atomic.
  */
 DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     if (RT_UNLIKELY(iCpu < 0))
         return false;
-    return !!(*pSet & RT_BIT_64(iCpu));
+    return ASMBitTest((volatile void *)pSet, iCpu);
 }
 
 

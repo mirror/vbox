@@ -195,6 +195,87 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
  */
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
+
+/**
+ * MP event, see FNRTMPNOTIFICATION.
+ */
+typedef enum RTMPEVENT
+{
+    /** The CPU goes online. */
+    RTMPEVENT_ONLINE = 1,
+    /** The CPU goes offline. */
+    RTMPEVENT_OFFLINE
+} RTMPEVENT;
+
+/**
+ * Notification callback.
+ *
+ * The context this is called in differs a bit from platform to
+ * platform, so be careful while in here.
+ *
+ * @param   idCpu       The CPU this applies to.
+ * @param   enmEvent    The event.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(void) FNRTMPNOTIFICATION(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+/** Pointer to a FNRTMPNOTIFICATION(). */
+typedef FNRTMPNOTIFICATION *PFNRTMPNOTIFICATION;
+
+/**
+ * Registers a notification callback for cpu events.
+ *
+ * On platforms which doesn't do cpu offline/online events this API
+ * will just be a no-op that pretends to work.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NO_MEMORY if a registration record cannot be allocated.
+ * @retval  VERR_ALREADY_EXISTS if the pfnCallback and pvUser already exist
+ *          in the callback list.
+ *
+ * @param   pfnCallback     The callback.
+ * @param   pvUser          The user argument to the callback function.
+ */
+RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser);
+
+/**
+ * This deregisters a notification callback registered via RTMpNotificationRegister().
+ *
+ * The pfnCallback and pvUser arguments must be identical to the registration call
+ * of we won't find the right entry.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if no matching entry was found.
+ *
+ * @param   pfnCallback     The callback.
+ * @param   pvUser          The user argument to the callback function.
+ */
+RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser);
+
+/**
+ * Initializes the multiprocessor event notifcations.
+ *
+ * This must be called before calling RTMpNotificationRegister(). This is an
+ * inconvenice caused Visual C++ not implmenting weak externals.
+ *
+ * @returns IPRT status code.
+ * @param   pvOS            Reserved, pass NULL.
+ */
+RTR0DECL(int) RTR0MpNotificationInit(void *pvOS);
+
+
+/**
+ * Terminates the multiprocessor event notifcations.
+ *
+ * The number of RTR0MpNotificationInit calls must match the calls to this
+ * function exactly.
+ *
+ * @returns IPRT status code.
+ * @param   pvOS            Reserved, pass NULL.
+ */
+RTR0DECL(void) RTR0MpNotificationTerm(void *pvOS);
+
 #endif /* IN_RING0 */
 
 /** @} */

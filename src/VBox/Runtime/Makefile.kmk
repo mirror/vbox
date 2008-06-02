@@ -922,6 +922,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
 	r0drv/linux/mp-r0drv-linux.c \
+	r0drv/linux/mpnotification-r0drv-linux.c \
 	r0drv/linux/process-r0drv-linux.c \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
 	r0drv/linux/semevent-r0drv-linux.c \
@@ -930,8 +931,10 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c \
 	r0drv/linux/time-r0drv-linux.c \
-	r0drv/memobj-r0drv.cpp
+	r0drv/memobj-r0drv.cpp \
+	r0drv/mpnotification-r0drv.c
 ## @todo thread2-r0drv-linux.c, timer-r0drv-linux.c and assert-r0drv-linux.c
+#	r0drv/linux/timer-r0drv-linux.c \
 
 RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
@@ -939,12 +942,14 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	r0drv/nt/mp-r0drv-nt.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
+	r0drv/mpnotification-r0drv.c \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
 	r0drv/nt/memobj-r0drv-nt.cpp \
+	r0drv/nt/mp-r0drv-nt.cpp \
+	r0drv/nt/mpnotification-r0drv-nt.cpp \
 	r0drv/nt/process-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
 	r0drv/nt/semevent-r0drv-nt.cpp \
@@ -982,6 +987,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
@@ -1027,6 +1033,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	os2/sys0.asm \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
 	r0drv/os2/assertA-r0drv-os2.asm \
@@ -1070,6 +1077,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
@@ -1091,7 +1099,9 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	r0drv/memobj-r0drv.cpp
+	r0drv/memobj-r0drv.cpp \
+	r0drv/mpnotification-r0drv.cpp \
+	r0drv/solaris/mpnotification-r0drv-solaris.cpp
 
 ifdef VBOX_WITH_SOLARIS_VBI
  RuntimeR0Drv_SOURCES.solaris += \
@@ -1192,6 +1202,7 @@ RuntimeGuestR0_SOURCES.solaris = \
  	generic/RTMpGetSet-generic.cpp \
  	generic/RTMpIsCpuOnline-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
  	r0drv/solaris/alloc-r0drv-solaris.c \
  	r0drv/solaris/assert-r0drv-solaris.c \
  	r0drv/solaris/initterm-r0drv-solaris.c \
