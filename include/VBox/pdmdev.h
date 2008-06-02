@@ -1686,7 +1686,7 @@ typedef struct PDMDEVHLP
      * @param   pszInStr            Name of the GC function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterGC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTGCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterGC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
                                                    const char *pszOut, const char *pszIn,
                                                    const char *pszOutStr, const char *pszInStr, const char *pszDesc));
 
