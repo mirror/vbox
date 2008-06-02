@@ -2161,7 +2161,7 @@ CFGMR3DECL(int) CFGMR3QuerySInt(PCFGMNODE pNode, const char *pszName, signed int
  * @param   pi              Where to store the value.
  * @param   iDef            The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryUIntDef(PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef)
+CFGMR3DECL(int) CFGMR3QuerySIntDef(PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef)
 {
     AssertCompileSize(signed int, 4);
     return CFGMR3QueryS32Def(pNode, pszName, (int32_t *)pi, iDef);
