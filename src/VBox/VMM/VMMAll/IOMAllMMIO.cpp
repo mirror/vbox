@@ -941,11 +941,11 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatGCMMIOHandler, a);
-    Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%p eip=%RGv\n",
-          GCPhysFault, uErrorCode, pvFault, pCtxCore->eip));
+    Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%RGv\n",
+          GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->eip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);

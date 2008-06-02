@@ -137,7 +137,7 @@ MMGCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
     /*
      * And mark the relevant guest page as accessed and dirty.
      */
-    PGMGstModifyPage(pVM, (RTGCPTR)pDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+    PGMGstModifyPage(pVM, (RTGCPTR)(RTRCUINTPTR)pDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
 
     return rc;
 }

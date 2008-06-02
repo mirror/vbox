@@ -427,7 +427,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO range entry.
  */
-IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 
 /**
  * Gets the I/O port range for the specified I/O port in the current context.
