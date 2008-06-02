@@ -118,7 +118,7 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
             uint32_t cb;
 
             LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %VRv\n", pRegFrame->eip, GCPtr));
-            int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)GCPtr, &cb);
+            int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr, &cb);
             if (rc == VINF_SUCCESS)
             {
                 STAM_COUNTER_INC(&pVM->patm.s.StatPatchWriteInterpreted);
