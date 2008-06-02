@@ -71,10 +71,10 @@ typedef struct RTTIMER
     RTSEMEVENT              Event;
     /** The timer interval. 0 if one-shot. */
     uint64_t                u64NanoInterval;
-    /** The start of the current run.
+    /** The start of the current run (ns).
      * This is used to calculate when the timer ought to fire the next time. */
     uint64_t volatile       u64StartTS;
-    /** The start of the current run.
+    /** The start of the current run (ns).
      * This is used to calculate when the timer ought to fire the next time. */
     uint64_t volatile       u64NextTS;
     /** The current tick number (since u64StartTS). */
@@ -262,7 +262,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
                     pTimer->u64NextTS = u64NanoTS + 1;
 #else
                     pTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
-#endif 
+#endif
             }
 
             /* block. */
