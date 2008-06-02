@@ -201,6 +201,8 @@ EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE
 EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     RTGCPTR pbCode;
+
+    LogFlow(("EMInterpretInstruction %VRv fault %VGv\n", pRegFrame->eip, pvFault));
     int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
     if (VBOX_SUCCESS(rc))
     {
@@ -1271,7 +1273,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     {
         if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
         {
-            RTGCPTR pParam1;
+            RTRCPTR pParam1;
             uint32_t valpar, eflags;
 #ifdef VBOX_STRICT
             uint32_t valpar1 = 0; /// @todo used uninitialized...
@@ -1281,11 +1283,11 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = (RTRCPTR)param1.val.val32;
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -1302,7 +1304,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VGv=%08x eax=%08x %08x\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
+            LogFlow(("%s %VRv=%08x eax=%08x %08x\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
@@ -1317,7 +1319,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VGv=%08x eax=%08x %08x ZF=%d\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %VRv=%08x eax=%08x %08x ZF=%d\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1355,25 +1357,25 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     {
         if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
         {
-            RTGCPTR pParam1;
+            RTRCPTR pParam1;
             uint32_t eflags;
 
             AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = (RTRCPTR)param1.val.val32;
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VGv=%08x eax=%08x\n", pszInstr, pParam1, pRegFrame->eax));
+            LogFlow(("%s %VRv=%08x eax=%08x\n", pszInstr, pParam1, pRegFrame->eax));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
@@ -1426,7 +1428,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     {
         if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
         {
-            RTGCPTR pParam1;
+            RTRCPTR pParam1;
             uint32_t eflags;
 #ifdef VBOX_STRICT
             uint32_t valpar1 = 0; /// @todo used uninitialized...
@@ -1436,18 +1438,18 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = (RTRCPTR)param1.val.val32;
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("XAdd %VGv=%08x reg=%08x\n", pParam1, *pParamReg2));
+            LogFlow(("XAdd %VRv=%08x reg=%08x\n", pParam1, *pParamReg2));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
