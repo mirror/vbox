@@ -45,7 +45,7 @@ typedef DECLCALLBACK(void) FNMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser
 typedef FNMPWORKER *PFNMPWORKER;
 
 /**
- * RTMpOn* argument packet used by the host specific callback 
+ * RTMpOn* argument packet used by the host specific callback
  * wrapper functions.
  */
 typedef struct RTMPARGS
@@ -58,5 +58,9 @@ typedef struct RTMPARGS
 } RTMPARGS;
 /** Pointer to a RTMpOn* argument packet. */
 typedef RTMPARGS *PRTMPARGS;
+
+int rtR0MpNotificationNativeInit(void *pvOS);
+void rtR0MpNotificationNativeTerm(void *pvOS);
+void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
 
 #endif
