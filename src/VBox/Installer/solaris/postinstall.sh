@@ -17,6 +17,13 @@
 # additional information or have any questions.
 #
 
+# Check for xVM/Xen
+currentisa=`uname -i`
+if test "$currentisa" = "i86xpv"; then
+    echo "## VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
+    exit 2
+fi
+
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
     echo "Configuring VirtualBox kernel module..."
@@ -49,7 +56,7 @@ rm -rf /opt/VirtualBox/etc
 /usr/sbin/installf -f $PKGINST
 
 # We need to touch the desktop link inorder to add it to the menu right away
-if test -f /usr/share/applications/virtualbox.desktop; then
+if test -f /usr/share/applications/virtualbox.desktop && test "$currentzone" = "global"; then
     touch /usr/share/applications/virtualbox.desktop
 fi
 
