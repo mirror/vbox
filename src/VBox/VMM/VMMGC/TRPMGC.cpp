@@ -104,7 +104,7 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
+TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     uint16_t    cbIDT;
     RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVM, &cbIDT);
@@ -165,9 +165,9 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
+TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogRel(("FATAL ERROR: trpmgcShadowIDTWriteHandler: eip=%08X pvFault=%08X pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
+    LogRel(("FATAL ERROR: trpmgcShadowIDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
 
     /* If we ever get here, then the guest has executed an sidt instruction that we failed to patch. In theory this could be very bad, but
      * there are nasty applications out there that install device drivers that mess with the guest's IDT. In those cases, it's quite ok
