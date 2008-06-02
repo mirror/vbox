@@ -2516,7 +2516,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                 if (VBOX_SUCCESS(rc))
                 {
                     pHlp->pfnPrintf(pHlp,
-                                    "!! EIP in %s (%p) at rva %x near symbols:\n"
+                                    "!! EIP in %s (%VGv) at rva %x near symbols:\n"
                                     "!!    %VGv rva %VGv off %08x  %s\n"
                                     "!!    %VGv rva %VGv off -%08x %s\n",
                                     szModName,  GCPtrMod, (unsigned)(uEIP - GCPtrMod),
