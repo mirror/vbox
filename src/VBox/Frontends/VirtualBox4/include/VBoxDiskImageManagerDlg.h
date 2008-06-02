@@ -33,6 +33,7 @@
 class DiskImageItem;
 class VBoxToolBar;
 class InfoPaneLabel;
+class VBoxProgressBar;
 
 class VBoxDiskImageManagerDlg : public QIWithRetranslateUI2<QIMainDialog>,
                                 public Ui::VBoxDiskImageManagerDlg
@@ -137,6 +138,7 @@ private:
     /* Window status */
     bool mDoSelect;
     static VBoxDiskImageManagerDlg *mModelessDialog;
+    VBoxProgressBar  *mProgressBar;
 
     /* Type if we are in the select modus */
     int mType;
