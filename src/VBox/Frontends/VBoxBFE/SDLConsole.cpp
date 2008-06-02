@@ -24,6 +24,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+
 #ifdef RT_OS_DARWIN
 # include <Carbon/Carbon.h>
 # undef PAGE_SIZE
