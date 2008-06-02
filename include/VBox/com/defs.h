@@ -31,6 +31,14 @@
 #ifndef ___VBox_com_defs_h
 #define ___VBox_com_defs_h
 
+/* Make sure all the stdint.h macros are included - must come first! */
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS
+#endif
+#ifndef __STDC_CONSTANT_MACROS
+# define __STDC_CONSTANT_MACROS
+#endif
+
 #if defined (RT_OS_OS2)
 
 /* Make sure OS/2 Toolkit headers are pulled in to have BOOL/ULONG/etc. typedefs
@@ -178,7 +186,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #if defined (RT_OS_DARWIN) || (defined (QT_VERSION) && (QT_VERSION >= 0x040000))
-  /* CFBase.h defines these & 
+  /* CFBase.h defines these &
    * qglobal.h from Qt4 defines these */
 # undef FALSE
 # undef TRUE
