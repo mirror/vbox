@@ -345,7 +345,7 @@ TRPMR3DECL(int) TRPMR3EnableGuestTrapHandler(PVM pVM, unsigned iTrap);
  * @param   iTrap       Interrupt/trap number.
  * @parapm  pHandler    GC handler pointer
  */
-TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHandler);
+TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler);
 
 /**
  * Get guest trap/interrupt gate handler
@@ -354,7 +354,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Interrupt/trap number.
  */
-TRPMR3DECL(RTGCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap);
+TRPMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap);
 
 /**
  * Disable IDT monitoring and syncing
@@ -379,7 +379,7 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM);
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTGCPTR GCPtr);
+TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr);
 
 /**
  * Check if address is a gate handler (interrupt or trap).
@@ -389,7 +389,7 @@ TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTGCPTR GCPtr);
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTGCPTR GCPtr);
+TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr);
 
 /**
  * Initializes the SELM.

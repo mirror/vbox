@@ -1050,7 +1050,7 @@ static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
     /** @todo cleanup trpmR3ClearPassThroughHandler()! */
-    RTGCPTR32 aGCPtrs[TRPM_HANDLER_MAX];
+    RTRCPTR aGCPtrs[TRPM_HANDLER_MAX];
     int rc;
 
     memset(aGCPtrs, 0, sizeof(aGCPtrs));
@@ -1075,8 +1075,8 @@ TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
     if (pIdte->Gen.u1Present)
     {
         Assert(pIdteTemplate->u16OffsetLow == TRPM_HANDLER_INT);
-        Assert(sizeof(RTGCPTR) <= sizeof(aGCPtrs[0]));
-        RTGCPTR Offset = (RTGCPTR)aGCPtrs[pIdteTemplate->u16OffsetLow];
+        Assert(sizeof(RTRCPTR) == sizeof(aGCPtrs[0]));
+        RTRCPTR Offset = (RTRCPTR)aGCPtrs[pIdteTemplate->u16OffsetLow];
 
         /*
          * Generic handlers have different entrypoints for each possible
@@ -1106,7 +1106,7 @@ TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTGCPTR GCPtr)
+TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
 {
     for (uint32_t iTrap = 0; iTrap < ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
     {
@@ -1134,7 +1134,7 @@ TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTGCPTR GCPtr)
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Interrupt/trap number.
  */
-TRPMR3DECL(RTGCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
+TRPMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
     AssertReturn(iTrap < ELEMENTS(pVM->trpm.s.aIdt), TRPM_INVALID_HANDLER);
 
@@ -1151,7 +1151,7 @@ TRPMR3DECL(RTGCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
  * @param   iTrap       Interrupt/trap number.
  * @param   pHandler    GC handler pointer
  */
-TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHandler)
+TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler)
 {
     /*
      * Validate.
@@ -1268,7 +1268,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTGCPTR GCPtr)
+TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 {
     /*
      * Read IDTR and calc last entry.
@@ -1301,7 +1301,7 @@ TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTGCPTR GCPtr)
             {
                 if (pIDTE->Gen.u1Present)
                 {
-                    RTGCPTR GCPtrHandler = (pIDTE->Gen.u16OffsetHigh << 16) | pIDTE->Gen.u16OffsetLow;
+                    RTRCPTR GCPtrHandler = (pIDTE->Gen.u16OffsetHigh << 16) | pIDTE->Gen.u16OffsetLow;
                     if (GCPtr == GCPtrHandler)
                         return true;
                 }
