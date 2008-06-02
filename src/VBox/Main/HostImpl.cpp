@@ -19,26 +19,29 @@
  * additional information or have any questions.
  */
 
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+
 #ifdef RT_OS_LINUX
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <mntent.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <unistd.h>
+# include <sys/ioctl.h>
+# include <fcntl.h>
+# include <mntent.h>
 /* bird: This is a hack to work around conflicts between these linux kernel headers
  *       and the GLIBC tcpip headers. They have different declarations of the 4
  *       standard byte order functions. */
-#define _LINUX_BYTEORDER_GENERIC_H
-#include <linux/cdrom.h>
-#ifdef VBOX_USE_LIBHAL
+# define _LINUX_BYTEORDER_GENERIC_H
+# include <linux/cdrom.h>
+# ifdef VBOX_USE_LIBHAL
 // # include <libhal.h>
 // /* These are defined by libhal.h and by VBox header files. */
 // # undef TRUE
 // # undef FALSE
-#include "vbox-libhal.h"
-#endif
-#include <errno.h>
+#  include "vbox-libhal.h"
+# endif
+# include <errno.h>
 #endif /* RT_OS_LINUX */
 
 #ifdef RT_OS_SOLARIS
@@ -61,16 +64,16 @@ extern "C" char *getfullrawname(char *);
 #endif /* RT_OS_SOLARIS */
 
 #ifdef RT_OS_WINDOWS
-#define _WIN32_DCOM
-#include <windows.h>
-#include <shellapi.h>
-#define INITGUID
-#include <guiddef.h>
-#include <devguid.h>
-#include <objbase.h>
-#include <setupapi.h>
-#include <shlobj.h>
-#include <cfgmgr32.h>
+# define _WIN32_DCOM
+# include <windows.h>
+# include <shellapi.h>
+# define INITGUID
+# include <guiddef.h>
+# include <devguid.h>
+# include <objbase.h>
+# include <setupapi.h>
+# include <shlobj.h>
+# include <cfgmgr32.h>
 #endif /* RT_OS_WINDOWS */
 
 
