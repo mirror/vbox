@@ -87,6 +87,7 @@
 #include <linux/wait.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 71)
 # include <linux/cpu.h>
+# include <linux/notifier.h>
 #endif
 /* For the basic additions module */
 #include <linux/pci.h>
