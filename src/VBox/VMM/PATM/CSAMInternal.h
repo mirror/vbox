@@ -173,8 +173,8 @@ typedef struct CSAM
 
     /* To keep track of dirty pages */
     uint32_t            cDirtyPages;
-    RTGCPTR32           pvDirtyBasePage[CSAM_MAX_DIRTY_PAGES];
-    RTGCPTR32           pvDirtyFaultPage[CSAM_MAX_DIRTY_PAGES];
+    RTRCPTR             pvDirtyBasePage[CSAM_MAX_DIRTY_PAGES];
+    RTRCPTR             pvDirtyFaultPage[CSAM_MAX_DIRTY_PAGES];
 
     /* To keep track of possible code pages */
     uint32_t            cPossibleCodePages;
