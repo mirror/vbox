@@ -1597,46 +1597,24 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     /* IBase */
     s->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
-    /* PCI Device */
-/** @todo convert to PCI*(). */
-    pData->dev.config[0x00] = 0x86;      /* vid vendor id intel ro */
-    pData->dev.config[0x01] = 0x80;      /* intel */
-
-    pData->dev.config[0x02] = 0x15;      /* did device id 82801 ro */
-    pData->dev.config[0x03] = 0x24;      /* 82801aa */
-
-    pData->dev.config[0x04] = 0x00;      /* pcicmd pci command rw, ro */
-    pData->dev.config[0x05] = 0x00;
-
-    pData->dev.config[0x06] = 0x80;      /* pcists pci status rwc, ro */
-    pData->dev.config[0x07] = 0x02;
-
-    pData->dev.config[0x08] = 0x01;      /* rid revision ro */
-    pData->dev.config[0x09] = 0x00;      /* pi programming interface ro */
-    pData->dev.config[0x0a] = 0x01;      /* scc sub class code ro */
-    pData->dev.config[0x0b] = 0x04;      /* bcc base class code ro */
-    pData->dev.config[0x0e] = 0x00;      /* headtyp header type ro */
-
-    pData->dev.config[0x10] = 0x01;      /* nambar native audio mixer base
-                                          * address rw */
-    pData->dev.config[0x11] = 0x00;
-    pData->dev.config[0x12] = 0x00;
-    pData->dev.config[0x13] = 0x00;
-
-    pData->dev.config[0x14] = 0x01;      /* nabmbar native audio bus mastering
-                                          * base address rw */
-    pData->dev.config[0x15] = 0x00;
-    pData->dev.config[0x16] = 0x00;
-    pData->dev.config[0x17] = 0x00;
-
-    pData->dev.config[0x2c] = 0x86;      /* svid subsystem vendor id rwo */
-    pData->dev.config[0x2d] = 0x80;
-
-    pData->dev.config[0x2e] = 0x00;      /* sid subsystem id rwo */
-    pData->dev.config[0x2f] = 0x00;
-
-    pData->dev.config[0x3c] = 0x00;      /* intr_ln interrupt line rw */
-    pData->dev.config[0x3d] = 0x01;      /* intr_pn interrupt pin ro */
+    /* PCI Device (the assertions will be removed later) */
+    PCIDevSetVendorId           (&pData->dev, 0x8086); /* 00 ro - intel. */             Assert (pData->dev.config[0x00] == 0x86); Assert (pData->dev.config[0x01] == 0x80);
+    PCIDevSetDeviceId           (&pData->dev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */Assert (pData->dev.config[0x02] == 0x15); Assert (pData->dev.config[0x03] == 0x24);
+    PCIDevSetCommand            (&pData->dev, 0x0000); /* 04 rw,ro - pcicmd. */         Assert (pData->dev.config[0x04] == 0x00); Assert (pData->dev.config[0x05] == 0x00);
+    PCIDevSetStatus             (&pData->dev, 0x0280); /* 06 rwc?,ro? - pcists. */      Assert (pData->dev.config[0x06] == 0x80); Assert (pData->dev.config[0x07] == 0x02);
+    PCIDevSetRevisionId         (&pData->dev, 0x01);   /* 08 ro - rid. */               Assert (pData->dev.config[0x08] == 0x01);
+    PCIDevSetClassProg          (&pData->dev, 0x00);   /* 09 ro - pi. */                Assert (pData->dev.config[0x09] == 0x00);
+    PCIDevSetClassSub           (&pData->dev, 0x01);   /* 0a ro - scc; 01 == Audio. */  Assert (pData->dev.config[0x0a] == 0x01);
+    PCIDevSetClassBase          (&pData->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert (pData->dev.config[0x0b] == 0x04);
+    PCIDevSetHeaderType         (&pData->dev, 0x00);   /* 0e ro - headtyp. */           Assert (pData->dev.config[0x0e] == 0x00);
+    PCIDevSetBaseAddress        (&pData->dev, 0,       /* 10 rw - nambar - native audio mixer base. */
+                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pData->dev.config[0x10] == 0x01); Assert (pData->dev.config[0x11] == 0x00); Assert (pData->dev.config[0x12] == 0x00); Assert (pData->dev.config[0x13] == 0x00);
+    PCIDevSetBaseAddress        (&pData->dev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
+                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pData->dev.config[0x14] == 0x01); Assert (pData->dev.config[0x15] == 0x00); Assert (pData->dev.config[0x16] == 0x00); Assert (pData->dev.config[0x17] == 0x00);
+    PCIDevSetSubSystemVendorId  (&pData->dev, 0x8086); /* 2c ro - intel.) */            Assert (pData->dev.config[0x2c] == 0x86); Assert (pData->dev.config[0x2d] == 0x80);
+    PCIDevSetSubSystemId        (&pData->dev, 0x0000); /* 2e ro. */                     Assert (pData->dev.config[0x2e] == 0x00); Assert (pData->dev.config[0x2f] == 0x00);
+    PCIDevSetInterruptLine      (&pData->dev, 0x00);   /* 3c rw. */                     Assert (pData->dev.config[0x3c] == 0x00);
+    PCIDevSetInterruptPin       (&pData->dev, 0x01);   /* 3d ro - INTA#. */             Assert (pData->dev.config[0x3d] == 0x01);
 
     /*
      * Register the PCI device, it's I/O regions, the timer and the
