@@ -32,6 +32,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <iprt/assert.h>
 
 /** @defgroup grp_pci       PCI - The PCI Controller.
  * @{
@@ -101,8 +102,10 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define VBOX_PCI_COMMAND                0x04    /**< 16-bit RW */
 #define VBOX_PCI_STATUS                 0x06    /**< 16-bit RW */
 #define VBOX_PCI_REVISION_ID            0x08    /**<  8-bit RO */
-#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit RO */
-#define VBOX_PCI_CLASS_DEVICE           0x0a    /**<  8-bit ?? */
+#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit RO - - register-level programming class code (device specific). */
+#define VBOX_PCI_CLASS_SUB              0x0a    /**<  8-bit RO - - sub-class code. */
+#define VBOX_PCI_CLASS_DEVICE           VBOX_PCI_CLASS_SUB
+#define VBOX_PCI_CLASS_BASE             0x0b    /**<  8-bit RO - - base class code. */
 #define VBOX_PCI_CACHE_LINE_SIZE        0x0c    /**<  8-bit ?? */
 #define VBOX_PCI_LATENCY_TIMER          0x0d    /**<  8-bit ?? */
 #define VBOX_PCI_HEADER_TYPE            0x0e    /**<  8-bit ?? */
@@ -237,6 +240,7 @@ DECLINLINE(uint16_t) PCIDevGetVendorId(PPCIDEVICE pPciDev)
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_VENDOR_ID], pPciDev->config[VBOX_PCI_VENDOR_ID + 1]));
 }
 
+
 /**
  * Sets the device id config register.
  * @param   pPciDev         The PCI device.
@@ -259,6 +263,151 @@ DECLINLINE(uint16_t) PCIDevGetDeviceId(PPCIDEVICE pPciDev)
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_DEVICE_ID], pPciDev->config[VBOX_PCI_DEVICE_ID + 1]));
 }
 
+
+/**
+ * Sets the command config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u16Command      The command register value.
+ */
+DECLINLINE(void) PCIDevSetCommand(PPCIDEVICE pPciDev, uint16_t u16Command)
+{
+    u16Command = RT_H2LE_U16(u16Command);
+    pPciDev->config[VBOX_PCI_COMMAND]     = u16Command & 0xff;
+    pPciDev->config[VBOX_PCI_COMMAND + 1] = u16Command >> 8;
+}
+
+
+/**
+ * Sets the status config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u16Status       The status register value.
+ */
+DECLINLINE(void) PCIDevSetStatus(PPCIDEVICE pPciDev, uint16_t u16Status)
+{
+    u16Status = RT_H2LE_U16(u16Status);
+    pPciDev->config[VBOX_PCI_STATUS]     = u16Status & 0xff;
+    pPciDev->config[VBOX_PCI_STATUS + 1] = u16Status >> 8;
+}
+
+
+/**
+ * Sets the revision id config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8RevisionId    The revision id.
+ */
+DECLINLINE(void) PCIDevSetRevisionId(PPCIDEVICE pPciDev, uint8_t u8RevisionId)
+{
+    pPciDev->config[VBOX_PCI_REVISION_ID] = u8RevisionId;
+}
+
+
+/**
+ * Sets the register level programming class config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8ClassProg     The new value.
+ */
+DECLINLINE(void) PCIDevSetClassProg(PPCIDEVICE pPciDev, uint8_t u8ClassProg)
+{
+    pPciDev->config[VBOX_PCI_CLASS_PROG] = u8ClassProg;
+}
+
+
+/**
+ * Sets the sub-class (aka device class) config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8SubClass      The sub-class.
+ */
+DECLINLINE(void) PCIDevSetClassSub(PPCIDEVICE pPciDev, uint8_t u8SubClass)
+{
+    pPciDev->config[VBOX_PCI_CLASS_SUB] = u8SubClass;
+}
+
+
+/**
+ * Sets the base class config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8BaseClass     The base class.
+ */
+DECLINLINE(void) PCIDevSetClassBase(PPCIDEVICE pPciDev, uint8_t u8BaseClass)
+{
+    pPciDev->config[VBOX_PCI_CLASS_BASE] = u8BaseClass;
+}
+
+
+/**
+ * Sets the header type config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8HdrType       The header type.
+ */
+DECLINLINE(void) PCIDevSetHeaderType(PPCIDEVICE pPciDev, uint8_t u8HdrType)
+{
+    pPciDev->config[VBOX_PCI_HEADER_TYPE] = u8HdrType;
+}
+
+
+/**
+ * Sets a base address config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   fIOSpace        Whether it's I/O (true) or memory (false) space.
+ * @param   fPrefetchable   Whether the memory is prefetachable. Must be false if fIOSpace == true.
+ * @param   f64Bit          Whether the memory can be mapped anywhere in the 64-bit address space. Otherwise restrict to 32-bit.
+ * @param   u32Addr         The address value.
+ */
+DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIOSpace, bool fPrefetchable, bool f64Bit, uint32_t u32Addr)
+{
+    if (fIOSpace)
+    {
+        Assert(!(u32Addr & 0x3)); Assert(!fPrefetchable); Assert(!f64Bit);
+        u32Addr |= RT_BIT_32(0);
+    }
+    else
+    {
+        Assert(!(u32Addr & 0xf));
+        if (fPrefetchable)
+            u32Addr |= RT_BIT_32(3);
+        if (f64Bit)
+            u32Addr |= 0x2 << 1;
+    }
+    switch (iReg)
+    {
+        case 0: iReg = VBOX_PCI_BASE_ADDRESS_0; break;
+        case 1: iReg = VBOX_PCI_BASE_ADDRESS_1; break;
+        case 2: iReg = VBOX_PCI_BASE_ADDRESS_2; break;
+        case 3: iReg = VBOX_PCI_BASE_ADDRESS_3; break;
+        case 4: iReg = VBOX_PCI_BASE_ADDRESS_4; break;
+        case 5: iReg = VBOX_PCI_BASE_ADDRESS_5; break;
+        default: AssertFailedReturnVoid();
+    }
+
+    u32Addr = RT_H2LE_U32(u32Addr);
+    pPciDev->config[iReg]     = u32Addr         & 0xff;
+    pPciDev->config[iReg + 1] = (u32Addr >> 16) & 0xff;
+    pPciDev->config[iReg + 2] = (u32Addr >> 16) & 0xff;
+    pPciDev->config[iReg + 3] = (u32Addr >> 24) & 0xff;
+}
+
+
+/**
+ * Sets the sub-system vendor id config register.
+ *
+ * @param   pPciDev             The PCI device.
+ * @param   u16SubSysVendorId   The sub-system vendor id.
+ */
+DECLINLINE(void) PCIDevSetSubSystemVendorId(PPCIDEVICE pPciDev, uint16_t u16SubSysVendorId)
+{
+    u16SubSysVendorId = RT_H2LE_U16(u16SubSysVendorId);
+    pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID]     = u16SubSysVendorId & 0xff;
+    pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID + 1] = u16SubSysVendorId >> 8;
+}
+
 /**
  * Gets the sub-system vendor id config register.
  * @returns the sub-system vendor id.
@@ -269,6 +418,20 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemVendorId(PPCIDEVICE pPciDev)
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID + 1]));
 }
 
+
+/**
+ * Sets the sub-system id config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u16SubSystemId  The sub-system id.
+ */
+DECLINLINE(void) PCIDevSetSubSystemId(PPCIDEVICE pPciDev, uint16_t u16SubSystemId)
+{
+    u16SubSystemId = RT_H2LE_U16(u16SubSystemId);
+    pPciDev->config[VBOX_PCI_SUBSYSTEM_ID]     = u16SubSystemId & 0xff;
+    pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1] = u16SubSystemId >> 8;
+}
+
 /**
  * Gets the sub-system id config register.
  * @returns the sub-system id.
@@ -277,6 +440,30 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemVendorId(PPCIDEVICE pPciDev)
 DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
 {
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1]));
+}
+
+
+/**
+ * Sets the interrupt line config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8Line          The interrupt line.
+ */
+DECLINLINE(void) PCIDevSetInterruptLine(PPCIDEVICE pPciDev, uint8_t u8Line)
+{
+    pPciDev->config[VBOX_PCI_INTERRUPT_LINE] = u8Line;
+}
+
+
+/**
+ * Sets the interrupt pin config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8Pin           The interrupt pin.
+ */
+DECLINLINE(void) PCIDevSetInterruptPin(PPCIDEVICE pPciDev, uint8_t u8Pin)
+{
+    pPciDev->config[VBOX_PCI_INTERRUPT_PIN] = u8Pin;
 }
 
 
