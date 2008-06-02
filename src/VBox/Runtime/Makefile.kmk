@@ -1101,7 +1101,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
-	r0drv/solaris/mpnotification-r0drv-solaris.cpp
+	r0drv/solaris/mpnotification-r0drv-solaris.c
 
 ifdef VBOX_WITH_SOLARIS_VBI
  RuntimeR0Drv_SOURCES.solaris += \
