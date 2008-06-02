@@ -118,7 +118,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
             break;
     }
 
-    return 0;
+    return NOTIFY_DONE;
 }
 
 
