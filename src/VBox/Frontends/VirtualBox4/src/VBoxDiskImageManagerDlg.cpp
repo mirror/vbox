@@ -34,6 +34,7 @@
 #include <QMenuBar>
 #include <QPushButton>
 #include <QUrl>
+#include <QProgressBar>
 
 class AddVDMUrlsEvent: public QEvent
 {
@@ -203,6 +204,41 @@ private:
 
     /* Private member vars */
     QLabel *mLabel;
+};
+
+class VBoxProgressBar: public QWidget
+{
+public:
+
+    VBoxProgressBar (QWidget *aParent)
+        : QWidget (aParent)
+    {
+        QHBoxLayout *layout = new QHBoxLayout (this);
+        VBoxGlobal::setLayoutMargin (layout, 0);
+        mText = new QLabel ();
+        layout->addWidget (mText);
+        mProgressBar = new QProgressBar;
+        /* The text is provided by our own label */
+        mProgressBar->setTextVisible (false);
+        layout->addWidget (mProgressBar);
+    }
+
+public slots:
+
+    void setText (const QString& aText) { mText->setText (aText); }
+    void setValue (int aValue) { mProgressBar->setValue (aValue); }
+    void setMinimum (int aValue) { mProgressBar->setMinimum (aValue); }
+    void setMaximum (int aValue) { mProgressBar->setMaximum (aValue); }
+    void setRange (int aMin, int aMax) { mProgressBar->setRange (aMin, aMax); }
+
+    QLabel *label() const { return mText; }
+    QProgressBar *progressBar() const { return mProgressBar; }
+
+private:
+
+    /* Private member vars */
+    QLabel       *mText;
+    QProgressBar *mProgressBar;
 };
 
 VBoxDiskImageManagerDlg *VBoxDiskImageManagerDlg::mModelessDialog = NULL;
@@ -387,19 +423,12 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     createInfoString (mFdsPane1, mFdsContainer, 0, 0);
     createInfoString (mFdsPane2, mFdsContainer, 1, 0);
 
-    /* enumeration progressbar creation */
-//    mProgressText = new QLabel (centralWidget());
-//    mProgressText->setHidden (true);
-#warning port me
-//    buttonLayout->insertWidget (2, mProgressText);
-//    mProgressBar = new Q3ProgressBar (centralWidget());
-//    mProgressBar->setHidden (true);
-//    mProgressBar->setFrameShadow (Q3Frame::Sunken);
-//    mProgressBar->setFrameShape  (Q3Frame::Panel);
-//    mProgressBar->setPercentageVisible (false);
-//    mProgressBar->setMaximumWidth (100);
-#warning port me
-//    buttonLayout->insertWidget (3, mProgressBar);
+    /* Enumeration progressbar creation */
+    mProgressBar = new VBoxProgressBar (this);
+    /* Add to the dialog button box */
+    mButtonBox->addExtraWidget (mProgressBar);
+    /* Default is invisible */
+    mProgressBar->setVisible (false);
 
     /* Connects for the button box */
     connect (mButtonBox, SIGNAL (accepted()),
@@ -472,8 +501,11 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
         for (it = list.begin(); it != list.end(); ++ it)
         {
             mediaAdded (*it);
-//            if ((*it).status != VBoxMedia::Unknown)
-//                mProgressBar->setProgress (++ index);
+            if ((*it).status != VBoxMedia::Unknown)
+            {
+                mProgressBar->setValue (++ index);
+                qApp->processEvents();
+            }
         }
 
         /* Emulate the finished signal to reuse the code */
@@ -806,8 +838,15 @@ void VBoxDiskImageManagerDlg::retranslateUi()
     mFdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
     mFdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
 
-//    mProgressText->setText (tr ("Checking accessibility"));
-//
+    mProgressBar->setText (tr ("Checking accessibility"));
+#ifdef Q_WS_MAC
+    /* Make sure that the widgets aren't jumping around while the progress bar
+     * get visible. */
+    mProgressBar->adjustSize();
+    int h = mProgressBar->height();
+    mButtonBox->setMinimumHeight (h + 12);
+#endif 
+
     if (mHdsTree->model()->rowCount() || mCdsTree->model()->rowCount() || mFdsTree->model()->rowCount())
         refreshAll();
 }
@@ -1033,14 +1072,16 @@ void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMedia &aMedia,
 {
     mediaUpdated (aMedia);
     Assert (aMedia.status != VBoxMedia::Unknown);
-//    if (aMedia.status != VBoxMedia::Unknown)
-//        mProgressBar->setProgress (aIndex + 1);
+    if (aMedia.status != VBoxMedia::Unknown)
+    {
+        mProgressBar->setValue (aIndex + 1);
+        qApp->processEvents();
+    }
 }
 
 void VBoxDiskImageManagerDlg::mediaEnumFinished (const VBoxMediaList &/* aList */)
 {
-//    mProgressBar->setHidden (true);
-//    mProgressText->setHidden (true);
+    mProgressBar->setVisible (false);
 
     mRefreshAction->setEnabled (true);
     unsetCursor();
@@ -1922,12 +1963,12 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     clearInfoPanes();
 
     /* Prepare progressbar */
-//    if (mProgressBar)
-//    {
-//        mProgressBar->setProgress (0, aTotal);
-//        mProgressBar->setHidden (false);
-//        mProgressText->setHidden (false);
-//    }
+    if (mProgressBar)
+    {
+        mProgressBar->setMaximum (aTotal);
+        mProgressBar->setValue (0);
+        mProgressBar->setVisible (true);
+    }
 
     mRefreshAction->setEnabled (false);
     setCursor (QCursor (Qt::BusyCursor));

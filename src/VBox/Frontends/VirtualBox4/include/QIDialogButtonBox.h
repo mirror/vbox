@@ -28,6 +28,8 @@
 /* Qt includes */
 #include <QDialogButtonBox>
 
+class QBoxLayout;
+
 class QIDialogButtonBox: public QIWithRetranslateUI<QDialogButtonBox>
 {
 public:
@@ -40,7 +42,13 @@ public:
 
     void setStandardButtons (StandardButtons aButtons);
 
+    void addExtraWidget (QWidget *aWidget);
+    void addExtraLayout (QLayout *aLayout);
+
 protected:
+
+    QBoxLayout *boxLayout() const;
+    int findEmptySpace (QBoxLayout *aLayout) const;
 
     void retranslateUi();
 };
