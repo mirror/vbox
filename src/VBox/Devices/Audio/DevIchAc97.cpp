@@ -1,10 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox ICH AC97 Audio Controller
+ * VBox ICH AC97 Audio Controller.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -79,9 +79,9 @@ enum {
 };
 
 #ifndef VBOX
-#define SOFT_VOLUME
+# define SOFT_VOLUME
 #else
-#undef  SOFT_VOLUME
+# undef  SOFT_VOLUME
 #endif
 #define SR_FIFOE RT_BIT(4)          /* rwc, fifo error */
 #define SR_BCIS  RT_BIT(3)          /* rwc, buffer completion interrupt status */
@@ -227,15 +227,15 @@ typedef struct PCIAC97LinkState
 } PCIAC97LinkState;
 
 #define MKREGS(prefix, start)                   \
-enum {                                          \
-    prefix ## _BDBAR = start,                   \
-    prefix ## _CIV   = start + 4,               \
-    prefix ## _LVI   = start + 5,               \
-    prefix ## _SR    = start + 6,               \
-    prefix ## _PICB  = start + 8,               \
-    prefix ## _PIV   = start + 10,              \
-    prefix ## _CR    = start + 11               \
-}
+    enum {                                      \
+        prefix ## _BDBAR = start,               \
+        prefix ## _CIV   = start + 4,           \
+        prefix ## _LVI   = start + 5,           \
+        prefix ## _SR    = start + 6,           \
+        prefix ## _PICB  = start + 8,           \
+        prefix ## _PIV   = start + 10,          \
+        prefix ## _CR    = start + 11           \
+    }
 
 enum
 {
@@ -281,7 +281,7 @@ static void fetch_bd (AC97LinkState *s, AC97BusMasterRegs *r)
     PDMDevHlpPhysRead (pDevIns, r->bdbar + r->civ * 8, b, sizeof(b));
     r->bd_valid   = 1;
 #if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
-#error Please adapt the code (audio buffers are little endian)!
+# error Please adapt the code (audio buffers are little endian)!
 #else
     r->bd.addr    = (*(uint32_t *) &b[0]) & ~3;
     r->bd.ctl_len = (*(uint32_t *) &b[4]);
@@ -416,7 +416,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
                 s->voice_pi = AUD_open_in (&s->card, s->voice_pi, "ac97.pi",
                                            s, pi_callback, &as);
 #ifdef LOG_VOICES
-                LogRel(("AC97: open PI freq=%d (%s)\n", freq, s->voice_pi ? "ok" : "FAIL"));
+                LogRel (("AC97: open PI freq=%d (%s)\n", freq, s->voice_pi ? "ok" : "FAIL"));
 #endif
                 break;
 
@@ -424,7 +424,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
                 s->voice_po = AUD_open_out (&s->card, s->voice_po, "ac97.po",
                                             s, po_callback, &as);
 #ifdef LOG_VOICES
-                LogRel(("AC97: open PO freq=%d (%s)\n", freq, s->voice_po ? "ok" : "FAIL"));
+                LogRel (("AC97: open PO freq=%d (%s)\n", freq, s->voice_po ? "ok" : "FAIL"));
 #endif
                 break;
 
@@ -432,7 +432,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
                 s->voice_mc = AUD_open_in (&s->card, s->voice_mc, "ac97.mc",
                                            s, mc_callback, &as);
 #ifdef LOG_VOICES
-                LogRel(("AC97: open MC freq=%d (%s)\n", freq, s->voice_mc ? "ok" : "FAIL"));
+                LogRel (("AC97: open MC freq=%d (%s)\n", freq, s->voice_mc ? "ok" : "FAIL"));
 #endif
                 break;
         }
@@ -444,7 +444,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
             case PI_INDEX:
                 AUD_close_in (&s->card, s->voice_pi);
 #ifdef LOG_VOICES
-                LogRel(("AC97: Closing PCM IN\n"));
+                LogRel (("AC97: Closing PCM IN\n"));
 #endif
                 s->voice_pi = NULL;
                 break;
@@ -452,7 +452,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
             case PO_INDEX:
                 AUD_close_out (&s->card, s->voice_po);
 #ifdef LOG_VOICES
-                LogRel(("AC97: Closing PCM OUT\n"));
+                LogRel (("AC97: Closing PCM OUT\n"));
 #endif
                 s->voice_po = NULL;
                 break;
@@ -460,7 +460,7 @@ static void open_voice (AC97LinkState *s, int index, int freq)
             case MC_INDEX:
                 AUD_close_in (&s->card, s->voice_mc);
 #ifdef LOG_VOICES
-                LogRel(("AC97: Closing MIC IN\n"));
+                LogRel (("AC97: Closing MIC IN\n"));
 #endif
                 s->voice_mc = NULL;
                 break;
@@ -486,6 +486,7 @@ static void reset_voices (AC97LinkState *s, uint8_t active[LAST_INDEX])
 }
 
 #ifdef USE_MIXER
+
 static void set_volume (AC97LinkState *s, int index,
                         audmixerctl_t mt, uint32_t val)
 {
@@ -495,19 +496,18 @@ static void set_volume (AC97LinkState *s, int index,
     rvol = 255 * rvol / VOL_MASK;
     lvol = 255 * lvol / VOL_MASK;
 
-#ifdef SOFT_VOLUME
+# ifdef SOFT_VOLUME
     if (index == AC97_Master_Volume_Mute)
         AUD_set_volume_out (s->voice_po, mute, lvol, rvol);
     else
         AUD_set_volume (mt, &mute, &lvol, &rvol);
-#else
+# else
     AUD_set_volume (mt, &mute, &lvol, &rvol);
-#endif
+# endif
 
     rvol = VOL_MASK - ((VOL_MASK * rvol) / 255);
     lvol = VOL_MASK - ((VOL_MASK * lvol) / 255);
 
-#ifdef VBOX
     /*
      * From AC'97 SoundMax Codec AD1981A: "Because AC '97 defines 6-bit volume registers, to
      * maintain compatibility whenever the D5 or D13 bits are set to `1,' their respective
@@ -520,7 +520,6 @@ static void set_volume (AC97LinkState *s, int index,
         val |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
     if (val & RT_BIT(13))
         val |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
-#endif
 
     mixer_store (s, index, val);
 }
@@ -566,7 +565,8 @@ static void record_select (AC97LinkState *s, uint32_t val)
     ls = aud_to_ac97_record_source (als);
     mixer_store (s, AC97_Record_Select, rs | (ls << 8));
 }
-#endif
+
+#endif /* USE_MIXER */
 
 static void mixer_reset (AC97LinkState *s)
 {
@@ -803,7 +803,7 @@ static void transfer_audio (AC97LinkState *s, int index, int elapsed)
                 break;
         }
 
-        Log(("r->picb = %d\n", r->picb));
+        Log (("r->picb = %d\n", r->picb));
 
         if (!r->picb)
         {
@@ -1274,14 +1274,14 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite (PPDMDEVINS pDevIns, void *pvUser
                 case AC97_Record_Select:
                     record_select (s, u32);
                     break;
-#else
+#else  /* !USE_MIXER */
                 case AC97_Master_Volume_Mute:
                 case AC97_PCM_Out_Volume_Mute:
                 case AC97_Line_In_Volume_Mute:
                 case AC97_Record_Select:
                     mixer_store (s, index, u32);
                     break;
-#endif
+#endif /* !USE_MIXER */
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
                     Log (("ac97: Attempt to write vendor ID to %#x\n", u32));
@@ -1496,12 +1496,12 @@ static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
 
 #ifdef USE_MIXER
     record_select (s, mixer_load (s, AC97_Record_Select));
-#define V_(a, b) set_volume (s, a, b, mixer_load (s, a))
+# define V_(a, b) set_volume (s, a, b, mixer_load (s, a))
     V_ (AC97_Master_Volume_Mute,  AUD_MIXER_VOLUME);
     V_ (AC97_PCM_Out_Volume_Mute, AUD_MIXER_PCM);
     V_ (AC97_Line_In_Volume_Mute, AUD_MIXER_LINE_IN);
-#undef V_
-#endif
+# undef V_
+#endif /* USE_MIXER */
     reset_voices (s, active);
 
     s->bup_flag = 0;
@@ -1519,7 +1519,7 @@ static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
  * @remark  The original sources didn't install a reset handler, but it seems to
  *          make sense to me so we'll do it.
  */
-static DECLCALLBACK(void)  ac97Reset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void)  ac97Reset (PPDMDEVINS pDevIns)
 {
     PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
 
@@ -1535,7 +1535,7 @@ static DECLCALLBACK(void)  ac97Reset(PPDMDEVINS pDevIns)
      * this. At least it wants to read the vendor id before it resets
      * the codec manually.
      */
-    mixer_reset(&pData->ac97);
+    mixer_reset (&pData->ac97);
 }
 
 /**
@@ -1598,6 +1598,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
     /* PCI Device */
+/** @todo convert to PCI*(). */
     pData->dev.config[0x00] = 0x86;      /* vid vendor id intel ro */
     pData->dev.config[0x01] = 0x80;      /* intel */
 
@@ -1642,24 +1643,24 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
      * saved state item.
      */
     rc = PDMDevHlpPCIRegister (pDevIns, &pData->dev);
-    if (VBOX_FAILURE(rc))
+    if (VBOX_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0, 256, PCI_ADDRESS_SPACE_IO,
                                        ichac97IOPortMap);
-    if (VBOX_FAILURE(rc))
+    if (VBOX_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpPCIIORegionRegister (pDevIns, 1, 64, PCI_ADDRESS_SPACE_IO,
                                        ichac97IOPortMap);
-    if (VBOX_FAILURE(rc))
+    if (VBOX_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName,
                                iInstance, AC97_SSM_VERSION, sizeof(*pData),
                                NULL, ichac97SaveExec, NULL,
                                NULL, ichac97LoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (VBOX_FAILURE (rc))
         return rc;
 
     /*
@@ -1669,24 +1670,24 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                                 &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log (("ac97: No attached driver!\n"));
-    else if (VBOX_FAILURE(rc))
+    else if (VBOX_FAILURE (rc))
     {
-        AssertMsgFailed(("Failed to attach AC97 LUN #0! rc=%Vrc\n", rc));
+        AssertMsgFailed (("Failed to attach AC97 LUN #0! rc=%Vrc\n", rc));
         return rc;
     }
 
     AUD_register_card ("ICH0", &s->card);
 
-    ac97Reset(pDevIns);
+    ac97Reset (pDevIns);
 
 #ifndef RT_OS_DARWIN /* coreaudio doesn't supply these. */
     if (!s->voice_pi)
-        LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
+        LogRel (("AC97: WARNING: Unable to open PCM IN!\n"));
     if (!s->voice_mc)
-        LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
+        LogRel (("AC97: WARNING: Unable to open PCM MC!\n"));
 #endif
     if (!s->voice_po)
-        LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
+        LogRel (("AC97: WARNING: Unable to open PCM OUT!\n"));
 
     if (!s->voice_pi && !s->voice_po && !s->voice_mc)
     {
@@ -1697,11 +1698,11 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         s->voice_po = NULL;
         s->voice_pi = NULL;
         s->voice_mc = NULL;
-        AUD_init_null();
-        ac97Reset(pDevIns);
+        AUD_init_null ();
+        ac97Reset (pDevIns);
 
-        PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
-             N_("No audio devices could be opened. Selecting the NULL audio backend "
+        PDMDevHlpVMSetRuntimeError (pDevIns, false, "HostAudioNotResponding",
+            N_ ("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible."));
     }
 #ifndef RT_OS_DARWIN
@@ -1709,26 +1710,15 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     {
         char   szMissingVoices[128];
         size_t len = 0;
-        bool   fComma = false;
         if (!s->voice_pi)
-        {
-            len = RTStrPrintf(szMissingVoices, sizeof(szMissingVoices), "PCM_in");
-            fComma = true;
-        }
+            len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
         if (!s->voice_po)
-        {
-            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_out",
-                              fComma ? ", " : "");
-            fComma = true;
-        }
+            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
         if (!s->voice_mc)
-        {
-            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_mic",
-                              fComma ? ", " : "");
-        }
+            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
 
-        PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
-             N_("Some audio devices (%s) could not be opened. Guest applications generating audio "
+        PDMDevHlpVMSetRuntimeError (pDevIns, false, "HostAudioNotResponding",
+            N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
                 "output or depending on audio input may hang. Make sure your host audio device "
                 "is working properly. Check the logfile for error messages of the audio "
                 "subsystem."), szMissingVoices);
