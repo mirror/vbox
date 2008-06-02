@@ -86,7 +86,7 @@ replace: \/\*\* @copydoc PDMDEVHLP::pfn\2 \*\/\nstatic DECLCALLBACK\(\1\) pdmR3D
  * @{
  */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTGCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
+static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts);
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
@@ -1244,7 +1244,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
 
 
 /** @copydoc PDMDEVHLP::pfnIOPortRegisterGC */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTGCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
                                                       const char *pszOut, const char *pszIn,
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
 {
