@@ -60,7 +60,7 @@ if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
-find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright' | pkgproto >> prototype
+find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
 # don't grok for the sed class files
 $VBOX_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
