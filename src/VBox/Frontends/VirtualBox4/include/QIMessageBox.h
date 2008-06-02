@@ -83,6 +83,8 @@ public:
     bool isDetailsShown() const { return mDetailsVBox->isVisible(); }
     void setDetailsShown (bool aShown);
 
+    QPixmap standardPixmap (QIMessageBox::Icon aIcon);
+
 private:
 
     QPushButton *createButton (int aButton);

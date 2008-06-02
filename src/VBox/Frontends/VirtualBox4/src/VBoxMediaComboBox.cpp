@@ -70,19 +70,13 @@ void VBoxMediaComboBox::init()
 //                 this, SLOT (processOnItem (Q3ListBoxItem*)));
 
     /* cache pixmaps as class members */
-    QImage img;
-    img = QMessageBox::standardIcon (QMessageBox::Warning).convertToImage();
-    if (!img.isNull())
-    {
-        img = img.smoothScale (14, 14);
-        mPmInacc.convertFromImage (img);
-    }
-    img = QMessageBox::standardIcon (QMessageBox::Critical).convertToImage();
-    if (!img.isNull())
-    {
-        img = img.smoothScale (14, 14);
-        mPmError.convertFromImage (img);
-    }
+    QIcon icon;
+    icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
+    if (!icon.isNull())
+       mPmInacc = icon.pixmap (14, 14);
+    icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this);
+    if (!icon.isNull())
+       mPmError = icon.pixmap (14, 14);
 }
 
 void VBoxMediaComboBox::refresh()

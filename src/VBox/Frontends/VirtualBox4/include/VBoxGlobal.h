@@ -522,7 +522,7 @@ public:
                             const char *aActive = NULL,
                             const char *aSmallActive = NULL);
 
-    static QIcon standardIcon (QStyle::StandardPixmap aStandard);
+    static QIcon standardIcon (QStyle::StandardPixmap aStandard, QWidget *aWidget = NULL);
 
     static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
