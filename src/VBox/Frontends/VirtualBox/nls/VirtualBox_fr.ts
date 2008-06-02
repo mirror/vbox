@@ -628,15 +628,15 @@ Version %1</source>
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation>Installer une image sur disquette</translation>
+        <translation>Insérer un fichier image disquette</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>&amp;Désinstaller la disquette</translation>
+        <translation>&amp;Ejecter la disquette</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Désinstaller la disquette actuellement installée</translation>
+        <translation>Ejecter la disquette actuellement insérée</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
@@ -644,15 +644,15 @@ Version %1</source>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Installer une image CD/DVD-ROM</translation>
+        <translation>Insérer une image CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Désinstaller C&amp;D/DVD-ROM</translation>
+        <translation>Ejecter C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Désinstaller le médium CD/DVD-ROM actuellement installé</translation>
+        <translation>Ejecter le médium CD/DVD-ROM actuellement inséré</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -681,11 +681,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Installer les additions client...</translation>
+        <translation>&amp;Installer les Additions Client...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Installer l&apos;image des additions client</translation>
+        <translation>Insérer le fichier image des Additions Client</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -721,11 +721,11 @@ Version %1</source>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>Installer une &amp;disquette</translation>
+        <translation>Insérer une &amp;disquette</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Installer un &amp;CD/DVD-ROM</translation>
+        <translation>Insérer un &amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -901,12 +901,12 @@ Version %1</source>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation>Installer le lecteur de disquette choisi</translation>
+        <translation>Connecter le lecteur de disquette choisi de la machine hôte</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation>Installer le lecteur CD/DVD choisi</translation>
+        <translation>Connecter le lecteur CD/DVD choisi de la machine hôte</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
@@ -931,7 +931,7 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque souple :&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du média disquette :&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -946,7 +946,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Disque souple non attaché&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Disquette non attaché&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1531,7 +1531,7 @@ Version %1</source>
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>Non installée</translation>
+        <translation>Non insérée</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1551,7 +1551,7 @@ Version %1</source>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>Non installé</translation>
+        <translation>Non inséré</translation>
     </message>
     <message>
         <source>Image</source>
@@ -3350,21 +3350,20 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;option de capture automatique du clavier est activée. Ceci entraine la machine virtuelle à &lt;b&gt;capturer&lt;/b&gt; le clavier dès que la l&apos;écran de la machine virtuelle est activée et à rendre le clavier inutilisable par d&apos;autres applications. Si le clavier est capturé toutes les frappes sont dirigées sur la machine virtuelle
-(y compris les combinaisons telles que Alt-Tab).&lt;/p&gt;
-&lt;p&gt;Vous pouvez actionner la &lt;i&gt;touche hôte&lt;/i&gt; à n&apos;importe quel instant,  ceci libérera le clavier et la souris (s&apos;il sont capturés) et autorisera leur emploi normal. La &lt;i&gt;touche hôte&lt;/i&gt; actuellement paramétrée&amp;nbsp;est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, prés de l&apos;icône &lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;option de capture automatique du clavier est activée. Ceci entraine la machine virtuelle à &lt;b&gt;capturer&lt;/b&gt; le clavier dès que la fenêtre de la machine virtuelle est activée et rendra le clavier indisponible pour d&apos;autres applications. Si le clavier est capturé toutes les appuis de touches sont redirigés vers la machine virtuelle (y compris les combinaisons telles que Alt-Tab).&lt;/p&gt;
+&lt;p&gt;Vous pouvez actionner la &lt;i&gt;touche hôte&lt;/i&gt; à n&apos;importe quel instant. Ceci libérera le clavier et la souris (s&apos;il sont capturés) et permettra leur emploi normal. La &lt;i&gt;touche hôte&lt;/i&gt; actuellement paramétrée&amp;nbsp;est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, prés de l&apos;icône &lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client  soutient  &lt;b&gt;l&apos;intégration du pointeur de souris&lt;/b&gt;.
-Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d*exploitation client -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de l&apos;affichage de la machine virtuelle sont traitées par le système d&apos;exploitation client. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;
-&lt;p&gt;L&apos;icône de souris de la barre se statut predra l&apos;apparence suivante &lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler quel&apos;intégration est soutenue et active.&lt;/p&gt;
-&lt;p&gt;Quelques applications peuvent fonctionner incorrectement  en mode d&apos;intégration de pointeur de souris. Vous pouvez toujours activer ou désactiver ce mode en  choisissant l&apos;action correspondante à partir de la barre de menu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client soutient &lt;b&gt;l&apos;intégration du pointeur de souris&lt;/b&gt;.
+Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d&apos;exploitation client -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de la fenêtre de la machine virtuelle sont traitées par le système d&apos;exploitation client. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;
+&lt;p&gt;L&apos;icône de souris de la barre se statut predra l&apos;apparence suivante &lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler que l&apos;intégration est soutenue et active.&lt;/p&gt;
+&lt;p&gt;Il est possible que certaines applications fonctionnent incorrectement en mode d&apos;intégration de pointeur de souris. Vous pouvez toujours activer ou désactiver ce mode en choisissant l&apos;action correspondante à partir de la barre de menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client ne soutient pas &lt;i&gt;l&apos;intégration du pointeur de la souris&lt;/i&gt; pour le mode vidéo actuel.
-Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtuelle ou pressez la  &lt;/i&gt;touche hôte&lt;/i&gt;.&lt;/p&gt; </translation>
+Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtuelle ou pressez la &lt;/i&gt;touche hôte&lt;/i&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3956,7 +3955,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Supprimer tous les avertissements</translation>
+        <translation>&amp;Réinitialiser tous les avertissements</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
@@ -5198,11 +5197,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation>Choisir l&apos;application d&apos;installation de l&apos;interface TAP</translation>
+        <translation>Choisir l&apos;application d&apos;initialisation de l&apos;interface TAP</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation>Choisir l&apos;application de désinstallation de l&apos;interface TAP</translation>
+        <translation>Choisir l&apos;application d&apos;arrêt de l&apos;interface TAP</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -5246,19 +5245,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation>Affiche la commande lancée pour l&apos;installation de l&apos;interface TAP.</translation>
+        <translation>Affiche la commande lancée pour l&apos;initialisation de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation>Choisissez L&apos;application d&apos;installation.</translation>
+        <translation>Choisissez l&apos;application d&apos;initialisation.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation>Affiche la commande lancée pour la désinstallation de l&apos;interface TAP.</translation>
+        <translation>Affiche la commande lancée pour l&apos;arrêt de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation>Choisi l&apos;application de désinstallation.</translation>
+        <translation>Choisi l&apos;application d&apos;arrêt.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
@@ -5648,7 +5647,7 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Installer la disquette</translation>
+        <translation>&amp;Connecter la disquette</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
@@ -5660,7 +5659,7 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Installe le lecteur de disquette de l&apos;hôte sur la disquette virtuelle du client.</translation>
+        <translation>Connecte le lecteur de disquette de l&apos;hôte au lecteur virtuelle du client.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to
@@ -5673,7 +5672,7 @@ the virtual machine.</source>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Installe l&apos;image disquette sur la disquette virtuelle.</translation>
+        <translation>Insère l&apos;image disquette dans le lecteur virtuelle.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
@@ -5682,7 +5681,7 @@ a Floppy image to mount.</source>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Installer un lecteur C&amp;D/DVD-ROM</translation>
+        <translation>&amp;Connecter le lecteur C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
@@ -5690,7 +5689,7 @@ a Floppy image to mount.</source>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Installe le lecteur CD/DVD sur le lecteur virtuel CD/DVD.</translation>
+        <translation>Connecte le lecteur CD/DVD au lecteur virtuel CD/DVD.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to
@@ -5889,19 +5888,19 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Si la case est cochée, le média spécifié sera installé sur le lecteur CD/DVD de la machnine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation>Si la case est cochée, le média spécifié sera attaché au lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Affiche le fichier image à installé sur le lecteur virtuel CD/DVD et permet un choix rapide de différentes images.</translation>
+        <translation>Affiche le fichier image à insérer dans le lecteur virtuel CD/DVD et permet un choix rapide de différentes images.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Si la case est cochée le média spécifié est installé sur la disquette de la machine virtuelle.</translation>
+        <translation>Si la case est cochée le média spécifié sera attaché au lecteur de disquette de la machine virtuelle.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>Affiche le fichier image à installé sur le lecteur virtuel de disquette et permet un choix rapide de différentes images.</translation>
+        <translation>Affiche le fichier image à insérer dans le lecteur virtuel de disquette et permet un choix rapide de différentes images.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
@@ -6022,15 +6021,15 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation>Listes les lecteurs de disquette disponibles pouvant être installé sur la machine virtuelle.</translation>
+        <translation>Affiche les lecteurs de disquette disponibles pouvant être connectés à la machine virtuelle.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation>Appelle l&apos; assistant de disque virtuel permettant le choix d&apos;e l&apos;image de disquette à installer. </translation>
+        <translation>Appelle l&apos;assistant de disque virtuel permettant le choix de l&apos;image de disquette à insérer. </translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation>Listes les lecteurs CD/DVD disponibles pouvants être installés sur la machine virtuelle. </translation>
+        <translation>Affiche les lecteurs CD/DVD disponibles pouvants être connectés à la machine virtuelle. </translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
@@ -6196,7 +6195,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>Le fichier image de disque souple n&apos;est pas choisi</translation>
+        <translation>Le fichier image de disquette n&apos;est pas choisi</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected</source>
