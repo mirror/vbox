@@ -2107,6 +2107,68 @@ CFGMR3DECL(int) CFGMR3QueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPO
 
 
 /**
+ * Query unsigned int address value.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu              Where to store the value.
+ */
+CFGMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, unsigned int *pu)
+{
+    AssertCompileSize(unsigned int, 4);
+    return CFGMR3QueryU32(pNode, pszName, (uint32_t *)pu);
+}
+
+
+/**
+ * Query unsigned int address value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu              Where to store the value.
+ * @param   uDef            The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, unsigned int *pu, unsigned int uDef)
+{
+    AssertCompileSize(unsigned int, 4);
+    return CFGMR3QueryU32Def(pNode, pszName, (uint32_t *)pu, uDef);
+}
+
+
+/**
+ * Query signed int address value.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi              Where to store the value.
+ */
+CFGMR3DECL(int) CFGMR3QuerySInt(PCFGMNODE pNode, const char *pszName, signed int *pi)
+{
+    AssertCompileSize(signed int, 4);
+    return CFGMR3QueryS32(pNode, pszName, (int32_t *)pi);
+}
+
+
+/**
+ * Query unsigned int address value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi              Where to store the value.
+ * @param   iDef            The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef)
+{
+    AssertCompileSize(signed int, 4);
+    return CFGMR3QueryS32Def(pNode, pszName, (int32_t *)pi, iDef);
+}
+
+
+/**
  * Query pointer integer value.
  *
  * @returns VBox status code.

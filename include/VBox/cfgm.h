@@ -141,6 +141,10 @@ CFGMR3DECL(int)         CFGMR3QueryBool(        PCFGMNODE pNode, const char *psz
 CFGMR3DECL(int)         CFGMR3QueryBoolDef(     PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef);
 CFGMR3DECL(int)         CFGMR3QueryPort(        PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort);
 CFGMR3DECL(int)         CFGMR3QueryPortDef(     PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort, RTIOPORT PortDef);
+CFGMR3DECL(int)         CFGMR3QueryUInt(        PCFGMNODE pNode, const char *pszName, unsigned int *pu);
+CFGMR3DECL(int)         CFGMR3QueryUIntDef(     PCFGMNODE pNode, const char *pszName, unsigned int *pu, unsigned int uDef);
+CFGMR3DECL(int)         CFGMR3QuerySInt(        PCFGMNODE pNode, const char *pszName, signed int *pi);
+CFGMR3DECL(int)         CFGMR3QuerySIntDef(     PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef);
 CFGMR3DECL(int)         CFGMR3QueryPtr(         PCFGMNODE pNode, const char *pszName, void **ppv);
 CFGMR3DECL(int)         CFGMR3QueryPtrDef(      PCFGMNODE pNode, const char *pszName, void **ppv, void *pvDef);
 CFGMR3DECL(int)         CFGMR3QueryGCPtr(       PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr);
