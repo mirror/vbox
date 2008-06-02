@@ -71,10 +71,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     layout->addWidget (main);
 
     mIconLabel = new QLabel();
-	if (aIcon < GuruMeditation)
-        mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
-    else if (aIcon == GuruMeditation)
-        mIconLabel->setPixmap (QPixmap (":/meditation_32px.png"));
+    mIconLabel->setPixmap (standardPixmap (aIcon));
     mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     mIconLabel->setAlignment (Qt::AlignHCenter | Qt::AlignTop);
     hLayout->addWidget (mIconLabel);
@@ -321,5 +318,36 @@ void QIMessageBox::setDetailsShown (bool aShown)
         mFlagCB = mFlagCB_Main;
         mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
     }
+}
+
+QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
+{
+    QIcon icon;
+    switch (aIcon) 
+    {
+        case QIMessageBox::Information:
+            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxInformation, this);
+            break;
+        case QMessageBox::Warning:
+            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
+            break;
+        case QIMessageBox::Critical:
+            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this);
+            break;
+        case QIMessageBox::Question:
+            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxQuestion, this);
+            break;
+        case QIMessageBox::GuruMeditation:
+            icon = QIcon (":/meditation_32px.png");
+            break;
+        default:
+            break;
+    }
+    if (!icon.isNull())
+    {
+        int size = style()->pixelMetric (QStyle::PM_MessageBoxIconSize, 0, this);
+        return icon.pixmap (size, size);
+    }else
+        return QPixmap();
 }
 

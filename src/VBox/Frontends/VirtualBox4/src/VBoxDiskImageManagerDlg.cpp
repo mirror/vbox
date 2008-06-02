@@ -218,8 +218,8 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
 
     mType = VBoxDefs::InvalidType;
 
-    mIconInaccessible = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning);
-    mIconErroneous = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical);
+    mIconInaccessible = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
+    mIconErroneous = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this);
     mIconHD = VBoxGlobal::iconSet (":/hd_16px.png", ":/hd_disabled_16px.png");
     mIconCD = VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png");
     mIconFD = VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png");
