@@ -1340,11 +1340,11 @@ else
 endif
 
 SDK_VBOX_OPENSSL      = .
-#if1of ($(KBUILD_TARGET),linux solaris)
-#SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.8h/include
-#else
+if1of ($(KBUILD_TARGET),linux)
+SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.8h/include
+else
 SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
-#endif
+endif
 SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
 SDK_VBOX_FFMPEG       = .
