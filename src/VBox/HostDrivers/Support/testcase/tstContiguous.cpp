@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test contiguous memory
+ * VBox Support Driver - Contiguous Memory Testcase (ring-3).
  */
 
 /*
@@ -35,11 +34,10 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <VBox/param.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 
 int main(int argc, char **argv)
@@ -71,6 +69,25 @@ int main(int argc, char **argv)
                 rcRet += rc != 0;
                 if (rc)
                     RTPrintf("tstContiguous: SUPContFree failed! rc=%Vrc\n", rc);
+
+                void *apv[128];
+                for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
+                {
+                    apv[i] = SUPContAlloc(1 + (i % 11), &HCPhys);
+                    if (!apv[i])
+                    {
+                        RTPrintf("tstContiguous: i=%d: failed to allocate %d pages\n", i, 1 + (i % 11));
+                        rcRet++;
+                    }
+                }
+                for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
+                    if (apv[i])
+                    {
+                        rc = SUPContFree(apv[i], 1 + (i % 11));
+                        rcRet += rc != 0;
+                        if (rc)
+                            RTPrintf("tstContiguous: i=%d SUPContFree failed! rc=%Vrc\n", i, rc);
+                    }
             }
             else
                 RTPrintf("tstContiguous: SUPContAlloc (2nd) failed!\n");
@@ -83,5 +100,5 @@ int main(int argc, char **argv)
         rcRet += rc != 0;
     }
 
-    return rcRet;
+    return rcRet ? 1 : 0;
 }
