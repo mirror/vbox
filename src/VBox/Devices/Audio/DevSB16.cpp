@@ -1,8 +1,9 @@
+/* $Id$ */
 /** @file
+ * VBox SB16 Audio Controller.
+ * (r3917 sb16.c)
  *
- * VBox SB16 Audio Controller
- *
- * TODO: hiccups on NT4 and Win98.
+ * @todo hiccups on NT4 and Win98.
  */
 
 /*
@@ -44,6 +45,7 @@ extern "C" {
 #ifndef VBOX
 
 #define LENOFA(a) ((int) (sizeof(a)/sizeof(a[0])))
+
 #define dolog(...) AUD_log ("sb16", __VA_ARGS__)
 
 /* #define DEBUG */
@@ -55,7 +57,7 @@ extern "C" {
 #define ldebug(...)
 #endif
 
-#else
+#else /* VBOX */
 
 DECLINLINE(void) dolog (const char *fmt, ...)
 {
@@ -65,7 +67,7 @@ DECLINLINE(void) dolog (const char *fmt, ...)
     va_end (ap);
 }
 
-#ifdef DEBUG
+# ifdef DEBUG
 static void ldebug (const char *fmt, ...)
 {
     va_list ap;
@@ -74,22 +76,29 @@ static void ldebug (const char *fmt, ...)
     AUD_vlog ("sb16", fmt, ap);
     va_end (ap);
 }
-#else
+# else
 DECLINLINE(void) ldebug (const char *fmt, ...)
 {
     (void)fmt;
 }
-#endif
+# endif
 
 #endif /* VBOX */
 
+#ifndef VBOX
+#define IO_READ_PROTO(name)                             \
+    uint32_t name (void *opaque, uint32_t nport)
+#define IO_WRITE_PROTO(name)                                    \
+    void name (void *opaque, uint32_t nport, uint32_t val)
+#else  /* VBOX */
 #define IO_READ_PROTO(name)                                             \
-        DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
-                                           RTIOPORT nport, uint32_t *pu32, unsigned cb)
+    DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
+                            RTIOPORT nport, uint32_t *pu32, unsigned cb)
 
 #define IO_WRITE_PROTO(name)                                            \
-        DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
-                                           RTIOPORT nport, uint32_t val, unsigned cb)
+    DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
+                            RTIOPORT nport, uint32_t val, unsigned cb)
+#endif /* VBOX */
 
 static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 
@@ -102,7 +111,7 @@ static struct {
     int hdma;
     int port;
 } conf = {5, 4, 5, 1, 5, 0x220};
-#endif
+#endif /* !VBOX */
 
 typedef struct SB16State {
 #ifdef VBOX
@@ -246,7 +255,7 @@ static void control (SB16State *s, int hold)
         DMA_release_DREQ (dma);
         AUD_set_active_out (s->voice, 0);
     }
-#else
+#else  /* VBOX */
     if (hold)
     {
         PDMDevHlpDMASetDREQ (s->pDevIns, dma, 1);
@@ -258,24 +267,24 @@ static void control (SB16State *s, int hold)
         PDMDevHlpDMASetDREQ (s->pDevIns, dma, 0);
         AUD_set_active_out (s->voice, 0);
     }
-#endif
+#endif /* VBOX */
 }
 
 #ifndef VBOX
 static void aux_timer (void *opaque)
 {
-    SB16State *s = (SB16State*)opaque;
+    SB16State *s = opaque;
     s->can_write = 1;
     qemu_irq_raise (s->pic[s->irq]);
 }
-#else
+#else  /* VBOX */
 static DECLCALLBACK(void) sb16Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     SB16State *s = PDMINS2DATA(pDevIns, SB16State *);
     s->can_write = 1;
     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
 }
-#endif
+#endif /* VBOX */
 
 #define DMA8_AUTO 1
 #define DMA8_HIGH 2
@@ -373,7 +382,6 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
         s->fmt_bits = 8;
         break;
     }
-
 
     if (-1 != s->time_const) {
 #if 1
@@ -866,16 +874,15 @@ static void complete (SB16State *s)
                             );
                     }
                 }
-#else
+                ldebug ("mix silence %d %d %" PRId64 "\n", samples, bytes, ticks);
+#else  /* VBOX */
                 ticks = (bytes * TMTimerGetFreq(s->pTimer)) / freq;
                 if (ticks < TMTimerGetFreq(s->pTimer) / 1024)
-                {
                     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
-                }
                 else
                     TMTimerSet(s->pTimer, TMTimerGet(s->pTimer) + ticks);
-#endif
                 ldebug ("mix silence %d %d % %RU64\n", samples, bytes, ticks);
+#endif /* VBOX */
             }
             break;
 
@@ -963,13 +970,13 @@ static void reset (SB16State *s)
         qemu_irq_raise (s->pic[s->irq]);
         qemu_irq_lower (s->pic[s->irq]);
     }
-#else
+#else  /* VBOX */
     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 0);
     if (s->dma_auto) {
         PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
         PDMDevHlpISASetIrq(s->pDevIns, s->irq, 0);
     }
-#endif
+#endif /* VBOX */
 
     s->mixer_regs[0x82] = 0;
     s->dma_auto = 0;
@@ -995,7 +1002,6 @@ static IO_WRITE_PROTO (dsp_write)
     int iport = nport - s->port;
 
     ldebug ("write %#x <- %#x\n", nport, val);
-
     switch (iport) {
     case 0x06:
         switch (val) {
@@ -1076,7 +1082,9 @@ static IO_WRITE_PROTO (dsp_write)
         break;
     }
 
+#ifdef VBOX
     return VINF_SUCCESS;
+#endif
 }
 
 static IO_READ_PROTO (dsp_read)
@@ -1085,6 +1093,9 @@ static IO_READ_PROTO (dsp_read)
     int iport, retval, ack = 0;
 
     iport = nport - s->port;
+#ifdef VBOX
+    /** @todo reject non-byte access? */
+#endif
 
     switch (iport) {
     case 0x06:                  /* reset */
@@ -1201,7 +1212,9 @@ static IO_WRITE_PROTO(mixer_write_indexb)
     (void) nport;
     s->mixer_nreg = val;
 
+#ifdef VBOX
     return VINF_SUCCESS;
+#endif
 }
 
 static IO_WRITE_PROTO(mixer_write_datab)
@@ -1248,7 +1261,9 @@ static IO_WRITE_PROTO(mixer_write_datab)
     case 0x82:
         dolog ("attempt to write into IRQ status register (val=%#x)\n",
                val);
+#ifdef VBOX
         return VINF_SUCCESS;
+#endif
 
     default:
         if (s->mixer_nreg >= 0x80) {
@@ -1259,6 +1274,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
     s->mixer_regs[s->mixer_nreg] = val;
 
+#ifdef VBOX /*???*/
     if (s->mixer_nreg == 0x30 || s->mixer_nreg == 0x31)
     {
         int     mute = 0;
@@ -1266,12 +1282,19 @@ static IO_WRITE_PROTO(mixer_write_datab)
         uint8_t rvol = s->mixer_regs[0x31];
         AUD_set_volume (AUD_MIXER_VOLUME, &mute, &lvol, &rvol);
     }
+#endif /* VBOX ??? */
 
+#ifdef VBOX
     return VINF_SUCCESS;
+#endif
 }
 
 static IO_WRITE_PROTO(mixer_write)
 {
+#ifndef VBOX
+    mixer_write_indexb (opaque, nport, val & 0xff);
+    mixer_write_datab (opaque, nport, (val >> 8) & 0xff);
+#else  /* VBOX */
     SB16State *s = (SB16State*)opaque;
     int iport = nport - s->port;
     switch (cb)
@@ -1296,6 +1319,7 @@ static IO_WRITE_PROTO(mixer_write)
             break;
     }
     return VINF_SUCCESS;
+#endif /* VBOX */
 }
 
 static IO_READ_PROTO(mixer_read)
@@ -1448,10 +1472,16 @@ static void SB_audio_callback (void *opaque, int free)
 #endif
 }
 
+#ifndef VBOX
+static void SB_save (QEMUFile *f, void *opaque)
+{
+    SB16State *s = opaque;
+#else
 static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     SB16State *s = PDMINS2DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
+#endif
 
     qemu_put_be32 (f, s->irq);
     qemu_put_be32 (f, s->dma);
@@ -1501,9 +1531,20 @@ static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     qemu_put_be32 (f, s->mixer_nreg);
     qemu_put_buffer (f, s->mixer_regs, 256);
 
+#ifdef VBOX
     return VINF_SUCCESS;
+#endif
 }
 
+#ifndef VBOX
+static int SB_load (QEMUFile *f, void *opaque, int version_id)
+{
+    SB16State *s = opaque;
+
+    if (version_id != 1) {
+        return -EINVAL;
+    }
+#else  /* VBOX */
 static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
                                    uint32_t u32Version)
 {
@@ -1515,6 +1556,7 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
         AssertMsgFailed(("u32Version=%d\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
+#endif /* VBOX */
 
     s->irq=qemu_get_be32 (f);
     s->dma=qemu_get_be32 (f);
@@ -1594,7 +1636,9 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
         speaker (s, s->speaker);
     }
 
+#ifdef VBOX
     return VINF_SUCCESS;
+#endif
 }
 
 #ifndef VBOX
@@ -1659,7 +1703,8 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
     AUD_register_card (audio, "sb16", &s->card);
     return 0;
 }
-#endif
+
+#else /* VBOX */
 
 static DECLCALLBACK(void *) sb16QueryInterface (struct PDMIBASE *pInterface,
                                                 PDMINTERFACE enmInterface)
@@ -1681,53 +1726,54 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     SB16State *s = PDMINS2DATA(pDevIns, SB16State *);
     int rc;
 
+    /*
+     * Validations.
+     */
     Assert(iInstance == 0);
-
-    uint32_t value;
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0DMA\0DMA16\0Port\0Version\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle,
+                              "IRQ\0"
+                              "DMA\0"
+                              "DMA16\0"
+                              "Port\0"
+                              "Version\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for sb16 device"));
-    rc = CFGMR3QueryU32(pCfgHandle, "IRQ", &value);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->irq = 5;
-    else if (VBOX_FAILURE(rc))
+
+    /*
+     * Read config data.
+     */
+    rc = CFGMR3QuerySIntDef(pCfgHandle, "IRQ", &s->irq, 5);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
-    else s->irq = value;
-    rc = CFGMR3QueryU32(pCfgHandle, "DMA", &value);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->dma = 1;
-    else if (VBOX_FAILURE(rc))
+
+    rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA", &s->dma, 1);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA\" value"));
-    else
-        s->dma = value;
-    rc = CFGMR3QueryU32(pCfgHandle, "DMA16", &value);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->hdma = 5;
-    else if (VBOX_FAILURE(rc))
+
+    rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA16", &s->hdma, 5);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA16\" value"));
-    else
-        s->hdma = value;
-    rc = CFGMR3QueryU32(pCfgHandle, "Port", &value);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->port = 0x220;
-    else if (VBOX_FAILURE(rc))
+
+    RTIOPORT Port;
+    rc = CFGMR3QueryPortDef(pCfgHandle, "Port", &Port, 0x220);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Port\" value"));
-    else
-        s->port = value;
-    uint16_t version;
-    rc = CFGMR3QueryU16(pCfgHandle, "Version", &version);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->ver = 0x0405;
-    else if (VBOX_FAILURE(rc))
+    s->port = Port;
+
+    uint16_t u16Version;
+    rc = CFGMR3QueryU16Def(pCfgHandle, "Version", &u16Version, 0x0405);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Version\" value"));
-    else
-        s->ver = version;
+    s->ver = u16Version;
 
+    /*
+     * Init instance data.
+     */
     s->pDevIns                 = pDevIns;
     s->IBase.pfnQueryInterface = sb16QueryInterface;
     s->cmd                     = -1;
@@ -1739,43 +1785,46 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     s->csp_regs[5]             = 1;
     s->csp_regs[9]             = 0xf8;
 
-    reset_mixer (s);
+    reset_mixer(s);
 
+    /*
+     * Create timer, register & attach stuff.
+     */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16Timer, "SB16 timer", &s->pTimer);
     if (VBOX_FAILURE(rc))
         AssertMsgFailedReturn(("pfnTMTimerCreate -> %Vrc\n", rc), rc);
 
-    rc = PDMDevHlpIOPortRegister (pDevIns, s->port + 0x04,  2, s,
-                                  mixer_write, mixer_read, NULL, NULL, "SB16");
-    if (VBOX_FAILURE (rc))
+    rc = PDMDevHlpIOPortRegister(pDevIns, s->port + 0x04,  2, s,
+                                 mixer_write, mixer_read, NULL, NULL, "SB16");
+    if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpIOPortRegister (pDevIns, s->port + 0x06, 10, s,
-                                  dsp_write, dsp_read, NULL, NULL, "SB16");
-    if (VBOX_FAILURE (rc))
+    rc = PDMDevHlpIOPortRegister(pDevIns, s->port + 0x06, 10, s,
+                                 dsp_write, dsp_read, NULL, NULL, "SB16");
+    if (VBOX_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpDMARegister (pDevIns, s->hdma, SB_read_DMA, s);
-    if (VBOX_FAILURE (rc))
+    rc = PDMDevHlpDMARegister(pDevIns, s->hdma, SB_read_DMA, s);
+    if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpDMARegister (pDevIns, s->dma, SB_read_DMA, s);
-    if (VBOX_FAILURE (rc))
+    rc = PDMDevHlpDMARegister(pDevIns, s->dma, SB_read_DMA, s);
+    if (VBOX_FAILURE(rc))
         return rc;
 
     s->can_write = 1;
 
-    rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, SB16_SSM_VERSION,
-                               sizeof (*s), NULL, SaveExec, NULL, NULL, LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, SB16_SSM_VERSION,
+                              sizeof(*s), NULL, SaveExec, NULL, NULL, LoadExec, NULL);
     if (VBOX_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpDriverAttach (pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log (("sb16: No attached driver!\n"));
+        Log(("sb16: No attached driver!\n"));
     else if (VBOX_FAILURE(rc))
         AssertMsgFailedReturn(("Failed to attach SB16 LUN #0! rc=%Vrc\n", rc), rc);
 
-    AUD_register_card ("sb16", &s->card);
-    legacy_reset (s);
+    AUD_register_card("sb16", &s->card);
+    legacy_reset(s);
 
     if (!s->voice)
     {
@@ -1783,8 +1832,8 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         s->voice = NULL;
         AUD_init_null();
         PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
-                N_("No audio devices could be opened. Selecting the NULL audio backend "
-                   "with the consequence that no sound is audible."));
+            N_("No audio devices could be opened. Selecting the NULL audio backend "
+               "with the consequence that no sound is audible."));
     }
     return VINF_SUCCESS;
 }
@@ -1830,3 +1879,6 @@ const PDMDEVREG g_DeviceSB16 =
     /* pfnQueryInterface. */
     NULL
 };
+
+#endif /* VBOX */
+
