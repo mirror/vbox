@@ -321,7 +321,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/$(PKG_FILENAME).pkg
-
+	$(QUIET)$(if $(VBOX_WITH_SOLARIS_VBI),$(RM) -f $(SOLARIS_INST_DIR)/$(VBIPKG_FILENAME).pkg,)
 
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
