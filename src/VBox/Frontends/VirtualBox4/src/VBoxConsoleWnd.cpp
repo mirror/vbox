@@ -1542,6 +1542,7 @@ void VBoxConsoleWnd::retranslateUi()
     /* Help actions */
 
     helpContentsAction->setText (tr ("&Contents..."));
+    helpContentsAction->setShortcut (QKeySequence::HelpContents);
     helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
     helpWebAction->setText (tr ("&VirtualBox Web Site..."));
