@@ -2220,7 +2220,7 @@ const OPCODE g_aMapX86_Group7_mod11_rm000[8] =
 {
     /* 0F 01 MOD=11b */
     INVALID_OPCODE,
-    OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg,          0,          0,          OP_MONITOR,         OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX,    OPTYPE_HARMLESS ),
+    OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg, IDX_ParseFixedReg, IDX_ParseFixedReg,          OP_MONITOR,         OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX,    OPTYPE_HARMLESS ),
     INVALID_OPCODE,
     INVALID_OPCODE,
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
@@ -2233,7 +2233,7 @@ const OPCODE g_aMapX86_Group7_mod11_rm001[8] =
 {
     /* 0F 01 MOD=11b */
     INVALID_OPCODE,
-    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  0,          0,          OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX, OP_PARM_NONE,   OPTYPE_HARMLESS ),
+    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg,          0,          OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX, OP_PARM_NONE,   OPTYPE_HARMLESS ),
     INVALID_OPCODE,
     INVALID_OPCODE,
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
