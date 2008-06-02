@@ -19,6 +19,14 @@
  * additional information or have any questions.
  */
 
+/* Make sure all the stdint.h macros are included - must come first! */
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS
+#endif
+#ifndef __STDC_CONSTANT_MACROS
+# define __STDC_CONSTANT_MACROS
+#endif
+
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
 #endif

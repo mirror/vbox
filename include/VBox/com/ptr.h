@@ -31,13 +31,21 @@
 #ifndef ___VBox_com_ptr_h
 #define ___VBox_com_ptr_h
 
+/* Make sure all the stdint.h macros are included - must come first! */
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS
+#endif
+#ifndef __STDC_CONSTANT_MACROS
+# define __STDC_CONSTANT_MACROS
+#endif
+
 #if !defined (VBOX_WITH_XPCOM)
 
 #include <atlbase.h>
 
 #ifndef _ATL_IIDOF
 # define _ATL_IIDOF(c) __uuidof(c)
-#endif 
+#endif
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
@@ -84,12 +92,12 @@ protected:
 
 /**
  *  Returns @c true if two interface pointers are equal.
- *  
+ *
  *  According to the COM Identity Rule, interface pointers are considered to be
  *  equal if and only if IUnknown pointers queried on these interfaces pointers
  *  are equal (e.g. have the same binary value). Equal interface pointers
  *  represent the same object even if they are pointers to different interfaces.
- *  
+ *
  *  @param I1   Class of the first interface pointer (must be derived from
  *              IUnknown).
  *  @param I2   Class of the second interface pointer (must be derived from
@@ -144,7 +152,7 @@ inline bool ComPtrEquals <IUnknown, IUnknown> (IUnknown *aThis, IUnknown *aThat)
     return aThis == aThat;
 }
 
-/** 
+/**
  *  Base template for smart COM pointers. Not intended to be used directly.
  */
 template <class C, template <class> class RefOps = ComStrongRef>
