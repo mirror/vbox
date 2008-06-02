@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
  * CFGM - Configuration Manager.
- *
- * This is the main file of the \ref pg_cfgm "CFGM (Configuration Manager)".
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,33 +21,32 @@
 
 /** @page pg_cfgm       CFGM - The Configuration Manager
  *
- * The configuration manager will load and keep the configuration of a VM
- * handy (thru query interface) while the VM is running. The VM properties
- * are organized in a tree and individual nodes can be accessed by normal
- * path walking.
+ * The configuration manager is responsible for storing the configuration
+ * of the VM at run time. It is organized a bit like file hierarchy,
+ * except that the values live in a separate name space, i.e. value names
+ * can include path separators.
  *
- * Exactly how the CFGM obtains the configuration is specific to the build.
- * The default for a full build is to query it thru the IMachine interface and
- * applies it onto a default setup. It's necessary to have a default in the
- * bottom of this because the IMachine interface doesn't provide all the
- * required details.
+ * The VMM user creates the configuration tree as part of the VMR3Create()
+ * call via the pfnCFGMConstructor callback argument. If this isn't specified
+ * a simple default tree is created by cfgmR3CreateDefaultTree(). When used
+ * in the normal setup, this function is found in Main/ConsoleImpl2.cpp.
+ * For the VBoxBFE case, see the VBoxBFE.cpp.
  *
- * Devices are given their own subtree where they are protected from accessing
- * information of any parents. The exported PDM callback interfaces makes sure
- * of this.
+ * Devices, drivers, services and other PDM stuff are given their own subtree
+ * where they are protected from accessing information of any parents. This is
+ * is implemented via the CFGMR3SetRestrictedRoot() API.
  *
- * Validating of the data obtained, except for validation of the primitive type,
- * is all up to the user. The CFGM user is concidered in a better position to
- * know the validation rules of the individual properties.
+ * Validating of the data obtained, except for validation of the primitive
+ * type, is left the caller. The caller is in a better position to know the
+ * proper validation rules of the individual properties.
  *
  *
  * @section sec_cfgm_primitives     Data Primitives
  *
  * CFGM supports the following data primitives:
- *      - Integers. Representation is signed 64-bit. Boolean, unsigned and
- *        small integers are all represented using this primitive.
- *      - Zero terminated character strings. As everywhere else
- *        strings are UTF-8.
+ *      - Integers. Representation is unsigned 64-bit. Boolean, unsigned and
+ *        small integers, and pointers are all represented using this primitive.
+ *      - Zero terminated character strings. These are of course UTF-8.
  *      - Variable length byte strings. This can be used to get/put binary
  *        objects.
  *
@@ -76,7 +73,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  cfgmR3CreateDefault(PVM pVM);
+static int  cfgmR3CreateDefaultTree(PVM pVM);
 static void cfgmR3DumpPath(PCFGMNODE pNode, PCDBGFINFOHLP pHlp);
 static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp);
 static DECLCALLBACK(void) cfgmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -134,7 +131,7 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
         rc = pfnCFGMConstructor(pVM, pvUser);
     }
     else
-        rc = cfgmR3CreateDefault(pVM);
+        rc = cfgmR3CreateDefaultTree(pVM);
     if (VBOX_SUCCESS(rc))
     {
         Log(("CFGMR3Init: Successfully constructed the configuration\n"));
@@ -739,7 +736,7 @@ CFGMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvD
  * @returns VBox status code.
  * @param   pVM     VM handle.
  */
-static int cfgmR3CreateDefault(PVM pVM)
+static int cfgmR3CreateDefaultTree(PVM pVM)
 {
     int rc;
     int rcAll = VINF_SUCCESS;
