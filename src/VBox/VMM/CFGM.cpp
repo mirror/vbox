@@ -595,6 +595,35 @@ CFGMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_
 
 
 /**
+ * Query integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu64            Where to store the integer value.
+ * @param   u64Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
+{
+    PCFGMLEAF pLeaf;
+    int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (pLeaf->enmType == CFGMVALUETYPE_INTEGER)
+            *pu64 = pLeaf->Value.Integer.u64;
+        else
+            rc = VERR_CFGM_NOT_INTEGER;
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        *pu64 = u64Def;
+        rc = VINF_SUCCESS;
+    }
+    return rc;
+}
+
+
+/**
  * Query zero terminated character value.
  *
  * @returns VBox status code.
@@ -621,6 +650,51 @@ CFGMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *ps
         }
         else
             rc = VERR_CFGM_NOT_STRING;
+    }
+    return rc;
+}
+
+
+/**
+ * Query zero terminated character value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of a zero terminate character value.
+ * @param   pszString       Where to store the string.
+ * @param   cchString       Size of the string buffer. (Includes terminator.)
+ * @param   pszDef          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+{
+    PCFGMLEAF pLeaf;
+    int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (pLeaf->enmType == CFGMVALUETYPE_STRING)
+        {
+            if (cchString >= pLeaf->Value.String.cch)
+            {
+                memcpy(pszString, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
+                memset(pszString + pLeaf->Value.String.cch, 0, cchString - pLeaf->Value.String.cch);
+            }
+            else
+                rc = VERR_CFGM_NOT_ENOUGH_SPACE;
+        }
+        else
+            rc = VERR_CFGM_NOT_STRING;
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        size_t cchDef = strlen(pszDef);
+        if (cchString > cchDef)
+        {
+            memcpy(pszString, pszDef, cchDef);
+            memset(pszString + cchDef, 0, cchString - cchDef);
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_CFGM_NOT_ENOUGH_SPACE;
     }
     return rc;
 }
@@ -1627,6 +1701,21 @@ CFGMR3DECL(int) CFGMR3QueryU64(PCFGMNODE pNode, const char *pszName, uint64_t *p
 
 
 /**
+ * Query unsigned 64-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu64            Where to store the integer value.
+ * @param   u64Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryU64Def(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
+{
+    return CFGMR3QueryIntegerDef(pNode, pszName, pu64, u64Def);
+}
+
+
+/**
  * Query signed 64-bit integer value.
  *
  * @returns VBox status code.
@@ -1638,6 +1727,25 @@ CFGMR3DECL(int) CFGMR3QueryS64(PCFGMNODE pNode, const char *pszName, int64_t *pi
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
+    if (VBOX_SUCCESS(rc))
+        *pi64 = (int64_t)u64;
+    return rc;
+}
+
+
+/**
+ * Query signed 64-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi64            Where to store the value.
+ * @param   i64Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t *pi64, int64_t i64Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i64Def);
     if (VBOX_SUCCESS(rc))
         *pi64 = (int64_t)u64;
     return rc;
@@ -1658,7 +1766,31 @@ CFGMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *p
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (!(u64 & 0xffffffff00000000ULL))
+        if (!(u64 & UINT64_C(0xffffffff00000000)))
+            *pu32 = (uint32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query unsigned 32-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu32            Where to store the value.
+ * @param   u32Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t *pu32, uint32_t u32Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u32Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffff00000000)))
             *pu32 = (uint32_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1681,8 +1813,33 @@ CFGMR3DECL(int) CFGMR3QueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (   !(u64 & 0xffffffff80000000ULL)
-            ||  (u64 & 0xffffffff80000000ULL) == 0xffffffff80000000ULL)
+        if (   !(u64 & UINT64_C(0xffffffff80000000))
+            ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
+            *pi32 = (int32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query signed 32-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi32            Where to store the value.
+ * @param   i32Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *pi32, int32_t i32Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i32Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (   !(u64 & UINT64_C(0xffffffff80000000))
+            ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
             *pi32 = (int32_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1705,7 +1862,31 @@ CFGMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *p
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (!(u64 & 0xffffffffffff0000ULL))
+        if (!(u64 & UINT64_C(0xffffffffffff0000)))
+            *pu16 = (int16_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query unsigned 16-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu16            Where to store the value.
+ * @param   i16Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t *pu16, uint16_t u16Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u16Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffff0000)))
             *pu16 = (int16_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1728,8 +1909,33 @@ CFGMR3DECL(int) CFGMR3QueryS16(PCFGMNODE pNode, const char *pszName, int16_t *pi
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (   !(u64 & 0xffffffffffff8000ULL)
-            ||  (u64 & 0xffffffffffff8000ULL) == 0xffffffffffff8000ULL)
+        if (   !(u64 & UINT64_C(0xffffffffffff8000))
+            ||  (u64 & UINT64_C(0xffffffffffff8000)) == UINT64_C(0xffffffffffff8000))
+            *pi16 = (int16_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query signed 16-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi16            Where to store the value.
+ * @param   i16Def          The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t *pi16, int16_t i16Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i16Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (   !(u64 & UINT64_C(0xffffffffffff8000))
+            ||  (u64 & UINT64_C(0xffffffffffff8000)) == UINT64_C(0xffffffffffff8000))
             *pi16 = (int16_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1752,7 +1958,31 @@ CFGMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (!(u64 & 0xffffffffffffff00ULL))
+        if (!(u64 & UINT64_C(0xffffffffffffff00)))
+            *pu8 = (uint8_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query unsigned 8-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pu8             Where to store the value.
+ * @param   u8Def           The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *pu8, uint8_t u8Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u8Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffffff00)))
             *pu8 = (uint8_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1775,8 +2005,33 @@ CFGMR3DECL(int) CFGMR3QueryS8(PCFGMNODE pNode, const char *pszName, int8_t *pi8)
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
     if (VBOX_SUCCESS(rc))
     {
-        if (   !(u64 & 0xffffffffffffff80ULL)
-            ||  (u64 & 0xffffffffffffff80ULL) == 0xffffffffffffff80ULL)
+        if (   !(u64 & UINT64_C(0xffffffffffffff80))
+            ||  (u64 & UINT64_C(0xffffffffffffff80)) == UINT64_C(0xffffffffffffff80))
+            *pi8 = (int8_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query signed 8-bit integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pi8             Where to store the value.
+ * @param   i8Def           The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *pi8, int8_t i8Def)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i8Def);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (   !(u64 & UINT64_C(0xffffffffffffff80))
+            ||  (u64 & UINT64_C(0xffffffffffffff80)) == UINT64_C(0xffffffffffffff80))
             *pi8 = (int8_t)u64;
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
@@ -1805,6 +2060,57 @@ CFGMR3DECL(int) CFGMR3QueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
 
 
 /**
+ * Query boolean integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pf              Where to store the value.
+ * @param   fDef            The default value.
+ * @remark  This function will interpret any non-zero value as true.
+ */
+CFGMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, fDef);
+    if (VBOX_SUCCESS(rc))
+        *pf = u64 ? true : false;
+    return rc;
+}
+
+
+/**
+ * Query I/O port address value.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pPort           Where to store the value.
+ */
+CFGMR3DECL(int) CFGMR3QueryPort(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort)
+{
+    AssertCompileSize(RTIOPORT, 2);
+    return CFGMR3QueryU16(pNode, pszName, pPort);
+}
+
+
+/**
+ * Query I/O port address value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pPort           Where to store the value.
+ * @param   PortDef         The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort, RTIOPORT PortDef)
+{
+    AssertCompileSize(RTIOPORT, 2);
+    return CFGMR3QueryU16Def(pNode, pszName, pPort, PortDef);
+}
+
+
+/**
  * Query pointer integer value.
  *
  * @returns VBox status code.
@@ -1816,6 +2122,31 @@ CFGMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
+    if (VBOX_SUCCESS(rc))
+    {
+        uintptr_t u = (uintptr_t)u64;
+        if (u64 == u)
+            *ppv = (void *)u;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query pointer integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   ppv             Where to store the value.
+ * @param   pvDef           The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **ppv, void *pvDef)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, (uintptr_t)pvDef);
     if (VBOX_SUCCESS(rc))
     {
         uintptr_t u = (uintptr_t)u64;
@@ -1853,6 +2184,31 @@ CFGMR3DECL(int) CFGMR3QueryGCPtr(PCFGMNODE pNode, const char *pszName, PRTGCPTR 
 
 
 /**
+ * Query Guest Context pointer integer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pGCPtr          Where to store the value.
+ * @param   GCPtrDef        The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr, RTGCPTR GCPtrDef)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTGCPTR u = (RTGCPTR)u64;
+        if (u64 == u)
+            *pGCPtr = u;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
  * Query Guest Context unsigned pointer value.
  *
  * @returns VBox status code.
@@ -1877,6 +2233,31 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrU(PCFGMNODE pNode, const char *pszName, PRTGCUIN
 
 
 /**
+ * Query Guest Context unsigned pointer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pGCPtr          Where to store the value.
+ * @param   GCPtrDef        The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr, RTGCUINTPTR GCPtrDef)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTGCUINTPTR u = (RTGCUINTPTR)u64;
+        if (u64 == u)
+            *pGCPtr = u;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
  * Query Guest Context signed pointer value.
  *
  * @returns VBox status code.
@@ -1888,6 +2269,31 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrS(PCFGMNODE pNode, const char *pszName, PRTGCINT
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTGCINTPTR u = (RTGCINTPTR)u64;
+        if (u64 == (uint64_t)u)
+            *pGCPtr = u;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
+}
+
+
+/**
+ * Query Guest Context signed pointer value with default.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Name of an integer value.
+ * @param   pGCPtr          Where to store the value.
+ * @param   GCPtrDef        The default value.
+ */
+CFGMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCINTPTR pGCPtr, RTGCINTPTR GCPtrDef)
+{
+    uint64_t u64;
+    int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
     if (VBOX_SUCCESS(rc))
     {
         RTGCINTPTR u = (RTGCINTPTR)u64;
@@ -1931,6 +2337,42 @@ CFGMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, cha
     return rc;
 }
 
+
+/**
+ * Query zero terminated character value storing it in a
+ * buffer allocated from the MM heap.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Which node to search for pszName in.
+ * @param   pszName         Value name. This value must be of zero terminated character string type.
+ * @param   ppszString      Where to store the string pointer.
+ *                          Free this using MMR3HeapFree().
+ */
+CFGMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
+{
+    size_t cch;
+    int rc = CFGMR3QuerySize(pNode, pszName, &cch);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        cch = strlen(pszDef) + 1;
+        rc = VINF_SUCCESS;
+    }
+    if (VBOX_SUCCESS(rc))
+    {
+        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cch);
+        if (pszString)
+        {
+            rc = CFGMR3QueryStringDef(pNode, pszName, pszString, cch, pszDef);
+            if (VBOX_SUCCESS(rc))
+                *ppszString = pszString;
+            else
+                MMR3HeapFree(pszString);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
 
 
 /**
