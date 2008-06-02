@@ -34,10 +34,10 @@
 *******************************************************************************/
 #include <sys/cpuvar.h>
 #include <iprt/mp.h>
-#include "r0drv/mp.h"
+#include "r0drv/mp-r0drv.h"
 
 
-static int rtmpNotificationNativeCallback(cpu_setup_t enmSolarisEvent, int iCpu, void *pvUser)
+static int rtMpNotificationSolarisCallback(cpu_setup_t enmSolarisEvent, int iCpu, void *pvUser)
 {
     NOREF(pvUser);
 
@@ -68,12 +68,12 @@ static int rtmpNotificationNativeCallback(cpu_setup_t enmSolarisEvent, int iCpu,
 
 int rtR0MpNotificationNativeInit(void *pvOS)
 {
-    register_cpu_setup_func(rtmpNotificationNativeCallback, NULL);
+    register_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
 }
 
 
 void rtR0MpNotificationNativeTerm(void *pvOS)
 {
-    unregister_cpu_setup_func(rtmpNotificationNativeCallback, NULL);
+    unregister_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
 }
 
