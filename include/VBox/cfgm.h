@@ -1,5 +1,5 @@
 /** @file
- * CFGM - Configuration Manager
+ * CFGM - Configuration Manager.
  */
 
 /*
