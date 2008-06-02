@@ -384,32 +384,5 @@ BEGINPROC_EXPORTED CPUMGCResumeGuestV86
 ENDPROC     CPUMGCResumeGuestV86
 
 
-;;
-; Set the Guest CPU CR2 register.
-;
-; @param    eax         cr2
-; @uses     edx
-;
-align 16
-BEGINPROC   CPUMGCSetGuestCR2Asm
-    mov     edx, IMP(g_CPUM)
-    mov     [edx + CPUM.Guest.cr2], eax
-    ret
-ENDPROC     CPUMGCSetGuestCR2Asm
-
-
-;;
-; Get the Guest CPU CR0 register.
-;
-; @returns  cr0 in eax
-; @uses     eax
-;
-align 16
-BEGINPROC   CPUMGCGetGuestCR0
-    mov     eax, IMP(g_CPUM)
-    mov     eax, [eax + CPUM.Guest.cr0]
-    ret
-ENDPROC     CPUMGCGetGuestCR0
-
 
 
