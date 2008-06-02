@@ -278,7 +278,7 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
             CTXALLSUFF(pVM->iom.s.pRangeLastRead) = pRange;
     }
 #ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
+    AssertMsg(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange), ("pRange = %VGv\n", pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
 #endif
 
     if (pRange)
@@ -425,7 +425,7 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
             CTXALLSUFF(pVM->iom.s.pRangeLastRead) = pRange;
     }
 #ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
+    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
 #endif
 
     if (pRange)
@@ -548,7 +548,7 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
             CTXALLSUFF(pVM->iom.s.pRangeLastWrite) = pRange;
     }
 #ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)pRange));
+    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange));
 #endif
 
     if (pRange)
@@ -672,7 +672,7 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
             CTXALLSUFF(pVM->iom.s.pRangeLastWrite) = pRange;
     }
 #ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
+    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
 #endif
 
     if (pRange)
