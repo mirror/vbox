@@ -154,7 +154,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
         if (!(++s_iTimerPoll & 0xf))
         {
             uint64_t cTicks = TMTimerPoll(pVM); NOREF(cTicks);
-            Log2(("TMTimerPoll at %VGv returned %RX64 (VM_FF_TIMER=%d)\n", pRegFrame->eip, cTicks, VM_FF_ISPENDING(pVM, VM_FF_TIMER)));
+            Log2(("TMTimerPoll at %VRv returned %RX64 (VM_FF_TIMER=%d)\n", pRegFrame->eip, cTicks, VM_FF_ISPENDING(pVM, VM_FF_TIMER)));
         }
     }
     else
@@ -164,7 +164,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
     /* Clear pending inhibit interrupt state if required. (necessary for dispatching interrupts later on) */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log2(("VM_FF_INHIBIT_INTERRUPTS at %VGv successor %VGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM)));
+        Log2(("VM_FF_INHIBIT_INTERRUPTS at %VRv successor %VGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM)));
         if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVM))
         {
             /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
@@ -234,7 +234,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
     AssertMsg(     rc != VINF_SUCCESS
               ||   (   pRegFrame->eflags.Bits.u1IF
                     && ( pRegFrame->eflags.Bits.u2IOPL < (unsigned)(pRegFrame->ss & X86_SEL_RPL) || pRegFrame->eflags.Bits.u1VM))
-              , ("rc = %VGv\neflags=%RX32 ss=%RTsel IOPL=%d\n", rc, pRegFrame->eflags.u32, pRegFrame->ss, pRegFrame->eflags.Bits.u2IOPL));
+              , ("rc = %VRv\neflags=%RX32 ss=%RTsel IOPL=%d\n", rc, pRegFrame->eflags.u32, pRegFrame->ss, pRegFrame->eflags.Bits.u2IOPL));
     return rc;
 }
 
@@ -350,7 +350,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     PVM pVM = TRPM2VM(pTrpm);
     int rc;
 
-    LogFlow(("TRPMGCTrap06Handler %VGv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
+    LogFlow(("TRPMGCTrap06Handler %VRv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
 
     if (CPUMGetGuestCPL(pVM, pRegFrame) == 0)
     {
@@ -440,7 +440,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     PVM pVM = TRPM2VM(pTrpm);
 
-    LogFlow(("TRPMTrap07HandlerGC: eip=%VGv\n", pRegFrame->eip));
+    LogFlow(("TRPMTrap07HandlerGC: eip=%VRv\n", pRegFrame->eip));
     return CPUMHandleLazyFPU(pVM);
 }
 
@@ -458,7 +458,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCTrap0bHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
-    LogFlow(("TRPMGCTrap0bHandler: eip=%VGv\n", pRegFrame->eip));
+    LogFlow(("TRPMGCTrap0bHandler: eip=%VRv\n", pRegFrame->eip));
     PVM pVM = TRPM2VM(pTrpm);
 
     /*
@@ -772,7 +772,7 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
  */
 static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
-    LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%VGv uErr=%RX32\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
+    LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%VRv uErr=%RX32\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
 
     /*
      * Convert and validate CS.
