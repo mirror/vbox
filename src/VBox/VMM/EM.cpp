@@ -1151,7 +1151,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
      */
     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
-        Log(("emR3RawExecuteInstruction: In patch block. eip=%VGv\n", pCtx->eip));
+        Log(("emR3RawExecuteInstruction: In patch block. eip=%VRv\n", pCtx->eip));
 
         RTGCPTR pNewEip;
         rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
@@ -2545,7 +2545,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 
             default:
                 if (PATMIsPatchGCAddr(pVM, pCtx->eip) && !(pCtx->eflags.u32 & X86_EFL_TF))
-                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %VGv for reason %Vrc\n", CPUMGetGuestEIP(pVM), rc));
+                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %VRv for reason %Vrc\n", (RTRCPTR)CPUMGetGuestEIP(pVM), rc));
                 break;
         }
         /*
