@@ -184,6 +184,24 @@ __END_DECLS
 #define AssertCompileSizeAlignment(type, align) \
     AssertCompile(!(sizeof(type) & ((align) - 1)))
 
+/** @def AssertCompileMemberSize
+ * Asserts a member offset alignment at compile.
+ * @param   type    The type.
+ * @param   member  The member.
+ * @param   size    The member size to assert.
+ */
+#define AssertCompileMemberSize(type, member, size) \
+    AssertCompile(RT_SIZEOFMEMB(type, member) == (size))
+
+/** @def AssertCompileMemberSizeAlignment
+ * Asserts a member size alignment at compile.
+ * @param   type    The type.
+ * @param   member  The member.
+ * @param   align   The member size alignment to assert.
+ */
+#define AssertCompileMemberSizeAlignment(type, member, align) \
+    AssertCompile(!(RT_SIZEOFMEMB(type, member) & ((align) - 1)))
+
 /** @def AssertCompileMemberAlignment
  * Asserts a member offset alignment at compile.
  * @param   type    The type.
@@ -203,24 +221,24 @@ __END_DECLS
     AssertCompile(!(RT_OFFSETOF(type, member) & ((align) - 1)))
 #endif
 
-
-/** @def AssertCompileMemberSize
- * Asserts a member offset alignment at compile.
+/** @def AssertCompileMemberOffset
+ * Asserts a offset of a structure member at compile.
  * @param   type    The type.
  * @param   member  The member.
- * @param   size    The member size to assert.
+ * @param   off     The expected offset.
  */
-#define AssertCompileMemberSize(type, member, size) \
-    AssertCompile(RT_SIZEOFMEMB(type, member) == (size))
-
-/** @def AssertCompileMemberSizeAlignment
- * Asserts a member size alignment at compile.
- * @param   type    The type.
- * @param   member  The member.
- * @param   align   The member size alignment to assert.
- */
-#define AssertCompileMemberSizeAlignment(type, member, align) \
-    AssertCompile(!(RT_SIZEOFMEMB(type, member) & ((align) - 1)))
+#if defined(__GNUC__) && defined(__cplusplus)
+# if __GNUC__ >= 4
+#  define AssertCompileMemberOffset(type, member, off) \
+    AssertCompile(!(__builtin_offsetof(type, member) == (off)))
+# else
+#  define AssertCompileMemberOffset(type, member, off) \
+    AssertCompile(!(RT_OFFSETOF(type, member) == (off)))
+# endif
+#else
+# define AssertCompileMemberOffset(type, member, off) \
+    AssertCompile(!(RT_OFFSETOF(type, member) & (off)))
+#endif
 
 
 /** @def Assert
