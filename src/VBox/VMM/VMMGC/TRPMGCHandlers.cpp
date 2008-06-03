@@ -469,7 +469,8 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     RTGCPTR GCPtr;
     if (SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &GCPtr) == VINF_SUCCESS)
     {
-        uint8_t *pu8Code = (uint8_t *)GCPtr;
+        uint8_t *pu8Code = (uint8_t *)(uintptr_t)GCPtr;
+
         /*
          * First skip possible instruction prefixes, such as:
          *      OS, AS
