@@ -931,10 +931,10 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c \
 	r0drv/linux/time-r0drv-linux.c \
+	r0drv/linux/timer-r0drv-linux.c \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c
-## @todo thread2-r0drv-linux.c, timer-r0drv-linux.c and assert-r0drv-linux.c
-#	r0drv/linux/timer-r0drv-linux.c \
+## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
