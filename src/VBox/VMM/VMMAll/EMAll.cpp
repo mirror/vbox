@@ -1165,10 +1165,10 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 break;
 
             default:
-                Log(("emInterpretMov: unexpected type=%d eip=%VGv\n", param2.type, pRegFrame->eip));
+                Log(("emInterpretMov: unexpected type=%d eip=%VRv\n", param2.type, pRegFrame->eip));
                 return VERR_EM_INTERPRETER;
             }
-            LogFlow(("EMInterpretInstruction at %08x: OP_MOV %08X <- %08X (%d) &val32=%08x\n", pRegFrame->eip, pDest, val32, param2.size, &val32));
+            LogFlow(("EMInterpretInstruction at %08x: OP_MOV %VGv <- %08X (%d) &val32=%08x\n", pRegFrame->eip, pDest, val32, param2.size, &val32));
 
             Assert(param2.size <= 4 && param2.size > 0);
 
@@ -1234,7 +1234,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             default:
                 return VERR_EM_INTERPRETER;
             }
-            LogFlow(("EMInterpretInstruction: OP_MOV %08X -> %08X (%d)\n", pSrc, val32, param1.size));
+            LogFlow(("EMInterpretInstruction: OP_MOV %VGv -> %08X (%d)\n", pSrc, val32, param1.size));
         }
         return VINF_SUCCESS;
 #ifdef IN_GC
