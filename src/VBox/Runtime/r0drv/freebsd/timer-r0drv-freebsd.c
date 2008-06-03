@@ -231,6 +231,7 @@ static void rtTimerFreeBSDCallback(void *pvTimer)
     {
         struct timeval tv;
         const uint64_t u64NanoTS = RTTimeNanoTS();
+        pTimer->iTick++;
         pTimer->u64NextTS = pTimer->u64StartTS + pTimer->iTick * pTimer->u64NanoInterval;
         if (pTimer->u64NextTS < u64NanoTS)
             pTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
