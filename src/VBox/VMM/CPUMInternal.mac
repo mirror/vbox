@@ -414,6 +414,9 @@ struc CPUM
     ; CPUID eax=1
     .CPUFeatures.edx      resd    1
     .CPUFeatures.ecx      resd    1
+
+    .enmCPUVendor         resd    1
+
     ; CR4 masks
     .CR4.AndMask          resd    1
     .CR4.OrMask           resd    1

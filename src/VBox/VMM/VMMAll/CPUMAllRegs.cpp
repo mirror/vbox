@@ -1000,13 +1000,13 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_APIC;
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
+                &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_APIC;
-            Log(("CPUMSetGuestCpuIdFeature: Enabled APIC\n"));
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled APIC\n"));
             break;
 
         /*
-         * Set the sysenter/sysexit bit in both feature masks.
+         * Set the sysenter/sysexit bit in the standard feature mask.
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_SEP:
@@ -1019,10 +1019,25 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_SEP;
-            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
-                pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_SEP;
-            Log(("CPUMSetGuestCpuIdFeature: Enabled sysenter/exit\n"));
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled sysenter/exit\n"));
+            break;
+        }
+
+        /*
+         * Set the syscall/sysret bit in the extended feature mask.
+         * Assumes the caller knows what it's doing! (host must support these)
+         */
+        case CPUMCPUIDFEATURE_SYSCALL:
+        {
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_SEP))
+            {
+                LogRel(("WARNING: Can't turn on SYSCALL/SYSRET when the host doesn't support it!!\n"));
+                return;
+            }
+            /* Valid for both Intel and AMD CPUs, although only in 64 bits mode for Intel. */
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_SEP;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled sysenter/exit\n"));
             break;
         }
 
@@ -1041,9 +1056,9 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_PAE;
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
+                &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_PAE;
-            Log(("CPUMSetGuestCpuIdFeature: Enabled PAE\n"));
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled PAE\n"));
             break;
         }
 
@@ -1056,14 +1071,46 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
                 ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
             {
-                AssertMsgFailed(("ERROR: Can't turn on LONG MODE when the host doesn't support it!!\n"));
+                LogRel(("WARNING: Can't turn on LONG MODE when the host doesn't support it!!\n"));
                 return;
             }
 
-            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
-                pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_LONG_MODE;
-            Log(("CPUMSetGuestCpuIdFeature: Enabled LONG MODE\n"));
+            /* Valid for both Intel and AMD. */
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_LONG_MODE;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled LONG MODE\n"));
+            break;
+        }
+
+        /*
+         * Set the NXE bit in the extended feature mask.
+         * Assumes the caller knows what it's doing! (host must support these)
+         */
+        case CPUMCPUIDFEATURE_NXE:
+        {
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_NX))
+            {
+                LogRel(("WARNING: Can't turn on NXE when the host doesn't support it!!\n"));
+                return;
+            }
+
+            /* Valid for both Intel and AMD. */
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_NX;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled NXE\n"));
+            break;
+        }
+
+        case CPUMCPUIDFEATURE_LAHF:
+        {
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
+                ||  !(ASMCpuId_ECX(0x80000001) & X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF))
+            {
+                LogRel(("WARNING: Can't turn on LAHF/SAHF when the host doesn't support it!!\n"));
+                return;
+            }
+
+            pVM->cpum.s.aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled LAHF/SAHF\n"));
             break;
         }
 
@@ -1115,7 +1162,8 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_APIC:
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx &= ~X86_CPUID_FEATURE_EDX_APIC;
-            if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
+                &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
             Log(("CPUMSetGuestCpuIdFeature: Disabled APIC\n"));
             break;
@@ -1125,7 +1173,7 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx &= ~X86_CPUID_FEATURE_EDX_PAE;
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
+                &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
             LogRel(("CPUMClearGuestCpuIdFeature: Disabled PAE!\n"));
             break;
@@ -1138,6 +1186,16 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
 }
 
+/**
+ * Gets the CPU vendor 
+ *
+ * @returns CPU vendor
+ * @param   pVM     The VM handle.
+ */
+CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM)
+{
+    return pVM->cpum.s.enmCPUVendor;
+}
 
 
 CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, RTGCUINTREG uDr0)

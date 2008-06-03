@@ -361,13 +361,33 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_INVALID = 0,
     /** The APIC feature bit. (Std+Ext) */
     CPUMCPUIDFEATURE_APIC,
-    /** The sysenter/sysexit feature bit. (Std+Ext) */
+    /** The sysenter/sysexit feature bit. (Std) */
     CPUMCPUIDFEATURE_SEP,
+    /** The SYSCALL/SYSEXIT feature bit (64 bits mode only for Intel CPUs). (Ext) */
+    CPUMCPUIDFEATURE_SYSCALL,
     /** The PAE feature bit. (Std+Ext) */
     CPUMCPUIDFEATURE_PAE,
+    /** The NXE feature bit. (Ext) */
+    CPUMCPUIDFEATURE_NXE,
+    /** The LAHF/SAHF feature bit (64 bits mode only). (Ext) */
+    CPUMCPUIDFEATURE_LAHF,
     /** The LONG MODE feature bit. (Ext) */
     CPUMCPUIDFEATURE_LONG_MODE
 } CPUMCPUIDFEATURE;
+
+/*
+ * CPU Vendor.
+ */
+typedef enum CPUMCPUVENDOR
+{
+    CPUMCPUVENDOR_INVALID = 0,
+    CPUMCPUVENDOR_INTEL,
+    CPUMCPUVENDOR_AMD,
+    CPUMCPUVENDOR_VIA,
+    CPUMCPUVENDOR_UNKNOWN,
+    /** 32bit hackishness. */
+    CPUMCPUVENDOR_32BIT_HACK = 0x7fffffff
+} CPUMCPUVENDOR;
 
 
 /** @name Guest Register Getters.
@@ -515,6 +535,15 @@ CPUMDECL(bool) CPUMIsGuestIn32BitCode(PVM pVM);
  * @param   pVM     The VM handle.
  */
 CPUMDECL(bool) CPUMIsGuestIn64BitCode(PVM pVM);
+
+/**
+ * Gets the CPU vendor 
+ *
+ * @returns CPU vendor
+ * @param   pVM     The VM handle.
+ */
+CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM);
+
 
 /** @} */
 
