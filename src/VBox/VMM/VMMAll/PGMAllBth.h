@@ -599,7 +599,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 RTGCPHYS   GCPhys;
                 uint64_t   fPageGst;
                 PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
-                Log(("Page out of sync: %p eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
+                Log(("Page out of sync: %VGv eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
                      pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip)));
 #  endif /* LOG_ENABLED */
 
@@ -676,7 +676,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * Mark this page as safe.
                          */
                         /** @todo not correct for pages that contain both code and data!! */
-                        Log2(("CSAMMarkPage %p; scanned=%d\n", pvFault, true));
+                        Log2(("CSAMMarkPage %VGv; scanned=%d\n", pvFault, true));
                         CSAMMarkPage(pVM, pvFault, true);
                     }
                 }
@@ -774,7 +774,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * Note: we have AVL, A, D bits desynched.
                          */
                         AssertMsg((fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)),
-                                  ("Page flags mismatch! pvFault=%p GCPhys=%VGp fPageShw=%08llx fPageGst=%08llx\n", pvFault, GCPhys, fPageShw, fPageGst));
+                                  ("Page flags mismatch! pvFault=%VGv GCPhys=%VGp fPageShw=%08llx fPageGst=%08llx\n", pvFault, GCPhys, fPageShw, fPageGst));
                     }
                     else
                         AssertMsgFailed(("PGMGstGetPage rc=%Vrc\n", rc));

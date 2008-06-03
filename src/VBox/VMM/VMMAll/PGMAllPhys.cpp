@@ -2262,7 +2262,7 @@ PGMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
             switch (rc)
             {
                 case VINF_SUCCESS:
-Log(("PGMPhysInterpretedRead: pvDst=%p pvSrc=%p cb=%d\n", pvDst, (uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb));
+                    Log(("PGMPhysInterpretedRead: pvDst=%p pvSrc=%p cb=%d\n", pvDst, (uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb));
                     memcpy(pvDst, (uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb);
                     break;
                 case VERR_PGM_PHYS_PAGE_RESERVED:
@@ -2298,7 +2298,7 @@ Log(("PGMPhysInterpretedRead: pvDst=%p pvSrc=%p cb=%d\n", pvDst, (uint8_t *)pvSr
         if (VBOX_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
-AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%VGv\n", cb, cb1, cb2, GCPtrSrc));
+            AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%VGv\n", cb, cb1, cb2, GCPtrSrc));
             void *pvSrc1;
             rc = PGM_GCPHYS_2_PTR(pVM, GCPhys1, &pvSrc1);
             switch (rc)

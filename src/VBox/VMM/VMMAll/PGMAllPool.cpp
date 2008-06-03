@@ -758,7 +758,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     STAM_PROFILE_START(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), a);
     PPGMPOOL        pPool = pVM->pgm.s.CTXSUFF(pPool);
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    LogFlow(("pgmPoolAccessHandler: pvFault=%p pPage=%p:{.idx=%d} GCPhysFault=%VGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
+    LogFlow(("pgmPoolAccessHandler: pvFault=%VGv pPage=%p:{.idx=%d} GCPhysFault=%VGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
     /*
      * We should ALWAYS have the list head as user parameter. This
