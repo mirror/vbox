@@ -431,6 +431,12 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 hwaccmr3DisableRawMode(pVM);
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
+#endif
                 LogRel(("HWACCM: VMX enabled!\n"));
             }
             else
@@ -512,6 +518,12 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
                 hwaccmr3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+#endif
             }
             else
             {

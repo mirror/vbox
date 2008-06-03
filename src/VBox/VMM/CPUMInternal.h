@@ -320,6 +320,9 @@ typedef struct CPUM
         X86CPUIDFEATECX     ecx;
     }   CPUFeatures;
 
+    /* CPU manufacturer. */
+    CPUMCPUVENDOR           enmCPUVendor;
+
     /** CR4 mask */
     struct
     {

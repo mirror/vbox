@@ -163,6 +163,26 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
+    /* Query the CPU manufacturer. */
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    if (    uEAX >= 1
+        &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+        &&  uECX == X86_CPUID_VENDOR_AMD_ECX
+        &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
+    {
+        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_AMD;
+    }
+    else if (    uEAX >= 1
+                &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
+                &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
+                &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
+    {
+        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_INTEL;
+    }
+    else /* @todo Via */
+        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_UNKNOWN;
+
     /*
      * Register info handlers.
      */
@@ -170,7 +190,7 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternal(pVM, "cpumguest",    "Displays the guest cpu state.",       &cpumR3InfoGuest);
     DBGFR3InfoRegisterInternal(pVM, "cpumhyper",    "Displays the hypervisor cpu state.",  &cpumR3InfoHyper);
     DBGFR3InfoRegisterInternal(pVM, "cpumhost",     "Displays the host cpu state.",        &cpumR3InfoHost);
-    DBGFR3InfoRegisterInternal(pVM, "cpuid",        "Displays the guest cpuid leaves.",     &cpumR3CpuIdInfo);
+    DBGFR3InfoRegisterInternal(pVM, "cpuid",        "Displays the guest cpuid leaves.",    &cpumR3CpuIdInfo);
 
     /*
      * Initialize the Guest CPU state.
