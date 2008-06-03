@@ -142,7 +142,8 @@ int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
              * Init data.
              */
             pDir->fDataUnread = false;
-            memset(&pDir->Data, 0, sizeof(pDir->Data)); /* not strictly necessary */
+            memset(&pDir->Data, 0, RT_OFFSETOF(RTDIR, Data.d_name)); /* not strictly necessary */
+            memset(&pDir->Data.d_name[0], 0, pDir->cbMaxName);
         }
         else
             rc = RTErrConvertFromErrno(errno);
