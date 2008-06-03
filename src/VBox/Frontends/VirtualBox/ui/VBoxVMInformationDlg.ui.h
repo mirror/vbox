@@ -542,6 +542,8 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString osType = console.GetGuest().GetOSTypeId();
         if (osType.isNull())
             osType = tr ("Not Detected", "guest os type");
+        else
+            osType = vboxGlobal().vmGuestOSTypeDescription (osType);
 
         result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
