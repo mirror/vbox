@@ -746,10 +746,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 off = pParam->disp32;
 
                             if (fBase || (pParam->flags & USE_INDEX))
+                            {
                                 PUT_C(off >= 0 ? '+' : '-');
-
-                            if (off < 0)
-                                off = -off;
+                                if (off < 0)
+                                    off = -off;
+                            }
                             if (pParam->flags & USE_DISPLACEMENT8)
                                 PUT_NUM_8( off);
                             else if (pParam->flags & USE_DISPLACEMENT16)
