@@ -195,7 +195,8 @@ int main (int argc, char **argv)
         a.setPalette (pal);
 #else /* !Q_WS_MAC */
         /* No icons in the menu of a mac application. */
-        a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
+        /* Available since Qt 4.4 only */
+//        a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
