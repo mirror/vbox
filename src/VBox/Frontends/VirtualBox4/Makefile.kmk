@@ -302,6 +302,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsFD.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsAudio.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsAudio.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsNetwork.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsNetwork.ui
+
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsSerial.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSerial.ui
 
@@ -471,6 +474,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsCD.h \
 	include/VBoxVMSettingsFD.h \
 	include/VBoxVMSettingsAudio.h \
+	include/VBoxVMSettingsNetwork.h \
 	include/VBoxVMSettingsSerial.h \
 	include/VBoxVMSettingsParallel.h \
 	include/VBoxVMSettingsUSB.h \
@@ -557,6 +561,7 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsCD.cpp \
 	src/VBoxVMSettingsFD.cpp \
 	src/VBoxVMSettingsAudio.cpp \
+	src/VBoxVMSettingsNetwork.cpp \
 	src/VBoxVMSettingsSerial.cpp \
 	src/VBoxVMSettingsParallel.cpp \
 	src/VBoxVMSettingsUSB.cpp \
