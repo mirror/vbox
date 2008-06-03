@@ -180,10 +180,11 @@ int main (int argc, char **argv)
         PlaySound (NULL, NULL, 0);
 #endif
 
-#ifndef RT_OS_DARWIN
+#ifndef Q_WS_MAC
         /* some gui qt-styles has it's own different color for buttons
          * causing tool-buttons and dropped menu displayed in
          * different annoying color, so fixing palette button's color */
+#warning "port me: any longer required?"
         QPalette pal = a.palette();
         pal.setColor (QPalette::Disabled, QColorGroup::Button,
                       pal.color (QPalette::Disabled, QColorGroup::Background));
@@ -192,7 +193,10 @@ int main (int argc, char **argv)
         pal.setColor (QPalette::Inactive, QColorGroup::Button,
                       pal.color (QPalette::Inactive, QColorGroup::Background));
         a.setPalette (pal);
-#endif
+#else /* !Q_WS_MAC */
+        /* No icons in the menu of a mac application. */
+        a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
+#endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
         /* version check (major.minor are sensitive, fix number is ignored) */
