@@ -100,6 +100,9 @@ typedef struct RTDIR
 #else /* 'POSIX': */
     /** What opendir() returned. */
     DIR                *pDir;
+    /** The max size of the d_name member.
+     * This includes the 0 terminator of course.*/
+    size_t              cbMaxName;
     /** Find data buffer.
      * fDataUnread indicates valid data. */
     struct dirent       Data;

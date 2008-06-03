@@ -33,10 +33,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
-#ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS /* PORTME: Assumes everyone else is using dir-posix.cpp */
 # include <Windows.h>
 #else
 # include <dirent.h>
+# include <unistd.h>
 #endif
 
 #include <iprt/dir.h>
@@ -527,17 +528,17 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
      */
     char szRealPath[RTPATH_MAX + 1];
     int rc;
-    size_t cchFilter;                   /* includes '\0'. */
-    size_t cucFilter;                   /* includes U+0. */
+    size_t cbFilter;                    /* includes '\0' (thus cb and not cch). */
+    size_t cucFilter0;                  /* includes U+0. */
     if (!pszFilter)
     {
-        cchFilter = cucFilter = 0;
+        cbFilter = cucFilter0 = 0;
         rc = RTPathReal(pszPath, szRealPath, sizeof(szRealPath) - 1);
     }
     else
     {
-        cchFilter = strlen(pszFilter) + 1;
-        cucFilter = RTStrUniLen(pszFilter) + 1;
+        cbFilter = strlen(pszFilter) + 1;
+        cucFilter0 = RTStrUniLen(pszFilter) + 1;
 
         if (pszFilter != pszPath)
         {
@@ -565,20 +566,41 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
 
     /*
      * Allocate and initialize the directory handle.
+     *
+     * The posix definition of Data.d_name allows it to be < NAME_MAX + 1,
+     * thus the horrible uglyness here. Solaris uses d_name[1] for instance.
      */
-    PRTDIR pDir = (PRTDIR)RTMemAlloc(sizeof(RTDIR) + cchRealPath + 1 + 4 + cchFilter + cucFilter * sizeof(RTUNICP));
+#ifndef RT_OS_WINDOWS
+    long cbNameMax = pathconf(szRealPath, _PC_NAME_MAX);
+    if (cbNameMax < NAME_MAX)           /* This is plain paranoia, but it doesn't hurt. */
+        cbNameMax = NAME_MAX;
+    size_t cbDir = RT_OFFSETOF(RTDIR, Data.d_name[cbNameMax + 1]);
+    if (cbDir < sizeof(RTDIR))          /* Ditto. */
+        cbDir = sizeof(RTDIR);
+    cbDir = RT_ALIGN_Z(cbDir, 8);
+#else
+    size_t cbDir = sizeof(RTDIR);
+#endif
+    size_t const cbAllocated = cbDir
+                             + cucFilter0 * sizeof(RTUNICP)
+                             + cbFilter
+                             + cchRealPath + 1 + 4;
+    PRTDIR pDir = (PRTDIR)RTMemAlloc(cbAllocated);
     if (!pDir)
         return VERR_NO_MEMORY;
+    uint8_t *pb = (uint8_t *)pDir + cbDir;
 
     /* initialize it */
     pDir->u32Magic = RTDIR_MAGIC;
-    if (cchFilter)
+    if (cbFilter)
     {
-        pDir->puszFilter = (PRTUNICP)(pDir + 1);
-        rc = RTStrToUniEx(pszFilter, RTSTR_MAX, &pDir->puszFilter, cucFilter, &pDir->cucFilter);
+        pDir->puszFilter = (PRTUNICP)pb;
+        rc = RTStrToUniEx(pszFilter, RTSTR_MAX, &pDir->puszFilter, cucFilter0, &pDir->cucFilter);
         AssertRC(rc);
-        pDir->pszFilter = (char *)memcpy(pDir->puszFilter + cucFilter, pszFilter, cchFilter);
-        pDir->cchFilter = cchFilter - 1;
+        pb += cucFilter0 * sizeof(RTUNICP);
+        pDir->pszFilter = (char *)memcpy(pb, pszFilter, cbFilter);
+        pDir->cchFilter = cbFilter - 1;
+        pb += cbFilter;
     }
     else
     {
@@ -605,12 +627,15 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
             break;
     }
     pDir->cchPath = cchRealPath;
-    pDir->pszPath = (char *)memcpy((char *)(pDir + 1) + cucFilter * sizeof(RTUNICP) + cchFilter,
-                                   szRealPath, cchRealPath + 1);
+    pDir->pszPath = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
+    Assert(pb - (uint8_t *)pDir + cchRealPath + 1 <= cbAllocated);
     pDir->fDataUnread = false;
 #ifndef RT_DONT_CONVERT_FILENAMES
     pDir->pszName = NULL;
     pDir->cchName = 0;
+#endif
+#ifndef RT_OS_WINDOWS
+    pDir->cbMaxName = cbDir - RT_OFFSETOF(RTDIR, Data.d_name);
 #endif
 
     /*
