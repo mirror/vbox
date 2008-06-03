@@ -52,7 +52,7 @@
  * @param   pVM         The VM to operate on.
  * @param   pvFault     Fault address
  */
-CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR32 pvFault)
+CSAMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
 {
     if(!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -79,7 +79,7 @@ CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR32 pvFault)
  * @param   pVM         The VM to operate on.
  * @param   pPage       GC page address
  */
-CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR32 pPage)
+CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
 {
     int pgdir, bit;
     uintptr_t page;
@@ -107,14 +107,14 @@ CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR32 pPage)
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned)
+CSAMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
 {
     int pgdir, bit;
     uintptr_t page;
 
 #ifdef LOG_ENABLED
     if (fScanned && !CSAMIsPageScanned(pVM, pPage))
-       Log(("CSAMMarkPage %VGv\n", pPage));
+       Log(("CSAMMarkPage %VRv\n", pPage));
 #endif
 
     if(!CSAMIsEnabled(pVM))
@@ -140,7 +140,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned)
         pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperGC2HC(pVM, (RCPTRTYPE(void*))pVM->csam.s.pPDBitmapGC[pgdir]);
         if (!pVM->csam.s.pPDHCBitmapGC[pgdir])
         {
-            Log(("MMHyperHC2GC failed for %VGv\n", pVM->csam.s.pPDBitmapGC[pgdir]));
+            Log(("MMHyperHC2GC failed for %VRv\n", pVM->csam.s.pPDBitmapGC[pgdir]));
             return rc;
         }
 #else
@@ -176,7 +176,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR32 GCPtr)
+CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCPTR GCPtr)
 {
     if(!CSAMIsEnabled(pVM))
         return false;
@@ -199,11 +199,11 @@ CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR32 GCPtr)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR32 GCPtr)
+CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
 {
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
-        pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = (RTGCPTR32)GCPtr;
+        pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = (RTRCPTR)GCPtr;
         VM_FF_SET(pVM, VM_FF_CSAM_PENDING_ACTION);
     }
     return;
@@ -246,18 +246,18 @@ CSAMDECL(int) CSAMDisableScanning(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTGCPTR32 GCPtr)
+CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCPTR GCPtr)
 {
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {
-        if (pVM->csam.s.aDangerousInstr[i] == (RTGCPTR32)GCPtr)
+        if (pVM->csam.s.aDangerousInstr[i] == (RTRCPTR)GCPtr)
         {
             STAM_COUNTER_INC(&pVM->csam.s.StatInstrCacheHit);
             return true;
         }
     }
     /* Record that we're about to process it in ring 3. */
-    pVM->csam.s.aDangerousInstr[pVM->csam.s.iDangerousInstr++] = (RTGCPTR32)GCPtr;
+    pVM->csam.s.aDangerousInstr[pVM->csam.s.iDangerousInstr++] = (RTRCPTR)GCPtr;
     pVM->csam.s.iDangerousInstr &= CSAM_MAX_DANGR_INSTR_MASK;
 
     if (++pVM->csam.s.cDangerousInstr > CSAM_MAX_DANGR_INSTR)

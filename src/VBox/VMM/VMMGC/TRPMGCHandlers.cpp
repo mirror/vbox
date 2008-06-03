@@ -616,7 +616,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_MOV_DR:
             /* We can safely emulate control/debug register move instructions in patched code. */
             if (    !PATMIsPatchGCAddr(pVM, (RTRCPTR)PC)
-                &&  !CSAMIsKnownDangerousInstr(pVM, PC))
+                &&  !CSAMIsKnownDangerousInstr(pVM, (RTRCPTR)PC))
                 break;
         case OP_INVLPG:
         case OP_LLDT:
