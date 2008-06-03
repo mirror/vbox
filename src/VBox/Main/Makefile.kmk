@@ -181,6 +181,7 @@ VBoxSVC_LIBS.solaris = \
 	devinfo
 
 VBoxSVC_SOURCES = \
+	Global.cpp \
 	Logging.cpp \
 	AutoLock.cpp \
 	Matching.cpp \
@@ -361,6 +362,7 @@ VBoxC_LIBS += \
 	$(LIB_REM)
 
 VBoxC_SOURCES = \
+	Global.cpp \
 	Logging.cpp \
 	AutoLock.cpp \
 	VBoxDll.cpp \
@@ -527,6 +529,7 @@ VBOX_XML_SCHEMADEFS_XSL = xml/SchemaDefs.xsl
 
 VBoxC_DEPS      += $(VBOX_XML_SCHEMADEFS_H)
 VBoxC_INCS      += $(PATH_TARGET)
+VBoxC_SOURCES 	+= $(VBOX_XML_SCHEMADEFS_CPP)
 
 VBoxSVC_DEPS    += $(VBOX_XML_SCHEMADEFS_H)
 VBoxSVC_INCS    += $(PATH_TARGET)

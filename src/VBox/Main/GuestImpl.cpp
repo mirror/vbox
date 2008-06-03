@@ -1,10 +1,12 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +22,8 @@
  */
 
 #include "GuestImpl.h"
+
+#include "Global.h"
 #include "ConsoleImpl.h"
 #include "VMMDev.h"
 
@@ -333,9 +337,8 @@ void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
 
     mData.mAdditionsVersion = aVersion;
     mData.mAdditionsActive = !aVersion.isNull();
-    /** @todo Translate aOsType to a string and assign it to mData.mOSTypeId.
-     * The problem is just that the VBOXOSTYPE -> string translation table is in VBoxSVC. :/
-     * We need this fixed for correct session information! */
+
+    mData.mOSTypeId = Global::OSTypeId (aOsType);
 }
 
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)

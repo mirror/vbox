@@ -75,13 +75,13 @@ class ATL_NO_VTABLE VirtualBox :
 
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VirtualBox)
-
     typedef std::list <ComPtr <IVirtualBoxCallback> > CallbackList;
     typedef std::vector <ComPtr <IVirtualBoxCallback> > CallbackVector;
 
     class CallbackEvent;
     friend class CallbackEvent;
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VirtualBox)
 
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
 
@@ -382,7 +382,6 @@ private:
 
     HRESULT registerDVDImage (DVDImage *aImage, bool aOnStartUp);
     HRESULT registerFloppyImage (FloppyImage *aImage, bool aOnStartUp);
-    HRESULT registerGuestOSTypes();
 
     HRESULT lockConfig();
     HRESULT unlockConfig();
