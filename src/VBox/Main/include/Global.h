@@ -40,7 +40,7 @@ class Global
 public:
 
     /** Represents OS Type <-> string mappings. */
-    const struct OSType
+    struct OSType
     {
         const char    *id;          /* utf-8 */
         const char    *description; /* utf-8 */
