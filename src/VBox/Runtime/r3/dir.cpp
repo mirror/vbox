@@ -573,8 +573,14 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
      */
 #ifndef RT_OS_WINDOWS
     long cbNameMax = pathconf(szRealPath, _PC_NAME_MAX);
+# ifdef NAME_MAX
     if (cbNameMax < NAME_MAX)           /* This is plain paranoia, but it doesn't hurt. */
         cbNameMax = NAME_MAX;
+# endif
+# ifdef _XOPEN_NAME_MAX
+    if (cbNameMax < _XOPEN_NAME_MAX)    /* Ditto. */
+        cbNameMax = _XOPEN_NAME_MAX;
+# endif
     size_t cbDir = RT_OFFSETOF(RTDIR, Data.d_name[cbNameMax + 1]);
     if (cbDir < sizeof(RTDIR))          /* Ditto. */
         cbDir = sizeof(RTDIR);
