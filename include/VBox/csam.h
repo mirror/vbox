@@ -72,7 +72,7 @@ __BEGIN_DECLS
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR32 GCPtr);
+CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCPTR GCPtr);
 
 /**
  * Check if this page was previously scanned by CSAM
@@ -81,7 +81,7 @@ CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR32 GCPtr);
  * @param   pVM         The VM to operate on.
  * @param   pPage       GC page address
  */
-CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR32 pPage);
+CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage);
 
 /**
  * Mark a page as scanned/not scanned
@@ -94,7 +94,7 @@ CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR32 pPage);
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned);
+CSAMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned);
 
 
 /**
@@ -104,7 +104,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR32 pPage, bool fScanned);
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR32 GCPtr);
+CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr);
 
 /**
  * Query CSAM state (enabled/disabled)
@@ -138,7 +138,7 @@ CSAMDECL(int) CSAMDisableScanning(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   pvFault     Fault address
  */
-CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR32 pvFault);
+CSAMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault);
 
 /**
  * Check if we've scanned this instruction before. If true, then we can emulate
@@ -148,7 +148,7 @@ CSAMDECL(int) CSAMExecFault(PVM pVM, RTGCPTR32 pvFault);
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTGCPTR32 GCPtr);
+CSAMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCPTR GCPtr);
 
 
 #ifdef IN_RING3
@@ -212,7 +212,7 @@ CSAMR3DECL(int) CSAMR3Reset(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR32 addr);
+CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr);
 
 /**
  * Remove a CSAM monitored page. Use with care!
@@ -221,7 +221,7 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR32 addr);
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR32 addr);
+CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr);
 
 /**
  * Scan and analyse code
@@ -232,7 +232,7 @@ CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR32 addr);
  * @param   pHiddenSel  The hidden selector register.
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTGCPTR32 pInstrGC);
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTRCPTR pInstrGC);
 
 /**
  * Scan and analyse code
@@ -241,7 +241,7 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, PCPUMSELREGHID pHiddenSel,
  * @param   pVM         The VM to operate on.
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
-CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR32 pInstrGC);
+CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC);
 
 /**
  * Mark an instruction in a page as scanned/not scanned
@@ -252,7 +252,7 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR32 pInstrGC);
  * @param   opsize      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR32 pInstr, uint32_t opsize, bool fScanned);
+CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fScanned);
 
 /**
  * Perform any pending actions
@@ -270,7 +270,7 @@ CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM);
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR32 pPageAddrGC, CSAMTAG enmTag);
+CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
 
 /**
  * Unmonitors a code page
@@ -280,7 +280,7 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR32 pPageAddrGC, CSAMTAG enmTag
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR32 pPageAddrGC, CSAMTAG enmTag);
+CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
 
 /**
  * Analyse interrupt and trap gates
@@ -299,7 +299,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates);
  * @param   pVM         The VM to operate on.
  * @param   GCPtrCall   Call address
  */
-CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTGCPTR32 GCPtrCall);
+CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
 
 /** @} */
 #endif

@@ -70,7 +70,7 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
 
     Assert(uType == FIXUP_ABSOLUTE || ((uType == FIXUP_REL_JMPTOPATCH || uType == FIXUP_REL_JMPTOGUEST) && pSource && pDest));
 
-    LogFlow(("patmPatchAddReloc32 type=%d pRelocGC=%VGv source=%VGv dest=%VGv\n", uType, pRelocHC - pVM->patm.s.pPatchMemGC + pVM->patm.s.pPatchMemGC , pSource, pDest));
+    LogFlow(("patmPatchAddReloc32 type=%d pRelocGC=%VRv source=%VRv dest=%VRv\n", uType, pRelocHC - pVM->patm.s.pPatchMemGC + pVM->patm.s.pPatchMemGC , pSource, pDest));
 
     pRec = (PRELOCREC)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pRec));
     Assert(pRec);

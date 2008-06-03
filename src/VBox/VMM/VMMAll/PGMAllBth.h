@@ -600,7 +600,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 uint64_t   fPageGst;
                 PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
                 Log(("Page out of sync: %VGv eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
-                     pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip)));
+                     pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip)));
 #  endif /* LOG_ENABLED */
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE) && !defined(IN_RING0)
@@ -616,12 +616,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             ||  (RTGCUINTPTR)pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
 #   ifdef CSAM_DETECT_NEW_CODE_PAGES
                             ||  (   !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
-                                 && CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip))   /* any new code we encounter here */
+                                 && CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip))   /* any new code we encounter here */
 #   endif /* CSAM_DETECT_NEW_CODE_PAGES */
                            )
                         {
                             LogFlow(("CSAMExecFault %VGv\n", pRegFrame->eip));
-                            rc = CSAMExecFault(pVM, (RTGCPTR)pRegFrame->eip);
+                            rc = CSAMExecFault(pVM, (RTRCPTR)pRegFrame->eip);
                             if (rc != VINF_SUCCESS)
                             {
                                 /*
@@ -677,7 +677,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          */
                         /** @todo not correct for pages that contain both code and data!! */
                         Log2(("CSAMMarkPage %VGv; scanned=%d\n", pvFault, true));
-                        CSAMMarkPage(pVM, pvFault, true);
+                        CSAMMarkPage(pVM, (RTRCPTR)pvFault, true);
                     }
                 }
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE) && !defined(IN_RING0) */
@@ -1530,7 +1530,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                                 PPGMPAGE pPage;
                                 if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
-                                    ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)GCPtrCurPage)
+                                    ||  !CSAMDoesPageNeedScanning(pVM, (RTRCPTR)GCPtrCurPage)
                                     ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
@@ -2278,7 +2278,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                          */
                         PPGMPAGE pPage;
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
-                            ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
+                            ||  !CSAMDoesPageNeedScanning(pVM, (RTRCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
                             ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
                                  &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                            )
@@ -2394,7 +2394,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                          * 4MB can be code or readonly data. Linux enables write access for its large pages.
                          */
                         else if (    !PdeSrc.n.u1User
-                                 &&  CSAMDoesPageNeedScanning(pVM, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))))
+                                 &&  CSAMDoesPageNeedScanning(pVM, (RTRCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))))
                             PteDst.u = 0;
 # endif
                         else
@@ -2613,7 +2613,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
          */
         /** @todo not correct for pages that contain both code and data!! */
         Log(("CSAMMarkPage %VGv; scanned=%d\n", GCPtrPage, true));
-        CSAMMarkPage(pVM, (RTGCPTR)GCPtrPage, true);
+        CSAMMarkPage(pVM, (RTRCPTR)GCPtrPage, true);
     }
 # endif
     /*

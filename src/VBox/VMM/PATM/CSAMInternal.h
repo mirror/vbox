@@ -67,7 +67,7 @@
 
 typedef struct
 {
-  RTGCPTR32         pInstrAfterRetGC[CSAM_MAX_CALLEXIT_RET];
+  RTRCPTR         pInstrAfterRetGC[CSAM_MAX_CALLEXIT_RET];
   uint32_t          cInstrAfterRet;
 } CSAMCALLEXITREC, *PCSAMCALLEXITREC;
 
@@ -83,7 +83,7 @@ typedef struct
 
 typedef struct
 {
-    RTGCPTR32       pPageGC;
+    RTRCPTR       pPageGC;
     RTGCPHYS        GCPhys;
     uint64_t        fFlags;
     uint32_t        uSize;
@@ -102,7 +102,7 @@ typedef struct
 typedef struct
 {
     // GC Patch pointer
-    RTGCPTR32       pInstrGC;
+    RTRCPTR       pInstrGC;
 
     // Disassembly state for original instruction
     DISCPUSTATE     cpu;
@@ -154,14 +154,14 @@ typedef struct CSAM
     /* Array to store previously scanned dangerous instructions, so we don't need to
      * switch back to ring 3 each time we encounter them in GC.
      */
-    RTGCPTR32           aDangerousInstr[CSAM_MAX_DANGR_INSTR];
+    RTRCPTR           aDangerousInstr[CSAM_MAX_DANGR_INSTR];
     uint32_t            cDangerousInstr;
     uint32_t            iDangerousInstr;
 
-    RCPTRTYPE(RTGCPTR32 *)  pPDBitmapGC;
+    RCPTRTYPE(RTRCPTR *)  pPDBitmapGC;
     RCPTRTYPE(RTHCPTR *)    pPDHCBitmapGC;
     R3PTRTYPE(uint8_t **)   pPDBitmapHC;
-    R3PTRTYPE(RTGCPTR32  *) pPDGCBitmapHC;
+    R3PTRTYPE(RTRCPTR  *) pPDGCBitmapHC;
 
     /* Temporary storage during load/save state */
     struct
@@ -178,10 +178,10 @@ typedef struct CSAM
 
     /* To keep track of possible code pages */
     uint32_t            cPossibleCodePages;
-    RTGCPTR32           pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
+    RTRCPTR           pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
 
     /* call addresses reported by the recompiler */
-    RTGCPTR32           pvCallInstruction[16];
+    RTRCPTR           pvCallInstruction[16];
     RTUINT              iCallInstruction;
 
     /* Set when scanning has started. */
@@ -251,7 +251,7 @@ typedef int (VBOXCALL *PFN_CSAMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(
  * @param   pCpu            Disassembly state of instruction.
  * @param   pBranchInstrGC  GC pointer of branch instruction
  */
-inline RTGCPTR32 CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR32 pBranchInstrGC)
+inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 {
     uint32_t disp;
     if (pCpu->param1.flags & USE_IMMEDIATE8_REL)
@@ -274,7 +274,7 @@ inline RTGCPTR32 CSAMResolveBranch(PDISCPUSTATE pCpu, RTGCPTR32 pBranchInstrGC)
         return 0;
     }
 #ifdef IN_GC
-    return (RTGCPTR32)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
+    return (RTRCPTR)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
 #else
     return pBranchInstrGC + pCpu->opsize + disp;
 #endif
