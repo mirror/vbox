@@ -139,10 +139,10 @@ void VBoxVMInformationDlg::retranslateUi()
     Ui::VBoxVMInformationDlg::retranslateUi (this);
 
     updateDetails();
-    
-    AssertReturnVoid (!mSession.isNull()); 
- 	CMachine machine = mSession.GetMachine(); 
- 	AssertReturnVoid (!machine.isNull()); 
+
+    AssertReturnVoid (!mSession.isNull());
+ 	CMachine machine = mSession.GetMachine();
+ 	AssertReturnVoid (!machine.isNull());
 
     /* Setup a dialog caption */
     setWindowTitle (tr ("%1 - Session Information").arg (machine.GetName()));
@@ -153,99 +153,99 @@ void VBoxVMInformationDlg::retranslateUi()
 
     /* Clear counter names initially */
     mNamesMap.clear();
-    mUnitsMap.clear(); 
-    mLinksMap.clear(); 
+    mUnitsMap.clear();
+    mLinksMap.clear();
 
-    /* IDE HD statistics: */ 
-    for (int i = 0; i < 2; ++ i) 
-        for (int j = 0; j < 2; ++ j) 
-        { 
-            /* Names */ 
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*DMA") 
-                .arg (i).arg (j)] = tr ("DMA Transfers"); 
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*PIO") 
-                .arg (i).arg (j)] = tr ("PIO Transfers"); 
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes") 
-                .arg (i).arg (j)] = tr ("Data Read"); 
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes") 
-                .arg (i).arg (j)] = tr ("Data Written"); 
+    /* IDE HD statistics: */
+    for (int i = 0; i < 2; ++ i)
+        for (int j = 0; j < 2; ++ j)
+        {
+            /* Names */
+            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*DMA")
+                .arg (i).arg (j)] = tr ("DMA Transfers");
+            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*PIO")
+                .arg (i).arg (j)] = tr ("PIO Transfers");
+            mNamesMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes")
+                .arg (i).arg (j)] = tr ("Data Read");
+            mNamesMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes")
+                .arg (i).arg (j)] = tr ("Data Written");
 
-            /* Units */ 
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*DMA") 
-                .arg (i).arg (j)] = "[B]"; 
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*PIO") 
-                .arg (i).arg (j)] = "[B]"; 
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes") 
-                .arg (i).arg (j)] = "B"; 
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes") 
-                .arg (i).arg (j)] = "B"; 
+            /* Units */
+            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*DMA")
+                .arg (i).arg (j)] = "[B]";
+            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*PIO")
+                .arg (i).arg (j)] = "[B]";
+            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes")
+                .arg (i).arg (j)] = "B";
+            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes")
+                .arg (i).arg (j)] = "B";
 
-            /* Belongs to */ 
-            mLinksMap [QString ("IDE%1%2").arg (i).arg (j)] = QStringList() 
-                << QString ("/Devices/ATA%1/Unit%2/*DMA").arg (i).arg (j) 
-                << QString ("/Devices/ATA%1/Unit%2/*PIO").arg (i).arg (j) 
-                << QString ("/Devices/ATA%1/Unit%2/ReadBytes").arg (i).arg (j) 
-                << QString ("/Devices/ATA%1/Unit%2/WrittenBytes").arg (i).arg (j); 
-        } 
+            /* Belongs to */
+            mLinksMap [QString ("IDE%1%2").arg (i).arg (j)] = QStringList()
+                << QString ("/Devices/ATA%1/Unit%2/*DMA").arg (i).arg (j)
+                << QString ("/Devices/ATA%1/Unit%2/*PIO").arg (i).arg (j)
+                << QString ("/Devices/ATA%1/Unit%2/ReadBytes").arg (i).arg (j)
+                << QString ("/Devices/ATA%1/Unit%2/WrittenBytes").arg (i).arg (j);
+        }
 
-    /* SATA HD statistics: */ 
-    for (int i = 0; i < 30; ++ i) 
-    { 
-        /* Names */ 
-        mNamesMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)] 
-            = tr ("DMA Transfers"); 
-        mNamesMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)] 
-            = tr ("Data Read"); 
-        mNamesMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)] 
-            = tr ("Data Written"); 
+    /* SATA HD statistics: */
+    for (int i = 0; i < 30; ++ i)
+    {
+        /* Names */
+        mNamesMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)]
+            = tr ("DMA Transfers");
+        mNamesMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)]
+            = tr ("Data Read");
+        mNamesMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)]
+            = tr ("Data Written");
 
-        /* Units */ 
-        mUnitsMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)] = "[B]"; 
-        mUnitsMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)] = "B"; 
-        mUnitsMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)] = "B"; 
+        /* Units */
+        mUnitsMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)] = "[B]";
+        mUnitsMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)] = "B";
+        mUnitsMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)] = "B";
 
-        /* Belongs to */ 
-        mLinksMap [QString ("SATA%1").arg (i)] = QStringList() 
-            << QString ("/Devices/SATA/Port%1/DMA").arg (i) 
-            << QString ("/Devices/SATA/Port%1/ReadBytes").arg (i) 
-            << QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i); 
-    } 
+        /* Belongs to */
+        mLinksMap [QString ("SATA%1").arg (i)] = QStringList()
+            << QString ("/Devices/SATA/Port%1/DMA").arg (i)
+            << QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)
+            << QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i);
+    }
 
-    /* Network Adapters statistics: */ 
-    ulong count = vboxGlobal().virtualBox() 
-        .GetSystemProperties().GetNetworkAdapterCount(); 
+    /* Network Adapters statistics: */
+    ulong count = vboxGlobal().virtualBox()
+        .GetSystemProperties().GetNetworkAdapterCount();
     for (ulong i = 0; i < count; ++ i)
-    { 
-        CNetworkAdapter na = machine.GetNetworkAdapter (i); 
-        KNetworkAdapterType ty = na.GetAdapterType(); 
-        const char *name; 
+    {
+        CNetworkAdapter na = machine.GetNetworkAdapter (i);
+        KNetworkAdapterType ty = na.GetAdapterType();
+        const char *name;
 
-        switch (ty) 
-        { 
+        switch (ty)
+        {
             case KNetworkAdapterType_I82540EM:
             case KNetworkAdapterType_I82543GC:
-                name = "E1k"; 
-                break; 
-            default: 
-                name = "PCNet"; 
-                break; 
-        } 
+                name = "E1k";
+                break;
+            default:
+                name = "PCNet";
+                break;
+        }
 
-        /* Names */ 
-        mNamesMap [QString ("/Devices/%1%2/TransmitBytes") 
-            .arg (name).arg (i)] = tr ("Data Transmitted"); 
-        mNamesMap [QString ("/Devices/%1%2/ReceiveBytes") 
-            .arg (name).arg (i)] = tr ("Data Received"); 
+        /* Names */
+        mNamesMap [QString ("/Devices/%1%2/TransmitBytes")
+            .arg (name).arg (i)] = tr ("Data Transmitted");
+        mNamesMap [QString ("/Devices/%1%2/ReceiveBytes")
+            .arg (name).arg (i)] = tr ("Data Received");
 
-        /* Units */ 
-        mUnitsMap [QString ("/Devices/%1%2/TransmitBytes") 
-            .arg (name).arg (i)] = "B"; 
-        mUnitsMap [QString ("/Devices/%1%2/ReceiveBytes") 
-            .arg (name).arg (i)] = "B"; 
+        /* Units */
+        mUnitsMap [QString ("/Devices/%1%2/TransmitBytes")
+            .arg (name).arg (i)] = "B";
+        mUnitsMap [QString ("/Devices/%1%2/ReceiveBytes")
+            .arg (name).arg (i)] = "B";
 
-        /* Belongs to */ 
-        mLinksMap [QString ("NA%1").arg (i)] = QStringList() 
-            << QString ("/Devices/%1%2/TransmitBytes").arg (name).arg (i) 
+        /* Belongs to */
+        mLinksMap [QString ("NA%1").arg (i)] = QStringList()
+            << QString ("/Devices/%1%2/TransmitBytes").arg (name).arg (i)
             << QString ("/Devices/%1%2/ReceiveBytes").arg (name).arg (i);
     }
 
@@ -402,104 +402,106 @@ void VBoxVMInformationDlg::refreshStatistics()
         if (bpp)
             resolution += QString ("x%1").arg (bpp);
         QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
-            VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") : 
-            VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)"); 
-        QString addInfo = console.GetGuest().GetAdditionsVersion(); 
-        uint addVersion = addInfo.toUInt(); 
-        QString addVerisonStr = !addInfo.isNull() ? 
-            tr ("Version %1.%2", "guest additions") 
-                .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) : 
-            tr ("Not Detected", "guest additions"); 
-        QString osType = console.GetGuest().GetOSTypeId(); 
-        if (osType.isNull()) 
+            VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
+            VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
+        QString addInfo = console.GetGuest().GetAdditionsVersion();
+        uint addVersion = addInfo.toUInt();
+        QString addVerisonStr = !addInfo.isNull() ?
+            tr ("Version %1.%2", "guest additions")
+                .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) :
+            tr ("Not Detected", "guest additions");
+        QString osType = console.GetGuest().GetOSTypeId();
+        if (osType.isNull())
             osType = tr ("Not Detected", "guest os type");
+        else
+            osType = vboxGlobal().vmGuestOSTypeDescription (osType);
 
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
-                  bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt); 
+                  bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt);
         result += bdyRow.arg (tr ("Guest Additions")).arg (addVerisonStr);
         result += bdyRow.arg (tr ("Guest OS Type")).arg (osType);
         result += paragraph;
     }
 
     /* Hard Disk Statistics */
-    { 
-        QString hdStat; 
+    {
+        QString hdStat;
 
-        result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics")); 
+        result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));
 
-        /* IDE Hard Disk (Primary Master) */ 
-        if (!m.GetHardDisk (KStorageBus_IDE, 0, 0).isNull()) 
-        { 
-            hdStat += formatHardDisk (KStorageBus_IDE, 0, 0, "IDE00"); 
-            hdStat += paragraph; 
-        } 
+        /* IDE Hard Disk (Primary Master) */
+        if (!m.GetHardDisk (KStorageBus_IDE, 0, 0).isNull())
+        {
+            hdStat += formatHardDisk (KStorageBus_IDE, 0, 0, "IDE00");
+            hdStat += paragraph;
+        }
 
-        /* IDE Hard Disk (Primary Slave) */ 
-        if (!m.GetHardDisk (KStorageBus_IDE, 0, 1).isNull()) 
-        { 
-            hdStat += formatHardDisk (KStorageBus_IDE, 0, 1, "IDE01"); 
-            hdStat += paragraph; 
-        } 
+        /* IDE Hard Disk (Primary Slave) */
+        if (!m.GetHardDisk (KStorageBus_IDE, 0, 1).isNull())
+        {
+            hdStat += formatHardDisk (KStorageBus_IDE, 0, 1, "IDE01");
+            hdStat += paragraph;
+        }
 
-        /* IDE Hard Disk (Secondary Slave) */ 
-        if (!m.GetHardDisk (KStorageBus_IDE, 1, 1).isNull()) 
-        { 
-            hdStat += formatHardDisk (KStorageBus_IDE, 1, 1, "IDE11"); 
-            hdStat += paragraph; 
-        } 
+        /* IDE Hard Disk (Secondary Slave) */
+        if (!m.GetHardDisk (KStorageBus_IDE, 1, 1).isNull())
+        {
+            hdStat += formatHardDisk (KStorageBus_IDE, 1, 1, "IDE11");
+            hdStat += paragraph;
+        }
 
-        /* SATA Hard Disks */ 
-        for (int i = 0; i < 30; ++ i) 
-        { 
-            if (!m.GetHardDisk (KStorageBus_SATA, i, 0).isNull()) 
-            { 
-                hdStat += formatHardDisk (KStorageBus_SATA, i, 0, 
-                                          QString ("SATA%1").arg (i)); 
-                hdStat += paragraph; 
-            } 
-        } 
+        /* SATA Hard Disks */
+        for (int i = 0; i < 30; ++ i)
+        {
+            if (!m.GetHardDisk (KStorageBus_SATA, i, 0).isNull())
+            {
+                hdStat += formatHardDisk (KStorageBus_SATA, i, 0,
+                                          QString ("SATA%1").arg (i));
+                hdStat += paragraph;
+            }
+        }
 
-        /* If there are no Hard Disks */ 
-        if (hdStat.isNull()) 
-        { 
+        /* If there are no Hard Disks */
+        if (hdStat.isNull())
+        {
             hdStat = composeArticle (tr ("No Hard Disks"));
-            hdStat += paragraph; 
-        } 
+            hdStat += paragraph;
+        }
 
-        result += hdStat; 
+        result += hdStat;
 
-        /* CD/DVD-ROM (Secondary Master) */ 
-        result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics")); 
-        result += formatHardDisk (KStorageBus_IDE, 1, 0, "IDE10"); 
-        result += paragraph; 
-    } 
+        /* CD/DVD-ROM (Secondary Master) */
+        result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
+        result += formatHardDisk (KStorageBus_IDE, 1, 0, "IDE10");
+        result += paragraph;
+    }
 
     /* Network Adapters Statistics */
-    { 
+    {
         QString naStat;
 
-        result += hdrRow.arg (":/nw_16px.png") 
-            .arg (tr ("Network Adapter Statistics")); 
+        result += hdrRow.arg (":/nw_16px.png")
+            .arg (tr ("Network Adapter Statistics"));
 
-        /* Network Adapters list */ 
-        ulong count = vboxGlobal().virtualBox() 
-            .GetSystemProperties().GetNetworkAdapterCount(); 
-        for (ulong slot = 0; slot < count; ++ slot) 
-        { 
-            if (m.GetNetworkAdapter (slot).GetEnabled()) 
-            { 
-                naStat += formatAdapter (slot, QString ("NA%1").arg (slot)); 
-                naStat += paragraph; 
-            } 
-        } 
+        /* Network Adapters list */
+        ulong count = vboxGlobal().virtualBox()
+            .GetSystemProperties().GetNetworkAdapterCount();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            if (m.GetNetworkAdapter (slot).GetEnabled())
+            {
+                naStat += formatAdapter (slot, QString ("NA%1").arg (slot));
+                naStat += paragraph;
+            }
+        }
 
-        /* If there are no Network Adapters */ 
-        if (naStat.isNull()) 
-        { 
+        /* If there are no Network Adapters */
+        if (naStat.isNull())
+        {
             naStat = composeArticle (tr ("No Network Adapters"));
-            naStat += paragraph; 
-        } 
+            naStat += paragraph;
+        }
 
         result += naStat;
     }
@@ -509,9 +511,9 @@ void VBoxVMInformationDlg::refreshStatistics()
     mStatisticText->verticalScrollBar()->setValue (vv);
 }
 
-QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus, 
-                                              LONG aChannel, 
-                                              LONG aDevice, 
+QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
+                                              LONG aChannel,
+                                              LONG aDevice,
                                               const QString &aBelongsTo)
 {
     if (mSession.isNull())
@@ -519,56 +521,56 @@ QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
 
     CHardDisk hd = mSession.GetMachine().GetHardDisk (aBus, aChannel, aDevice);
     QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
-    QString name = vboxGlobal().toFullString (aBus, aChannel, aDevice); 
-    QString result = hd.isNull() ? QString::null : header.arg (name); 
+    QString name = vboxGlobal().toFullString (aBus, aChannel, aDevice);
+    QString result = hd.isNull() ? QString::null : header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;
 }
 
-QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot, 
+QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
                                              const QString &aBelongsTo)
 {
     if (mSession.isNull())
         return QString::null;
 
     QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
-    QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot); 
-    QString result = header.arg (name); 
+    QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot);
+    QString result = header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;
 }
 
-QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo) 
-{ 
-    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td align=right>" 
+QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo)
+{
+    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td align=right>"
                    "<nobr>%2%3</nobr></td><td></td></tr>";
     QString result;
 
-    if (mLinksMap.contains (aBelongsTo)) 
-    { 
-        QStringList keyList = mLinksMap [aBelongsTo]; 
-        for (QStringList::Iterator it = keyList.begin(); it != keyList.end(); ++ it) 
-        { 
-            QString line (body); 
-            QString key = *it; 
-            if (mNamesMap.contains (key) && 
-                mValuesMap.contains (key) && 
-                mUnitsMap.contains (key)) 
-            { 
-                line = line.arg (mNamesMap [key]) 
-                           .arg (QString ("%L1") 
-                           .arg (mValuesMap [key].toULongLong())); 
-                line = mUnitsMap [key].contains (QRegExp ("\\[\\S+\\]")) ? 
-                    line.arg (QString ("<img src=:/tpixel.png width=%1 height=1>") 
-                              .arg (QApplication::fontMetrics().width ( 
-                              QString (" %1").arg (mUnitsMap [key] 
-                              .mid (1, mUnitsMap [key].length() - 2))))) : 
-                    line.arg (QString (" %1").arg (mUnitsMap [key])); 
-                result += line; 
-            } 
-        } 
-    } 
-    else 
+    if (mLinksMap.contains (aBelongsTo))
+    {
+        QStringList keyList = mLinksMap [aBelongsTo];
+        for (QStringList::Iterator it = keyList.begin(); it != keyList.end(); ++ it)
+        {
+            QString line (body);
+            QString key = *it;
+            if (mNamesMap.contains (key) &&
+                mValuesMap.contains (key) &&
+                mUnitsMap.contains (key))
+            {
+                line = line.arg (mNamesMap [key])
+                           .arg (QString ("%L1")
+                           .arg (mValuesMap [key].toULongLong()));
+                line = mUnitsMap [key].contains (QRegExp ("\\[\\S+\\]")) ?
+                    line.arg (QString ("<img src=:/tpixel.png width=%1 height=1>")
+                              .arg (QApplication::fontMetrics().width (
+                              QString (" %1").arg (mUnitsMap [key]
+                              .mid (1, mUnitsMap [key].length() - 2))))) :
+                    line.arg (QString (" %1").arg (mUnitsMap [key]));
+                result += line;
+            }
+        }
+    }
+    else
         result = body.arg (aBelongsTo).arg (QString::null).arg (QString::null);
 
     return result;
