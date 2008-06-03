@@ -38,6 +38,7 @@
 #else
 # include <dirent.h>
 # include <unistd.h>
+# include <limits.h>
 #endif
 
 #include <iprt/dir.h>
