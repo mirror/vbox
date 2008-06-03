@@ -90,7 +90,7 @@
    name="VirtualBox"
    uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
    version="1.3"
-   desc="innotek VirtualBox Type Library"
+   desc="VirtualBox Type Library"
    appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
    supportsErrorInfo="yes"
 >
