@@ -54,9 +54,9 @@
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2_UINT32(uint32_t *pu32Param1, uint32_t val2);
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, size_t val2);
 typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
-typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM2(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, RTGCUINTREG32 *pf);
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM2(RTRCPTR GCPtrParam1, RTGCUINTREG32 Val2, RTGCUINTREG32 *pf);
 typedef FNEMULATELOCKPARAM2 *PFNEMULATELOCKPARAM2;
-typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM3(RTGCPTR GCPtrParam1, RTGCUINTREG Val2, size_t cb, RTGCUINTREG32 *pf);
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM3(RTRCPTR GCPtrParam1, RTGCUINTREG32 Val2, size_t cb, RTGCUINTREG32 *pf);
 typedef FNEMULATELOCKPARAM3 *PFNEMULATELOCKPARAM3;
 
 
@@ -366,13 +366,40 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
 {
     switch (pCpu->pCurInstr->opcode)
     {
-        case OP_XOR:        return "Xor";
+        case OP_XCHG:       return "Xchg";
+        case OP_DEC:        return "Dec";
+        case OP_INC:        return "Inc";
+        case OP_POP:        return "Pop";
         case OP_OR:         return "Or";
         case OP_AND:        return "And";
+        case OP_MOV:        return "Mov";
+        case OP_INVLPG:     return "InvlPg";
+        case OP_CPUID:      return "CpuId";
+        case OP_MOV_CR:     return "MovCRx";
+        case OP_MOV_DR:     return "MovDRx";
+        case OP_LLDT:       return "LLdt";
+        case OP_CLTS:       return "Clts";
+        case OP_MONITOR:    return "Monitor";
+        case OP_MWAIT:      return "MWait";
+        case OP_RDMSR:      return "Rdmsr";
+        case OP_WRMSR:      return "Wrmsr";
+        case OP_ADC:        return "Adc";
+        case OP_BTC:        return "Btc";
+        case OP_RDTSC:      return "Rdtsc";
+        case OP_STI:        return "Sti";
+        case OP_XADD:       return "XAdd";
+        case OP_HLT:        return "Hlt";
+        case OP_IRET:       return "Iret";
+        case OP_CMPXCHG:    return "CmpXchg";
+        case OP_CMPXCHG8B:  return "CmpXchg8b";
+        case OP_MOVNTPS:    return "MovNTPS";
+        case OP_STOSWD:     return "StosWD";
+        case OP_WBINVD:     return "WbInvd";
+        case OP_XOR:        return "Xor";
         case OP_BTR:        return "Btr";
         case OP_BTS:        return "Bts";
         default:
-            AssertMsgFailed(("%d\n", pCpu->pCurInstr->opcode));
+            Log(("Unknown opcode %d\n", pCpu->pCurInstr->opcode));
             return "???";
     }
 }
@@ -812,14 +839,14 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
 
     /* Register and immediate data == PARMTYPE_IMMEDIATE */
     AssertReturn(param2.type == PARMTYPE_IMMEDIATE, VERR_EM_INTERPRETER);
-    RTGCUINTREG ValPar2 = param2.val.val32;
+    RTGCUINTREG32 ValPar2 = param2.val.val32;
 
     /* Try emulate it with a one-shot #PF handler in place. */
     Log2(("%s %RGv imm%d=%RGr\n", emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
 
     RTGCUINTREG32 eflags = 0;
     MMGCRamRegisterTrapHandler(pVM);
-    rc = pfnEmulate(GCPtrPar1, ValPar2, pCpu->param2.size, &eflags);
+    rc = pfnEmulate((RTRCPTR)GCPtrPar1, ValPar2, pCpu->param2.size, &eflags);
     MMGCRamDeregisterTrapHandler(pVM);
 
     if (RT_FAILURE(rc))
@@ -1058,6 +1085,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, 
                                   uint32_t *pcbSize, PFNEMULATELOCKPARAM2 pfnEmulate)
 {
+        return VERR_EM_INTERPRETER;
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
     if(VBOX_FAILURE(rc))
@@ -1076,7 +1104,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 
     /* Register and immediate data == PARMTYPE_IMMEDIATE */
     AssertReturn(param2.type == PARMTYPE_IMMEDIATE, VERR_EM_INTERPRETER);
-    RTGCUINTREG ValPar2 = param2.val.val32;
+    RTGCUINTREG32 ValPar2 = param2.val.val32;
 
     Log2(("emInterpretLockBitTest %s: pvFault=%VGv GCPtrPar1=%RGv imm=%RGr\n", emGetMnemonic(pCpu), pvFault, GCPtrPar1, ValPar2));
 
@@ -1093,7 +1121,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     /* Try emulate it with a one-shot #PF handler in place. */
     RTGCUINTREG32 eflags = 0;
     MMGCRamRegisterTrapHandler(pVM);
-    rc = pfnEmulate(GCPtrPar1, ValPar2, &eflags);
+    rc = pfnEmulate((RTRCPTR)GCPtrPar1, ValPar2, &eflags);
     MMGCRamDeregisterTrapHandler(pVM);
 
     if (RT_FAILURE(rc))
@@ -2288,6 +2316,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     }
 
     int rc;
+#if defined(IN_GC) && (defined(VBOX_STRICT) || defined(LOG_ENABLED))
+    LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pCpu)));
+#endif
     switch (pCpu->pCurInstr->opcode)
     {
 #ifdef IN_GC
