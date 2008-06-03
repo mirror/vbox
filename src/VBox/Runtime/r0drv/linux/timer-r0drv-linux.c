@@ -49,7 +49,9 @@
 # define RT_USE_LINUX_HRTIMER
 #endif
 
-#if defined(RT_USE_LINUX_HRTIMER) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+/* This check must match the ktime usage in rtTimeGetSystemNanoTS() / time-r0drv-linux.c. */
+#if defined(RT_USE_LINUX_HRTIMER) \
+ && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 # error "RT_USE_LINUX_HRTIMER requires 2.6.16 or later, sorry."
 #endif
 
