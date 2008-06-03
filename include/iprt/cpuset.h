@@ -129,6 +129,19 @@ DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
 
 
 /**
+ * Checks if the two sets match or not.
+ *
+ * @returns true / false accordingly.
+ * @param   pSet1       The first set.
+ * @param   pSet2       The second set.
+ */
+DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
+{
+    return *pSet1 == *pSet2;
+}
+
+
+/**
  * Converts the CPU set to a 64-bit mask.
  *
  * @returns The mask.
