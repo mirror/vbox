@@ -165,188 +165,6 @@ typedef struct RTTIMERLINUXSTARTONCPUARGS
 typedef RTTIMERLINUXSTARTONCPUARGS *PRTTIMERLINUXSTARTONCPUARGS;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-#ifdef RT_USE_LINUX_HRTIMER
-static enum hrtimer_restart rtTimerLinuxCallback(struct hrtimer *pHrTimer);
-#else
-static void rtTimerLinuxCallback(unsigned long ulUser);
-#endif
-#ifdef CONFIG_SMP
-static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs);
-static int rtTimerLnxStopAll(PRTTIMER pTimer);
-static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
-#endif
-
-
-RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
-{
-#ifdef RT_USE_LINUX_HRTIMER
-    /** @todo later... */
-    return 1000000000 / HZ; /* ns */
-#else
-    return 1000000000 / HZ; /* ns */
-#endif
-}
-
-
-RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
-{
-    return VERR_NOT_SUPPORTED;
-}
-
-
-RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
-{
-    return VERR_NOT_SUPPORTED;
-}
-
-
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
-{
-    PRTTIMER pTimer;
-    RTCPUID  iCpu;
-    unsigned cCpus;
-
-    *ppTimer = NULL;
-
-    /*
-     * Validate flags.
-     */
-    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
-        return VERR_INVALID_PARAMETER;
-    if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
-        &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
-        &&  !RTMpIsCpuOnline(fFlags & RTTIMER_FLAGS_CPU_MASK))
-        return (fFlags & RTTIMER_FLAGS_CPU_MASK) > RTMpGetMaxCpuId()
-             ? VERR_CPU_NOT_FOUND
-             : VERR_CPU_OFFLINE;
-
-    /*
-     * Allocate the timer handler.
-     */
-    cCpus = 1;
-#ifdef CONFIG_SMP
-    if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL)
-    {
-        cCpus = RTMpGetMaxCpuId() + 1;
-        Assert(cCpus <= RTCPUSET_MAX_CPUS); /* On linux we have a 1:1 relationship between cpuid and set index. */
-        AssertReturn(u64NanoInterval, VERR_NOT_IMPLEMENTED); /* We don't implement single shot on all cpus, sorry. */
-    }
-#endif
-
-    pTimer = (PRTTIMER)RTMemAllocZ(RT_OFFSETOF(RTTIMER, aSubTimers[cCpus]));
-    if (!pTimer)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Initialize it.
-     */
-    pTimer->u32Magic = RTTIMER_MAGIC;
-    pTimer->hSpinlock = NIL_RTSPINLOCK;
-    pTimer->fSuspended = true;
-#ifdef CONFIG_SMP
-    pTimer->fSpecificCpu = (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC) && (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL;
-    pTimer->fAllCpus = (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL;
-    pTimer->idCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
-#else
-    pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
-    pTimer->idCpu = RTMpCpuId();
-#endif
-    pTimer->cCpus = cCpus;
-    pTimer->pfnTimer = pfnTimer;
-    pTimer->pvUser = pvUser;
-    pTimer->u64NanoInterval = u64NanoInterval;
-
-    for (iCpu = 0; iCpu < cCpus; iCpu++)
-    {
-#ifdef RT_USE_LINUX_HRTIMER
-        hrtimer_init(&pTimer->aSubTimers[iCpu].LnxTimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
-        pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
-#else
-        init_timer(&pTimer->aSubTimers[iCpu].LnxTimer);
-        pTimer->aSubTimers[iCpu].LnxTimer.data     = (unsigned long)pTimer;
-        pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
-        pTimer->aSubTimers[iCpu].LnxTimer.expires  = jiffies;
-#endif
-        pTimer->aSubTimers[iCpu].u64StartTS = 0;
-        pTimer->aSubTimers[iCpu].u64NextTS = 0;
-        pTimer->aSubTimers[iCpu].iTick = 0;
-        pTimer->aSubTimers[iCpu].pParent = pTimer;
-        pTimer->aSubTimers[iCpu].enmState = RTTIMERLNXSTATE_STOPPED;
-    }
-
-#ifdef CONFIG_SMP
-    /*
-     * If this is running on ALL cpus, we'll have to register a callback
-     * for MP events (so timers can be started/stopped on cpus going
-     * online/offline). We also create the spinlock for syncrhonizing
-     * stop/start/mp-event.
-     */
-    if (cCpus > 1)
-    {
-        int rc = RTSpinlockCreate(&pTimer->hSpinlock);
-        if (RT_SUCCESS(rc))
-            rc = RTMpNotificationRegister(rtTimerLinuxMpEvent, pTimer);
-        else
-            pTimer->hSpinlock = NIL_RTSPINLOCK;
-        if (RT_FAILURE(rc))
-        {
-            RTTimerDestroy(pTimer);
-            return rc;
-        }
-    }
-#endif /* CONFIG_SMP */
-
-    *ppTimer = pTimer;
-    return VINF_SUCCESS;
-}
-
-
-RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
-{
-    RTSPINLOCK hSpinlock;
-
-    /* It's ok to pass NULL pointer. */
-    if (pTimer == /*NIL_RTTIMER*/ NULL)
-        return VINF_SUCCESS;
-    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
-    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-
-    /*
-     * Remove the MP notifications first because it'll reduce the risk of
-     * us overtaking any MP event that might theoretically be racing us here.
-     */
-    hSpinlock = pTimer->hSpinlock;
-#ifdef CONFIG_SMP
-    if (    pTimer->cCpus > 1
-        &&  hSpinlock != NIL_RTSPINLOCK)
-    {
-        int rc = RTMpNotificationDeregister(rtTimerLinuxMpEvent, pTimer);
-        AssertRC(rc);
-    }
-#endif /* CONFIG_SMP */
-
-    /*
-     * Stop the timer if it's running.
-     */
-    if (!ASMAtomicUoReadBool(&pTimer->fSuspended)) /* serious paranoia */
-        RTTimerStop(pTimer);
-
-    /*
-     * Uninitialize the structure and free the associated resources.
-     * The spinlock goes last.
-     */
-    ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
-    RTMemFree(pTimer);
-    if (hSpinlock != NIL_RTSPINLOCK)
-        RTSpinlockDestroy(hSpinlock);
-
-    return VINF_SUCCESS;
-}
-
-
 /**
  * Sets the state.
  */
@@ -429,95 +247,6 @@ static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer)
 
     rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED);
 }
-
-
-/**
- * Callback function use by RTTimerStart via RTMpOnSpecific to start
- * a timer running on a specific CPU.
- *
- * @param   idCpu       The current CPU.
- * @param   pvUser1     Pointer to the timer.
- * @param   pvUser2     Pointer to the argument structure.
- */
-static DECLCALLBACK(void) rtTimerLnxStartOnSpecificCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-    PRTTIMERLINUXSTARTONCPUARGS pArgs = (PRTTIMERLINUXSTARTONCPUARGS)pvUser2;
-    PRTTIMER pTimer = (PRTTIMER)pvUser1;
-    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], pArgs->u64Now, pArgs->u64First);
-}
-
-
-RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
-{
-    RTTIMERLINUXSTARTONCPUARGS Args;
-    int rc2;
-
-    /*
-     * Validate.
-     */
-    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
-    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-
-    if (!pTimer->fSuspended)
-        return VERR_TIMER_ACTIVE;
-
-    Args.u64First = u64First;
-#ifdef CONFIG_SMP
-    if (pTimer->fAllCpus)
-        return rtTimerLnxStartAll(pTimer, &Args);
-#endif
-
-    /*
-     * This is pretty straight forwards.
-     */
-    Args.u64Now = RTTimeNanoTS();
-    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING);
-    ASMAtomicWriteBool(&pTimer->fSuspended, false);
-    if (!pTimer->fSpecificCpu)
-        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First);
-    else
-    {
-        rc2 = RTMpOnSpecific(pTimer->idCpu, rtTimerLnxStartOnSpecificCpu, pTimer, &Args);
-        if (RT_FAILURE(rc2))
-        {
-            /* Suspend it, the cpu id is probably invalid or offline. */
-            ASMAtomicWriteBool(&pTimer->fSuspended, true);
-            rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPED);
-            return rc2;
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-RTDECL(int) RTTimerStop(PRTTIMER pTimer)
-{
-
-    /*
-     * Validate.
-     */
-    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
-    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-
-    if (pTimer->fSuspended)
-        return VERR_TIMER_SUSPENDED;
-
-#ifdef CONFIG_SMP
-    if (pTimer->fAllCpus)
-        return rtTimerLnxStopAll(pTimer);
-#endif
-
-    /*
-     * Cancel the timer.
-     */
-    ASMAtomicWriteBool(&pTimer->fSuspended, true); /* just to be on the safe side. */
-    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPING);
-    rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0]);
-
-    return VINF_SUCCESS;
-}
-
 
 
 #ifdef RT_USE_LINUX_HRTIMER
@@ -632,19 +361,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
 }
 
 
-
 #ifdef CONFIG_SMP
-
-/* */
-/* */
-/* The ALL CPUs stuff */
-/* The ALL CPUs stuff */
-/* The ALL CPUs stuff */
-/* */
-/* */
-
-
-
 
 /**
  * Per-cpu callback function (RTMpOnAll/RTMpOnSpecific).
@@ -897,3 +614,259 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
 }
 
 #endif /* CONFIG_SMP */
+
+
+/**
+ * Callback function use by RTTimerStart via RTMpOnSpecific to start
+ * a timer running on a specific CPU.
+ *
+ * @param   idCpu       The current CPU.
+ * @param   pvUser1     Pointer to the timer.
+ * @param   pvUser2     Pointer to the argument structure.
+ */
+static DECLCALLBACK(void) rtTimerLnxStartOnSpecificCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PRTTIMERLINUXSTARTONCPUARGS pArgs = (PRTTIMERLINUXSTARTONCPUARGS)pvUser2;
+    PRTTIMER pTimer = (PRTTIMER)pvUser1;
+    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], pArgs->u64Now, pArgs->u64First);
+}
+
+
+RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
+{
+    RTTIMERLINUXSTARTONCPUARGS Args;
+    int rc2;
+
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+
+    if (!pTimer->fSuspended)
+        return VERR_TIMER_ACTIVE;
+
+    Args.u64First = u64First;
+#ifdef CONFIG_SMP
+    if (pTimer->fAllCpus)
+        return rtTimerLnxStartAll(pTimer, &Args);
+#endif
+
+    /*
+     * This is pretty straight forwards.
+     */
+    Args.u64Now = RTTimeNanoTS();
+    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING);
+    ASMAtomicWriteBool(&pTimer->fSuspended, false);
+    if (!pTimer->fSpecificCpu)
+        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First);
+    else
+    {
+        rc2 = RTMpOnSpecific(pTimer->idCpu, rtTimerLnxStartOnSpecificCpu, pTimer, &Args);
+        if (RT_FAILURE(rc2))
+        {
+            /* Suspend it, the cpu id is probably invalid or offline. */
+            ASMAtomicWriteBool(&pTimer->fSuspended, true);
+            rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPED);
+            return rc2;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerStop(PRTTIMER pTimer)
+{
+
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+
+    if (pTimer->fSuspended)
+        return VERR_TIMER_SUSPENDED;
+
+#ifdef CONFIG_SMP
+    if (pTimer->fAllCpus)
+        return rtTimerLnxStopAll(pTimer);
+#endif
+
+    /*
+     * Cancel the timer.
+     */
+    ASMAtomicWriteBool(&pTimer->fSuspended, true); /* just to be on the safe side. */
+    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPING);
+    rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0]);
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
+{
+    RTSPINLOCK hSpinlock;
+
+    /* It's ok to pass NULL pointer. */
+    if (pTimer == /*NIL_RTTIMER*/ NULL)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
+     * Remove the MP notifications first because it'll reduce the risk of
+     * us overtaking any MP event that might theoretically be racing us here.
+     */
+    hSpinlock = pTimer->hSpinlock;
+#ifdef CONFIG_SMP
+    if (    pTimer->cCpus > 1
+        &&  hSpinlock != NIL_RTSPINLOCK)
+    {
+        int rc = RTMpNotificationDeregister(rtTimerLinuxMpEvent, pTimer);
+        AssertRC(rc);
+    }
+#endif /* CONFIG_SMP */
+
+    /*
+     * Stop the timer if it's running.
+     */
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended)) /* serious paranoia */
+        RTTimerStop(pTimer);
+
+    /*
+     * Uninitialize the structure and free the associated resources.
+     * The spinlock goes last.
+     */
+    ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+    RTMemFree(pTimer);
+    if (hSpinlock != NIL_RTSPINLOCK)
+        RTSpinlockDestroy(hSpinlock);
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+{
+    PRTTIMER pTimer;
+    RTCPUID  iCpu;
+    unsigned cCpus;
+
+    *ppTimer = NULL;
+
+    /*
+     * Validate flags.
+     */
+    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
+        return VERR_INVALID_PARAMETER;
+    if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+        &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
+        &&  !RTMpIsCpuOnline(fFlags & RTTIMER_FLAGS_CPU_MASK))
+        return (fFlags & RTTIMER_FLAGS_CPU_MASK) > RTMpGetMaxCpuId()
+             ? VERR_CPU_NOT_FOUND
+             : VERR_CPU_OFFLINE;
+
+    /*
+     * Allocate the timer handler.
+     */
+    cCpus = 1;
+#ifdef CONFIG_SMP
+    if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL)
+    {
+        cCpus = RTMpGetMaxCpuId() + 1;
+        Assert(cCpus <= RTCPUSET_MAX_CPUS); /* On linux we have a 1:1 relationship between cpuid and set index. */
+        AssertReturn(u64NanoInterval, VERR_NOT_IMPLEMENTED); /* We don't implement single shot on all cpus, sorry. */
+    }
+#endif
+
+    pTimer = (PRTTIMER)RTMemAllocZ(RT_OFFSETOF(RTTIMER, aSubTimers[cCpus]));
+    if (!pTimer)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Initialize it.
+     */
+    pTimer->u32Magic = RTTIMER_MAGIC;
+    pTimer->hSpinlock = NIL_RTSPINLOCK;
+    pTimer->fSuspended = true;
+#ifdef CONFIG_SMP
+    pTimer->fSpecificCpu = (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC) && (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL;
+    pTimer->fAllCpus = (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL;
+    pTimer->idCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
+#else
+    pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
+    pTimer->idCpu = RTMpCpuId();
+#endif
+    pTimer->cCpus = cCpus;
+    pTimer->pfnTimer = pfnTimer;
+    pTimer->pvUser = pvUser;
+    pTimer->u64NanoInterval = u64NanoInterval;
+
+    for (iCpu = 0; iCpu < cCpus; iCpu++)
+    {
+#ifdef RT_USE_LINUX_HRTIMER
+        hrtimer_init(&pTimer->aSubTimers[iCpu].LnxTimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
+        pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
+#else
+        init_timer(&pTimer->aSubTimers[iCpu].LnxTimer);
+        pTimer->aSubTimers[iCpu].LnxTimer.data     = (unsigned long)pTimer;
+        pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
+        pTimer->aSubTimers[iCpu].LnxTimer.expires  = jiffies;
+#endif
+        pTimer->aSubTimers[iCpu].u64StartTS = 0;
+        pTimer->aSubTimers[iCpu].u64NextTS = 0;
+        pTimer->aSubTimers[iCpu].iTick = 0;
+        pTimer->aSubTimers[iCpu].pParent = pTimer;
+        pTimer->aSubTimers[iCpu].enmState = RTTIMERLNXSTATE_STOPPED;
+    }
+
+#ifdef CONFIG_SMP
+    /*
+     * If this is running on ALL cpus, we'll have to register a callback
+     * for MP events (so timers can be started/stopped on cpus going
+     * online/offline). We also create the spinlock for syncrhonizing
+     * stop/start/mp-event.
+     */
+    if (cCpus > 1)
+    {
+        int rc = RTSpinlockCreate(&pTimer->hSpinlock);
+        if (RT_SUCCESS(rc))
+            rc = RTMpNotificationRegister(rtTimerLinuxMpEvent, pTimer);
+        else
+            pTimer->hSpinlock = NIL_RTSPINLOCK;
+        if (RT_FAILURE(rc))
+        {
+            RTTimerDestroy(pTimer);
+            return rc;
+        }
+    }
+#endif /* CONFIG_SMP */
+
+    *ppTimer = pTimer;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
+{
+#ifdef RT_USE_LINUX_HRTIMER
+    /** @todo later... */
+    return 1000000000 / HZ; /* ns */
+#else
+    return 1000000000 / HZ; /* ns */
+#endif
+}
+
+
+RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
