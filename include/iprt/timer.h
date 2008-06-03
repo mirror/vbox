@@ -146,8 +146,8 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
  * @retval  VERR_TIMER_ACTIVE if the timer isn't suspended.
  *
  * @param   pTimer      The timer to activate.
- * @param   u64First    The RTTimeSystemNanoTS() for when the timer should start firing.
- *                      If 0 is specified, the timer will fire ASAP.
+ * @param   u64First    The RTTimeSystemNanoTS() for when the timer should start
+ *                      firing (relative). If 0 is specified, the timer will fire ASAP.
  * @see     RTTimerStop
  */
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First);
