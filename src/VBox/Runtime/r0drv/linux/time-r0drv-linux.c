@@ -41,7 +41,7 @@
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16) /* This must match timer-r0drv-linux.c! */
     /*
      * Use ktime_get_ts, this is also what clock_gettime(CLOCK_MONOTONIC,) is using.
      */
