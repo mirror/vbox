@@ -1,0 +1,259 @@
+<ui version="4.0" >
+ <class>VBoxVMSettingsNetwork</class>
+ <widget class="QWidget" name="VBoxVMSettingsNetwork" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>318</width>
+    <height>403</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QGroupBox" name="mGbAdapter" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Minimum" hsizetype="Preferred" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="whatsThis" >
+      <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
+     </property>
+     <property name="title" >
+      <string>&amp;Enable Network Adapter</string>
+     </property>
+     <property name="checkable" >
+      <bool>true</bool>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <widget class="QLabel" name="mLbAType" >
+        <property name="text" >
+         <string>A&amp;dapter Type</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbAType</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2" >
+       <widget class="QComboBox" name="mCbAType" >
+        <property name="whatsThis" >
+         <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="mLbNAType" >
+        <property name="text" >
+         <string>&amp;Attached to</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbNAType</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2" >
+       <widget class="QComboBox" name="mCbNAType" >
+        <property name="whatsThis" >
+         <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" >
+       <widget class="QLabel" name="mLbNetwork" >
+        <property name="text" >
+         <string>&amp;Network Name</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbNetwork</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1" colspan="2" >
+       <widget class="QComboBox" name="mCbNetwork" >
+        <property name="whatsThis" >
+         <string>Displays the name of the internal network selected for this adapter.</string>
+        </property>
+        <property name="editable" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" >
+       <widget class="QLabel" name="mLbMAC" >
+        <property name="text" >
+         <string>&amp;MAC Address</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mLeMAC</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" >
+       <widget class="QLineEdit" name="mLeMAC" >
+        <property name="whatsThis" >
+         <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" >
+       <widget class="QPushButton" name="mPbMAC" >
+        <property name="whatsThis" >
+         <string>Generates a new random MAC address.</string>
+        </property>
+        <property name="text" >
+         <string>&amp;Generate</string>
+        </property>
+        <property name="shortcut" >
+         <string>Alt+G</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="3" >
+       <widget class="QCheckBox" name="mCbCable" >
+        <property name="whatsThis" >
+         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
+        </property>
+        <property name="text" >
+         <string>Ca&amp;ble Connected</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="mGbTAP" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="whatsThis" >
+      <string>Host Interface Settings</string>
+     </property>
+     <property name="title" >
+      <string>Host Interface Settings</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <item>
+       <layout class="QVBoxLayout" >
+        <property name="spacing" >
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="mLbInterface_x11" >
+          <property name="text" >
+           <string>&amp;Interface Name</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeInterface_x11</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mLeInterface_x11" >
+          <property name="whatsThis" >
+           <string>Displays the TAP interface name.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" >
+        <property name="spacing" >
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="mLbSetup_x11" >
+          <property name="text" >
+           <string>&amp;Setup Application</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeSetup_x11</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" >
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="mLeSetup_x11" >
+            <property name="whatsThis" >
+             <string>Displays the command executed to set up the TAP interface.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbSetup_x11" >
+            <property name="whatsThis" >
+             <string>Selects the setup application.</string>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" >
+        <property name="spacing" >
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="mLbTerminate_x11" >
+          <property name="text" >
+           <string>&amp;Terminate Application</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeTerminate_x11</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" >
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="mLeTerminate_x11" >
+            <property name="whatsThis" >
+             <string>Displays the command executed to terminate the TAP interface.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="mTbTerminate_x11" >
+            <property name="whatsThis" >
+             <string>Selects the terminate application.</string>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

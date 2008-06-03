@@ -25,7 +25,7 @@ TEMPLATE	= app
 LANGUAGE	= C++
 
 FORMS	= ui/VBoxDiskImageManagerDlg.ui \
-	ui/VBoxVMNetworkSettings.ui \
+	ui/VBoxVMSettingsNetwork.ui \
 	ui/VBoxVMSettingsSerial.ui \
 	ui/VBoxVMSettingsParallel.ui \
 	ui/VBoxVMSettingsUSB.ui \
