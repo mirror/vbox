@@ -1202,7 +1202,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                 &&  cpu.param1.flags == USE_DISPLACEMENT32)
             {
                 addr = 0;
-                PGMPhysReadGCPtr(pVM, &addr, cpu.param1.disp32, sizeof(addr));
+                PGMPhysReadGCPtr(pVM, &addr, (RTRCUINTPTR)cpu.param1.disp32, sizeof(addr));
             }
             else
                 addr = CSAMResolveBranch(&cpu, pCurInstrGC);
