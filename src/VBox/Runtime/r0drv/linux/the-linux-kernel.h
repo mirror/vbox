@@ -171,6 +171,11 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 
 #endif /* < 2.6.7 */
 
+/** @def TICK_NSEC
+ * The time between ticks in nsec */
+#ifndef TICK_NSEC
+# define TICK_NSEC (1000000UL / HZ)
+#endif
 
 /*
  * This sucks soooo badly on x86! Why don't they export __PAGE_KERNEL_EXEC so PAGE_KERNEL_EXEC would be usable?
@@ -264,12 +269,6 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #else
 # define ONE_MSEC_IN_JIFFIES       ((HZ + 999) / 1000)
 # error "HZ is not a multiple of 1000, the GIP stuff won't work right!"
-#endif
-
-/** @def TICK_NSEC
- * The time between ticks in nsec */
-#ifndef TICK_NSEC
-# define TICK_NSEC (1000000UL / HZ)
 #endif
 
 /*
