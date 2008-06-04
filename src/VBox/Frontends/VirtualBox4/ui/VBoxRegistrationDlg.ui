@@ -254,7 +254,7 @@
   <customwidget>
    <class>QILabel</class>
    <extends>QLabel</extends>
-   <header>QIAbstractWizard.h</header>
+   <header>QILabel.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

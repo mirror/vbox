@@ -1307,11 +1307,11 @@ to the system default language.&lt;/qt&gt;
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
-    <include location="local" impldecl="in implementation">QIRichLabel.h</include>
+    <include location="local" impldecl="in implementation">QILabel.h</include>
 </includes>
 <forwards>
     <forward>class VBoxUSBMenu</forward>
-    <forward>class QIRichLabel</forward>
+    <forward>class QILabel</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -1326,7 +1326,7 @@ to the system default language.&lt;/qt&gt;
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">bool mLanguageChanged;</variable>
-    <variable access="private">QIRichLabel *whatsThisLabel;</variable>
+    <variable access="private">QILabel *whatsThisLabel;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>

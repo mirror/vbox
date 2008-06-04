@@ -22,7 +22,7 @@
 
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxToolBar.h"
-#include "QIRichLabel.h"
+#include "QILabel.h"
 #include "VBoxNewHDWzd.h"
 #include "VBoxProblemReporter.h"
 
@@ -191,12 +191,12 @@ public:
     }
 };
 
-class InfoPaneLabel : public QIRichLabel
+class InfoPaneLabel : public QILabel
 {
 public:
 
     InfoPaneLabel (QWidget *aParent, QLabel *aLabel = 0)
-        : QIRichLabel (aParent), mLabel (aLabel) {}
+        : QILabel (aParent), mLabel (aLabel) {}
 
     QLabel* label() const { return mLabel; }
 

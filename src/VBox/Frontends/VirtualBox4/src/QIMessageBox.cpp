@@ -24,7 +24,7 @@
 #include "VBoxGlobal.h"
 
 #include "QIMessageBox.h"
-#include "QIRichLabel.h"
+#include "QILabel.h"
 #include "QIDialogButtonBox.h"
 
 /* Qt includes */
@@ -81,7 +81,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     messageVBoxLayout->setSpacing (10);
     hLayout->addLayout (messageVBoxLayout);
 
-    mTextLabel = new QIRichLabel (aText, NULL);
+    mTextLabel = new QILabel (aText, NULL);
     mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop);
     mTextLabel->setWordWrap (true);
     QSizePolicy sp (QSizePolicy::Minimum, QSizePolicy::Minimum);

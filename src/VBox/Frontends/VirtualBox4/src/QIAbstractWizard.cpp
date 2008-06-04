@@ -21,6 +21,7 @@
  */
 
 #include "QIAbstractWizard.h"
+#include "QILabel.h"
 
 /* Qt includes */
 #include <QStackedWidget>
@@ -66,25 +67,6 @@ void QITextEdit::setText (const QString &aText)
 {
     QTextEdit::setText (aText);
     updateSizeHint();
-}
-
-
-QILabel::QILabel (QWidget *aParent)
-    : QLabel (aParent)
-{
-}
-
-QSize QILabel::sizeHint() const
-{
-    /* If there is an updated sizeHint() present - using it. */
-    return mOwnSizeHint.isValid() ? mOwnSizeHint : QLabel::sizeHint();
-}
-
-void QILabel::updateSizeHint()
-{
-    if (minimumWidth() > 0)
-        mOwnSizeHint = QSize (minimumWidth(),
-                              heightForWidth (minimumWidth()));
 }
 
 

@@ -66,22 +66,9 @@ private:
  *     for getting more compact layout.
  *  2. Tries to take into account horizontal scrollbar if present to avoid
  *     vertical scrollbar appearing.
+ *
+ * --> uses now global QILabel
  */
-class QILabel : public QLabel
-{
-    Q_OBJECT;
-
-public:
-
-    QILabel (QWidget *aParent);
-
-    QSize sizeHint() const;
-    void updateSizeHint();
-
-private:
-
-    QSize mOwnSizeHint;
-};
 
 /**
  *  QDialog reimplementation used as abstract interface in different wizards:
