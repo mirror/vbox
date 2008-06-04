@@ -1395,6 +1395,9 @@ typedef struct PGMPOOLPAGE
     /** Pointer to the HC mapping of the page. */
     R3R0PTRTYPE(void *) pvPageHC;
     /** The guest physical address. */
+#if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
+    uint32_t            Alignment0;
+#endif
     RTGCPHYS            GCPhys;
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
     uint8_t             enmKind;
