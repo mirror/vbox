@@ -39,7 +39,7 @@ endif
 #endif # !VBOX_OSE
 ifdef VBOX_WITH_VRDP
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
-  ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_ROOT)/src/libs/openssl-0.9.8h/include)
+  ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_OBJ)/src/libs/openssl-0.9.8h/include)
    subdirs += openssl-0.9.8h
   endif
  else
