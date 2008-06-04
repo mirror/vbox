@@ -29,6 +29,8 @@
 ** place of a destructor.
 *****************************************************************************/
 
+#include "QILabel.h"
+
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -302,7 +304,7 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisCandidate = NULL;
 
 #warning port me
-    whatsThisLabel = new QIRichLabel (this);
+    whatsThisLabel = new QILabel (this);
 //    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
 #ifndef DEBUG

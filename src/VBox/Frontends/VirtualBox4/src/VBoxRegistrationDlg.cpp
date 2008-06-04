@@ -243,9 +243,6 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
     connect (mWvalReg, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
     connect (mTimeout, SIGNAL (timeout()), this, SLOT (processTimeout()));
-    /* TODO: Implement mouse on link click for QILabel:
-     * connect (mTextRegInfo, SIGNAL (clickedOnLink (const QString &)),
-     *          &vboxGlobal(), SLOT (openURL (const QString &))); */
 
     /* Setup initial dialog parameters. */
     VBoxRegistrationData regData (vboxGlobal().virtualBox().

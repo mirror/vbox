@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIRichLabel class implementation
+ * VirtualBox Qt extensions: QILabel class implementation
  */
 
 /*
@@ -24,8 +24,8 @@
  * This class is based on the original QLabel implementation.
  */
 
-#include "QIRichLabel.h"
-#include "QIRichLabel_p.h"
+#include "QILabel.h"
+#include "QILabel_p.h"
 #include "VBoxGlobal.h"
 
 /* Qt includes */
@@ -35,14 +35,14 @@
 
 /* @todo: Compare the minimal size behavior in the qt3 & qt4 version. */
 
-QIRichLabel::QIRichLabel (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = 0 */)
+QILabel::QILabel (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = 0 */)
     : QWidget (aParent, aFlags)
     , mLabel (NULL)
 {
     init();
 }
 
-QIRichLabel::QIRichLabel (const QString &aText, QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = 0 */)
+QILabel::QILabel (const QString &aText, QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = 0 */)
     : QWidget (aParent, aFlags)
     , mLabel (NULL)
 {
@@ -50,17 +50,22 @@ QIRichLabel::QIRichLabel (const QString &aText, QWidget *aParent /* = NULL */, Q
     mLabel->setFullText (aText);
 }
 
-bool QIRichLabel::fullSizeSelection () const
+bool QILabel::fullSizeSelection () const
 {
-    mLabel->fullSizeSelection();
+    return mLabel->fullSizeSelection();
 }
 
-void QIRichLabel::setFullSizeSelection (bool bOn)
+void QILabel::setFullSizeSelection (bool bOn)
 {
     mLabel->setFullSizeSelection (bOn);
 }
 
-void QIRichLabel::init()
+void QILabel::updateSizeHint()
+{
+    mLabel->updateSizeHint();
+}
+
+void QILabel::init()
 {
     QHBoxLayout *layout = new QHBoxLayout (this);
     VBoxGlobal::setLayoutMargin (layout, 0);
@@ -75,147 +80,159 @@ void QIRichLabel::init()
 
 /* Default QLabel methods */
 
-Qt::Alignment QIRichLabel::alignment () const
+Qt::Alignment QILabel::alignment () const
 {
     return mLabel->alignment();
 }
 
-QWidget *QIRichLabel::buddy () const
+QWidget *QILabel::buddy () const
 {
     return mLabel->buddy();
 }
 
-bool QIRichLabel::hasScaledContents () const
+bool QILabel::hasScaledContents () const
 {
     return mLabel->hasScaledContents();
 }
 
-int QIRichLabel::indent () const
+int QILabel::indent () const
 {
     return mLabel->indent();
 }
 
-int QIRichLabel::margin () const
+int QILabel::margin () const
 {
     return mLabel->margin();
 }
 
-QMovie *QIRichLabel::movie () const
+QMovie *QILabel::movie () const
 {
     return mLabel->movie();
 }
 
-bool QIRichLabel::openExternalLinks () const
+bool QILabel::openExternalLinks () const
 {
     return mLabel->openExternalLinks();
 }
 
-const QPicture *QIRichLabel::picture () const
+const QPicture *QILabel::picture () const
 {
     return mLabel->picture();
 }
 
-const QPixmap *QIRichLabel::pixmap () const
+const QPixmap *QILabel::pixmap () const
 {
     return mLabel->pixmap();
 }
 
-void QIRichLabel::setAlignment (Qt::Alignment aAlignment) 
+void QILabel::setAlignment (Qt::Alignment aAlignment) 
 { 
     mLabel->setAlignment (aAlignment); 
 }
 
-void QIRichLabel::setBuddy (QWidget *aBuddy)
+void QILabel::setBuddy (QWidget *aBuddy)
 {
     mLabel->setBuddy (aBuddy);
 }
 
-void QIRichLabel::setIndent (int aIndent)
+void QILabel::setIndent (int aIndent)
 {
     mLabel->setIndent (aIndent);
 }
 
-void QIRichLabel::setMargin (int aMargin)
+void QILabel::setMargin (int aMargin)
 {
     mLabel->setMargin (aMargin);
 }
 
-void QIRichLabel::setOpenExternalLinks (bool aOpen)
+void QILabel::setOpenExternalLinks (bool aOpen)
 { 
     mLabel->setOpenExternalLinks (aOpen); 
 }
 
-void QIRichLabel::setScaledContents (bool aOn)
+void QILabel::setScaledContents (bool aOn)
 {
     mLabel->setScaledContents (aOn);
 }
 
-void QIRichLabel::setTextFormat (Qt::TextFormat aFormat)
+void QILabel::setTextFormat (Qt::TextFormat aFormat)
 {
     mLabel->setTextFormat (aFormat);
 }
 
-void QIRichLabel::setTextInteractionFlags (Qt::TextInteractionFlags aFlags) 
+void QILabel::setTextInteractionFlags (Qt::TextInteractionFlags aFlags) 
 { 
     mLabel->setTextInteractionFlags (aFlags); 
 }
 
-void QIRichLabel::setWordWrap (bool aOn) 
+void QILabel::setWordWrap (bool aOn) 
 { 
     mLabel->setWordWrap (aOn); 
 }
 
-QString QIRichLabel::text () const
+QString QILabel::text () const
 {
     return mLabel->fullText();
 }
 
-Qt::TextFormat QIRichLabel::textFormat () const
+Qt::TextFormat QILabel::textFormat () const
 {
     return mLabel->textFormat();
 }
 
-Qt::TextInteractionFlags QIRichLabel::textInteractionFlags () const
+Qt::TextInteractionFlags QILabel::textInteractionFlags () const
 {
     return mLabel->textInteractionFlags();
 }
 
-bool QIRichLabel::wordWrap () const
+bool QILabel::wordWrap () const
 {
     return mLabel->wordWrap();
 }
 
-void QIRichLabel::clear()
+void QILabel::setSizePolicy (QSizePolicy aPolicy)
+{
+    mLabel->setSizePolicy (aPolicy);
+    QWidget::setSizePolicy (aPolicy);
+}
+
+void QILabel::setMinimumSize (const QSize &aSize)
+{
+    mLabel->setMinimumSize (aSize);
+    QWidget::setMinimumSize (aSize);
+}
+
+void QILabel::clear()
 {
     mLabel->clearAll();
 }
 
-void QIRichLabel::setMovie (QMovie *aMovie)
+void QILabel::setMovie (QMovie *aMovie)
 {
     mLabel->setMovie (aMovie);
 }
 
-void QIRichLabel::setNum (int aNum)
+void QILabel::setNum (int aNum)
 {
     mLabel->setNum (aNum);
 }
 
-void QIRichLabel::setNum (double aNum)
+void QILabel::setNum (double aNum)
 {
     mLabel->setNum (aNum);
 }
 
-void QIRichLabel::setPicture (const QPicture &aPicture)
+void QILabel::setPicture (const QPicture &aPicture)
 {
     mLabel->setPicture (aPicture);
 }
 
-void QIRichLabel::setPixmap (const QPixmap &aPixmap)
+void QILabel::setPixmap (const QPixmap &aPixmap)
 {
     mLabel->setPixmap (aPixmap);
 }
 
-void QIRichLabel::setText (const QString &aText)
+void QILabel::setText (const QString &aText)
 {
     mLabel->setFullText (aText);
 }

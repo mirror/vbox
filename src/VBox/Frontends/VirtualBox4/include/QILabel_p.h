@@ -69,6 +69,19 @@ public:
     bool fullSizeSelection () const;
     void setFullSizeSelection (bool bOn);
 
+    void updateSizeHint()
+    {
+        if (minimumWidth() > 0)
+            mOwnSizeHint = QSize (minimumWidth(),
+                                  heightForWidth (minimumWidth()));
+    }
+
+    QSize sizeHint() const
+    {
+        /* If there is an updated sizeHint() present - using it. */
+        return mOwnSizeHint.isValid() ? mOwnSizeHint : QLabel::sizeHint();
+    }
+
 protected:
 
     void resizeEvent (QResizeEvent *aEvent);
@@ -114,6 +127,7 @@ private:
     bool mFullSizeSeclection;
     static const QRegExp mCopyRegExp;
     static QRegExp mElideRegExp;
+    QSize mOwnSizeHint;
 };
 
 #endif // __QILabel_p_h__

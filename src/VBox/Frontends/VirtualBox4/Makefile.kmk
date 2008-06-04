@@ -441,8 +441,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIStatusBar.h \
 	include/QIStateIndicator.h \
 	include/QIMessageBox.h \
-	include/QIRichLabel.h \
-	include/QIRichLabel_p.h \
+	include/QILabel.h \
+	include/QILabel_p.h \
 	include/QIAbstractWizard.h \
 	include/QIListView.h \
 	include/QITreeWidget.h \
@@ -525,7 +525,7 @@ VirtualBox_SOURCES = \
 	src/QIStateIndicator.cpp \
 	src/QIStatusBar.cpp \
 	src/QIMessageBox.cpp \
-	src/QIRichLabel.cpp \
+	src/QILabel.cpp \
 	src/QIAbstractWizard.cpp \
 	src/QIDialog.cpp \
 	src/QIDialogButtonBox.cpp \

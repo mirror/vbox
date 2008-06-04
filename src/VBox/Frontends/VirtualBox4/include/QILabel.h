@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIRichLabel class declaration
+ * VirtualBox Qt extensions: QILabel class declaration
  */
 
 /*
@@ -24,26 +24,28 @@
  * This class is based on the original QLabel implementation.
  */
 
-#ifndef __QIRichLabel_h__
-#define __QIRichLabel_h__
+#ifndef __QILabel_h__
+#define __QILabel_h__
 
 /* Qt includes */
 #include <QWidget>
 
 class QILabelPrivate;
 
-class QIRichLabel: public QWidget
+class QILabel: public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    QIRichLabel (QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
-    QIRichLabel (const QString &aText, QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
+    QILabel (QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
+    QILabel (const QString &aText, QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
 
     /* QLabel extensions */
     bool fullSizeSelection () const;
     void setFullSizeSelection (bool bOn);
+
+    void updateSizeHint();
 
     /* Default QLabel methods */
     Qt::Alignment alignment() const;
@@ -69,6 +71,10 @@ public:
     Qt::TextInteractionFlags textInteractionFlags() const;
     bool wordWrap() const;
 
+    /* Default QWidget methods */
+    void setSizePolicy (QSizePolicy aPolicy);
+    void setMinimumSize (const QSize &aSize);
+
 public slots:
 
     void clear();
@@ -92,4 +98,5 @@ protected:
     QILabelPrivate *mLabel;
 };
 
-#endif // __QIRichLabel_h__
+#endif // __QILabel_h__
+
