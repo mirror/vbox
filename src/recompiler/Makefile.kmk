@@ -137,7 +137,7 @@ endif
 
 ifdef REM_USE_NOCRT
  $(REM_MOD)_TEMPLATE        = VBOXNOCRTGAS
- $(REM_MOD)_DEFS           += LOG_USE_C99
+ $(REM_MOD)_DEFS           += LOG_USE_C99 $(ARCH_BITS_DEFS)
  $(REM_MOD)_CFLAGS.amd64    = -O2
  $(REM_MOD)_CFLAGS.debug    = -O0
  ifdef ($(KBUILD_TARGET_ARCH),x86)
