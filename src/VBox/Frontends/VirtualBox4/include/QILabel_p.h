@@ -130,7 +130,7 @@ private:
     static const QRegExp mCopyRegExp;
     static QRegExp mElideRegExp;
     QSize mOwnSizeHint;
-    bool mStartDraging;
+    bool mStartDragging;
 };
 
 #endif // __QILabel_p_h__
