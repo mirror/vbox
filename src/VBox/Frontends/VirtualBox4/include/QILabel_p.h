@@ -86,6 +86,8 @@ protected:
 
     void resizeEvent (QResizeEvent *aEvent);
     void mousePressEvent (QMouseEvent *aEvent);
+    void mouseReleaseEvent (QMouseEvent *aEvent);
+    void mouseMoveEvent (QMouseEvent *aEvent);
     void contextMenuEvent (QContextMenuEvent *aEvent);
 
 protected slots:
@@ -128,6 +130,7 @@ private:
     static const QRegExp mCopyRegExp;
     static QRegExp mElideRegExp;
     QSize mOwnSizeHint;
+    bool mStartDraging;
 };
 
 #endif // __QILabel_p_h__
