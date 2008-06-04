@@ -186,6 +186,15 @@
  *      - Take care and use size_t when you have to, esp. when passing a pointer
  *        to a size_t as a parameter.
  *
+ *      - Be wary of type promotion to (signed) integer. For example the
+ *        following will cause u8 to be promoted to int in the shift, and then
+ *        sign extended in the assignment 64-bit:
+ *        @code
+ *              uint8_t u8 = 0xfe;
+ *              uint64_t u64 = u8 << 24;
+ *              // u64 == 0xfffffffffe000000
+ *        @endcode
+ *
  *
  *
  * @section sec_vbox_guideline_optional         Optional
