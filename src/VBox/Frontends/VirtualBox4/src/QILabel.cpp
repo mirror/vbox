@@ -287,7 +287,22 @@ void QILabelPrivate::mousePressEvent (QMouseEvent *aEvent)
     if (aEvent->button() == Qt::LeftButton &&
         geometry().contains (aEvent->pos()) &&
         mFullSizeSeclection) 
+        mStartDraging = true;
+    else
+        QLabel::mousePressEvent (aEvent);
+}
+
+void QILabelPrivate::mouseReleaseEvent (QMouseEvent *aEvent)
+{
+    mStartDraging = false;
+    QLabel::mouseReleaseEvent (aEvent);
+}
+
+void QILabelPrivate::mouseMoveEvent (QMouseEvent *aEvent)
+{
+    if (mStartDraging)
     {
+        mStartDraging = false;
         /* Create a drag object out of the given data. */
         QDrag *drag = new QDrag (this);
         QMimeData *mimeData = new QMimeData;
@@ -297,7 +312,7 @@ void QILabelPrivate::mousePressEvent (QMouseEvent *aEvent)
         drag->exec();
     }
     else
-        QLabel::mousePressEvent (aEvent);
+        QLabel::mouseMoveEvent (aEvent);
 }
 
 void QILabelPrivate::contextMenuEvent (QContextMenuEvent *aEvent)
@@ -322,6 +337,7 @@ void QILabelPrivate::copy()
 
 void QILabelPrivate::init()
 {
+    mStartDraging = false;
     setFullSizeSelection (false);
     /* Open links with the QDesktopService */
     setOpenExternalLinks (true);
