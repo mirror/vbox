@@ -33,6 +33,11 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
+/* Uncomment to enable experimental nested paging. */
+//#define VBOX_WITH_NESTED_PAGING
+/* Uncomment to enable 64 bits guest support. */
+//#define VBOX_ENABLE_64_BITS_GUESTS
+
 __BEGIN_DECLS
 
 
@@ -104,10 +109,10 @@ __BEGIN_DECLS
  *  Currently #NM and #PF only
  */
 #ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(0) | RT_BIT(7) | RT_BIT(14) | RT_BIT(6) | RT_BIT(11) | RT_BIT(12) | RT_BIT(13) | RT_BIT(16)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(7) | RT_BIT(14)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #endif
 /** @} */
