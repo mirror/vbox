@@ -1343,7 +1343,7 @@ endif
 
 SDK_VBOX_OPENSSL      = .
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
- SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.8h/include
+ SDK_VBOX_OPENSSL_INCS?= $(PATH_OBJ)/src/libs/openssl-0.9.8h/include
 else
  SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
 endif
