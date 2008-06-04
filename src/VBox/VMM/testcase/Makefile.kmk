@@ -243,6 +243,7 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 		$(VBOX_PATH_VMM_SRC)/TRPMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
+		$(PATH_ROOT)/Config.kmk \
 		| $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 ifndef DONT_USE_YASM
