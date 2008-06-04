@@ -442,6 +442,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIStateIndicator.h \
 	include/QIMessageBox.h \
 	include/QIRichLabel.h \
+	include/QIRichLabel_p.h \
 	include/QIAbstractWizard.h \
 	include/QIListView.h \
 	include/QITreeWidget.h \
