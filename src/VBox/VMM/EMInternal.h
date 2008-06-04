@@ -274,6 +274,8 @@ typedef struct EM
     bool                    fTracing;
 #endif
 
+    uint8_t                 u8Padding[GC_ARCH_BITS == 64 ? 6 : 2];
+
     /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
     RTGCUINTPTR             GCPtrInhibitInterrupts;
 
@@ -336,8 +338,8 @@ typedef struct EM
     R3R0PTRTYPE(PEMSTATS)   pStatsHC;
     /** More statistics (GC). */
     RCPTRTYPE(PEMSTATS)     pStatsGC;
-#if HC_ARCH_BITS != GC_ARCH_BITS && GC_ARCH_BITS == 32
-    RTGCPTR                 padding0;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                 padding0;
 #endif
 
     /** Tree for keeping track of cli occurances (debug only). */

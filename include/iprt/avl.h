@@ -416,6 +416,7 @@ typedef struct _AVLOGCPtrNodeCore
     AVLOGCPTR           pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
     unsigned char       uchHeight;
+    unsigned char       padding[GC_ARCH_BITS == 64 ? 7 : 3];
 } AVLOGCPTRNODECORE, *PAVLOGCPTRNODECORE;
 
 /** A offset base tree with uint32_t keys. */
@@ -517,6 +518,7 @@ typedef struct _AVLROGCPtrNodeCore
     AVLROGCPTR          pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
     unsigned char       uchHeight;
+    unsigned char       padding[GC_ARCH_BITS == 64 ? 7 : 3];
 } AVLROGCPTRNODECORE, *PAVLROGCPTRNODECORE;
 
 /** A offset base tree with uint32_t keys. */

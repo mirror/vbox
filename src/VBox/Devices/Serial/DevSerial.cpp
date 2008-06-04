@@ -123,8 +123,8 @@ struct SerialState
     R3PTRTYPE(PPDMDEVINS)           pDevInsHC;
     /** Pointer to the device instance. */
     RCPTRTYPE(PPDMDEVINS)           pDevInsGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
-    RTGCPTR                         Alignment0;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         Alignment0;
 #endif
     /** The base interface. */
     PDMIBASE                        IBase;

@@ -119,8 +119,8 @@ typedef struct PicState {
     R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the device instance, GCPtr. */
     RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
-    RTGCPTR                 Alignment0;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                 Alignment0;
 #endif
 } PicState;
 
@@ -137,13 +137,13 @@ typedef struct DEVPIC
     PCPDMPICHLPR0           pPicHlpR0;
     /** Pointer to the PIC GC helpers. */
     PCPDMPICHLPGC           pPicHlpGC;
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignmnet1;
+#endif
     /** Pointer to the device instance - GC Ptr. */
     RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
     /** Pointer to the device instance - GC Ptr. */
     R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignmnet0;
-#endif
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER             StatSetIrqGC;
     STAMCOUNTER             StatSetIrqHC;

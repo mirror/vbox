@@ -187,7 +187,7 @@ typedef struct VMM
     RTGCPTR32                   pfnCPUMGCResumeGuestV86;
     /** The last GC return code. */
     RTINT                       iLastGCRc;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t                    u32Padding0; /**< Alignment padding. */
 #endif
 

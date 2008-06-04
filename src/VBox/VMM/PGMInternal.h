@@ -311,6 +311,9 @@ typedef struct PGMMAPPING
     R0PTRTYPE(struct PGMMAPPING *)  pNextR0;
     /** Pointer to next entry. */
     RCPTRTYPE(struct PGMMAPPING *)  pNextGC;
+#if GC_ARCH_BITS == 64
+    RTRCPTR                         padding0;
+#endif
     /** Start Virtual address. */
     RTGCUINTPTR                     GCPtr;
     /** Last Virtual address (inclusive). */
@@ -325,8 +328,8 @@ typedef struct PGMMAPPING
     R3PTRTYPE(const char *)         pszDesc;
     /** Number of page tables. */
     RTUINT                          cPTs;
-#if HC_ARCH_BITS != GC_ARCH_BITS
-    RTUINT                          uPadding0; /**< Alignment padding. */
+#if HC_ARCH_BITS != GC_ARCH_BITS || GC_ARCH_BITS == 64
+    RTUINT                          uPadding1; /**< Alignment padding. */
 #endif
     /** Array of page table mapping data. Each entry
      * describes one page table. The array can be longer
@@ -439,7 +442,9 @@ typedef struct PGMVIRTHANDLER
     PGMVIRTHANDLERTYPE                  enmType;
     /** Number of cache pages. */
     uint32_t                            cPages;
-
+#if GC_ARCH_BITS == 64
+    uint32_t                            padding0;
+#endif
 /** @todo The next two members are redundant. It adds some readability though. */
     /** Start of the range. */
     RTGCPTR                             GCPtr;
@@ -449,6 +454,9 @@ typedef struct PGMVIRTHANDLER
     RTGCUINTPTR                         cb;
     /** Pointer to the GC callback function. */
     RCPTRTYPE(PFNPGMGCVIRTHANDLER)      pfnHandlerGC;
+#if GC_ARCH_BITS == 64
+    RTRCPTR                             padding1;
+#endif
     /** Pointer to the HC callback function for invalidation. */
     R3PTRTYPE(PFNPGMHCVIRTINVALIDATE)   pfnInvalidateHC;
     /** Pointer to the HC callback function. */
@@ -909,10 +917,8 @@ typedef struct PGMRAMRANGE
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
     /** Pointer to the next RAM range - for GC. */
     RCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
-#if GC_ARCH_BITS == 32
     /** Pointer alignment. */
-    RTGCPTR                             GCPtrAlignment;
-#endif
+    RTRCPTR                             GCPtrAlignment;
     /** Start of the range. Page aligned. */
     RTGCPHYS                            GCPhys;
     /** Last address in the range (inclusive). Page aligned (-1). */
@@ -995,9 +1001,8 @@ typedef struct PGMROMRANGE
     R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
     /** Pointer to the next range - GC. */
     RCPTRTYPE(struct PGMROMRANGE *) pNextGC;
-#if GC_ARCH_BITS == 32
-    RTGCPTR                         GCPtrAlignment; /**< Pointer alignment. */
-#endif
+    /** Pointer alignment */
+    RTRCPTR                         GCPtrAlignment;
     /** Address of the range. */
     RTGCPHYS                        GCPhys;
     /** Address of the last byte in the range. */
@@ -1623,6 +1628,9 @@ typedef struct PGMPOOL
     /** Array of pages. (cMaxPages in length)
      * The Id is the index into thist array.
      */
+#if GC_ARCH_BITS == 64
+    uint32_t        Alignment4;
+#endif
     PGMPOOLPAGE     aPages[PGMPOOL_IDX_FIRST];
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
 
@@ -1907,7 +1915,7 @@ typedef struct PGM
      * The first page is always the CR3 (in some form) while the 4 other pages
      * are used of the PDs in PAE mode. */
     RTGCPTR                     GCPtrCR3Mapping;
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                    u32Alignment;
 #endif
     /** The physical address of the currently monitored guest CR3 page.
@@ -1954,7 +1962,7 @@ typedef struct PGM
     R3R0PTRTYPE(PX86PD)         pHC32BitPD;
     /** The 32-Bit PD - GC Ptr. */
     RCPTRTYPE(PX86PD)           pGC32BitPD;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t                    u32Padding1; /**< alignment padding. */
 #endif
     /** The Physical Address (HC) of the 32-Bit PD. */
@@ -1984,8 +1992,8 @@ typedef struct PGM
     /** @name AMD64 Shadow Paging
      * Extends PAE Paging.
      * @{ */
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
-    RTGCPTR                    alignment5; /**< structure size alignment. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                    alignment5; /**< structure size alignment. */
 #endif
     /** The Page Map Level 4 table - HC Ptr. */
     R3R0PTRTYPE(PX86PML4)       pHCPaePML4;
@@ -2035,8 +2043,8 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
     RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
     RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
-    RTGCPTR                         alignment3; /**< structure size alignment. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment3; /**< structure size alignment. */
 #endif
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
@@ -2077,8 +2085,8 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
-    RTGCPTR                         alignment2; /**< structure size alignment. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment2; /**< structure size alignment. */
 #endif
     /** @} */
 
@@ -2104,7 +2112,7 @@ typedef struct PGM
     /** GC pointer corresponding to PGM::pRomRangesR3. */
     RCPTRTYPE(PPGMRAMRANGE)         pRomRangesGC;
     /** Alignment padding. */
-    RTGCPTR                         GCPtrPadding2;
+    RTRCPTR                         GCPtrPadding2;
 
     /** Pointer to the list of MMIO2 ranges - for R3.
      * Registration order. */
