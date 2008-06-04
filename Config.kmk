@@ -294,6 +294,8 @@ endif
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Use the new VBI module on Solaris.
 VBOX_WITH_SOLARIS_VBI = 1
+# Enable 64 bits guest pointers
+VBOX_WITH_64_BITS_GUESTS = 1
 
 #
 # Skip stuff.
