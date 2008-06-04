@@ -79,7 +79,6 @@
 
 #undef ASSERT
 
-#include <qglobal.h>
 #include <qstring.h>
 #include <quuid.h>
 #include <q3valuevector.h>
