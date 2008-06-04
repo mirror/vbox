@@ -177,8 +177,8 @@ typedef struct ATADevState {
     R3R0PTRTYPE(uint8_t *) pbIOBufferHC;
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
-    RTGCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
 #endif
 
     /*

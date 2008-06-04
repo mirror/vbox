@@ -86,7 +86,8 @@ typedef struct IOMMMIORANGE
     RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackGC;
     /** Pointer to fill (memset) callback function. */
     RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackGC;
-    RTGCPTR                     GCPtrAlignment; /**< Alignment padding */
+    /** Alignment padding. */
+    RTRCPTR                     GCPtrAlignment;
 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
@@ -149,7 +150,7 @@ typedef struct IOMIOPORTRANGER3
 {
     /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
     AVLROIOPORTNODECORE         Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
     uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
 #endif
     /** Start I/O port address. */
@@ -181,7 +182,7 @@ typedef struct IOMIOPORTRANGER0
 {
     /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
     AVLROIOPORTNODECORE         Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
     uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
 #endif
     /** Start I/O port address. */
@@ -229,8 +230,8 @@ typedef struct IOMIOPORTRANGEGC
     RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
     /** Pointer to string IN callback function. */
     RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
 #endif
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
@@ -249,7 +250,7 @@ typedef struct IOMIOPORTSTATS
 {
     /** Avl node core with the port as Key. */
     AVLOIOPORTNODECORE          Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
     uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
 #endif
     /** Number of INs to this port from R3. */
@@ -340,6 +341,9 @@ typedef struct IOM
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
     /** The GC address of IOMMMIOHandler. */
     RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
+#if GC_ARCH_BITS == 64
+    RTRCPTR                         padding;
+#endif
     RTGCPTR                         Alignment;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.

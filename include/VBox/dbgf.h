@@ -594,6 +594,11 @@ typedef struct DBGFBP
 
     /** The breakpoint type. */
     DBGFBPTYPE      enmType;
+
+#if GC_ARCH_BITS == 64
+    uint32_t        u32Padding;
+#endif
+
     /** Union of type specific data. */
     union
     {

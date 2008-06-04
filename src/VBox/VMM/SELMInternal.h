@@ -102,6 +102,9 @@ typedef struct SELM
     R3PTRTYPE(void *)       HCPtrLdt;
     /** GC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
     RCPTRTYPE(void *)       GCPtrLdt;
+#if GC_ARCH_BITS == 64
+    RTRCPTR                 padding0;
+#endif
     /** GC Pointer to the current Guest's LDT. */
     RTGCPTR                 GCPtrGuestLdt;
     /** Current LDT limit, both Guest and Shadow. */
@@ -122,6 +125,9 @@ typedef struct SELM
 
     /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
     RCPTRTYPE(void *)       GCPtrTss;
+#if GC_ARCH_BITS == 64
+    RTRCPTR                 padding1;
+#endif
     /** GC Pointer to the current Guest's TSS. */
     RTGCPTR                 GCPtrGuestTss;
     /** The size of the guest TSS. */

@@ -624,6 +624,7 @@ int main()
     GEN_CHECK_OFF(ATADevState, cbIOBuffer);
     GEN_CHECK_OFF(ATADevState, pbIOBufferHC);
     GEN_CHECK_OFF(ATADevState, pbIOBufferGC);
+    GEN_CHECK_OFF(ATADevState, StatATADMA);
     GEN_CHECK_OFF(ATADevState, StatReads);
     GEN_CHECK_OFF(ATADevState, StatBytesRead);
     GEN_CHECK_OFF(ATADevState, StatWrites);

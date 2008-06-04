@@ -109,9 +109,8 @@ typedef struct PDMDEVINSINT
     RCPTRTYPE(PVM)                  pVMGC;
     /** GC pointer to associated PCI bus structure. */
     RCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
-#if GC_ARCH_BITS == 32
+    /** Alignment padding. */
     uint32_t                        Alignment0;
-#endif
 } PDMDEVINSINT;
 
 
@@ -200,7 +199,7 @@ typedef struct PDMCRITSECTINT
     R0PTRTYPE(PVM)      pVMR0;
     /** Pointer to the VM - GCPtr. */
     RCPTRTYPE(PVM)      pVMGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t            padding;
 #endif
     /** Event semaphore that is scheduled to be signaled upon leaving the
@@ -374,9 +373,8 @@ typedef struct PDMPIC
     DECLGCCALLBACKMEMBER(void, pfnSetIrqGC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptHC */
     DECLGCCALLBACKMEMBER(int, pfnGetInterruptGC,(PPDMDEVINS pDevIns));
-#if GC_ARCH_BITS == 32
-    RTGCPTR                         GCPtrPadding; /**< Alignment padding. */
-#endif
+    /** Alignment padding. */
+    RTRCPTR                 GCPtrPadding;
 } PDMPIC;
 
 
@@ -432,9 +430,8 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnBusDeliverHC */
     DECLGCCALLBACKMEMBER(void,      pfnBusDeliverGC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
-#if GC_ARCH_BITS == 32
-    RTGCPTR                         GCPtrPadding; /**< Alignment padding. */
-#endif
+    /** Alignment padding. */
+    RTRCPTR                         GCPtrPadding;
 } PDMAPIC;
 
 
@@ -670,7 +667,7 @@ typedef struct PDMQUEUE
         R3R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pItemHC;
         /** Pointer to the free item - GC Ptr. */
         RCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
         uint32_t                              Alignment0;
 #endif
     }                                       aFreeItems[1];

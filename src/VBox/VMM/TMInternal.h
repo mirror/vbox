@@ -183,8 +183,8 @@ typedef struct TMTIMER
     PVMR0                   pVMR0;
     /** Pointer to the VM the timer belongs to - RC Ptr. */
     PVMRC                   pVMGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    RTGCPTR                 padding0; /**< pad structure to multiple of 8 bytes. */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                 padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
 } TMTIMER;
 

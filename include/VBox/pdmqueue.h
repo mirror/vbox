@@ -54,7 +54,7 @@ typedef struct PDMQUEUEITEMCORE
     R3R0PTRTYPE(PPDMQUEUEITEMCORE)  pNextHC;
     /** Pointer to the next item in the pending list - GC Pointer. */
     RCPTRTYPE(PPDMQUEUEITEMCORE)    pNextGC;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t                        Alignment0;
 #endif
 } PDMQUEUEITEMCORE;
