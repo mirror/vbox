@@ -48,6 +48,8 @@
 
 /* Uncomment to enable experimental nested paging. */
 //#define VBOX_WITH_NESTED_PAGING
+/* Uncomment to enable 64 bits guest support. */
+//#define VBOX_ENABLE_64_BITS_GUESTS
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -431,7 +433,8 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 hwaccmr3DisableRawMode(pVM);
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-#ifdef VBOX_WITH_64_BITS_GUESTS
+#ifdef VBOX_ENABLE_64_BITS_GUESTS
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
@@ -519,7 +522,8 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 hwaccmr3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
-#ifdef VBOX_WITH_64_BITS_GUESTS
+#ifdef VBOX_ENABLE_64_BITS_GUESTS
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
