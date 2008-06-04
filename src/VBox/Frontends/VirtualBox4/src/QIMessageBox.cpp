@@ -82,10 +82,12 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     hLayout->addLayout (messageVBoxLayout);
 
     mTextLabel = new QIRichLabel (aText, NULL);
-    mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop | Qt::TextExpandTabs | Qt::TextWordWrap);
-    QSizePolicy sp (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop);
+    mTextLabel->setWordWrap (true);
+    QSizePolicy sp (QSizePolicy::Minimum, QSizePolicy::Minimum);
     sp.setHeightForWidth (true);
     mTextLabel->setSizePolicy (sp);
+    mTextLabel->adjustSize();
     mTextLabel->setMinimumWidth (mTextLabel->sizeHint().width());
     messageVBoxLayout->addWidget (mTextLabel);
 

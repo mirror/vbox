@@ -301,8 +301,8 @@ void VBoxGlobalSettingsDlg::init()
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
 
-    whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
 #warning port me
+    whatsThisLabel = new QIRichLabel (this);
 //    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
 #ifndef DEBUG
@@ -313,28 +313,28 @@ void VBoxGlobalSettingsDlg::init()
      * recognize it as rich text and draws all tags as is instead of doing
      * formatting). We want to catch this text because this is how it will look
      * in the whatsthis balloon where we cannot enforce rich text. */
-    whatsThisLabel->setTextFormat (Qt::RichText);
+//    whatsThisLabel->setTextFormat (Qt::RichText);
 #endif
 
-    whatsThisLabel->setMaxHeightMode (true);
-    whatsThisLabel->setFocusPolicy (Qt::NoFocus);
-    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    whatsThisLabel->setBackgroundMode (Qt::PaletteMidlight);
-    whatsThisLabel->setFrameShape (QLabel::Box);
-    whatsThisLabel->setFrameShadow (QLabel::Sunken);
-    whatsThisLabel->setMargin (7);
-    whatsThisLabel->setScaledContents (FALSE);
-    whatsThisLabel->setAlignment (int (Qt::TextWordWrap |
-                                       Qt::AlignJustify |
-                                       Qt::AlignTop));
-
-    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
-                                    6 /* seems that RichText adds some margin */ +
-                                    whatsThisLabel->fontMetrics().lineSpacing() * 4);
-    whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
-                                     6 /* seems that RichText adds some margin */ +
-                                     whatsThisLabel->fontMetrics().width ('m') * 40);
-
+//    whatsThisLabel->setMaxHeightMode (true);
+//    whatsThisLabel->setFocusPolicy (Qt::NoFocus);
+//    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+//    whatsThisLabel->setBackgroundMode (Qt::PaletteMidlight);
+//    whatsThisLabel->setFrameShape (QLabel::Box);
+//    whatsThisLabel->setFrameShadow (QLabel::Sunken);
+//    whatsThisLabel->setMargin (7);
+//    whatsThisLabel->setScaledContents (FALSE);
+//    whatsThisLabel->setAlignment (int (Qt::TextWordWrap |
+//                                       Qt::AlignJustify |
+//                                       Qt::AlignTop));
+//
+//    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
+//                                    6 /* seems that RichText adds some margin */ +
+//                                    whatsThisLabel->fontMetrics().lineSpacing() * 4);
+//    whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
+//                                     6 /* seems that RichText adds some margin */ +
+//                                     whatsThisLabel->fontMetrics().width ('m') * 40);
+//
     /*
      *  create and layout non-standard widgets
      *  ----------------------------------------------------------------------

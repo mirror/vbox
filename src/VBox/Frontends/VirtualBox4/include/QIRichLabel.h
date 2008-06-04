@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,132 +27,69 @@
 #ifndef __QIRichLabel_h__
 #define __QIRichLabel_h__
 
-#include "q3frame.h"
-//Added by qt3to4:
-#include <Q3Accel>
-#include <Q3Picture>
-#include <QPixmap>
-#include <QResizeEvent>
-#include <QMouseEvent>
-#include <QContextMenuEvent>
-#include <QKeyEvent>
-#include <Q3PopupMenu>
-#include <QFocusEvent>
+/* Qt includes */
+#include <QWidget>
 
-class Q3SimpleRichText;
-class QLabelPrivate;
-class QAction;
-class Q3PopupMenu;
+class QILabelPrivate;
 
-class QIRichLabel : public Q3Frame
+class QIRichLabel: public QWidget
 {
-   Q_OBJECT
-      Q_PROPERTY( QString text READ text WRITE setText )
-      Q_PROPERTY( Qt::TextFormat textFormat READ textFormat WRITE setTextFormat )
-      Q_PROPERTY( QPixmap pixmap READ pixmap WRITE setPixmap )
-      Q_PROPERTY( bool scaledContents READ hasScaledContents WRITE setScaledContents )
-//      Q_PROPERTY( Qt::Alignment alignment READ alignment WRITE setAlignment )
-      Q_PROPERTY( int indent READ indent WRITE setIndent )
-      Q_OVERRIDE( Qt::BackgroundMode backgroundMode DESIGNABLE true )
+    Q_OBJECT;
 
 public:
-   QIRichLabel (QWidget *parent, const char* name=0, Qt::WFlags f=0);
-   QIRichLabel (const QString &text, QWidget *parent, const char* name=0,
-              Qt::WFlags f=0);
-   QIRichLabel (QWidget *buddy, const QString &,
-              QWidget *parent, const char* name=0, Qt::WFlags f=0 );
-   ~QIRichLabel();
 
-   QString      text()    const   { return ltext; }
-   QPixmap     *pixmap()  const   { return lpixmap; }
-   Q3Picture    *picture() const   { return lpicture; }
-   QMovie      *movie()   const;
+    QIRichLabel (QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
+    QIRichLabel (const QString &aText, QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
 
-   Qt::TextFormat   textFormat() const;
-   void         setTextFormat( Qt::TextFormat );
+    /* QLabel extensions */
+    bool fullSizeSelection () const;
+    void setFullSizeSelection (bool bOn);
 
-   int          alignment() const  { return align; }
-   virtual void setAlignment( int );
-   int          indent() const     { return extraMargin; }
-   void         setIndent( int );
-
-   bool         autoResize() const { return autoresize; }
-   virtual void setAutoResize( bool );
-   bool         hasScaledContents() const;
-   void         setScaledContents( bool );
-   QSize        sizeHint() const;
-   QSize        minimumSizeHint() const;
-   virtual void setBuddy( QWidget * );
-   QWidget     *buddy() const;
-   int          heightForWidth(int) const;
-
-   void setFont( const QFont &f );
-   void setFixedHeight (int);
-
-   void setMaxHeightMode (bool);
+    /* Default QLabel methods */
+    Qt::Alignment alignment() const;
+    QWidget * buddy() const;
+    bool hasScaledContents() const;
+    int indent() const;
+    int margin() const;
+    QMovie *movie() const;
+    bool openExternalLinks() const;
+    const QPicture *picture() const;
+    const QPixmap *pixmap() const;
+    void setAlignment (Qt::Alignment aAlignment);
+    void setBuddy (QWidget *aBuddy);
+    void setIndent (int aIndent);
+    void setMargin (int aMargin);
+    void setOpenExternalLinks (bool aOpen);
+    void setScaledContents (bool aOn);
+    void setTextFormat (Qt::TextFormat aFormat);
+    void setTextInteractionFlags (Qt::TextInteractionFlags aFlags);
+    void setWordWrap (bool aOn);
+    QString text() const;
+    Qt::TextFormat textFormat() const;
+    Qt::TextInteractionFlags textInteractionFlags() const;
+    bool wordWrap() const;
 
 public slots:
-   virtual void setText( const QString &);
-   virtual void setPixmap( const QPixmap & );
-   virtual void setPicture( const Q3Picture & );
-   virtual void setMovie( const QMovie & );
-   virtual void setNum( int );
-   virtual void setNum( double );
-   void         clear();
 
-protected slots:
-   void         putToClipBoard();
-
-protected:
-   void         drawContents ( QPainter * );
-   void         fontChange ( const QFont & );
-   void         mouseMoveEvent (QMouseEvent *);
-   void         mousePressEvent (QMouseEvent *);
-   void         resizeEvent ( QResizeEvent* );
-   void         focusInEvent ( QFocusEvent* );
-   void         keyPressEvent ( QKeyEvent* );
-   void         contextMenuEvent (QContextMenuEvent*);
+    void clear();
+    void setMovie (QMovie *aMovie);
+    void setNum (int aNum);
+    void setNum (double aNum);
+    void setPicture (const QPicture &aPicture);
+    void setPixmap (const QPixmap &aPixmap);
+    void setText (const QString &aText);
 
 signals:
-   void         clickedOnLink (const QString&);
 
-private slots:
-   void         acceleratorSlot();
-   void         buddyDied();
-   void         movieUpdated(const QRect&);
-   void         movieResized(const QSize&);
+      void linkActivated (const QString &);
+      void linkHovered (const QString &);
 
-private:
-   void        init();
-   void        clearContents();
-   void        updateLabel (QSize oldSizeHint);
-   QString     compressText (int paneWidth = -1) const;
-   QSize       sizeForWidth (int w) const;
+protected:
 
-   QString     ltext;
-   QString     mTipText;
-   bool        mIsMainTip;
-   QPixmap    *lpixmap;
-   Q3Picture   *lpicture;
-   QMovie     *lmovie;
-   Q3PopupMenu *popupMenu;
-   QString     popupBuffer;
-   QWidget    *lbuddy;
-   ushort      align;
-   short       extraMargin;
-   uint        autoresize:1;
-   uint        scaledcontents :1;
-   uint        baseheight;
-   Qt::TextFormat  textformat;
-   Q3Accel     *accel;
-   QLabelPrivate *d;
-   Q3SimpleRichText *doc;
-   bool        mMaxHeightMode;
+    virtual void init();
 
-   friend class QTipLabel;
-
-   QIRichLabel( const QIRichLabel & );
-   QIRichLabel &operator=( const QIRichLabel & );
+    /* Protected member vars */
+    QILabelPrivate *mLabel;
 };
 
 #endif // __QIRichLabel_h__

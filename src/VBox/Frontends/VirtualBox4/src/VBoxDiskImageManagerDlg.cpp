@@ -2003,8 +2003,8 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
     QLabel *nameLabel = new QLabel (aRoot);
     aInfo = new InfoPaneLabel (aRoot, nameLabel);
 
-    /* Setup focus policy <strong> default for info pane */
-    aInfo->setFocusPolicy (Qt::StrongFocus);
+    /* We would the full size selection mode */
+    aInfo->setFullSizeSelection (true);
 
     /* Prevent the name columns from being expanded */
     nameLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
