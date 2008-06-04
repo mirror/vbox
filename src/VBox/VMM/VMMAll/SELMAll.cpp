@@ -69,7 +69,7 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
     }
 
     return (RTGCPTR)( (RTGCUINTPTR)Addr
-                       + (   (Desc.Gen.u8BaseHigh2 << 24)
+                       + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
                           |  (Desc.Gen.u8BaseHigh1 << 16)
                           |   Desc.Gen.u16BaseLow));
 }
@@ -202,7 +202,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
 
         /* calc address assuming straight stuff. */
         pvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                           + (   (Desc.Gen.u8BaseHigh2 << 24)
+                           + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
                               |  (Desc.Gen.u8BaseHigh1 << 16)
                               |   Desc.Gen.u16BaseLow )
                              );
@@ -407,7 +407,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
                     *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                                           + (   (Desc.Gen.u8BaseHigh2 << 24)
+                                           + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
                                               |  (Desc.Gen.u8BaseHigh1 << 16)
                                               |   Desc.Gen.u16BaseLow)
                                              );
