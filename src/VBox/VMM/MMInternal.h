@@ -675,7 +675,7 @@ typedef struct MM
 
     /** The hypervisor heap (GC Ptr). */
     RCPTRTYPE(PMMHYPERHEAP)     pHyperHeapGC;
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 64
     uint32_t                    u32Padding2;
 #endif
     /** The hypervisor heap (HC Ptr). */
