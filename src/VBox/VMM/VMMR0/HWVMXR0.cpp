@@ -898,8 +898,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /* EIP, ESP and EFLAGS */
-    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->rip);
-    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->rsp);
+    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->eip);
+    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->esp);
     AssertRC(rc);
 
     /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
@@ -1352,13 +1352,13 @@ ResumeExecution:
     /* Let's first sync back eip, esp, and eflags. */
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RIP,              &val);
     AssertRC(rc);
-    pCtx->rip               = val;
+    pCtx->eip               = val;
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RSP,              &val);
     AssertRC(rc);
-    pCtx->rsp               = val;
+    pCtx->esp               = val;
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
     AssertRC(rc);
-    pCtx->rflags.u64        = val;
+    pCtx->eflags.u32        = val;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
