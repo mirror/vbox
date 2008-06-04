@@ -58,14 +58,14 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation> Définis l&apos;ordre des périphériques d&apos;amorçage. Utiliser la case à cocher située à gauche pour activer ou désactiver un périphérique. Déplacer les périphériquer vers le haut ou le bas pour changer leurs ordres.</translation>
+        <translation>Définis l&apos;ordre des périphériques d&apos;amorçage. Utilisez la case à cocher située à gauche pour activer ou désactiver un périphérique. Déplacez les périphériquer vers le haut ou le bas pour changer leurs ordres.</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
-        <translation>Le programme &lt;b&gt;%1&lt;/b&gt; nécessite QT%2.x, QT %3 à été trouvé.</translation>
+        <translation>Le programme &lt;b&gt;%1&lt;/b&gt; nécessite QT% 2.x, QT %3 à été trouvé.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
@@ -632,11 +632,11 @@ Version %1</source>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>&amp;Ejecter la disquette</translation>
+        <translation type="unfinished">Éjecter la d&amp;isquette</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Ejecter la disquette actuellement insérée</translation>
+        <translation>Éjecter la disquette actuellement insérée</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
@@ -648,11 +648,11 @@ Version %1</source>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Ejecter C&amp;D/DVD-ROM</translation>
+        <translation>Éjecter le C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Ejecter le médium CD/DVD-ROM actuellement inséré</translation>
+        <translation>Éjecter le médium CD/DVD-ROM actuellement inséré</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -661,7 +661,7 @@ Version %1</source>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>Écran à di&amp;stance</translation>
+        <translation>É&amp;cran à distance</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
@@ -673,7 +673,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Répertoire&amp;s partagés...</translation>
+        <translation>&amp;Répertoires partagés...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
@@ -681,7 +681,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Installer les Additions Client...</translation>
+        <translation>I&amp;nstaller les Additions Client...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
@@ -729,7 +729,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>Périphériques &amp;USB</translation>
+        <translation type="unfinished">&amp;Périphériques USB</translation>
     </message>
     <message>
         <source>&amp;VM</source>
@@ -951,7 +951,7 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le média CD/DVD/ROM : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le média CD/DVD-ROM : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -2592,11 +2592,11 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation>Ajouter un filtre a partir du périphérique</translation>
+        <translation>Ajouter un filtre à partir du périphérique</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation>Ajouter un filtre a partir &amp;du périphérique</translation>
+        <translation>Ajouter un filtre à partir &amp;du périphérique</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
@@ -3417,7 +3417,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>Le lancement de la machine virtuelle peu entraîner l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais ils es recommandé d&apos;effectuer les actions appropriées pour que ce défaut n&apos;apparaisse pas.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le lancement de la machine virtuelle peut entraîner l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais il es recommandé d&apos;effectuer les actions appropriées pour que cette erreur n&apos;apparaisse pas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -4757,7 +4757,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>Fichier &amp;Image</translation>
+        <translation>&amp;Fichier Image</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -4777,7 +4777,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera installé temporairement sur la machine virtuelle et cette dernière commencera l&apos;exècution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement déinstallé et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Notez que cette fonctionnalité dépend, entre autre,  du logiciel de mise en œuvre et que les actions doivent, éventuellement, être effectuées manuellement (&lt;b&gt;Déinstaller...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera installé temporairement sur la machine virtuelle et cette dernière commencera l&apos;exècution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement éjecté et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Notez que cette fonctionnalité dépend, entre autre, du logiciel de mise en œuvre et que les actions doivent, éventuellement, être effectuées manuellement (&lt;b&gt;Éjecter...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -5647,11 +5647,11 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Connecter la disquette</translation>
+        <translation>&amp;Insérrer une disquette</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Disquette hôte</translation>
+        <translation>Connecter le &amp;lecteur disquette hôte</translation>
     </message>
     <message>
         <source>Alt+D</source>
@@ -5681,15 +5681,15 @@ a Floppy image to mount.</source>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Connecter le lecteur C&amp;D/DVD-ROM</translation>
+        <translation>&amp;Insérrer un CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>&amp;Lecteur  CD/DVD hôte</translation>
+        <translation>Connecter le &amp;lecteur CD/DVD hôte</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Connecte le lecteur CD/DVD au lecteur virtuel CD/DVD.</translation>
+        <translation type="unfinished">Connecte le lecteur CD/DVD du hôte au lecteur virtuel.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to
@@ -5698,11 +5698,11 @@ the virtual machine.</source>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>Fichier image &amp;ISO</translation>
+        <translation>&amp;Fichier image ISO</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Attache l&apos;image CD/DVD sur le lecteur virtuel DC/DVD.</translation>
+        <translation>Insère l&apos;image CD/DVD dans le lecteur virtuel.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
@@ -5888,7 +5888,7 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Si la case est cochée, le média spécifié sera attaché au lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation>Si la case est cochée, le média spécifié sera insérré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
@@ -5896,7 +5896,7 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Si la case est cochée le média spécifié sera attaché au lecteur de disquette de la machine virtuelle.</translation>
+        <translation>Si la case est cochée le média spécifié sera insérré dans le lecteur de disquette de la machine virtuelle.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
@@ -6135,7 +6135,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Si la case est cochée, toutes les modifications (attachement de CD/DVD ou disquette) effectuées lors du fonctionnement de la machine virtuelle seront sauvegardés afin de préservé la dernière configuration.</translation>
+        <translation>Si la case est cochée, toutes les modifications des médias CD/DVD ou disquette effectuées lors du fonctionnement de la machine virtuelle seront sauvegardées afin de préserver la même configuration au lancement suivant de la machine.</translation>
     </message>
     <message>
         <source>O&amp;ther</source>
@@ -6143,7 +6143,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation>Activer le mode dir&amp;ect</translation>
+        <translation>&amp;Activer le mode direct</translation>
     </message>
     <message>
         <source>Alt+E</source>
@@ -6151,7 +6151,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Si la case est cochée, le client pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs CD/DVD a partir de la machine virtuelle. Notez que la gravure de CD audio n&apos;est pas possible actuellement.</translation>
+        <translation>Si la case est cochée, le client pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs CD/DVD à partir de la machine virtuelle. Notez que la gravure de CD audio n&apos;est pas possible actuellement.</translation>
     </message>
     <message>
         <source>&amp;Server Port </source>
@@ -6339,11 +6339,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation>Ajouter un filtre a partir du périphérique</translation>
+        <translation>Ajouter un filtre à partir du périphérique</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation>Ajouter un filtre a partir &amp;du périphérique</translation>
+        <translation>Ajouter un filtre à partir &amp;du périphérique</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
