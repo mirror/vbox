@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * CPUM - CPU Monitor(/Manager)
+ * CPUM - CPU Monitor / Manager.
  */
 
 /*
@@ -19,6 +19,18 @@
  * additional information or have any questions.
  */
 
+/** @page pg_cpum
+ * The CPU Monitor / Manager keeps track of all the CPU registers. It is
+ * also responsible for lazy FPU handling and some of the context loading
+ * in raw mode.
+ *
+ * There are three CPU contexts, the most important one is the guest one (GC).
+ * When running in raw-mode (RC) there is a special hyper context for the VMM
+ * that floats around inside the guest address space. When running in raw-mode
+ * or when using 64-bit guests on a 32-bit host, CPUM also maintains a host
+ * context for saving and restoring registers accross world switches. This latter
+ * is done in cooperation with the world switcher (@see pg_vmm).
+ */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -57,7 +69,7 @@
 *******************************************************************************/
 
 /**
- * What kind of cpu info dump to performe.
+ * What kind of cpu info dump to perform.
  */
 typedef enum CPUMDUMPTYPE
 {
@@ -65,15 +77,17 @@ typedef enum CPUMDUMPTYPE
     CPUMDUMPTYPE_DEFAULT,
     CPUMDUMPTYPE_VERBOSE
 
-} CPUMDUMPTYPE, *PCPUMDUMPTYPE;
+} CPUMDUMPTYPE;
+/** Pointer to a cpu info dump type. */
+typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int cpumR3CpuIdInit(PVM pVM);
-static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)  cpumR3Save(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -146,9 +160,7 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     }
     /* Bogus on AMD? */
     if (!pVM->cpum.s.CPUFeatures.edx.u1SEP)
-    {
         Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
-    }
 
     /*
      * Setup hypervisor startup values.
@@ -170,17 +182,13 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
         &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
         &&  uECX == X86_CPUID_VENDOR_AMD_ECX
         &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
-    {
         pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_AMD;
-    }
     else if (    uEAX >= 1
-                &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
-                &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
-                &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
-    {
+             &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
+             &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
+             &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
         pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_INTEL;
-    }
-    else /* @todo Via */
+    else /** @todo Via */
         pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_UNKNOWN;
 
     /*
@@ -501,7 +509,7 @@ CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
  */
 CPUMR3DECL(int) CPUMR3Term(PVM pVM)
 {
-    /** @todo */
+    /** @todo ? */
     return 0;
 }
 
@@ -529,7 +537,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->eflags.Bits.u1Reserved0   = 1;
 
     pCtx->cs                        = 0xf000;
-    pCtx->csHid.u32Base             = 0xffff0000;
+    pCtx->csHid.u32Base             = UINT32_C(0xffff0000);
     pCtx->csHid.u32Limit            = 0x0000ffff;
     pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
     pCtx->csHid.Attr.n.u1Present    = 1;
@@ -571,16 +579,15 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->trHid.Attr.n.u1Present    = 1;
     pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_286_TSS_BUSY;
 
-    pCtx->dr6                       = 0xFFFF0FF0;
+    pCtx->dr6                       = UINT32_C(0xFFFF0FF0);
     pCtx->dr7                       = 0x400;
 
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
     pCtx->fpu.FCW                   = 0x37f;
 
     /* Init PAT MSR */
-    pCtx->msrPAT                    = 0x0007040600070406ULL; /* @todo correct? */
+    pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
 }
-
 
 
 /**
@@ -1033,6 +1040,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     }
 #endif
 }
+
 
 /**
  * Get L1 cache / TLS associativity.
@@ -1868,8 +1876,8 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     return rc;
 }
 
-
 #ifdef DEBUG
+
 /**
  * Disassemble an instruction and dump it to the log
  *
@@ -1910,7 +1918,7 @@ CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *pre
     }
 }
 
-#endif
+#endif /* DEBUG */
 
 #ifdef DEBUG
 /**
@@ -1922,7 +1930,7 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
     pVM->cpum.s.GuestEntry = pVM->cpum.s.Guest;
 }
-#endif
+#endif /* DEBUG */
 
 
 /**
