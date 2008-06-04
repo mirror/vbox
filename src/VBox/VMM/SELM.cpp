@@ -1419,7 +1419,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
          * Guest TR is not NULL.
          */
         PVBOXDESC   pDesc = &pVM->selm.s.paGdtHC[SelTss >> X86_SEL_SHIFT];
-        RTGCPTR     GCPtrTss = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | (pDesc->Gen.u8BaseHigh2 << 24);
+        RTGCPTR     GCPtrTss = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | ((pDesc->Gen.u8BaseHigh2 << 24) & 0xff000000);
         unsigned    cbTss = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
         if (pDesc->Gen.u1Granularity)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
