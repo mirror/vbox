@@ -81,8 +81,8 @@ typedef struct VM              *PVM;
 typedef R0PTRTYPE(struct VM *)  PVMR0;
 /** Pointer to a VM - Ring-3 Ptr. */
 typedef R3PTRTYPE(struct VM *)  PVMR3;
-/** Pointer to a VM - GC Ptr. */
-typedef RCPTRTYPE(struct VM *)  PVMGC;
+/** Pointer to a VM - RC Ptr. */
+typedef RCPTRTYPE(struct VM *)  PVMRC;
 
 /** Pointer to a ring-0 (global) VM structure. */
 typedef R0PTRTYPE(struct GVM *) PGVM;
