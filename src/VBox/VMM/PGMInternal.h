@@ -1622,18 +1622,15 @@ typedef struct PGMPOOL
     /** The number of uncacheable allocations. */
     STAMCOUNTER     StatCacheUncacheable;
 # endif
-#elif HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+#elif HC_ARCH_BITS == 64
     uint32_t        Alignment1;         /**< Align the next member on a 64-bit boundrary. */
 #endif
     /** The AVL tree for looking up a page by its HC physical address. */
     AVLOHCPHYSTREE  HCPhysTree;
-    uint32_t        Alignment3;         /**< Align the next member on a 64-bit boundrary. */
+    uint32_t        Alignment2;         /**< Align the next member on a 64-bit boundrary. */
     /** Array of pages. (cMaxPages in length)
      * The Id is the index into thist array.
      */
-#if GC_ARCH_BITS == 64
-    uint32_t        Alignment4;
-#endif
     PGMPOOLPAGE     aPages[PGMPOOL_IDX_FIRST];
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
 
@@ -2293,10 +2290,10 @@ typedef struct PGM
 #ifdef VBOX_WITH_STATISTICS
     /** GC: Which statistic this \#PF should be attributed to. */
     RCPTRTYPE(PSTAMPROFILE)   pStatTrap0eAttributionGC;
-    RTGCPTR                   padding0;
+    RTRCPTR                   padding0;
     /** HC: Which statistic this \#PF should be attributed to. */
     R3R0PTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionHC;
-    RTHCPTR                 padding1;
+    RTHCPTR                   padding1;
     STAMPROFILE     StatGCTrap0e;                       /**< GC: PGMGCTrap0eHandler() profiling. */
     STAMPROFILE     StatTrap0eCSAM;                     /**< Profiling of the Trap0eHandler body when the cause is CSAM. */
     STAMPROFILE     StatTrap0eDirtyAndAccessedBits;     /**< Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
