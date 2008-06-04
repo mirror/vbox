@@ -3148,7 +3148,7 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 
         //case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
-            GCPhysCR3 = CPUMGetGuestCR3(pVM) & 0xfffffffffffff000ULL; /** @todo define this mask and make CR3 64-bit in this case! */
+            GCPhysCR3 = CPUMGetGuestCR3(pVM) & 0xfffffffffffff000ULL; /** @todo define this mask! */
             rc = PGM_GST_NAME_AMD64(Enter)(pVM, GCPhysCR3);
             switch (pVM->pgm.s.enmShadowMode)
             {

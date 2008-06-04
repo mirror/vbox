@@ -783,7 +783,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK | RT_BIT(16));
+                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK | RT_BIT(X86_XCPT_MF));
                     AssertRC(rc);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
                 }
@@ -836,9 +836,12 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
         case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
         case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
+#ifdef VBOX_ENABLE_64_BITS_GUESTS
+            break;
+#else
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
-
+#endif
         default:                   /* shut up gcc */
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
@@ -895,8 +898,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /* EIP, ESP and EFLAGS */
-    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->eip);
-    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->esp);
+    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->rip);
+    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->rsp);
     AssertRC(rc);
 
     /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
@@ -977,11 +980,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
 {
     int         rc = VINF_SUCCESS;
-    RTCCUINTREG val, valShadow;
-    RTCCUINTREG exitReason, instrError, cbInstr;
-    RTGCUINTPTR exitQualification;
-    RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
-    RTGCUINTPTR errCode, instrInfo, uInterruptState;
+    uint64_t    val, valShadow;
+    uint64_t    exitReason, instrError, cbInstr;
+    uint64_t    exitQualification;
+    uint64_t    intInfo = 0; /* shut up buggy gcc 4 */
+    uint64_t    errCode, instrInfo, uInterruptState;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
 
@@ -1349,13 +1352,13 @@ ResumeExecution:
     /* Let's first sync back eip, esp, and eflags. */
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RIP,              &val);
     AssertRC(rc);
-    pCtx->eip               = val;
+    pCtx->rip               = val;
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RSP,              &val);
     AssertRC(rc);
-    pCtx->esp               = val;
+    pCtx->rsp               = val;
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
     AssertRC(rc);
-    pCtx->eflags.u32        = val;
+    pCtx->rflags.u64        = val;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
