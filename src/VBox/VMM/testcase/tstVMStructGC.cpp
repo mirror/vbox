@@ -492,6 +492,9 @@ int main()
     GEN_CHECK_OFF(PGM, cSharedPages);
     GEN_CHECK_OFF(PGM, cZeroPages);
     GEN_CHECK_OFF(PGM, cGuestModeChanges);
+#ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionHC);
+#endif
 
     GEN_CHECK_SIZE(PGMMAPPING);
     GEN_CHECK_OFF(PGMMAPPING, pNextR3);
