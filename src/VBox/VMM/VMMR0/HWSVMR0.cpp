@@ -674,15 +674,15 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /* EIP, ESP and EFLAGS */
-    pVMCB->guest.u64RIP    = pCtx->rip;
-    pVMCB->guest.u64RSP    = pCtx->rsp;
-    pVMCB->guest.u64RFlags = pCtx->rflags.u64;
+    pVMCB->guest.u64RIP    = pCtx->eip;
+    pVMCB->guest.u64RSP    = pCtx->esp;
+    pVMCB->guest.u64RFlags = pCtx->eflags.u32;
 
     /* Set CPL */
     pVMCB->guest.u8CPL     = pCtx->ssHid.Attr.n.u2Dpl;
 
     /* RAX/EAX too, as VMRUN uses RAX as an implicit parameter. */
-    pVMCB->guest.u64RAX    = pCtx->rax;
+    pVMCB->guest.u64RAX    = pCtx->eax;
 
     /* vmrun will fail without MSR_K6_EFER_SVME. */
     pVMCB->guest.u64EFER   = pCtx->msrEFER | MSR_K6_EFER_SVME;
@@ -1034,11 +1034,11 @@ ResumeExecution:
     }
 
     /* Let's first sync back eip, esp, and eflags. */
-    pCtx->rip        = pVMCB->guest.u64RIP;
-    pCtx->rsp        = pVMCB->guest.u64RSP;
-    pCtx->rflags.u64 = pVMCB->guest.u64RFlags;
+    pCtx->eip        = pVMCB->guest.u64RIP;
+    pCtx->esp        = pVMCB->guest.u64RSP;
+    pCtx->eflags.u32 = pVMCB->guest.u64RFlags;
     /* eax is saved/restore across the vmrun instruction */
-    pCtx->rax        = pVMCB->guest.u64RAX;
+    pCtx->eax        = pVMCB->guest.u64RAX;
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     SVM_READ_SELREG(SS, ss);
