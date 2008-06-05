@@ -276,6 +276,9 @@ CGImageRef darwinCreateDockBadge (const char *aSource);
 void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
 void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
 
+/* Icons in the menu of an mac application is unusual. */
+void darwinDisableIconsInMenus();
+
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 

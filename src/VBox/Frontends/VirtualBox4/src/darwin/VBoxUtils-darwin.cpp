@@ -33,6 +33,10 @@
 #include <QPainter>
 #include <QApplication>
 
+#if QT_VERSION < 0x040400
+extern void qt_mac_set_menubar_icons(bool b);
+#endif /* QT_VERSION < 0x040400 */
+
 /**
  * Callback for deleting the QImage object when CGImageCreate is done
  * with it (which is probably not until the returned CFGImageRef is released).
@@ -253,6 +257,17 @@ void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
     CGColorSpaceRelease (cs);
+}
+
+void darwinDisableIconsInMenus()
+{
+    /* No icons in the menu of a mac application. */
+#if QT_VERSION < 0x040400
+    qt_mac_set_menubar_icons (false);
+#else /* QT_VERSION < 0x040400 */
+    /* Available since Qt 4.4 only */
+    a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
+#endif /* QT_VERSION >= 0x040400 */
 }
 
 /* Currently not used! */

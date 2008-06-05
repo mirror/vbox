@@ -26,6 +26,7 @@
 #include "VBoxConsoleWnd.h"
 #ifdef Q_WS_MAC
 # include "QIApplication.h"
+# include "VBoxUtils.h"
 #else
 # define QIApplication QApplication
 #endif
@@ -194,9 +195,7 @@ int main (int argc, char **argv)
                       pal.color (QPalette::Inactive, QColorGroup::Background));
         a.setPalette (pal);
 #else /* !Q_WS_MAC */
-        /* No icons in the menu of a mac application. */
-        /* Available since Qt 4.4 only */
-//        a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
+        ::darwinDisableIconsInMenus();
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
