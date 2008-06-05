@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Multiprocessor, Generic RTMpDoesCpuExist.
+ * IPRT - Multiprocessor, Generic RTMpIsCpuPossible.
  */
 
 /*
@@ -35,7 +35,7 @@
 #include <iprt/mp.h>
 
 
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     return RTMpCpuId() == idCpu;
 }

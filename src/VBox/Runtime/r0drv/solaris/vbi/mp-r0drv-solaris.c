@@ -71,7 +71,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 }
 
 
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     return idCpu < vbi_cpu_count();
 }
@@ -85,7 +85,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
     idCpu = RTMpGetMaxCpuId(); /* it's inclusive */
     do
     {
-        if (RTMpDoesCpuExist(idCpu))
+        if (RTMpIsCpuPossible(idCpu))
             RTCpuSetAdd(pSet, idCpu);
     } while (idCpu-- > 0);
 

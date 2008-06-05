@@ -94,26 +94,30 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     if (idCpu >= MAXIMUM_PROCESSORS)
         return false;
 
+    /** @todo this must be done at init time as it's not safe under all circumstances (braindead OS design). */
     KAFFINITY Mask = KeQueryActiveProcessors();
     return !!(Mask & RT_BIT_64(idCpu));
 }
 
 
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
 {
     /* Cannot easily distinguish between online and offline cpus. */
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
     return RTMpIsCpuOnline(idCpu);
 }
 
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
     return RTMpGetOnlineSet(pSet);
 }
 
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
     return RTMpGetOnlineCount();
 }
 
@@ -166,17 +170,12 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
 
 #if 0
     /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL according to MSDN, but the
-     * driver verifier doesn't complain... 
+     * driver verifier doesn't complain...
      */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
 #endif
 
     KAFFINITY Mask = KeQueryActiveProcessors();
-
-    if (    enmCpuid == RT_NT_CPUID_SPECIFIC
-        &&  (   idCpu >= 64
-             || !(Mask & RT_BIT_64(idCpu))))
-        return VERR_CPU_NOT_FOUND;  /* can't distinguish between cpu not present or offline */
 
     /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we can just fail this call. */
     UNICODE_STRING  RoutineName;
@@ -243,9 +242,7 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
             }
         }
         if (enmCpuid != RT_NT_CPUID_OTHERS)
-        {
             pfnWorker(iSelf, pvUser1, pvUser2);
-        }
     }
 
     KeLowerIrql(oldIrql);
@@ -269,6 +266,9 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
+    if (RTMpIsCpuOnline(idCpu);
+        return !RTMpIsCpuPossible(idCpu) ? VERR_CPU_NOT_FOUND : VERR_CPU_OFFLINE;
+
     return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
 }
 

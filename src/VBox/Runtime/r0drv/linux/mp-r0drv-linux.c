@@ -65,32 +65,15 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 }
 
 
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP)
     if (RT_UNLIKELY(idCpu >= NR_CPUS))
         return false;
-# ifdef cpu_online
-    return cpu_online(idCpu);
-# else /* 2.4: */
-    return cpu_online_map & RT_BIT_64(idCpu);
-# endif
-#else
-    return idCpu == RTMpCpuId();
-#endif
-}
 
-
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
-{
-#ifdef CONFIG_SMP
-    if (RT_UNLIKELY(idCpu >= NR_CPUS))
-        return false;
-# ifdef CONFIG_HOTPLUG_CPU /* introduced & uses cpu_present */
-    return cpu_present(idCpu);
-# elif defined(cpu_possible)
+# if defined(cpu_possible)
     return cpu_possible(idCpu);
-# else /* 2.4: */
+# else /* < 2.5.29 */
     return idCpu < (RTCPUID)smp_num_cpus;
 # endif
 #else
@@ -107,7 +90,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
     idCpu = RTMpGetMaxCpuId();
     do
     {
-        if (RTMpDoesCpuExist(idCpu))
+        if (RTMpIsCpuPossible(idCpu))
             RTCpuSetAdd(pSet, idCpu);
     } while (idCpu-- > 0);
     return pSet;
@@ -130,6 +113,22 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 # endif
 #else
     return 1;
+#endif
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+#ifdef CONFIG_SMP
+    if (RT_UNLIKELY(idCpu >= NR_CPUS))
+        return false;
+# ifdef cpu_online
+    return cpu_online(idCpu);
+# else /* 2.4: */
+    return cpu_online_map & RT_BIT_64(idCpu);
+# endif
+#else
+    return idCpu == RTMpCpuId();
 #endif
 }
 
@@ -271,7 +270,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.idCpu = idCpu;
     Args.cHits = 0;
 
-    if (!RTMpDoesCpuExist(idCpu))
+    if (!RTMpIsCpuPossible(idCpu))
         return VERR_CPU_NOT_FOUND;
 
 # ifdef preempt_disable
