@@ -297,11 +297,9 @@ typedef struct CPUMCTX
     /** Global Descriptor Table register. */
     VBOXGDTR        gdtr;
     uint16_t        gdtrPadding;
-    uint32_t        gdtrPadding64;/** @todo fix this hack */
     /** Interrupt Descriptor Table register. */
     VBOXIDTR        idtr;
     uint16_t        idtrPadding;
-    uint32_t        idtrPadding64;/** @todo fix this hack */
     /** The task register.
      * Only the guest context uses all the members. */
     RTSEL           ldtr;

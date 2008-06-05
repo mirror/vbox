@@ -54,7 +54,7 @@ struc TRPM
     .aTmpTrapHandlers   RTRCPTR_RES 256
 
     .GCPtrIdt           RTRCPTR_RES 1
-    .GuestIdtr          resb 6
+    .GuestIdtr          resb 10
     .au8Padding         resb 2
 
     .aGuestTrapHandler  RTRCPTR_RES 256

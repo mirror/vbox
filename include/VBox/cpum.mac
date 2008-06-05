@@ -173,12 +173,10 @@ struc CPUMCTX
     .dr6            resq    1
     .dr7            resq    1
 
-    .gdtr           resb    6           ; GDT limit + linear address
+    .gdtr           resb    10          ; GDT limit + linear address
     .gdtrPadding    resw    1
-    .gdtrPadding64  resd    1
-    .idtr           resb    6           ; IDT limit + linear address
+    .idtr           resb    10          ; IDT limit + linear address
     .idtrPadding    resw    1
-    .idtrPadding64  resd    1
     .ldtr           resw    1
     .ldtrPadding    resw    1
     .tr             resw    1
