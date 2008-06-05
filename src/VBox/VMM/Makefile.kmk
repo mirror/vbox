@@ -155,7 +155,6 @@ VMMR3_DEFS.linux += __USE_FILE_OFFSET64 __USE_LARGEFILE64
 VMMR3_SOURCES += PDMAsyncCompletion.cpp
 VMMR3_SOURCES.linux += \
 	PDMAsyncCompletionSocketPosix.cpp \
-	PDMAsyncCompletionHostLinux.cpp \
 	PDMAsyncCompletionHostPosix.cpp
 
 VMMR3_SOURCES.win += \
@@ -201,11 +200,11 @@ VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
 VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
 VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
 VBoxVMM_LDFLAGS.solaris = -mimpure-text
-ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
- ifeq ($(KBUILD_HOST), linux)
-VBoxVMM_LIBS += aio
- endif
-endif
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+# ifeq ($(KBUILD_HOST), linux)
+#VBoxVMM_LIBS += aio
+# endif
+#endif
 
 ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
 
