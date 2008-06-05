@@ -292,7 +292,7 @@ GLOBALNAME FarJmpGCTarget
     DEBUG_CHAR('3')
     mov     eax, [edx + CPUM.Hyper.esp]
     mov     [edx + CPUM.Hyper.lss_esp], eax
-    lss     esp, [edx + CPUM.Hyper.esp]
+    lss     esp, [edx + CPUM.Hyper.lss_esp]
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     DEBUG_CHAR('4')
