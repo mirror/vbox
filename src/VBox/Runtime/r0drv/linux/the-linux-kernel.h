@@ -174,7 +174,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 /** @def TICK_NSEC
  * The time between ticks in nsec */
 #ifndef TICK_NSEC
-# define TICK_NSEC (1000000UL / HZ)
+# define TICK_NSEC (1000000000UL / HZ)
 #endif
 
 /*
