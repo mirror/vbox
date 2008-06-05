@@ -809,11 +809,11 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 /**
  * Dumps a descriptor.
  *
- * @param   Desc    Descriptor to dump.
+ * @param   pDesc    Descriptor to dump.
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC Desc, RTSEL Sel, const char *pszMsg)
+HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
@@ -884,23 +884,23 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC Desc, RTSEL Sel, const char
     #define ADD_STR(psz, pszAdd) do { strcpy(psz, pszAdd); psz += strlen(pszAdd); } while (0)
     char        szMsg[128];
     char       *psz = &szMsg[0];
-    unsigned    i = Desc->Gen.u1DescType << 4 | Desc->Gen.u4Type;
+    unsigned    i = pDesc->Gen.u1DescType << 4 | pDesc->Gen.u4Type;
     memcpy(psz, aTypes[i].psz, aTypes[i].cch);
     psz += aTypes[i].cch;
 
-    if (Desc->Gen.u1Present)
+    if (pDesc->Gen.u1Present)
         ADD_STR(psz, "Present ");
     else
         ADD_STR(psz, "Not-Present ");
 #if HC_ARCH_BITS == 64
-    if (Desc->Gen.u1Long)
+    if (pDesc->Gen.u1Long)
         ADD_STR(psz, "64-bit ");
     else
         ADD_STR(psz, "Comp   ");
 #else
-    if (Desc->Gen.u1Granularity)
+    if (pDesc->Gen.u1Granularity)
         ADD_STR(psz, "Page ");
-    if (Desc->Gen.u1DefBig)
+    if (pDesc->Gen.u1DefBig)
         ADD_STR(psz, "32-bit ");
     else
         ADD_STR(psz, "16-bit ");
@@ -911,20 +911,20 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC Desc, RTSEL Sel, const char
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = Desc->Gen.u4LimitHigh << 16 | Desc->Gen.u16LimitLow;
-    if (Desc->Gen.u1Granularity)
+    uint32_t    u32Limit = pDesc->Gen.u4LimitHigh << 16 | pDesc->Gen.u16LimitLow;
+    if (pDesc->Gen.u1Granularity)
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
 
 #if HC_ARCH_BITS == 64
-    uint64_t    u32Base =  X86DESC64_BASE(Desc);
+    uint64_t    u32Base =  X86DESC64_BASE(*pDesc);
 
     Log(("%s %04x - %VX64 %VX64 - base=%VX64 limit=%08x dpl=%d %s\n", pszMsg,
-         Sel, Desc->au64[0], Desc->au64[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));
+         Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 #else
-    uint32_t    u32Base =  X86DESC_BASE(Desc);
+    uint32_t    u32Base =  X86DESC_BASE(*pDesc);
 
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
-         Sel, Desc->au32[0], Desc->au32[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));
+         Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 #endif
 }
 
