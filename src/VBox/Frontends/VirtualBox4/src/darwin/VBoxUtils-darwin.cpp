@@ -266,7 +266,7 @@ void darwinDisableIconsInMenus()
     qt_mac_set_menubar_icons (false);
 #else /* QT_VERSION < 0x040400 */
     /* Available since Qt 4.4 only */
-    a.setAttribute (Qt::AA_DontShowIconsInMenus, true);
+    QApplication::instance()->setAttribute (Qt::AA_DontShowIconsInMenus, true);
 #endif /* QT_VERSION >= 0x040400 */
 }
 
