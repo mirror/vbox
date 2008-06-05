@@ -911,7 +911,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = pDesc->Gen.u4LimitHigh << 16 | pDesc->Gen.u16LimitLow;
+    uint32_t    u32Limit = X86DESC_LIMIT(*pDesc);
     if (pDesc->Gen.u1Granularity)
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
 
