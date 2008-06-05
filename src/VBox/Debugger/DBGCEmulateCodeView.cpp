@@ -1345,29 +1345,29 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                 "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                 "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                "%scs={%04x base=%08x limit=%08x flags=%08x} %sdr0=%08x %sdr1=%08x\n"
-                "%sds={%04x base=%08x limit=%08x flags=%08x} %sdr2=%08x %sdr3=%08x\n"
-                "%ses={%04x base=%08x limit=%08x flags=%08x} %sdr4=%08x %sdr5=%08x\n"
-                "%sfs={%04x base=%08x limit=%08x flags=%08x} %sdr6=%08x %sdr7=%08x\n"
-                "%sgs={%04x base=%08x limit=%08x flags=%08x} %scr0=%08x %scr2=%08x\n"
-                "%sss={%04x base=%08x limit=%08x flags=%08x} %scr3=%08x %scr4=%08x\n"
+                "%scs={%04x base=%VGv limit=%08x flags=%08x} %sdr0=%08x %sdr1=%08x\n"
+                "%sds={%04x base=%VGv limit=%08x flags=%08x} %sdr2=%08x %sdr3=%08x\n"
+                "%ses={%04x base=%VGv limit=%08x flags=%08x} %sdr4=%08x %sdr5=%08x\n"
+                "%sfs={%04x base=%VGv limit=%08x flags=%08x} %sdr6=%08x %sdr7=%08x\n"
+                "%sgs={%04x base=%VGv limit=%08x flags=%08x} %scr0=%08x %scr2=%08x\n"
+                "%sss={%04x base=%VGv limit=%08x flags=%08x} %scr3=%08x %scr4=%08x\n"
                 "%sgdtr=%08x:%04x  %sidtr=%08x:%04x  %seflags=%08x\n"
-                "%sldtr={%04x base=%08x limit=%08x flags=%08x}\n"
-                "%str  ={%04x base=%08x limit=%08x flags=%08x}\n"
+                "%sldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
+                "%str  ={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                 "%sFCW=%04x %sFSW=%04x %sFTW=%04x\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                 pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u32Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
-                pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u32Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
-                pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
-                pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
-                pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u32Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u32Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
+                pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
+                pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
+                pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
+                pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                 pszPrefix, pCtx->gdtr.pGdt,pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, pCtxCore->eflags,
-                pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u32Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u32Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
+                pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
                 pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
                 pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
         }
