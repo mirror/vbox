@@ -65,15 +65,7 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 }
 
 
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
-{
-    cpu_t *pCpu = idCpu < NCPU ? cpu_get(idCpu) : NULL;
-    return pCpu
-        && cpu_is_online(pCpu);
-}
-
-
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     cpu_t *pCpu = idCpu < NCPU ? cpu_get(idCpu) : NULL;
     return pCpu != NULL;
@@ -88,7 +80,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
     idCpu = RTMpGetMaxCpuId(); /* it's inclusive */
     do
     {
-        if (RTMpDoesCpuExist(idCpu))
+        if (RTMpIsCpuPossible(idCpu))
             RTCpuSetAdd(pSet, idCpu);
     } while (idCpu-- > 0);
 
@@ -99,6 +91,14 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
     return ncpus;
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    cpu_t *pCpu = idCpu < NCPU ? cpu_get(idCpu) : NULL;
+    return pCpu
+        && cpu_is_online(pCpu);
 }
 
 

@@ -66,7 +66,7 @@ RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
  * Converts a CPU set index to a a CPU identifier.
  *
  * This may or may not validate the precense of the CPU, so, use
- * RTMpDoesCpuExist for that.
+ * RTMpIsCpuPossible for that.
  *
  * @returns The corresponding CPU identifier, NIL_RTCPUID on failure.
  * @param   iCpu    The CPU set index.
@@ -84,26 +84,16 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu);
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void);
 
 /**
- * Checks if a CPU is online or not.
+ * Checks if a CPU exists in the system or may possibly be hotplugged later.
  *
  * @returns true/false accordingly.
  * @param   idCpu       The identifier of the CPU.
  */
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu);
 
 /**
- * Checks if a CPU exist or not / validates a CPU id.
- *
- * @returns true/false accordingly.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
-
-/**
- * Gets set of the CPUs present in the system.
- *
- * This may or may not validate the precense of the CPU, so, use
- * RTMpDoesCpuExist for that.
+ * Gets set of the CPUs present in the system pluss any that may
+ * possibly be hotplugged later.
  *
  * @returns pSet.
  * @param   pSet    Where to put the set.
@@ -111,7 +101,8 @@ RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
 
 /**
- * Get the count of CPUs presetn in the system.
+ * Get the count of CPUs present in the system plus any that may
+ * possibly be hotplugged later.
  *
  * @return The count.
  */
@@ -131,6 +122,14 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet);
  * @return The count.
  */
 RTDECL(RTCPUID) RTMpGetOnlineCount(void);
+
+/**
+ * Checks if a CPU is online or not.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
 
 
 #ifdef IN_RING0

@@ -61,14 +61,7 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 }
 
 
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
-{
-    RTCPUSET Set;
-    return RTCpuSetIsMember(RTMpGetOnlineSet(&Set), idCpu);
-}
-
-
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     RTCPUSET Set;
     return RTCpuSetIsMember(RTMpGetSet(&Set), idCpu);
@@ -92,6 +85,13 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     if (rc || !cCpus)
         cCpus = 1;
     return cCpus;
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    RTCPUSET Set;
+    return RTCpuSetIsMember(RTMpGetOnlineSet(&Set), idCpu);
 }
 
 

@@ -66,7 +66,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 }
 
 
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     RTCPUSET Set;
     return RTCpuSetIsMember(RTMpGetSet(&Set), idCpu);

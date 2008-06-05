@@ -44,7 +44,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
     idCpu = RTMpGetMaxCpuId();
     do
     {
-        if (RTMpDoesCpuExist(idCpu))
+        if (RTMpIsCpuPossible(idCpu))
             RTCpuSetAdd(pSet, idCpu);
     } while (idCpu-- > 0);
     return pSet;
