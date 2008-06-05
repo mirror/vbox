@@ -898,8 +898,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /* EIP, ESP and EFLAGS */
-    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->eip);
-    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->esp);
+    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_RIP,              pCtx->rip);
+    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_RSP,              pCtx->rsp);
     AssertRC(rc);
 
     /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
@@ -950,16 +950,16 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
      */
     val = (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF);
 
-    /* 64 bits guest mode? */
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
-
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
     val &= (pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL);
     /* else Must be zero when AMD64 is not available. */
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
     AssertRC(rc);
+
+    /* 64 bits guest mode? */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1337,6 +1337,17 @@ ResumeExecution:
     exitQualification = val;
     AssertRC(rc);
 
+    /* Let's first sync back eip, esp, and eflags. */
+    rc = VMXReadVMCS(VMX_VMCS_GUEST_RIP,              &val);
+    AssertRC(rc);
+    pCtx->rip               = val;
+    rc = VMXReadVMCS(VMX_VMCS_GUEST_RSP,              &val);
+    AssertRC(rc);
+    pCtx->rsp               = val;
+    rc = VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
+    AssertRC(rc);
+    pCtx->eflags.u32        = val;
+
     /* Take care of instruction fusing (sti, mov ss) */
     rc |= VMXReadVMCS(VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE, &val);
     uInterruptState = val;
@@ -1348,17 +1359,6 @@ ResumeExecution:
     }
     else
         VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
-
-    /* Let's first sync back eip, esp, and eflags. */
-    rc = VMXReadVMCS(VMX_VMCS_GUEST_RIP,              &val);
-    AssertRC(rc);
-    pCtx->eip               = val;
-    rc = VMXReadVMCS(VMX_VMCS_GUEST_RSP,              &val);
-    AssertRC(rc);
-    pCtx->esp               = val;
-    rc = VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
-    AssertRC(rc);
-    pCtx->eflags.u32        = val;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))

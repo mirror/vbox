@@ -288,8 +288,10 @@ GLOBALNAME FarJmpGCTarget
     mov     gs, eax
     mov     fs, eax
 
-    ; Setup stack
+    ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('3')
+    mov     eax, [edx + CPUM.Hyper.esp]
+    mov     [edx + CPUM.Hyper.lss_esp], eax
     lss     esp, [edx + CPUM.Hyper.esp]
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)

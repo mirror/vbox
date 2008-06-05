@@ -545,7 +545,7 @@
 #ifdef IN_GC
 # define DECLGCCALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
 #else
-# define DECLGCCALLBACKMEMBER(type, name, args)  RTGCPTR32 name
+# define DECLGCCALLBACKMEMBER(type, name, args)  RTRCPTR name
 #endif
 
 /** @def DECLR0CALLBACKMEMBER
