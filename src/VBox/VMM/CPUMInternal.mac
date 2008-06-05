@@ -205,27 +205,27 @@ struc CPUM
     .Hyper.r14            resq    1
     .Hyper.r15            resq    1
 
-    .Hyper.esHid.u32Base      resd    1
+    .Hyper.esHid.u64Base      resq    1
     .Hyper.esHid.u32Limit     resd    1
     .Hyper.esHid.Attr         resd    1
 
-    .Hyper.csHid.u32Base      resd    1
+    .Hyper.csHid.u64Base      resq    1
     .Hyper.csHid.u32Limit     resd    1
     .Hyper.csHid.Attr         resd    1
 
-    .Hyper.ssHid.u32Base      resd    1
+    .Hyper.ssHid.u64Base      resq    1
     .Hyper.ssHid.u32Limit     resd    1
     .Hyper.ssHid.Attr         resd    1
 
-    .Hyper.dsHid.u32Base      resd    1
+    .Hyper.dsHid.u64Base      resq    1
     .Hyper.dsHid.u32Limit     resd    1
     .Hyper.dsHid.Attr         resd    1
 
-    .Hyper.fsHid.u32Base      resd    1
+    .Hyper.fsHid.u64Base      resq    1
     .Hyper.fsHid.u32Limit     resd    1
     .Hyper.fsHid.Attr         resd    1
 
-    .Hyper.gsHid.u32Base      resd    1
+    .Hyper.gsHid.u64Base      resq    1
     .Hyper.gsHid.u32Limit     resd    1
     .Hyper.gsHid.Attr         resd    1
 
@@ -269,11 +269,11 @@ struc CPUM
     .Hyper.msrGSBASE          resb    8
     .Hyper.msrKERNELGSBASE    resb    8
 
-    .Hyper.ldtrHid.u32Base    resd    1
+    .Hyper.ldtrHid.u64Base    resq    1
     .Hyper.ldtrHid.u32Limit   resd    1
     .Hyper.ldtrHid.Attr       resd    1
 
-    .Hyper.trHid.u32Base      resd    1
+    .Hyper.trHid.u64Base      resq    1
     .Hyper.trHid.u32Limit     resd    1
     .Hyper.trHid.Attr         resd    1
 
@@ -321,27 +321,27 @@ struc CPUM
     .Guest.r14            resq    1
     .Guest.r15            resq    1
 
-    .Guest.esHid.u32Base      resd    1
+    .Guest.esHid.u64Base      resq    1
     .Guest.esHid.u32Limit     resd    1
     .Guest.esHid.Attr         resd    1
 
-    .Guest.csHid.u32Base      resd    1
+    .Guest.csHid.u64Base      resq    1
     .Guest.csHid.u32Limit     resd    1
     .Guest.csHid.Attr         resd    1
 
-    .Guest.ssHid.u32Base      resd    1
+    .Guest.ssHid.u64Base      resq    1
     .Guest.ssHid.u32Limit     resd    1
     .Guest.ssHid.Attr         resd    1
 
-    .Guest.dsHid.u32Base      resd    1
+    .Guest.dsHid.u64Base      resq    1
     .Guest.dsHid.u32Limit     resd    1
     .Guest.dsHid.Attr         resd    1
 
-    .Guest.fsHid.u32Base      resd    1
+    .Guest.fsHid.u64Base      resq    1
     .Guest.fsHid.u32Limit     resd    1
     .Guest.fsHid.Attr         resd    1
 
-    .Guest.gsHid.u32Base      resd    1
+    .Guest.gsHid.u64Base      resq    1
     .Guest.gsHid.u32Limit     resd    1
     .Guest.gsHid.Attr         resd    1
 
@@ -385,11 +385,11 @@ struc CPUM
     .Guest.msrGSBASE          resb    8
     .Guest.msrKERNELGSBASE    resb    8
 
-    .Guest.ldtrHid.u32Base    resd    1
+    .Guest.ldtrHid.u64Base    resq    1
     .Guest.ldtrHid.u32Limit   resd    1
     .Guest.ldtrHid.Attr       resd    1
 
-    .Guest.trHid.u32Base      resd    1
+    .Guest.trHid.u64Base      resq    1
     .Guest.trHid.u32Limit     resd    1
     .Guest.trHid.Attr         resd    1
 
@@ -435,7 +435,7 @@ struc CPUM
     .GuestCpuIdDef        resb    16
 
     ; CPUMCTX debug stuff...
-    .GuestEntry           resb   1024
+    .GuestEntry           resb   1056
 
 endstruc
 

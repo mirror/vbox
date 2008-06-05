@@ -139,7 +139,7 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 #define VMX_WRITE_SELREG(REG, reg) \
         rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_##REG,      pCtx->reg);                         \
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);           \
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u32Base);            \
+        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);            \
         if (pCtx->eflags.u32 & X86_EFL_VM)                                                      \
             val = pCtx->reg##Hid.Attr.u;                                                        \
         else                                                                                    \
@@ -156,7 +156,7 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
         VMXReadVMCS(VMX_VMCS_GUEST_##REG##_LIMIT,         &val);     \
         pCtx->reg##Hid.u32Limit    = val;                            \
         VMXReadVMCS(VMX_VMCS_GUEST_##REG##_BASE,          &val);     \
-        pCtx->reg##Hid.u32Base     = val;                            \
+        pCtx->reg##Hid.u64Base     = val;                            \
         VMXReadVMCS(VMX_VMCS_GUEST_##REG##_ACCESS_RIGHTS, &val);     \
         pCtx->reg##Hid.Attr.u    = val;
 

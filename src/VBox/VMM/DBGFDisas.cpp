@@ -322,7 +322,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     if (    pHiddenSel
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
-        SelInfo.GCPtrBase           = pHiddenSel->u32Base;
+        SelInfo.GCPtrBase           = pHiddenSel->u64Base;
         SelInfo.cbLimit             = pHiddenSel->u32Limit;
         SelInfo.fHyper              = false;
         SelInfo.fRealMode           = !!((pCtxCore && pCtxCore->eflags.Bits.u1VM) || enmMode == PGMMODE_REAL);

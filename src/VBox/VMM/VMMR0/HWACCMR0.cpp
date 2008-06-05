@@ -980,30 +980,30 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx)
      */
     Log(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
          "eip=%08x esp=%08x ebp=%08x iopl=%d %*s\n"
-         "cs={%04x base=%08x limit=%08x flags=%08x} dr0=%08RX64 dr1=%08RX64\n"
-         "ds={%04x base=%08x limit=%08x flags=%08x} dr2=%08RX64 dr3=%08RX64\n"
-         "es={%04x base=%08x limit=%08x flags=%08x} dr4=%08RX64 dr5=%08RX64\n"
-         "fs={%04x base=%08x limit=%08x flags=%08x} dr6=%08RX64 dr7=%08RX64\n"
+         "cs={%04x base=%VGv limit=%08x flags=%08x} dr0=%08RX64 dr1=%08RX64\n"
+         "ds={%04x base=%VGv limit=%08x flags=%08x} dr2=%08RX64 dr3=%08RX64\n"
+         "es={%04x base=%VGv limit=%08x flags=%08x} dr4=%08RX64 dr5=%08RX64\n"
+         "fs={%04x base=%VGv limit=%08x flags=%08x} dr6=%08RX64 dr7=%08RX64\n"
          ,
          pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
          pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), 31, szEFlags,
-         (RTSEL)pCtx->cs, pCtx->csHid.u32Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pCtx->dr0,  pCtx->dr1,
-         (RTSEL)pCtx->ds, pCtx->dsHid.u32Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pCtx->dr2,  pCtx->dr3,
-         (RTSEL)pCtx->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pCtx->dr4,  pCtx->dr5,
-         (RTSEL)pCtx->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pCtx->dr6,  pCtx->dr7));
+         (RTSEL)pCtx->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pCtx->dr0,  pCtx->dr1,
+         (RTSEL)pCtx->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pCtx->dr2,  pCtx->dr3,
+         (RTSEL)pCtx->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pCtx->dr4,  pCtx->dr5,
+         (RTSEL)pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pCtx->dr6,  pCtx->dr7));
 
-    Log(("gs={%04x base=%08x limit=%08x flags=%08x} cr0=%08RX64 cr2=%08RX64\n"
-         "ss={%04x base=%08x limit=%08x flags=%08x} cr3=%08RX64 cr4=%08RX64\n"
+    Log(("gs={%04x base=%VGv limit=%08x flags=%08x} cr0=%08RX64 cr2=%08RX64\n"
+         "ss={%04x base=%VGv limit=%08x flags=%08x} cr3=%08RX64 cr4=%08RX64\n"
          "gdtr=%08x:%04x  idtr=%08x:%04x  eflags=%08x\n"
-         "ldtr={%04x base=%08x limit=%08x flags=%08x}\n"
-         "tr  ={%04x base=%08x limit=%08x flags=%08x}\n"
+         "ldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
+         "tr  ={%04x base=%VGv limit=%08x flags=%08x}\n"
          "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
          "FCW=%04x FSW=%04x FTW=%04x\n",
-         (RTSEL)pCtx->gs, pCtx->gsHid.u32Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pCtx->cr0,  pCtx->cr2,
-         (RTSEL)pCtx->ss, pCtx->ssHid.u32Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pCtx->cr3,  pCtx->cr4,
+         (RTSEL)pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pCtx->cr0,  pCtx->cr2,
+         (RTSEL)pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pCtx->cr3,  pCtx->cr4,
          pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, efl,
-         (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u32Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-         (RTSEL)pCtx->tr, pCtx->trHid.u32Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+         (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
+         (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
          pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
          pCtx->fpu.FCW, pCtx->fpu.FSW, pCtx->fpu.FTW));
 
