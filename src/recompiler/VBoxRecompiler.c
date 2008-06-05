@@ -1598,8 +1598,38 @@ REMR3DECL(int) REMR3State(PVM pVM)
     pVM->rem.s.fInStateSync = true;
 
     /*
-     * Copy the registers which requires no special handling.
+     * Copy the registers which require no special handling.
      */
+#ifdef TARGET_X86_64
+    Assert(R_EAX == 0);
+    pVM->rem.s.Env.regs[R_EAX]  = pCtx->rax;
+    Assert(R_ECX == 1);
+    pVM->rem.s.Env.regs[R_ECX]  = pCtx->rcx;
+    Assert(R_EDX == 2);
+    pVM->rem.s.Env.regs[R_EDX]  = pCtx->rdx;
+    Assert(R_EBX == 3);
+    pVM->rem.s.Env.regs[R_EBX]  = pCtx->rbx;
+    Assert(R_ESP == 4);
+    pVM->rem.s.Env.regs[R_ESP]  = pCtx->rsp;
+    Assert(R_EBP == 5);
+    pVM->rem.s.Env.regs[R_EBP]  = pCtx->rbp;
+    Assert(R_ESI == 6);
+    pVM->rem.s.Env.regs[R_ESI]  = pCtx->rsi;
+    Assert(R_EDI == 7);
+    pVM->rem.s.Env.regs[R_EDI]  = pCtx->rdi;
+    pVM->rem.s.Env.regs[8]      = pCtx->r8;
+    pVM->rem.s.Env.regs[9]      = pCtx->r9;
+    pVM->rem.s.Env.regs[10]     = pCtx->r10;
+    pVM->rem.s.Env.regs[11]     = pCtx->r11;
+    pVM->rem.s.Env.regs[12]     = pCtx->r12;
+    pVM->rem.s.Env.regs[13]     = pCtx->r13;
+    pVM->rem.s.Env.regs[14]     = pCtx->r14;
+    pVM->rem.s.Env.regs[15]     = pCtx->r15;
+
+    pVM->rem.s.Env.eip          = pCtx->rip;
+
+    pVM->rem.s.Env.eflags       = pCtx->rflags.u64;
+#else
     Assert(R_EAX == 0);
     pVM->rem.s.Env.regs[R_EAX]  = pCtx->eax;
     Assert(R_ECX == 1);
@@ -1619,6 +1649,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
     pVM->rem.s.Env.eip          = pCtx->eip;
 
     pVM->rem.s.Env.eflags       = pCtx->eflags.u32;
+#endif
 
     pVM->rem.s.Env.cr[2]        = pCtx->cr2;
 
@@ -2016,6 +2047,26 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu);
 ////    dprintf2(("FPU state CW=%04X TT=%04X SW=%04X (%04X)\n", env->fpuc, env->fpstt, env->fpus, pVMCtx->fpu.FSW));
 
+#ifdef TARGET_X86_64
+    pCtx->rdi           = pVM->rem.s.Env.regs[R_EDI];
+    pCtx->rsi           = pVM->rem.s.Env.regs[R_ESI];
+    pCtx->rbp           = pVM->rem.s.Env.regs[R_EBP];
+    pCtx->rax           = pVM->rem.s.Env.regs[R_EAX];
+    pCtx->rbx           = pVM->rem.s.Env.regs[R_EBX];
+    pCtx->rdx           = pVM->rem.s.Env.regs[R_EDX];
+    pCtx->rcx           = pVM->rem.s.Env.regs[R_ECX];
+    pCtx->r8            = pVM->rem.s.Env.regs[8];
+    pCtx->r9            = pVM->rem.s.Env.regs[9];
+    pCtx->r10           = pVM->rem.s.Env.regs[10];
+    pCtx->r11           = pVM->rem.s.Env.regs[11];
+    pCtx->r12           = pVM->rem.s.Env.regs[12];
+    pCtx->r13           = pVM->rem.s.Env.regs[13];
+    pCtx->r14           = pVM->rem.s.Env.regs[14];
+    pCtx->r15           = pVM->rem.s.Env.regs[15];
+
+    pCtx->rsp           = pVM->rem.s.Env.regs[R_ESP];
+
+#else
     pCtx->edi           = pVM->rem.s.Env.regs[R_EDI];
     pCtx->esi           = pVM->rem.s.Env.regs[R_ESI];
     pCtx->ebp           = pVM->rem.s.Env.regs[R_EBP];
@@ -2025,6 +2076,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->ecx           = pVM->rem.s.Env.regs[R_ECX];
 
     pCtx->esp           = pVM->rem.s.Env.regs[R_ESP];
+#endif
+
     pCtx->ss            = pVM->rem.s.Env.segs[R_SS].selector;
 
 #ifdef VBOX_WITH_STATISTICS
@@ -2059,8 +2112,13 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->ds            = pVM->rem.s.Env.segs[R_DS].selector;
     pCtx->cs            = pVM->rem.s.Env.segs[R_CS].selector;
 
+#ifdef TARGET_X86_64
+    pCtx->rip           = pVM->rem.s.Env.eip;
+    pCtx->rflags.u64    = pVM->rem.s.Env.eflags;
+#else
     pCtx->eip           = pVM->rem.s.Env.eip;
     pCtx->eflags.u32    = pVM->rem.s.Env.eflags;
+#endif
 
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
@@ -2218,6 +2276,25 @@ static void remR3StateUpdate(PVM pVM)
     restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu);
 ////    dprintf2(("FPU state CW=%04X TT=%04X SW=%04X (%04X)\n", env->fpuc, env->fpstt, env->fpus, pVMCtx->fpu.FSW));
 
+#ifdef TARGET_X86_64
+    pCtx->rdi           = pVM->rem.s.Env.regs[R_EDI];
+    pCtx->rsi           = pVM->rem.s.Env.regs[R_ESI];
+    pCtx->rbp           = pVM->rem.s.Env.regs[R_EBP];
+    pCtx->rax           = pVM->rem.s.Env.regs[R_EAX];
+    pCtx->rbx           = pVM->rem.s.Env.regs[R_EBX];
+    pCtx->rdx           = pVM->rem.s.Env.regs[R_EDX];
+    pCtx->rcx           = pVM->rem.s.Env.regs[R_ECX];
+    pCtx->r8            = pVM->rem.s.Env.regs[8];
+    pCtx->r9            = pVM->rem.s.Env.regs[9];
+    pCtx->r10           = pVM->rem.s.Env.regs[10];
+    pCtx->r11           = pVM->rem.s.Env.regs[11];
+    pCtx->r12           = pVM->rem.s.Env.regs[12];
+    pCtx->r13           = pVM->rem.s.Env.regs[13];
+    pCtx->r14           = pVM->rem.s.Env.regs[14];
+    pCtx->r15           = pVM->rem.s.Env.regs[15];
+
+    pCtx->rsp           = pVM->rem.s.Env.regs[R_ESP];
+#else
     pCtx->edi           = pVM->rem.s.Env.regs[R_EDI];
     pCtx->esi           = pVM->rem.s.Env.regs[R_ESI];
     pCtx->ebp           = pVM->rem.s.Env.regs[R_EBP];
@@ -2227,6 +2304,8 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->ecx           = pVM->rem.s.Env.regs[R_ECX];
 
     pCtx->esp           = pVM->rem.s.Env.regs[R_ESP];
+#endif
+
     pCtx->ss            = pVM->rem.s.Env.segs[R_SS].selector;
 
     pCtx->gs            = pVM->rem.s.Env.segs[R_GS].selector;
@@ -2235,8 +2314,13 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->ds            = pVM->rem.s.Env.segs[R_DS].selector;
     pCtx->cs            = pVM->rem.s.Env.segs[R_CS].selector;
 
+#ifdef TARGET_X86_64
+    pCtx->rip           = pVM->rem.s.Env.eip;
+    pCtx->rflags.u64    = pVM->rem.s.Env.eflags;
+#else
     pCtx->eip           = pVM->rem.s.Env.eip;
     pCtx->eflags.u32    = pVM->rem.s.Env.eflags;
+#endif
 
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
@@ -2319,6 +2403,20 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->SysEnter.cs      = pVM->rem.s.Env.sysenter_cs;
     pCtx->SysEnter.eip     = pVM->rem.s.Env.sysenter_eip;
     pCtx->SysEnter.esp     = pVM->rem.s.Env.sysenter_esp;
+
+    /* System MSRs. */
+    pCtx->msrEFER          = pVM->rem.s.Env.efer;
+    pCtx->msrSTAR          = pVM->rem.s.Env.star;
+    pCtx->msrPAT           = pVM->rem.s.Env.pat;
+#ifdef TARGET_X86_64
+    pCtx->msrLSTAR         = pVM->rem.s.Env.lstar;
+    pCtx->msrCSTAR         = pVM->rem.s.Env.cstar;
+    pCtx->msrSFMASK        = pVM->rem.s.Env.fmask;
+    pCtx->msrFSBASE        = pVM->rem.s.Env.segs[R_FS].base;
+    pCtx->msrGSBASE        = pVM->rem.s.Env.segs[R_GS].base;
+    pCtx->msrKERNELGSBASE  = pVM->rem.s.Env.kernelgsbase;
+#endif
+
 }
 
 
