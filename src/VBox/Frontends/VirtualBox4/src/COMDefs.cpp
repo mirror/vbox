@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,8 @@
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-#include <qobject.h>
+/* Qt includes */
+#include <QObject>
 #include <qsocketnotifier.h>
 
 #include <nsEventQueueUtils.h>
@@ -63,8 +64,7 @@ public:
     {
         mEventQ = eq;
         mNotifier = new QSocketNotifier (mEventQ->GetEventQueueSelectFD(),
-                                         QSocketNotifier::Read, this,
-                                         "XPCOMEventQSocketNotifier");
+                                         QSocketNotifier::Read, this);
         QObject::connect (mNotifier, SIGNAL (activated (int)),
                           this, SLOT (processEvents()));
     }
@@ -186,25 +186,25 @@ HRESULT COMBase::CleanupCOM()
 }
 
 /* static */
-void COMBase::ToSafeArray (const Q3ValueVector <QString> &aVec,
+void COMBase::ToSafeArray (const QVector <QString> &aVec,
                            com::SafeArray <BSTR> &aArr)
 {
     aArr.reset (aVec.size());
     size_t i = 0;
-    for (Q3ValueVector <QString>::const_iterator it = aVec.begin();
+    for (QVector <QString>::const_iterator it = aVec.begin();
          it != aVec.end(); ++ it, ++ i)
-        aArr [i] = SysAllocString ((const OLECHAR *) (*it).ucs2());
+        aArr [i] = SysAllocString ((const OLECHAR *) (*it).utf16());
 }
 
 /* static */
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                             Q3ValueVector <QString> &aVec)
+                             QVector <QString> &aVec)
 {
-    aVec = Q3ValueVector <QString> (aArr.size());
+    aVec = QVector <QString> (aArr.size());
     size_t i = 0;
-    for (Q3ValueVector <QString>::iterator it = aVec.begin();
+    for (QVector <QString>::iterator it = aVec.begin();
          it != aVec.end(); ++ it, ++ i)
-        *it = QString::fromUcs2 (aArr [i]);
+        *it = QString::fromUtf16 (aArr [i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
