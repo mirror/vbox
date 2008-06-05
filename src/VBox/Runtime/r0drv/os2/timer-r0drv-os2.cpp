@@ -113,6 +113,12 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     *ppTimer = NULL;
 
     /*
+     * We don't support the fancy MP features.
+     */
+    if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+        return VERR_NOT_SUPPORTED;
+
+    /*
      * Lazy initialize the spinlock.
      */
     if (g_Spinlock == NIL_RTSPINLOCK)
