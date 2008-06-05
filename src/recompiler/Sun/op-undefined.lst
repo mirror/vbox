@@ -43,6 +43,8 @@ float64_sqrt
 float64_to_float32
 float64_to_int32
 float64_to_int32_round_to_zero
+float64_to_int64
+float64_to_int64_round_to_zero
 floatx80_compare
 floatx80_compare_quiet
 floatx80_to_int32
