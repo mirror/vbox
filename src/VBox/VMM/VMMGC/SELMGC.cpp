@@ -128,8 +128,8 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
         /** @todo what about interrupt gates and rawr0? */
         Desc.Gen.u1Present = 0;
     }
-    //Log(("O: base=%08X limit=%08X attr=%04X\n", pShadowDescr->Gen.u16BaseLow | (pShadowDescr->Gen.u8BaseHigh1 << 16) | (pShadowDescr->Gen.u8BaseHigh2 << 24), pShadowDescr->Gen.u16LimitLow | (pShadowDescr->Gen.u4LimitHigh << 16), (pShadowDescr->au32[1] >> 8) & 0xFFFF ));
-    //Log(("N: base=%08X limit=%08X attr=%04X\n", Desc.Gen.u16BaseLow | (Desc.Gen.u8BaseHigh1 << 16) | (Desc.Gen.u8BaseHigh2 << 24), Desc.Gen.u16LimitLow | (Desc.Gen.u4LimitHigh << 16), (Desc.au32[1] >> 8) & 0xFFFF ));
+    //Log(("O: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(*pShadowDescr)), X86DESC_LIMIT(*pShadowDescr), (pShadowDescr->au32[1] >> 8) & 0xFFFF ));
+    //Log(("N: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(Desc)), X86DESC_LIMIT(Desc), (Desc.au32[1] >> 8) & 0xFFFF ));
     *pShadowDescr = Desc;
 
     /* Check if we change the LDT selector */

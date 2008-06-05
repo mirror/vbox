@@ -916,12 +916,12 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC Desc, RTSEL Sel, const char
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
 
 #if HC_ARCH_BITS == 64
-    uint64_t    u32Base =  ((uintptr_t)Desc->Gen.u32BaseHigh3 << 32ULL) | Desc->Gen.u8BaseHigh2 << 24ULL | Desc->Gen.u8BaseHigh1 << 16ULL | Desc->Gen.u16BaseLow;
+    uint64_t    u32Base =  X86DESC64_BASE(Desc);
 
     Log(("%s %04x - %VX64 %VX64 - base=%VX64 limit=%08x dpl=%d %s\n", pszMsg,
          Sel, Desc->au64[0], Desc->au64[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));
 #else
-    uint32_t    u32Base =  Desc->Gen.u8BaseHigh2 << 24 | Desc->Gen.u8BaseHigh1 << 16 | Desc->Gen.u16BaseLow;
+    uint32_t    u32Base =  X86DESC_BASE(Desc);
 
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, Desc->au32[0], Desc->au32[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));

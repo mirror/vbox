@@ -1892,6 +1892,21 @@ typedef X86DESC *PX86DESC;
 typedef const X86DESC *PCX86DESC;
 
 
+/** @def X86DESC_BASE
+ * Return the base address of a descriptor.
+ */
+#define X86DESC_BASE(desc) \
+        (  ((uint32_t)((desc).Gen.u8BaseHigh2) << 24) \
+         | (           (desc).Gen.u8BaseHigh1  << 16) \
+         | (           (desc).Gen.u16BaseLow        ) )
+
+/** @def X86DESC_LIMIT
+ * Return the limit of a descriptor.
+ */
+#define X86DESC_LIMIT(desc) \
+        (  ((uint32_t)((desc).Gen.u4LimitHigh) << 16) \
+         | (           (desc).Gen.u16LimitLow       ) )
+
 /**
  * 64 bits generic descriptor table entry
  * Note: most of these bits have no meaning in long mode.
@@ -2024,6 +2039,16 @@ typedef X86DESC64   *PX86DESCHC;
 typedef X86DESC     X86DESCHC;
 typedef X86DESC     *PX86DESCHC;
 #endif
+
+/** @def X86DESC_LIMIT
+ * Return the base of a 64-bit descriptor.
+ */
+#define X86DESC64_BASE(desc) \
+        (  ((uint64_t)((desc).Gen.u32BaseHigh3) << 32) \
+         | ((uint32_t)((desc).Gen.u8BaseHigh2)  << 24) \
+         | (           (desc).Gen.u8BaseHigh1   << 16) \
+         | (           (desc).Gen.u16BaseLow         ) )
+
 
 /** @name Selector Descriptor Types.
  * @{

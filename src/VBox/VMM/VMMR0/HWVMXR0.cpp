@@ -612,9 +612,9 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 
         pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
 #if HC_ARCH_BITS == 64
-        trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16ULL) | (pDesc->Gen.u8BaseHigh2 << 24ULL) | ((uintptr_t)pDesc->Gen.u32BaseHigh3 << 32ULL);
+        trBase = X86DESC64_BASE(*pDesc);
 #else
-        trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | (pDesc->Gen.u8BaseHigh2 << 24);
+        trBase = X86DESC_BASE(*pDesc);
 #endif
         rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
         AssertRC(rc);
