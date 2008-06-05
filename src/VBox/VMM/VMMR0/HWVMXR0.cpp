@@ -990,7 +990,7 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 
     Log2(("\nE"));
 
-    AssertReturn(pCpu->fVMXConfigured, VERR_EM_INTERNAL_ERROR);
+    AssertReturn(pCpu->fConfigured, VERR_EM_INTERNAL_ERROR);
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -2057,8 +2057,9 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0Enter(PVM pVM)
+HWACCMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 

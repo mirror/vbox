@@ -125,6 +125,21 @@ __BEGIN_DECLS
  */
 #define HWACCM_SSM_VERSION                  3
 
+/* Per-cpu information. */
+typedef struct
+{
+    RTCPUID     idCpu;
+
+    RTR0MEMOBJ  pMemObj;
+    /* Current ASID (AMD-V only) */
+    uint32_t    uCurrentASID;
+    /* TLB flush count */
+    uint32_t    cTLBFlushes;
+
+    bool        fConfigured;
+} HWACCM_CPUINFO;
+typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
+
 /**
  * HWACCM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
@@ -346,21 +361,6 @@ typedef struct HWACCM
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
 
-typedef struct
-{
-    RTCPUID     idCpu;
-
-    RTR0MEMOBJ  pMemObj;
-    /* Current ASID (AMD-V only) */
-    uint32_t    uCurrentASID;
-    /* TLB flush count */
-    uint32_t    cTLBFlushes;
-
-    bool        fVMXConfigured;
-    bool        fSVMConfigured;
-} HWACCM_CPUINFO;
-typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
-
 #ifdef IN_RING0
 
 #ifdef VBOX_STRICT
@@ -370,6 +370,18 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const cha
 #define HWACCMDumpRegs(a)                   do { } while (0)
 #define HWACCMR0DumpDescriptor(a, b, c)     do { } while (0)
 #endif
+
+/* Dummy callback handlers. */
+HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu);
+HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
+HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
 #endif
 
