@@ -190,21 +190,17 @@ void COMBase::ToSafeArray (const QVector <QString> &aVec,
                            com::SafeArray <BSTR> &aArr)
 {
     aArr.reset (aVec.size());
-    size_t i = 0;
-    for (QVector <QString>::const_iterator it = aVec.begin();
-         it != aVec.end(); ++ it, ++ i)
-        aArr [i] = SysAllocString ((const OLECHAR *) (*it).utf16());
+    for (int i = 0; i < aVec.size(); ++i)
+        aArr [i] = SysAllocString ((const OLECHAR *) aVec.at (i).utf16());
 }
 
 /* static */
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
                              QVector <QString> &aVec)
 {
-    aVec = QVector <QString> (aArr.size());
-    size_t i = 0;
-    for (QVector <QString>::iterator it = aVec.begin();
-         it != aVec.end(); ++ it, ++ i)
-        *it = QString::fromUtf16 (aArr [i]);
+    aVec.resize (aArr.size());
+    for (int i = 0; i < aVec.size(); ++i)
+        aVec [i] = QString::fromUtf16 (aArr [i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,6 +221,7 @@ void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
     gotAll &= info.isOk();
     if (info.isOk())
         mInterfaceName = getInterfaceNameFromIID (mInterfaceID);
+    printf("iface %s\n", qPrintable (mInterfaceName));
 
     mComponent = info.GetComponent();
     gotSomething |= info.isOk();
@@ -321,25 +318,31 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
+    printf("1\n");
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
     if (NS_SUCCEEDED (rc))
     {
+        printf("2\n");
         nsCOMPtr <nsIExceptionManager> em;
         rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
         if (NS_SUCCEEDED (rc))
         {
+            printf("3\n");
             nsCOMPtr <nsIException> ex;
             rc = em->GetCurrentException (getter_AddRefs(ex));
             if (NS_SUCCEEDED (rc) && ex)
             {
+                printf("4\n");
                 nsCOMPtr <IVirtualBoxErrorInfo> info;
                 info = do_QueryInterface (ex, &rc);
                 if (NS_SUCCEEDED (rc) && info)
                     init (CVirtualBoxErrorInfo (info));
 
+                printf("5\n");
                 if (!mIsFullAvailable)
                 {
+                    printf("6\n");
                     bool gotSomething = false;
 
                     rc = ex->GetResult (&mResultCode);
@@ -350,8 +353,11 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
                     gotSomething |= NS_SUCCEEDED (rc);
                     if (NS_SUCCEEDED (rc) && message)
                     {
-                        mText = QString::fromUtf8 (message);
-                        nsMemory::Free (message);
+                        printf("7\n");
+//                        mText = QString::fromUtf8 (message);
+                        printf ("%s\n", message);
+                        mText = "sdafsdf";
+//                        nsMemory::Free (message);
                     }
 
                     if (gotSomething)
