@@ -357,7 +357,7 @@ public:
                 {
                     /* Failed to start the timer, post the shutdown event
                      * manually if not on the main thread alreay. */
-                    ShutdownTimer (NULL, NULL);
+                    ShutdownTimer (NULL, NULL, 0);
                 }
                 else
                 {
