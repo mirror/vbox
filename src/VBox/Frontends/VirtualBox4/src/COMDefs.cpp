@@ -28,7 +28,7 @@
 
 /* Qt includes */
 #include <QObject>
-#include <qsocketnotifier.h>
+#include <QSocketNotifier>
 
 #include <nsEventQueueUtils.h>
 #include <nsIEventQueue.h>
