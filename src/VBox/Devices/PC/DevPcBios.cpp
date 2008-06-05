@@ -855,6 +855,9 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     } while (0)
 
 
+    /*
+     * Don't change this information otherwise Windows guests will demand on re-activation!
+     */
     READCFGSTR("DmiBIOSVendor",        pszDmiBIOSVendor,      "innotek GmbH");
     READCFGSTR("DmiBIOSVersion",       pszDmiBIOSVersion,     "VirtualBox");
     READCFGSTR("DmiBIOSReleaseDate",   pszDmiBIOSReleaseDate, "12/01/2006");
