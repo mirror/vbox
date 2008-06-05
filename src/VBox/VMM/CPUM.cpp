@@ -537,7 +537,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->eflags.Bits.u1Reserved0   = 1;
 
     pCtx->cs                        = 0xf000;
-    pCtx->csHid.u32Base             = UINT32_C(0xffff0000);
+    pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
     pCtx->csHid.u32Limit            = 0x0000ffff;
     pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
     pCtx->csHid.Attr.n.u1Present    = 1;
@@ -830,15 +830,15 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                 pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u32Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
-                pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u32Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
-                pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
-                pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
-                pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u32Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u32Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
+                pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
+                pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
+                pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
+                pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                 pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
-                pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u32Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u32Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
+                pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
                 pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
 
             pHlp->pfnPrintf(pHlp,
@@ -1802,8 +1802,8 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     {
         if (CPUMAreHiddenSelRegsValid(pVM))
         {
-            State.GCPtrSegBase    = pCtx->csHid.u32Base;
-            State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u32Base;
+            State.GCPtrSegBase    = pCtx->csHid.u64Base;
+            State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u64Base;
             State.cbSegLimit      = pCtx->csHid.u32Limit;
             pCpu->mode            = pCtx->csHid.Attr.n.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
         }

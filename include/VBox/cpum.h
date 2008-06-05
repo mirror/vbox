@@ -47,7 +47,7 @@ __BEGIN_DECLS
 typedef struct CPUMSELREGHID
 {
     /** Base register. */
-    uint32_t    u32Base;
+    uint64_t    u64Base;
     /** Limit (expanded). */
     uint32_t    u32Limit;
     /** Flags.

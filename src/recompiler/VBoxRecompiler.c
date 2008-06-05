@@ -1108,22 +1108,22 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.cr4            = env->cr[4];
 
         Ctx.tr             = env->tr.selector;
-        Ctx.trHid.u32Base  = (uint32_t)env->tr.base;
+        Ctx.trHid.u64Base  = env->tr.base;
         Ctx.trHid.u32Limit = env->tr.limit;
         Ctx.trHid.Attr.u   = (env->tr.flags >> 8) & 0xF0FF;
 
         Ctx.idtr.cbIdt     = env->idt.limit;
-        Ctx.idtr.pIdt      = (uint32_t)env->idt.base;
+        Ctx.idtr.pIdt      = env->idt.base;
 
         Ctx.eflags.u32     = env->eflags;
 
         Ctx.cs             = env->segs[R_CS].selector;
-        Ctx.csHid.u32Base  = (uint32_t)env->segs[R_CS].base;
+        Ctx.csHid.u64Base  = env->segs[R_CS].base;
         Ctx.csHid.u32Limit = env->segs[R_CS].limit;
         Ctx.csHid.Attr.u   = (env->segs[R_CS].flags >> 8) & 0xF0FF;
 
         Ctx.ss             = env->segs[R_SS].selector;
-        Ctx.ssHid.u32Base  = (uint32_t)env->segs[R_SS].base;
+        Ctx.ssHid.u64Base  = env->segs[R_SS].base;
         Ctx.ssHid.u32Limit = env->segs[R_SS].limit;
         Ctx.ssHid.Attr.u   = (env->segs[R_SS].flags >> 8) & 0xF0FF;
 
@@ -1752,7 +1752,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
             if (fHiddenSelRegsValid)
             {
                 pVM->rem.s.Env.ldt.selector = pCtx->ldtr;
-                pVM->rem.s.Env.ldt.base     = pCtx->ldtrHid.u32Base;
+                pVM->rem.s.Env.ldt.base     = pCtx->ldtrHid.u64Base;
                 pVM->rem.s.Env.ldt.limit    = pCtx->ldtrHid.u32Limit;
                 pVM->rem.s.Env.ldt.flags    = (pCtx->ldtrHid.Attr.u << 8) & 0xFFFFFF;;
             }
@@ -1765,7 +1765,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
             if (fHiddenSelRegsValid)
             {
                 pVM->rem.s.Env.tr.selector = pCtx->tr;
-                pVM->rem.s.Env.tr.base     = pCtx->trHid.u32Base;
+                pVM->rem.s.Env.tr.base     = pCtx->trHid.u64Base;
                 pVM->rem.s.Env.tr.limit    = pCtx->trHid.u32Limit;
                 pVM->rem.s.Env.tr.flags    = (pCtx->trHid.Attr.u << 8) & 0xFFFFFF;;
             }
@@ -1807,12 +1807,12 @@ REMR3DECL(int) REMR3State(PVM pVM)
         /* Set current CPL */
         cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
 
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs, pCtx->csHid.u32Base, pCtx->csHid.u32Limit, (pCtx->csHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u32Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds, pCtx->dsHid.u32Base, pCtx->dsHid.u32Limit, (pCtx->dsHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u32Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, (pCtx->csHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, (pCtx->dsHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
     }
     else
     {
@@ -2164,36 +2164,36 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     }
 
     /** @todo These values could still be out of sync! */
-    pCtx->csHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_CS].base;
+    pCtx->csHid.u64Base    = pVM->rem.s.Env.segs[R_CS].base;
     pCtx->csHid.u32Limit   = pVM->rem.s.Env.segs[R_CS].limit;
     /** @note QEmu saves the 2nd dword of the descriptor; we should store the attribute word only! */
     pCtx->csHid.Attr.u     = (pVM->rem.s.Env.segs[R_CS].flags >> 8) & 0xF0FF;
 
-    pCtx->dsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_DS].base;
+    pCtx->dsHid.u64Base    = pVM->rem.s.Env.segs[R_DS].base;
     pCtx->dsHid.u32Limit   = pVM->rem.s.Env.segs[R_DS].limit;
     pCtx->dsHid.Attr.u     = (pVM->rem.s.Env.segs[R_DS].flags >> 8) & 0xF0FF;
 
-    pCtx->esHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_ES].base;
+    pCtx->esHid.u64Base    = pVM->rem.s.Env.segs[R_ES].base;
     pCtx->esHid.u32Limit   = pVM->rem.s.Env.segs[R_ES].limit;
     pCtx->esHid.Attr.u     = (pVM->rem.s.Env.segs[R_ES].flags >> 8) & 0xF0FF;
 
-    pCtx->fsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_FS].base;
+    pCtx->fsHid.u64Base    = pVM->rem.s.Env.segs[R_FS].base;
     pCtx->fsHid.u32Limit   = pVM->rem.s.Env.segs[R_FS].limit;
     pCtx->fsHid.Attr.u     = (pVM->rem.s.Env.segs[R_FS].flags >> 8) & 0xF0FF;
 
-    pCtx->gsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_GS].base;
+    pCtx->gsHid.u64Base    = pVM->rem.s.Env.segs[R_GS].base;
     pCtx->gsHid.u32Limit   = pVM->rem.s.Env.segs[R_GS].limit;
     pCtx->gsHid.Attr.u     = (pVM->rem.s.Env.segs[R_GS].flags >> 8) & 0xF0FF;
 
-    pCtx->ssHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_SS].base;
+    pCtx->ssHid.u64Base    = pVM->rem.s.Env.segs[R_SS].base;
     pCtx->ssHid.u32Limit   = pVM->rem.s.Env.segs[R_SS].limit;
     pCtx->ssHid.Attr.u     = (pVM->rem.s.Env.segs[R_SS].flags >> 8) & 0xF0FF;
 
-    pCtx->ldtrHid.u32Base  = (uint32_t)pVM->rem.s.Env.ldt.base;
+    pCtx->ldtrHid.u64Base  = pVM->rem.s.Env.ldt.base;
     pCtx->ldtrHid.u32Limit = pVM->rem.s.Env.ldt.limit;
     pCtx->ldtrHid.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
 
-    pCtx->trHid.u32Base    = (uint32_t)pVM->rem.s.Env.tr.base;
+    pCtx->trHid.u64Base    = pVM->rem.s.Env.tr.base;
     pCtx->trHid.u32Limit   = pVM->rem.s.Env.tr.limit;
     pCtx->trHid.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
 
@@ -2366,36 +2366,36 @@ static void remR3StateUpdate(PVM pVM)
     }
 
     /** @todo These values could still be out of sync! */
-    pCtx->csHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_CS].base;
+    pCtx->csHid.u64Base    = pVM->rem.s.Env.segs[R_CS].base;
     pCtx->csHid.u32Limit   = pVM->rem.s.Env.segs[R_CS].limit;
     /** @note QEmu saves the 2nd dword of the descriptor; we should store the attribute word only! */
     pCtx->csHid.Attr.u     = (pVM->rem.s.Env.segs[R_CS].flags >> 8) & 0xFFFF;
 
-    pCtx->dsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_DS].base;
+    pCtx->dsHid.u64Base    = pVM->rem.s.Env.segs[R_DS].base;
     pCtx->dsHid.u32Limit   = pVM->rem.s.Env.segs[R_DS].limit;
     pCtx->dsHid.Attr.u     = (pVM->rem.s.Env.segs[R_DS].flags >> 8) & 0xFFFF;
 
-    pCtx->esHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_ES].base;
+    pCtx->esHid.u64Base    = pVM->rem.s.Env.segs[R_ES].base;
     pCtx->esHid.u32Limit   = pVM->rem.s.Env.segs[R_ES].limit;
     pCtx->esHid.Attr.u     = (pVM->rem.s.Env.segs[R_ES].flags >> 8) & 0xFFFF;
 
-    pCtx->fsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_FS].base;
+    pCtx->fsHid.u64Base    = pVM->rem.s.Env.segs[R_FS].base;
     pCtx->fsHid.u32Limit   = pVM->rem.s.Env.segs[R_FS].limit;
     pCtx->fsHid.Attr.u     = (pVM->rem.s.Env.segs[R_FS].flags >> 8) & 0xFFFF;
 
-    pCtx->gsHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_GS].base;
+    pCtx->gsHid.u64Base    = pVM->rem.s.Env.segs[R_GS].base;
     pCtx->gsHid.u32Limit   = pVM->rem.s.Env.segs[R_GS].limit;
     pCtx->gsHid.Attr.u     = (pVM->rem.s.Env.segs[R_GS].flags >> 8) & 0xFFFF;
 
-    pCtx->ssHid.u32Base    = (uint32_t)pVM->rem.s.Env.segs[R_SS].base;
+    pCtx->ssHid.u64Base    = pVM->rem.s.Env.segs[R_SS].base;
     pCtx->ssHid.u32Limit   = pVM->rem.s.Env.segs[R_SS].limit;
     pCtx->ssHid.Attr.u     = (pVM->rem.s.Env.segs[R_SS].flags >> 8) & 0xFFFF;
 
-    pCtx->ldtrHid.u32Base  = (uint32_t)pVM->rem.s.Env.ldt.base;
+    pCtx->ldtrHid.u64Base  = pVM->rem.s.Env.ldt.base;
     pCtx->ldtrHid.u32Limit = pVM->rem.s.Env.ldt.limit;
     pCtx->ldtrHid.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xFFFF;
 
-    pCtx->trHid.u32Base    = (uint32_t)pVM->rem.s.Env.tr.base;
+    pCtx->trHid.u64Base    = pVM->rem.s.Env.tr.base;
     pCtx->trHid.u32Limit   = pVM->rem.s.Env.tr.limit;
     pCtx->trHid.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xFFFF;
 

@@ -702,7 +702,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_LDTR,         pCtx->ldtr);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_LIMIT,         pCtx->ldtrHid.u32Limit);
-            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_BASE,          pCtx->ldtrHid.u32Base);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_BASE,          pCtx->ldtrHid.u64Base);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_ACCESS_RIGHTS, pCtx->ldtrHid.Attr.u);
         }
         AssertRC(rc);
@@ -721,7 +721,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         else
         {
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
-            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u32Base);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u64Base);
         }
         val = pCtx->trHid.Attr.u;
 

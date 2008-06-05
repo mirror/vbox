@@ -70,27 +70,27 @@ struc CPUMCTXCORE
     .r14            resq    1
     .r15            resq    1
 
-    .esHid.u32Base      resd    1
+    .esHid.u64Base      resq    1
     .esHid.u32Limit     resd    1
     .esHid.Attr         resd    1
 
-    .csHid.u32Base      resd    1
+    .csHid.u64Base      resq    1
     .csHid.u32Limit     resd    1
     .csHid.Attr         resd    1
 
-    .ssHid.u32Base      resd    1
+    .ssHid.u64Base      resq    1
     .ssHid.u32Limit     resd    1
     .ssHid.Attr         resd    1
 
-    .dsHid.u32Base      resd    1
+    .dsHid.u64Base      resq    1
     .dsHid.u32Limit     resd    1
     .dsHid.Attr         resd    1
 
-    .fsHid.u32Base      resd    1
+    .fsHid.u64Base      resq    1
     .fsHid.u32Limit     resd    1
     .fsHid.Attr         resd    1
 
-    .gsHid.u32Base      resd    1
+    .gsHid.u64Base      resq    1
     .gsHid.u32Limit     resd    1
     .gsHid.Attr         resd    1
 
@@ -133,27 +133,27 @@ struc CPUMCTX
     .r14            resq    1
     .r15            resq    1
 
-    .esHid.u32Base      resd    1
+    .esHid.u64Base      resq    1
     .esHid.u32Limit     resd    1
     .esHid.Attr         resd    1
 
-    .csHid.u32Base      resd    1
+    .csHid.u64Base      resq    1
     .csHid.u32Limit     resd    1
     .csHid.Attr         resd    1
 
-    .ssHid.u32Base      resd    1
+    .ssHid.u64Base      resq    1
     .ssHid.u32Limit     resd    1
     .ssHid.Attr         resd    1
 
-    .dsHid.u32Base      resd    1
+    .dsHid.u64Base      resq    1
     .dsHid.u32Limit     resd    1
     .dsHid.Attr         resd    1
 
-    .fsHid.u32Base      resd    1
+    .fsHid.u64Base      resq    1
     .fsHid.u32Limit     resd    1
     .fsHid.Attr         resd    1
 
-    .gsHid.u32Base      resd    1
+    .gsHid.u64Base      resq    1
     .gsHid.u32Limit     resd    1
     .gsHid.Attr         resd    1
 
@@ -198,11 +198,11 @@ struc CPUMCTX
     .msrGSBASE          resb    8
     .msrKERNELGSBASE    resb    8
 
-    .ldtrHid.u32Base    resd    1
+    .ldtrHid.u64Base    resq    1
     .ldtrHid.u32Limit   resd    1
     .ldtrHid.Attr       resd    1
 
-    .trHid.u32Base      resd    1
+    .trHid.u64Base      resq    1
     .trHid.u32Limit     resd    1
     .trHid.Attr         resd    1
 

@@ -436,7 +436,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             int rc = SELMR3GetShadowSelectorInfo(pVM, pHyperCtx->reg, &selInfo);        \
             AssertRC(rc);                                                               \
                                                                                         \
-            pHyperCtx->reg##Hid.u32Base              = selInfo.GCPtrBase;               \
+            pHyperCtx->reg##Hid.u64Base              = selInfo.GCPtrBase;               \
             pHyperCtx->reg##Hid.u32Limit             = selInfo.cbLimit;                 \
             pHyperCtx->reg##Hid.Attr.n.u1Present     = selInfo.Raw.Gen.u1Present;       \
             pHyperCtx->reg##Hid.Attr.n.u1DefBig      = selInfo.Raw.Gen.u1DefBig;        \

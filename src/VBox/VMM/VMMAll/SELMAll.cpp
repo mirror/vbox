@@ -98,7 +98,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
 
         if (CPUMAreHiddenSelRegsValid(pVM))
-            uFlat += pHiddenSel->u32Base;
+            uFlat += pHiddenSel->u64Base;
         else
             uFlat += ((RTGCUINTPTR)Sel << 4);
         return (RTGCPTR)uFlat;
@@ -107,7 +107,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmToFlat(pVM, Sel, Addr);
-    return (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
+    return (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
 }
 
 
@@ -141,7 +141,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
         {
             if (    pHiddenSel
                 &&  CPUMAreHiddenSelRegsValid(pVM))
-                *ppvGC = (RTGCPTR)(pHiddenSel->u32Base + uFlat);
+                *ppvGC = (RTGCPTR)(pHiddenSel->u64Base + uFlat);
             else
                 *ppvGC = (RTGCPTR)(((RTGCUINTPTR)Sel << 4) + uFlat);
         }
@@ -165,7 +165,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
         u4Type        = pHiddenSel->Attr.n.u4Type;
 
         u32Limit      = pHiddenSel->u32Limit;
-        pvFlat        = (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
+        pvFlat        = (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
     }
     else
     {
@@ -333,7 +333,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUM
     if (!pHidCS || !CPUMAreHiddenSelRegsValid(pVM))
         uFlat += ((RTGCUINTPTR)SelCS << 4);
     else
-        uFlat += pHidCS->u32Base;
+        uFlat += pHidCS->u64Base;
     *ppvFlat = (RTGCPTR)uFlat;
     return VINF_SUCCESS;
 }
@@ -456,7 +456,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                 uint32_t    u32Limit = pHidCS->u32Limit;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
-                    *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHidCS->u32Base );
+                    *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHidCS->u64Base );
                     return VINF_SUCCESS;
                 }
                 return VERR_OUT_OF_SELECTOR_BOUNDS;
@@ -849,7 +849,7 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
 
         pHiddenTRReg = CPUMGetGuestTRHid(pVM);
 
-        *pGCPtrTss = pHiddenTRReg->u32Base;
+        *pGCPtrTss = pHiddenTRReg->u64Base;
         *pcbTss    = pHiddenTRReg->u32Limit;
 
         if (pfCanHaveIOBitmap)
