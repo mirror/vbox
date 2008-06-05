@@ -77,8 +77,11 @@ typedef struct RTTIMER   *PRTTIMER;
  *
  * @param   pTimer      Timer handle.
  * @param   pvUser      User argument.
+ * @param   iTick       The current timer tick. This is always 1 on the first
+ *                      callback after the timer was started. For omni timers
+ *                      this will be 1 when a cpu comes back online.
  */
-typedef DECLCALLBACK(void) FNRTTIMER(PRTTIMER pTimer, void *pvUser);
+typedef DECLCALLBACK(void) FNRTTIMER(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 /** Pointer to FNRTTIMER() function. */
 typedef FNRTTIMER *PFNRTTIMER;
 
@@ -121,7 +124,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 #define RTTIMER_FLAGS_CPU_ANY        0
 /** One specific CPU */
 #define RTTIMER_FLAGS_CPU_SPECIFIC   RT_BIT(8)
-/** All online CPUs. */
+/** Omni timer, run on all online CPUs.
+ * @remarks The timer callback isn't necessarily running at the time same time on each CPU. */
 #define RTTIMER_FLAGS_CPU_ALL        ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** CPU mask. */
 #define RTTIMER_FLAGS_CPU_MASK       0xff
@@ -129,7 +133,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
  * This will automatically OR in the RTTIMER_FLAG_CPU_SPECIFIC flag. */
 #define RTTIMER_FLAGS_CPU(iCpu)      ( (iCpu) | RTTIMER_FLAG_CPU_SPECIFIC )
 /** Macro that validates the flags. */
-#define RTTIMER_FLAGS_IS_VALID(fFlags) ( !((fFlags) & ((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ff : 0x100)) )
+#define RTTIMER_FLAGS_ARE_VALID(fFlags) ( !((fFlags) & ((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ff : 0x100)) )
 /** @} */
 
 /**

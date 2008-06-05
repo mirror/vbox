@@ -318,6 +318,7 @@ DECLASM(void) rtTimerOs2Tick(void)
             &&  pTimer->u64NextTS <= u64NanoTS)
         {
             pTimer->fDone = true;
+            pTimer->iTick++;
 
             /* calculate the next timeout */
             if (!pTimer->u64NanoInterval)
@@ -333,7 +334,7 @@ DECLASM(void) rtTimerOs2Tick(void)
             PFNRTTIMER  pfnTimer = pTimer->pfnTimer;
             void       *pvUser   = pTimer->pvUser;
             RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
-            pfnTimer(pTimer, pvUser);
+            pfnTimer(pTimer, pvUser, pTimer->iTick);
 
             RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
 

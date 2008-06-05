@@ -96,7 +96,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Validate flags.
      */
-    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
+    if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
@@ -213,7 +213,7 @@ static void rtTimerFreeBSDIpiAction(void *pvTimer)
     PRTTIMER pTimer = (PRTTIMER)pvTimer;
     if (    pTimer->iCpu == RTTIMER_FLAGS_CPU_MASK
         ||  (u_int)pTimer->iCpu == curcpu)
-        pTimer->pfnTimer(pTimer, pTimer->pvUser);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, pTimer->iTick);
 }
 
 
@@ -222,6 +222,7 @@ static void rtTimerFreeBSDCallback(void *pvTimer)
     PRTTIMER pTimer = (PRTTIMER)pvTimer;
 
     /* calculate and set the next timeout */
+    pTimer->iTick++;
     if (!pTimer->u64NanoInterval)
     {
         pTimer->fSuspended = true;
@@ -231,7 +232,6 @@ static void rtTimerFreeBSDCallback(void *pvTimer)
     {
         struct timeval tv;
         const uint64_t u64NanoTS = RTTimeNanoTS();
-        pTimer->iTick++;
         pTimer->u64NextTS = pTimer->u64StartTS + pTimer->iTick * pTimer->u64NanoInterval;
         if (pTimer->u64NextTS < u64NanoTS)
             pTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
@@ -244,7 +244,7 @@ static void rtTimerFreeBSDCallback(void *pvTimer)
     /* callback */
     if (    !pTimer->fSpecificCpu
         ||  pTimer->iCpu == curcpu)
-        pTimer->pfnTimer(pTimer, pTimer->pvUser);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, pTimer->iTick);
     else
         smp_rendezvous(NULL, rtTimerFreeBSDIpiAction, NULL, pvTimer);
 }

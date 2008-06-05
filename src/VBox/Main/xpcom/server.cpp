@@ -434,7 +434,7 @@ public:
         }
     };
 
-    static void ShutdownTimer (PRTTIMER pTimer, void *pvUser)
+    static void ShutdownTimer (PRTTIMER pTimer, void *pvUser, uint64_t /*iTick*/)
     {
         NOREF (pTimer);
         NOREF (pvUser);

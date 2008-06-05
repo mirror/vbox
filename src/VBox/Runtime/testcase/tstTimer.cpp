@@ -48,7 +48,7 @@ static volatile uint64_t gu64Min;
 static volatile uint64_t gu64Max;
 static volatile uint64_t gu64Prev;
 
-static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     gcTicks++;
 

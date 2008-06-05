@@ -97,6 +97,8 @@ typedef struct RTTIMER
     void                   *pvUser;
     /** Callback. */
     PFNRTTIMER              pfnTimer;
+    /** The current tick. */
+    uint64_t                iTick;
     /** The interval. */
     unsigned                uMilliesInterval;
 #ifdef USE_WINMM
@@ -105,10 +107,10 @@ typedef struct RTTIMER
 #else
     /** Time handle. */
     HANDLE                  hTimer;
-#ifdef USE_APC
+# ifdef USE_APC
     /** Handle to wait on. */
     HANDLE                  hevWait;
-#endif
+# endif
     /** USE_CATCH_UP: ns time of the next tick.
      * !USE_CATCH_UP: -uMilliesInterval * 10000 */
     LARGE_INTEGER           llNext;
@@ -131,7 +133,7 @@ static void CALLBACK rttimerCallback(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser,
 {
     PRTTIMER pTimer = (PRTTIMER)(void *)dwUser;
     Assert(pTimer->TimerId == uTimerID);
-    pTimer->pfnTimer(pTimer, pTimer->pvUser);
+    pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
     NOREF(uMsg); NOREF(dw1); NOREF(dw2); NOREF(uTimerID);
 }
 #else /* !USE_WINMM */
@@ -155,7 +157,7 @@ VOID CALLBACK rttimerAPCProc(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowVa
     /*
      * Callback the handler.
      */
-    pTimer->pfnTimer(pTimer, pTimer->pvUser);
+    pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
 
     /*
      * Rearm the timer handler.
@@ -239,7 +241,7 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
             /*
              * Callback the handler.
              */
-            pTimer->pfnTimer(pTimer, pTimer->pvUser);
+            pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
 
             /*
              * Rearm the timer handler.
@@ -320,6 +322,7 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
         pTimer->u32Magic    = RTTIMER_MAGIC;
         pTimer->pvUser      = pvUser;
         pTimer->pfnTimer    = pfnTimer;
+        pTimer->iTick       = 0;
         pTimer->uMilliesInterval = uMilliesInterval;
 #ifdef USE_WINMM
         /* sync kill doesn't work. */

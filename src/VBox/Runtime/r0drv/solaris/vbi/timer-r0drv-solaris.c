@@ -64,8 +64,27 @@ typedef struct RTTIMER
     /** The CPU it must run on if fSpecificCpu is set. */
     uint8_t                 iCpu;
     /** The Solaris timer handle. */
-    void                    *handle;
+    void                   *handle;
+    /** The user callback. */
+    PFNRTTIMER              pfnTimer;
+    /** The current tick count. */
+    uint64_t                iTick;
+
 } RTTIMER;
+
+
+/**
+ * Callback wrapper for adding the new iTick argument.
+ *
+ * @param   pTimer  The timer.
+ * @param   pvUser  The user argument.
+ */
+static void rtTimerSolarisCallbackWrapper(PRTTIMER pTimer, void *pvUser)
+{
+    pTimer->pfnTimer(pTimer, pvUser, ++pTimer->iTick);
+}
+
+
 
 
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
@@ -75,7 +94,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Validate flags.
      */
-    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
+    if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         /** @todo implement &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL*/)
@@ -92,7 +111,9 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     pTimer->fSuspended = true;
     pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
     pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
-    pTimer->handle = vbi_timer_create(pfnTimer, pTimer, pvUser, u64NanoInterval);
+    pTimer->handle = vbi_timer_create(rtTimerSolarisCallbackWrapper, pTimer, pvUser, u64NanoInterval);
+    pTimer->pfnTimer = pfnTimer;
+    pTimer->iTick = 0;
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;

@@ -45,7 +45,9 @@
 
 #include "internal/magics.h"
 
-#if !defined(RT_USE_LINUX_HRTIMER) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) /* ?? */
+#if !defined(RT_USE_LINUX_HRTIMER) \
+    && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
+    && 0 /* disabled because it somehow sucks. */
 # define RT_USE_LINUX_HRTIMER
 #endif
 
@@ -192,6 +194,27 @@ DECLINLINE(RTTIMERLNXSTATE) rtTimerLnxGetState(RTTIMERLNXSTATE volatile *penmSta
 }
 
 
+#ifndef RT_USE_LINUX_HRTIMER
+/**
+ * Converts a nano second interval to jiffies.
+ *
+ * @returns Jiffies.
+ * @param   cNanoSecs   Nanoseconds.
+ */
+DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
+{
+    /* this can be made even better... */
+    if (cNanoSecs > (uint64_t)TICK_NSEC * MAX_JIFFY_OFFSET)
+        return MAX_JIFFY_OFFSET;
+#if ARCH_BITS == 32
+    if (RT_LIKELY(cNanoSecs <= UINT32_MAX))
+        return ((uint32_t)cNanoSecs + (TICK_NSEC-1)) / TICK_NSEC;
+#endif
+    return (cNanoSecs + (TICK_NSEC-1)) / TICK_NSEC;
+}
+#endif
+
+
 /**
  * Starts a sub-timer (RTTimerStart).
  *
@@ -205,8 +228,9 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      * Calc when it should start firing.
      */
     uint64_t u64NextTS = u64Now + u64First;
-    pSubTimer->u64StartTS = u64Now;
+    pSubTimer->u64StartTS = u64NextTS;
     pSubTimer->u64NextTS = u64NextTS;
+    pSubTimer->iTick = 0;
 
 #ifdef RT_USE_LINUX_HRTIMER
     {
@@ -220,9 +244,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     }
 #else
     {
-        uint64_t cJiffies = !u64First ? 0 : u64First / TICK_NSEC;
-        if (cJiffies > MAX_JIFFY_OFFSET)
-            cJiffies = MAX_JIFFY_OFFSET;
+        unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
         mod_timer(&pSubTimer->LnxTimer, jiffies + cJiffies);
     }
 #endif
@@ -279,7 +301,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
      *
      * For the specific cpu case, we're just ignoring timer migration for now... (bad)
      */
-    if (    pTimer->fSuspended
+    if (    ASMAtomicUoReadBool(&pTimer->fSuspended)
 #ifdef CONFIG_SMP
         ||  (   pTimer->fAllCpus
              && (pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId())
@@ -305,7 +327,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
         /* detached before we're called, nothing to do for this case. */
 #endif
 
-        pTimer->pfnTimer(pTimer, pTimer->pvUser);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
     }
     else
     {
@@ -317,14 +339,13 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
          * This may of course backfire with highres timers...
          */
         const uint64_t u64NanoTS = RTTimeNanoTS();
-#if 0 /* this needs to be tested before it's enabled. */
-        if (    pSubTimer->iTick == 0
-            &&  pTimer->u64NanoInterval < u64NanoTS)
-            pSubTimer->u64StartTS = pSubTimer->u64FirstTS = u64NanoTS - 1000; /* ugly */
+        const uint64_t iTick = ++pSubTimer->iTick;
+#ifdef RT_USE_LINUX_HRTIMER
+        if (iTick == 1)
+            pSubTimer->u64StartTS = u64NanoTS;
 #endif
-        pSubTimer->iTick++;
         pSubTimer->u64NextTS = pSubTimer->u64StartTS
-                             + pSubTimer->iTick * pTimer->u64NanoInterval;
+                             + iTick * pTimer->u64NanoInterval;
         if (pSubTimer->u64NextTS < u64NanoTS)
             pSubTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
 
@@ -340,11 +361,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
 #else
         {
             uint64_t offDelta = pSubTimer->u64NextTS - u64NanoTS;
-            uint64_t cJiffies = offDelta / TICK_NSEC; /* (We end up doing 64-bit div here which ever way we go.) */
-            if (cJiffies > MAX_JIFFY_OFFSET)
-                cJiffies = MAX_JIFFY_OFFSET;
-            else if (cJiffies == 0)
-                cJiffies = 1;
+            unsigned long cJiffies = rtTimerLnxNanoToJiffies(offDelta);
             mod_timer(&pSubTimer->LnxTimer, jiffies + cJiffies);
         }
 #endif
@@ -352,7 +369,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
         /*
          * Run the timer.
          */
-        pTimer->pfnTimer(pTimer, pTimer->pvUser);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
     }
 
 #ifdef RT_USE_LINUX_HRTIMER
@@ -511,8 +528,8 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
     Assert(idCpu < pTimer->cCpus);
 
     /*
-     * We have to be kind of careful here as we might RTTimerStop (and RTTimerDestroy),
-     * thus the paranoia.
+     * We have to be kind of careful here as we might be racing RTTimerStop
+     * (and/or RTTimerDestroy, thus the paranoia.
      */
     hSpinlock = pTimer->hSpinlock;
     if (    hSpinlock != NIL_RTSPINLOCK
@@ -521,7 +538,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
         RTSPINLOCKTMP Tmp;
         RTSpinlockAcquire(hSpinlock, &Tmp);
 
-        if (    !pTimer->fSuspended
+        if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
             &&  pTimer->u32Magic == RTTIMER_MAGIC)
         {
             /* We're sane and the timer is not suspended yet. */
@@ -563,8 +580,8 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
     RTSpinlockAcquireNoInts(hSpinlock, &Tmp);
 
     /* Is it active? */
-    if (    !pTimer->fSuspended
-        &&  !pTimer->u32Magic == RTTIMER_MAGIC)
+    if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
+        &&  pTimer->u32Magic == RTTIMER_MAGIC)
     {
         switch (enmEvent)
         {
@@ -577,7 +594,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                 {
                     RTTIMERLINUXSTARTONCPUARGS Args;
                     Args.u64Now = RTTimeNanoTS();
-                    Args.u64First = pTimer->u64NanoInterval;
+                    Args.u64First = 0;
 
                     if (RTMpCpuId() == idCpu)
                         rtTimerLnxStartSubTimer(pSubTimer, Args.u64Now, Args.u64First);
@@ -643,17 +660,20 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
-    if (!pTimer->fSuspended)
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_ACTIVE;
 
     Args.u64First = u64First;
 #ifdef CONFIG_SMP
+    /*
+     * Omnit timer?
+     */
     if (pTimer->fAllCpus)
         return rtTimerLnxStartAll(pTimer, &Args);
 #endif
 
     /*
-     * This is pretty straight forwards.
+     * Simple timer - Pretty straight forward.
      */
     Args.u64Now = RTTimeNanoTS();
     rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING);
@@ -685,18 +705,21 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
-    if (pTimer->fSuspended)
+    if (ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_SUSPENDED;
 
 #ifdef CONFIG_SMP
+    /*
+     * Omni timer?
+     */
     if (pTimer->fAllCpus)
         return rtTimerLnxStopAll(pTimer);
 #endif
 
     /*
-     * Cancel the timer.
+     * Simple timer.
      */
-    ASMAtomicWriteBool(&pTimer->fSuspended, true); /* just to be on the safe side. */
+    ASMAtomicWriteBool(&pTimer->fSuspended, true);
     rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPING);
     rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0]);
 
@@ -731,7 +754,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     /*
      * Stop the timer if it's running.
      */
-    if (!ASMAtomicUoReadBool(&pTimer->fSuspended)) /* serious paranoia */
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
         RTTimerStop(pTimer);
 
     /*
@@ -758,7 +781,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Validate flags.
      */
-    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
+    if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
@@ -810,7 +833,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
 #else
         init_timer(&pTimer->aSubTimers[iCpu].LnxTimer);
-        pTimer->aSubTimers[iCpu].LnxTimer.data     = (unsigned long)pTimer;
+        pTimer->aSubTimers[iCpu].LnxTimer.data     = (unsigned long)&pTimer->aSubTimers[iCpu];
         pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
         pTimer->aSubTimers[iCpu].LnxTimer.expires  = jiffies;
 #endif

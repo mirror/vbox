@@ -248,7 +248,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
             if (u64NanoTS >= pTimer->u64NextTS)
             {
                 pTimer->iTick++;
-                pTimer->pfnTimer(pTimer, pTimer->pvUser);
+                pTimer->pfnTimer(pTimer, pTimer->pvUser, pTimer->iTick);
 
                 /* status changed? */
                 if (pTimer->fSuspended || pTimer->fDestroyed)
