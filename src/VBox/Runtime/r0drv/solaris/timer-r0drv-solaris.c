@@ -63,6 +63,8 @@ typedef struct RTTIMER
     uint8_t                 fSpecificCpu;
     /** The CPU it must run on if fSpecificCpu is set. */
     uint8_t                 iCpu;
+    /** The current timer tick (since last timer start). */
+    uint64_t                iTick;
     /** The Solaris cyclic structure. */
     cyc_handler_t           CyclicInfo;
     /** The Solaris cyclic handle. */
@@ -90,12 +92,12 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Validate flags.
      */
-    if (!RTTIMER_FLAGS_IS_VALID(fFlags))
+    if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         /** @todo implement &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL*/)
         return VERR_NOT_SUPPORTED;
-    
+
     /*
      * Allocate and initialize the timer handle.
      */
@@ -107,6 +109,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     pTimer->fSuspended = true;
     pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
     pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
+    pTimer->iTick = 0;
     pTimer->CyclicInfo.cyh_func = rtTimerSolarisCallback;
     pTimer->CyclicInfo.cyh_level = CY_LOCK_LEVEL;
     pTimer->CyclicInfo.cyh_arg = pTimer;
@@ -166,9 +169,10 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     u64First += RTTimeNanoTS();
 
     pTimer->fSuspended = false;
+    pTimer->iTick = 0;
     timerSpec.cyt_when = u64First;
     timerSpec.cyt_interval = pTimer->u64NanoInterval == 0 ? u64First : pTimer->u64NanoInterval;
-    
+
     mutex_enter(&cpu_lock);
     pTimer->CyclicID = cyclic_add(&pTimer->CyclicInfo, &timerSpec);
     mutex_exit(&cpu_lock);
@@ -189,7 +193,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     pTimer->fSuspended = true;
     rtTimerSolarisStop(pTimer);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -208,7 +212,7 @@ static void rtTimerSolarisCallback(void *pvTimer)
     }
 
     /* Callback user defined callback function */
-    pTimer->pfnTimer(pTimer, pTimer->pvUser);
+    pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
 }
 
 

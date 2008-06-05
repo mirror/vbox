@@ -252,7 +252,7 @@ static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR 
 #ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
-static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser);
+static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 #endif
 
 
@@ -3824,11 +3824,13 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
  * Timer callback function.
  * @param   pTimer      The timer.
  * @param   pvUser      The device extension.
+ * @param   iTick       The current tick.
  */
-static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)pvUser;
     supdrvGipUpdate(pDevExt->pGip, RTTimeSystemNanoTS());
+    NOREF(iTick);
 }
 #endif /* USE_NEW_OS_INTERFACE_FOR_GIP */
 

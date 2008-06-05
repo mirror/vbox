@@ -85,6 +85,8 @@ typedef struct RTTIMER
     uint64_t                u64NanoInterval;
     /** The first shot interval. 0 if ASAP. */
     uint64_t volatile       u64NanoFirst;
+    /** The current timer tick. */
+    uint64_t volatile       iTick;
     /** The error/status of the timer.
      * Initially -1, set to 0 when the timer have been successfully started, and
      * to errno on failure in starting the timer. */
@@ -238,7 +240,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
                                     ||  pTimer->u32Magic != RTTIMER_MAGIC))
                         break;
 
-                    pTimer->pfnTimer(pTimer, pTimer->pvUser);
+                    pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
 
                     /* auto suspend one-shot timers. */
                     if (RT_UNLIKELY(!pTimer->u64NanoInterval))
@@ -371,6 +373,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->pvUser      = pvUser;
         pTimer->u64NanoInterval = u64NanoInterval;
         pTimer->u64NanoFirst = 0;
+        pTimer->iTick       = 0;
         pTimer->iError      = 0;
         rc = RTSemEventCreate(&pTimer->Event);
         AssertRC(rc);
@@ -473,8 +476,9 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      * Tell the thread to start servicing the timer.
      */
     RTThreadUserReset(pTimer->Thread);
-    ASMAtomicXchgU64(&pTimer->u64NanoFirst, u64First);
-    ASMAtomicXchgU8(&pTimer->fSuspended, false);
+    ASMAtomicUoWriteU64(&pTimer->u64NanoFirst, u64First);
+    ASMAtomicUoWriteU64(&pTimer->iTick, 0);
+    ASMAtomicWriteU8(&pTimer->fSuspended, false);
     int rc = RTSemEventSignal(pTimer->Event);
     if (RT_SUCCESS(rc))
     {
