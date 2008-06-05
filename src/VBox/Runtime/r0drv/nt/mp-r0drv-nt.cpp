@@ -100,7 +100,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 }
 
 
-RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     /* Cannot easily distinguish between online and offline cpus. */
     /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
