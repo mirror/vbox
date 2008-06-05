@@ -82,102 +82,6 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     return 0;
 }
 
-#if 0
-static int tstVDOpenCreateWriteMerge(const char *pszBackend,
-                                     const char *pszBaseFilename,
-                                     const char *pszDiffFilename)
-{
-    int rc;
-    PVBOXHDD pVD = NULL;
-    char *pszFormat;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
-
-#define CHECK(str) \
-    do \
-    { \
-        RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
-        { \
-            VDCloseAll(pVD); \
-            return rc; \
-        } \
-    } while (0)
-
-    rc = VDCreate(tstVDError, NULL, &pVD);
-    CHECK("VDCreate()");
-
-    RTFILE File;
-    rc = RTFileOpen(&File, pszBaseFilename, RTFILE_O_READ);
-    if (VBOX_SUCCESS(rc))
-    {
-        RTFileClose(File);
-        rc = VDGetFormat(pszBaseFilename, &pszFormat);
-        RTPrintf("VDGetFormat() pszFormat=%s rc=%Vrc\n", pszFormat, rc);
-        if (VBOX_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
-        {
-            rc = VERR_GENERAL_FAILURE;
-            RTPrintf("VDGetFormat() returned incorrect backend name\n");
-        }
-        RTStrFree(pszFormat);
-        CHECK("VDGetFormat()");
-
-        rc = VDOpen(pVD, pszBackend, pszBaseFilename, VD_OPEN_FLAGS_NORMAL);
-        CHECK("VDOpen()");
-    }
-    else
-    {
-        rc = VDCreateBase(pVD, pszBackend, pszBaseFilename,
-                          VD_IMAGE_TYPE_NORMAL, 1000 * _1M,
-                          VD_IMAGE_FLAGS_NONE, "Test image",
-                          &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
-                          NULL, NULL);
-        CHECK("VDCreateBase()");
-    }
-
-    void *pvBuf = RTMemAlloc(_1M);
-
-    memset(pvBuf, 0x33, _1M);
-    rc = VDWrite(pVD, 20 * _1M + 594432, pvBuf, _1M);
-    CHECK("VDWrite()");
-
-    memset(pvBuf, 0x46, _1M);
-    rc = VDWrite(pVD, 20 * _1M + 594432, pvBuf, _1K);
-    CHECK("VDWrite()");
-
-    memset(pvBuf, 0x51, _1M);
-    rc = VDWrite(pVD, 40 * _1M + 594432, pvBuf, _1K);
-    CHECK("VDWrite()");
-
-    rc = VDCreateDiff(pVD, pszBackend, pszDiffFilename,
-                      VD_IMAGE_FLAGS_NONE, "Test diff image",
-                      VD_OPEN_FLAGS_NORMAL, NULL, NULL);
-    CHECK("VDCreateDiff()");
-
-    memset(pvBuf, '_', _1M);
-    rc = VDWrite(pVD, 20 * _1M + 594432, pvBuf, 512);
-    CHECK("VDWrite()");
-
-    rc = VDWrite(pVD, 22 * _1M + 594432, pvBuf, 78336);
-    CHECK("VDWrite()");
-    rc = VDWrite(pVD, 13 * _1M + 594432, pvBuf, 783360);
-    CHECK("VDWrite()");
-    rc = VDWrite(pVD, 44 * _1M + 594432, pvBuf, 68096);
-    CHECK("VDWrite()");
-
-    VDDumpImages(pVD);
-
-    RTPrintf("Merging diff into base..\n");
-    rc = VDMerge(pVD, -1, 0, NULL, NULL);
-    CHECK("VDMerge()");
-
-    VDDumpImages(pVD);
-
-    VDCloseAll(pVD);
-#undef CHECK
-    return 0;
-}
-#else
 
 #undef RTDECL
 #define RTDECL(x) static x
@@ -407,11 +311,12 @@ static void generateRandomSegments(PRNDCTX pCtx, PSEGMENT pSegment, uint32_t nSe
     {
         pSegment[i].u32Length = RTPRandU32Ex(pCtx, 1, RT_MIN(pSegment[i+1].u64Offset - pSegment[i].u64Offset,
                                                              u32MaxSegmentSize) / u32SectorSize) * u32SectorSize;
+        Assert(pSegment[i].u32Length <= u32MaxSegmentSize);
         pSegment[i].u8Value  = RTPRandU32Ex(pCtx, (uint32_t)u8ValueLow, (uint32_t)u8ValueHigh);
     }
 }
 
-static void mergeSegments(PSEGMENT pBaseSegment, PSEGMENT pDiffSegment, PSEGMENT pMergeSegment)
+static void mergeSegments(PSEGMENT pBaseSegment, PSEGMENT pDiffSegment, PSEGMENT pMergeSegment, uint32_t u32MaxLength)
 {
     while (pBaseSegment->u32Length > 0 || pDiffSegment->u32Length > 0)
     {
@@ -423,10 +328,12 @@ static void mergeSegments(PSEGMENT pBaseSegment, PSEGMENT pDiffSegment, PSEGMENT
             else
             {
                 pMergeSegment->u32Length = pDiffSegment->u64Offset - pMergeSegment->u64Offset;
+                Assert(pMergeSegment->u32Length <= u32MaxLength);
                 if (pBaseSegment->u64Offset + pBaseSegment->u32Length >
                     pDiffSegment->u64Offset + pDiffSegment->u32Length)
                 {
-                    pBaseSegment->u32Length -= pBaseSegment->u64Offset -pDiffSegment->u64Offset - pDiffSegment->u32Length;
+                    pBaseSegment->u32Length -= pDiffSegment->u64Offset + pDiffSegment->u32Length - pBaseSegment->u64Offset;
+                    Assert(pBaseSegment->u32Length <= u32MaxLength);
                     pBaseSegment->u64Offset = pDiffSegment->u64Offset + pDiffSegment->u32Length;
                 }
                 else
@@ -447,6 +354,7 @@ static void mergeSegments(PSEGMENT pBaseSegment, PSEGMENT pDiffSegment, PSEGMENT
                 if (pBaseSegment->u64Offset + pBaseSegment->u32Length > pDiffSegment->u64Offset + pDiffSegment->u32Length)
                 {
                     pBaseSegment->u32Length -= pDiffSegment->u64Offset + pDiffSegment->u32Length - pBaseSegment->u64Offset;
+                    Assert(pBaseSegment->u32Length <= u32MaxLength);
                     pBaseSegment->u64Offset = pDiffSegment->u64Offset + pDiffSegment->u32Length;
                     pDiffSegment++;
                     pMergeSegment++;
@@ -554,7 +462,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
         CHECK("VDCreateBase()");
     }
 
-    int nSegments = 10;
+    int nSegments = 100;
     /* Allocate one extra element for a sentinel. */
     PSEGMENT paBaseSegments  = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1));
     PSEGMENT paDiffSegments  = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1));
@@ -589,7 +497,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     rc = VDMerge(pVD, -1, 0, NULL, NULL);
     CHECK("VDMerge()");
 
-    mergeSegments(paBaseSegments, paDiffSegments, paMergeSegments);
+    mergeSegments(paBaseSegments, paDiffSegments, paMergeSegments, _1M);
     /*RTPrintf("\nMerged segments:\n");
     for (pSegment = paMergeSegments; pSegment->u32Length; pSegment++)
         RTPrintf("off: %08Lx len: %04x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
@@ -606,7 +514,72 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
 #undef CHECK
     return 0;
 }
-#endif
+
+static int tstVDCreateWriteOpenRead(const char *pszBackend,
+                                    const char *pszFilename,
+                                    uint32_t u32Seed)
+{
+    int rc;
+    PVBOXHDD pVD = NULL;
+    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
+    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    uint64_t u64DiskSize  = 1000 * _1M;
+    uint32_t u32SectorSize = 512;
+
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDCloseAll(pVD); \
+            return rc; \
+        } \
+    } while (0)
+
+    rc = VDCreate(tstVDError, NULL, &pVD);
+    CHECK("VDCreate()");
+
+    RTFILE File;
+    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTFileClose(File);
+        RTFileDelete(pszFilename);
+    }
+
+    rc = VDCreateBase(pVD, pszBackend, pszFilename,
+                      VD_IMAGE_TYPE_NORMAL, u64DiskSize,
+                      VD_IMAGE_FLAGS_NONE, "Test image",
+                      &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
+                      NULL, NULL);
+    CHECK("VDCreateBase()");
+
+    int nSegments = 100;
+    /* Allocate one extra element for a sentinel. */
+    PSEGMENT paSegments  = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1));
+
+    void *pvBuf = RTMemAlloc(_1M);
+
+    RNDCTX ctx;
+    initializeRandomGenerator(&ctx, u32Seed);
+    generateRandomSegments(&ctx, paSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
+
+    writeSegmentsToDisk(pVD, pvBuf, paSegments);
+
+    VDCloseAll(pVD);
+
+    rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL);
+    CHECK("VDOpen()");
+    rc = readAndCompareSegments(pVD, pvBuf, paSegments);
+    CHECK("readAndCompareSegments()");
+
+    RTMemFree(paSegments);
+
+    VDCloseAll(pVD);
+#undef CHECK
+    return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -630,10 +603,13 @@ int main(int argc, char *argv[])
      */
     RTFileDelete("tmpVDCreate.vdi");
     RTFileDelete("tmpVDCreate.vmdk");
+    RTFileDelete("tmpVDCreate.vhd");
     RTFileDelete("tmpVDBase.vdi");
     RTFileDelete("tmpVDDiff.vdi");
     RTFileDelete("tmpVDBase.vmdk");
     RTFileDelete("tmpVDDiff.vmdk");
+    RTFileDelete("tmpVDBase.vhd");
+    RTFileDelete("tmpVDDiff.vhd");
 
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
@@ -683,6 +659,22 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed split VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+    rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic VHD create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
+                           VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: fixed VHD create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
 
     rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
     if (VBOX_FAILURE(rc))
@@ -709,26 +701,32 @@ int main(int argc, char *argv[])
         g_cErrors++;
     }
 
-    /*
-     * Clean up any leftovers.
-     */
-    RTFileDelete("tmpVDCreate.vdi");
-    RTFileDelete("tmpVDCreate.vmdk");
-    RTFileDelete("tmpVDBase.vdi");
-    RTFileDelete("tmpVDDiff.vdi");
-    RTFileDelete("tmpVDBase.vmdk");
-    RTFileDelete("tmpVDDiff.vmdk");
+    rc = tstVDCreateWriteOpenRead("VHD", "tmpVDCreate.vhd", u32Seed);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VHD test failed (creating image)! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
 #if 0
-    rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
+    rc = tstVDOpenCreateWriteMerge("VHD", "tmpVDBase.vhd", "tmpVDDiff.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#endif
+    /*
+     * Clean up any leftovers.
+     */
+    RTFileDelete("tmpVDCreate.vdi");
+    RTFileDelete("tmpVDCreate.vmdk");
+    RTFileDelete("tmpVDCreate.vhd");
     RTFileDelete("tmpVDBase.vdi");
     RTFileDelete("tmpVDDiff.vdi");
-    //RTFileDelete("tmpVDDiff.vhd");
-#endif
+    RTFileDelete("tmpVDBase.vmdk");
+    RTFileDelete("tmpVDDiff.vmdk");
+    RTFileDelete("tmpVDBase.vhd");
+    RTFileDelete("tmpVDDiff.vhd");
 
     /*
      * Summary
