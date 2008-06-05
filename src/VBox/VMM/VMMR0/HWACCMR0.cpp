@@ -725,8 +725,6 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     int      rc;
     RTCPUID  idCpu = RTMpCpuId();
 
-    AssertReturn(HWACCMR0Globals.pfnEnterSession, VERR_INTERNAL_ERROR);
-
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -736,6 +734,12 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
 
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
     pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
+
+    /* Setup the register and mask according to the current execution mode. */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        pVM->hwaccm.s.u64RegisterMask = 0xFFFFFFFFFFFFFFFFULL;
+    else
+        pVM->hwaccm.s.u64RegisterMask = 0xFFFFFFFFULL;
 
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, &HWACCMR0Globals.aCpuInfo[idCpu]);
     AssertRC(rc);
@@ -1010,50 +1014,50 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx)
 /* Dummy callback handlers. */
 HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
 
 HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
-    return VERR_INTERNAL_ERROR;
+    return VINF_SUCCESS;
 }
