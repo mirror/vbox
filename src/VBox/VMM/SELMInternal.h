@@ -98,12 +98,14 @@ typedef struct SELM
     /** The current (last) effective Guest GDT size. */
     RTUINT                  cbEffGuestGdtLimit;
 
+    uint32_t                padding0;
+
     /** HC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
     R3PTRTYPE(void *)       HCPtrLdt;
     /** GC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
     RCPTRTYPE(void *)       GCPtrLdt;
 #if GC_ARCH_BITS == 64
-    RTRCPTR                 padding0;
+    RTRCPTR                 padding1;
 #endif
     /** GC Pointer to the current Guest's LDT. */
     RTGCPTR                 GCPtrGuestLdt;
@@ -111,9 +113,9 @@ typedef struct SELM
     RTUINT                  cbLdtLimit;
     /** Current LDT offset relative to pvLdt*. */
     RTUINT                  offLdtHyper;
-
-    uint32_t                padding1[3];
-
+#if HC_ARCH_BITS == 32
+    uint32_t                padding2[2];
+#endif
     /** TSS. (This is 16 byte aligned!)
       * @todo I/O bitmap & interrupt redirection table? */
     VBOXTSS                 Tss;
@@ -124,7 +126,7 @@ typedef struct SELM
     /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
     RCPTRTYPE(void *)       GCPtrTss;
 #if GC_ARCH_BITS == 64
-    RTRCPTR                 padding2;
+    RTRCPTR                 padding3;
 #endif
     /** GC Pointer to the current Guest's TSS. */
     RTGCPTR                 GCPtrGuestTss;
