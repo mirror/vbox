@@ -167,6 +167,8 @@ typedef struct HWACCM
     /** Old style FPU reporting trap mask override performed (optimization) */
     uint32_t                    fFPUOldStyleOverride;
 
+    /** And mask for copying register contents. */
+    uint64_t                    u64RegisterMask;
     struct
     {
         /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
