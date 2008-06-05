@@ -284,7 +284,7 @@ VBOX_X11_SEAMLESS_GUEST = 1
 # Enable the virtual SATA/AHCI controller
 VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
-#VBOX_WITH_PDM_ASYNC_COMPLETION = 1
+VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Enable use of the $ORIGIN rpath feature. This is the default on
 # Solaris, but not else where for various reasons (ld.so, dist builds).
 ifeq ($(KBUILD_TARGET),solaris)
@@ -342,7 +342,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Later:
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 # Most stuff doesn't build yet on the new targets.
@@ -363,7 +362,6 @@ ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_OGL=
- VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -375,7 +373,6 @@ ifeq ($(KBUILD_TARGET),freebsd)
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
  VBOX_WITH_DOCS=
- VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 
