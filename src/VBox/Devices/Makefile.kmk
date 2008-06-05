@@ -225,6 +225,7 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 #
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
+DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE
 DevicesR3_INCS         := \
 	$(PATH_SUB_CURRENT)
 DevicesR3_SOURCES       = \

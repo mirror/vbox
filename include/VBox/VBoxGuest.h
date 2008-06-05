@@ -162,7 +162,12 @@ typedef enum
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
+#ifdef VBOX_WITH_64_BITS_GUESTS
+    VMMDevReq_HGCMCall32                 = 62,
+    VMMDevReq_HGCMCall64                 = 63,
+#else
     VMMDevReq_HGCMCall                   = 62,
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 #endif
     VMMDevReq_VideoAccelEnable           = 70,
     VMMDevReq_VideoAccelFlush            = 71,
@@ -178,6 +183,28 @@ typedef enum
     VMMDevReq_LogString                  = 200,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+/*
+ * Constants and structures are redefined for the guest.
+ *
+ * Host code MUST always use either *32 or *64 variant explicitely.
+ * Host source code will use VBOX_HGCM_HOST_CODE define to catch undefined
+ * data types and constants.
+ *
+ * This redefinition means that the new additions builds will use
+ * the *64 or *32 variants depending on the current architecture bit count (ARCH_BITS).
+ */
+# ifndef VBOX_HGCM_HOST_CODE
+#  if ARCH_BITS == 64
+#   define VMMDevReq_HGCMCall VMMDevReq_HGCMCall64
+#  elif ARCH_BITS == 32
+#   define VMMDevReq_HGCMCall VMMDevReq_HGCMCall32
+#  else
+#   error "Unsupported ARCH_BITS"
+#  endif
+# endif /* !VBOX_HGCM_HOST_CODE */
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 /** Version of VMMDevRequestHeader structure. */
 #define VMMDEV_REQUEST_HEADER_VERSION (0x10001)
@@ -661,6 +688,47 @@ typedef enum
     VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
+typedef struct _HGCMFUNCTIONPARAMETER32
+{
+    HGCMFunctionParameterType type;
+    union
+    {
+        uint32_t   value32;
+        uint64_t   value64;
+        struct
+        {
+            uint32_t size;
+
+            union
+            {
+                vmmDevHypPhys physAddr;
+                vmmDevHypPtr  linearAddr;
+            } u;
+        } Pointer;
+    } u;
+} HGCMFunctionParameter32;
+
+typedef struct _HGCMFUNCTIONPARAMETER64
+{
+    HGCMFunctionParameterType type;
+    union
+    {
+        uint32_t   value32;
+        uint64_t   value64;
+        struct
+        {
+            uint32_t size;
+
+            union
+            {
+                uint64_t physAddr;
+                uint64_t linearAddr;
+            } u;
+        } Pointer;
+    } u;
+} HGCMFunctionParameter64;
+#else
 typedef struct _HGCMFUNCTIONPARAMETER
 {
     HGCMFunctionParameterType type;
@@ -680,6 +748,21 @@ typedef struct _HGCMFUNCTIONPARAMETER
         } Pointer;
     } u;
 } HGCMFunctionParameter;
+#endif /* VBOX_WITH_64_BITS_GUESTS */
+
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+/* Redefine the structure type for the guest code. */
+# ifndef VBOX_HGCM_HOST_CODE
+#  if ARCH_BITS == 64
+#    define HGCMFunctionParameter HGCMFunctionParameter64
+#  elif ARCH_BITS == 32
+#    define HGCMFunctionParameter HGCMFunctionParameter32
+#  else
+#   error "Unsupported sizeof (void *)"
+#  endif
+# endif /* !VBOX_HGCM_HOST_CODE */
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 typedef struct
 {
@@ -696,7 +779,15 @@ typedef struct
 } VMMDevHGCMCall;
 #pragma pack()
 
-#define VMMDEV_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((char *)a + sizeof (VMMDevHGCMCall)))
+#define VMMDEV_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+/* Explicit defines for the host code. */
+# ifdef VBOX_HGCM_HOST_CODE
+#  define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+#  define VMMDEV_HGCM_CALL_PARMS64(a) ((HGCMFunctionParameter64 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+# endif /* VBOX_HGCM_HOST_CODE */
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 #define VBOX_HGCM_MAX_PARMS 32
 
@@ -1271,9 +1362,16 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevHGCMConnect);
         case VMMDevReq_HGCMDisconnect:
             return sizeof(VMMDevHGCMDisconnect);
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        case VMMDevReq_HGCMCall32:
+            return sizeof(VMMDevHGCMCall);
+        case VMMDevReq_HGCMCall64:
+            return sizeof(VMMDevHGCMCall);
+#else
         case VMMDevReq_HGCMCall:
             return sizeof(VMMDevHGCMCall);
-#endif
+#endif /* VBOX_WITH_64_BITS_GUESTS */
+#endif /* VBOX_HGCM */
         case VMMDevReq_VideoAccelEnable:
             return sizeof(VMMDevVideoAccelEnable);
         case VMMDevReq_VideoAccelFlush:

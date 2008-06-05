@@ -89,6 +89,8 @@ typedef struct _VBoxClipboardGetHostMsg
     HGCMFunctionParameter formats; /* OUT uint32_t */
 } VBoxClipboardGetHostMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG 2
+
 typedef struct _VBoxClipboardFormats
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -96,6 +98,8 @@ typedef struct _VBoxClipboardFormats
     /* VBOX_SHARED_CLIPBOARD_FMT_* */
     HGCMFunctionParameter formats; /* OUT uint32_t */
 } VBoxClipboardFormats;
+
+#define VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS 1
 
 typedef struct _VBoxClipboardReadData
 {
@@ -114,6 +118,8 @@ typedef struct _VBoxClipboardReadData
 
 } VBoxClipboardReadData;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA 3
+
 typedef struct _VBoxClipboardWriteData
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -124,6 +130,9 @@ typedef struct _VBoxClipboardWriteData
     /* Data.  */
     HGCMFunctionParameter ptr;    /* IN linear pointer. */
 } VBoxClipboardWriteData;
+
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 2
+
 #pragma pack ()
 
 #endif

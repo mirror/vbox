@@ -128,7 +128,7 @@ DECLVBGL(int) vboxCallQueryMappings (PVBSFCLIENT pClient, SHFLMAPPING paMappings
 
     data.mappings.type                   = VMMDevHGCMParmType_LinAddr;
     data.mappings.u.Pointer.size         = sizeof (SHFLMAPPING) * *pcMappings;
-    data.mappings.u.Pointer.u.linearAddr = (RTGCPTR)&paMappings[0];
+    data.mappings.u.Pointer.u.linearAddr = (uintptr_t)&paMappings[0];
 
 /*    Log(("VBOXSF: in ifs difference %d\n",
          (char *)&data.flags.type - (char *)&data.callInfo.cParms));
@@ -165,7 +165,7 @@ DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRI
 
     data.name.type                   = VMMDevHGCMParmType_LinAddr;
     data.name.u.Pointer.size         = size;
-    data.name.u.Pointer.u.linearAddr = (RTGCPTR)pString;
+    data.name.u.Pointer.u.linearAddr = (uintptr_t)pString;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 
@@ -191,7 +191,7 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
 
     data.path.type                    = VMMDevHGCMParmType_LinAddr;
     data.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
-    data.path.u.Pointer.u.linearAddr  = (RTGCPTR)szFolderName;
+    data.path.u.Pointer.u.linearAddr  = (uintptr_t)szFolderName;
 
     data.root.type                    = VMMDevHGCMParmType_32bit;
     data.root.u.value32               = 0;
@@ -226,7 +226,7 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
 
         data.path.type                    = VMMDevHGCMParmType_LinAddr;
         data.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
-        data.path.u.Pointer.u.linearAddr  = (RTGCPTR)szFolderName;
+        data.path.u.Pointer.u.linearAddr  = (uintptr_t)szFolderName;
 
         data.root.type                    = VMMDevHGCMParmType_32bit;
         data.root.u.value32               = 0;
@@ -283,11 +283,11 @@ DECLVBGL(int) vboxCallCreate (PVBSFCLIENT pClient, PVBSFMAP pMap,
 
     data.path.type                    = VMMDevHGCMParmType_LinAddr;
     data.path.u.Pointer.size          = ShflStringSizeOfBuffer (pParsedPath);
-    data.path.u.Pointer.u.linearAddr  = (RTGCPTR)pParsedPath;
+    data.path.u.Pointer.u.linearAddr  = (uintptr_t)pParsedPath;
 
     data.parms.type                   = VMMDevHGCMParmType_LinAddr;
     data.parms.u.Pointer.size         = sizeof (SHFLCREATEPARMS);
-    data.parms.u.Pointer.u.linearAddr = (RTGCPTR)pCreateParms;
+    data.parms.u.Pointer.u.linearAddr = (uintptr_t)pCreateParms;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 
@@ -342,7 +342,7 @@ DECLVBGL(int) vboxCallRemove (PVBSFCLIENT pClient, PVBSFMAP pMap,
 
     data.path.type                      = VMMDevHGCMParmType_LinAddr_In;
     data.path.u.Pointer.size            = ShflStringSizeOfBuffer (pParsedPath);
-    data.path.u.Pointer.u.linearAddr    = (RTGCPTR)pParsedPath;
+    data.path.u.Pointer.u.linearAddr    = (uintptr_t)pParsedPath;
 
     data.flags.type                     = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                = flags;
@@ -374,11 +374,11 @@ DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap,
 
     data.src.type                       = VMMDevHGCMParmType_LinAddr_In;
     data.src.u.Pointer.size             = ShflStringSizeOfBuffer (pSrcPath);
-    data.src.u.Pointer.u.linearAddr     = (RTGCPTR)pSrcPath;
+    data.src.u.Pointer.u.linearAddr     = (uintptr_t)pSrcPath;
 
     data.dest.type                      = VMMDevHGCMParmType_LinAddr_In;
     data.dest.u.Pointer.size            = ShflStringSizeOfBuffer (pDestPath);
-    data.dest.u.Pointer.u.linearAddr    = (RTGCPTR)pDestPath;
+    data.dest.u.Pointer.u.linearAddr    = (uintptr_t)pDestPath;
 
     data.flags.type                     = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                = flags;
@@ -415,7 +415,7 @@ DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
     data.cb.u.value32                   = *pcbBuffer;
     data.buffer.type                    = (fLocked) ? VMMDevHGCMParmType_LinAddr_Locked_Out : VMMDevHGCMParmType_LinAddr_Out;
     data.buffer.u.Pointer.size          = *pcbBuffer;
-    data.buffer.u.Pointer.u.linearAddr  = (RTGCPTR)pBuffer;
+    data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 
@@ -450,7 +450,7 @@ DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile
     data.cb.u.value32                   = *pcbBuffer;
     data.buffer.type                    = (fLocked) ? VMMDevHGCMParmType_LinAddr_Locked_In : VMMDevHGCMParmType_LinAddr_In;
     data.buffer.u.Pointer.size          = *pcbBuffer;
-    data.buffer.u.Pointer.u.linearAddr  = (RTGCPTR)pBuffer;
+    data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 
@@ -520,11 +520,11 @@ DECLVBGL(int) vboxCallDirInfo (
     data.path.type                      = VMMDevHGCMParmType_LinAddr_In;
     data.path.u.Pointer.size            =
         (ParsedPath) ? ShflStringSizeOfBuffer(ParsedPath) : 0;
-    data.path.u.Pointer.u.linearAddr    = (RTGCPTR) ParsedPath;
+    data.path.u.Pointer.u.linearAddr    = (uintptr_t) ParsedPath;
 
     data.buffer.type                    = VMMDevHGCMParmType_LinAddr_Out;
     data.buffer.u.Pointer.size          = *pcbBuffer;
-    data.buffer.u.Pointer.u.linearAddr  = (RTGCPTR)pBuffer;
+    data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
     data.resumePoint.type               = VMMDevHGCMParmType_32bit;
     data.resumePoint.u.value32          = index;
@@ -565,7 +565,7 @@ DECLVBGL(int) vboxCallFSInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFil
     data.cb.u.value32                   = *pcbBuffer;
     data.info.type                      = VMMDevHGCMParmType_LinAddr;
     data.info.u.Pointer.size            = *pcbBuffer;
-    data.info.u.Pointer.u.linearAddr    = (RTGCPTR)pBuffer;
+    data.info.u.Pointer.u.linearAddr    = (uintptr_t)pBuffer;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 

@@ -31,8 +31,6 @@
 
 #include "VBoxClipboard.h"
 
-#define VBOX_HGCM_PARM_COUNT(a) ((sizeof (a) - sizeof (((a *)0)->hdr)) / sizeof (HGCMFunctionParameter))
-
 static void VBoxHGCMParmUInt32Set (VBOXHGCMSVCPARM *pParm, uint32_t u32)
 {
     pParm->type = VBOX_HGCM_SVC_PARM_32BIT;
@@ -338,7 +336,7 @@ static DECLCALLBACK(void) svcCall (void *,
             /* The quest requests a host message. */
             Log(("svcCall: VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG\n"));
 
-            if (cParms != VBOX_HGCM_PARM_COUNT (VBoxClipboardGetHostMsg))
+            if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -386,7 +384,7 @@ static DECLCALLBACK(void) svcCall (void *,
             /* The guest reports that some formats are available. */
             Log(("svcCall: VBOX_SHARED_CLIPBOARD_FN_FORMATS\n"));
 
-            if (cParms != VBOX_HGCM_PARM_COUNT (VBoxClipboardFormats))
+            if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -431,7 +429,7 @@ static DECLCALLBACK(void) svcCall (void *,
             /* The guest wants to read data in the given format. */
             Log(("svcCall: VBOX_SHARED_CLIPBOARD_FN_READ_DATA\n"));
 
-            if (cParms != VBOX_HGCM_PARM_COUNT (VBoxClipboardReadData))
+            if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -499,7 +497,7 @@ static DECLCALLBACK(void) svcCall (void *,
             /* The guest writes the requested data. */
             Log(("svcCall: VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA\n"));
 
-            if (cParms != VBOX_HGCM_PARM_COUNT (VBoxClipboardWriteData))
+            if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
