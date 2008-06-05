@@ -44,10 +44,10 @@ struc CPUMCTXCORE
     .ebx            resq    1
     .edx            resq    1
     .ecx            resq    1
-    .esp            resd    1
+    .esp            resq    1
+    .lss_esp        resd    1
     .ss             resw    1
     .ssPadding      resw    1
-    .rsp            resq    1
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1
@@ -107,10 +107,10 @@ struc CPUMCTX
     .ebx            resq    1
     .edx            resq    1
     .ecx            resq    1
-    .esp            resd    1
+    .esp            resq    1
+    .lss_esp        resd    1
     .ss             resw    1
     .ssPadding      resw    1
-    .rsp            resq    1
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1

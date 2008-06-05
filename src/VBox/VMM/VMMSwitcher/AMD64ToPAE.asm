@@ -452,9 +452,11 @@ GLOBALNAME JmpGCTarget
     DEBUG_CHAR('2')
     lidt    [edx + CPUM.Hyper.idtr]
 
-    ; Setup stack
+    ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('3')
-    lss     esp, [edx + CPUM.Hyper.esp]
+    mov     eax, [edx + CPUM.Hyper.esp]
+    mov     [edx + CPUM.Hyper.lss_esp], eax
+    lss     esp, [edx + CPUM.Hyper.lss_esp]
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     DEBUG_CHAR('4')

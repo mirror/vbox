@@ -737,9 +737,9 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
 
     /* Setup the register and mask according to the current execution mode. */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        pVM->hwaccm.s.u64RegisterMask = 0xFFFFFFFFFFFFFFFFULL;
+        pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFFFFFFFFFF);
     else
-        pVM->hwaccm.s.u64RegisterMask = 0xFFFFFFFFULL;
+        pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, &HWACCMR0Globals.aCpuInfo[idCpu]);
     AssertRC(rc);

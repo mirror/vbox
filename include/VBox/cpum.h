@@ -116,23 +116,26 @@ typedef struct CPUMCTXCORE
         uint32_t        ecx;
         uint64_t        rcx;
     };
-    /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
-    uint32_t        esp;
-    RTSEL           ss;
-    RTSEL           ssPadding;
-    /* Note: no overlap with esp here. */
-    uint64_t        rsp;
+    union
+    {
+        uint32_t        esp;
+        uint64_t        rsp;
+    };
+    /* Note: lss esp, [] in the switcher needs some space, so we reserve it here instead of relying on the exact esp & ss layout as before. */
+    uint32_t            lss_esp;
+    RTSEL               ss;
+    RTSEL               ssPadding;
 
-    RTSEL           gs;
-    RTSEL           gsPadding;
-    RTSEL           fs;
-    RTSEL           fsPadding;
-    RTSEL           es;
-    RTSEL           esPadding;
-    RTSEL           ds;
-    RTSEL           dsPadding;
-    RTSEL           cs;
-    RTSEL           csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
+    RTSEL               gs;
+    RTSEL               gsPadding;
+    RTSEL               fs;
+    RTSEL               fsPadding;
+    RTSEL               es;
+    RTSEL               esPadding;
+    RTSEL               ds;
+    RTSEL               dsPadding;
+    RTSEL               cs;
+    RTSEL               csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
 
     union
     {
@@ -216,23 +219,26 @@ typedef struct CPUMCTX
         uint32_t        ecx;
         uint64_t        rcx;
     };
-    /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
-    uint32_t        esp;
-    RTSEL           ss;
-    RTSEL           ssPadding;
-    /* Note: no overlap with esp here. */
-    uint64_t        rsp;
+    union
+    {
+        uint32_t        esp;
+        uint64_t        rsp;
+    };
+    /* Note: lss esp, [] in the switcher needs some space, so we reserve it here instead of relying on the exact esp & ss layout as before (prevented us from using a union with rsp). */
+    uint32_t            lss_esp;
+    RTSEL               ss;
+    RTSEL               ssPadding;
 
-    RTSEL           gs;
-    RTSEL           gsPadding;
-    RTSEL           fs;
-    RTSEL           fsPadding;
-    RTSEL           es;
-    RTSEL           esPadding;
-    RTSEL           ds;
-    RTSEL           dsPadding;
-    RTSEL           cs;
-    RTSEL           csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
+    RTSEL               gs;
+    RTSEL               gsPadding;
+    RTSEL               fs;
+    RTSEL               fsPadding;
+    RTSEL               es;
+    RTSEL               esPadding;
+    RTSEL               ds;
+    RTSEL               dsPadding;
+    RTSEL               cs;
+    RTSEL               csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
 
     union
     {

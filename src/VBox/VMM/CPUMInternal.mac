@@ -180,10 +180,10 @@ struc CPUM
     .Hyper.ebx            resq    1
     .Hyper.edx            resq    1
     .Hyper.ecx            resq    1
-    .Hyper.esp            resd    1
+    .Hyper.esp            resq    1
+    .Hyper.lss_esp        resd    1
     .Hyper.ss             resw    1
     .Hyper.ssPadding      resw    1
-    .Hyper.rsp            resq    1
     .Hyper.gs             resw    1
     .Hyper.gsPadding      resw    1
     .Hyper.fs             resw    1
@@ -296,10 +296,10 @@ struc CPUM
     .Guest.ebx            resq    1
     .Guest.edx            resq    1
     .Guest.ecx            resq    1
-    .Guest.esp            resd    1
+    .Guest.esp            resq    1
+    .Guest.lss_esp        resd    1
     .Guest.ss             resw    1
     .Guest.ssPadding      resw    1
-    .Guest.rsp            resq    1
     .Guest.gs             resw    1
     .Guest.gsPadding      resw    1
     .Guest.fs             resw    1
