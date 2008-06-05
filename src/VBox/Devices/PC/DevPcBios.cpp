@@ -828,7 +828,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
 #define STRCPY(p, s) \
     do { \
         size_t _len = strlen(s) + 1; \
-        size_t _max = (size_t)(pszStr + _len - (char *)pTable) + 1; /* +1 for strtab terminator */ \
+        size_t _max = (size_t)(pszStr + _len - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
         if (_max > cbMax) \
             return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
                     N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
