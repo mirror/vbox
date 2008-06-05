@@ -101,6 +101,8 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
  * Create a suspended timer.
  *
  * @returns iprt status code.
+ * @retval  VERR_NOT_SUPPORTED if an unsupported flag was specfied.
+ *
  * @param   ppTimer             Where to store the timer handle.
  * @param   u64NanoInterval     The interval between timer ticks specified in nanoseconds if it's
  *                              a recurring timer. This is rounded to the fit the system timer granularity.
