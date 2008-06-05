@@ -37,7 +37,12 @@
  *    (smart Qt-based C++ wrapper classes for COM interfaces
  *     of the Main API)
  *
- * 6. src/VBox/Installer/win32/VirtualBox_TypeLib.xsl =>
+ * 6. src/VBox/Frontends/VirtualBox4/include/COMWrappers.xsl =>
+ *    out/<platform>/obj/src/VBox/Frontends/VirtualBox4/VirtualBox/include/COMWrappers.h
+ *    (smart Qt-based C++ wrapper classes for COM interfaces
+ *     of the Main API)
+ *
+ * 7. src/VBox/Installer/win32/VirtualBox_TypeLib.xsl =>
  *    out/<platform>/obj/src/VBox/Installer/win32/VirtualBox_TypeLib.wxi
  *    (Main API TypeLib block for the WiX installer)
  *
