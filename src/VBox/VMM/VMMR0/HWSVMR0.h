@@ -118,6 +118,14 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 
 
 /**
+ * Save the host state
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM);
+
+/**
  * Loads the guest state
  *
  * @returns VBox status code.

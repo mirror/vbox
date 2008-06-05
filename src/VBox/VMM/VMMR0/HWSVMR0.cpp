@@ -498,6 +498,17 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
     return VINF_SUCCESS;
 }
 
+/**
+ * Save the host state
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
 
 /**
  * Loads the guest state
@@ -741,7 +752,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
-    AssertReturn(pCpu->fSVMConfigured, VERR_EM_INTERNAL_ERROR);
+    AssertReturn(pCpu->fConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
     AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
