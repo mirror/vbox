@@ -411,17 +411,17 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     VBoxGlobal::setLayoutMargin (fdsContainerLayout, 5);
     fdsContainerLayout->setSpacing (0);
     /* Create info-pane for hd list-view */
-    createInfoString (mHdsPane1, mHdsContainer, 0, 0, 1, 3);
-    createInfoString (mHdsPane2, mHdsContainer, 1, 0);
-    createInfoString (mHdsPane3, mHdsContainer, 1, 2);
-    createInfoString (mHdsPane4, mHdsContainer, 2, 0);
-    createInfoString (mHdsPane5, mHdsContainer, 2, 2);
+    createInfoString (mHdsPane1, mHdsContainer, false, 0, 0, 1, 3);
+    createInfoString (mHdsPane2, mHdsContainer,  true, 1, 0);
+    createInfoString (mHdsPane3, mHdsContainer, false, 1, 2);
+    createInfoString (mHdsPane4, mHdsContainer,  true, 2, 0);
+    createInfoString (mHdsPane5, mHdsContainer, false, 2, 2);
     /* Create info-pane for cd list-view */
-    createInfoString (mCdsPane1, mCdsContainer, 0, 0);
-    createInfoString (mCdsPane2, mCdsContainer, 1, 0);
+    createInfoString (mCdsPane1, mCdsContainer, false, 0, 0);
+    createInfoString (mCdsPane2, mCdsContainer, false, 1, 0);
     /* Create info-pane for fd list-view */
-    createInfoString (mFdsPane1, mFdsContainer, 0, 0);
-    createInfoString (mFdsPane2, mFdsContainer, 1, 0);
+    createInfoString (mFdsPane1, mFdsContainer, false, 0, 0);
+    createInfoString (mFdsPane2, mFdsContainer, false, 1, 0);
 
     /* Enumeration progressbar creation */
     mProgressBar = new VBoxProgressBar (this);
@@ -1996,6 +1996,7 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
 
 void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
                                                 QWidget *aRoot,
+                                                bool aLeftRigthMargin,
                                                 int aRow, int aCol,
                                                 int aRowSpan /* = 1 */, int aColSpan /* = 1 */) const
 {
@@ -2014,6 +2015,15 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
 
     /* Add the two widgets */
     rootLayout->addWidget (nameLabel, aRow, aCol, 1, 1);
+    int margin = aInfo->style()->pixelMetric (QStyle::PM_LayoutHorizontalSpacing);
+#if QT_VERSION >= 0x040300
+    if (margin == -1)
+        margin = aInfo->style()->layoutSpacing (QSizePolicy::Label, QSizePolicy::Label, Qt::Horizontal);
+#endif /* QT_VERSION >= 0x040300 */
+    if (aLeftRigthMargin)
+        aInfo->setContentsMargins (margin, NULL, margin, NULL);
+    else 
+        aInfo->setContentsMargins (margin, NULL, NULL, NULL);
     rootLayout->addWidget (aInfo, aRow, aCol + 1, aRowSpan, aColSpan);
 }
 
