@@ -1351,7 +1351,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                 "%sfs={%04x base=%VGv limit=%08x flags=%08x} %sdr6=%08x %sdr7=%08x\n"
                 "%sgs={%04x base=%VGv limit=%08x flags=%08x} %scr0=%08x %scr2=%08x\n"
                 "%sss={%04x base=%VGv limit=%08x flags=%08x} %scr3=%08x %scr4=%08x\n"
-                "%sgdtr=%08x:%04x  %sidtr=%08x:%04x  %seflags=%08x\n"
+                "%sgdtr=%VGv:%04x  %sidtr=%VGv:%04x  %seflags=%08x\n"
                 "%sldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%str  ={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"

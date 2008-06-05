@@ -244,12 +244,10 @@ struc CPUM
     .Hyper.dr6            resq    1
     .Hyper.dr7            resq    1
 
-    .Hyper.gdtr           resb    6           ; GDT limit + linear address
+    .Hyper.gdtr           resb    10          ; GDT limit + linear address
     .Hyper.gdtrPadding    resw    1
-    .Hyper.gdtrPadding64  resd    1
-    .Hyper.idtr           resb    6           ; IDT limit + linear address
+    .Hyper.idtr           resb    10          ; IDT limit + linear address
     .Hyper.idtrPadding    resw    1
-    .Hyper.idtrPadding64  resd    1
     .Hyper.ldtr           resw    1
     .Hyper.ldtrPadding    resw    1
     .Hyper.tr             resw    1
@@ -360,12 +358,10 @@ struc CPUM
     .Guest.dr6            resq    1
     .Guest.dr7            resq    1
 
-    .Guest.gdtr           resb    6           ; GDT limit + linear address
+    .Guest.gdtr           resb    10          ; GDT limit + linear address
     .Guest.gdtrPadding    resw    1
-    .Guest.gdtrPadding64  resd    1
-    .Guest.idtr           resb    6           ; IDT limit + linear address
+    .Guest.idtr           resb    10          ; IDT limit + linear address
     .Guest.idtrPadding    resw    1
-    .Guest.idtrPadding64  resd    1
     .Guest.ldtr           resw    1
     .Guest.ldtrPadding    resw    1
     .Guest.tr             resw    1

@@ -380,7 +380,7 @@ typedef struct VBOXIDTR
     /** Size of the IDT. */
     uint16_t    cbIdt;
     /** Address of the IDT. */
-    uint32_t    pIdt;
+    RTGCPTR     pIdt;
 } VBOXIDTR, *PVBOXIDTR;
 #pragma pack()
 /** @} */
@@ -469,7 +469,7 @@ typedef struct VBOXGDTR
     /** Size of the GDT. */
     uint16_t    cbGdt;
     /** Address of the GDT. */
-    uint32_t    pGdt;
+    RTGCPTR     pGdt;
 } VBOXGDTR;
 #pragma pack()
 /** Pointer to GDTR. */

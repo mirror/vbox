@@ -81,6 +81,8 @@ static DECLCALLBACK(int) dbgcSymSetReg(PCDBGCSYM pSymDesc, PDBGCCMDHLP pCmdHlp, 
 #define SYMREG_SIZE_6           ( 6 << SYMREG_SIZE_SHIFT)
 /** 8 byte. */
 #define SYMREG_SIZE_8           ( 8 << SYMREG_SIZE_SHIFT)
+/** 10 bytes. */
+#define SYMREG_SIZE_10          (10 << SYMREG_SIZE_SHIFT)
 /** 12 byte. */
 #define SYMREG_SIZE_12          (12 << SYMREG_SIZE_SHIFT)
 /** 16 byte. */
@@ -147,13 +149,13 @@ static const DBGCSYM    g_aSyms[] =
     { "tr",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, tr)       | SYMREG_SIZE_2 },
     { "ldtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ldtr)     | SYMREG_SIZE_2 },
 
-    { "gdtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, gdtr)     | SYMREG_SIZE_6 },
+    { "gdtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, gdtr)     | SYMREG_SIZE_10 },
     { "gdtr.limit", dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.cbGdt)| SYMREG_SIZE_2 },
-    { "gdtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.pGdt)| SYMREG_SIZE_4 },
+    { "gdtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.pGdt)| SYMREG_SIZE_8 },
 
-    { "idtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, idtr)     | SYMREG_SIZE_6 },
+    { "idtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, idtr)     | SYMREG_SIZE_10 },
     { "idtr.limit", dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.cbIdt)| SYMREG_SIZE_2 },
-    { "idtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.pIdt)| SYMREG_SIZE_4 },
+    { "idtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.pIdt)| SYMREG_SIZE_8 },
 
     /* hypervisor */
 
@@ -212,13 +214,13 @@ static const DBGCSYM    g_aSyms[] =
     {".tr",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, tr)       | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
     {".ldtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ldtr)     | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
 
-    {".gdtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, gdtr)     | SYMREG_SIZE_6 | SYMREG_FLAGS_HYPER },
+    {".gdtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, gdtr)     | SYMREG_SIZE_10 | SYMREG_FLAGS_HYPER },
     {".gdtr.limit", dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.cbGdt)| SYMREG_SIZE_2| SYMREG_FLAGS_HYPER },
-    {".gdtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.pGdt)| SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
+    {".gdtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, gdtr.pGdt)| SYMREG_SIZE_8 | SYMREG_FLAGS_HYPER },
 
-    {".idtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, idtr)     | SYMREG_SIZE_6 | SYMREG_FLAGS_HYPER },
+    {".idtr",   dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, idtr)     | SYMREG_SIZE_10 | SYMREG_FLAGS_HYPER },
     {".idtr.limit", dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.cbIdt)| SYMREG_SIZE_2| SYMREG_FLAGS_HYPER },
-    {".idtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.pIdt)| SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
+    {".idtr.base",  dbgcSymGetReg,      dbgcSymSetReg,      offsetof(CPUMCTX, idtr.pIdt)| SYMREG_SIZE_8 | SYMREG_FLAGS_HYPER },
 
 };
 

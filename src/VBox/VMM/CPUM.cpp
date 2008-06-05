@@ -61,7 +61,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION    6
+#define CPUM_SAVED_STATE_VERSION    7
 
 
 /*******************************************************************************
@@ -803,7 +803,7 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                 "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
                 "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
-                "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%08x:%04x %sldtr=%04x\n"
+                "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%VGv:%04x %sldtr=%04x\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                 pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
@@ -823,7 +823,7 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 "%sfs={%04x base=%VGv limit=%08x flags=%08x} %sdr6=%08RX64 %sdr7=%08RX64\n"
                 "%sgs={%04x base=%VGv limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
                 "%sss={%04x base=%VGv limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
-                "%sgdtr=%08x:%04x  %sidtr=%08x:%04x  %seflags=%08x\n"
+                "%sgdtr=%VGv:%04x  %sidtr=%VGv:%04x  %seflags=%08x\n"
                 "%sldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%str  ={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"

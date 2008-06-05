@@ -842,7 +842,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 }
                 else
                 {
-                    AssertReleaseMsgFailed(("Couldn't read GDT at %RX32, rc=%Vrc!\n", GDTR.pGdt, rc));
+                    AssertReleaseMsgFailed(("Couldn't read GDT at %VGv, rc=%Vrc!\n", GDTR.pGdt, rc));
                     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
                     return VERR_NOT_IMPLEMENTED;
                 }
@@ -1005,7 +1005,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         if (    GDTR.pGdt != pVM->selm.s.GuestGdtr.pGdt
             ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
         {
-            Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%08X cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
+            Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%VGv cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
 
             /*
              * [Re]Register write virtual handler for guest's GDT.
@@ -2157,7 +2157,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 {
     VBOXGDTR    GDTR;
     CPUMGetGuestGDTR(pVM, &GDTR);
-    RTGCPTR     pGDTGC = (RTGCPTR)GDTR.pGdt;
+    RTGCPTR     pGDTGC = GDTR.pGdt;
     unsigned    cGDTs = ((unsigned)GDTR.cbGdt + 1) / sizeof(VBOXDESC);
 
     pHlp->pfnPrintf(pHlp, "Guest GDT (GCAddr=%VGv limit=%x):\n", pGDTGC, GDTR.cbGdt);
