@@ -817,15 +817,15 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
             pHlp->pfnPrintf(pHlp,
                 "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                 "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                "%scs={%04x base=%08x limit=%08x flags=%08x} %sdr0=%08RX64 %sdr1=%08RX64\n"
-                "%sds={%04x base=%08x limit=%08x flags=%08x} %sdr2=%08RX64 %sdr3=%08RX64\n"
-                "%ses={%04x base=%08x limit=%08x flags=%08x} %sdr4=%08RX64 %sdr5=%08RX64\n"
-                "%sfs={%04x base=%08x limit=%08x flags=%08x} %sdr6=%08RX64 %sdr7=%08RX64\n"
-                "%sgs={%04x base=%08x limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
-                "%sss={%04x base=%08x limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
+                "%scs={%04x base=%VGv limit=%08x flags=%08x} %sdr0=%08RX64 %sdr1=%08RX64\n"
+                "%sds={%04x base=%VGv limit=%08x flags=%08x} %sdr2=%08RX64 %sdr3=%08RX64\n"
+                "%ses={%04x base=%VGv limit=%08x flags=%08x} %sdr4=%08RX64 %sdr5=%08RX64\n"
+                "%sfs={%04x base=%VGv limit=%08x flags=%08x} %sdr6=%08RX64 %sdr7=%08RX64\n"
+                "%sgs={%04x base=%VGv limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
+                "%sss={%04x base=%VGv limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
                 "%sgdtr=%08x:%04x  %sidtr=%08x:%04x  %seflags=%08x\n"
-                "%sldtr={%04x base=%08x limit=%08x flags=%08x}\n"
-                "%str  ={%04x base=%08x limit=%08x flags=%08x}\n"
+                "%sldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
+                "%str  ={%04x base=%VGv limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
