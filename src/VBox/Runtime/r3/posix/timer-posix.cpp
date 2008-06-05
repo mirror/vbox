@@ -284,6 +284,12 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     /*
+     * We don't support the fancy MP features.
+     */
+    if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+        return VERR_NOT_SUPPORTED;
+
+    /*
      * Check if timer is busy.
      */
     struct itimerval TimerVal;
