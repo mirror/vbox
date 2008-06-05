@@ -112,6 +112,8 @@ typedef struct SELM
     /** Current LDT offset relative to pvLdt*. */
     RTUINT                  offLdtHyper;
 
+    uint32_t                padding1[3];
+
     /** TSS. (This is 16 byte aligned!)
       * @todo I/O bitmap & interrupt redirection table? */
     VBOXTSS                 Tss;
@@ -122,7 +124,7 @@ typedef struct SELM
     /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
     RCPTRTYPE(void *)       GCPtrTss;
 #if GC_ARCH_BITS == 64
-    RTRCPTR                 padding1;
+    RTRCPTR                 padding2;
 #endif
     /** GC Pointer to the current Guest's TSS. */
     RTGCPTR                 GCPtrGuestTss;
