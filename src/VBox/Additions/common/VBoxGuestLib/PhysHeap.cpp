@@ -304,6 +304,9 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
     }
 
     physAddr = 0;
+    /* This function allocates physical contiguous memory (below 4GB) according to the IPRT docs.
+     * Address < 4G is required for the port IO.
+     */
     pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc (&physAddr, cbSize);
 
     if (!pChunk)

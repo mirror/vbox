@@ -75,7 +75,8 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
         return VERR_INVALID_PARAMETER;
 
     physaddr = VbglPhysHeapGetPhysAddr (pReq);
-    if (!physaddr)
+    if (  !physaddr
+       || (physaddr >> 32) != 0) /* Port IO is 32 bit. */
     {
         rc = VERR_VBGL_INVALID_ADDR;
     }
