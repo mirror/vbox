@@ -74,14 +74,14 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
 #if HC_ARCH_BITS == 32
     RTFAR32   pfnHandler;
-    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.sel = pIdte->Gen.u16SegSel;
 
     const RTR0UINTREG uRSP = ~(RTR0UINTREG)0;
 
 #else /* 64-bit: */
     RTFAR64   pfnHandler;
-    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.off |= (uint64_t)(*(uint32_t *)(pIdte + 1)) << 32; //cleanup!
     pfnHandler.sel = pIdte->Gen.u16SegSel;
 
@@ -134,7 +134,7 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
 
     RTFAR32   pfnHandler;
-    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.sel = pIdte->Gen.u16SegSel;
 
     /*
@@ -177,7 +177,7 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
 
     RTFAR64   pfnHandler;
-    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.off |= (uint64_t)(*(uint32_t *)(pIdte + 1)) << 32; //cleanup!
     pfnHandler.sel = pIdte->Gen.u16SegSel;
 

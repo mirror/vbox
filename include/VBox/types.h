@@ -386,6 +386,13 @@ typedef struct VBOXIDTR
 /** @} */
 
 
+/** @def VBOXIDTE_OFFSET
+ * Return the offset of an IDT entry.
+ */
+#define VBOXIDTE_OFFSET(desc) \
+        (  ((uint32_t)((desc).Gen.u16OffsetHigh) << 16) \
+         | (           (desc).Gen.u16OffsetLow        ) )
+
 /** @defgroup grp_types_desc    Descriptor Table Entry.
  * @ingroup grp_types
  * @{ */

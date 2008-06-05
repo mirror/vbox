@@ -479,7 +479,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
             RTGCPTR pHandler, dummy;
             RTGCPTR pTrapStackGC;
 
-            pHandler = (RTGCPTR)((GuestIdte.Gen.u16OffsetHigh << 16) | GuestIdte.Gen.u16OffsetLow);
+            pHandler = (RTGCPTR)VBOXIDTE_OFFSET(GuestIdte);
 
             /* Note: SELMValidateAndConvertCSAddr checks for code type, memory type, selector validity. */
             /** @todo dpl <= cpl else GPF */

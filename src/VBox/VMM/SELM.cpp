@@ -1082,8 +1082,8 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
          * Get the LDT selector.
          */
         PVBOXDESC   pDesc = &pVM->selm.s.paGdtHC[SelLdt >> X86_SEL_SHIFT];
-        RTGCPTR     GCPtrLdt = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | ((RTGCPTR)pDesc->Gen.u8BaseHigh2 << 24);
-        unsigned    cbLdt = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        RTGCPTR     GCPtrLdt = X86DESC_BASE(*pDesc);
+        unsigned    cbLdt = X86DESC_LIMIT(*pDesc);
         if (pDesc->Gen.u1Granularity)
             cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
 
@@ -1419,8 +1419,8 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
          * Guest TR is not NULL.
          */
         PVBOXDESC   pDesc = &pVM->selm.s.paGdtHC[SelTss >> X86_SEL_SHIFT];
-        RTGCPTR     GCPtrTss = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | ((RTGCPTR)pDesc->Gen.u8BaseHigh2 << 24);
-        unsigned    cbTss = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        RTGCPTR     GCPtrTss = X86DESC_BASE(*pDesc);
+        unsigned    cbTss = X86DESC_LIMIT(*pDesc);
         if (pDesc->Gen.u1Granularity)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
         cbTss++;
@@ -1624,8 +1624,8 @@ SELMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         Log(("SELMR3DebugCheck: Failed to read LDT descriptor. rc=%d\n", rc));
         return rc;
     }
-    RTGCPTR     GCPtrLDTEGuest = LDTDesc.Gen.u16BaseLow | (LDTDesc.Gen.u8BaseHigh1 << 16) | ((RTGCPTR)LDTDesc.Gen.u8BaseHigh2 << 24);
-    unsigned    cbLdt = LDTDesc.Gen.u16LimitLow | (LDTDesc.Gen.u4LimitHigh << 16);
+    RTGCPTR     GCPtrLDTEGuest = X86DESC_BASE(LDTDesc);
+    unsigned    cbLdt = X86DESC_LIMIT(LDTDesc);
     if (LDTDesc.Gen.u1Granularity)
         cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
 
@@ -1703,8 +1703,8 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
          * Guest TR is not NULL.
          */
         PVBOXDESC   pDesc = &pVM->selm.s.paGdtHC[SelTss >> X86_SEL_SHIFT];
-        RTGCPTR     GCPtrTss = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | ((RTGCPTR)pDesc->Gen.u8BaseHigh2 << 24);
-        unsigned    cbTss = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        RTGCPTR     GCPtrTss = X86DESC_BASE(*pDesc);
+        unsigned    cbTss = X86DESC_LIMIT(*pDesc);
         if (pDesc->Gen.u1Granularity)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
         cbTss++;
@@ -1815,10 +1815,8 @@ SELMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned
     /* LDT descriptor is ok. */
     if (ppvLdt)
     {
-        *ppvLdt = (RTGCPTR)(    ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                              |  (Desc.Gen.u8BaseHigh1 << 16)
-                              |   Desc.Gen.u16BaseLow);
-        *pcbLimit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+        *ppvLdt = (RTGCPTR)X86DESC_BASE(Desc);
+        *pcbLimit = X86DESC_LIMIT(Desc);
     }
     return VINF_SUCCESS;
 }
@@ -1900,16 +1898,14 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
                 ||  Desc.Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
                 return VERR_INVALID_SELECTOR;
 
-            unsigned cbLimit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+            unsigned cbLimit = X86DESC_LIMIT(Desc);
             if (Desc.Gen.u1Granularity)
                 cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
             if ((unsigned)(Sel & X86_SEL_MASK) + sizeof(VBOXDESC) - 1 > cbLimit)
                 return VERR_INVALID_SELECTOR;
 
             /* calc the descriptor location. */
-            GCPtrDesc =    ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                        |  (Desc.Gen.u8BaseHigh1 << 16)
-                        |   Desc.Gen.u16BaseLow;
+            GCPtrDesc = X86DESC_BASE(Desc);
             GCPtrDesc += (Sel & X86_SEL_MASK);
         }
 
@@ -1937,12 +1933,10 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
      */
     pSelInfo->Sel = Sel;
     pSelInfo->Raw = Desc;
-    pSelInfo->cbLimit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+    pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
     if (Desc.Gen.u1Granularity)
         pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSelInfo->GCPtrBase =   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                          | (Desc.Gen.u8BaseHigh1 << 16)
-                          |  Desc.Gen.u16BaseLow;
+    pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
     pSelInfo->fRealMode = false;
 
     return VINF_SUCCESS;
@@ -2004,12 +1998,10 @@ SELMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSe
      */
     pSelInfo->Sel = Sel;
     pSelInfo->Raw = Desc;
-    pSelInfo->cbLimit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+    pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
     if (Desc.Gen.u1Granularity)
         pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSelInfo->GCPtrBase =   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                          | (Desc.Gen.u8BaseHigh1 << 16)
-                          |  Desc.Gen.u16BaseLow;
+    pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
     pSelInfo->fRealMode = false;
 
     return VINF_SUCCESS;
@@ -2095,10 +2087,10 @@ static void selmR3FormatDescriptor(VBOXDESC Desc, RTSEL Sel, char *pszOutput, si
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+    uint32_t    u32Limit = X86DESC_LIMIT(Desc);
     if (Desc.Gen.u1Granularity)
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
-    uint32_t    u32Base =  Desc.Gen.u8BaseHigh2 << 24 | Desc.Gen.u8BaseHigh1 << 16 | Desc.Gen.u16BaseLow;
+    uint32_t    u32Base =  X86DESC_BASE(Desc);
 
     RTStrPrintf(pszOutput, cchOutput, "%04x - %08x %08x - base=%08x limit=%08x dpl=%d %s",
                 Sel, Desc.au32[0], Desc.au32[1], u32Base, u32Limit, Desc.Gen.u2Dpl, szMsg);

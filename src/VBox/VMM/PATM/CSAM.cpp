@@ -2373,7 +2373,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             /* we're not in v86 mode here */
             fakeflags.u32 = 0;
 
-            pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
+            pHandler = VBOXIDTE_OFFSET(*pGuestIdte);
             pHandler = SELMToFlat(pVM, fakeflags, pGuestIdte->Gen.u16SegSel, 0, pHandler);
 
             rc = SELMR3GetSelectorInfo(pVM, pGuestIdte->Gen.u16SegSel, &selInfo);
@@ -2390,11 +2390,11 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 
             if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
             {
-                Log(("CSAMCheckGates: check trap gate %d at %04X:%08X (flat %VRv)\n", iGate, pGuestIdte->Gen.u16SegSel, (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow, pHandler));
+                Log(("CSAMCheckGates: check trap gate %d at %04X:%08X (flat %VRv)\n", iGate, pGuestIdte->Gen.u16SegSel, VBOXIDTE_OFFSET(*pGuestIdte), pHandler));
             }
             else
             {
-                Log(("CSAMCheckGates: check interrupt gate %d at %04X:%08X (flat %VRv)\n", iGate, pGuestIdte->Gen.u16SegSel, (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow, pHandler));
+                Log(("CSAMCheckGates: check interrupt gate %d at %04X:%08X (flat %VRv)\n", iGate, pGuestIdte->Gen.u16SegSel, VBOXIDTE_OFFSET(*pGuestIdte), pHandler));
             }
 
             STAM_PROFILE_START(&pVM->csam.s.StatTime, a);

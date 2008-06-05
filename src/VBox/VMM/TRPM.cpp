@@ -641,7 +641,7 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
         {
             PVBOXIDTE   pIdte = &pVM->trpm.s.aIdt[iTrap];
-            RTGCPTR     pHandler = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+            RTGCPTR     pHandler = VBOXIDTE_OFFSET(*pIdte);
 
             Log(("TRPMR3Relocate: *iGate=%2X Handler %VGv -> %VGv\n", iTrap, pHandler, pHandler + offDelta));
             pHandler += offDelta;
@@ -1117,7 +1117,7 @@ TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
         if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
         {
             PVBOXIDTE   pIdte = &pVM->trpm.s.aIdt[iTrap];
-            RTGCPTR     pHandler = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+            RTGCPTR     pHandler = VBOXIDTE_OFFSET(*pIdte);
 
             if (pHandler == GCPtr)
                 return iTrap;
@@ -1301,7 +1301,7 @@ TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
             {
                 if (pIDTE->Gen.u1Present)
                 {
-                    RTRCPTR GCPtrHandler = (pIDTE->Gen.u16OffsetHigh << 16) | pIDTE->Gen.u16OffsetLow;
+                    RTRCPTR GCPtrHandler = VBOXIDTE_OFFSET(*pIDTE);
                     if (GCPtr == GCPtrHandler)
                         return true;
                 }

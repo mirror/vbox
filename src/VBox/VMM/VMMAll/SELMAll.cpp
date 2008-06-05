@@ -68,10 +68,7 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
-    return (RTGCPTR)( (RTGCUINTPTR)Addr
-                       + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                          |  (Desc.Gen.u8BaseHigh1 << 16)
-                          |   Desc.Gen.u16BaseLow));
+    return (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
 }
 
 
@@ -196,16 +193,12 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
         }
 
         /* calc limit. */
-        u32Limit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+        u32Limit = X86DESC_LIMIT(Desc);
         if (Desc.Gen.u1Granularity)
             u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
 
         /* calc address assuming straight stuff. */
-        pvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                           + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                              |  (Desc.Gen.u8BaseHigh1 << 16)
-                              |   Desc.Gen.u16BaseLow )
-                             );
+        pvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
 
         u1Present     = Desc.Gen.u1Present;
         u1Granularity = Desc.Gen.u1Granularity;
@@ -401,16 +394,12 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
                 /*
                  * Limit check.
                  */
-                uint32_t    u32Limit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+                uint32_t    u32Limit = X86DESC_LIMIT(Desc);
                 if (Desc.Gen.u1Granularity)
                     u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
-                    *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                                           + (   ((RTGCPTR)Desc.Gen.u8BaseHigh2 << 24)
-                                              |  (Desc.Gen.u8BaseHigh1 << 16)
-                                              |   Desc.Gen.u16BaseLow)
-                                             );
+                    *ppvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
                     if (pcBits)
                         *pcBits = Desc.Gen.u1DefBig ? 32 : 16; /** @todo GUEST64 */
                     return VINF_SUCCESS;
