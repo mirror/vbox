@@ -227,7 +227,8 @@ endif
 # Use the RTR0MemObj API - testing.
 # If this makes testboxes crash/burn/leak disable it and add a comment to defect #2116.
 #
-KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM -DUSE_NEW_OS_INTERFACE_FOR_GIP
+KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM 
+#-DUSE_NEW_OS_INTERFACE_FOR_GIP
 OBJS += r0drv/memobj-r0drv.o \
 	r0drv/linux/memobj-r0drv-linux.o
 ifeq ($(BUILD_TARGET_ARCH),x86) # Some gcc versions ends up needing __divdi3.
