@@ -248,7 +248,7 @@ void VBoxMediaComboBox::processOnItem (const QModelIndex &aIndex)
     view()->viewport()->setToolTip (mTipList [index]);
 }
 
-QUuid VBoxMediaComboBox::getId (int aId)
+QUuid VBoxMediaComboBox::getId (int aId) const
 {
     return mUuidList.isEmpty() ? QUuid() :
            aId == -1 ? QUuid (mUuidList [currentIndex()]) :
@@ -262,7 +262,7 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
 {
     int currentInd = currentIndex();
 
-    int insertPosition = -1;
+    int insertPosition = count();
     for (int i = 0; i < count(); ++ i)
         /* Searching for the first real (non-null) vdi item
            which have name greater than the item to be inserted.
@@ -274,16 +274,16 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
             break;
         }
 
-    insertPosition == -1 ? mUuidList.append (aId) :
+    insertPosition == count() ? mUuidList.append (aId) :
         mUuidList.insert (insertPosition, aId);
 
-    insertPosition == -1 ? mTipList.append (aTip) :
+    insertPosition == count() ? mTipList.append (aTip) :
         mTipList.insert (insertPosition, aTip);
 
     aPixmap ? insertItem (insertPosition, *aPixmap, aName) :
               insertItem (insertPosition, aName);
 
-    if (insertPosition != -1 && currentInd >= insertPosition)
+    if (insertPosition != count() && currentInd >= insertPosition)
         QComboBox::setCurrentIndex (currentInd + 1);
 }
 
