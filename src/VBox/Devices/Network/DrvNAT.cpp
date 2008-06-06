@@ -292,7 +292,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  * @returns VBox status code.
  * @param   pCfgHandle      The drivers configuration handle.
  */
-static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCfgHandle)
+static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCfgHandle, RTIPV4ADDR Network)
 {
     /*
      * Enumerate redirections.
@@ -345,7 +345,8 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
         char    szGuestIP[32];
         rc = CFGMR3QueryString(pNode, "GuestIP", &szGuestIP[0], sizeof(szGuestIP));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            strcpy(szGuestIP, "10.0.2.15");
+            RTStrPrintf(szGuestIP, sizeof(szGuestIP), "%d.%d.%d.%d",
+                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00), (Network & 0xE0) | 15);
         else if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string failed"), iInstance);
         struct in_addr GuestIP;
@@ -506,7 +507,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             rc = slirp_init(&pData->pNATState, &szNetAddr[0], Netmask, fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
             if (VBOX_SUCCESS(rc))
             {
-                int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);
+                int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle, Network);
                 if (VBOX_SUCCESS(rc2))
                 {
                     /*
