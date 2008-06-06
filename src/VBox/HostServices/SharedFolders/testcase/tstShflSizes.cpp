@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     STRUCT(VBoxSFMapFolder, 80);
     STRUCT(VBoxSFUnmapFolder, 32);
     STRUCT(VBoxSFCreate, 64);
-    STRUCT(VBoxSFClose, 40);
+    STRUCT(VBoxSFClose, 48);
     STRUCT(VBoxSFRead, 96);
     STRUCT(VBoxSFWrite, 96);
     STRUCT(VBoxSFLock, 96);
