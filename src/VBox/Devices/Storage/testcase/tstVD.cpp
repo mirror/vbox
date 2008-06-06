@@ -163,9 +163,9 @@ RTDECL(int) RTPRandInit(PRNDCTX pCtx, uint32_t u32Seed)
     if (u32Seed == 0)
         u32Seed = 362436069;
     pCtx->x = u32Seed;
-    pCtx->y = 17280675555674358941ll;
-    pCtx->z = 6376492577913983186ll;
-    pCtx->w = 9064188857900113776ll;
+    pCtx->y = 17280675555674358941ULL;
+    pCtx->z = 6376492577913983186ULL;
+    pCtx->w = 9064188857900113776ULL;
     pCtx->c = 123456789;
     pCtx->u32x = 2282008;
     pCtx->u32y = u32Seed;
@@ -494,7 +494,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     VDDumpImages(pVD);
 
     RTPrintf("Merging diff into base..\n");
-    rc = VDMerge(pVD, -1, 0, NULL, NULL);
+    rc = VDMerge(pVD, (unsigned)-1, 0, NULL, NULL);
     CHECK("VDMerge()");
 
     mergeSegments(paBaseSegments, paDiffSegments, paMergeSegments, _1M);
