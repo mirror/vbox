@@ -824,8 +824,8 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 "%sgs={%04x base=%016RX64 limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
                 "%sss={%04x base=%016RX64 limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
                 "%sgdtr=%VGv:%04x  %sidtr=%VGv:%04x  %seflags=%08x\n"
-                "%sldtr={%04x base=%VGv limit=%08x flags=%08x}\n"
-                "%str  ={%04x base=%VGv limit=%08x flags=%08x}\n"
+                "%sldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
