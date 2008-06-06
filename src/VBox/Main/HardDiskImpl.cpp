@@ -4437,7 +4437,6 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
             int vrc = VDGetFormat (Utf8Str (mLocation), &pszFormat);
             if (VBOX_FAILURE(vrc))
             {
-                AssertRC (vrc);
                 rc = setError (E_FAIL,
                     tr ("Cannot recognize the format of the custom "
                         "hard disk '%ls' (%Vrc)"),
