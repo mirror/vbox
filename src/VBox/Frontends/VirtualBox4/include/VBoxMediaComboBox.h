@@ -56,7 +56,7 @@ protected slots:
     void mediaAdded (const VBoxMedia &);
     void mediaUpdated (const VBoxMedia &);
     void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
-    void processOnItem (Q3ListBoxItem *);
+    void processOnItem (const QModelIndex&);
     void processActivated (int);
 
 protected:
