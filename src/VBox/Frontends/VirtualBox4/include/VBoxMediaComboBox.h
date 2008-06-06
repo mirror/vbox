@@ -44,7 +44,7 @@ public:
     void  refresh();
     void  setUseEmptyItem (bool);
     void  setBelongsTo (const QUuid &);
-    QUuid getId (int aId = -1);
+    QUuid getId (int aId = -1) const;
     QUuid getBelongsTo();
     void  setCurrentItem (const QUuid &);
     void  setType (int);
