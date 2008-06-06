@@ -394,7 +394,208 @@ ENDPROC VMXR0StartVM32
 ; * @param   pCtx       Guest context
 ; */
 BEGINPROC VMXR0StartVM64
+    push    xBP
+    mov     xBP, xSP
+
+    pushf
+    cli
+
+    ;/* First we have to save some final CPU context registers. */
+    mov     rax, qword .vmlaunch64_done
+    push    rax
+    mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
+    vmwrite rax, [xSP]
+    ;/* Note: assumes success... */
+    add     xSP, xS
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; * - EFLAGS (reset to RT_BIT(1); not relevant)
+    ; *
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+%ifdef ASM_CALL64_GCC
+    ; fResume already in rdi
+    ; pCtx    already in rsi
+%else
+    mov     rdi, rcx        ; fResume
+    mov     rsi, rdx        ; pCtx
+%endif
+
+    ;/* Save segment registers */
+    ; Note: MYPUSHSEGS trashes rdx (among others), so we moved it here (msvc amd64 case)
+    MYPUSHSEGS xAX, ax
+
+    ; Save the pCtx pointer
+    push    xSI
+
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
+    ; Restore CR2
+    mov     rbx, qword [xSI + CPUMCTX.cr2]
+    mov     cr2, rbx
+
+    mov     eax, VMX_VMCS_HOST_RSP
+    vmwrite xAX, xSP
+    ;/* Note: assumes success... */
+    ;/* Don't mess with ESP anymore!! */
+
+    ;/* Restore Guest's general purpose registers. */
+    mov     rax, qword [xSI + CPUMCTX.eax]
+    mov     rbx, qword [xSI + CPUMCTX.ebx]
+    mov     rcx, qword [xSI + CPUMCTX.ecx]
+    mov     rdx, qword [xSI + CPUMCTX.edx]
+    mov     rbp, qword [xSI + CPUMCTX.ebp]
+    mov     r8,  qword [xSI + CPUMCTX.r8]
+    mov     r9,  qword [xSI + CPUMCTX.r9]
+    mov     r10, qword [xSI + CPUMCTX.r10]
+    mov     r11, qword [xSI + CPUMCTX.r11]
+    mov     r12, qword [xSI + CPUMCTX.r12]
+    mov     r13, qword [xSI + CPUMCTX.r13]
+    mov     r14, qword [xSI + CPUMCTX.r14]
+    mov     r15, qword [xSI + CPUMCTX.r15]
+
+    ; resume or start?
+    cmp     xDI, 0                  ; fResume
+    je      .vmlauch64_lauch
+
+    ;/* Restore edi & esi. */
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    vmresume
+    jmp     .vmlaunch64_done;      ;/* here if vmresume detected a failure. */
+    
+.vmlauch64_lauch:    
+    ;/* Restore rdi & rsi. */
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    vmlaunch
+    jmp     .vmlaunch64_done;      ;/* here if vmlaunch detected a failure. */
+
+ALIGNCODE(16)
+.vmlaunch64_done:
+    jc      near .vmxstart64_invalid_vmxon_ptr
+    jz      near .vmxstart64_start_failed
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    push    xDI
+    mov     xDI, [xSP + xS * 2]         ; pCtx
+
+    mov     qword [xDI + CPUMCTX.eax], rax
+    mov     qword [xDI + CPUMCTX.ebx], rbx
+    mov     qword [xDI + CPUMCTX.ecx], rcx
+    mov     qword [xDI + CPUMCTX.edx], rdx
+    mov     qword [xDI + CPUMCTX.esi], rsi
+    mov     qword [xDI + CPUMCTX.ebp], rbp
+    mov     qword [xDI + CPUMCTX.r8],  r8
+    mov     qword [xDI + CPUMCTX.r9],  r9
+    mov     qword [xDI + CPUMCTX.r10], r10
+    mov     qword [xDI + CPUMCTX.r11], r11
+    mov     qword [xDI + CPUMCTX.r12], r12
+    mov     qword [xDI + CPUMCTX.r13], r13
+    mov     qword [xDI + CPUMCTX.r14], r14
+    mov     qword [xDI + CPUMCTX.r15], r15
+
+    pop     xAX                                 ; the guest edi we pushed above
+    mov     qword [xDI + CPUMCTX.edi], rax
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [xDI + CPUMCTX.dr6], xAX
+%endif
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS      ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+.vmstart64_end:
+    popf
+    pop     xBP
     ret
+
+
+.vmxstart64_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmstart64_end
+
+.vmxstart64_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_START_VM
+    jmp     .vmstart64_end
 ENDPROC VMXR0StartVM64
 
 ;/**

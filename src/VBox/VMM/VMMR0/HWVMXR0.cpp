@@ -680,6 +680,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         VMX_WRITE_SELREG(DS, ds);
         AssertRC(rc);
 
+        /* @todo are the hidden base registers in sync with the MSRs? */
         VMX_WRITE_SELREG(FS, fs);
         AssertRC(rc);
 
@@ -966,6 +967,10 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #else
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
+        rc = VMXWriteVMCS(VMX_VMCS_GUEST_FS_BASE, pCtx->msrFSBASE);
+        AssertRC(rc);
+        rc = VMXWriteVMCS(VMX_VMCS_GUEST_GS_BASE, pCtx->msrGSBASE);
+        AssertRC(rc);
     }
     else
     {
@@ -1981,9 +1986,10 @@ ResumeExecution:
                   ("rc = %d\n", rc));
         break;
 
-    case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
+        /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
+    case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
     case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
     case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */
@@ -2030,6 +2036,18 @@ end:
         pCtx->SysEnter.eip      = val;
         VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
         pCtx->SysEnter.esp      = val;
+
+        /* 64 bits guest mode? */
+        if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        {
+            /* Note: we assume that either you can't rely on fs/gs base staying intact when switching in and out of 64 bits mode or that in
+             *       reality it really doesn't matter (as the guest OS restores them manually).
+             */
+            VMXReadVMCS(VMX_VMCS_GUEST_FS_BASE, &val);
+            pCtx->msrFSBASE = val;
+            VMXReadVMCS(VMX_VMCS_GUEST_GS_BASE, &val);
+            pCtx->msrGSBASE = val;
+        }
     }
 
     /* Signal changes for the recompiler. */
