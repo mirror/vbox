@@ -125,7 +125,7 @@ private:
 
     void clearInfoPanes();
     void prepareToRefresh (int aTotal = 0);
-    void createInfoString (InfoPaneLabel *&aInfo, QWidget* aRoot, bool aLeftRigthMargin, int aRow, int aCol, int aRowSpan = 1, int aColSpan = 1) const;
+    void createInfoString (InfoPaneLabel *&aInfo, QWidget* aRoot, bool aLeftRightMargin, int aRow, int aCol, int aRowSpan = 1, int aColSpan = 1) const;
 
     void makeWarningMark (DiskImageItem *aItem, VBoxMedia::Status aStatus, VBoxDefs::DiskType aType) const;
     
