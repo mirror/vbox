@@ -187,6 +187,9 @@ DECLINLINE(void) rtTimerLnxSetState(RTTIMERLNXSTATE volatile *penmState, RTTIMER
 
 /**
  * Sets the state if it has a certain value.
+ *
+ * @return true if xchg was done.
+ * @return false if xchg wasn't done.
  */
 DECLINLINE(bool) rtTimerLnxCmpXchgState(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState, RTTIMERLNXSTATE enmCurState)
 {
@@ -538,7 +541,7 @@ static int rtTimerLnxStopAll(PRTTIMER pTimer)
                 ||  enmState == RTTIMERLNXSTATE_MP_STOPPING)
                 break;
             Assert(enmState == RTTIMERLNXSTATE_ACTIVE);
-        } while (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPING, enmState));
+        } while (!rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPING, enmState));
     }
 
     RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
