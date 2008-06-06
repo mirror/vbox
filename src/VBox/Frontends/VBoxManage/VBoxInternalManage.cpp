@@ -647,7 +647,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     return VINF_SUCCESS;
 }
 
-HRESULT CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     Utf8Str rawdisk;
 
@@ -710,7 +710,7 @@ HRESULT CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox
     return 0;
 }
 
-HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     HRESULT rc = S_OK;
     Bstr filename;
@@ -1135,7 +1135,7 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-HRESULT CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     Bstr src;
     Bstr dst;
