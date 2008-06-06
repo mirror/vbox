@@ -194,9 +194,6 @@ typedef struct HWACCM
         /** Virtual address of the TSS page used for real mode emulation. */
         R0PTRTYPE(PVBOXTSS)         pRealModeTSS;
 
-        /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int, pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
-
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
 
