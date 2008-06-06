@@ -40,12 +40,47 @@
 #include <iprt/alloc.h>
 #include <iprt/thread.h>
 #include <iprt/stream.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
+#include <iprt/getopt.h>
 
 
-int main(void)
+int main(int argc, char **argv)
 {
     RTR3Init();
+
+    /*
+     * Parse args
+     */
+    static const RTOPTIONDEF g_aOptions[] =
+    {
+        { "--interations",      'i', RTGETOPT_REQ_INT32 }
+    };
+
+    uint32_t cIterations = 40;
+    int ch;
+    int iArg = 1;
+    RTOPTIONUNION ValueUnion;
+    while ((ch = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &iArg, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'i':
+                cIterations = ValueUnion.u32;
+                break;
+
+            default:
+                if (ch < 0)
+                    RTPrintf("tstGIP-2: %Rrc: %s\n", ch, ValueUnion.psz);
+                else
+                    RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
+                return 1;
+        }
+    }
+    if (iArg < argc)
+    {
+        RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
+        return 1;
+    }
 
     /*
      * Init
@@ -57,21 +92,21 @@ int main(void)
         if (g_pSUPGlobalInfoPage)
         {
             RTPrintf("tstGIP-2: u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u32Mode=%d (%s) u32Version=%#x\n"
-                     "tstGIP-2: it: u64NanoTS        u64TSC           UpIntTSC H TransId            CpuHz TSC Interval History...\n",
+                     "tstGIP-2:     it: u64NanoTS        u64TSC           UpIntTSC H TransId            CpuHz TSC Interval History...\n",
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
-                     g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz, 
+                     g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz,
                      g_pSUPGlobalInfoPage->u32Mode,
                      g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC       ? "sync"
                      : g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC    ? "async"
                      :                                                            "???",
                      g_pSUPGlobalInfoPage->u32Version);
-            for (int i = 0; i < 80; i++)
+            for (int i = 0; i < cIterations; i++)
             {
                 for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs); iCpu++)
-                    if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0 
+                    if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0
                         &&  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz != _4G + 1)
-                        RTPrintf("tstGIP-2: %2d/%d: %016llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
+                        RTPrintf("tstGIP-2: %4d/%d: %016llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
                                  i, iCpu,
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64NanoTS,
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64TSC,
@@ -86,7 +121,7 @@ int main(void)
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].au32TSCHistory[4],
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].au32TSCHistory[5],
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].au32TSCHistory[6],
-                                 g_pSUPGlobalInfoPage->aCPUs[iCpu].au32TSCHistory[7], 
+                                 g_pSUPGlobalInfoPage->aCPUs[iCpu].au32TSCHistory[7],
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].cErrors);
                 RTThreadSleep(9);
             }
