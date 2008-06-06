@@ -64,6 +64,30 @@ int main(int argc, char **argv)
     STRUCT(SHFLMAPPING, 8);
     STRUCT(SHFLDIRINFO, 128);
     STRUCT(SHFLVOLINFO, 40);
+#ifdef VBOX_WITH_64_BITS_GUESTS
+/* The size of the guest structures depends on the current architecture bit count (ARCH_BITS)
+ * because the HGCMFunctionParameter structure differs in 32 and 64 bit guests.
+ * The host VMMDev device takes care about this.
+ *
+ * Therefore this testcase verifies whether structure sizes are correct for the currebt ARCH_BITS.
+ */
+# if ARCH_BITS == 64
+    STRUCT(VBoxSFQueryMappings, 64);
+    STRUCT(VBoxSFQueryMapName, 48);
+    STRUCT(VBoxSFMapFolder_Old, 64);
+    STRUCT(VBoxSFMapFolder, 80);
+    STRUCT(VBoxSFUnmapFolder, 32);
+    STRUCT(VBoxSFCreate, 64);
+    STRUCT(VBoxSFClose, 40);
+    STRUCT(VBoxSFRead, 96);
+    STRUCT(VBoxSFWrite, 96);
+    STRUCT(VBoxSFLock, 96);
+    STRUCT(VBoxSFFlush, 48);
+    STRUCT(VBoxSFList, 144);
+    STRUCT(VBoxSFInformation, 96);
+    STRUCT(VBoxSFRemove, 64);
+    STRUCT(VBoxSFRename, 80);
+# elif ARCH_BITS == 32
     STRUCT(VBoxSFQueryMappings, 52);
     STRUCT(VBoxSFQueryMapName, 40); /* this was changed from 52 in 21976 after VBox-1.4. */
     STRUCT(VBoxSFMapFolder_Old, 52);
@@ -79,11 +103,26 @@ int main(int argc, char **argv)
     STRUCT(VBoxSFInformation, 76);
     STRUCT(VBoxSFRemove, 52);
     STRUCT(VBoxSFRename, 64);
-
-    /* The following requests are only available from the host. */
-    STRUCT(VBoxSFAddMapping, 52);
-    STRUCT(VBoxSFRemoveMapping, 28);
-    STRUCT(VBoxSFSetStatusLed, 28);
+# else
+#  error "Unsupported ARCH_BITS"
+# endif /* ARCH_BITS */
+#else
+    STRUCT(VBoxSFQueryMappings, 52);
+    STRUCT(VBoxSFQueryMapName, 40); /* this was changed from 52 in 21976 after VBox-1.4. */
+    STRUCT(VBoxSFMapFolder_Old, 52);
+    STRUCT(VBoxSFMapFolder, 64);
+    STRUCT(VBoxSFUnmapFolder, 28);
+    STRUCT(VBoxSFCreate, 52);
+    STRUCT(VBoxSFClose, 40);
+    STRUCT(VBoxSFRead, 76);
+    STRUCT(VBoxSFWrite, 76);
+    STRUCT(VBoxSFLock, 76);
+    STRUCT(VBoxSFFlush, 40);
+    STRUCT(VBoxSFList, 112);
+    STRUCT(VBoxSFInformation, 76);
+    STRUCT(VBoxSFRemove, 52);
+    STRUCT(VBoxSFRename, 64);
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
     /*
      * The summary.

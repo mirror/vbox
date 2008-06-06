@@ -929,67 +929,23 @@ typedef struct _VBoxSFRename
 
 /**
  * SHFL_FN_ADD_MAPPING
+ * Host call, no guest structure is used.
  */
-
-/** Parameters structure. */
-typedef struct _VBoxSFAddMapping
-{
-    VBoxGuestHGCMCallInfo callInfo;
-
-    /** pointer, in: Folder name
-     * Points to SHFLSTRING buffer.
-     */
-    HGCMFunctionParameter folder;
-
-    /** pointer, in: Mapping name
-     * Points to SHFLSTRING buffer.
-     */
-    HGCMFunctionParameter mapping;
-
-    /** bool, in: Writable
-     * True (default) if the folder is writable.
-     */
-    HGCMFunctionParameter writable;
-
-} VBoxSFAddMapping;
 
 #define SHFL_CPARMS_ADD_MAPPING  (3)
 
-
 /**
  * SHFL_FN_REMOVE_MAPPING
+ * Host call, no guest structure is used.
  */
-
-/** Parameters structure. */
-typedef struct _VBoxSFRemoveMapping
-{
-    VBoxGuestHGCMCallInfo callInfo;
-
-    /** pointer, in: Guest name
-     * Points to SHFLSTRING buffer.
-     */
-    HGCMFunctionParameter path;
-
-} VBoxSFRemoveMapping;
 
 #define SHFL_CPARMS_REMOVE_MAPPING (1)
 
 
 /**
  * SHFL_FN_SET_STATUS_LED
+ * Host call, no guest structure is used.
  */
-
-/** Parameters structure. */
-typedef struct _VBoxSFSetStatusLed
-{
-    VBoxGuestHGCMCallInfo callInfo;
-
-    /** pointer, in: LED address
-     * Points to PPDMLED buffer.
-     */
-    HGCMFunctionParameter led;
-
-} VBoxSFSetStatusLed;
 
 #define SHFL_CPARMS_SET_STATUS_LED (1)
 
