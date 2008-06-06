@@ -1013,6 +1013,22 @@ the_end:
 #endif /* HC_ARCH_BITS == 64 */
 
 /**
+ * Prepares for and executes VMLAUNCH
+ *
+ * @returns VBox status code
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXStartVM(PCPUMCTX pCtx);
+
+/**
+ * Prepares for and executes VMRESUME
+ *
+ * @returns VBox status code
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXResumeVM(PCPUMCTX pCtx);
+
+/**
  * Gets the last instruction error value from the current VMCS
  *
  * @returns error value

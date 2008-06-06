@@ -177,13 +177,14 @@
 BEGINCODE
 
 ;/**
-; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
+; * Prepares for and executes VMLAUNCH
+; *
+; * @note identical to VMXResumeVM, except for the vmlaunch/vmresume opcode
 ; *
 ; * @returns VBox status code
-; * @param   fResume    vmlauch/vmresume
-; * @param   pCtx       Guest context
+; * @param   pCtx        Guest context
 ; */
-BEGINPROC VMXR0StartVM32
+BEGINPROC VMXStartVM
     push    xBP
     mov     xBP, xSP
 
@@ -199,7 +200,7 @@ BEGINPROC VMXR0StartVM32
 %endif
     mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite xAX, [xSP]
-    ;/* Note: assumes success... */
+    ;/* @todo assumes success... */
     add     xSP, xS
 
     ;/* Manual save and restore:
@@ -223,15 +224,12 @@ BEGINPROC VMXR0StartVM32
     ;/* Save the Guest CPU context pointer. */
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    ; fResume already in rdi
-    ; pCtx    already in rsi
+    mov     rsi, rdi ; pCtx
  %else
-    mov     rdi, rcx        ; fResume
-    mov     rsi, rdx        ; pCtx
+    mov     rsi, rcx ; pCtx
  %endif
 %else
-    mov     edi, [ebp + 8]  ; fResume
-    mov     esi, [ebp + 12] ; pCtx
+    mov     esi, [ebp + 8] ; pCtx
 %endif
     push    xSI
 
@@ -259,7 +257,7 @@ BEGINPROC VMXR0StartVM32
 
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite xAX, xSP
-    ;/* Note: assumes success... */
+    ;/* @todo assumes success... */
     ;/* Don't mess with ESP anymore!! */
 
     ;/* Restore Guest's general purpose registers. */
@@ -267,22 +265,8 @@ BEGINPROC VMXR0StartVM32
     mov     ebx, [xSI + CPUMCTX.ebx]
     mov     ecx, [xSI + CPUMCTX.ecx]
     mov     edx, [xSI + CPUMCTX.edx]
+    mov     edi, [xSI + CPUMCTX.edi]
     mov     ebp, [xSI + CPUMCTX.ebp]
-
-    ; resume or start?
-    cmp     xDI, 0                  ; fResume
-    je      .vmlauch_lauch
-
-    ;/* Restore edi & esi. */
-    mov     edi, [xSI + CPUMCTX.edi]
-    mov     esi, [xSI + CPUMCTX.esi]
-
-    vmresume
-    jmp     .vmlaunch_done;      ;/* here if vmresume detected a failure. */
-    
-.vmlauch_lauch:    
-    ;/* Restore edi & esi. */
-    mov     edi, [xSI + CPUMCTX.edi]
     mov     esi, [xSI + CPUMCTX.esi]
 
     vmlaunch
@@ -380,25 +364,205 @@ ALIGNCODE(16)
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart_end
 
-ENDPROC VMXR0StartVM32
+ENDPROC VMXStartVM
 
-%ifdef RT_ARCH_AMD64
+
 ;/**
-; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
+; * Prepares for and executes VMRESUME
+; *
+; * @note identical to VMXStartVM, except for the vmlaunch/vmresume opcode
 ; *
 ; * @returns VBox status code
-; * @param   fResume    vmlauch/vmresume
-; * @param   pCtx       Guest context
+; * @param   pCtx        Guest context
 ; */
-BEGINPROC VMXR0StartVM64
-    ret
-ENDPROC VMXR0StartVM64
+BEGINPROC VMXResumeVM
+    push    xBP
+    mov     xBP, xSP
 
+    pushf
+    cli
+
+    ;/* First we have to save some final CPU context registers. */
+%ifdef RT_ARCH_AMD64
+    mov     rax, qword .vmresume_done
+    push    rax
+%else
+    push    .vmresume_done
+%endif
+    mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
+    vmwrite xAX, [xSP]
+    ;/* @todo assumes success... */
+    add     xSP, xS
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; * - EFLAGS (reset to RT_BIT(1); not relevant)
+    ; *
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save segment registers */
+    MYPUSHSEGS xAX, ax
+
+    ;/* Save the Guest CPU context pointer. */
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    mov     rsi, rdi        ; pCtx
+ %else
+    mov     rsi, rcx        ; pCtx
+ %endif
+%else
+    mov     esi, [ebp + 8]  ; pCtx
+%endif
+    push    xSI
+
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
+    ; Restore CR2
+    mov     xBX, [xSI + CPUMCTX.cr2]
+    mov     cr2, xBX
+
+    mov     eax, VMX_VMCS_HOST_RSP
+    vmwrite xAX, xSP
+    ;/* @todo assumes success... */
+    ;/* Don't mess with ESP anymore!! */
+
+    ;/* Restore Guest's general purpose registers. */
+    mov     eax, [xSI + CPUMCTX.eax]
+    mov     ebx, [xSI + CPUMCTX.ebx]
+    mov     ecx, [xSI + CPUMCTX.ecx]
+    mov     edx, [xSI + CPUMCTX.edx]
+    mov     edi, [xSI + CPUMCTX.edi]
+    mov     ebp, [xSI + CPUMCTX.ebp]
+    mov     esi, [xSI + CPUMCTX.esi]
+
+    vmresume
+    jmp     .vmresume_done;      ;/* here if vmresume detected a failure. */
+
+ALIGNCODE(16)
+.vmresume_done:
+    jc      near .vmxresume_invalid_vmxon_ptr
+    jz      near .vmxresume_start_failed
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    push    xDI
+    mov     xDI, [xSP + xS * 2]         ; pCtx
+
+    mov     [ss:xDI + CPUMCTX.eax], eax
+    mov     [ss:xDI + CPUMCTX.ebx], ebx
+    mov     [ss:xDI + CPUMCTX.ecx], ecx
+    mov     [ss:xDI + CPUMCTX.edx], edx
+    mov     [ss:xDI + CPUMCTX.esi], esi
+    mov     [ss:xDI + CPUMCTX.ebp], ebp
+%ifdef RT_ARCH_AMD64
+    pop     xAX                                 ; the guest edi we pushed above
+    mov     dword [ss:xDI + CPUMCTX.edi], eax
+%else
+    pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
+%endif
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [ss:xDI + CPUMCTX.dr6], xAX
+%endif
+
+    pop     xAX          ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS      ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+.vmresume_end:
+    popf
+    pop     xBP
+    ret
+
+.vmxresume_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmresume_end
+
+.vmxresume_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_RESUME_VM
+    jmp     .vmresume_end
+
+ENDPROC VMXResumeVM
+
+
+%ifdef RT_ARCH_AMD64
 ;/**
 ; * Executes VMWRITE
 ; *
 ; * @returns VBox status code
-; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index
+; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: edi   VMCS index
 ; * @param   pData      x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
 ; */
 BEGINPROC VMXWriteVMCS64
