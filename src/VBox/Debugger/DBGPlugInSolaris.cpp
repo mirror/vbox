@@ -413,6 +413,8 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PVM pVM, void *pvData)
     Assert(!pThis->fValid);
     int rc;
 
+/** @todo Use debug_info, build 7x / S10U6. */
+
     /*
      * Find the 'unix' modctl_t structure (aka modules).
      * We know it resides in the unix data segment.
