@@ -351,7 +351,7 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
     /* In Qt4 there is not bitblt anymore. So 
      * we create a qpainter object and paint on 
      * that. Todo: Do some performance test. */
-#warning port me: do it faster?
+//#warning port me: do it faster?
     QPainter painter (mView->viewport());
     painter.drawImage (r.x(), r.y(), mImg, 
                        r.x() + mView->contentsX(),

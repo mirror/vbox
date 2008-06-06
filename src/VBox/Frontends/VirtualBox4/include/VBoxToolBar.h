@@ -81,7 +81,7 @@ public:
     /**
      * This is a temporary hack, we'll set the style globally later.
      */
-#warning port me
+//#warning port me
     void setMacStyle()
     {
         /* self */

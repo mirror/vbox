@@ -225,7 +225,8 @@ public:
                     if (mIsRegDlgOwner)
                     {
                         if (sVal.isEmpty() ||
-                            sVal == QString ("%1").arg (static_cast<long> (vboxGlobal().mainWindow()->winId())))
+                            sVal == QString ("%1")
+                                .arg ((Q_ULLONG) vboxGlobal().mainWindow()->winId()))
                             *allowChange = TRUE;
                         else
                             *allowChange = FALSE;
@@ -275,7 +276,8 @@ public:
                         mIsRegDlgOwner = false;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
                     }
-                    else if (sVal == QString ("%1").arg (static_cast<long> (vboxGlobal().mainWindow()->winId())))
+                    else if (sVal == QString ("%1")
+                                .arg ((Q_ULLONG) vboxGlobal().mainWindow()->winId()))
                     {
                         mIsRegDlgOwner = true;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
@@ -519,30 +521,33 @@ private:
 /**
  *  QObject class reimplementation which is the target for OpenNativeDialogEvent
  *  event. It receives OpenNativeDialogEvent event from another thread,
- *  stores result information and exits event processing loop.
+ *  stores result information and exits the given local event loop.
  */
 class LoopObject : public QObject
 {
 public:
 
-    LoopObject (QEvent::Type aType) : mType (aType), mResult (QString::null) {}
+    LoopObject (QEvent::Type aType, QEventLoop &aLoop)
+        : mType (aType), mLoop (aLoop), mResult (QString::null) {}
     const QString& result() { return mResult; }
 
 private:
 
     bool event (QEvent *aEvent)
     {
+//#warning check me!
         if (aEvent->type() == mType)
         {
             OpenNativeDialogEvent *ev = (OpenNativeDialogEvent*) aEvent;
             mResult = ev->result();
-            qApp->eventLoop()->exitLoop();
+            mLoop.exit();
             return true;
         }
         return QObject::event (aEvent);
     }
 
     QEvent::Type mType;
+    QEventLoop &mLoop;
     QString mResult;
 };
 
@@ -2472,7 +2477,7 @@ void VBoxGlobal::retranslateUi()
     /* As PM and X11 do not (to my knowledge) have functionality for providing
      * human readable key names, we keep a table of them, which must be
      * updated when the language is changed. */
-#warning port me
+//#warning port me
     QIHotKeyEdit::retranslateUi();
 #endif
 }
@@ -3244,7 +3249,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         {
             QString result;
 
-            QWidget *topParent = mParent ? mParent->window() : vboxGlobal()->mainWindow();
+            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
             QString title = mCaption.isNull() ? tr ("Select a directory") : mCaption;
 
             TCHAR path[MAX_PATH];
@@ -3301,12 +3306,20 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         QString mCaption;
     };
 
+//#warning check me!
+
+    /* Local event loop to run while waiting for the result from another
+     * thread */
+    QEventLoop loop;
+
     QString dir = QDir::convertSeparators (aDir);
-    LoopObject loopObject ((QEvent::Type) GetExistDirectoryEvent::TypeId);
+    LoopObject loopObject ((QEvent::Type) GetExistDirectoryEvent::TypeId, loop);
+
     Thread openDirThread (aParent, &loopObject, dir, aCaption);
     openDirThread.start();
-    qApp->eventLoop()->enterLoop();
+    loop.exec();
     openDirThread.wait();
+
     return loopObject.result();
 
 #else
@@ -3393,7 +3406,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             QString title = mCaption.isNull() ? tr ("Select a file") : mCaption;
 
-            QWidget *topParent = mParent ? mParent->window() : vboxGlobal()->mainWindow();
+            QWidget *topParent = mParent ? mParent->window() : qApp->mainWidget();
             QString winFilters = winFilter (mFilters);
             AssertCompile (sizeof (TCHAR) == sizeof (QChar));
             TCHAR buf [1024];
@@ -3444,14 +3457,29 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
     if (aSelectedFilter)
         *aSelectedFilter = QString::null;
+
+//#warning check me!
+
+    /* Local event loop to run while waiting for the result from another
+     * thread */
+    QEventLoop loop;
+
     QString startWith = QDir::convertSeparators (aStartWith);
-    LoopObject loopObject ((QEvent::Type) GetOpenFileNameEvent::TypeId);
-    if (aParent) qt_enter_modal (aParent);
+    LoopObject loopObject ((QEvent::Type) GetOpenFileNameEvent::TypeId, loop);
+
+//#warning check me!
+    if (aParent)
+        aParent->setWindowModality (Qt::WindowModal);
+
     Thread openDirThread (aParent, &loopObject, startWith, aFilters, aCaption);
     openDirThread.start();
-    qApp->eventLoop()->enterLoop();
+    loop.exec();
     openDirThread.wait();
-    if (aParent) qt_leave_modal (aParent);
+
+//#warning check me!
+    if (aParent)
+        aParent->setWindowModality (Qt::NonModal);
+
     return loopObject.result();
 
 #else
@@ -3822,7 +3850,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
          * that attempts to set it will win, the rest will get a failure from
          * the SetExtraData() call. */
         mVBox.SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-            QString ("%1").arg (static_cast<long> (mMainWindow->winId())));
+                            QString ("%1").arg ((Q_ULLONG) mMainWindow->winId()));
 
         if (mVBox.isOk())
         {

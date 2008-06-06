@@ -110,7 +110,7 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
     Icon *icon = mStateIcons [mState];
     if (icon)
     {
-#warning port me
+//#warning port me
         /* I didn't see any benefits of caching the icon
          * background drawing in Qt4. This is already done
          * by Qt itself. Also there is no "NoAutoErase"

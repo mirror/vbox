@@ -67,6 +67,10 @@ VBOX_PATH_QT4_LIB64    ?= $(VBOX_PATH_QT4)/lib64
 VBOX_PATH_QT4_SHARE    ?= $(VBOX_PATH_QT4)
 
 VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
+# @todo: remove later: this is necessary only as long as Qt3Support is necessary
+# (it links to them)
+VBOX_MODULE_QT4    += QtSql QtXml
+
 VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -75,11 +79,33 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join /Library/Frameworks/, $(mod)), .framework/Headers))
  VBOX_LIBS_QT4       =
 else
+
  VBOX_INCS_QT4       = \
-	$(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++ \
 	$(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt) \
 	$(VBOX_PATH_QT4_INCLUDE)
- VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
+ ifeq ($(KBUILD_TARGET),win)
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+   $(error Port me!)
+  else
+   VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc.net
+  endif
+ else ifeq ($(KBUILD_TARGET),linux)
+  VBOX_INCS_QT4     += $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++
+ endif
+
+ # add the VBox prefix to Qt libs if they are built by us
+ ifeq ($(KBUILD_TARGET),win)
+  VBOX_LIBS_QT4      = $(patsubst %, VBox%4, $(VBOX_MODULE_QT4))
+  VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/VBox%4.dll, $(VBOX_MODULE_QT4))
+ else
+  VBOX_LIBS_QT4      = $(VBOX_MODULE_QT4)
+  VBOX_QT4_RUNTIME   =
+ endif
+
+ ifeq ($(KBUILD_TARGET),win)
+  VBOX_LIBS_QT4     := $(addsuffix .lib, $(VBOX_LIBS_QT4)) VBoxqtmain.lib
+ endif
+
 endif
 
 # Warn about all what you know about porting qt3->qt4.
@@ -95,6 +121,26 @@ VBOX_RCC4      ?= $(VBOX_PATH_QT4_BIN)/rcc
 VBOX_LUPDATE4  ?= $(VBOX_PATH_QT4_BIN)/lupdate
 VBOX_LRELEASE4 ?= $(VBOX_PATH_QT4_BIN)/lrelease
 
+# tell moc what platform we are on to let it properly define
+# Q_OS_* and Q_WS_* macros when including qglobal.h
+# (is there a better way?)
+ifeq ($(KBUILD_TARGET),win)
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  VBOX_MOC4    += -DWIN64
+ else
+  VBOX_MOC4    += -DWIN32
+ endif
+else ifeq ($(KBUILD_TARGET),linux)
+ # when nothing special is defined, Q_OS_UNIX/Q_WS_X11 will be set
+else
+ $(error Port me!)
+endif
+
+# The Qt DLLs (move to the root Makefile.kmk, and remove bin from INSTALLS below).
+bin_SOURCES += $(VBOX_QT4_RUNTIME)
+bin_INST = $(INST_BIN)
+bin_MODE = 644
+
 # Template copy from the qt3 stuff. Appended a "4" on the
 # relevant places.
 
@@ -109,10 +155,6 @@ TEMPLATE_VBOXQT4GUIEXE_INCS = \
     $(VBOX_INCS_QT4)
 
 ifeq ($(KBUILD_TARGET),win)
- # drag in library configuration (we need QMAKE_PRL_DEFINES)
- ifneq ($(LIB_QT_PRL),)
-  include $(LIB_QT_PRL)
- endif
  TEMPLATE_VBOXQT4GUIEXE_TOOL = $(VBOX_VCC_TOOL)
  TEMPLATE_VBOXQT4GUIEXE_DEFS += \
     _WIN32_WINNT=0x0500 UNICODE _UNICODE \
@@ -135,14 +177,14 @@ ifeq ($(KBUILD_TARGET),win)
 	/DELAYLOAD:oleaut32.dll
  TEMPLATE_VBOXQT4GUIEXE_SDKS = WINPSDK
  TEMPLATE_VBOXQT4GUIEXE_LIBS = \
-	$(LIB_QT) \
-	$(LIB_QTMAIN) \
+	$(VBOX_LIBS_QT4) \
 	$(LIB_RUNTIME) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+ TEMPLATE_VBOXQT4GUIEXE_LIBPATH = $(VBOX_PATH_QT4_LIB)
  TEMPLATE_VBOXQT4GUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys:
@@ -184,14 +226,6 @@ else # the gcc guys:
  else ifeq ($(KBUILD_TARGET),darwin)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(foreach mod, $(VBOX_MODULE_QT4), -framework $(mod)) \
   	-framework Carbon -framework QuickTime -bind_at_load
-  TEMPLATE_VBOXQT4GUIEXE_LIBS +=
-  TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
- else ifeq ($(KBUILD_TARGET),os2)
-  # drag in library configuration (we need QMAKE_PRL_DEFINES)
-  ifneq ($(LIB_QT_PRL),)
-   include $(LIB_QT_PRL)
-  endif
-  TEMPLATE_VBOXQT4GUIEXE_DEFS += $(QMAKE_PRL_DEFINES)
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
  else
@@ -331,7 +365,7 @@ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X1
 DLLS = VBoxKeyboard4
 OTHERS = $(PATH_BIN)/vboxkeyboard4.tar.gz
 endif
-INSTALLS = VirtualBox.nls
+INSTALLS = VirtualBox.nls bin
 
 ifeq ($(KBUILD_TARGET),os2)
  DLLS += VBoxHlp
@@ -485,9 +519,6 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
-VirtualBox_QT_MOCSRCS += src/VBoxGlobal.cpp
-endif
 ifdef VBOX_WITH_XPCOM
 VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif

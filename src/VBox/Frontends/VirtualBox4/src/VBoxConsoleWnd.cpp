@@ -3357,7 +3357,7 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
  */
 void VBoxConsoleWnd::tryClose()
 {
-#warning "port me"
+//#warning "port me"
     /* First close any open modal & popup widgets. Use a single shot with
      * timeout 0 to allow the widgets to cleany close and test then again. If
      * all open widgets are closed destroy ourself. */

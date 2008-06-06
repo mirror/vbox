@@ -185,7 +185,7 @@ int main (int argc, char **argv)
         /* some gui qt-styles has it's own different color for buttons
          * causing tool-buttons and dropped menu displayed in
          * different annoying color, so fixing palette button's color */
-#warning "port me: any longer required?"
+//#warning "port me: any longer required?"
         QPalette pal = a.palette();
         pal.setColor (QPalette::Disabled, QColorGroup::Button,
                       pal.color (QPalette::Disabled, QColorGroup::Background));

@@ -93,7 +93,7 @@ private slots:
 
     void gotLinkClicked (const QUrl &aURL)
     {
-#warning is this still necessary?
+//#warning is this still necessary?
         QTextDocument* text = mDetailsText->document();
         emit linkClicked (aURL.toString());
         /* QTextBrowser will try to get the URL from the mime source factory
@@ -523,7 +523,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to the toolbar */
 
-#warning port me
+//#warning port me
 //    setUsesTextLabel (true);
 //    setUsesBigPixmaps (true);
     vmTools->setIconSize (QSize (32, 32));
@@ -638,7 +638,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         mVMListView->selectItemById (QUuid (prevVMId));
     }
 
-#warning port me
+//#warning port me
 //    clearWState (WState_Polished);
 
     /* signals and slots connections */

@@ -133,7 +133,7 @@ int VBoxProgressDialog::run (int aRefreshInterval)
 {
     if (mProgress.isOk())
     {
-#warning port me
+//#warning port me
         /* start a refresh timer */
         startTimer (aRefreshInterval);
         // todo: Ok here I have no clue what this mean.
@@ -178,7 +178,7 @@ void VBoxProgressDialog::timerEvent (QTimerEvent *e)
     {
         if (mLoopLevel != -1)
         {
-#warning port me
+//#warning port me
 //            /* we've entered the loop in run() */
 //            if (mLoopLevel + 1 == qApp->eventLoop()->loopLevel())
 //            {
