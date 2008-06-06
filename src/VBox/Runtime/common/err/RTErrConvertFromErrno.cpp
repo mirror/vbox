@@ -38,6 +38,8 @@
 
 #if defined(RT_OS_DARWIN) && defined(KERNEL)
 # include <sys/errno.h>
+#elif defined(RT_OS_LINUX) && defined(__KERNEL__)
+# include <linux/errno.h>
 #else
 # include <errno.h>
 #endif
