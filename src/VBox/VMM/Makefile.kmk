@@ -167,11 +167,11 @@ VMMR3_SOURCES.solaris += \
 
 VMMR3_SOURCES.darwin += \
 	PDMAsyncCompletionSocketPosix.cpp \
-	PDMAsyncCompletionHostDarwin.cpp
+	PDMAsyncCompletionHostPosix.cpp
 
 VMMR3_SOURCES.freebsd += \
 	PDMAsyncCompletionSocketPosix.cpp \
-	PDMAsyncCompletionHostDarwin.cpp
+	PDMAsyncCompletionHostFreeBSD.cpp
 
 endif
 
