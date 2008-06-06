@@ -101,7 +101,7 @@ int main(int argc, char **argv)
                      : g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC    ? "async"
                      :                                                            "???",
                      g_pSUPGlobalInfoPage->u32Version);
-            for (int i = 0; i < cIterations; i++)
+            for (uint32_t i = 0; i < cIterations; i++)
             {
                 for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs); iCpu++)
                     if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0
