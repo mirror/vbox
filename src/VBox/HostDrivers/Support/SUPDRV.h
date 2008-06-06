@@ -696,8 +696,11 @@ typedef struct SUPDRVDEVEXT
     PRTTIMER                pGipTimer;
     /** If non-zero we've successfully called RTTimerRequestSystemGranularity(). */
     uint32_t                u32SystemTimerGranularityGrant;
-#endif
-#ifdef RT_OS_WINDOWS
+    /** The CPU id of the GIP master.
+     * This CPU is responsible for the updating the common GIP data. */
+    RTCPUID volatile        idGipMaster;
+#else
+# ifdef RT_OS_WINDOWS
     /** The GIP timer object. */
     KTIMER                  GipTimer;
     /** The GIP DPC object associated with GipTimer. */
@@ -712,15 +715,15 @@ typedef struct SUPDRVDEVEXT
     BOOLEAN                 fForceAsyncTsc;
     /** Current CPU affinity mask. */
     KAFFINITY               uAffinityMask;
-#endif
-#ifdef RT_OS_LINUX
+# endif
+# ifdef RT_OS_LINUX
     /** The last jiffies. */
     unsigned long           ulLastJiffies;
     /** The last mono time stamp. */
     uint64_t volatile       u64LastMonotime;
     /** Set when GIP is suspended to prevent the timers from re-registering themselves). */
     uint8_t volatile        fGIPSuspended;
-# ifdef CONFIG_SMP
+#  ifdef CONFIG_SMP
     /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
     struct LINUXCPU
     {
@@ -733,8 +736,9 @@ typedef struct SUPDRVDEVEXT
         /** The per cpu timer. */
         VBOXKTIMER          Timer;
     }                       aCPUs[256];
-# endif
-#endif
+#  endif
+# endif /* LINUX */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 } SUPDRVDEVEXT;
 
 
@@ -761,9 +765,11 @@ int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip)
 int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
-unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt);
-bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 #endif
+#ifdef RT_OS_WINDOWS /** @todo remove when RTMpGetCount() has been fixed. */
+unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt);
+#endif
+bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 
 
 /*******************************************************************************

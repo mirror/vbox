@@ -74,15 +74,20 @@ OBJS   = \
 	SUPDRVShared.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
-	r0drv/linux/mp-r0drv-linux.o \
+	r0drv/mpnotification-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
+	r0drv/linux/mp-r0drv-linux.o \
+	r0drv/linux/mpnotification-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semeventmulti-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
-	r0drv/linux/thread-r0drv-linux.o
+	r0drv/linux/thread-r0drv-linux.o \
+	r0drv/linux/time-r0drv-linux.o \
+	r0drv/linux/timer-r0drv-linux.o \
+	common/err/RTErrConvertFromErrno.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS  += alloc/heapsimple.o
 endif
@@ -222,7 +227,7 @@ endif
 # Use the RTR0MemObj API - testing.
 # If this makes testboxes crash/burn/leak disable it and add a comment to defect #2116.
 #
-KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM
+KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM -DUSE_NEW_OS_INTERFACE_FOR_GIP
 OBJS += r0drv/memobj-r0drv.o \
 	r0drv/linux/memobj-r0drv-linux.o
 ifeq ($(BUILD_TARGET_ARCH),x86) # Some gcc versions ends up needing __divdi3.
