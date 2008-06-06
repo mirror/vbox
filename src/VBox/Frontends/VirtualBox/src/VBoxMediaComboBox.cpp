@@ -277,7 +277,7 @@ void VBoxMediaComboBox::appendItem (const QString &aName,
     insertPosition == -1 ? mUuidList.append (aId) :
         mUuidList.insert (mUuidList.at (insertPosition), aId);
 
-    insertPosition == -1 ? mTipList.append (aId) :
+    insertPosition == -1 ? mTipList.append (aTip) :
         mTipList.insert (mTipList.at (insertPosition), aTip);
 
     aPixmap ? insertItem (*aPixmap, aName, insertPosition) :
