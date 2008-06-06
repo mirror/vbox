@@ -395,7 +395,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-        char        padding[4384];      /* multiple of 32 */
+        char        padding[4416];      /* multiple of 32 */
     } cpum;
 
     /** VMM part. */
