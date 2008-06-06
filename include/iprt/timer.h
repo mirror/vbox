@@ -133,7 +133,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
  * This will automatically OR in the RTTIMER_FLAG_CPU_SPECIFIC flag. */
 #define RTTIMER_FLAGS_CPU(iCpu)      ( (iCpu) | RTTIMER_FLAG_CPU_SPECIFIC )
 /** Macro that validates the flags. */
-#define RTTIMER_FLAGS_ARE_VALID(fFlags) ( !((fFlags) & ((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ff : 0x100)) )
+#define RTTIMER_FLAGS_ARE_VALID(fFlags) ( !((fFlags) & ~((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ffU : 0x100U)) )
 /** @} */
 
 /**
