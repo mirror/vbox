@@ -406,6 +406,8 @@
  * this and we'll adjust the code so it tries harder to avoid it.
  */
 #define VERR_PGM_INTERMEDIATE_PAGING_CONFLICT   (-1627)
+/** The shadow paging mode is not supported yet. */
+#define VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE (-1628)
 
 /** @} */
 
