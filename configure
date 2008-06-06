@@ -172,7 +172,7 @@ which_wrapper()
   if [ "$have_ancient_which" = "yes" ]; then
     retval=`which $* 2>/dev/null`
     echo "$retval"
-    test -n "$retval" -a -e "$retval"
+    test -n "$retval" -a -x "$retval"
     unset retval
   else
     which $* 2> /dev/null
