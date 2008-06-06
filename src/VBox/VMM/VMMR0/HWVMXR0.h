@@ -161,6 +161,25 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
         pCtx->reg##Hid.Attr.u    = val;
 
 
+
+/**
+ * Prepares for and executes VMLAUNCH (32 bits guest mode)
+ *
+ * @returns VBox status code
+ * @param   fResume     vmlauch/vmresume
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx);
+
+/**
+ * Prepares for and executes VMLAUNCH (64 bits guest mode)
+ *
+ * @returns VBox status code
+ * @param   fResume     vmlauch/vmresume
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx);
+
 #endif /* IN_RING0 */
 
 /** @} */
