@@ -1,4 +1,4 @@
-/* $Rev:$ */
+/* $Rev$ */
 /** @file
  * The VirtualBox Support Driver - Linux hosts.
  */
@@ -198,18 +198,33 @@ extern int nmi_active;
 #define xstr(s) str(s)
 #define str(s) #s
 
+
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
+# ifdef VBOX_HRTIMER
+typedef enum hrtimer_restart (*PFNVBOXKTIMER)(struct hrtimer *);
+# else
+typedef void (*PFNVBOXKTIMER)(unsigned long);
+# endif
+#endif
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
 *******************************************************************************/
 /**
  * Device extention & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
 
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 /** Timer structure for the GIP update. */
 static VBOXKTIMER           g_GipTimer;
 /** Pointer to the page structure for the GIP. */
 struct page                *g_pGipPage;
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 
 /** Registered devfs device handle. */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
@@ -253,12 +268,6 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifdef VBOX_HRTIMER
-typedef enum hrtimer_restart (*PFNVBOXKTIMER)(struct hrtimer *);
-#else
-typedef void (*PFNVBOXKTIMER)(unsigned long);
-#endif
-
 static int      VBoxDrvLinuxInit(void);
 static void     VBoxDrvLinuxUnload(void);
 static int      VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
@@ -269,21 +278,23 @@ static long     VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigne
 static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #endif
 static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
-#ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer);
-#else
-static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
-#endif
-#ifdef CONFIG_SMP
 # ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer);
+static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer);
 # else
-static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
+static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
 # endif
+# ifdef CONFIG_SMP
+#  ifdef VBOX_HRTIMER
+static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer);
+#  else
+static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
+#  endif
 static void     VBoxDrvLinuxGipResumePerCpu(void *pvUser);
-#endif
+# endif /* CONFIG_SMP */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 static int      VBoxDrvLinuxErr2LinuxErr(int);
 
 
@@ -313,6 +324,9 @@ static struct miscdevice gMiscDevice =
 # endif
 };
 #endif
+
+
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 
 static inline void vbox_ktimer_init(PVBOXKTIMER pTimer, PFNVBOXKTIMER pfnFunction, unsigned long ulData)
 {
@@ -345,6 +359,9 @@ static inline void vbox_ktimer_stop(PVBOXKTIMER pTimer)
         del_timer_sync(pTimer);
 #endif
 }
+
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
+
 
 #ifdef CONFIG_X86_LOCAL_APIC
 # ifdef DO_DISABLE_NMI
@@ -640,40 +657,47 @@ nmi_activated:
         rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-#ifdef RT_ARCH_AMD64
-            rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
-#endif
-            /*
-             * Initialize the device extension.
-             */
+            rc = RTR0MpNotificationInit(NULL);
             if (RT_SUCCESS(rc))
-                rc = supdrvInitDevExt(&g_DevExt);
-            if (!rc)
             {
+#ifdef RT_ARCH_AMD64
+                rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
+#endif
                 /*
-                 * Create the GIP page.
+                 * Initialize the device extension.
                  */
-                rc = VBoxDrvLinuxInitGip(&g_DevExt);
+                if (RT_SUCCESS(rc))
+                    rc = supdrvInitDevExt(&g_DevExt);
                 if (!rc)
                 {
-                    printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
+                    /*
+                     * Create the GIP page.
+                     */
+                    rc = VBoxDrvLinuxInitGip(&g_DevExt);
+                    if (!rc)
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
+                    {
+                        printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
 #ifdef VBOX_HRTIMER
-                           "'high-res'"
+                               "'high-res'"
 #else
-                           "'normal'"
+                               "'normal'"
 #endif
-                           ".\n",
-                           g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
-                    LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                           VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
-                    return rc;
-                }
+                               ".\n",
+                               g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                        LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                        printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                               VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
+                        return rc;
+                    }
 
-                supdrvDeleteDevExt(&g_DevExt);
+                    supdrvDeleteDevExt(&g_DevExt);
+                }
+                else
+                    rc = -EINVAL;
+                RTR0MpNotificationTerm(NULL);
             }
-            else
-                rc = -EINVAL;
             RTR0Term();
         }
         else
@@ -729,7 +753,9 @@ static void __exit VBoxDrvLinuxUnload(void)
     /*
      * Destroy GIP, delete the device extension and terminate IPRT.
      */
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
     VBoxDrvLinuxTermGip(&g_DevExt);
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
     supdrvDeleteDevExt(&g_DevExt);
     RTR0Term();
 }
@@ -946,6 +972,8 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 
 /**
  * Initializes the GIP.
@@ -1364,30 +1392,9 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 #endif
 }
 
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 
-/**
- * Get the current CPU count.
- * @returns Number of cpus.
- */
-unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
-{
-#ifdef CONFIG_SMP
-# if defined(num_present_cpus) && !defined(VBOX_REDHAT_KABI)
-    return num_present_cpus();
-# elif defined(num_possible_cpus)
-    return num_possible_cpus();
-# else
-    return smp_num_cpus;
-# endif
-#else
-    return 1;
-#endif
-}
 
-/**
- * Force async tsc mode.
- * @todo add a module argument for this.
- */
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     return force_async_tsc != 0;
@@ -1474,7 +1481,7 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 }
 
 
-/* GCC C++ hack. */
+/* GCC C++ hack. (shouldn't be necessary...) */
 unsigned __gxx_personality_v0 = 0xcccccccc;
 
 

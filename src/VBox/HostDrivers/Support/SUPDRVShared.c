@@ -252,7 +252,9 @@ static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR 
 #ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
-static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 #endif
 
 
@@ -3747,27 +3749,51 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     }
 
     /*
-     * Find a reasonable update interval, something close to 10ms would be nice,
-     * and create a recurring timer.
+     * Find a reasonable update interval and initialize the structure.
      */
     u32Interval = u32SystemResolution = RTTimerGetSystemGranularity();
     while (u32Interval < 10000000 /* 10 ms */)
         u32Interval += u32SystemResolution;
 
-    rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0, supdrvGipTimer, pDevExt);
-    if (RT_FAILURE(rc))
-    {
-        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %RU32 ns interval. rc=%d\n", u32Interval, rc));
-        Assert(!pDevExt->pGipTimer);
-        supdrvGipDestroy(pDevExt);
-        return rc;
-    }
+    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/);
 
     /*
-     * We're good.
+     * Create the timer.
+     * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
      */
-    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/);
-    return VINF_SUCCESS;
+    if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
+    {
+        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, RTTIMER_FLAGS_CPU_ALL, supdrvGipAsyncTimer, pDevExt);
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            OSDBGPRINT(("supdrvGipCreate: omni timer not supported, falling back to synchronous mode\n"));
+            pGip->u32Mode = SUPGIPMODE_SYNC_TSC;
+        }
+    }
+    if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0, supdrvGipSyncTimer, pDevExt);
+    if (RT_SUCCESS(rc))
+    {
+        if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
+            rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * We're good.
+             */
+            dprintf(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
+            return VINF_SUCCESS;
+        }
+
+        OSDBGPRINT(("supdrvGipCreate: failed register MP event notfication. rc=%d\n", rc));
+    }
+    else
+    {
+        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %ld ns interval. rc=%d\n", (long)u32Interval, rc));
+        Assert(!pDevExt->pGipTimer);
+    }
+    supdrvGipDestroy(pDevExt);
+    return rc;
 }
 
 
@@ -3821,17 +3847,81 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 
 
 /**
- * Timer callback function.
+ * Timer callback function sync GIP mode.
  * @param   pTimer      The timer.
  * @param   pvUser      The device extension.
- * @param   iTick       The current tick.
  */
-static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)pvUser;
     supdrvGipUpdate(pDevExt->pGip, RTTimeSystemNanoTS());
-    NOREF(iTick);
 }
+
+
+/**
+ * Timer callback function for async GIP mode.
+ * @param   pTimer      The timer.
+ * @param   pvUser      The device extension.
+ */
+static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PSUPDRVDEVEXT   pDevExt = (PSUPDRVDEVEXT)pvUser;
+    RTCPUID         idCpu   = RTMpCpuId();
+    uint64_t        NanoTS  = RTTimeSystemNanoTS();
+
+    if (pDevExt->idGipMaster == idCpu)
+        supdrvGipUpdate(pDevExt->pGip, NanoTS);
+    else
+        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, ASMGetApicId());
+}
+
+
+/**
+ * Multiprocessor event notification callback.
+ *
+ * This is used to make sue that the GIP master gets passed on to
+ * another CPU.
+ *
+ * @param   enmEvent    The event.
+ * @param   idCpu       The cpu it applies to.
+ * @param   pvUser      Pointer to the device extension.
+ */
+static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
+{
+    PSUPDRVDEVEXT   pDevExt = (PSUPDRVDEVEXT)pvUser;
+    if (enmEvent == RTMPEVENT_OFFLINE)
+    {
+        RTCPUID idGipMaster;
+        ASMAtomicReadSize(&pDevExt->idGipMaster, &idGipMaster);
+        if (idGipMaster == idCpu)
+        {
+            /*
+             * Find a new GIP master.
+             */
+            bool        fIgnored;
+            unsigned    i;
+            RTCPUID     idNewGipMaster = NIL_RTCPUID;
+            RTCPUSET    OnlineCpus;
+            RTMpGetOnlineSet(&OnlineCpus);
+
+            for (i = 0; i < RTCPUSET_MAX_CPUS; i++)
+            {
+                RTCPUID idCurCpu = RTMpCpuIdFromSetIndex(i);
+                if (    RTCpuSetIsMember(&OnlineCpus, idCurCpu)
+                    &&  idCurCpu != idGipMaster)
+                {
+                    idNewGipMaster = idCurCpu;
+                    break;
+                }
+            }
+
+            dprintf(("supdrvGipMpEvent: Gip master %#lx -> %#lx\n", (long)idGipMaster, (long)idNewGipMaster));
+            ASMAtomicCmpXchgSize(&pDevExt->idGipMaster, idNewGipMaster, idGipMaster, fIgnored);
+            NOREF(fIgnored);
+        }
+    }
+}
+
 #endif /* USE_NEW_OS_INTERFACE_FOR_GIP */
 
 
@@ -3906,7 +3996,6 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
     /*
      * The problem here is that AMD processors with power management features
      * may easily end up with different TSCs because the CPUs or even cores
@@ -3918,13 +4007,19 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
      * identify the older CPUs which don't do different frequency and
      * can be relied upon to have somewhat uniform TSC between the cpus.
      */
+# ifdef RT_OS_WINDOWS /** @todo fix RTMpGetCount() wrt to IRQL. */
     if (supdrvOSGetCPUCount(pDevExt) > 1)
+# else
+    if (RTMpGetCount() > 1)
+# endif
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
 
-        /* Permit user users override. */
+        /* Permit the user and/or the OS specfic bits to force async mode. */
         if (supdrvOSGetForcedAsyncTscMode(pDevExt))
             return SUPGIPMODE_ASYNC_TSC;
+
+        /** @todo perform supdrvDetermineAsyncTsc here! */
 
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
@@ -3933,6 +4028,8 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
             &&  uECX == X86_CPUID_VENDOR_AMD_ECX
             &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
         {
+            /** @todo This is probably wrong. TscInvariant doesn't seem to mean that RdTSC returns the
+             * value everywhere, but rather that the rate is supposed to be the same. */
             /* Check for APM support and that TscInvariant is cleared. */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
             if (uEAX >= 0x80000007)
@@ -3944,7 +4041,6 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
             }
         }
     }
-#endif
     return SUPGIPMODE_SYNC_TSC;
 }
 

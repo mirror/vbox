@@ -530,6 +530,11 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+{
+    return false;
+}
+
 
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
