@@ -46,7 +46,11 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
    OTHERS += \
     $(PATH_TARGET)/tstShflSizes.run
+ else
+    $(warning KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH), KBUILD_HOST_ARCH=$(KBUILD_HOST_ARCH))
  endif
+else
+    $(warning KBUILD_TARGET != KBUILD_HOST ($(KBUILD_TARGET) != $(KBUILD_HOST)))
 endif
 
 TESTING += \
