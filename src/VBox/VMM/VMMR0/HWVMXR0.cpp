@@ -950,18 +950,19 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
      * Set required bits to one and zero according to the MSR capabilities.
      */
     val = (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF);
+    /* 64 bits guest mode? */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
+    /* else Must be zero when AMD64 is not available. */
 
     /* Mask away the bits that the CPU doesn't support */
-    /** @todo make sure they don't conflict with the above requirements. */
     val &= (pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL);
-    /* else Must be zero when AMD64 is not available. */
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
     AssertRC(rc);
 
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
-        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
 #ifndef VBOX_WITH_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #else
