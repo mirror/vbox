@@ -50,7 +50,7 @@ void QIStatusBar::paintEvent (QPaintEvent *e)
 {
     QStatusBar::paintEvent (e);
     return;
-#warning port me: is this needed anymore?
+//#warning port me: is this needed anymore?
 //    QPainter p (this);
 //
 //#ifndef QT_NO_SIZEGRIP
@@ -63,7 +63,7 @@ void QIStatusBar::paintEvent (QPaintEvent *e)
 //    int psx = width() - 12;
 //#endif
 //
-//    if (!message.isEmpty()) 
+//    if (!message.isEmpty())
 //    {
 //        p.setPen (colorGroup().foreground());
 //        p.drawText (6, 0, psx, height(), Qt::AlignVCenter | Qt::TextSingleLine, message);

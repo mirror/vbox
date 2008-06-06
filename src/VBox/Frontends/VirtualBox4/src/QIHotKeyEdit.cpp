@@ -209,7 +209,7 @@ QSize QIHotKeyEdit::sizeHint() const
     int h = QMAX(fm.lineSpacing(), 14) + 2;
     int w = fm.width( 'x' ) * 17; // "some"
     int m = frameWidth() * 2;
-#warning port me
+//#warning port me
 //    return (style()->sizeFromContents (QStyle::CT_LineEdit, this,
 //                                      QSize (w + m, h + m)
 //                                      .expandedTo(QApplication::globalStrut())));
@@ -230,13 +230,13 @@ QSize QIHotKeyEdit::minimumSizeHint() const
 }
 
 #if defined (Q_WS_PM)
-/** 
+/**
  *  Returns the virtual key extracted from the QMSG structure.
  *
  *  This function tries to detect some extra virtual keys definitions missing
  *  in PM (like Left Shift, Left Ctrl, Win keys). In all other cases it simply
  *  returns SHORT2FROMMP (aMsg->mp2).
- * 
+ *
  *  @param aMsg  Pointer to the QMSG structure to extract the virtual key from.
  *  @return The extracted virtual key code or zero if there is no virtual key.
  */
@@ -732,7 +732,7 @@ void QIHotKeyEdit::focusOutEvent (QFocusEvent *)
 
 void QIHotKeyEdit::drawContents (QPainter * p)
 {
-#warning port me
+//#warning port me
 //    QLabel::drawContents (p);
 //    if (hasFocus())
 //    {

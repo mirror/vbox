@@ -2265,7 +2265,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
 
 #else
 
-#warning Adapt VBoxConsoleView::fixModifierState
+//#warning Adapt VBoxConsoleView::fixModifierState
 
 #endif
 

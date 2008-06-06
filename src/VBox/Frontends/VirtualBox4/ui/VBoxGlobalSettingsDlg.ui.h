@@ -247,7 +247,7 @@ private:
     QString tratra (const QTranslator &aTranslator, const char *aCtxt,
                        const char *aSrc, const char *aCmnt)
     {
-#warning port me: check this
+//#warning port me: check this
         QString msg = aTranslator.translate (aCtxt, aSrc, aCmnt);
 //        QString msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt).translation();
         /* return the source text if no translation is found */
@@ -270,7 +270,7 @@ void VBoxGlobalSettingsDlg::init()
     /*  all pages are initially valid */
     valid = true;
     buttonOk->setEnabled (true);
-#warning port me
+//#warning port me
 //    warningSpacer->changeSize (0, 0, QSizePolicy::Expanding);
     warningLabel->setHidden (true);
     warningPixmap->setHidden (true);
@@ -303,7 +303,7 @@ void VBoxGlobalSettingsDlg::init()
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
 
-#warning port me
+//#warning port me
     whatsThisLabel = new QILabel (this);
 //    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
@@ -348,7 +348,7 @@ void VBoxGlobalSettingsDlg::init()
         tr ("Displays the key used as a Host Key in the VM window. Activate the "
             "entry field and press a new Host Key. Note that alphanumeric, "
             "cursor movement and editing keys cannot be used as a Host Key."));
-#warning port me
+//#warning port me
 //    layoutHostKey->addWidget (hkeHostKey);
     txHostKey->setBuddy (hkeHostKey);
     setTabOrder (listView, hkeHostKey);
@@ -378,7 +378,7 @@ void VBoxGlobalSettingsDlg::init()
     /* disable unselecting items by clicking in the unused area of the list */
     new QIListViewSelectionPreserver (this, lvUSBFilters);
     wstUSBFilters = new Q3WidgetStack (grbUSBFilters, "wstUSBFilters");
-#warning port me
+//#warning port me
 //    grbUSBFiltersLayout->addWidget (wstUSBFilters);
     /* create a default (disabled) filter settings widget at index 0 */
     /*
@@ -739,6 +739,8 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
          item = item->nextSibling())
     {
         USBListItem *uli = static_cast <USBListItem *> (item);
+//#warning port me
+        /*
         VBoxUSBFilterSettings *settings =
             static_cast <VBoxUSBFilterSettings *>
                 (wstUSBFilters->widget (uli->mId));
@@ -755,6 +757,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
         if (mUSBFilterListModified)
             host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
                                         insertedFilter);
+        */
     }
     mUSBFilterListModified = false;
 
@@ -765,7 +768,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
     if (mLanguageChanged && selItem)
     {
         gs.setLanguageId (selItem->text (1));
-#warning "port me: check if this is longer necessary (See the ChangeGUILanguageEvent)"
+//#warning "port me: check if this is longer necessary (See the ChangeGUILanguageEvent)"
         VBoxGlobal::loadLanguage (selItem->text (1));
     }
 }
@@ -782,13 +785,13 @@ void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
     }
     else
     {
-#warning port me
+//#warning port me
 //        widget = focusData()->focusWidget();
     }
     /* if the given widget lacks the whats'this text, look at its parent */
     while (widget && widget != this)
     {
-#warning port me
+//#warning port me
 //        text = Q3WhatsThis::textFor (widget);
         if (!text.isEmpty())
             break;
@@ -797,7 +800,7 @@ void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
 
     if (text.isEmpty() && !warningString.isEmpty())
         text = warningString;
-#warning port me
+//#warning port me
 //    if (text.isEmpty())
 //        text = Q3WhatsThis::textFor (this);
 
