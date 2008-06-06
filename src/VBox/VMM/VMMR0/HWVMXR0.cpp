@@ -840,11 +840,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             break;
 #else
             AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
         default:                   /* shut up gcc */
             AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
+            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
         }
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
@@ -959,7 +959,18 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    {
         val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
+#ifndef VBOX_WITH_64_BITS_GUESTS
+        return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#else
+        pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
+#endif
+    }
+    else
+    {
+        pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
+    }
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1157,10 +1168,7 @@ ResumeExecution:
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
-    if (pVM->hwaccm.s.vmx.fResumeVM == false)
-        rc = VMXStartVM(pCtx);
-    else
-        rc = VMXResumeVM(pCtx);
+    rc = pVM->hwaccm.s.vmx.pfnStartVM(pVM->hwaccm.s.vmx.fResumeVM, pCtx);
 
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.vmx.fResumeVM = true;
