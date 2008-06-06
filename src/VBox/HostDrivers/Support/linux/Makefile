@@ -88,6 +88,7 @@ OBJS   = \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
 	common/err/RTErrConvertFromErrno.o \
+	math/gcc/qdivrem.o \
 	math/gcc/udivdi3.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS  += alloc/heapsimple.o
@@ -97,7 +98,6 @@ OBJS  += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/umoddi3.o \
-	math/gcc/qdivrem.o \
 	common/log/log.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
