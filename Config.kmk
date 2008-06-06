@@ -342,6 +342,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Later:
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 # Most stuff doesn't build yet on the new targets.
