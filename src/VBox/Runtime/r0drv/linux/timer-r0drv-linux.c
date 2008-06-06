@@ -107,6 +107,10 @@ typedef struct RTTIMERLNXSUBTIMER
     uint64_t                iTick;
     /** Pointer to the parent timer. */
     PRTTIMER                pParent;
+#ifndef RT_USE_LINUX_HRTIMER
+    /** The u64NextTS in jiffies. */
+    unsigned long           ulNextJiffies;
+#endif
     /** The current sub-timer state. */
     RTTIMERLNXSTATE volatile enmState;
 } RTTIMERLNXSUBTIMER;
@@ -145,6 +149,11 @@ typedef struct RTTIMER
     void                   *pvUser;
     /** The timer interval. 0 if one-shot. */
     uint64_t                u64NanoInterval;
+#ifndef RT_USE_LINUX_HRTIMER
+    /** This is set to the number of jiffies between ticks if the interval is
+     * an exact number of jiffies. */
+    unsigned long           cJiffies;
+#endif
     /** Sub-timers.
      * Normally there is just one, but for RTTIMER_FLAGS_CPU_ALL this will contain
      * an entry for all possible cpus. In that case the index will be the same as
@@ -194,7 +203,36 @@ DECLINLINE(RTTIMERLNXSTATE) rtTimerLnxGetState(RTTIMERLNXSTATE volatile *penmSta
 }
 
 
-#ifndef RT_USE_LINUX_HRTIMER
+#ifdef RT_USE_LINUX_HRTIMER
+/**
+ * Converts a nano second time stamp to ktime_t.
+ *
+ * ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts().
+ *
+ * @returns ktime_t.
+ * @param   cNanoSecs   Nanoseconds.
+ */
+DECLINLINE(ktime_t) rtTimerLnxNanoToKt(uint64_t cNanoSecs)
+{
+    /* With some luck the compiler optimizes the division out of this... (Bet it doesn't.) */
+    return ktime_set(cNanoSecs / 1000000000, cNanoSecs % 1000000000);
+}
+
+/**
+ * Converts ktime_t to a nano second time stamp.
+ *
+ * ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts().
+ *
+ * @returns nano second time stamp.
+ * @param   Kt          ktime_t.
+ */
+DECLINLINE(uint64_t) rtTimerLnxKtToNano(ktime_t Kt)
+{
+    return ktime_to_ns(Kt);
+}
+
+#else /* ! RT_USE_LINUX_HRTIMER */
+
 /**
  * Converts a nano second interval to jiffies.
  *
@@ -233,19 +271,12 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     pSubTimer->iTick = 0;
 
 #ifdef RT_USE_LINUX_HRTIMER
-    {
-        /* ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts(). */
-        struct timespec Ts;
-        ktime_t Kt;
-        Ts.tv_sec  = u64NextTS / 1000000000;
-        Ts.tv_nsec = u64NextTS % 1000000000;
-        Kt = timespec_to_ktime(Ts);
-        hrtimer_start(&pSubTimer->LnxTimer, Kt, HRTIMER_MODE_ABS);
-    }
+    hrtimer_start(&pSubTimer->LnxTimer, rtTimerLnxNanoToKt(u64NextTS), HRTIMER_MODE_ABS);
 #else
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
-        mod_timer(&pSubTimer->LnxTimer, jiffies + cJiffies);
+        pSubTimer->ulNextJiffies = jiffies + cJiffies;
+        mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
     }
 #endif
 
@@ -340,30 +371,43 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
          */
         const uint64_t u64NanoTS = RTTimeNanoTS();
         const uint64_t iTick = ++pSubTimer->iTick;
+
+        if (RT_UNLIKELY(iTick == 1))
+        {
 #ifdef RT_USE_LINUX_HRTIMER
-        if (iTick == 1)
-            pSubTimer->u64StartTS = u64NanoTS;
+            pSubTimer->u64StartTS = pSubTimer->u64NextTS = u64NanoTS;//rtTimerLnxKtToNano(pSubTimer->LnxTimer.base->softirq_time);
+#else
+            pSubTimer->u64StartTS = pSubTimer->u64NextTS = u64NanoTS;
+            pSubTimer->ulNextJiffies = jiffies;
 #endif
-        pSubTimer->u64NextTS = pSubTimer->u64StartTS
-                             + iTick * pTimer->u64NanoInterval;
-        if (pSubTimer->u64NextTS < u64NanoTS)
-            pSubTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
+        }
+
+        pSubTimer->u64NextTS += pTimer->u64NanoInterval;
 
 #ifdef RT_USE_LINUX_HRTIMER
-        {
-            /* ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts(). */
-            struct timespec Ts;
-            Ts.tv_sec  = pSubTimer->u64NextTS / 1000000000;
-            Ts.tv_nsec = pSubTimer->u64NextTS % 1000000000;
-            pSubTimer->LnxTimer.expires = timespec_to_ktime(Ts);
-            rc = HRTIMER_RESTART;
-        }
+        while (pSubTimer->u64NextTS < u64NanoTS)
+            pSubTimer->u64NextTS += pTimer->u64NanoInterval;
+
+        pSubTimer->LnxTimer.expires = rtTimerLnxNanoToKt(pSubTimer->u64NextTS);
+        rc = HRTIMER_RESTART;
 #else
+        if (pTimer->cJiffies)
         {
-            uint64_t offDelta = pSubTimer->u64NextTS - u64NanoTS;
-            unsigned long cJiffies = rtTimerLnxNanoToJiffies(offDelta);
-            mod_timer(&pSubTimer->LnxTimer, jiffies + cJiffies);
+            pSubTimer->ulNextJiffies += pTimer->cJiffies;
+            while (pSubTimer->ulNextJiffies < jiffies)
+            {
+                pSubTimer->ulNextJiffies += pTimer->cJiffies;
+                pSubTimer->u64NextTS += pTimer->u64NanoInterval;
+            }
         }
+        else
+        {
+            while (pSubTimer->u64NextTS < u64NanoTS)
+                pSubTimer->u64NextTS += pTimer->u64NanoInterval;
+            pSubTimer->ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u64NextTS - u64NanoTS);
+        }
+
+        mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
 #endif
 
         /*
@@ -825,6 +869,11 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     pTimer->pfnTimer = pfnTimer;
     pTimer->pvUser = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
+#ifndef RT_USE_LINUX_HRTIMER
+    pTimer->cJiffies = u64NanoInterval / RTTimerGetSystemGranularity();
+    if (pTimer->cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
+        pTimer->cJiffies = 0;
+#endif
 
     for (iCpu = 0; iCpu < cCpus; iCpu++)
     {
@@ -874,7 +923,13 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
 #ifdef RT_USE_LINUX_HRTIMER
-    /** @todo later... */
+    struct timespec Ts;
+    int rc = hrtimer_get_res(CLOCK_MONOTONIC, &Ts);
+    if (!rc)
+    {
+        Assert(!Ts.tv_sec);
+        return Ts.tv_nsec;
+    }
     return 1000000000 / HZ; /* ns */
 #else
     return 1000000000 / HZ; /* ns */
