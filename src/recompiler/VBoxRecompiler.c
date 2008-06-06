@@ -1335,7 +1335,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     int rc = PGMInvalidatePage(pVM, GCPtr);
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("remR3FlushPage %x %x %x %d failed!!\n", GCPtr));
+        AssertMsgFailed(("remR3FlushPage %VGv failed with %d!!\n", GCPtr, rc));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
     }
     //RAWEx_ProfileStart(env, STATS_QEMU_TOTAL);
