@@ -64,6 +64,27 @@
 ; @param 2  16-bit regsiter name for \a 1.
 
 %ifdef RT_ARCH_AMD64
+  ; Save a host and load the corresponding guest MSR (trashes rdx & rcx)
+  %macro LOADGUESTMSR 2
+    mov     rcx, %1
+    rdmsr
+    push    rdx
+    push    rax
+    xor     rdx, rdx
+    mov     rax, qword [xSI + %2]
+    wrmsr
+  %endmacro
+
+  ; Save a guest and load the corresponding host MSR (trashes rdx & rcx)
+  %macro LOADHOSTMSR 2
+    mov     rcx, %1
+    rdmsr
+    mov     qword [xSI + %2], rax
+    pop     rax
+    pop     rdx
+    wrmsr
+  %endmacro
+
  %ifdef ASM_CALL64_GCC
   %macro MYPUSHAD 0
     push    r15
@@ -101,6 +122,7 @@
   %endmacro
  %endif
 
+; trashes, rax, rdx & rcx
  %macro MYPUSHSEGS 2
     mov     %2, es
     push    %1
@@ -108,41 +130,34 @@
     push    %1
 
     ; Special case for FS; Windows and Linux either don't use it or restore it when leaving kernel mode, Solaris OTOH doesn't and we must save it.
-    push    rcx
     mov     ecx, MSR_K8_FS_BASE
     rdmsr
-    pop     rcx
     push    rdx
     push    rax
     push    fs
 
     ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
-    push    rcx
     mov     ecx, MSR_K8_GS_BASE
     rdmsr
-    pop     rcx
     push    rdx
     push    rax
     push    gs
  %endmacro
 
+; trashes, rax, rdx & rcx
  %macro MYPOPSEGS 2
     ; Note: do not step through this code with a debugger!
     pop     gs
     pop     rax
     pop     rdx
-    push    rcx
     mov     ecx, MSR_K8_GS_BASE
     wrmsr
-    pop     rcx
 
     pop     fs
     pop     rax
     pop     rdx
-    push    rcx
     mov     ecx, MSR_K8_FS_BASE
     wrmsr
-    pop     rcx
     ; Now it's safe to step again
 
     pop     %1
@@ -232,7 +247,7 @@ BEGINPROC VMXR0StartVM32
 %endif
 
     ;/* Save segment registers */
-    ; Note: MYPUSHSEGS trashes rdx (among others), so we moved it here (msvc amd64 case)
+    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
     MYPUSHSEGS xAX, ax
 
     ; Save the pCtx pointer
@@ -433,8 +448,15 @@ BEGINPROC VMXR0StartVM64
 %endif
 
     ;/* Save segment registers */
-    ; Note: MYPUSHSEGS trashes rdx (among others), so we moved it here (msvc amd64 case)
+    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
     MYPUSHSEGS xAX, ax
+
+    ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
+    ; @todo use the automatic load feature for MSRs
+    LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+    LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
+    LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Save the pCtx pointer
     push    xSI
@@ -543,6 +565,13 @@ ALIGNCODE(16)
 
     add     xSP, xS      ; pCtx
 
+    ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
+    ; @todo use the automatic load feature for MSRs
+    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADHOSTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
+    LOADHOSTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+
     ; Restore segment registers
     MYPOPSEGS xAX, ax
 
@@ -569,6 +598,13 @@ ALIGNCODE(16)
 
     add     xSP, xS     ; pCtx
 
+    ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
+    ; @todo use the automatic load feature for MSRs
+    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADHOSTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
+    LOADHOSTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+
     ; Restore segment registers
     MYPOPSEGS xAX, ax
 
@@ -588,6 +624,13 @@ ALIGNCODE(16)
     lldt    ax
 
     add     xSP, xS     ; pCtx
+
+    ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
+    ; @todo use the automatic load feature for MSRs
+    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADHOSTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
+    LOADHOSTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
 
     ; Restore segment registers
     MYPOPSEGS xAX, ax
