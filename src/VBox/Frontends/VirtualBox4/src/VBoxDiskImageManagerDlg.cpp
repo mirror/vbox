@@ -2025,9 +2025,9 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
         margin = aInfo->style()->layoutSpacing (QSizePolicy::Label, QSizePolicy::Label, Qt::Horizontal);
 #endif /* QT_VERSION >= 0x040300 */
     if (aLeftRightMargin)
-        aInfo->setContentsMargins (margin, NULL, margin, NULL);
+        aInfo->setContentsMargins (margin, 0, margin, 0);
     else 
-        aInfo->setContentsMargins (margin, NULL, NULL, NULL);
+        aInfo->setContentsMargins (margin, 0, 0, 0);
     rootLayout->addWidget (aInfo, aRow, aCol + 1, aRowSpan, aColSpan);
 }
 
