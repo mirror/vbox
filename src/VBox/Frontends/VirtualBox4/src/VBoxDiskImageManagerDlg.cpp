@@ -525,6 +525,7 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
             setCurrentItem (mFdsTree, item);
 }
 
+/* static */
 void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
 {
     if (!mModelessDialog)
@@ -577,6 +578,7 @@ QString VBoxDiskImageManagerDlg::selectedPath() const
     return path;
 }
 
+/* static */
 QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
                                                    VBoxMedia::Status aStatus,
                                                    DiskImageItem *aItem)
@@ -662,6 +664,7 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
     return tip;
 }
 
+/* static */
 QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
                                                    VBoxMedia::Status aStatus,
                                                    DiskImageItem *aItem)
@@ -728,6 +731,7 @@ QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
     return tip;
 }
 
+/* static */
 QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
                                                    VBoxMedia::Status aStatus,
                                                    DiskImageItem *aItem)
@@ -1996,7 +2000,7 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
 
 void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
                                                 QWidget *aRoot,
-                                                bool aLeftRigthMargin,
+                                                bool aLeftRightMargin,
                                                 int aRow, int aCol,
                                                 int aRowSpan /* = 1 */, int aColSpan /* = 1 */) const
 {
@@ -2020,7 +2024,7 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
     if (margin == -1)
         margin = aInfo->style()->layoutSpacing (QSizePolicy::Label, QSizePolicy::Label, Qt::Horizontal);
 #endif /* QT_VERSION >= 0x040300 */
-    if (aLeftRigthMargin)
+    if (aLeftRightMargin)
         aInfo->setContentsMargins (margin, NULL, margin, NULL);
     else 
         aInfo->setContentsMargins (margin, NULL, NULL, NULL);
@@ -2047,6 +2051,7 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
     }
 }
 
+/* static */
 QString VBoxDiskImageManagerDlg::DVDImageUsage (const QUuid &aId, QString &aSnapshotUsage)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -2093,6 +2098,7 @@ QString VBoxDiskImageManagerDlg::DVDImageUsage (const QUuid &aId, QString &aSnap
     return usage;
 }
 
+/* static */
 QString VBoxDiskImageManagerDlg::FloppyImageUsage (const QUuid &aId, QString &aSnapshotUsage)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -2139,6 +2145,7 @@ QString VBoxDiskImageManagerDlg::FloppyImageUsage (const QUuid &aId, QString &aS
     return usage;
 }
 
+/* static */
 void VBoxDiskImageManagerDlg::DVDImageSnapshotUsage (const QUuid &aId, const CSnapshot &aSnapshot, QString &aUsage)
 {
     if (aSnapshot.isNull())
@@ -2157,6 +2164,7 @@ void VBoxDiskImageManagerDlg::DVDImageSnapshotUsage (const QUuid &aId, const CSn
         DVDImageSnapshotUsage (aId, en.GetNext(), aUsage);
 }
 
+/* static */
 void VBoxDiskImageManagerDlg::FloppyImageSnapshotUsage (const QUuid &aId, const CSnapshot &aSnapshot, QString &aUsage)
 {
     if (aSnapshot.isNull())
