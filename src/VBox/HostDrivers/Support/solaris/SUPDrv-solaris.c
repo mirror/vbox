@@ -808,6 +808,12 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+{
+    return false;
+}
+
+
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list     args;
