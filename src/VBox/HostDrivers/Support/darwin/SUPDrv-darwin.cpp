@@ -32,7 +32,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/* 
+/*
  * Deal with conflicts first.
  * PVM - BSD mess, that FreeBSD has correct a long time ago.
  * iprt/types.h before sys/param.h - prevents UINT32_C and friends.
@@ -492,7 +492,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         }
         if (RT_UNLIKELY((pHdr->fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
         {
-            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", pHdr->fFlags, iCmd)); 
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", pHdr->fFlags, iCmd));
             return EINVAL;
         }
         if (RT_UNLIKELY(    RT_MAX(pHdr->cbIn, pHdr->cbOut) != cbReq
@@ -505,9 +505,9 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
     }
     else if ((IOC_DIRMASK & iCmd) == IOC_VOID && !cbReq)
     {
-        /* 
+        /*
          * Get the header and figure out how much we're gonna have to read.
-         */ 
+         */
         SUPREQHDR Hdr;
         pUser = (user_addr_t)*(void **)pData;
         int rc = copyin(pUser, &Hdr, sizeof(Hdr));
@@ -518,7 +518,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         }
         if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
         {
-            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", Hdr.fFlags, iCmd)); 
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", Hdr.fFlags, iCmd));
             return EINVAL;
         }
         cbReq = RT_MAX(Hdr.cbIn, Hdr.cbOut);
@@ -544,7 +544,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         rc = copyin(pUser, pHdr, Hdr.cbIn);
         if (RT_UNLIKELY(rc))
         {
-            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyin(%llx,%p,%#x) -> %#x; iCmd=%#lx\n", 
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyin(%llx,%p,%#x) -> %#x; iCmd=%#lx\n",
                         (unsigned long long)pUser, pHdr, Hdr.cbIn, rc, iCmd));
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
@@ -578,7 +578,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
             }
             rc = copyout(pHdr, pUser, cbOut);
             if (RT_UNLIKELY(rc))
-                OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyout(%p,%llx,%#x) -> %d; uCmd=%#lx!\n", 
+                OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyout(%p,%llx,%#x) -> %d; uCmd=%#lx!\n",
                             pHdr, (unsigned long long)pUser, cbOut, rc, iCmd));
 
             /* cleanup */
@@ -590,7 +590,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
     }
     else
     {
-        /* 
+        /*
          * The request failed, just clean up.
          */
         if (pUser)
@@ -638,6 +638,13 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     NOREF(pSession);
     NOREF(pszObjName);
     NOREF(prc);
+    return false;
+}
+
+
+bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+{
+    NOREF(pDevExt);
     return false;
 }
 
