@@ -24,7 +24,11 @@ SUB_DEPTH ?= ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxGINA
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGINA_TEMPLATE = VBOXGUESTR3DLL
+else
 VBoxGINA_TEMPLATE = VBOXW32GUESTR3
+endif
 VBoxGINA_DEFS     = UNICODE
 VBoxGINA_SOURCES  = \
 	VBoxGINA.cpp \
@@ -32,8 +36,13 @@ VBoxGINA_SOURCES  = \
 	Dialog.cpp \
 	VBoxGINA.def \
 	VBoxGINA.rc
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGINA_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3)
+else
 VBoxGINA_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3$(VBOXW32GUEST_SUFF_LIB)
+endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
