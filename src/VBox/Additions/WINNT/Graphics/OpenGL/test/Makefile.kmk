@@ -29,21 +29,46 @@ ifdef VBOX_WITH_TESTCASES
 #
 PROGRAMS += tstShOpenGL tstOGLSample tstOGLSphere
 
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstShOpenGL_TEMPLATE = VBOXGUESTR3EXE
+else
 tstShOpenGL_TEMPLATE = VBOXW32GUESTR3
+endif
 tstShOpenGL_DEFS     = VBOX_HGCM
 tstShOpenGL_SOURCES  = tstShOpenGL.cpp
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstShOpenGL_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+else
 tstShOpenGL_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
+endif
 
 
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstOGLSample_TEMPLATE = VBOXGUESTR3EXE
+else
 tstOGLSample_TEMPLATE = VBOXW32GUESTR3
+endif
 tstOGLSample_DEFS     =
 tstOGLSample_SOURCES  = tstOGLSample.cpp
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstOGLSample_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+else
 tstOGLSample_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
+endif
 
+
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstOGLSphere_TEMPLATE = VBOXGUESTR3EXE
+else
 tstOGLSphere_TEMPLATE = VBOXW32GUESTR3
+endif
 tstOGLSphere_DEFS     =
 tstOGLSphere_SOURCES  = tstOGLSphere.c
+ifdef VBOX_WITH_64BIT_ADDITIONS
+tstOGLSphere_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+else
 tstOGLSphere_LIBS     = $(PATH_SDK_W2K3DDKX86_LIB)/opengl32.lib
+endif
 
 endif # VBOX_WITH_TESTCASES
 
