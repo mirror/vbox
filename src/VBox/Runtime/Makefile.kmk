@@ -37,12 +37,12 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- ifeq ($(KBUILD_TARGET),win)
+ ifeq ($(KBUILD_TARGET)$(VBOX_WITH_64BIT_ADDITIONS),win)
   LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  else
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-  #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
-  #LIBRARIES.win = RuntimeW32NT4GuestR0
+  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
+  LIBRARIES.win.x86 = RuntimeGuestR0NT4
   ifndef VBOX_WITH_ADDITION_DRIVERS
    if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
@@ -64,12 +64,14 @@ else
  endif
  ifdef VBOX_WITH_ADDITIONS
   ifdef VBOX_WITH_WIN32_ADDITIONS
-   LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+   ifndef VBOX_WITH_64BIT_ADDITIONS
+    LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+   endif
   endif
-  ifneq ($(KBUILD_TARGET),win)
+  ifneq ($(KBUILD_TARGET)$(VBOX_WITH_64BIT_ADDITIONS),win)
    LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
-   #LIBRARIES.win = RuntimeW32NT4GuestR0
+   #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
+   LIBRARIES.win.x86 = RuntimeGuestR0NT4
    ifndef VBOX_WITH_ADDITION_DRIVERS
     if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
      LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
@@ -544,6 +546,7 @@ RuntimeR3L4_SOURCES = \
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
 RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
+## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
@@ -564,8 +567,10 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST)    := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
+ifndef VBOX_WITH_64BIT_ADDITIONS
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).x86)
+endif
 
 
 #
@@ -574,14 +579,15 @@ RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86   := $(RuntimeR3_SOURCES.$(KBUILD_HOST
 #                      for X11 drivers, GRADD and similar.
 #
 RuntimeGuestR3Mini_TEMPLATE                 := VBOXGUESTR3DLL
+## @todo change this to EXTEND the RuntimeGuestR3 target.
 RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3Mini_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) RT_MINI
-RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)     := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
-RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)   := $(RuntimeR3_DEFS.$(KBUILD_HOST))
+RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
+RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3Mini_INCS.$(KBUILD_TARGET)     := $(RuntimeR3_INCS.$(KBUILD_TARGET))
-RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)   := $(RuntimeR3_INCS.$(KBUILD_HOST))
+RuntimeGuestR3Mini_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
+RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_SOURCES = \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -1156,32 +1162,34 @@ endif # !VBOX_WITH_SOLARIS_VBI
 # RuntimeGuestR0 - Guest driver runtime.
 #                  This is almost the same as the RuntimeR0Drv, the main difference
 #                  is in the backdoor logging and the lack of sup.h (which should be
-#                  made irrelevant even for RuntimeR0Rdrv).
-#
-# TODO: RuntimeGuestR0_EXTENDS = RuntimeR0Drv (kBuild)
+#                  made irrelevant even for RuntimeR0Drv).
 #
 RuntimeGuestR0_TEMPLATE                := VBOXGUESTR0LIB
-RuntimeGuestR0_SDKS.win                := W2K3DDKX86 WINPSDKINCS
-RuntimeGuestR0_DEFS                    := $(RuntimeR0Drv_DEFS)
-RuntimeGuestR0_DEFS.$(KBUILD_TARGET)    := $(RuntimeR0Drv_DEFS.$(KBUILD_TARGET))
-RuntimeGuestR0_INCS                    := $(PATH_SUB_CURRENT) include
-RuntimeGuestR0_INCS.$(KBUILD_TARGET)    := $(RuntimeR0Drv_INCS.$(KBUILD_TARGET))
 RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
-RuntimeGuestR0_SOURCES.$(KBUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET))
-RuntimeGuestR0_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-ifdef VBOX_USE_VCC80
-RuntimeGuestR0_SOURCES.win += \
-	common/string/memchr.cpp \
-	common/string/memcpy.cpp \
-	common/string/memset.cpp \
-	common/string/memmove.asm \
-	common/string/strlen.cpp
+ifdef VBOX_WITH_64BIT_ADDITIONS
+ RuntimeGuestR0_EXTENDS                 = RuntimeR0Drv
+else
+ RuntimeGuestR0_SDKS.win               := W2K3DDKX86 WINPSDKINCS
+ RuntimeGuestR0_DEFS                   := $(RuntimeR0Drv_DEFS)
+ RuntimeGuestR0_DEFS.$(KBUILD_TARGET)  := $(RuntimeR0Drv_DEFS.$(KBUILD_TARGET))
+ RuntimeGuestR0_INCS                   := $(PATH_SUB_CURRENT) include
+ RuntimeGuestR0_INCS.$(KBUILD_TARGET)  := $(RuntimeR0Drv_INCS.$(KBUILD_TARGET))
+ RuntimeGuestR0_SOURCES.$(KBUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET))
+ RuntimeGuestR0_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+ ifdef VBOX_USE_VCC80
+  RuntimeGuestR0_SOURCES.win += \
+  	common/string/memchr.cpp \
+  	common/string/memcpy.cpp \
+  	common/string/memset.cpp \
+  	common/string/memmove.asm \
+  	common/string/strlen.cpp
+ endif
+ RuntimeGuestR0_SOURCES.freebsd += \
+ 	common/string/memset.cpp \
+ 	common/string/memcmp.cpp \
+ 	common/string/strchr.asm
 endif
-RuntimeGuestR0_SOURCES.freebsd += \
-	common/string/memset.cpp \
-	common/string/memcmp.cpp \
-	common/string/strchr.asm
 
 # HACK: no vbi for the solaris guest additions - yet.
 RuntimeGuestR0_SOURCES.solaris = \
@@ -1218,6 +1226,15 @@ RuntimeGuestR0_SOURCES.solaris = \
  	r0drv/solaris/time-r0drv-solaris.c \
  	r0drv/solaris/timer-r0drv-solaris.c
 
+#
+# RuntimeGuestR0NT4 - Win32 NT4 guest driver runtime.
+#
+RuntimeGuestR0NT4_EXTENDS = RuntimeGuestR0
+RuntimeGuestR0NT4_EXTENDS_BY = appending
+RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
+
+
+## @todo remove this
 RuntimeOS2GuestR0_TEMPLATE      = VBOXOS2GUESTR0LIB
 RuntimeOS2GuestR0_SOURCES       = \
 	$(filter-out common/misc/assert.cpp generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
