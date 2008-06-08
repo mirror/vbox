@@ -2581,6 +2581,7 @@ $(warning Warning: VBOX Build: Target $(KBUILD_HOST) is not officially supported
 endif # !win
 
 
+ifndef VBOX_WITH_64BIT_ADDITIONS
 
 #
 # Template for building R3 win32 guest additions.
@@ -2709,6 +2710,7 @@ TEMPLATE_VBOXW32GUESTR0LIB         = VBox Win32 Guest Driver
 TEMPLATE_VBOXW32GUESTR0LIB_EXTENDS = VBOXW32GUESTR0
 TEMPLATE_VBOXW32GUESTR0LIB_INST    = $(INST_ADDITIONS_LIB)
 
+endif # !VBOX_WITH_64BIT_ADDITIONS
 
 #
 # Windows rc workaround for crosscompiling.
