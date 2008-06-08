@@ -41,9 +41,9 @@
 # endif
 
 /* No alias support here (yet in the ming case). */
-extern char *(strlen)(const char *psz, int ch)
+extern char *(strlen)(const char *psz)
 {
-    return RT_NOCRT(strlen)(psz, ch);
+    return RT_NOCRT(strlen)(psz);
 }
 
 #elif __GNUC__ >= 4
