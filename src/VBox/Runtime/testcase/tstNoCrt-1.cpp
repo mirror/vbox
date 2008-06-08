@@ -114,7 +114,7 @@ static void TstBufCheck(PTSTBUF pBuf, const char *pszDesc)
 # define RT_NOCRT(a) a
 # ifdef _MSC_VER
 #  define mempcpy nocrt_mempcpy
-# endif 
+# endif
 #endif
 
 int main()
@@ -142,6 +142,17 @@ int main()
         RTPrintf("tstNoCrt-1: FAILED - fatal sanity error\n");
         return 1;
     }
+
+#define CHECK_CCH(expect)  \
+        do \
+        { \
+            if (cch != (expect)) \
+            { \
+                RTPrintf("tstNoCrt-1(%d): cb=%zu expected=%zu\n", __LINE__, cch, (expect)); \
+                g_cErrors++; \
+            } \
+         } while (0)
+    size_t cch;
 
 #define CHECK_PV(expect)  \
         do \
@@ -399,7 +410,7 @@ int main()
     for (unsigned i = 0; i < sizeof(s_szTest1); i++)
         for (unsigned j = 0; j <= i; j++)
         {
-            pv = RT_NOCRT(memchr)(&s_szTest1[j], s_szTest1[i], sizeof(s_szTest1)); 
+            pv = RT_NOCRT(memchr)(&s_szTest1[j], s_szTest1[i], sizeof(s_szTest1));
             CHECK_PV(&s_szTest1[i]);
         }
 
@@ -411,7 +422,7 @@ int main()
     for (unsigned i = 0; i < sizeof(s_szTest1); i++)
         for (unsigned j = 0; j <= i; j++)
         {
-            pv = RT_NOCRT(strchr)(&s_szTest1[j], s_szTest1[i]); 
+            pv = RT_NOCRT(strchr)(&s_szTest1[j], s_szTest1[i]);
             CHECK_PV(&s_szTest1[i]);
         }
 
@@ -434,6 +445,26 @@ int main()
     iDiff = RT_NOCRT(strcmp)(s_szTest1, s_szTest3); CHECK_DIFF( < );
     iDiff = RT_NOCRT(strcmp)(s_szTest3, s_szTest1); CHECK_DIFF( > );
 
+    /*
+     * Some simple strlen checks.
+     */
+    RTPrintf("tstNoCrt-1: strlen\n");
+    cch = RT_NOCRT(strlen)("");             CHECK_CCH(0);
+    cch = RT_NOCRT(strlen)("1");            CHECK_CCH(1);
+    cch = RT_NOCRT(strlen)("12");           CHECK_CCH(2);
+    cch = RT_NOCRT(strlen)("123");          CHECK_CCH(3);
+    cch = RT_NOCRT(strlen)("1234");         CHECK_CCH(4);
+    cch = RT_NOCRT(strlen)("12345");        CHECK_CCH(5);
+    cch = RT_NOCRT(strlen)(s_szTest1);      CHECK_CCH(sizeof(s_szTest1) - 1);
+    cch = RT_NOCRT(strlen)(&s_szTest1[1]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 1);
+    cch = RT_NOCRT(strlen)(&s_szTest1[2]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 2);
+    cch = RT_NOCRT(strlen)(&s_szTest1[3]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 3);
+    cch = RT_NOCRT(strlen)(&s_szTest1[4]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 4);
+    cch = RT_NOCRT(strlen)(&s_szTest1[5]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 5);
+    cch = RT_NOCRT(strlen)(&s_szTest1[6]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 6);
+    cch = RT_NOCRT(strlen)(&s_szTest1[7]);  CHECK_CCH(sizeof(s_szTest1) - 1 - 7);
+    cch = RT_NOCRT(strlen)(s_szTest2);      CHECK_CCH(sizeof(s_szTest2) - 1);
+    cch = RT_NOCRT(strlen)(s_szTest3);      CHECK_CCH(sizeof(s_szTest3) - 1);
 
     /*
      * Summary.
