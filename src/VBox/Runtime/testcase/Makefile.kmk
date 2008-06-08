@@ -251,7 +251,8 @@ tstNoCrt-1_SOURCES = \
 	../common/string/memchr.asm \
 	../common/string/memcmp.asm \
 	../common/string/strchr.asm \
-	../common/string/strcmp.asm
+	../common/string/strcmp.asm \
+	../common/string/strlen.asm
 
 tstPath_SOURCES = tstPath.cpp
 

@@ -759,7 +759,9 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/string/strchr.asm \
 	common/string/strchr_alias.c \
 	common/string/strcmp.asm \
-	common/string/strcmp_alias.c
+	common/string/strcmp_alias.c \
+	common/string/strlen.asm \
+	common/string/strlen_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	common/math/x86/fenv-x86.c \
@@ -808,7 +810,7 @@ RuntimeR0_SOURCES       = \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
-	common/string/strlen.cpp \
+	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
@@ -944,7 +946,12 @@ RuntimeR0Drv_SOURCES.linux = \
 
 RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
-	common/string/memcmp.cpp \
+	common/string/memcmp.asm \
+	common/string/memchr.asm \
+  	common/string/memcpy.asm \
+  	common/string/memset.asm \
+  	common/string/memmove.asm \
+  	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
@@ -1016,9 +1023,9 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/memset.asm \
 	common/string/strchr.asm \
 	common/string/strcmp.asm \
+	common/string/strlen.asm \
 	\
 	common/string/strcpy.cpp \
-	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	\
@@ -1177,14 +1184,7 @@ else
  RuntimeGuestR0_INCS.$(KBUILD_TARGET)  := $(RuntimeR0Drv_INCS.$(KBUILD_TARGET))
  RuntimeGuestR0_SOURCES.$(KBUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET))
  RuntimeGuestR0_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
- ifdef VBOX_USE_VCC80
-  RuntimeGuestR0_SOURCES.win += \
-  	common/string/memchr.cpp \
-  	common/string/memcpy.cpp \
-  	common/string/memset.cpp \
-  	common/string/memmove.asm \
-  	common/string/strlen.cpp
- endif
+ ## @todo this deosn't belong here, but in RuntimeR0Drv.
  RuntimeGuestR0_SOURCES.freebsd += \
  	common/string/memset.cpp \
  	common/string/memcmp.cpp \
@@ -1260,7 +1260,7 @@ RuntimeW32GuestR0_SOURCES += \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
 	common/string/memmove.asm \
-	common/string/strlen.cpp
+	common/string/strlen.asm
 endif
 
 
@@ -1294,7 +1294,7 @@ RuntimeGC_SOURCES       = \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
-	common/string/strlen.cpp \
+	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
