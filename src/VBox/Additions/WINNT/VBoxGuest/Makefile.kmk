@@ -27,35 +27,58 @@ include	$(KBUILD_PATH)/subheader.kmk
 # VBoxGuest
 #
 SYSMODS += VBoxGuest
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGuest_TEMPLATE    = VBOXGUESTR0
+else
 VBoxGuest_TEMPLATE    = VBOXW32GUESTR0
+VBoxGuest_SDKS        = W2K3DDKX86 WINPSDKINCS
+endif
 ifdef VBOX_SIGN_ADDITIONS
  VBoxGuest_NOINST     = true
 endif
-VBoxGuest_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL
 #VBoxGuest_DEFS       += LOG_ENABLED
 VBoxGuest_INCS        = ../include
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGuest_LDFLAGS.x86   = -Entry:DriverEntry@8
+VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
+else
 VBoxGuest_LDFLAGS     = -Entry:DriverEntry@8
+endif
 VBoxGuest_SOURCES     = \
 	VBoxGuest.cpp \
 	VBoxGuestPnP.cpp \
 	Helper.cpp \
 	VBoxGuest.rc
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGuest_LIBS        = \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
+	$(VBOX_LIB_VBGL_R0BASE) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+else
 VBoxGuest_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib
 	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
+endif
 
 
 #
-# VBoxGuestNT - NT version of the driver.
+# VBoxGuestNT - NT version of the driver (x86 only).
 #
+ifdef VBOX_WITH_64BIT_ADDITIONS
+SYSMODS.x86 += VBoxGuestNT
+VBoxGuestNT_TEMPLATE  = VBOXGUESTR0
+else
 SYSMODS += VBoxGuestNT
 VBoxGuestNT_TEMPLATE  = VBOXW32GUESTR0
 VBoxGuestNT_SDKS      = W2K3DDKX86 WINPSDKINCS
+endif
 VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
 VBoxGuestNT_INCS      = $(VBoxGuest_INCS)
 VBoxGuestNT_LDFLAGS   = $(VBoxGuest_LDFLAGS)
@@ -64,6 +87,15 @@ VBoxGuestNT_SOURCES   = \
 	Helper.cpp \
 	NTLegacy.cpp \
 	VBoxGuest.rc
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxGuestNT_LIBS      = \
+	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
+	$(VBOX_LIB_VBGL_R0BASE) \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
+else
 VBoxGuestNT_LIBS      = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
@@ -71,14 +103,13 @@ VBoxGuestNT_LIBS      = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
 	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
-#	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib  - not needed?
-
+endif
 
 #
 # VBoxGuestInst - The installer.
 #
 #PROGRAMS += VBoxGuestInst
-VBoxGuestInst_TEMPLATE= VBOXW32GUESTR3
+VBoxGuestInst_TEMPLATE= VBOXGUESTR3EXE
 VBoxGuestInst_SOURCES = VBoxGuestInst.cpp
 
 include	$(KBUILD_PATH)/subfooter.kmk

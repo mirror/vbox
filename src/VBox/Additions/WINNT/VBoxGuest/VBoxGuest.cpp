@@ -39,7 +39,7 @@
 #include <VBoxGuestInternal.h>
 
 #ifdef TARGET_NT4
-/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so... 
+/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so...
  * The same for ExAllocatePool.
  */
 #undef ExAllocatePool
@@ -344,8 +344,8 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
 
     dprintf(("VBoxHGCMCallback\n"));
-        
-    /* Possible problem with request completion right between the fu32Flags check and KeWaitForSingleObject 
+
+    /* Possible problem with request completion right between the fu32Flags check and KeWaitForSingleObject
      * call; introduce a timeout to make sure we don't wait indefinitely.
      */
 
@@ -356,7 +356,7 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
          *       be not interruptible. The wait can be interrupted only when the
          *       calling process is being killed.
          *       When alertable is TRUE, the wait sometimes ends with STATUS_USER_APC.
-         */ 
+         */
         NTSTATUS rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive,
                                              UserMode,
                                              FALSE, /* Not Alertable */
@@ -399,29 +399,9 @@ NTSTATUS vboxHGCMVerifyIOBuffers (PIO_STACK_LOCATION pStack, unsigned cb)
 
 #endif /* VBOX_HGCM */
 
-static bool
-__declspec (naked) __fastcall
-TestAndClearEvent (PVBOXGUESTDEVEXT pDevExt, int iBitOffset)
-{
-    _asm {
-        lock btr PVBOXGUESTDEVEXT[ecx].u32Events, edx;
-        setc al;
-        movzx eax, al;
-        ret;
-    }
-}
-
 static bool IsPowerOfTwo (uint32_t val)
 {
     return (val & (val - 1)) == 0;
-}
-
-static int __declspec (naked) __fastcall GetMsb32 (uint32_t val)
-{
-    _asm {
-        bsf eax, ecx;
-        ret;
-    }
 }
 
 static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
@@ -520,8 +500,8 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 __try {
                     /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
                     MmProbeAndLockPages (pMdl, KernelMode, IoModifyAccess);
-                } 
-                __except(EXCEPTION_EXECUTE_HANDLER) 
+                }
+                __except(EXCEPTION_EXECUTE_HANDLER)
                 {
                     dprintf(("MmProbeAndLockPages failed!\n"));
                     rc = VERR_NO_MEMORY;
@@ -774,12 +754,12 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
             eventInfo->u32EventFlagsOut = 0;
-            int iBitOffset = GetMsb32 (eventInfo->u32EventMaskIn);
+            int iBitOffset = ASMBitFirstSetU32 (eventInfo->u32EventMaskIn) - 1;
             bool fTimeout = (eventInfo->u32TimeoutIn != ~0L);
 
             dprintf (("mask = %d, iBitOffset = %d\n", iBitOffset, eventInfo->u32EventMaskIn));
 
-            /* Possible problem with request completion right between the pending event check and KeWaitForSingleObject 
+            /* Possible problem with request completion right between the pending event check and KeWaitForSingleObject
              * call; introduce a timeout (if none was specified) to make sure we don't wait indefinitely.
              */
             LARGE_INTEGER timeout;
@@ -790,7 +770,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             for (;;)
             {
-                bool fEventPending = TestAndClearEvent (pDevExt, iBitOffset);
+                bool fEventPending = ASMAtomicBitTestAndClear(&pDevExt->u32Events, iBitOffset);
                 if (fEventPending)
                 {
                     eventInfo->u32EventFlagsOut = 1 << iBitOffset;
@@ -997,7 +977,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             Status = vboxHGCMVerifyIOBuffers (pStack,
                                               sizeof (VBoxGuestHGCMCallInfo));
-                                              
+
             if (Status != STATUS_SUCCESS)
             {
                 dprintf(("VBoxGuest::VBoxGuestDeviceControl: invalid parameter. Status: %p\n", Status));
