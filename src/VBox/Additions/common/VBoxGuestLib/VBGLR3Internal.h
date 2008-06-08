@@ -22,6 +22,9 @@
 #ifndef ___VBGLR3Internal_h
 #define ___VBGLR3Internal_h
 
+#if defined(RT_OS_WINDOWS)
+# include <Windows.h>
+#endif
 #include <VBox/VBoxGuest.h>
 
 __BEGIN_DECLS

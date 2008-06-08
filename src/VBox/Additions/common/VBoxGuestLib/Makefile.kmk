@@ -26,23 +26,21 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Target config.
 #
-ifn1of ($(KBUILD_TARGET),l4 linux win)
+ifn1of ($(KBUILD_TARGET)$(VBOX_WITH_64BIT_ADDITIONS), l4 linux win)
  LIBRARIES += \
 	VBoxGuestR0Lib \
 	VBoxGuestR0LibBase
  LIBRARIES += \
 	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared
- if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
   LIBRARIES += \
   	VBoxGuestR3LibXFree86
  endif
-else
+else # This case is going to become obsolete with 64-bit guest additions.
  # As we build Windows Additions on Linux as well, we need a
  # separate Linux target for each library so that both platforms
  # are built.
- # NOTE: This is going to be obsoleted before long, everyone is going to
- #       use VBoxGuestR0Lib* and VBoxGuestR3Lib.
  ifdef VBOX_WITH_WIN32_ADDITIONS
   ifndef VBOX_ADDITIONS_LINUX_ONLY
    LIBRARIES += \
@@ -78,7 +76,7 @@ endif
 VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
 VBoxGuestR0Lib_DEFS         = VBOX_HGCM
 VBoxGuestR0Lib_INCS         = \
-	$(PATH_VBoxGuestLib)
+	$(PATH_VBoxGuestR0Lib)
 VBoxGuestR0Lib_INCS.win     = \
 	$(PATH_SUB_ROOT)/WINNT/SharedFolders/include
 VBoxGuestR0Lib_SOURCES      = \
@@ -120,6 +118,11 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
 	VBoxGuestR3LibVideo.cpp
+ifdef VBOX_WITH_64BIT_ADDITIONS ## @todo get rid of this hack.
+ ifeq ($(KBUILD_TARGET),win)
+  VBoxGuestR3Lib_SOURCES   = VBoxGuestR3Lib.cpp
+ endif
+endif
 
 #
 # VBoxGuestR3LibShared - a PIC variant of VBoxGuestR3Lib for linking into .so/.dll/.dylib.
@@ -150,6 +153,8 @@ VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11
 
 
+ifndef VBOX_WITH_64BIT_ADDITIONS
+
 #
 # VBoxGuestLib (Windows)
 #
@@ -176,6 +181,7 @@ VBoxGuestLibBase_DEFS       = $(VBoxGuestLib_DEFS) VBGL_VBOXGUEST
 VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
 #VBoxGuestLibBase_DEFS      += LOG_ENABLED
 
+endif # VBOX_WITH_64BIT_ADDITIONS
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
