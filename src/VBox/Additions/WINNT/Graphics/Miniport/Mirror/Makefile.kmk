@@ -24,21 +24,37 @@ SUB_DEPTH = ../../../../
 include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += vrdpvd
+ifdef VBOX_WITH_64BIT_ADDITIONS
+vrdpvd_TEMPLATE    = VBOXGUESTR0
+else
 vrdpvd_TEMPLATE    = VBOXW32GUESTR0
 vrdpvd_SDKS        = W2K3DDKX86
-vrdpvd_SYSSUFF     = .sys
+endif
 #vrdpvd_DEFS       += LOG_TO_BACKDOOR LOG_ENABLED
+ifdef VBOX_WITH_64BIT_ADDITIONS
+vrdpvd_LDFLAGS.x86   = /Entry:DriverEntry@8
+vrdpvd_LDFLAGS.amd64 = /Entry:DriverEntry
+else
 vrdpvd_LDFLAGS     = /Entry:DriverEntry@8
+endif
 vrdpvd_SOURCES     = \
 	vrdpvd.c \
 	helpers.c \
 	vrdpvd.rc
+ifdef VBOX_WITH_64BIT_ADDITIONS
+vrdpvd_LIBS        = \
+	$(PATH_SDK_W2K3DDK_LIB)/videoprt.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+else
 vrdpvd_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/videoprt.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
+endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
