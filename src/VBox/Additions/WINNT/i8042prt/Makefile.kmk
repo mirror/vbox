@@ -24,9 +24,14 @@ SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 
+ifdef VBOX_WITH_64BIT_ADDITIONS
+SYSMODS.x86 += VBoxMouseNT
+VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
+else
 SYSMODS += VBoxMouseNT
 VBoxMouseNT_TEMPLATE    = VBOXW32GUESTR0
 VBoxMouseNT_SDKS        = W2K3DDKX86 WINPSDKINCS
+endif
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
 VBoxMouseNT_INCS        = \
 	$(PATH_VBoxMouseNT) \
@@ -42,6 +47,14 @@ VBoxMouseNT_SOURCES     = \
 	moucmn.c \
 	moudep.c \
 	i8042prt.rc
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxMouseNT_LIBS        = \
+	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
+else
 VBoxMouseNT_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
@@ -50,6 +63,7 @@ VBoxMouseNT_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib
+endif
 VBoxMouseNT_DEPS        = \
 	$(PATH_VBoxMouseNT)/i8042log.rc
 VBoxMouseNT_CLEAN       = \
@@ -60,7 +74,6 @@ VBoxMouseNT_CLEAN       = \
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
-
 
 $(PATH_VBoxMouseNT)/i8042log.rc: $(VBoxMouseNT_PATH)/i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))
 	$(call MSG_COMPILE,VBoxMouseNT,$<,$@,RC)
