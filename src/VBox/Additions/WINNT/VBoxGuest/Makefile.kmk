@@ -62,7 +62,7 @@ VBoxGuest_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib
+	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
 	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 endif
