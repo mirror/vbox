@@ -56,7 +56,7 @@ VBoxVideo_SOURCES     = \
 	VBoxVideo.rc
 ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxVideo_LIBS.x86    = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib
+	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
 VBoxVideo_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/videoprt.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
