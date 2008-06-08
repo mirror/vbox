@@ -24,16 +24,32 @@ SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += VBoxMouse
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxMouse_TEMPLATE    = VBOXGUESTR0
+else
 VBoxMouse_TEMPLATE    = VBOXW32GUESTR0
+VBoxMouse_SDKS        = W2K3DDKX86 WINPSDKINCS
+endif
 VBoxMouse_DEFS        = LOG_TO_BACKDOOR
 #VBoxMouse_DEFS       += LOG_ENABLED
-VBoxMouse_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxMouse_CXXFLAGS    = -Od
 VBoxMouse_CFLAGS      = -Od
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxMouse_LDFLAGS.x86   = -Entry:DriverEntry@8
+VBoxMouse_LDFLAGS.amd64 = -Entry:DriverEntry
+else
 VBoxMouse_LDFLAGS     = -Entry:DriverEntry@8
+endif
 VBoxMouse_SOURCES     = VBoxMouse.cpp \
                         VBoxMouse.rc
-
+ifdef VBOX_WITH_64BIT_ADDITIONS
+VBoxMouse_LIBS        = \
+	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(VBOX_LIB_IPRT_GUEST_R0) \
+	$(VBOX_LIB_VBGL_R0)
+else
 VBoxMouse_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
@@ -41,6 +57,7 @@ VBoxMouse_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
+endif
 
 # Inf2Cat refuses to sign this one complaining that it isn't an installation INF
 INSTALLS += VBoxMouse-inf
