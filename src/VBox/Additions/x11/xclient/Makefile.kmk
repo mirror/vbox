@@ -63,14 +63,21 @@ endif
 # Link aginst libstdc++.a. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
 # (It would've been preferred to avoid features depending on libstdc++, of course...)
 #
+# Actually, this is darn annoying and will *NOT* be tollerated for any new code!
+#
 VBoxClient_LIBPATH  += $(PATH_TARGET)/VBoxClient
 VBoxClient_ORDERDEPS = $(PATH_TARGET)/VBoxClient/libstdc++.a
 VBoxClient_CLEAN     = $(PATH_TARGET)/VBoxClient/libstdc++.a
 $(PATH_TARGET)/VBoxClient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)$(MKDIR) -p $(@D)
+ifdef VBOX_WITH_64BIT_ADDITIONS
+	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
+	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+else
 	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
 	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+endif
 
 
 ifdef VBOX_X11_SEAMLESS_GUEST
