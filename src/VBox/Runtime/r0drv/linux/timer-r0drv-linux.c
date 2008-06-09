@@ -674,7 +674,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
         }
     }
 
-    RTSpinlockAcquire(hSpinlock, &Tmp);
+    RTSpinlockRelease(hSpinlock, &Tmp);
 }
 
 #endif /* CONFIG_SMP */
@@ -933,10 +933,8 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
         Assert(!Ts.tv_sec);
         return Ts.tv_nsec;
     }
-    return 1000000000 / HZ; /* ns */
-#else
-    return 1000000000 / HZ; /* ns */
 #endif
+    return 1000000000 / HZ; /* ns */
 }
 
 
