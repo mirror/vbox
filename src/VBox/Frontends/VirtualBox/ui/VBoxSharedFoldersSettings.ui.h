@@ -329,7 +329,8 @@ private slots:
         SFolderName pair = qMakePair (mLeName->text(), resultType);
 
         mBtOk->setEnabled (!mLePath->text().isEmpty() &&
-                           !mLeName->text().isEmpty() &&
+                           !mLeName->text().stripWhiteSpace().isEmpty() &&
+                           (mLeName->text().contains(" ") == 0) &&
                            !mUsedNames.contains (pair));
     }
 
