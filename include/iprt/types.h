@@ -913,6 +913,11 @@ typedef const RTRCPTR  *PCRTRCPTR;
  */
 #define NIL_RTRCPTR    ((RTRCPTR)0)
 
+/** @def RTRCPTR_MAX 
+ * The maximum value a RTRCPTR can have. Mostly used as INVALID value.
+ */
+#define RTRCPTR_MAX    ((RTRCPTR)~0)
+
 typedef int32_t       RTRCINTPTR;
 typedef uint32_t      RTRCUINTPTR;
 

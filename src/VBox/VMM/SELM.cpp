@@ -135,13 +135,13 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
      * Init Guest's and Shadow GDT, LDT, TSS changes control variables.
      */
     pVM->selm.s.cbEffGuestGdtLimit = 0;
-    pVM->selm.s.GuestGdtr.pGdt     = ~0;
-    pVM->selm.s.GCPtrGuestLdt      = ~0;
-    pVM->selm.s.GCPtrGuestTss      = ~0;
+    pVM->selm.s.GuestGdtr.pGdt     = RTRCPTR_MAX;
+    pVM->selm.s.GCPtrGuestLdt      = RTRCPTR_MAX;
+    pVM->selm.s.GCPtrGuestTss      = RTRCPTR_MAX;
 
     pVM->selm.s.paGdtGC            = 0;
-    pVM->selm.s.GCPtrLdt           = ~0;
-    pVM->selm.s.GCPtrTss           = ~0;
+    pVM->selm.s.GCPtrLdt           = RTRCPTR_MAX;
+    pVM->selm.s.GCPtrTss           = RTRCPTR_MAX;
     pVM->selm.s.GCSelTss           = ~0;
 
     pVM->selm.s.fDisableMonitoring = false;
@@ -421,7 +421,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
         AssertRC(rc);
 #endif
 #ifdef SELM_TRACK_SHADOW_TSS_CHANGES
-        if (pVM->selm.s.GCPtrTss != ~0)
+        if (pVM->selm.s.GCPtrTss != RTRCPTR_MAX)
         {
             rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrTss);
             AssertRC(rc);
@@ -437,7 +437,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
          * Update the GC LDT region handler and address.
          */
 #ifdef SELM_TRACK_SHADOW_LDT_CHANGES
-        if (pVM->selm.s.GCPtrLdt != ~0)
+        if (pVM->selm.s.GCPtrLdt != RTRCPTR_MAX)
         {
             rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrLdt);
             AssertRC(rc);
@@ -501,29 +501,29 @@ SELMR3DECL(void) SELMR3Reset(PVM pVM)
      */
     int rc;
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
-    if (pVM->selm.s.GuestGdtr.pGdt != ~0 && pVM->selm.s.fGDTRangeRegistered)
+    if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
         AssertRC(rc);
-        pVM->selm.s.GuestGdtr.pGdt = ~0;
+        pVM->selm.s.GuestGdtr.pGdt = RTRCPTR_MAX;
         pVM->selm.s.GuestGdtr.cbGdt = 0;
     }
     pVM->selm.s.fGDTRangeRegistered = false;
 #endif
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
-    if (pVM->selm.s.GCPtrGuestLdt != ~0)
+    if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
         AssertRC(rc);
-        pVM->selm.s.GCPtrGuestLdt = ~0;
+        pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
     }
 #endif
 #ifdef SELM_TRACK_GUEST_TSS_CHANGES
-    if (pVM->selm.s.GCPtrGuestTss != ~0)
+    if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
         AssertRC(rc);
-        pVM->selm.s.GCPtrGuestTss = ~0;
+        pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
         pVM->selm.s.GCSelTss      = ~0;
     }
 #endif
@@ -557,29 +557,29 @@ SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
      */
     int rc;
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
-    if (pVM->selm.s.GuestGdtr.pGdt != ~0 && pVM->selm.s.fGDTRangeRegistered)
+    if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
         AssertRC(rc);
-        pVM->selm.s.GuestGdtr.pGdt = ~0;
+        pVM->selm.s.GuestGdtr.pGdt = RTRCPTR_MAX;
         pVM->selm.s.GuestGdtr.cbGdt = 0;
     }
     pVM->selm.s.fGDTRangeRegistered = false;
 #endif
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
-    if (pVM->selm.s.GCPtrGuestLdt != ~0)
+    if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
         AssertRC(rc);
-        pVM->selm.s.GCPtrGuestLdt = ~0;
+        pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
     }
 #endif
 #ifdef SELM_TRACK_GUEST_TSS_CHANGES
-    if (pVM->selm.s.GCPtrGuestTss != ~0)
+    if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
         AssertRC(rc);
-        pVM->selm.s.GCPtrGuestTss = ~0;
+        pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
         pVM->selm.s.GCSelTss      = ~0;
     }
 #endif
@@ -596,19 +596,19 @@ SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
     }
 #endif
 #ifdef SELM_TRACK_SHADOW_TSS_CHANGES
-    if (pVM->selm.s.GCPtrTss != ~0)
+    if (pVM->selm.s.GCPtrTss != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrTss);
         AssertRC(rc);
-        pVM->selm.s.GCPtrTss = ~0;
+        pVM->selm.s.GCPtrTss = RTRCPTR_MAX;
     }
 #endif
 #ifdef SELM_TRACK_SHADOW_LDT_CHANGES
-    if (pVM->selm.s.GCPtrLdt != ~0)
+    if (pVM->selm.s.GCPtrLdt != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrLdt);
         AssertRC(rc);
-        pVM->selm.s.GCPtrLdt = ~0;
+        pVM->selm.s.GCPtrLdt = RTRCPTR_MAX;
     }
 #endif
 
@@ -1010,7 +1010,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             /*
              * [Re]Register write virtual handler for guest's GDT.
              */
-            if (pVM->selm.s.GuestGdtr.pGdt != ~0 && pVM->selm.s.fGDTRangeRegistered)
+            if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
                 AssertRC(rc);
@@ -1067,11 +1067,11 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             /* ldtr = 0 - update hyper LDTR and deregister any active handler. */
             CPUMSetHyperLDTR(pVM, 0);
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
-            if (pVM->selm.s.GCPtrGuestLdt != ~0)
+            if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                 AssertRC(rc);
-                pVM->selm.s.GCPtrGuestLdt = ~0;
+                pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
             }
 #endif
             STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
@@ -1103,11 +1103,11 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
              */
             CPUMSetHyperLDTR(pVM, 0);
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
-            if (pVM->selm.s.GCPtrGuestLdt != ~0)
+            if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                 AssertRC(rc);
-                pVM->selm.s.GCPtrGuestLdt = ~0;
+                pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
             }
 #endif
             STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
@@ -1141,7 +1141,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                  * [Re]Register write virtual handler for guest's GDT.
                  * In the event of LDT overlapping something, don't install it just assume it's being updated.
                  */
-                if (pVM->selm.s.GCPtrGuestLdt != ~0)
+                if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
                 {
                     rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                     AssertRC(rc);
@@ -1155,7 +1155,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
                 {
                     /** @todo investigate the various cases where conflicts happen and try avoid them by enh. the instruction emulation. */
-                    pVM->selm.s.GCPtrGuestLdt = ~0;
+                    pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
                     Log(("WARNING: Guest LDT (%VGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%VGv:%04x)\n",
                          GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
                 }
@@ -1472,7 +1472,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                     /*
                      * [Re]Register write virtual handler for guest's TSS.
                      */
-                    if (pVM->selm.s.GCPtrGuestTss != ~0)
+                    if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
                     {
                         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
                         AssertRC(rc);
