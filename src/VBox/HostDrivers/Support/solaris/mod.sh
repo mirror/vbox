@@ -49,15 +49,15 @@ if test -n "$old_id"; then
 else
     echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
 fi
-if ! grep -q vboxdrv /etc/devlink.tab; then
+if grep -q vboxdrv /etc/devlink.tab; then
+    echo "* vboxdrv already present in /etc/devlink.tab"
+else 
     echo "* Adding vboxdrv to /etc/devlink.tab"
     $SUDO rm -f /tmp/devlink.tab.vboxdrv
     echo "" > /tmp/devlink.tab.vboxdrv
     echo '# vbox' >> /tmp/devlink.tab.vboxdrv
     echo 'type=ddi_pseudo;name=vboxdrv	\D' >> /tmp/devlink.tab.vboxdrv
     $SUDO /bin/sh -c 'cat /tmp/devlink.tab.vboxdrv >> /etc/devlink.tab'
-else
-    echo "* vboxdrv already present in /etc/devlink.tab"
 fi
 
 echo "* loading vboxdrv..."
