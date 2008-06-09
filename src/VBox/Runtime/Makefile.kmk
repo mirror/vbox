@@ -1133,7 +1133,6 @@ ifdef VBOX_WITH_SOLARIS_VBI
  	r0drv/solaris/vbi/thread2-r0drv-solaris.c \
  	r0drv/solaris/vbi/time-r0drv-solaris.c \
  	r0drv/solaris/vbi/timer-r0drv-solaris.c
-$(error )
 else  # !VBOX_WITH_SOLARIS_VBI
  RuntimeR0Drv_SOURCES.solaris += \
  	r0drv/solaris/alloc-r0drv-solaris.c \
