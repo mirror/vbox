@@ -1437,7 +1437,7 @@ void remR3ChangeCpuMode(CPUState *env)
     Assert(pVM->rem.s.fInREM);
 
     /*
-     * Update the control registers before calling PGMR3ChangeMode()
+     * Update the control registers before calling PGMChangeMode()
      * as it may need to map whatever cr3 is pointing to.
      */
     PCPUMCTX pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
@@ -1448,11 +1448,11 @@ void remR3ChangeCpuMode(CPUState *env)
 #ifdef TARGET_X86_64
     rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], env->efer);
     if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %08x, %08x, %016llx) -> %Vrc\n", env->cr[0], env->cr[4], env->efer, rc);
+        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Vrc\n", env->cr[0], env->cr[4], env->efer, rc);
 #else
     rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], 0);
     if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %08x, %08x, %016llx) -> %Vrc\n", env->cr[0], env->cr[4], 0LL, rc);
+        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Vrc\n", env->cr[0], env->cr[4], 0LL, rc);
 #endif
 }
 
@@ -2704,7 +2704,7 @@ void remR3GrowDynRange(unsigned long physaddr)
     int rc;
     PVM pVM = cpu_single_env->pVM;
 
-    Log(("remR3GrowDynRange %VGp\n", physaddr));
+    LogFlow(("remR3GrowDynRange %VGp\n", physaddr));
     const RTGCPHYS GCPhys = physaddr;
     rc = PGM3PhysGrowRange(pVM, &GCPhys);
     if (VBOX_SUCCESS(rc))
