@@ -59,7 +59,7 @@ DECLINLINE(void) VbglHGCMParmPtrSet(HGCMFunctionParameter *pParm, void *pv, uint
 {
     pParm->type                    = VMMDevHGCMParmType_LinAddr;
     pParm->u.Pointer.size          = cb;
-    pParm->u.Pointer.u.linearAddr  = (vmmDevHypPtr)pv;
+    pParm->u.Pointer.u.linearAddr  = (uintptr_t)pv;
 }
 
 __END_DECLS
