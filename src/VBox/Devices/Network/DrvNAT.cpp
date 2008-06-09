@@ -346,7 +346,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
         rc = CFGMR3QueryString(pNode, "GuestIP", &szGuestIP[0], sizeof(szGuestIP));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             RTStrPrintf(szGuestIP, sizeof(szGuestIP), "%d.%d.%d.%d",
-                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00), (Network & 0xE0) | 15);
+                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00) >> 8, (Network & 0xE0) | 15);
         else if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string failed"), iInstance);
         struct in_addr GuestIP;
