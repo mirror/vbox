@@ -848,10 +848,6 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-#if PGM_GST_TYPE == PGM_TYPE_AMD64
-    AssertFailed();
-#endif
-
     /** @todo
      * In theory this is not sufficient: the guest can change a single page in a range with invlpg
      */
