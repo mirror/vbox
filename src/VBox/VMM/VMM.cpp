@@ -1699,6 +1699,10 @@ VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         return VERR_INVALID_PARAMETER;
     }
 
+    /* Do nothing if the switcher is disabled. */
+    if (pVM->vmm.s.fSwitcherDisabled)
+        return VINF_SUCCESS;
+
     /*
      * Select the new switcher.
      */

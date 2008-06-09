@@ -397,8 +397,7 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE)
 PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
+ || PGM_GST_TYPE == PGM_TYPE_PAE
 
     LogFlow(("MapCR3: %VGp\n", GCPhysCR3));
 
@@ -414,11 +413,11 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         if (VBOX_SUCCESS(rc))
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
             pVM->pgm.s.pGuestPDHC = (R3R0PTRTYPE(PX86PD))HCPtrGuestCR3;
             pVM->pgm.s.pGuestPDGC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
-#elif PGM_GST_TYPE == PGM_TYPE_PAE
+# else /* PAE */
             unsigned offset = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
             pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT)) HCPtrGuestCR3;
             pVM->pgm.s.pGstPaePDPTGC = (RCPTRTYPE(PX86PDPT))   ((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + offset);
@@ -454,10 +453,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 pVM->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
                 PGM_INVL_PG(GCPtr);
             }
-
-#else /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
-            rc = VERR_NOT_IMPLEMENTED;
-#endif
+# endif
         }
         else
             AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
@@ -465,7 +461,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     else
         AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
 
-#else /* prot/real mode stub */
+#else /* prot/real/amd64 mode stub */
     int rc = VINF_SUCCESS;
 #endif
     return rc;
@@ -499,8 +495,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-//#error not implemented
-    rc = VERR_NOT_IMPLEMENTED;
+    /* nothing to do; vt-x/amd-v only */
 
 #else /* prot/real mode stub */
     /* nothing to do */
@@ -612,10 +607,8 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         }
     }
 
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    AssertFailed();
 #else
-    /* prot/real mode stub */
+    /* prot/real/amd64 mode stub */
 
 #endif
     return rc;
@@ -679,10 +672,8 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
     }
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    AssertFailed();
 #else
-    /* prot/real mode stub */
+    /* prot/real/amd64 mode stub */
 #endif
     return rc;
 
