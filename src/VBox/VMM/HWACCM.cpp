@@ -634,7 +634,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         return true;
     }
 
-    /* @todo we can support real-mode by using v86 and protected mode without paging with identity mapped pages.
+    /* @todo we can support real-mode by using v86 with identity mapped pages.
      * (but do we really care?)
      */
 
@@ -642,17 +642,19 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /** @note The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 
-#ifndef HWACCM_VMX_EMULATE_ALL
+#if 0 //ndef HWACCM_VMX_EMULATE_ALL
     /* Too early for VMX. */
     if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
         return false;
+#endif
 
     /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
+    /* Windows XP; switch to protected mode; all selectors are marked not present in the 
+     * hidden registers (possible recompiler bug) */
     if (pCtx->csHid.Attr.n.u1Present == 0)
         return false;
     if (pCtx->ssHid.Attr.n.u1Present == 0)
         return false;
-#endif
 
     if (pVM->hwaccm.s.vmx.fEnabled)
     {
