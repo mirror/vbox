@@ -66,16 +66,14 @@ VBOX_PATH_QT4_LIB      ?= $(VBOX_PATH_QT4)/lib
 VBOX_PATH_QT4_LIB64    ?= $(VBOX_PATH_QT4)/lib64
 VBOX_PATH_QT4_SHARE    ?= $(VBOX_PATH_QT4)
 
-VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
+VBOX_MODULE_QT4     = QtCore QtGui QtNetwork
+VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB
 # @todo: remove later: this is necessary only as long as Qt3Support is necessary
 # (it links to them)
-VBOX_MODULE_QT4    += QtSql QtXml
-
-VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
+VBOX_MODULE_QT4    += Qt3Support QtSql QtXml
+VBOX_DEFS_QT4      += QT_QT3SUPPORT_LIB QT_SQL_LIB QT_XML_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_MODULE_QT4    += QtSql QtXml
- VBOX_DEFS_QT4       = QT_SQL_LIB QT_XML_LIB
  VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join /Library/Frameworks/, $(mod)), .framework/Headers))
  VBOX_LIBS_QT4       =
 else
