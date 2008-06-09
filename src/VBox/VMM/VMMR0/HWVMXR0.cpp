@@ -2004,128 +2004,33 @@ ResumeExecution:
     case VMX_EXIT_ERR_INVALID_GUEST_STATE:  /* 33 VM-entry failure due to invalid guest state. */
     {
 #ifdef VBOX_STRICT
-        int      rc1;
+        Log(("VMX_EXIT_ERR_INVALID_GUEST_STATE\n"));
 
-        rc1  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
-        rc1 |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
-        AssertRC(rc1);
-        if (rc1 == VINF_SUCCESS)
-        {
-            RTGDTR     gdtr;
-            PX86DESCHC pDesc;
+        VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
+        Log(("Old eip %VGv new %VGv\n", pCtx->rip, (RTGCPTR)val));
 
-            ASMGetGDTR(&gdtr);
+        VMXReadVMCS(VMX_VMCS_GUEST_CR0, &val);
+        Log(("VMX_VMCS_GUEST_CR0        %RX64\n", val));
 
-            Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
-            Log(("Current stack %08x\n", &rc1));
+        VMXReadVMCS(VMX_VMCS_GUEST_CR3, &val);
+        Log(("VMX_VMCS_HOST_CR3         %VGp\n", val));
 
+        VMXReadVMCS(VMX_VMCS_GUEST_CR4, &val);
+        Log(("VMX_VMCS_GUEST_CR4        %RX64\n", val));
 
-            VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
-            Log(("Old eip %VGv new %VGv\n", pCtx->eip, (RTGCPTR)val));
-            VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
-            Log(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS   %08x\n", val));
-            VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
-            Log(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS  %08x\n", val));
-            VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
-            Log(("VMX_VMCS_CTRL_ENTRY_CONTROLS      %08x\n", val));
-            VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
-            Log(("VMX_VMCS_CTRL_EXIT_CONTROLS       %08x\n", val));
+        VMX_LOG_SELREG(CS, "CS");
+        VMX_LOG_SELREG(DS, "DS");
+        VMX_LOG_SELREG(ES, "ES");
+        VMX_LOG_SELREG(FS, "FS");
+        VMX_LOG_SELREG(GS, "GS");
+        VMX_LOG_SELREG(SS, "SS");
+        VMX_LOG_SELREG(TR, "TR");
+        VMX_LOG_SELREG(LDTR, "LDTR");
 
-            VMXReadVMCS(VMX_VMCS_HOST_CR0, &val);
-            Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_CR3, &val);
-            Log(("VMX_VMCS_HOST_CR3 %VHp\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_CR4, &val);
-            Log(("VMX_VMCS_HOST_CR4 %08x\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_CS, &val);
-            Log(("VMX_VMCS_HOST_FIELD_CS %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "CS: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_DS, &val);
-            Log(("VMX_VMCS_HOST_FIELD_DS %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "DS: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_ES, &val);
-            Log(("VMX_VMCS_HOST_FIELD_ES %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "ES: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_FS, &val);
-            Log(("VMX_VMCS_HOST_FIELD_FS %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "FS: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_GS, &val);
-            Log(("VMX_VMCS_HOST_FIELD_GS %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "GS: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_SS, &val);
-            Log(("VMX_VMCS_HOST_FIELD_SS %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "SS: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_FIELD_TR, &val);
-            Log(("VMX_VMCS_HOST_FIELD_TR %08x\n", val));
-            if (val < gdtr.cbGdt)
-            {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
-                HWACCMR0DumpDescriptor(pDesc, val, "TR: ");
-            }
-
-            VMXReadVMCS(VMX_VMCS_HOST_TR_BASE, &val);
-            Log(("VMX_VMCS_HOST_TR_BASE %VHv\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_GDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_GDTR_BASE %VHv\n", val));
-            VMXReadVMCS(VMX_VMCS_HOST_IDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_IDTR_BASE %VHv\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_CS, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_EIP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_ESP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", val));
-
-            VMXReadVMCS(VMX_VMCS_HOST_RSP, &val);
-            Log(("VMX_VMCS_HOST_RSP %VHv\n", val));
-            VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
-            Log(("VMX_VMCS_HOST_RIP %VHv\n", val));
-
-#if HC_ARCH_BITS == 64
-            Log(("MSR_K6_EFER       = %VX64\n", ASMRdMsr(MSR_K6_EFER)));
-            Log(("MSR_K6_STAR       = %VX64\n", ASMRdMsr(MSR_K6_STAR)));
-            Log(("MSR_K8_LSTAR      = %VX64\n", ASMRdMsr(MSR_K8_LSTAR)));
-            Log(("MSR_K8_CSTAR      = %VX64\n", ASMRdMsr(MSR_K8_CSTAR)));
-            Log(("MSR_K8_SF_MASK    = %VX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
-#endif
-        }
+        VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE, &val);
+        Log(("VMX_VMCS_GUEST_GDTR_BASE    %VGv\n", val));
+        VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE, &val);
+        Log(("VMX_VMCS_GUEST_IDTR_BASE    %VGv\n", val));
 #endif /* VBOX_STRICT */
         rc = VERR_EM_INTERNAL_ERROR;
         break;
