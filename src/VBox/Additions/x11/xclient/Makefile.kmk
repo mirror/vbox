@@ -72,8 +72,8 @@ $(PATH_TARGET)/VBoxClient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifdef VBOX_WITH_64BIT_ADDITIONS
-	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
-	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@ \
+	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@
 else
 	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
 	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
