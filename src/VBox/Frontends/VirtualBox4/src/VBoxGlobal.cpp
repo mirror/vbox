@@ -4385,6 +4385,3 @@ void VBoxSwitchMenu::processAboutToShow()
     mAction->setText (text);
 }
 
-#ifdef Q_WS_X11
-#include "VBoxGlobal.moc"
-#endif
