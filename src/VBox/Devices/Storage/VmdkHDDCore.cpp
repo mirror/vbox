@@ -3588,6 +3588,10 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
         goto out;
     }
 
+    /* @todo A quick hack to support differencing images in VMDK. */
+    if (enmType == VD_IMAGE_TYPE_DIFF)
+        enmType = VD_IMAGE_TYPE_NORMAL;
+
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename

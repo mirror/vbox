@@ -392,10 +392,10 @@ static int readAndCompareSegments(PVBOXHDD pVD, void *pvBuf, PSEGMENT pSegment)
             for (unsigned i = 0; i < pSegment->u32Length; i++)
                 if (((uint8_t*)pvBuf)[i] != pSegment->u8Value)
                 {
-                    RTPrintf("ERROR: Segment at %Lx of %d bytes is corrupt at offset %x (found %x instead of %x)\n",
+                    RTPrintf("ERROR: Segment at %Lx of %x bytes is corrupt at offset %x (found %x instead of %x)\n",
                              pSegment->u64Offset, pSegment->u32Length, i, ((uint8_t*)pvBuf)[i],
                              pSegment->u8Value);
-                    RTLogPrintf("ERROR: Segment at %Lx of %d bytes is corrupt at offset %x (found %x instead of %x)\n",
+                    RTLogPrintf("ERROR: Segment at %Lx of %x bytes is corrupt at offset %x (found %x instead of %x)\n",
                              pSegment->u64Offset, pSegment->u32Length, i, ((uint8_t*)pvBuf)[i],
                              pSegment->u8Value);
                     return VERR_INTERNAL_ERROR;
@@ -475,10 +475,10 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     generateRandomSegments(&ctx, paBaseSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
     generateRandomSegments(&ctx, paDiffSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 128u, 255u);
 
-    /*PSEGMENT pSegment;
-    RTPrintf("Base segments:\n");
+    PSEGMENT pSegment;
+    /*RTPrintf("Base segments:\n");
     for (pSegment = paBaseSegments; pSegment->u32Length; pSegment++)
-        RTPrintf("off: %08Lx len: %04x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
+        RTPrintf("off: %08Lx len: %05x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
     writeSegmentsToDisk(pVD, pvBuf, paBaseSegments);
 
     rc = VDCreateDiff(pVD, pszBackend, pszDiffFilename,
@@ -488,7 +488,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
 
     /*RTPrintf("\nDiff segments:\n");
     for (pSegment = paDiffSegments; pSegment->u32Length; pSegment++)
-        RTPrintf("off: %08Lx len: %04x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
+        RTPrintf("off: %08Lx len: %05x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
     writeSegmentsToDisk(pVD, pvBuf, paDiffSegments);
 
     VDDumpImages(pVD);
@@ -500,7 +500,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     mergeSegments(paBaseSegments, paDiffSegments, paMergeSegments, _1M);
     /*RTPrintf("\nMerged segments:\n");
     for (pSegment = paMergeSegments; pSegment->u32Length; pSegment++)
-        RTPrintf("off: %08Lx len: %04x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
+        RTPrintf("off: %08Lx len: %05x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
     rc = readAndCompareSegments(pVD, pvBuf, paMergeSegments);
     CHECK("readAndCompareSegments()");
 
@@ -564,6 +564,8 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     RNDCTX ctx;
     initializeRandomGenerator(&ctx, u32Seed);
     generateRandomSegments(&ctx, paSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
+    /*for (PSEGMENT pSegment = paSegments; pSegment->u32Length; pSegment++)
+        RTPrintf("off: %08Lx len: %05x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
 
     writeSegmentsToDisk(pVD, pvBuf, paSegments);
 
@@ -610,7 +612,7 @@ int main(int argc, char *argv[])
     RTFileDelete("tmpVDDiff.vmdk");
     RTFileDelete("tmpVDBase.vhd");
     RTFileDelete("tmpVDDiff.vhd");
-
+#if 1
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -707,14 +709,15 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VHD test failed (creating image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#if 0
+#endif
+
     rc = tstVDOpenCreateWriteMerge("VHD", "tmpVDBase.vhd", "tmpVDDiff.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#endif
+
     /*
      * Clean up any leftovers.
      */
