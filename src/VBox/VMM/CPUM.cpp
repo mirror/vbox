@@ -792,9 +792,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
             {
                 pHlp->pfnPrintf(pHlp,
-                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64 %srsi=%016RX64 %srdi=%016RX64\n"
-                    "%sr8 =%016RX64 %sr9 =%016RX64 %sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
-                    "%sr14=%016RX64 %sr15 =%016RX64\n"
+                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
+                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
+                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
+                    "%sr14=%016RX64 %sr15=%016RX64\n"
                     "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x                %seflags=%08x\n",
                     pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
@@ -819,9 +820,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
             {
                 pHlp->pfnPrintf(pHlp,
-                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64 %srsi=%016RX64 %srdi=%016RX64\n"
-                    "%sr8 =%016RX64 %sr9 =%016RX64 %sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
-                    "%sr14=%016RX64 %sr15 =%016RX64\n"
+                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
+                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
+                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
+                    "%sr14=%016RX64 %sr15=%016RX64\n"
                     "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
                     "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%VGv:%04x %sldtr=%04x\n"
@@ -854,9 +856,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
             {
                 pHlp->pfnPrintf(pHlp,
-                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64 %srsi=%016RX64 %srdi=%016RX64\n"
-                    "%sr8 =%016RX64 %sr9 =%016RX64 %sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
-                    "%sr14=%016RX64 %sr15 =%016RX64\n"
+                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
+                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
+                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
+                    "%sr14=%016RX64 %sr15=%016RX64\n"
                     "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
                     "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr0=%08RX64 %sdr1=%08RX64\n"
                     "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr2=%08RX64 %sdr3=%08RX64\n"
@@ -923,6 +926,27 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS, pszPrefix, pCtx->fpu.Rsrvd2,
                 pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK);
 
+
+            pHlp->pfnPrintf(pHlp,
+                "MSR:\n"
+                "%sEFER         =%016RX64\n"
+                "%sPAT          =%016RX64\n"
+                "%sSTAR         =%016RX64\n"
+                "%sCSTAR        =%016RX64\n"
+                "%sLSTAR        =%016RX64\n"
+                "%sSFMASK       =%016RX64\n"
+                "%sFSBASE       =%016RX64\n"
+                "%sGSBASE       =%016RX64\n"
+                "%sKERNELGSBASE =%016RX64\n",
+                pszPrefix, pCtx->msrEFER,
+                pszPrefix, pCtx->msrPAT,
+                pszPrefix, pCtx->msrSTAR,
+                pszPrefix, pCtx->msrCSTAR,
+                pszPrefix, pCtx->msrLSTAR,
+                pszPrefix, pCtx->msrSFMASK,
+                pszPrefix, pCtx->msrFSBASE,
+                pszPrefix, pCtx->msrGSBASE,
+                pszPrefix, pCtx->msrKERNELGSBASE);
 
             break;
     }
