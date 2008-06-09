@@ -7261,6 +7261,9 @@ static int handleSharedFolder (int argc, char *argv[],
                 return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
         }
 
+        if (NULL != strstr(name, " "))
+            return errorSyntax(USAGE_SHAREDFOLDER_ADD, "No spaces allowed in parameter '-name'!");
+
         /* required arguments */
         if (!name || !hostpath)
         {
