@@ -624,7 +624,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
     if (hSpinlock == NIL_RTSPINLOCK)
         return;
 
-    RTSpinlockAcquireNoInts(hSpinlock, &Tmp);
+    RTSpinlockAcquire(hSpinlock, &Tmp);
 
     /* Is it active? */
     if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
@@ -648,7 +648,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                     else
                     {
                         rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED); /* we'll recheck it. */
-                        RTSpinlockReleaseNoInts(hSpinlock, &Tmp);
+                        RTSpinlockRelease(hSpinlock, &Tmp);
 
                         RTMpOnSpecific(idCpu, rtTimerLinuxMpStartOnCpu, pTimer, &Args);
                         return; /* we've left the spinlock */
@@ -665,7 +665,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
             case RTMPEVENT_OFFLINE:
                 if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
                 {
-                    RTSpinlockAcquireNoInts(hSpinlock, &Tmp);
+                    RTSpinlockRelease(hSpinlock, &Tmp);
 
                     rtTimerLnxStopSubTimer(pSubTimer);
                     return; /* we've left the spinlock */
@@ -674,7 +674,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
         }
     }
 
-    RTSpinlockAcquireNoInts(hSpinlock, &Tmp);
+    RTSpinlockAcquire(hSpinlock, &Tmp);
 }
 
 #endif /* CONFIG_SMP */
