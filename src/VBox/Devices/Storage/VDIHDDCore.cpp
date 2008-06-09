@@ -811,7 +811,8 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename
-        || (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED)
+        || (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED
+            && enmType != VD_IMAGE_TYPE_DIFF)
         || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE
         || !VALID_PTR(pPCHSGeometry)
         || !VALID_PTR(pLCHSGeometry))

@@ -1483,7 +1483,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
         rc = pImage->Backend->pfnCreate(pImage->pszFilename,
-                                        VD_IMAGE_TYPE_NORMAL, pDisk->cbSize,
+                                        VD_IMAGE_TYPE_DIFF, pDisk->cbSize,
                                         uImageFlags, pszComment,
                                         &pDisk->PCHSGeometry,
                                         &pDisk->LCHSGeometry,
