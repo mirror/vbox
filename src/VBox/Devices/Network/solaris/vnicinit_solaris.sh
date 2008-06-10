@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 # Sun xVM VirtualBox
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
 #
@@ -33,20 +34,32 @@ if [ -z "$2" ]; then
     if [ -z "$phys_nic" ]; then
         # Try obtain a physical NIC that is currently active
         phys_nic=`/usr/sbin/dladm show-dev | /usr/bin/awk 'NF==4 && $2=="up" { print $1 }'`
-        # Failed to get a currently active NIC, get the first available NIC.
-        phys_nic=`/usr/sbin/dladm show-link | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
         if [ -z "$phys_nic" ]; then
-            # Failed to get any NICs!
-            echo "Failed to get a physical NIC to bind to."
-            exit 1
+            # Failed to get a currently active NIC, get the first available NIC.
+            phys_nic=`/usr/sbin/dladm show-link | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
+            if [ -z "$phys_nic" ]; then
+                # Failed to get any NICs!
+                echo "Failed to get a physical NIC to bind to."
+                exit 1
+            fi
         fi
     fi
 
     # To use a specific physical NIC, replace $phys_nic with the name of the NIC.
-    vnic_name="vnic"`/usr/lib/vna $phys_nic $mac`
+    vnic_name=`/usr/lib/vna $phys_nic $mac`
     if [ $? != 0 ]; then
         exit 1
     fi
+
+    # The vna utility can return the id/name depending on the distro
+    case "$vnic_name" in
+        vnic[0-9]*)
+            vnic_name="$vnic_name"
+            ;;
+        *)
+            vnic_name="vnic$vnic_name"
+            ;;
+    esac
 else
     vnic_name=$2
 fi
