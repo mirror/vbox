@@ -1885,6 +1885,7 @@ endif
 
 #
 # Template for building R3 executables and static libraries which are linked into executables.
+# Note! This is the base template for a whole lot of other ones, so be careful when changing it.
 #
 TEMPLATE_VBOXR3EXE                     = VBox Ring 3 Exe
 TEMPLATE_VBOXR3EXE_ASTOOL              = $(VBOX_ASTOOL)
@@ -2774,6 +2775,15 @@ TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_64BIT_ADDITIONS
   TEMPLATE_VBOXGUESTR3EXE_EXTENDS = VBOXR3EXE
+  TEMPLATE_VBOXGUESTR3EXE_CFLAGS  = $(filter-out -MD, $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT
+  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS= $(filter-out -MD, $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT
+  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS = $(filter-out /DISALLOWLIB:libcmt.lib, $(TEMPLATE_VBOXR3EXE_LDFLAGS)) \
+	/DISALLOWLIB:msvcrt.lib \
+	/DISALLOWLIB:msvcprt.lib
+  TEMPLATE_VBOXGUESTR3EXE_LIBS    = \
+	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL)_LIB)/oldnames.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL)_LIB)/libcmt.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL)_LIB)/libcpmt.lib
  else
   TEMPLATE_VBOXGUESTR3EXE_EXTENDS = VBOXW32GUESTR3
  endif
