@@ -1107,29 +1107,29 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
          * base image can be fixed or normal, all others must be normal or
          * diff images. Some image formats don't distinguish between normal
          * and diff images, so this must be corrected here. */
+        if (VBOX_FAILURE(rc))
+            enmImageType = VD_IMAGE_TYPE_INVALID;
         if (    VBOX_SUCCESS(rc)
             &&  !(uOpenFlags & VD_OPEN_FLAGS_INFO))
         {
-            rc = VERR_VDI_INVALID_TYPE;
-            break;
-        }
-        if (    pDisk->cImages == 0
-            &&  (   enmImageType != VD_IMAGE_TYPE_FIXED
-                 || enmImageType != VD_IMAGE_TYPE_NORMAL))
-        {
-            rc = VERR_VDI_INVALID_TYPE;
-            break;
-        }
-        else if (pDisk->cImages != 0)
-        {
-            if (    enmImageType != VD_IMAGE_TYPE_NORMAL
-                ||  enmImageType != VD_IMAGE_TYPE_DIFF)
+            if (    pDisk->cImages == 0
+                &&  (   enmImageType != VD_IMAGE_TYPE_FIXED
+                     || enmImageType != VD_IMAGE_TYPE_NORMAL))
             {
                 rc = VERR_VDI_INVALID_TYPE;
                 break;
             }
-            else
-                enmImageType = VD_IMAGE_TYPE_DIFF;
+            else if (pDisk->cImages != 0)
+            {
+                if (    enmImageType != VD_IMAGE_TYPE_NORMAL
+                    ||  enmImageType != VD_IMAGE_TYPE_DIFF)
+                {
+                    rc = VERR_VDI_INVALID_TYPE;
+                    break;
+                }
+                else
+                    enmImageType = VD_IMAGE_TYPE_DIFF;
+            }
         }
         pImage->enmImageType = enmImageType;
 
@@ -2776,7 +2776,14 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        *penmType = pImage->enmImageType;
+        if (    pImage->enmImageType >= VD_IMAGE_TYPE_FIRST
+            &&  pImage->enmImageType <= VD_IMAGE_TYPE_DIFF)
+        {
+            *penmType = pImage->enmImageType;
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_VDI_INVALID_TYPE;
     } while (0);
 
     LogFlowFunc(("returns %Vrc uenmType=%u\n", rc, *penmType));
