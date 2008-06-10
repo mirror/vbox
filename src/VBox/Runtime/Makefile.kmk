@@ -631,7 +631,11 @@ RuntimeGuestR3Mini_SOURCES += \
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
 #
-RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
+ifdef VBOX_WITH_64BIT_ADDITIONS 
+  RuntimeW32GuestR3_TEMPLATE     = VBOXGUESTR3LIB
+else
+  RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
+endif
 RuntimeW32GuestR3_SDKS         = WINPSDK W2K3DDK
 RuntimeW32GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
 ifdef IPRT_WITH_KSTUFF
@@ -1255,7 +1259,12 @@ RuntimeOS2GuestR0_SOURCES       = \
 #
 # RuntimeW32GuestR0 - Win32 guest driver runtime.
 #
-RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
+ifdef VBOX_WITH_64BIT_ADDITIONS
+  RuntimeW32GuestR0_TEMPLATE      = VBOXGUESTR0LIB
+else
+  RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
+endif
+
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
 RuntimeW32GuestR0_INCS         := $(PATH_SUB_CURRENT) include
 RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0
