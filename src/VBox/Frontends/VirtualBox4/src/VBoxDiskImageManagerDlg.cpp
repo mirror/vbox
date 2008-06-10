@@ -42,7 +42,7 @@ public:
 
     AddVDMUrlsEvent (const QList<QUrl> &aUrls)
         : QEvent (static_cast<QEvent::Type> (VBoxDefs::AddVDMUrlsEventType))
-        , mUrls (aUrls) 
+        , mUrls (aUrls)
     {}
 
     const QList<QUrl> &urls() const { return mUrls; }
@@ -107,9 +107,9 @@ public:
     void setStatus (VBoxMedia::Status aStatus) { mStatus = aStatus; }
     VBoxMedia::Status status() const { return mStatus; }
 
-    void setToolTip (const QString& aToolTip) 
-    { 
-        mToolTip = aToolTip; 
+    void setToolTip (const QString& aToolTip)
+    {
+        mToolTip = aToolTip;
         for (int i=0; i < treeWidget()->columnCount(); ++i)
             QTreeWidgetItem::setToolTip (i, mToolTip);
     }
@@ -128,7 +128,7 @@ public:
         return info;
     }
 
-    bool operator< (const QTreeWidgetItem &aOther) const 
+    bool operator< (const QTreeWidgetItem &aOther) const
     {
         int column = treeWidget()->sortColumn();
         ULONG64 thisValue = vboxGlobal().parseSize (       text (column));
@@ -514,13 +514,13 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     }
 
     /* For a newly opened dialog, select the first item */
-    if (!mHdsTree->selectedItems().isEmpty())
+    if (mHdsTree->selectedItems().isEmpty())
         if (QTreeWidgetItem *item = mHdsTree->topLevelItem (0))
             setCurrentItem (mHdsTree, item);
-    if (!mCdsTree->selectedItems().isEmpty())
+    if (mCdsTree->selectedItems().isEmpty())
         if (QTreeWidgetItem *item = mCdsTree->topLevelItem (0))
             setCurrentItem (mCdsTree, item);
-    if (!mFdsTree->selectedItems().isEmpty())
+    if (mFdsTree->selectedItems().isEmpty())
         if (QTreeWidgetItem *item = mFdsTree->topLevelItem (0))
             setCurrentItem (mFdsTree, item);
 }
@@ -849,7 +849,7 @@ void VBoxDiskImageManagerDlg::retranslateUi()
     mProgressBar->adjustSize();
     int h = mProgressBar->height();
     mButtonBox->setMinimumHeight (h + 12);
-#endif 
+#endif
 
     if (mHdsTree->model()->rowCount() || mCdsTree->model()->rowCount() || mFdsTree->model()->rowCount())
         refreshAll();
@@ -1415,13 +1415,13 @@ VBoxDefs::DiskType VBoxDiskImageManagerDlg::currentTreeWidgetType() const
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
     switch (twImages->currentIndex ())
     {
-        case HDTab: 
+        case HDTab:
             type = VBoxDefs::HD;
             break;
-        case CDTab: 
+        case CDTab:
             type = VBoxDefs::CD;
             break;
-        case FDTab: 
+        case FDTab:
             type = VBoxDefs::FD;
             break;
         default:
@@ -1505,7 +1505,7 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
         return;
     }
 
-    /* Set the file for the proxy icon */ 
+    /* Set the file for the proxy icon */
     setFileForProxyIcon (item->path());
 
     /* Ensures current item visible every time we are switching page */
@@ -1815,7 +1815,7 @@ void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem *aItem,
 DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
                                                     const QUuid &aId) const
 {
-    if (aId.isNull()) 
+    if (aId.isNull())
         return NULL;
 
     DiskImageItemIterator iterator (aTree);
@@ -1844,7 +1844,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
 bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
 {
     QUuid itemId = aItem ? aItem->uuid() : QUuid();
-    if (itemId.isNull()) 
+    if (itemId.isNull())
         return false;
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1922,14 +1922,14 @@ bool VBoxDiskImageManagerDlg::checkDndUrls (const QList<QUrl> &aUrls) const
         QString suffix = fi.suffix().toLower();
         switch (currentTreeWidgetType())
         {
-            case VBoxDefs::HD: 
-                err |= (!(suffix == "vdi" || suffix == "vmdk")); 
+            case VBoxDefs::HD:
+                err |= (!(suffix == "vdi" || suffix == "vmdk"));
                 break;
-            case VBoxDefs::CD: 
-                err |= (suffix != "iso"); 
+            case VBoxDefs::CD:
+                err |= (suffix != "iso");
                 break;
-            case VBoxDefs::FD: 
-                err |= (suffix != "img"); 
+            case VBoxDefs::FD:
+                err |= (suffix != "img");
                 break;
             default:
                 AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::DiskType.\n"));
@@ -2026,7 +2026,7 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
 #endif /* QT_VERSION >= 0x040300 */
     if (aLeftRightMargin)
         aInfo->setContentsMargins (margin, 0, margin, 0);
-    else 
+    else
         aInfo->setContentsMargins (margin, 0, 0, 0);
     rootLayout->addWidget (aInfo, aRow, aCol + 1, aRowSpan, aColSpan);
 }
