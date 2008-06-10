@@ -39,6 +39,7 @@
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
+#include "internal-r0drv-nt.h"
 
 
 /*******************************************************************************
@@ -94,9 +95,12 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     if (idCpu >= MAXIMUM_PROCESSORS)
         return false;
 
-    /** @todo this must be done at init time as it's not safe under all circumstances (braindead OS design). */
+#if 0 /* this isn't safe at all IRQLs (great work guys) */
     KAFFINITY Mask = KeQueryActiveProcessors();
     return !!(Mask & RT_BIT_64(idCpu));
+#else
+    return RTCpuSetIsMember(&g_rtMpNtCpuSet, idCpu);
+#endif
 }
 
 
@@ -124,8 +128,13 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
+#if 0 /* this isn't safe at all IRQLs (great work guys) */
     KAFFINITY Mask = KeQueryActiveProcessors();
     return RTCpuSetFromU64(pSet, Mask);
+#else
+    *pSet = g_rtMpNtCpuSet;
+    return pSet;
+#endif
 }
 
 
@@ -254,15 +263,18 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     return VINF_SUCCESS;
 }
 
+
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_ALL, 0);
 }
 
+
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, 0);
 }
+
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {

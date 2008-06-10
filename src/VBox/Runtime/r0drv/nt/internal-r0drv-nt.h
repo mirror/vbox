@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Initialization & Termination, R0 Driver, NT.
+ * IPRT - Internal Header for the NT Ring-0 Driver Code.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,52 +28,22 @@
  * additional information or have any questions.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#include "the-nt-kernel.h"
-#include <iprt/err.h>
-#include <iprt/assert.h>
-#include <iprt/mp.h>
-#include "internal/initterm.h"
-#include "internal-r0drv-nt.h"
+#ifndef ___internal_r0drv_h
+#define ___internal_r0drv_h
+
+#include <iprt/cpuset.h>
+
+__BEGIN_DECLS
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The Nt CPU set.
- * KeQueryActiveProcssors() cannot be called at all IRQLs and therefore we'll
- * have to cache it. Fortunately, Nt doesn't really support taking CPUs offline
- * or online. It's first with W2K8 that support for adding / onlining cpus at
- * runtime is (officially) supported. Once we start caring about this, we'll
- * simply use the native MP event callback and update this variable as cpus
- * comes online.
- */
-RTCPUSET g_rtMpNtCpuSet;
+extern RTCPUSET g_rtMpNtCpuSet;
 
 
-int rtR0InitNative(void)
-{
-    /*
-     * Init the Nt cpu set.
-     */
-    KAFFINITY ActiveProcessors = KeQueryActiveProcessors();
-    RTCpuSetEmpty(&g_rtMpNtCpuSet);
-    RTCpuSetFromU64(&g_rtMpNtCpuSet, ActiveProcessors);
+__END_DECLS
 
-#if 0 /* W2K8 support */
-    return RTR0MpNotificationInit(NULL);
-#else
-    return VINF_SUCCESS;
 #endif
-}
 
-
-void rtR0TermNative(void)
-{
-#if 0 /* W2K8 support */
-    RTR0MpNotificationTerm(NULL);
-#endif
-}
 

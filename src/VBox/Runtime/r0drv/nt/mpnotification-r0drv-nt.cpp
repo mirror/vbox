@@ -38,6 +38,7 @@
 #include <iprt/err.h>
 #include <iprt/cpuset.h>
 #include "r0drv/mp-r0drv.h"
+#include "internal-r0drv-nt.h"
 
 
 #if /*NTDDI_VERSION >= NTDDI_WS08*/ 0
@@ -87,6 +88,7 @@ static VOID __stdcall rtMpNotificationNtCallback(IN PVOID pvUser,
 
         case KeProcessorAddCompleteNotify:
             rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
+            RTCpuSetAdd(&g_rtMpNtCpuSet, idCpu);
             break;
 
         //case KeProcessorDelCompleteNotify:
