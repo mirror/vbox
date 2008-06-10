@@ -76,7 +76,7 @@ DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
 
 
 /**
- * Adds a CPU given by it's identifier to the set.
+ * Adds a CPU given by its identifier to the set.
  *
  * @returns 0 on success, -1 if idCpu isn't valid.
  * @param   pSet    Pointer to the set.
@@ -94,7 +94,7 @@ DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
 
 
 /**
- * Removes a CPU given by it's identifier from the set.
+ * Removes a CPU given by its identifier from the set.
  *
  * @returns 0 on success, -1 if idCpu isn't valid.
  * @param   pSet    Pointer to the set.
@@ -112,7 +112,7 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
 
 
 /**
- * Checks if a CPU given by it's identifier is a member of the set.
+ * Checks if a CPU given by its identifier is a member of the set.
  *
  * @returns true / false accordingly.
  * @param   pSet    Pointer to the set.
@@ -123,6 +123,22 @@ DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     if (RT_UNLIKELY(iCpu < 0))
+        return false;
+    return ASMBitTest((volatile void *)pSet, iCpu);
+}
+
+
+/**
+ * Checks if a CPU given by its index is a member of the set.
+ *
+ * @returns true / false accordingly.
+ * @param   pSet    Pointer to the set.
+ * @param   iCpu    The index of the CPU in the set.
+ * @remarks The test is atomic.
+ */
+DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, RTCPUID iCpu)
+{
+    if (RT_UNLIKELY(iCpu >= RTCPUSET_MAX_CPUS))
         return false;
     return ASMBitTest((volatile void *)pSet, iCpu);
 }
