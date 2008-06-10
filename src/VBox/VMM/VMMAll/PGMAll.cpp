@@ -730,7 +730,7 @@ PGMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  * @param   GCPtr       The address.
  * @param   ppPD        Receives address of page directory
  */
-PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppPD)
+PGMDECL(int) PGMShwGetAllocLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -782,7 +782,7 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppP
 
         AssertRCReturn(rc, rc);
 
-        /* The PDPT was cached or created; hook it up now. */
+        /* The PD was cached or created; hook it up now. */
         pPdpe->u |= pShwPage->Core.Key;
     }
     else
@@ -790,6 +790,47 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppP
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
+
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Gets the SHADOW page directory pointer for the specified address.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   ppPdpt      Receives address of pdpt
+ * @param   ppPD        Receives address of page directory
+ */
+PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+{
+    PPGM           pPGM   = &pVM->pgm.s;
+    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PX86PML4E      pPml4e;
+    PPGMPOOLPAGE   pShwPage;
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
+
+    pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
+    if (!pPml4e->n.u1Present)
+        return VERR_PAGE_TABLE_NOT_PRESENT;
+
+    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
+    AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);    
+    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
+
+    *ppPdpt = pPdpt;
+    if (!pPdpe->n.u1Present)
+        return VERR_PAGE_TABLE_NOT_PRESENT;
+
+    pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+    AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
