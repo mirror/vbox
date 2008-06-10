@@ -67,8 +67,10 @@ __BEGIN_DECLS
  * @{ */
 typedef enum VDIMAGETYPE
 {
+    /** Invalid image type. Should never be returned/passed through the API. */
+    VD_IMAGE_TYPE_INVALID   = 0,
     /** Normal dynamically growing base image file. */
-    VD_IMAGE_TYPE_NORMAL    = 1,
+    VD_IMAGE_TYPE_NORMAL,
     /** Preallocated base image file of a fixed size. */
     VD_IMAGE_TYPE_FIXED,
     /** Dynamically growing image file for undo/commit changes support. */
