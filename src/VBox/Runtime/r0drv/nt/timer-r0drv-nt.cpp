@@ -145,7 +145,7 @@ static void _stdcall rtTimerNtOmniSlaveCallback(IN PKDPC pDpc, IN PVOID pvUser, 
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
         AssertMsg2("rtTimerNtOmniSlaveCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
-    RTCPUID iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
+    int iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
     if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
         AssertMsg2("rtTimerNtOmniSlaveCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
 #endif
@@ -176,7 +176,7 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
 {
     PRTTIMERNTSUBTIMER pSubTimer = (PRTTIMERNTSUBTIMER)pvUser;
     PRTTIMER pTimer = pSubTimer->pParent;
-    RTCPUID iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
+    int iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
 
     AssertPtr(pTimer);
 #ifdef RT_STRICT
@@ -195,7 +195,7 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
     {
         RTCPUSET    OnlineSet;
         RTMpGetOnlineSet(&OnlineSet);
-        for (RTCPUID iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+        for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
             if (    RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
                 &&  iCpuSelf != iCpu)
                 KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0);
@@ -234,7 +234,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         ulInterval = 1;
 
     LARGE_INTEGER DueTime;
-    DueTime.QuadPart = -(int64_t)(u64First / 10000); /* Relative, NT time. */
+    DueTime.QuadPart = -(int64_t)(u64First / 100); /* Relative, NT time. */
     if (DueTime.QuadPart)
         DueTime.QuadPart = -1;
 
@@ -244,9 +244,36 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 }
 
 
+/**
+ * Worker function that stops an active timer.
+ *
+ * Shared by RTTimerStop and RTTimerDestroy.
+ *
+ * @param   pTimer      The active timer.
+ */
+static void rtTimerNtStopWorker(PRTTIMER pTimer)
+{
+    /*
+     * Just cancel the timer, dequeue the DPCs and flush them (if this is supported).
+     */
+    ASMAtomicWriteBool(&pTimer->fSuspended, true);
+    KeCancelTimer(&pTimer->NtTimer);
+
+    for (RTCPUID iCpu = 0; iCpu < pTimer->cSubTimers; iCpu++)
+        KeRemoveQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc);
+
+    /*
+     * I'm a bit uncertain whether this should be done during RTTimerStop
+     * or only in RTTimerDestroy()... Linux and Solaris will wait AFAIK,
+     * which is why I'm keeping this here for now.
+     */
+    if (g_pfnrtNtKeFlushQueuedDpcs)
+        g_pfnrtNtKeFlushQueuedDpcs();
+}
+
+
 RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 {
-
     /*
      * Validate.
      */
@@ -257,13 +284,9 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
         return VERR_TIMER_SUSPENDED;
 
     /*
-     * Just cancel the timer and flush DPCs.
+     * Call the worker we share with RTTimerDestroy.
      */
-    ASMAtomicWriteBool(&pTimer->fSuspended, true);
-    KeCancelTimer(&pTimer->NtTimer);
-    if (g_pfnrtNtKeFlushQueuedDpcs)
-        g_pfnrtNtKeFlushQueuedDpcs();
-
+    rtTimerNtStopWorker(pTimer);
     return VINF_SUCCESS;
 }
 
@@ -277,15 +300,12 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
     /*
-     * Stop the timer if it's running.
-     */
-    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
-        RTTimerStop(pTimer);
-
-    /*
-     * Uninitialize the structure and free the associated resources.
+     * Invalidate the timer, stop it if it's running and finally                   .
+     * free up the memory.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
+        rtTimerNtStopWorker(pTimer);
     RTMemFree(pTimer);
 
     return VINF_SUCCESS;
@@ -343,7 +363,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
          * ASSUMES that no cpus will ever go offline.
          */
         pTimer->idCpu = NIL_RTCPUID; /* */
-        for (RTCPUID iCpu = 0; iCpu < cSubTimers; iCpu++)
+        for (unsigned iCpu = 0; iCpu < cSubTimers; iCpu++)
         {
             pTimer->aSubTimers[iCpu].iTick = 0;
             pTimer->aSubTimers[iCpu].pParent = pTimer;
@@ -357,7 +377,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
             else
                 KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
             KeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
-            KeSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, RTMpCpuIdFromSetIndex(iCpu));
+            KeSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, (int)RTMpCpuIdFromSetIndex(iCpu));
         }
         Assert(pTimer->idCpu != NIL_RTCPUID);
     }
@@ -373,7 +393,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
         KeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
         if (pTimer->fSpecificCpu)
-            KeSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, pTimer->idCpu);
+            KeSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
     }
 
     *ppTimer = pTimer;
@@ -383,17 +403,23 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
+    /*
+     * Get the default/max timer increment value, return it if ExtSetTimerResolution
+     * isn't available. Accoring to the sysinternals guys NtQueryTimerResolution
+     * is only available in userland and they find it equally annoying.
+     */
+    ULONG ulTimeInc = KeQueryTimeIncrement();
     if (!g_pfnrtNtExSetTimerResolution)
-        return 156250; /* AMD64 default, will hopefully work for x86 too... */
+        return ulTimeInc * 100; /* The value is in 100ns, the funny NT unit. */
 
     /*
-     * First try set it to the AMD64 default (which is higher than the default than x86)
-     * and then restore it immediately. Wonder if this really works...
+     * Use the value returned by ExSetTimerResolution. Since the kernel is keeping
+     * count of these calls, we have to do two calls that cancel each other out.
      */
-    ULONG ulResolution1 = g_pfnrtNtExSetTimerResolution(156250, TRUE);
+    ULONG ulResolution1 = g_pfnrtNtExSetTimerResolution(ulTimeInc, TRUE);
     ULONG ulResolution2 = g_pfnrtNtExSetTimerResolution(0 /*ignored*/, FALSE);
-    AssertMsg(ulResolution1 == ulResolution2, ("%ld, %ld\n", ulResolution1, ulResolution2));
-    return ulResolution2 * 10000; /* NT -> ns */
+    AssertMsg(ulResolution1 == ulResolution2, ("%ld, %ld\n", ulResolution1, ulResolution2)); /* not supposed to change it! */
+    return ulResolution2 * 100; /* NT -> ns */
 }
 
 
@@ -402,7 +428,7 @@ RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32G
     if (!g_pfnrtNtExSetTimerResolution)
         return VERR_NOT_SUPPORTED;
 
-    ULONG ulGranted = g_pfnrtNtExSetTimerResolution(u32Request / 10000, TRUE);
+    ULONG ulGranted = g_pfnrtNtExSetTimerResolution(u32Request / 100, TRUE);
     if (pu32Granted)
         *pu32Granted = ulGranted;
     return VINF_SUCCESS;
