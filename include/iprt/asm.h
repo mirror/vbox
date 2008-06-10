@@ -2154,18 +2154,18 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
-    uint32_t u32 = (uint32_t)u64;
+    uint32_t u32EBX = (uint32_t)u64;
     __asm__ __volatile__(/*"xchgl %%esi, %5\n\t"*/
                          "xchgl %%ebx, %3\n\t"
                          "1:\n\t"
                          "lock; cmpxchg8b (%5)\n\t"
                          "jnz 1b\n\t"
-                         "xchgl %%ebx, %3\n\t"
+                         "movl %3, %%ebx\n\t"
                          /*"xchgl %%esi, %5\n\t"*/
                          : "=A" (u64),
                            "=m" (*pu64)
                          : "0" (*pu64),
-                           "m" ( u32 ),
+                           "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64 >> 32) ),
                            "S" (pu64) );
 #   else /* !PIC */
@@ -2428,18 +2428,18 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
     uint32_t u32Ret;
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
-    uint32_t u32 = (uint32_t)u64New;
+    uint32_t u32EBX = (uint32_t)u64New;
     uint32_t u32Spill;
     __asm__ __volatile__("xchgl %%ebx, %4\n\t"
                          "lock; cmpxchg8b (%6)\n\t"
                          "setz  %%al\n\t"
-                         "xchgl %%ebx, %4\n\t"
+                         "movl  %4, %%ebx\n\t"
                          "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
                            "=m" (*pu64)
                          : "A" (u64Old),
-                           "m" ( u32 ),
+                           "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64New >> 32) ),
                            "S" (pu64) );
 #   else /* !PIC */
@@ -3264,7 +3264,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
     Assert(!((uintptr_t)pu64 & 7));
     __asm__ __volatile__("xchgl %%ebx, %3\n\t"
                          "lock; cmpxchg8b (%5)\n\t"
-                         "xchgl %%ebx, %3\n\t"
+                         "movl %3, %%ebx\n\t"
                          : "=A" (u64),
                            "=m" (*pu64)
                          : "0" (0),
@@ -3334,7 +3334,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
     Assert(!((uintptr_t)pu64 & 7));
     __asm__ __volatile__("xchgl %%ebx, %3\n\t"
                          "lock; cmpxchg8b (%5)\n\t"
-                         "xchgl %%ebx, %3\n\t"
+                         "movl %3, %%ebx\n\t"
                          : "=A" (u64),
                            "=m" (*pu64)
                          : "0" (0),
@@ -4846,9 +4846,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void *pvBitmap, int32_t iBit
  * @param   iBit        The bit to test.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(bool) ASMBitTest(volatile void *pvBitmap, int32_t iBit);
+DECLASM(bool) ASMBitTest(const volatile void *pvBitmap, int32_t iBit);
 #else
-DECLINLINE(bool) ASMBitTest(volatile void *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMBitTest(const volatile void *pvBitmap, int32_t iBit)
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4858,9 +4858,9 @@ DECLINLINE(bool) ASMBitTest(volatile void *pvBitmap, int32_t iBit)
     __asm__ __volatile__ ("btl %2, %1\n\t"
                           "setc %b0\n\t"
                           "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit)
+                          : "=q" (rc.u32)
+                          : "m" (*(const volatile long *)pvBitmap),
+                            "Ir" (iBit)
                           : "memory");
 # else
     __asm
@@ -4974,9 +4974,9 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits);
+DECLASM(int) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits);
 #else
-DECLINLINE(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits)
+DECLINLINE(int) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits)
 {
     if (cBits)
     {
@@ -5060,17 +5060,17 @@ DECLINLINE(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits)
  *                      The search will start at iBitPrev + 1.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(int) ASMBitNextClear(volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
+DECLASM(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
 #else
-DECLINLINE(int) ASMBitNextClear(volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
+DECLINLINE(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
 {
     int iBit = ++iBitPrev & 31;
-    pvBitmap = (volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
+    pvBitmap = (const volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
     cBits   -= iBitPrev & ~31;
     if (iBit)
     {
         /* inspect the first dword. */
-        uint32_t u32 = (~*(volatile uint32_t *)pvBitmap) >> iBit;
+        uint32_t u32 = (~*(const volatile uint32_t *)pvBitmap) >> iBit;
 # if RT_INLINE_ASM_USES_INTRIN
         unsigned long ulBit = 0;
         if (_BitScanForward(&ulBit, u32))
@@ -5101,7 +5101,7 @@ DECLINLINE(int) ASMBitNextClear(volatile void *pvBitmap, uint32_t cBits, uint32_
         /* Search the rest of the bitmap, if there is anything. */
         if (cBits > 32)
         {
-            iBit = ASMBitFirstClear((volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
+            iBit = ASMBitFirstClear((const volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
             if (iBit >= 0)
                 return iBit + (iBitPrev & ~31) + 32;
         }
@@ -5127,9 +5127,9 @@ DECLINLINE(int) ASMBitNextClear(volatile void *pvBitmap, uint32_t cBits, uint32_
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits);
+DECLASM(int) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits);
 #else
-DECLINLINE(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits)
+DECLINLINE(int) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits)
 {
     if (cBits)
     {
@@ -5212,17 +5212,17 @@ DECLINLINE(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits)
  *                      The search will start at iBitPrev + 1.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(int) ASMBitNextSet(volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
+DECLASM(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
 #else
-DECLINLINE(int) ASMBitNextSet(volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
+DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
 {
     int iBit = ++iBitPrev & 31;
-    pvBitmap = (volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
+    pvBitmap = (const volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
     cBits   -= iBitPrev & ~31;
     if (iBit)
     {
         /* inspect the first dword. */
-        uint32_t u32 = *(volatile uint32_t *)pvBitmap >> iBit;
+        uint32_t u32 = *(const volatile uint32_t *)pvBitmap >> iBit;
 # if RT_INLINE_ASM_USES_INTRIN
         unsigned long ulBit = 0;
         if (_BitScanForward(&ulBit, u32))
@@ -5253,7 +5253,7 @@ DECLINLINE(int) ASMBitNextSet(volatile void *pvBitmap, uint32_t cBits, uint32_t 
         /* Search the rest of the bitmap, if there is anything. */
         if (cBits > 32)
         {
-            iBit = ASMBitFirstSet((volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
+            iBit = ASMBitFirstSet((const volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
             if (iBit >= 0)
                 return iBit + (iBitPrev & ~31) + 32;
         }
