@@ -41,16 +41,40 @@
 #include "internal-r0drv-nt.h"
 
 
-#if /*NTDDI_VERSION >= NTDDI_WS08*/ 0
-/* The following is 100% untested code which probably doesn't even compile. */
+#if 0 /* The following is 100% untested code . */
+
+#ifndef KE_PROCESSOR_CHANGE_ADD_EXISTING
+/* Some bits that are missing from our DDK headers. */
+
+typedef enum
+{
+    KeProcessorAddStartNotify = 0,
+    KeProcessorAddCompleteNotify,
+    KeProcessorAddFailureNotify
+} KE_PROCESSOR_CHANGE_NOTIFY_STATE;
+
+typedef struct _KE_PROCESSOR_CHANGE_NOTIFY_CONTEXT
+{
+    KE_PROCESSOR_CHANGE_NOTIFY_STATE State;
+    ULONG NtNumber;
+    NTSTATUS Status;
+} KE_PROCESSOR_CHANGE_NOTIFY_CONTEXT;
+typedef KE_PROCESSOR_CHANGE_NOTIFY_CONTEXT *PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT;
+
+typedef VOID (__stdcall *PPROCESSOR_CALLBACK_FUNCTION)(PVOID, PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT, PNTSTATUS);
+
+# define KE_PROCESSOR_CHANGE_ADD_EXISTING 1
+#endif /* !KE_PROCESSOR_CHANGE_ADD_EXISTING */
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /** Typedef of KeRegisterProcessorChangeCallback. */
-typedef PROCESSOR_CALLBACK_HANDLE (__stdcall *PFNMYKEREGISTERPROCESSORCHANGECALLBACK)(IN PPROCESSOR_CALLBACK_FUNCTION, IN PVOID, IN ULONG);
+typedef PVOID (__stdcall *PFNMYKEREGISTERPROCESSORCHANGECALLBACK)(PPROCESSOR_CALLBACK_FUNCTION, PVOID, ULONG);
 /** Typedef of KeDeregisterProcessorChangeCallback. */
-typedef VOID (__stdcall *PFNMYKEDEREGISTERPROCESSORCHANGECALLBACK)(IN PROCESSOR_CALLBACK_HANDLE);
+typedef VOID (__stdcall *PFNMYKEDEREGISTERPROCESSORCHANGECALLBACK)(PVOID);
 
 
 /*******************************************************************************
@@ -61,7 +85,7 @@ static PFNMYKEREGISTERPROCESSORCHANGECALLBACK   g_pfnKeRegisterProcessorChangeCa
 /** The pointer to KeDeregisterProcessorChangeCallback if found. */
 static PFNMYKEDEREGISTERPROCESSORCHANGECALLBACK g_pfnKeDeregisterProcessorChangeCallback = NULL;
 /** The callback handle. */
-static PROCESSOR_CALLBACK_HANDLE g_hCallback = NULL;
+static PVOID g_hCallback = NULL;
 
 
 /**
@@ -71,9 +95,9 @@ static PROCESSOR_CALLBACK_HANDLE g_hCallback = NULL;
  * @param   ulNativeEvent   The native event.
  * @param   pvCpu           The cpu id cast into a pointer value.
  */
-static VOID __stdcall rtMpNotificationNtCallback(IN PVOID pvUser,
-                                                 IN PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT pChangeContext,
-                                                 IN OUT PNTSTATUS pOperationStatus)
+static VOID __stdcall rtMpNotificationNtCallback(PVOID pvUser,
+                                                 PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT pChangeContext,
+                                                 PNTSTATUS pOperationStatus)
 {
     NOREF(pvUser);
     AssertPtr(pChangeContext);
@@ -87,12 +111,13 @@ static VOID __stdcall rtMpNotificationNtCallback(IN PVOID pvUser,
             break;
 
         case KeProcessorAddCompleteNotify:
-            rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
+            /* Update the active CPU set before doing callback round. */
             RTCpuSetAdd(&g_rtMpNtCpuSet, idCpu);
+            rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
             break;
 
         //case KeProcessorDelCompleteNotify:
-        //    rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
+        //    rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
         //    break;
 
         default:
@@ -101,7 +126,6 @@ static VOID __stdcall rtMpNotificationNtCallback(IN PVOID pvUser,
     }
 
     *pOperationStatus = STATUS_SUCCESS;
-    return 0;
 }
 
 
