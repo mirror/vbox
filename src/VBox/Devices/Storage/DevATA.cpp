@@ -3210,6 +3210,10 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             ataCmdOK(s, 0);
             ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
+        case ATA_SEEK: /* Used by the SCO OpenServer. Command is marked as obsolete */
+            ataCmdOK(s, 0);
+            ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
+            break;
         case ATA_READ_NATIVE_MAX_ADDRESS:
             ataSetSector(s, RT_MIN(s->cTotalSectors, 1 << 28) - 1);
             ataCmdOK(s, 0);
@@ -4698,6 +4702,10 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         case VAL(2, 1): *pu32 = ataBMDMAStatusReadB(pCtl, Port); break;
         case VAL(2, 2): *pu32 = ataBMDMAStatusReadB(pCtl, Port); break;
         case VAL(4, 4): *pu32 = ataBMDMAAddrReadL(pCtl, Port); break;
+        case VAL(0, 4):
+            /* The SCO OpenServer tries to read 4 bytes starting from offset 0. */
+            *pu32 = ataBMDMACmdReadB(pCtl, Port) | (ataBMDMAStatusReadB(pCtl, Port) << 16);
+            break;
         default:
             AssertMsgFailed(("%s: Unsupported read from port %x size=%d\n", __FUNCTION__, Port, cb));
             PDMCritSectLeave(&pCtl->lock);
