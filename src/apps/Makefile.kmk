@@ -1,0 +1,26 @@
+# $Id$
+## @file
+# Top-level makefile for the external apps.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+DEPTH = ../..
+include $(KBUILD_PATH)/header.kmk
+
+ifdef VBOX_WITH_KCHMVIEWER
+ifneq ($(wildcard kchmviewer-2.6),)
+SUBDIRS.linux = kchmviewer-2.6
+endif
+endif
+ifneq ($(wildcard tunctl),)
+SUBDIRS.linux += tunctl
+endif
+
+include $(KBUILD_PATH)/rules.kmk
+
