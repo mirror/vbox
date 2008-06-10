@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 # Sun xVM VirtualBox
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
 #
