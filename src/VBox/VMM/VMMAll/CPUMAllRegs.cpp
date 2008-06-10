@@ -392,8 +392,34 @@ CPUMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
 {
     /** @todo #1410 requires selectors to be checked. */
 
-    PCPUMCTXCORE pCtxCoreDst CPUMCTX2CORE(&pVM->cpum.s.Guest);
+    PCPUMCTXCORE pCtxCoreDst = CPUMCTX2CORE(&pVM->cpum.s.Guest);
     *pCtxCoreDst = *pCtxCore;
+
+    /* Mask away invalid parts of the cpu context. */
+    if (CPUMGetGuestMode(pVM) != CPUMMODE_LONG)
+    {
+        uint64_t u64Mask = UINT64_C(0xffffffff);
+
+        pCtxCoreDst->rip        &= u64Mask;
+        pCtxCoreDst->rax        &= u64Mask;
+        pCtxCoreDst->rbx        &= u64Mask;
+        pCtxCoreDst->rcx        &= u64Mask;
+        pCtxCoreDst->rdx        &= u64Mask;
+        pCtxCoreDst->rsi        &= u64Mask;
+        pCtxCoreDst->rdi        &= u64Mask;
+        pCtxCoreDst->rbp        &= u64Mask;
+        pCtxCoreDst->rsp        &= u64Mask;
+        pCtxCoreDst->rflags.u   &= u64Mask;
+
+        pCtxCoreDst->r8         = 0;
+        pCtxCoreDst->r9         = 0;
+        pCtxCoreDst->r10        = 0;
+        pCtxCoreDst->r11        = 0;
+        pCtxCoreDst->r12        = 0;
+        pCtxCoreDst->r13        = 0;
+        pCtxCoreDst->r14        = 0;
+        pCtxCoreDst->r15        = 0;
+    }
 }
 
 
