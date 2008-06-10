@@ -52,6 +52,11 @@
  */
 RTCPUSET g_rtMpNtCpuSet;
 
+/** ExSetTimerResolution, introduced in W2K. */
+PFNMYEXSETTIMERRESOLUTION g_pfnrtNtExSetTimerResolution;
+/** KeFlushQueuedDpcs, introduced in XP. */
+PFNMYKEFLUSHQUEUEDDPCS g_pfnrtNtKeFlushQueuedDpcs;
+
 
 int rtR0InitNative(void)
 {
@@ -61,6 +66,17 @@ int rtR0InitNative(void)
     KAFFINITY ActiveProcessors = KeQueryActiveProcessors();
     RTCpuSetEmpty(&g_rtMpNtCpuSet);
     RTCpuSetFromU64(&g_rtMpNtCpuSet, ActiveProcessors);
+
+    /*
+     * Initialize the function pointers.
+     */
+    UNICODE_STRING RoutineName;
+    RtlInitUnicodeString(&RoutineName, L"ExSetTimerResolution");
+    g_pfnrtNtExSetTimerResolution = (PFNMYEXSETTIMERRESOLUTION)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
+    g_pfnrtNtKeFlushQueuedDpcs = (PFNMYKEFLUSHQUEUEDDPCS)MmGetSystemRoutineAddress(&RoutineName);
+
 
 #if 0 /* W2K8 support */
     return RTR0MpNotificationInit(NULL);
