@@ -37,6 +37,7 @@
 #include <excpt.h>
 #include <iprt/assert.h>
 #include <iprt/process.h>
+#include <iprt/initterm.h>
 
 
 /*******************************************************************************
@@ -119,51 +120,60 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         rc = IoCreateSymbolicLink(&DosName, &DevName);
         if (NT_SUCCESS(rc))
         {
-            uint64_t  u64DiffCores;
-
-            /*
-             * Initialize the device extension.
-             */
-            PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
-            memset(pDevExt, 0, sizeof(*pDevExt));
-
-            int vrc = supdrvInitDevExt(pDevExt);
-            if (!vrc)
+            int vrc = RTR0Init(0);
+            if (RT_SUCCESS(rc))
             {
-                /* Make sure the tsc is consistent across cpus/cores. */
-                pDevExt->fForceAsyncTsc = supdrvDetermineAsyncTsc(&u64DiffCores);
-                dprintf(("supdrvDetermineAsyncTsc: fAsync=%d u64DiffCores=%u.\n", pDevExt->fForceAsyncTsc, (uint32_t)u64DiffCores));
-
                 /*
-                 * Inititalize the GIP.
+                 * Initialize the device extension.
                  */
-                rc = VBoxDrvNtGipInit(pDevExt);
-                if (NT_SUCCESS(rc))
+                PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
+                memset(pDevExt, 0, sizeof(*pDevExt));
+    
+                vrc = supdrvInitDevExt(pDevExt);
+                if (!vrc)
                 {
+                    /* Make sure the tsc is consistent across cpus/cores. */
+                    uint64_t    u64DiffCores;
+                    pDevExt->fForceAsyncTsc = supdrvDetermineAsyncTsc(&u64DiffCores);
+                    dprintf(("supdrvDetermineAsyncTsc: fAsync=%d u64DiffCores=%u.\n", pDevExt->fForceAsyncTsc, (uint32_t)u64DiffCores));
+    
                     /*
-                     * Setup the driver entry points in pDrvObj.
+                     * Inititalize the GIP.
                      */
-                    pDrvObj->DriverUnload                           = VBoxDrvNtUnload;
-                    pDrvObj->MajorFunction[IRP_MJ_CREATE]           = VBoxDrvNtCreate;
-                    pDrvObj->MajorFunction[IRP_MJ_CLOSE]            = VBoxDrvNtClose;
-                    pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]   = VBoxDrvNtDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_READ]             = VBoxDrvNtNotSupportedStub;
-                    pDrvObj->MajorFunction[IRP_MJ_WRITE]            = VBoxDrvNtNotSupportedStub;
-                    /* more? */
-                    dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
-                    return STATUS_SUCCESS;
+                    rc = VBoxDrvNtGipInit(pDevExt);
+                    if (NT_SUCCESS(rc))
+                    {
+                        /*
+                         * Setup the driver entry points in pDrvObj.
+                         */
+                        pDrvObj->DriverUnload                           = VBoxDrvNtUnload;
+                        pDrvObj->MajorFunction[IRP_MJ_CREATE]           = VBoxDrvNtCreate;
+                        pDrvObj->MajorFunction[IRP_MJ_CLOSE]            = VBoxDrvNtClose;
+                        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]   = VBoxDrvNtDeviceControl;
+                        pDrvObj->MajorFunction[IRP_MJ_READ]             = VBoxDrvNtNotSupportedStub;
+                        pDrvObj->MajorFunction[IRP_MJ_WRITE]            = VBoxDrvNtNotSupportedStub;
+                        /* more? */
+                        dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
+                        return STATUS_SUCCESS;
+                    }
+                    dprintf(("VBoxDrvNtGipInit failed with rc=%#x!\n", rc));
+    
+                    supdrvDeleteDevExt(pDevExt);
                 }
-                dprintf(("VBoxDrvNtGipInit failed with rc=%#x!\n", rc));
-
-                supdrvDeleteDevExt(pDevExt);
+                else
+                {
+                    dprintf(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
+                    rc = VBoxDrvNtErr2NtStatus(vrc);
+                }
+    
+                IoDeleteSymbolicLink(&DosName);
+                RTR0Term();
             }
             else
-            {
-                dprintf(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
+            {    
+                dprintf(("RTR0Init failed with vrc=%d!\n", vrc));
                 rc = VBoxDrvNtErr2NtStatus(vrc);
             }
-
-            IoDeleteSymbolicLink(&DosName);
         }
         else
             dprintf(("IoCreateSymbolicLink failed with rc=%#x!\n", rc));
@@ -204,6 +214,7 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
      */
     VBoxDrvNtGipTerm(pDevExt);
     supdrvDeleteDevExt(pDevExt);
+    RTR0Term();
     IoDeleteDevice(pDrvObj->DeviceObject);
 }
 
