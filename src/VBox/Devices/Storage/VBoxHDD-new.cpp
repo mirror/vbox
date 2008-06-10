@@ -1113,8 +1113,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             &&  !(uOpenFlags & VD_OPEN_FLAGS_INFO))
         {
             if (    pDisk->cImages == 0
-                &&  (   enmImageType != VD_IMAGE_TYPE_FIXED
-                     || enmImageType != VD_IMAGE_TYPE_NORMAL))
+                &&  enmImageType != VD_IMAGE_TYPE_FIXED
+                &&  enmImageType != VD_IMAGE_TYPE_NORMAL)
             {
                 rc = VERR_VDI_INVALID_TYPE;
                 break;
@@ -1122,7 +1122,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             else if (pDisk->cImages != 0)
             {
                 if (    enmImageType != VD_IMAGE_TYPE_NORMAL
-                    ||  enmImageType != VD_IMAGE_TYPE_DIFF)
+                    &&  enmImageType != VD_IMAGE_TYPE_DIFF)
                 {
                     rc = VERR_VDI_INVALID_TYPE;
                     break;
