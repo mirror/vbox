@@ -198,7 +198,11 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_LDFLAGS.os2     = -Zomf
  $(REM_MOD)_LDFLAGS.debug   = -g
  $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
- $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=11
+ ifdef VBOX_SOLARIS_10
+  $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=10
+ else # solaris 11
+  $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=11
+ endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   $(REM_MOD)_LIBS           = $(FILE_TOOL_GCC3_LIBGCC)
  else # x86
