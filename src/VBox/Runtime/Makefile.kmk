@@ -978,7 +978,7 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
 	r0drv/nt/timer-r0drv-nt.cpp
-## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
+## @todo  and assert-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 RuntimeR0Drv_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)

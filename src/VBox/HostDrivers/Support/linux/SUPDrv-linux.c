@@ -657,47 +657,42 @@ nmi_activated:
         rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-            rc = RTR0MpNotificationInit(NULL);
-            if (RT_SUCCESS(rc))
-            {
 #ifdef RT_ARCH_AMD64
-                rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
+            rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
 #endif
-                /*
-                 * Initialize the device extension.
-                 */
-                if (RT_SUCCESS(rc))
-                    rc = supdrvInitDevExt(&g_DevExt);
-                if (!rc)
-                {
+            /*
+             * Initialize the device extension.
+             */
+            if (RT_SUCCESS(rc))
+                rc = supdrvInitDevExt(&g_DevExt);
+            if (!rc)
+            {
 #ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-                    /*
-                     * Create the GIP page.
-                     */
-                    rc = VBoxDrvLinuxInitGip(&g_DevExt);
-                    if (!rc)
+                /*
+                 * Create the GIP page.
+                 */
+                rc = VBoxDrvLinuxInitGip(&g_DevExt);
+                if (!rc)
 #endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
-                    {
-                        printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+                {
+                    printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
 #ifdef VBOX_HRTIMER
-                               "'high-res'"
+                           "'high-res'"
 #else
-                               "'normal'"
+                           "'normal'"
 #endif
-                               ".\n",
-                               g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
-                        LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                        printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                               VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
-                        return rc;
-                    }
-
-                    supdrvDeleteDevExt(&g_DevExt);
+                           ".\n",
+                           g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                    LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                           VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
+                    return rc;
                 }
-                else
-                    rc = -EINVAL;
-                RTR0MpNotificationTerm(NULL);
+
+                supdrvDeleteDevExt(&g_DevExt);
             }
+            else
+                rc = -EINVAL;
             RTR0Term();
         }
         else
@@ -757,7 +752,6 @@ static void __exit VBoxDrvLinuxUnload(void)
     VBoxDrvLinuxTermGip(&g_DevExt);
 #endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
     supdrvDeleteDevExt(&g_DevExt);
-    RTR0MpNotificationTerm(NULL);
     RTR0Term();
 }
 

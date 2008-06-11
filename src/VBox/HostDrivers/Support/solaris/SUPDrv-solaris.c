@@ -262,51 +262,44 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             rc = RTR0Init(0);
             if (RT_SUCCESS(rc))
             {
-                rc = RTR0MpNotificationInit(NULL);
-                if (RT_SUCCESS(rc)) 
+                /*
+                 * Initialize the device extension
+                 */
+                rc = supdrvInitDevExt(&g_DevExt);
+                if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Initialize the device extension
+                     * Initialize the session hash table.
                      */
-                    rc = supdrvInitDevExt(&g_DevExt);
+                    memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
+                    rc = RTSpinlockCreate(&g_Spinlock);
                     if (RT_SUCCESS(rc))
                     {
                         /*
-                         * Initialize the session hash table.
+                         * Register ourselves as a character device, pseudo-driver
                          */
-                        memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
-                        rc = RTSpinlockCreate(&g_Spinlock);
-                        if (RT_SUCCESS(rc))
+                        if (ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
                         {
-                            /*
-                             * Register ourselves as a character device, pseudo-driver
-                             */
-                            if (ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
-                            {
 #ifdef USE_SESSION_HASH
-                                pState->pDip = pDip;
+                            pState->pDip = pDip;
 #endif
-                                ddi_report_dev(pDip);
-                                return DDI_SUCCESS;
-                            }
-
-                            /* Is this really necessary? */
-                            ddi_remove_minor_node(pDip, NULL);
-                            cmn_err(CE_NOTE,"VBoxDrvSolarisAttach: ddi_create_minor_node failed.");
-
-                            RTSpinlockDestroy(g_Spinlock);
-                            g_Spinlock = NIL_RTSPINLOCK;
+                            ddi_report_dev(pDip);
+                            return DDI_SUCCESS;
                         }
-                        else
-                            cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTSpinlockCreate failed");
-                        supdrvDeleteDevExt(&g_DevExt);
+
+                        /* Is this really necessary? */
+                        ddi_remove_minor_node(pDip, NULL);
+                        cmn_err(CE_NOTE,"VBoxDrvSolarisAttach: ddi_create_minor_node failed.");
+
+                        RTSpinlockDestroy(g_Spinlock);
+                        g_Spinlock = NIL_RTSPINLOCK;
                     }
                     else
-                        cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: supdrvInitDevExt failed");
-                    RTR0MpNotificationTerm(NULL);
+                        cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTSpinlockCreate failed");
+                    supdrvDeleteDevExt(&g_DevExt);
                 }
-                else 
-                    cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTR0MpNotifcationInit failed");
+                else
+                    cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: supdrvInitDevExt failed");
                 RTR0Term();
             }
             else
@@ -366,7 +359,6 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             AssertRC(rc);
             g_Spinlock = NIL_RTSPINLOCK;
 
-            RTR0MpNotificationTerm(NULL);
             RTR0Term();
 
             memset(&g_DevExt, 0, sizeof(g_DevExt));
