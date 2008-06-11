@@ -303,9 +303,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         RTGCPHYS    GCPhys = NIL_RTGCPHYS;
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
-        uint32_t    cr4 = CPUMGetGuestCR4(pVM);
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+        bool fBigPagesSupported = true;
+#  else
+        bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+#  endif
         if (    PdeSrc.b.u1Size
-            &&  (cr4 & X86_CR4_PSE))
+            &&  fBigPagesSupported)
             GCPhys = (PdeSrc.u & GST_PDE_BIG_PG_MASK)
                     | ((RTGCPHYS)pvFault & (GST_BIG_PAGE_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
@@ -924,7 +928,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # endif
 
     const uint32_t  cr4         = CPUMGetGuestCR4(pVM);
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    const bool      fIsBigPage  = PdeSrc.b.u1Size;
+# else
     const bool      fIsBigPage  = PdeSrc.b.u1Size && (cr4 & X86_CR4_PSE);
+# endif
 
 # ifdef IN_RING3
     /*
@@ -1462,7 +1470,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    const bool      fBigPage = PdeSrc.b.u1Size;
+# else
     const bool      fBigPage = PdeSrc.b.u1Size && (CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+# endif
     RTGCPHYS        GCPhys;
     if (!fBigPage)
     {
@@ -1799,7 +1811,11 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     bool fWriteProtect      = !!(CPUMGetGuestCR0(pVM) & X86_CR0_WP);
     bool fUserLevelFault    = !!(uErr & X86_TRAP_PF_US);
     bool fWriteFault        = !!(uErr & X86_TRAP_PF_RW);
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    bool fBigPagesSupported = true;
+# else
     bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+# endif
 # if PGM_WITH_NX(PGM_GST_TYPE)
     bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
 # endif
@@ -2188,7 +2204,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
          * Allocate & map the page table.
          */
         PSHWPT          pPTDst;
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+        const bool      fPageTable = !PdeSrc.b.u1Size;
+# else
         const bool      fPageTable = !PdeSrc.b.u1Size || !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+# endif
         PPGMPOOLPAGE    pShwPage;
         RTGCPHYS        GCPhys;
         if (fPageTable)
@@ -2787,7 +2807,11 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
  */
 DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32_t cr4)
 {
+#  if PMG_GST_TYPE == PGM_TYPE_AMD64
+    if (!pPdeSrc->n.u1Size)
+#  else
     if (!pPdeSrc->n.u1Size || !(cr4 & X86_CR4_PSE))
+#  endif
         return BTH_PGMPOOLKIND_PT_FOR_PT;
     //switch (pPdeSrc->u & (X86_PDE4M_RW | X86_PDE4M_US /*| X86_PDE4M_PAE_NX*/))
     //{
@@ -2878,6 +2902,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     MY_STAM_COUNTER_INC(fGlobal ? &pVM->pgm.s.CTXMID(Stat,SyncCR3Global) : &pVM->pgm.s.CTXMID(Stat,SyncCR3NotGlobal));
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+    bool fBigPagesSupported = true;
+#  else
+    bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+#  endif
+
     /*
      * Get page directory addresses.
      */
@@ -3098,7 +3128,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             PPGMPOOLPAGE pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
                             RTGCPHYS     GCPhys;
                             if (    !PdeSrc.b.u1Size
-                                ||  !(cr4 & X86_CR4_PSE))
+                                ||  !fBigPagesSupported)
                             {
                                 GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -3122,7 +3152,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                         && (   false
 #  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
                                             || (   (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
+#   if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                                && (cr4 & X86_CR4_PGE)) /* global 2/4MB page. */
+#   else
                                                 && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE)) /* global 2/4MB page. */
+#   endif
                                             || (  !pShwPage->fSeenNonGlobal
                                                 && (cr4 & X86_CR4_PGE))
 #  endif
@@ -3130,7 +3164,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                         )
                                     )
                                 &&  (   (PdeSrc.u & (X86_PDE_US | X86_PDE_RW)) == (PdeDst.u & (X86_PDE_US | X86_PDE_RW))
-                                    || (   (cr4 & X86_CR4_PSE)
+                                    || (   fBigPagesSupported
                                         &&     ((PdeSrc.u & (X86_PDE_US | X86_PDE4M_PS | X86_PDE4M_D)) | PGM_PDFLAGS_TRACK_DIRTY)
                                             ==  ((PdeDst.u & (X86_PDE_US | X86_PDE_RW | PGM_PDFLAGS_TRACK_DIRTY)) | X86_PDE4M_PS))
                                     )
@@ -3139,7 +3173,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  ifdef VBOX_WITH_STATISTICS
                                 if (   !fGlobal
                                     && (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
+#   if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                    && (cr4 & X86_CR4_PGE)) /* global 2/4MB page. */
+#   else
                                     && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE))
+#   endif
                                     MY_STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,SyncCR3DstSkippedGlobalPD));
                                 else if (!fGlobal && !pShwPage->fSeenNonGlobal && (cr4 & X86_CR4_PGE))
                                     MY_STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,SyncCR3DstSkippedGlobalPT));
@@ -3319,6 +3357,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
     || PGM_GST_TYPE == PGM_TYPE_PAE
 
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+    bool        fBigPagesSupported = true;
+#  else
+    bool        fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+#  endif
     PPGM        pPGM = &pVM->pgm.s;
     RTGCPHYS    GCPhysGst;              /* page address derived from the guest page tables. */
     RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
@@ -3460,7 +3503,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             }
 
             if (    !PdeSrc.b.u1Size
-                ||  !(cr4 & X86_CR4_PSE))
+                ||  !fBigPagesSupported)
             {
                 GCPhysGst = PdeSrc.u & GST_PDE_PG_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -3485,7 +3528,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             }
 
             if (    pPoolPage->enmKind
-                !=  (!PdeSrc.b.u1Size || !(cr4 & X86_CR4_PSE) ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
+                !=  (!PdeSrc.b.u1Size || !fBigPagesSupported ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
             {
                 AssertMsgFailed(("Invalid shadow page table kind %d at %VGv! PdeSrc=%#RX64\n",
                                  pPoolPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
@@ -3510,7 +3553,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             }
 
             if (    !PdeSrc.b.u1Size
-                ||  !(cr4 & X86_CR4_PSE))
+                ||  !fBigPagesSupported)
             {
                 /*
                  * Page Table.

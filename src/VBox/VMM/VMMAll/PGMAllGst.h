@@ -193,7 +193,10 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     if (    !Pde.b.u1Size
-        ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE))
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
+        ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE)
+# endif
+        )
     {
         PGSTPT pPT;
         int rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
@@ -275,9 +278,9 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         /*
          * Get the PD entry.
          */
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
         PX86PDE pPde = &CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
-#elif PGM_GST_TYPE == PGM_TYPE_PAE
+# elif PGM_GST_TYPE == PGM_TYPE_PAE
         /* pgmGstGetPaePDEPtr will return 0 if the PDPTE is marked as not present
          * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
          */
@@ -285,20 +288,23 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         Assert(pPde);
         if (!pPde)
             return VERR_PAGE_TABLE_NOT_PRESENT;
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+# elif PGM_GST_TYPE == PGM_TYPE_AMD64
         /** @todo Setting the r/w, u/s & nx bits might have no effect depending on the pdpte & pml4 values */
         PX86PDEPAE pPde = pgmGstGetLongModePDEPtr(&pVM->pgm.s, GCPtr);
         Assert(pPde);
         if (!pPde)
             return VERR_PAGE_TABLE_NOT_PRESENT;
-#endif
+# endif
         GSTPDE Pde = *pPde;
         Assert(Pde.n.u1Present);
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         if (    !Pde.b.u1Size
-            ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE))
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
+            ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE)
+# endif
+            )
         {
             /*
              * 4KB Page table
@@ -727,7 +733,11 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 #endif
         if (Pde.n.u1Present)
         {
-            if (!Pde.b.u1Size || !(pState->cr4 & X86_CR4_PSE))
+            if (    !Pde.b.u1Size 
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
+                ||  !(pState->cr4 & X86_CR4_PSE)
+# endif
+                )
             {
                 /*
                  * Normal page table.

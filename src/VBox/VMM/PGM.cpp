@@ -2382,7 +2382,13 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
 {
 /** @todo fix this! Convert the PGMR3DumpHierarchyHC functions to do guest stuff. */
     /* Big pages supported? */
-    const bool  fPSE = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+    bool fPSE;
+
+    if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
+        fPSE = true;
+    else
+        fPSE = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+
     /* Global pages supported? */
     const bool  fPGE = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PGE);
 
@@ -3255,13 +3261,20 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                         fLongMode ? 16 : 8, u64Address, HCPhys);
         return VERR_INVALID_PARAMETER;
     }
+    bool fBigPagesSupported;
+
+    if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
+        fBigPagesSupported = true;
+    else
+        fBigPagesSupported = !!(cr4 & X86_CR4_PSE);
+
     int rc = VINF_SUCCESS;
     for (unsigned i = 0; i < ELEMENTS(pPD->a); i++)
     {
         X86PDEPAE Pde = pPD->a[i];
         if (Pde.n.u1Present)
         {
-            if ((cr4 & X86_CR4_PSE) && Pde.b.u1Size)
+            if (fBigPagesSupported && Pde.b.u1Size)
                 pHlp->pfnPrintf(pHlp,
                                 fLongMode       /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                                 ? "%016llx 2   |  P %c %c %c %c %c %s %s %s %s 4M %c%c%c  %016llx\n"
