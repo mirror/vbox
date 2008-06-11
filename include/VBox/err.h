@@ -69,6 +69,10 @@
 #define VERR_INVALID_SELECTOR               (-1011)
 /** Invalid requested privilegde level. */
 #define VERR_INVALID_RPL                    (-1012)
+/** PML4 entry not present. */
+#define VERR_PAGE_MAP_LEVEL4_NOT_PRESENT    (-1013)
+/** Page directory pointer not present. */
+#define VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT (-1014)
 /** @} */
 
 
