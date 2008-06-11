@@ -37,16 +37,12 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- ifeq ($(KBUILD_TARGET)$(VBOX_WITH_64BIT_ADDITIONS),win)
-  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
- else
-  LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
-  LIBRARIES.win.x86 = RuntimeGuestR0NT4
-  ifndef VBOX_WITH_ADDITION_DRIVERS
-   if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
-    LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
-   endif
+ LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+ #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
+ LIBRARIES.win.x86 = RuntimeGuestR0NT4
+ ifndef VBOX_WITH_ADDITION_DRIVERS
+  if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+   LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
   endif
  endif
 
@@ -63,19 +59,12 @@ else
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  ifdef VBOX_WITH_WIN32_ADDITIONS
-   ifndef VBOX_WITH_64BIT_ADDITIONS
-    LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
-   endif
-  endif
-  ifneq ($(KBUILD_TARGET)$(VBOX_WITH_64BIT_ADDITIONS),win)
-   LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-   #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
-   LIBRARIES.win.x86 = RuntimeGuestR0NT4
-   ifndef VBOX_WITH_ADDITION_DRIVERS
-    if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
-     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
-    endif
+  LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
+  LIBRARIES.win.x86 = RuntimeGuestR0NT4
+  ifndef VBOX_WITH_ADDITION_DRIVERS
+   if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+    LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
    endif
   endif
  endif # VBOX_WITH_ADDITIONS
@@ -567,10 +556,6 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST)    := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
-ifndef VBOX_WITH_64BIT_ADDITIONS
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST).x86   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).x86)
-endif
 
 
 #
@@ -631,11 +616,7 @@ RuntimeGuestR3Mini_SOURCES += \
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
 #
-ifdef VBOX_WITH_64BIT_ADDITIONS
-  RuntimeW32GuestR3_TEMPLATE     = VBOXGUESTR3LIB
-else
-  RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
-endif
+RuntimeW32GuestR3_TEMPLATE     = VBOXGUESTR3LIB
 RuntimeW32GuestR3_SDKS         = WINPSDK W2K3DDK
 RuntimeW32GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
 ifdef IPRT_WITH_KSTUFF
@@ -1190,22 +1171,7 @@ endif # !VBOX_WITH_SOLARIS_VBI
 RuntimeGuestR0_TEMPLATE                := VBOXGUESTR0LIB
 RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
-ifdef VBOX_WITH_64BIT_ADDITIONS
- RuntimeGuestR0_EXTENDS                 = RuntimeR0Drv
-else
- RuntimeGuestR0_SDKS.win               := W2K3DDKX86 WINPSDKINCS
- RuntimeGuestR0_DEFS                   := $(RuntimeR0Drv_DEFS)
- RuntimeGuestR0_DEFS.$(KBUILD_TARGET)  := $(RuntimeR0Drv_DEFS.$(KBUILD_TARGET))
- RuntimeGuestR0_INCS                   := $(PATH_SUB_CURRENT) include
- RuntimeGuestR0_INCS.$(KBUILD_TARGET)  := $(RuntimeR0Drv_INCS.$(KBUILD_TARGET))
- RuntimeGuestR0_SOURCES.$(KBUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET))
- RuntimeGuestR0_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
- ## @todo this deosn't belong here, but in RuntimeR0Drv.
- RuntimeGuestR0_SOURCES.freebsd += \
- 	common/string/memset.cpp \
- 	common/string/memcmp.cpp \
- 	common/string/strchr.asm
-endif
+RuntimeGuestR0_EXTENDS                 = RuntimeR0Drv
 
 # HACK: no vbi for the solaris guest additions - yet.
 RuntimeGuestR0_SOURCES.solaris = \
@@ -1248,49 +1214,6 @@ RuntimeGuestR0_SOURCES.solaris = \
 RuntimeGuestR0NT4_EXTENDS = RuntimeGuestR0
 RuntimeGuestR0NT4_EXTENDS_BY = appending
 RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
-
-
-## @todo remove this
-RuntimeOS2GuestR0_TEMPLATE      = VBOXOS2GUESTR0LIB
-RuntimeOS2GuestR0_SOURCES       = \
-	$(filter-out common/misc/assert.cpp generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
-	$(RuntimeR0Drv_SOURCES.os2) \
-	VBox/logbackdoor.cpp
-
-#
-# RuntimeW32GuestR0 - Win32 guest driver runtime.
-#
-ifdef VBOX_WITH_64BIT_ADDITIONS
-  RuntimeW32GuestR0_TEMPLATE      = VBOXGUESTR0LIB
-else
-  RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
-endif
-
-RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
-RuntimeW32GuestR0_INCS         := $(PATH_SUB_CURRENT) include
-RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0
-RuntimeW32GuestR0_DEFS.$(KBUILD_TARGET) =
-RuntimeW32GuestR0_SOURCES       = \
-	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
-	$(RuntimeR0Drv_SOURCES.win) \
-	VBox/logbackdoor.cpp
-ifdef VBOX_USE_VCC80
-## @todo use the .asm versions of these.
-RuntimeW32GuestR0_SOURCES += \
-	common/string/memchr.cpp \
-	common/string/memcpy.cpp \
-	common/string/memset.cpp \
-	common/string/memmove.asm \
-	common/string/strlen.asm
-endif
-
-
-#
-# RuntimeW32NT4GuestR0 - Win32 NT4 guest driver runtime.
-#
-RuntimeW32NT4GuestR0_EXTENDS = RuntimeW32GuestR0
-RuntimeW32NT4GuestR0_EXTENDS_BY = appending
-RuntimeW32NT4GuestR0_DEFS = IPRT_TARGET_NT4
 
 
 #

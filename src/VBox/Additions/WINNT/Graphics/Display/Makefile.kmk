@@ -24,18 +24,11 @@ SUB_DEPTH = ../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += VBoxDisp
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxDisp_TEMPLATE    = VBOXGUESTR0
-else
-VBoxDisp_TEMPLATE    = VBOXW32GUESTR0
-endif
 ifdef VBOX_SIGN_ADDITIONS
  VBoxDisp_NOINST     = true
 endif
 VBoxDisp_SYSSUFF     = .dll
-ifndef VBOX_WITH_64BIT_ADDITIONS
-VBoxDisp_SDKS        = W2K3DDKX86 WINPSDKINCS
-endif
 VBoxDisp_DEFS        = _WIN32_WINNT=0x0501 LOG_TO_BACKDOOR VBOX_WITH_DDRAW VBOX_WITH_OPENGL
 VBoxDisp_INCS        = ../../include
 VBoxDisp_DEFS        += VBOX_VBVA_ADJUST_RECT
@@ -57,24 +50,15 @@ VBoxDisp_SOURCES     = \
 	vbox.c \
 	VBoxDisp.def \
 	VBoxDisp.rc
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
 VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
 VBoxDisp_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-else
-VBoxDisp_LDFLAGS     = /Entry:DrvEnableDriver@12
-VBoxDisp_LIBS        = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
-	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
-endif
-ifndef VBOX_USE_VCC80
+ifndef VBOX_USE_VCC80 ## @todo remove this!
 VBoxDisp_LIBS       += \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib
 endif
-
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

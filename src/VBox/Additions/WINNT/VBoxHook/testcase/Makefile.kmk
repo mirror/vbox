@@ -29,11 +29,7 @@ ifdef VBOX_WITH_TESTCASES
 #
 PROGRAMS += tstHook
 
-ifdef VBOX_WITH_64BIT_ADDITIONS
 tstHook_TEMPLATE = VBOXGUESTR3EXE
-else
-tstHook_TEMPLATE = VBOXW32GUESTR3
-endif
 tstHook_DEFS     = VBOX_HGCM
 tstHook_SOURCES  = tstHook.cpp
 tstHook_INCS     = ../../include

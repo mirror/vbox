@@ -24,11 +24,7 @@ SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxControl
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxControl_TEMPLATE = VBOXGUESTR3EXE
-else
-VBoxControl_TEMPLATE = VBOXW32GUESTR3
-endif
 ifdef VBOX_SIGN_ADDITIONS
  VBoxControl_NOINST  = true
 endif
