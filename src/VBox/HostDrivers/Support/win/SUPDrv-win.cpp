@@ -135,11 +135,6 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 if (!vrc)
                 {
 #ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-                    /* Make sure the tsc is consistent across cpus/cores. */
-                    uint64_t    u64DiffCores;
-                    pDevExt->fForceAsyncTsc = supdrvDetermineAsyncTsc(&u64DiffCores);
-                    dprintf(("supdrvDetermineAsyncTsc: fAsync=%d u64DiffCores=%u.\n", pDevExt->fForceAsyncTsc, (uint32_t)u64DiffCores));
-
                     /*
                      * Inititalize the GIP.
                      */
@@ -801,11 +796,7 @@ unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
  */
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     return false;
-#else
-    return pDevExt->fForceAsyncTsc != 0;
-#endif
 }
 
 
