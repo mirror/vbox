@@ -254,6 +254,8 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     KeLowerIrql(oldIrql);
 
     /* Flush all DPCs and wait for completion. (can take long!) */
+    /** @todo Consider changing this to an active wait using some atomic inc/dec
+     *  stuff (and check for the current cpu above in the specific case). */
     g_pfnrtNtKeFlushQueuedDpcs();
 
     ExFreePool(pArgs);
