@@ -73,8 +73,13 @@ endif
 #
 ifdef VBOX_WITH_64BIT_ADDITIONS
 SYSMODS.x86 += VBoxGuestNT
+ifeq (foo,disabled)
 VBoxGuestNT_EXTENDS   = VBoxGuest
+else
 VBoxGuestNT_TEMPLATE  = VBOXGUESTR0
+VBoxGuestNT_INCS      = $(VBoxGuest_INCS)
+VBoxGuestNT_LDFLAGS.x86 = $(VBoxGuest_LDFLAGS.x86)
+endif
 else
 SYSMODS += VBoxGuestNT
 VBoxGuestNT_TEMPLATE  = VBOXW32GUESTR0
