@@ -1300,8 +1300,6 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     ASMMemZero32(pVM->pgm.s.pHCPaePML4, PAGE_SIZE);
-    pVM->pgm.s.pHCPaePML4->a[0].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_A
-                                  | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.HCPhysPaePDPT;
 
     CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhys32BitPD);
 
