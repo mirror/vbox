@@ -140,6 +140,9 @@ private:
     static VBoxDiskImageManagerDlg *mModelessDialog;
     VBoxProgressBar  *mProgressBar;
 
+    /* The global VirtualBox instance */
+    CVirtualBox mVBox;
+
     /* Type if we are in the select modus */
     int mType;
 

@@ -250,7 +250,8 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     /* Apply UI decorations */
     Ui::VBoxDiskImageManagerDlg::setupUi (this);
 
-//    defaultButton = searchDefaultButton();
+    mVBox = vboxGlobal().virtualBox();
+    Assert (!mVBox.isNull());
 
     mType = VBoxDefs::InvalidType;
 
@@ -584,6 +585,7 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
                                                    DiskImageItem *aItem)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
+
     QUuid machineId = aItem ? aItem->machineId() : aHd.GetMachineId();
 
     QString src = aItem ? aItem->path() : aHd.GetLocation();
@@ -870,7 +872,10 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
                 QDragEnterEvent *deEvent = static_cast<QDragEnterEvent*> (aEvent);
                 if (deEvent->mimeData()->hasUrls())
                 {
-                    if (checkDndUrls (deEvent->mimeData()->urls()))
+                    QList<QUrl> urls = deEvent->mimeData()->urls();
+                    /* Sometimes urls has an empty Url entry. Filter them out. */
+                    urls.removeAll (QUrl());
+                    if (checkDndUrls (urls))
                     {
                         deEvent->setDropAction (Qt::LinkAction);
                         deEvent->acceptProposedAction();
@@ -884,7 +889,10 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
                 QDropEvent *dEvent = static_cast<QDropEvent*> (aEvent);
                 if (dEvent->mimeData()->hasUrls())
                 {
-                    AddVDMUrlsEvent *event = new AddVDMUrlsEvent (dEvent->mimeData()->urls());
+                    QList<QUrl> urls = dEvent->mimeData()->urls();
+                    /* Sometimes urls has an empty Url entry. Filter them out. */
+                    urls.removeAll (QUrl());
+                    AddVDMUrlsEvent *event = new AddVDMUrlsEvent (urls);
                     QApplication::postEvent (currentTreeWidget(), event);
                     dEvent->acceptProposedAction();
                 }
@@ -1115,7 +1123,7 @@ void VBoxDiskImageManagerDlg::addImage()
     QTreeWidget *tree = currentTreeWidget();
     DiskImageItem *item = toDiskImageItem (tree->currentItem());
 
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    mVBox = vboxGlobal().virtualBox();
 
     QString title;
     QString filter;
@@ -1127,10 +1135,10 @@ void VBoxDiskImageManagerDlg::addImage()
 
     if (dir.isEmpty())
         if (type == VBoxDefs::HD)
-            dir = vbox.GetSystemProperties().GetDefaultVDIFolder();
+            dir = mVBox.GetSystemProperties().GetDefaultVDIFolder();
 
     if (dir.isEmpty() || !QFileInfo (dir).exists())
-        dir = vbox.GetHomeFolder();
+        dir = mVBox.GetHomeFolder();
 
     switch (type)
     {
@@ -1166,8 +1174,8 @@ void VBoxDiskImageManagerDlg::addImage()
     src =  QDir::convertSeparators (src);
 
     addImageToList (src, type);
-    if (!vbox.isOk())
-        vboxProblem().cannotRegisterMedia (this, vbox, type, src);
+    if (!mVBox.isOk())
+        vboxProblem().cannotRegisterMedia (this, mVBox, type, src);
 }
 
 void VBoxDiskImageManagerDlg::removeImage()
@@ -1175,8 +1183,6 @@ void VBoxDiskImageManagerDlg::removeImage()
     QTreeWidget *tree = currentTreeWidget();
     DiskImageItem *item = toDiskImageItem (tree->currentItem());
     AssertMsg (item, ("Current item must not be null\n"));
-
-    CVirtualBox vbox = vboxGlobal().virtualBox();
 
     QUuid uuid = item->uuid();
     AssertMsg (!uuid.isNull(), ("Current item must have uuid\n"));
@@ -1214,9 +1220,9 @@ void VBoxDiskImageManagerDlg::removeImage()
                         return;
                 }
 
-                CHardDisk hd = vbox.UnregisterHardDisk (uuid);
-                if (!vbox.isOk())
-                    vboxProblem().cannotUnregisterMedia (this, vbox, type, src);
+                CHardDisk hd = mVBox.UnregisterHardDisk (uuid);
+                if (!mVBox.isOk())
+                    vboxProblem().cannotUnregisterMedia (this, mVBox, type, src);
                 else if (deleteImage)
                 {
                     /// @todo When creation of VMDK is implemented, we should
@@ -1231,20 +1237,20 @@ void VBoxDiskImageManagerDlg::removeImage()
                 break;
             }
         case VBoxDefs::CD:
-            vbox.UnregisterDVDImage (uuid);
+            mVBox.UnregisterDVDImage (uuid);
             break;
         case VBoxDefs::FD:
-            vbox.UnregisterFloppyImage (uuid);
+            mVBox.UnregisterFloppyImage (uuid);
             break;
         default:
             AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::DiskType.\n"));
             break;
     }
 
-    if (vbox.isOk())
+    if (mVBox.isOk())
         vboxGlobal().removeMedia (type, uuid);
     else
-        vboxProblem().cannotUnregisterMedia (this, vbox, type, src);
+        vboxProblem().cannotUnregisterMedia (this, mVBox, type, src);
 }
 
 void VBoxDiskImageManagerDlg::releaseImage()
@@ -1252,8 +1258,6 @@ void VBoxDiskImageManagerDlg::releaseImage()
     QTreeWidget *tree = currentTreeWidget();
     DiskImageItem *item = toDiskImageItem (tree->currentItem());
     AssertMsg (item, ("Current item must not be null\n"));
-
-    CVirtualBox vbox = vboxGlobal().virtualBox();
 
     QUuid itemId = item->uuid();
     AssertMsg (!itemId.isNull(), ("Current item must have uuid\n"));
@@ -1266,7 +1270,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
                 CHardDisk hd = item->media().disk;
                 QUuid machineId = hd.GetMachineId();
                 if (vboxProblem().confirmReleaseImage (this,
-                                                       vbox.GetMachine (machineId).GetName()))
+                                                       mVBox.GetMachine (machineId).GetName()))
                 {
                     releaseDisk (machineId, itemId, VBoxDefs::HD);
                     VBoxMedia media (item->media());
@@ -1284,13 +1288,13 @@ void VBoxDiskImageManagerDlg::releaseImage()
                 if (vboxProblem().confirmReleaseImage (this, usage))
                 {
                     QStringList permMachines =
-                        vbox.GetDVDImageUsage (itemId,
+                        mVBox.GetDVDImageUsage (itemId,
                                                KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
                     for (QStringList::Iterator it = permMachines.begin();
                          it != permMachines.end(); ++it)
                         releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
 
-                    CDVDImage cd = vbox.GetDVDImage (itemId);
+                    CDVDImage cd = mVBox.GetDVDImage (itemId);
                     VBoxMedia media (item->media());
                     media.status = cd.GetAccessible() ? VBoxMedia::Ok :
                         cd.isOk() ? VBoxMedia::Inaccessible :
@@ -1305,13 +1309,13 @@ void VBoxDiskImageManagerDlg::releaseImage()
                 if (vboxProblem().confirmReleaseImage (this, usage))
                 {
                     QStringList permMachines =
-                        vbox.GetFloppyImageUsage (itemId,
+                        mVBox.GetFloppyImageUsage (itemId,
                                                   KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
                     for (QStringList::Iterator it = permMachines.begin();
                          it != permMachines.end(); ++it)
                         releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
 
-                    CFloppyImage fd = vbox.GetFloppyImage (itemId);
+                    CFloppyImage fd = mVBox.GetFloppyImage (itemId);
                     VBoxMedia media (item->media());
                     media.status = fd.GetAccessible() ? VBoxMedia::Ok :
                         fd.isOk() ? VBoxMedia::Inaccessible :
@@ -1589,19 +1593,17 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
     if (aSource.isEmpty())
         return;
 
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
     QUuid uuid;
     VBoxMedia media;
     switch (aDiskType)
     {
         case VBoxDefs::HD:
         {
-            CHardDisk hd = vbox.OpenHardDisk (aSource);
-            if (vbox.isOk())
+            CHardDisk hd = mVBox.OpenHardDisk (aSource);
+            if (mVBox.isOk())
             {
-                vbox.RegisterHardDisk (hd);
-                if (vbox.isOk())
+                mVBox.RegisterHardDisk (hd);
+                if (mVBox.isOk())
                 {
                     VBoxMedia::Status status =
                         hd.GetAccessible() ? VBoxMedia::Ok :
@@ -1614,11 +1616,11 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
         }
         case VBoxDefs::CD:
         {
-            CDVDImage cd = vbox.OpenDVDImage (aSource, uuid);
-            if (vbox.isOk())
+            CDVDImage cd = mVBox.OpenDVDImage (aSource, uuid);
+            if (mVBox.isOk())
             {
-                vbox.RegisterDVDImage (cd);
-                if (vbox.isOk())
+                mVBox.RegisterDVDImage (cd);
+                if (mVBox.isOk())
                 {
                     VBoxMedia::Status status =
                         cd.GetAccessible() ? VBoxMedia::Ok :
@@ -1631,11 +1633,11 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
         }
         case VBoxDefs::FD:
         {
-            CFloppyImage fd = vbox.OpenFloppyImage (aSource, uuid);
-            if (vbox.isOk())
+            CFloppyImage fd = mVBox.OpenFloppyImage (aSource, uuid);
+            if (mVBox.isOk())
             {
-                vbox.RegisterFloppyImage (fd);
-                if (vbox.isOk())
+                mVBox.RegisterFloppyImage (fd);
+                if (mVBox.isOk())
                 {
                     VBoxMedia::Status status =
                         fd.GetAccessible() ? VBoxMedia::Ok :
@@ -1847,8 +1849,6 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
     if (itemId.isNull())
         return false;
 
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
     switch (currentTreeWidgetType())
     {
         case VBoxDefs::HD:
@@ -1856,8 +1856,8 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
                 CHardDisk hd = aItem->media().disk;
                 QUuid machineId = hd.GetMachineId();
                 if (machineId.isNull() ||
-                    (vbox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
-                     vbox.GetMachine (machineId).GetState() != KMachineState_Aborted))
+                    (mVBox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
+                     mVBox.GetMachine (machineId).GetState() != KMachineState_Aborted))
                     return false;
                 break;
             }
@@ -1865,18 +1865,18 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
             {
                 /* Check if there is temporary usage: */
                 QStringList tempMachines =
-                    vbox.GetDVDImageUsage (itemId,
+                    mVBox.GetDVDImageUsage (itemId,
                                            KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
                 if (!tempMachines.isEmpty())
                     return false;
                 /* Only permanently mounted .iso could be released */
                 QStringList permMachines =
-                    vbox.GetDVDImageUsage (itemId,
+                    mVBox.GetDVDImageUsage (itemId,
                                            KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
                 for (QStringList::Iterator it = permMachines.begin();
                      it != permMachines.end(); ++it)
-                    if (vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
-                        vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
+                    if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                        mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
                         return false;
                 break;
             }
@@ -1884,18 +1884,18 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
             {
                 /* Check if there is temporary usage: */
                 QStringList tempMachines =
-                    vbox.GetFloppyImageUsage (itemId,
+                    mVBox.GetFloppyImageUsage (itemId,
                                               KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
                 if (!tempMachines.isEmpty())
                     return false;
                 /* Only permanently mounted floppies could be released */
                 QStringList permMachines =
-                    vbox.GetFloppyImageUsage (itemId,
+                    mVBox.GetFloppyImageUsage (itemId,
                                               KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
                 for (QStringList::Iterator it = permMachines.begin();
                      it != permMachines.end(); ++it)
-                    if (vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
-                        vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
+                    if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                        mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
                         return false;
                 break;
             }
@@ -1941,14 +1941,13 @@ bool VBoxDiskImageManagerDlg::checkDndUrls (const QList<QUrl> &aUrls) const
 
 void VBoxDiskImageManagerDlg::addDndUrls (const QList<QUrl> &aUrls)
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
     foreach (QUrl u, aUrls)
     {
         QString file = u.toLocalFile();
         VBoxDefs::DiskType type = currentTreeWidgetType();
         addImageToList (file, type);
-        if (!vbox.isOk())
-            vboxProblem().cannotRegisterMedia (this, vbox, type, file);
+        if (!mVBox.isOk())
+            vboxProblem().cannotRegisterMedia (this, mVBox, type, file);
     }
 }
 
