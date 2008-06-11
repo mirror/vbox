@@ -33,6 +33,7 @@
 *******************************************************************************/
 #include <iprt/mp.h>
 #include <iprt/err.h>
+#include "r0drv/mp-r0drv.h"
 
 
 RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser)
