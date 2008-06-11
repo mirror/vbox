@@ -3998,7 +3998,11 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  */
 static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+#if 1
+    ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
+#else
     *(uint64_t *)pvUser1 = ASMReadTSC();
+#endif
 }
 
 
@@ -4011,87 +4015,74 @@ static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvU
  * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
  * case we have to choose the asynchronous timer mode.
  *
- * @param   pu64Diff    pointer to the determined difference between different cores.
+ * @param   poffMin     Pointer to the determined difference between different cores.
  * @return  false if the time stamp counters appear to be synchron, true otherwise.
  */
-bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
+bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
 {
-    static uint64_t s_aTsc[8][RTCPUSET_MAX_CPUS];
-    uint64_t u64Diff, u64DiffMin, u64DiffMax, u64TscLast;
-    int iSlot, iCpu, cCpus;
-    bool fBackwards;
-    RTCPUSET OnlineCpus;
-    int rc;
-
-    *pu64DiffCores = 1;
-
-    RTMpGetOnlineSet(&OnlineCpus);
-    cCpus = RTCpuSetCount(&OnlineCpus);
-    if (cCpus < 2)
-        return false;
-    Assert(cCpus <= RT_ELEMENTS(s_aTsc[0]));
-
     /*
-     * Collect data from the online CPUs.
+     * Just iterate all the cpus 8 times and make sure that the TSC is
+     * ever increasing. We don't bother taking TSC rollover into account.
      */
-    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
+    RTCPUSET    CpuSet;
+    int         iLastCpu = RTCpuLastIndex(RTMpGetSet(&CpuSet));
+    int         iCpu;
+    int         cLoops = 8;
+    bool        fAsync = false;
+    int         rc;
+    uint64_t    offMax = 0;
+    uint64_t    offMin = ~(uint64_t)0;
+    uint64_t    PrevTsc = ASMReadTSC();
+
+    while (cLoops-- > 0)
     {
-        RTCPUID iCpuSet = 0;
-        for (iCpu = 0; iCpu < cCpus; iCpu++)
+        for (iCpu = 0; iCpu <= iLastCpu; iCpu++)
         {
-            while (!RTCpuSetIsMemberByIndex(&OnlineCpus, iCpuSet))
+            uint64_t CurTsc;
+            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvDetermineAsyncTscWorker, &CurTsc, NULL);
+            if (RT_SUCCESS(rc))
             {
-                iCpuSet++; /* skip offline CPU */
-                dprintf2(("skipping %d\n", iCpuSet));
+                if (CurTsc <= PrevTsc)
+                {
+                    fAsync = true;
+                    offMin = offMax = PrevTsc - CurTsc;
+                    dprintf(("supdrvDetermineAsyncTsc: iCpu=%d cLoops=%d CurTsc=%llx PrevTsc=%llx\n",
+                             iCpu, cLoops, CurTsc, PrevTsc));
+                    break;
+                }
+
+                /* Gather statistics (except the first time). */
+                if (iCpu != 0 || cLoops != 7)
+                {
+                    uint64_t off = CurTsc - PrevTsc;
+                    if (off < offMin)
+                        offMin = off;
+                    if (off > offMax)
+                        offMax = off;
+                    dprintf2(("%d/%d: off=%llx\n", cLoops, iCpu, off));
+                }
+
+                /* Next */
+                PrevTsc = CurTsc;
             }
-            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpuSet), supdrvDetermineAsyncTscWorker, &s_aTsc[iSlot][iCpu], NULL);
-            if (rc == VERR_NOT_SUPPORTED)
-                return false;
-            iCpuSet++;
+            else if (rc == VERR_NOT_SUPPORTED)
+                break;
+            else
+                AssertMsg(rc == VERR_CPU_NOT_FOUND || rc == VERR_CPU_OFFLINE, ("%d\n", rc));
         }
+
+        /* broke out of the loop. */
+        if (iCpu <= iLastCpu)
+            break;
     }
 
-    /*
-     * Check that the TSC reads are strictly ascending.
-     */
-    /** @todo This doesn't work if a CPU is offline. Make these loops ignore
-     *        offline CPUs. */
-    fBackwards = false;
-    u64DiffMin = (uint64_t)~0;
-    u64TscLast = 0;
-    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
-    {
-        uint64_t u64Tsc0 = s_aTsc[iSlot][0];
-        u64DiffMax = 0;
-        if (u64Tsc0 <= u64TscLast)
-        {
-            dprintf2(("iSlot=%d u64Tsc0=%#x%#08x u64TscLast=%#x%#08x\n", iSlot,
-                      (long)(u64Tsc0 >> 32), (long)u64Tsc0, (long)(u64TscLast >> 32), (long)u64TscLast));
-            fBackwards = true;
-        }
-        u64TscLast = u64Tsc0;
-        for (iCpu = 1; iCpu < cCpus; iCpu++)
-        {
-            uint64_t u64TscN = s_aTsc[iSlot][iCpu];
-            if (u64TscN <= u64TscLast)
-            {
-                dprintf2(("iSlot=%d iCpu=%d u64TscN=%#x%#08x u64TscLast=%#x%#08x\n", iSlot, iCpu,
-                          (long)(u64TscN >> 32), (long)u64TscN, (long)(u64TscLast >> 32), (long)u64TscLast));
-                fBackwards = true;
-            }
-            u64TscLast = u64TscN;
-
-            u64Diff = u64TscN > u64Tsc0 ? u64TscN - u64Tsc0 : u64Tsc0 - u64TscN;
-            if (u64DiffMax < u64Diff)
-                u64DiffMax = u64Diff;
-        }
-        if (u64DiffMin > u64DiffMax)
-            u64DiffMin = u64DiffMax;
-    }
-    /* informational */
-    *pu64DiffCores = u64DiffMin;
-
-    return fBackwards;
+    *poffMin = offMin; /* Almost RTMpOnSpecific profiling. */
+    dprintf(("supdrvDetermineAsyncTsc: returns %d; iLastCpu=%d rc=%d offMin=%llx offMax=%llx\n",
+             fAsync, iLastCpu, rc, offMin, offMax));
+#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
+    OSDBGPRINT(("vboxdrv: fAsync=%d offMin=%#lx offMax=%#lx\n", fAsync, (long)offMin, (long)offMax));
+#endif
+    return fAsync;
 }
 
 
@@ -4105,12 +4096,12 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
     /*
      * On SMP we're faced with two problems:
-     *      (1) There might be a skew between the CPU, so that cpu0 
-     *          returns a TSC that is sligtly different from cpu1. 
+     *      (1) There might be a skew between the CPU, so that cpu0
+     *          returns a TSC that is sligtly different from cpu1.
      *      (2) Power management (and other things) may cause the TSC
      *          to run at a non-constant speed, and cause the speed
      *          to be different on the cpus. This will result in (1).
-     * 
+     *
      * So, on SMP systems we'll have to select the ASYNC update method
      * if there are symphoms of these problems.
      */
