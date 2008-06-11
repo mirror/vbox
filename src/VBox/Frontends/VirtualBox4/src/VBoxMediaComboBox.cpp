@@ -76,6 +76,14 @@ void VBoxMediaComboBox::init()
         mPmError = icon.pixmap (14, 14);
 }
 
+QString VBoxMediaComboBox::fullItemName (const QString &aSrc)
+{
+    /* Compose item's name */
+    QFileInfo fi (aSrc);
+    return QString ("%1 (%2)").arg (fi.fileName())
+               .arg (QDir::convertSeparators (fi.absolutePath()));
+}
+
 void VBoxMediaComboBox::refresh()
 {
     /* Clearing lists */
@@ -200,9 +208,7 @@ void VBoxMediaComboBox::updateShortcut (const QString &aSrc,
                                         VBoxMedia::Status aStatus)
 {
     /* Compose item's name */
-    QFileInfo fi (aSrc);
-    QString name = QString ("%1 (%2)").arg (fi.fileName())
-                   .arg (QDir::convertSeparators (fi.absolutePath()));
+    QString name = fullItemName (aSrc);
     /* Update warning/error icons */
     QPixmap *pixmap = 0;
     if (aStatus == VBoxMedia::Inaccessible)

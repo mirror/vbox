@@ -41,6 +41,8 @@ public:
                        bool aUseEmptyItem = false);
     ~VBoxMediaComboBox() {}
 
+    static QString fullItemName (const QString &aSrc);
+
     void  refresh();
     void  setUseEmptyItem (bool);
     void  setBelongsTo (const QUuid &);
