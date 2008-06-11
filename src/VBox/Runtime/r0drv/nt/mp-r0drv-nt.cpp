@@ -74,7 +74,7 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < MAXIMUM_PROCESSORS ? idCpu : -1;
+    return idCpu < MAXIMUM_PROCESSORS ? (int)idCpu : -1;
 }
 
 
@@ -206,7 +206,7 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
-        KeSetTargetProcessorDpc(&paExecCpuDpcs[0], idCpu);
+        KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
     }
     else
     {
