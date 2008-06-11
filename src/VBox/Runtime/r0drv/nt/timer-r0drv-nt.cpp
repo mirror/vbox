@@ -430,7 +430,7 @@ RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32G
 
     ULONG ulGranted = g_pfnrtNtExSetTimerResolution(u32Request / 100, TRUE);
     if (pu32Granted)
-        *pu32Granted = ulGranted;
+        *pu32Granted = ulGranted * 100; /* NT -> ns */
     return VINF_SUCCESS;
 }
 
