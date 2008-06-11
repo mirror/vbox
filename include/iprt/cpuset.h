@@ -136,9 +136,9 @@ DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
  * @param   iCpu    The index of the CPU in the set.
  * @remarks The test is atomic.
  */
-DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, RTCPUID iCpu)
+DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, int iCpu)
 {
-    if (RT_UNLIKELY(iCpu >= RTCPUSET_MAX_CPUS))
+    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
         return false;
     return ASMBitTest((volatile void *)pSet, iCpu);
 }
