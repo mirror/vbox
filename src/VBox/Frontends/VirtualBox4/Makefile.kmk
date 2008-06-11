@@ -48,7 +48,19 @@ DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 # Handmade configuration of qt4 - very annoying, this needs to
 # be cleaned up properly later some time (not important now).
 #
-ifndef VBOX_PATH_QT4
+ifeq ($(VBOX_PATH_QT4),)
+ ifeq ($(KBUILD_TARGET),darwin)
+  VBOX_PATH_QT4 := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
+  ifeq ($(VBOX_PATH_QT4),)
+   ifneq ($(wildcard /Library/Frameworks/QtCore.framework),) 
+    # Using the global installation (for OSE).
+    VBOX_PATH_QT4 ?= /usr
+    VBOX_PATH_QT4_FRAMEWORS ?= /Library/Frameworks
+   endif
+  endif
+ endif
+endif
+ifeq ($(VBOX_PATH_QT4),)
  if1of ($(USERNAME), bird)
   # gentoo (64-bit)
   VBOX_PATH_QT4          ?= /usr
@@ -75,8 +87,6 @@ VBOX_MODULE_QT4    += Qt3Support QtSql QtXml
 VBOX_DEFS_QT4      += QT_QT3SUPPORT_LIB QT_SQL_LIB QT_XML_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
- # This is temporary until the tools server is updated:
- VBOX_PATH_QT4_FRAMEWORKS = /Library/Frameworks
  # This is necessary because we didn't include the Qt header in framework
  # notation (e.g.: <QtCore/QObject>)).
  VBOX_INCS_QT4 = $(patsubst %, $(VBOX_PATH_QT4_FRAMEWORKS)/%.framework/Headers, $(VBOX_MODULE_QT4))
