@@ -172,8 +172,9 @@ typedef struct VBOXHDDRAW
  * This is handled generically, and is only meaningful for differential image
  * formats. It is silently ignored otherwise. */
 #define VD_OPEN_FLAGS_HONOR_SAME    RT_BIT(2)
-/** Do not perform the base/diff image check on open. This internally implies
- * opening the image as readonly. Images opened with this flag should only be
+/** Do not perform the base/diff image check on open. This does NOT imply
+ * opening the image as readonly (would break e.g. adding UUIDs to VMDK files
+ * created by other products). Images opened with this flag should only be
  * used for querying information, and nothing else. */
 #define VD_OPEN_FLAGS_INFO          RT_BIT(3)
 /** Mask of valid flags. */

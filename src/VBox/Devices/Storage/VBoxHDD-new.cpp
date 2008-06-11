@@ -1044,10 +1044,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
-        /* Force readonly for images without base/diff consistency checking. */
-        if (uOpenFlags & VD_OPEN_FLAGS_INFO)
-            uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
         if (!pImage)
