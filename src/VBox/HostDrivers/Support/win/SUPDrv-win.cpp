@@ -78,10 +78,12 @@ static NTSTATUS _stdcall   VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP p
 static int                 VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS _stdcall   VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS            VBoxDrvNtErr2NtStatus(int rc);
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 static NTSTATUS            VBoxDrvNtGipInit(PSUPDRVDEVEXT pDevExt);
 static void                VBoxDrvNtGipTerm(PSUPDRVDEVEXT pDevExt);
 static void     _stdcall   VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
 static void     _stdcall   VBoxDrvNtGipPerCpuDpc(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
+#endif
 
 
 /*******************************************************************************
@@ -128,20 +130,22 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                  */
                 PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
                 memset(pDevExt, 0, sizeof(*pDevExt));
-    
+
                 vrc = supdrvInitDevExt(pDevExt);
                 if (!vrc)
                 {
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
                     /* Make sure the tsc is consistent across cpus/cores. */
                     uint64_t    u64DiffCores;
                     pDevExt->fForceAsyncTsc = supdrvDetermineAsyncTsc(&u64DiffCores);
                     dprintf(("supdrvDetermineAsyncTsc: fAsync=%d u64DiffCores=%u.\n", pDevExt->fForceAsyncTsc, (uint32_t)u64DiffCores));
-    
+
                     /*
                      * Inititalize the GIP.
                      */
                     rc = VBoxDrvNtGipInit(pDevExt);
                     if (NT_SUCCESS(rc))
+#endif
                     {
                         /*
                          * Setup the driver entry points in pDrvObj.
@@ -156,21 +160,23 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                         dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
                         return STATUS_SUCCESS;
                     }
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
                     dprintf(("VBoxDrvNtGipInit failed with rc=%#x!\n", rc));
-    
+
                     supdrvDeleteDevExt(pDevExt);
+#endif
                 }
                 else
                 {
                     dprintf(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
                     rc = VBoxDrvNtErr2NtStatus(vrc);
                 }
-    
+
                 IoDeleteSymbolicLink(&DosName);
                 RTR0Term();
             }
             else
-            {    
+            {
                 dprintf(("RTR0Init failed with vrc=%d!\n", vrc));
                 rc = VBoxDrvNtErr2NtStatus(vrc);
             }
@@ -212,7 +218,9 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
     /*
      * Terminate the GIP page and delete the device extension.
      */
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
     VBoxDrvNtGipTerm(pDevExt);
+#endif
     supdrvDeleteDevExt(pDevExt);
     RTR0Term();
     IoDeleteDevice(pDrvObj->DeviceObject);
@@ -314,9 +322,9 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         KIRQL oldIrql;
         int   rc;
 
-	 	/* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */ 
+	 	/* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
-        KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);        
+        KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
         rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
         KeLowerIrql(oldIrql);
 
@@ -476,6 +484,8 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     NOREF(prc);
     return false;
 }
+
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 
 /**
  * Gets the monotone timestamp (nano seconds).
@@ -760,7 +770,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
     dprintf2(("supdrvOSGipSuspend:\n"));
     KeCancelTimer(&pDevExt->GipTimer);
 #ifdef RT_ARCH_AMD64
-    ExSetTimerResolution(0, FALSE);
+    ExSetTimerResolution(0, FALSE); /* why did we (I?) do this? */
 #endif
 }
 
@@ -783,6 +793,7 @@ unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
         cCpus = 1;
     return cCpus;
 }
+#endif /* ! USE_NEW_OS_INTERFACE_FOR_GIP */
 
 
 /**
@@ -790,7 +801,11 @@ unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt)
  */
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
+    return false;
+#else
     return pDevExt->fForceAsyncTsc != 0;
+#endif
 }
 
 
