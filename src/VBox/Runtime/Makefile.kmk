@@ -631,7 +631,7 @@ RuntimeGuestR3Mini_SOURCES += \
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
 #
-ifdef VBOX_WITH_64BIT_ADDITIONS 
+ifdef VBOX_WITH_64BIT_ADDITIONS
   RuntimeW32GuestR3_TEMPLATE     = VBOXGUESTR3LIB
 else
   RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
@@ -976,7 +976,8 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/spinlock-r0drv-nt.cpp \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	r0drv/nt/thread2-r0drv-nt.cpp \
-	r0drv/nt/time-r0drv-nt.cpp
+	r0drv/nt/time-r0drv-nt.cpp \
+	r0drv/nt/timer-r0drv-nt.cpp
 ## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
