@@ -1251,6 +1251,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PDPT:
             break;
 
@@ -1264,12 +1265,11 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+        case PGMPOOLKIND_ROOT_PML4:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
-        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
@@ -1332,6 +1332,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PDPT:
             break;
 
@@ -1345,12 +1346,11 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+        case PGMPOOLKIND_ROOT_PML4:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
-        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
