@@ -31,30 +31,20 @@ include	$(KBUILD_PATH)/subheader.kmk
 #       (VBOX_LIB_IPRT_GUEST_R0_NT4 == VBOX_LIB_IPRT_GUEST_R0 on 64-bit)
 #
 SYSMODS += VBoxVideo
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxVideo_TEMPLATE    = VBOXGUESTR0
-else
-VBoxVideo_TEMPLATE    = VBOXW32GUESTR0
-VBoxVideo_SDKS        = W2K3DDKX86 WINPSDKINCS
-endif
 ifdef VBOX_SIGN_ADDITIONS
  VBoxVideo_NOINST     = true
 endif
 VBoxVideo_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
 #VBoxVideo_DEFS        += LOG_ENABLED
 VBoxVideo_INCS        = ../../include
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxVideo_LDFLAGS.x86   = /Entry:DriverEntry@8
 VBoxVideo_LDFLAGS.amd64 = /Entry:DriverEntry
-else
-VBoxVideo_LDFLAGS     = /Entry:DriverEntry@8
-endif
 VBoxVideo_SOURCES     = \
 	VBoxVideo.cpp \
 	Helper.cpp \
 	VBoxVideo.def \
 	VBoxVideo.rc
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxVideo_LIBS.x86    = \
 	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
 VBoxVideo_LIBS        = \
@@ -63,16 +53,6 @@ VBoxVideo_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
-else
-VBoxVideo_LIBS        = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/videoprt.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
-	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
-	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
-endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

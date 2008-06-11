@@ -24,11 +24,7 @@ SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxTray
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxTray_TEMPLATE = VBOXGUESTR3EXE
-else
-VBoxTray_TEMPLATE = VBOXW32GUESTR3
-endif
 ifdef VBOX_SIGN_ADDITIONS
  VBoxTray_NOINST  = true
 endif
@@ -46,13 +42,8 @@ VBoxTray_SOURCES  = \
 	helpers.cpp \
 	VBoxTray.rc
 
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxTray_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3)
-else
-VBoxTray_LIBS     = \
-	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
-endif
 
 # VBoxTray.cpp uses VBOX_SVN_REV.
 VBoxTray.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)

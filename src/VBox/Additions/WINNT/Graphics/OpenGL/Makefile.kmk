@@ -27,12 +27,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/test/Makefile.kmk
 
 DLLS += VBoxOGL
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxOGL_TEMPLATE    = VBOXGUESTR3EXE
-else
-VBoxOGL_TEMPLATE    = VBOXW32GUESTR3
-VBoxOGL_SDKS        = W2K3DDKX86
-endif
 VBoxOGL_DEFS        = VBOX_HGCM _WIN32_WINNT=0x0500 VBOX_OGL_GUEST_SIDE
 VBoxOGL_SOURCES     = \
 	dllmain.cpp \
@@ -48,13 +43,8 @@ VBoxOGL_SOURCES     = \
 	MesaGL.cpp \
 	VBoxOGL.rc \
 	VBoxOGL.def
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxOGL_LIBS        = \
 	$(VBOX_LIB_IPRT_GUEST_R3)
-else
-VBoxOGL_LIBS        = \
-	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
-endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

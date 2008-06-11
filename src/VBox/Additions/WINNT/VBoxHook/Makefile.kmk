@@ -27,11 +27,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 DLLS += VBoxHook
-ifdef VBOX_WITH_64BIT_ADDITIONS
 VBoxHook_TEMPLATE = VBOXGUESTR3DLL
-else
-VBoxHook_TEMPLATE = VBOXW32GUESTR3
-endif
 VBoxHook_INCS     = ../include
 VBoxHook_SOURCES  = \
 	dllmain.cpp \
