@@ -188,14 +188,31 @@ DECLINLINE(PRTCPUSET) RTCpuSetFromU64(PRTCPUSET pSet, uint64_t fMask)
  * @returns CPU count.
  * @param   pSet    Pointer to the set.
  */
-DECLINLINE(RTCPUID) RTCpuSetCount(PRTCPUSET pSet)
+DECLINLINE(int) RTCpuSetCount(PCRTCPUSET pSet)
 {
-    RTCPUID cCpus = 0;
+    int     cCpus = 0;
     RTCPUID iCpu = 64;
     while (iCpu-- > 0)
         if (*pSet & RT_BIT_64(iCpu))
             cCpus++;
     return cCpus;
+}
+
+
+/**
+ * Get the highest set index.
+ *
+ * @returns The higest set index, -1 if all bits are clear.
+ * @param   pSet    Pointer to the set.
+ */
+DECLINLINE(int) RTCpuLastIndex(PCRTCPUSET pSet)
+{
+    /* There are more efficient ways to do this in asm.h... */
+    int iCpu = RTCPUSET_MAX_CPUS;
+    while (iCpu-- > 0)
+        if (*pSet & RT_BIT_64(iCpu))
+            return iCpu;
+    return iCpu;
 }
 
 
