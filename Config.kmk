@@ -142,13 +142,13 @@ endif
 # Build the optional ring-0 part of the additions for syntax checking.
 # (Ignored ifndef VBOX_WITH_ADDITIONS. Hack for 32/64 linux issues.)
 VBOX_WITH_ADDITION_DRIVERS = 1
-# Build win32 additions (cross building them on linux and l4 using wine).
-if1of ($(KBUILD_TARGET),l4 linux win)
+# Build windows additions.
+# Note! VBOX_WITH_WIN32_ADDITIONS will be removed later.
+if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_WIN32_ADDITIONS = 1
 endif
 # Build linux additions.
-# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later and only
-# VBOX_WITH_WIN32_ADDITIONS will be kept around for cross building.
+# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later.
 if1of ($(KBUILD_TARGET),l4 linux)
  VBOX_WITH_LINUX_ADDITIONS = 1
 endif
@@ -301,9 +301,7 @@ else
 # VBOX_WITH_64_BITS_GUESTS = 1
 endif
 # Enable building 64-bit additions (actually KBUILD_TARGET_ARCH decides).
-ifeq ($(USERNAME),bird) # precaution
 VBOX_WITH_64BIT_ADDITIONS = 1
-endif
 
 #
 # Skip stuff.
