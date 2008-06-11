@@ -27,9 +27,10 @@ $(error "The Linux installer can only be built on Linux!") # yeah, right.
 endif
 
 VBOX_NO_LINUX_RUN_INSTALLER ?= $(VBOX_OSE)
+PACKAGE_NAME   = VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).run
 
 PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
-		 $(PATH_BIN)/VirtualBox.run $(PATH_BIN)/VirtualBox-dbg.tar.bz2)
+		 $(PATH_BIN)/$(PACKAGE_NAME) $(PATH_BIN)/VirtualBox-dbg.tar.bz2)
 PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
 OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         install.sh deffiles routines.sh \
@@ -171,7 +172,7 @@ OTHER_CLEAN += $(addprefix $(PATH_TARGET)/archive/,$(LINUXARCHFILES)) \
 
 include $(KBUILD_PATH)/footer.kmk
 
-$(PATH_BIN)/VirtualBox.run: \
+$(PATH_BIN)/$(PACKAGE_NAME): \
 		$(PATH_TARGET)/install/VirtualBox.tar.bz2 \
 		install.sh \
 		$(VBOX_VERSION_STAMP) \
