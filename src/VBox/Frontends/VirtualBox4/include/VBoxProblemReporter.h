@@ -301,7 +301,7 @@ public:
 
     static QString formatErrorInfo (const COMBase &aWrapper)
     {
-        Assert (aWrapper.lastRC() != S_OK);
+//        Assert (aWrapper.lastRC() != S_OK);
         return formatErrorInfo (aWrapper.errorInfo(), aWrapper.lastRC());
     }
 

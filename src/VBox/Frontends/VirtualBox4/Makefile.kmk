@@ -59,12 +59,13 @@ ifndef VBOX_PATH_QT4
   VBOX_PATH_QT4_SHARE    ?= /usr/share/qt4
  endif
 endif
-VBOX_PATH_QT4          ?= /usr
-VBOX_PATH_QT4_BIN      ?= $(VBOX_PATH_QT4)/bin
-VBOX_PATH_QT4_INCLUDE  ?= $(VBOX_PATH_QT4)/include
-VBOX_PATH_QT4_LIB      ?= $(VBOX_PATH_QT4)/lib
-VBOX_PATH_QT4_LIB64    ?= $(VBOX_PATH_QT4)/lib64
-VBOX_PATH_QT4_SHARE    ?= $(VBOX_PATH_QT4)
+VBOX_PATH_QT4            ?= /usr
+VBOX_PATH_QT4_BIN        ?= $(VBOX_PATH_QT4)/bin
+VBOX_PATH_QT4_INCLUDE    ?= $(VBOX_PATH_QT4)/include
+VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
+VBOX_PATH_QT4_LIB64      ?= $(VBOX_PATH_QT4)/lib64
+VBOX_PATH_QT4_FRAMEWORKS ?= $(VBOX_PATH_QT4)/Frameworks
+VBOX_PATH_QT4_SHARE      ?= $(VBOX_PATH_QT4)
 
 VBOX_MODULE_QT4     = QtCore QtGui QtNetwork
 VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB
@@ -75,11 +76,13 @@ VBOX_DEFS_QT4      += QT_QT3SUPPORT_LIB QT_SQL_LIB QT_XML_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
  # This is temporary until the tools server is updated:
- VBOX_PATH_QT4_LIB = /Library/Frameworks
+ VBOX_PATH_QT4_FRAMEWORKS = /Library/Frameworks
  # This is necessary because we didn't include the Qt header in framework
  # notation (e.g.: <QtCore/QObject>)).
- VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join $(VBOX_PATH_QT4_LIB)/, $(mod)), .framework/Headers))
- VBOX_LIBS_QT4       =
+ VBOX_INCS_QT4 = $(patsubst %, $(VBOX_PATH_QT4_FRAMEWORKS)/%.framework/Headers, $(VBOX_MODULE_QT4))
+ # No libs cause we are using frameworks
+ VBOX_PATH_QT4_LIB =
+ VBOX_LIBS_QT4     =
 else
 
  VBOX_INCS_QT4       = \
@@ -140,20 +143,26 @@ else
  $(error Port me!)
 endif
 
+# All the following should be done in some root Makefile and removed from this
+# one.
 ifeq ($(KBUILD_TARGET),darwin)
- # Create the targets of the form
- # @executable_path/../Qt???.framework/Versions/4/Qt???
- QT_LIB_INSTALL=$(foreach mod, $(VBOX_MODULE_QT4), $(join $(join $(PATH_BIN)/../lib/, $(mod)), .framework/Versions/4/$(mod)))
- # Todo: Only installing the libraries isn't sufficient. For user provided
- # frameworks (usual installed in /Library/Frameworks) we must run
- # install_name_tool on the VirtualBox4 app and *all* used libraries. This has
- # to be done recursively for the library part.
- $(QT_LIB_INSTALL): \
-	$(PATH_BIN)/../lib/%: $(VBOX_PATH_QT4_LIB)/%
+ # The following is necessary on Non OSE only. On the OSE version the Qt
+ # frameworks provided by Trolltech have to be installed on the target system
+ # in the system wide Frameworks directory (/Library/Frameworks).
+ ifndef VBOX_OSE
+  # Create the targets of the form
+  # @executable_path/../Frameworks/Qt???.framework/Versions/4/Qt???
+  QT_LIB_INSTALL=$(foreach mod, $(VBOX_MODULE_QT4), $(join $(join $(PATH_BIN)/../Frameworks/, $(mod)), .framework/Versions/4/$(mod)))
+  # The target for the libs. This is a special target cause is creates the
+  # necessary directory structure. @Bird: is there something for this in
+  # kBuild already? Todo: What about uninstall?
+  $(QT_LIB_INSTALL): $(PATH_BIN)/../Frameworks/%: $(VBOX_PATH_QT4_FRAMEWORKS)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(INSTALL) -m 0644 $< $(@D)
- OTHERS = $(QT_LIB_INSTALL)
+  # Add the lib targets to the OTHER dependencies.
+  OTHERS = $(QT_LIB_INSTALL)
+ endif
 else
  # The Qt DLLs (move to the root Makefile.kmk, and remove bin from INSTALLS below).
  bin_SOURCES += $(VBOX_QT4_RUNTIME)
@@ -246,9 +255,9 @@ else # the gcc guys:
  else ifeq ($(KBUILD_TARGET),darwin)
   # We have to add the framework path to both the linker and the compiler also.
   # Note that the -F flag is apple gcc only.
-  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -F$(VBOX_PATH_QT4_LIB) $(foreach mod, $(VBOX_MODULE_QT4), -framework $(mod)) \
+  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS) $(addprefix -framework , $(VBOX_MODULE_QT4)) \
   	-framework Carbon -framework QuickTime -bind_at_load
-  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_LIB)
+  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS)
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
  else

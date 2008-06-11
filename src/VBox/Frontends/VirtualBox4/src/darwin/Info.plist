@@ -13,6 +13,8 @@
     <key>CFBundleGetInfoString</key>            <string>VirtualBox @VBOX_VERSION_STRING@, © 2007-2008 Sun Microsystems, Inc.</string>
     <key>CFBundleIconFile</key>                 <string>virtualbox</string>
     <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
+    <key>CFBundleHelpBookFolder</key>           <string>VirtualBox-Help</string>
+    <key>CFBundleHelpBookName</key>             <string>Sun xVM VirtualBox</string>
     <key>LSCanProvideIMVideoDataSource</key>    <true/>
 </dict>
 </plist>
