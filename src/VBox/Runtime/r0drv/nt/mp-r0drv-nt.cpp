@@ -275,7 +275,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    if (RTMpIsCpuOnline(idCpu))
+    if (!RTMpIsCpuOnline(idCpu))
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
