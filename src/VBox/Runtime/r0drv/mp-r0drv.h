@@ -33,6 +33,8 @@
 
 #include <iprt/mp.h>
 
+__BEGIN_DECLS
+
 /**
  * MP callback
  *
@@ -62,5 +64,7 @@ typedef RTMPARGS *PRTMPARGS;
 int rtR0MpNotificationNativeInit(void *pvOS);
 void rtR0MpNotificationNativeTerm(void *pvOS);
 void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
+
+__END_DECLS
 
 #endif
