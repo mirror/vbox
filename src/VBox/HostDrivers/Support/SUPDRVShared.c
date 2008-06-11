@@ -4008,11 +4008,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
      * identify the older CPUs which don't do different frequency and
      * can be relied upon to have somewhat uniform TSC between the cpus.
      */
-# ifdef RT_OS_WINDOWS /** @todo fix RTMpGetCount() wrt to IRQL. */
-    if (supdrvOSGetCPUCount(pDevExt) > 1)
-# else
     if (RTMpGetCount() > 1)
-# endif
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
 
@@ -4312,8 +4308,11 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
         RTCPUID iCpuSet = 0;
         for (iCpu = 0; iCpu < cCpus; iCpu++)
         {
-            while (!RTCpuSetIsMember(&OnlineCpus, iCpuSet))
+            while (!RTCpuSetIsMemberByIndex(&OnlineCpus, iCpuSet))
+            {
                 iCpuSet++; /* skip offline CPU */
+                dprintf2(("skipping %d\n", iCpuSet));
+            }
             rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpuSet), supdrvDetermineAsyncTscWorker, &s_aTsc[iSlot][iCpu], NULL);
             if (rc == VERR_NOT_SUPPORTED)
                 return false;
@@ -4324,6 +4323,7 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
     /*
      * Check that the TSC reads are strictly ascending.
      */
+    /** @todo this doesn't work if a CPU is offline for some reason. */
     fBackwards = false;
     u64DiffMin = (uint64_t)~0;
     u64TscLast = 0;
@@ -4332,13 +4332,21 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
         uint64_t u64Tsc0 = s_aTsc[iSlot][0];
         u64DiffMax = 0;
         if (u64Tsc0 <= u64TscLast)
+        {
+            dprintf2(("iSlot=%d u64Tsc0=%#x%#08x u64TscLast=%#x%#08x\n", iSlot,
+                      (long)(u64Tsc0 >> 32), (long)u64Tsc0, (long)(u64TscLast >> 32), (long)u64TscLast));
             fBackwards = true;
+        }
         u64TscLast = u64Tsc0;
         for (iCpu = 1; iCpu < cCpus; iCpu++)
         {
             uint64_t u64TscN = s_aTsc[iSlot][iCpu];
             if (u64TscN <= u64TscLast)
+            {
+                dprintf2(("iSlot=%d iCpu=%d u64TscN=%#x%#08x u64TscLast=%#x%#08x\n", iSlot, iCpu,
+                          (long)(u64TscN >> 32), (long)u64TscN, (long)(u64TscLast >> 32), (long)u64TscLast));
                 fBackwards = true;
+            }
             u64TscLast = u64TscN;
 
             u64Diff = u64TscN > u64Tsc0 ? u64TscN - u64Tsc0 : u64Tsc0 - u64TscN;
