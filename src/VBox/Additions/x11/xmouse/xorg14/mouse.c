@@ -115,6 +115,11 @@
  * file as it renamed ANSI C functions to xf86*. */
 extern int  abs(int);
 extern long strtol(const char*,char**,int);
+
+# ifdef DEBUG_michael
+#  define TRACE_ENTRY() \
+do { xf86Msg(X_INFO, "%s: entering\n", __PRETTY_FUNCTION__); } while(0)
+# endif
 #endif
 
 enum {
@@ -200,6 +205,9 @@ static void SetMouseProto(MouseDevPtr pMse, MouseProtocolID protocolID);
 static Bool autoGood(MouseDevPtr pMse);
 
 #undef MOUSE
+#ifdef VBOX
+/* # define MOUSE VBOXMOUSE */
+#endif
 _X_EXPORT InputDriverRec MOUSE = {
 	1,
 #ifdef VBOX
@@ -1221,6 +1229,7 @@ MouseReadInput(InputInfoPtr pInfo)
     unsigned char *pBuf, u;
 
 
+    TRACE_ENTRY();
     pMse = pInfo->private;
     pBufP = pMse->protoBufTail;
     pBuf = pMse->protoBuf;
@@ -1714,6 +1723,7 @@ MouseCtrl(DeviceIntPtr device, PtrCtrl *ctrl)
     InputInfoPtr pInfo;
     MouseDevPtr pMse;
 
+    TRACE_ENTRY();
     pInfo = device->public.devicePrivate;
     pMse = pInfo->private;
 
@@ -1746,6 +1756,7 @@ MouseProc(DeviceIntPtr device, int what)
     mousePrivPtr pPriv;
 #endif
 
+    TRACE_ENTRY();
     pInfo = device->public.devicePrivate;
     pMse = pInfo->private;
     pMse->device = device;
@@ -1905,6 +1916,7 @@ MouseConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
     if (first != 0 || num != 2)
 	return FALSE;
 
+    TRACE_ENTRY();
     *x = v0;
     *y = v1;
 
@@ -2150,6 +2162,7 @@ static void MouseBlockHandler(pointer data,
     MouseDevPtr	    pMse = (MouseDevPtr) pInfo->private;
     int		    ms;
 
+    TRACE_ENTRY();
     if (pMse->emulate3Pending)
     {
 	ms = pMse->emulate3Expires - GetTimeInMillis ();
@@ -2167,6 +2180,7 @@ static void MouseWakeupHandler(pointer data,
     MouseDevPtr	    pMse = (MouseDevPtr) pInfo->private;
     int		    ms;
 
+    TRACE_ENTRY();
     if (pMse->emulate3Pending)
     {
 	ms = pMse->emulate3Expires - GetTimeInMillis ();
@@ -2466,6 +2480,7 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
     int zbutton = 0;
     int i, b, buttons = 0;
 
+    TRACE_ENTRY();
     pMse = pInfo->private;
     if (pMse->protocolID == PROT_MMHIT)
 	b = reverseBits(hitachMap, truebuttons);
