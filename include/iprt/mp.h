@@ -226,6 +226,10 @@ typedef FNRTMPNOTIFICATION *PFNRTMPNOTIFICATION;
  * On platforms which doesn't do cpu offline/online events this API
  * will just be a no-op that pretends to work.
  *
+ * @todo We'll be adding a flag to this soon to indicate whether the callback should be called on all
+ *       CPUs that are currently online while it's being registered. This is to help avoid some race
+ *       conditions (we'll hopefully be able to implement this on linux, solaris/win is no issue).
+ *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NO_MEMORY if a registration record cannot be allocated.
