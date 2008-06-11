@@ -1157,11 +1157,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation>&amp;Ajout...</translation>
+        <translation>&amp;Ajouter...</translation>
     </message>
     <message>
         <source>R&amp;emove</source>
-        <translation>Révoqu&amp;er</translation>
+        <translation>Enlev&amp;er</translation>
     </message>
     <message>
         <source>Re&amp;lease</source>
@@ -1181,7 +1181,7 @@ Version %1</source>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Éliminer</translation>
+        <translation>Enlever</translation>
     </message>
     <message>
         <source>Release</source>
@@ -1327,7 +1327,7 @@ Version %1</source>
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Choisir un fichier image de disque dur</translation>
+        <translation>Choisissez un fichier image de disque dur</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
@@ -1335,7 +1335,7 @@ Version %1</source>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Choisir un fichier image  CD/DVD-ROM </translation>
+        <translation>Choisissez un fichier image CD/DVD-ROM </translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
@@ -1645,72 +1645,72 @@ Version %1</source>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation>Éteint</translation>
+        <translation>éteint</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation>Enregistré</translation>
+        <translation>enregistré</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>Avorté</translation>
+        <translation>avorté</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>En fonction</translation>
+        <translation>en fonction</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>En pause</translation>
+        <translation>en pause</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation>En cours d&apos;amorçage</translation>
+        <translation>en cours d&apos;amorçage</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation>S&apos;arrête</translation>
+        <translation>s&apos;arrête</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation>En enregistrement</translation>
+        <translation>en enregistrement</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation>En restauration</translation>
+        <translation>en restauration</translation>
     </message>
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>En rejet</translation>
+        <translation>en rejet</translation>
     </message>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Fermée</translation>
+        <translation>fermée</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Ouvert</translation>
+        <translation>ouvert</translation>
     </message>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation>Génération</translation>
+        <translation>génération</translation>
     </message>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Fermeture</translation>
+        <translation>en fermeture</translation>
     </message>
     <message>
         <source>None</source>
@@ -2848,7 +2848,7 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Cet assistant vous permet de créer une nouvelle image  de disque dur pour votre machine virtuelle.&lt;/p&gt;
-&lt;p&gt;Utilisez le boution &lt;b&gt;Suivant&lt;/b&gt; pour accédé à la page suivante de l&apos;assistant
+&lt;p&gt;Utilisez le boution &lt;b&gt;Suivant&lt;/b&gt; pour accéder à la page suivante de l&apos;assistant
 et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2880,7 +2880,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation>Image à taille &amp;Fixe</translation>
+        <translation>Image à taille &amp;fixe</translation>
     </message>
     <message>
         <source>Alt+F</source>
@@ -2907,26 +2907,26 @@ contiendra l&apos;image du disque dur, ou entrez le nom du fichier dans le champ
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisir la taille de l&apos;image virtuelle du disque dur en méga-octets. Cette taille sera rapportée au système d&apos;exploitation client comme taille du disque dur virtuel.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez la taille de l&apos;image virtuelle du disque dur en méga-octets. Cette taille sera rapportée au système d&apos;exploitation client comme taille du disque dur virtuel.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation>Image et &amp;Taille</translation>
+        <translation>Image et &amp;taille</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Disque virtuel, Emplacement et taille </translation>
+        <translation>Disque virtuel, emplacement et taille</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>Vous êtes en train der créer un disque dur avec les paramètres suivants :</translation>
+        <translation>Vous êtes en train de créer un disque dur avec les paramètres suivants :</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>Si les paramètres ci dessus sont corrects, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;.
-Le nouveau disque dur sera crée.</translation>
+        <translation>Si les paramètres ci-dessus sont corrects, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;.
+Le nouveau disque dur sera créé.</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2958,7 +2958,7 @@ the same size as the size of the virtual hard disk. The creation of a fixed-size
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez le type d&apos;image de disque dur que vous désirez créer.&lt;/p&gt;
 &lt;p&gt;Une &lt;b&gt;image à taille dynamique&lt;/b&gt; est de taille initiale réduite et est agrandie en fonction des besoins (jusqu&apos;à la taille spécifiée)  du système d&apos;exploitation client.&lt;/p&gt;
-&lt;p&gt;Une &lt;b&gt;image à taille fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel. La création d&apos;une image à taille fixe peu demander beaucoup de temps ce temps dépend de sa taille et de la vitesse d&apos;écriture de vôtre disque dur&lt;/p&gt;</translation>
+&lt;p&gt;Une &lt;b&gt;image à taille fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel. La création d&apos;une image à taille fixe peut demander beaucoup de temps en fonction de sa taille et de la vitesse d&apos;écriture de vôtre disque dur.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2973,11 +2973,11 @@ a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Cet assistant vous guidera pas à pas à travers les étapes nécessaires à la création d&apos;une nouvelle machine virtuelle pour VirtualBox.&lt;/p&gt;
-&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; aller à la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
+&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; pour aller à la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant Nouvelle machine virtuelle !</translation>
+        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle !</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
@@ -2986,7 +2986,7 @@ system you plan to install onto the virtual machine.&lt;/p&gt;
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Entrez un nom pour la nouvelle machine virtuelle et choisissez le type du système d&apos;exploitation que vous désirez installer sur cette machine&lt;/p&gt;
 &lt;p&gt;Le nom de la machine virtuelle indique normalement la configuration matériel et logiciel.
-Il est utilisé par tous les produits de VirtualBox pour l&apos;identification de la machine virtuelle.&lt;/p&gt;</translation>
+Il est utilisé par tous les composants de VirtualBox pour l&apos;identification de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -2998,7 +2998,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>Nom de la machine virtuelle et Type du système d&apos;exploitation</translation>
+        <translation>Nom de la machine virtuelle et type du système d&apos;exploitation</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
@@ -3036,7 +3036,7 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;amorçage de la machine virtuelle.
+        <translation>&lt;p&gt;Choisissez l&apos;image de disque dur qui sera utilisé comme disque dur d&apos;amorçage de la machine virtuelle.
 Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou choisir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
 &lt;p&gt;Si votre configuration est plus compliquée, vous pouvez sauter cette étape et attacher le disque dur plus tard, en utilisant la boîte de dialogue Préférences VM .&lt;/p&gt;
 </translation>
@@ -3078,8 +3078,8 @@ Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b
                             the menu of the main window.
                             &lt;/p&gt;
                             </source>
-        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Terminer&lt;/b&gt; si la configuration si dessus est correcte.&lt;/p&gt;
-&lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres en tout temps. Utilisez pour ce faire la
+        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Terminer&lt;/b&gt; si la configuration ci-dessus est correcte.&lt;/p&gt;
+&lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres à tout moment. Utilisez pour ce faire la
 boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la boîte de dialogue principale.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3417,7 +3417,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le lancement de la machine virtuelle peut entraîner l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais il es recommandé d&apos;effectuer les actions appropriées pour que cette erreur n&apos;apparaisse pas.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le lancement de la machine virtuelle peut entraîner l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais il est recommandé d&apos;effectuer les actions appropriées pour que cette erreur n&apos;apparaisse pas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -4709,7 +4709,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez lancé une nouvelle machine virtuelle pour la première fois. Cet assistant vous aideras à effectuer toutes les opérations nécessaires pour l&apos;installation d&apos;un nouveau système d&apos;exploitation sur cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; pour choisir la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt;pour revenir sur la page précédente. Vous pouvez également utiliser le bouton &lt;b&gt;Annuler&lt;/b&gt; pour interrompre l&apos;exécution de l&apos;assistant.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez lancé une nouvelle machine virtuelle pour la première fois. Cet assistant vous aidera à effectuer toutes les opérations nécessaires pour l&apos;installation d&apos;un nouveau système d&apos;exploitation sur cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; pour choisir la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour revenir sur la page précédente. Vous pouvez également utiliser le bouton &lt;b&gt;Annuler&lt;/b&gt; pour interrompre l&apos;exécution de l&apos;assistant.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
@@ -4725,7 +4725,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Lecteur &amp;CD/DVD-ROM </translation>
+        <translation>&amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -4733,7 +4733,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation>Lecteur &amp;Disquette</translation>
+        <translation>&amp;Disquette</translation>
     </message>
     <message>
         <source>Alt+F</source>
@@ -4741,7 +4741,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez le média contenant le logiciel de mise en œuvre du système d&apos;exploitation que vous désirer installer. Ce média doit permettre le démarage de l&apos;ordinateur.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez le média contenant le logiciel d'installation du système d&apos;exploitation que vous désirer utiliser dans la machine virtuelle. Ce média doit permettre le démarage de l&apos;ordinateur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
@@ -4749,7 +4749,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation>&amp;Disque dur de l&apos;hôte </translation>
+        <translation>&amp;Lecteur de l&apos;hôte </translation>
     </message>
     <message>
         <source>Alt+H</source>
@@ -4777,7 +4777,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera installé temporairement sur la machine virtuelle et cette dernière commencera l&apos;exècution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement éjecté et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Notez que cette fonctionnalité dépend, entre autre, du logiciel de mise en œuvre et que les actions doivent, éventuellement, être effectuées manuellement (&lt;b&gt;Éjecter...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pressez le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le média de démarrage choisi sera inséré temporairement dans la machine virtuelle et cette dernière commencera l&apos;exécution.&lt;/p&gt;&lt;p&gt;Notez qu&apos;après l&apos;arrêt de la machine virtuelle, le média spécifié sera automatiquement éjecté et le média de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Selon le logiciel d&apos;installation choisi, vous pourrez éventuellement avoir à éjecter manuellement le média après le réamorçage de la machine virtuelle (&lt;b&gt;Éjecter...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;) pourque l&apos;installation ne recommence pas du début.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -4793,7 +4793,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation>Disque dur %1</translation>
+        <translation>Lecteur de l&apos;hôte %1</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -5647,7 +5647,7 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Insérrer une disquette</translation>
+        <translation>&amp;Insérer une disquette</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
@@ -5681,7 +5681,7 @@ a Floppy image to mount.</source>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Insérrer un CD/DVD-ROM</translation>
+        <translation>&amp;Insérer un CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
