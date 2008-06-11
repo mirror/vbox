@@ -25,11 +25,8 @@
 
 #include "VBoxGlobal.h"
 
-#include <qcombobox.h>
-//Added by qt3to4:
+#include <QComboBox>
 #include <QPixmap>
-
-class Q3ListBoxItem;
 
 class VBoxMediaComboBox : public QComboBox
 {
@@ -37,48 +34,53 @@ class VBoxMediaComboBox : public QComboBox
 
 public:
 
-    VBoxMediaComboBox (QWidget *aParent, int aType = -1,
-                       bool aUseEmptyItem = false);
-    ~VBoxMediaComboBox() {}
-
     static QString fullItemName (const QString &aSrc);
 
+    VBoxMediaComboBox (QWidget *aParent, int aType = -1,
+                       bool aUseEmptyItem = false);
+
     void  refresh();
-    void  setUseEmptyItem (bool);
-    void  setBelongsTo (const QUuid &);
+
+    void  setUseEmptyItem (bool aUse);
+    void  setBelongsTo (const QUuid &aMachineId);
+    void  setCurrentItem (const QUuid &aId);
+    void  setType (int aImageType);
+
     QUuid getId (int aId = -1) const;
-    QUuid getBelongsTo();
-    void  setCurrentItem (const QUuid &);
-    void  setType (int);
 
 protected slots:
 
     void mediaEnumStarted();
     void mediaEnumerated (const VBoxMedia &, int);
+
     void mediaAdded (const VBoxMedia &);
     void mediaUpdated (const VBoxMedia &);
     void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
-    void processOnItem (const QModelIndex&);
-    void processActivated (int);
+
+    void processActivated (int aIndex);
+    void processIndexChanged (int aIndex);
+
+    void processOnItem (const QModelIndex &aIndex);
 
 protected:
 
-    void init();
-    void updateToolTip (int);
     void processMedia (const VBoxMedia &);
     void processHdMedia (const VBoxMedia &);
     void processCdMedia (const VBoxMedia &);
     void processFdMedia (const VBoxMedia &);
-    void appendItem (const QString &, const QUuid &,
-                     const QString &, QPixmap *);
-    void replaceItem (int, const QString &,
-                      const QString &, QPixmap *);
-    void updateShortcut (const QString &, const QUuid &, const QString &,
-                          VBoxMedia::Status);
+
+    void updateShortcut (const QString &aSrc, const QUuid &aId,
+                         const QString &aToolTip, VBoxMedia::Status aStatus);
+
+    void newItem (const QString &aName, const QUuid &aId,
+                  const QString &aToolTip, QPixmap *aPixmap);
+    void updItem (int aIndex, const QString &aNewName,
+                  const QString &aNewTip, QPixmap *aNewPix);
+
+    QList<QUuid> mUuidList;
+    QList<QString> mTipList;
 
     int         mType;
-    QStringList mUuidList;
-    QStringList mTipList;
     QUuid       mMachineId;
     QUuid       mRequiredId;
     bool        mUseEmptyItem;
