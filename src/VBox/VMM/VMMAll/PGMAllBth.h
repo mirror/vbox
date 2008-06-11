@@ -2602,13 +2602,12 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PX86PDPAE       pPDDst;
-        PX86PDPT        pPdptDst;
         X86PDEPAE       PdeDst;
 
-        int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+        int rc = PGMShwGetAllocLongModePDPtr(pVM, GCPtrPage, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
-            AssertMsg(rc == VERR_PAGE_TABLE_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+            AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
             return rc;
         }
         Assert(pPDDst);
@@ -2943,8 +2942,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
             if (rc != VINF_SUCCESS)
             {
-                AssertMsg(rc == VERR_PAGE_TABLE_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
-                return rc;
+                if (rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)
+                    break; /* next PML4E */
+
+                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                continue;   /* next PDPTE */
             }
             Assert(pPDDst);
             pPDEDst = &pPDDst->a[0];
@@ -2964,8 +2966,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
                             if (rc != VINF_SUCCESS)
                             {
-                                AssertMsg(rc == VERR_PAGE_TABLE_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
-                                return rc;
+                                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                                continue;
                             }
 
                             for (unsigned iPD = 0; iPD < ELEMENTS(pPDDst->a); iPD++)

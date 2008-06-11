@@ -816,7 +816,7 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
 
     pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
     if (!pPml4e->n.u1Present)
-        return VERR_PAGE_TABLE_NOT_PRESENT;
+        return VERR_PAGE_MAP_LEVEL4_NOT_PRESENT;
 
     pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
@@ -827,7 +827,7 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
 
     *ppPdpt = pPdpt;
     if (!pPdpe->n.u1Present)
-        return VERR_PAGE_TABLE_NOT_PRESENT;
+        return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
     pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
