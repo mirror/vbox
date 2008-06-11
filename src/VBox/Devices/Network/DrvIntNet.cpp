@@ -84,8 +84,9 @@ typedef struct DRVINTNET
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
     bool volatile           fLinkDown;
-    /** Set if data transmission should start immediately. */
-    bool                    fActivateEarly;
+    /** Set if data transmission should start immediately and deactivate
+     * as late as possible. */
+    bool                    fActivateEarlyDeactivateLate;
 
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling packet transmit runs. */
@@ -532,7 +533,8 @@ static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerOff\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
-    ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
+    if (!pThis->fActivateEarlyDeactivateLate)
+        ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
 }
 
 
@@ -545,8 +547,11 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerResume\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
-    ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
-    RTSemEventSignal(pThis->EventSuspended);
+    if (!pThis->fActivateEarlyDeactivateLate)
+    {
+        ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
+        RTSemEventSignal(pThis->EventSuspended);
+    }
 }
 
 
@@ -559,7 +564,8 @@ static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerSuspend\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
-    ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
+    if (!pThis->fActivateEarlyDeactivateLate)
+        ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
 }
 
 
@@ -572,7 +578,7 @@ static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerOn\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
-    if (!pThis->fActivateEarly)
+    if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
@@ -657,7 +663,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->Thread                       = NIL_RTTHREAD;
     pThis->EventSuspended               = NIL_RTSEMEVENT;
     pThis->enmState                     = ASYNCSTATE_SUSPENDED;
-    pThis->fActivateEarly               = false;
+    pThis->fActivateEarlyDeactivateLate = false;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvIntNetQueryInterface;
     /* INetwork */
@@ -731,9 +737,9 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "IsService", &pThis->fActivateEarly);
+    rc = CFGMR3QueryBool(pCfgHandle, "IsService", &pThis->fActivateEarlyDeactivateLate);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fActivateEarly = false;
+        pThis->fActivateEarlyDeactivateLate = false;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IsService\" value"));
@@ -808,7 +814,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Activate data transmission as early as possible
      */
-    if (pThis->fActivateEarly)
+    if (pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
