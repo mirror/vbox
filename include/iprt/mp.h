@@ -252,29 +252,6 @@ RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUs
  */
 RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser);
 
-/**
- * Initializes the multiprocessor event notifcations.
- *
- * This must be called before calling RTMpNotificationRegister(). This is an
- * inconvenice caused Visual C++ not implmenting weak externals.
- *
- * @returns IPRT status code.
- * @param   pvOS            Reserved, pass NULL.
- */
-RTR0DECL(int) RTR0MpNotificationInit(void *pvOS);
-
-
-/**
- * Terminates the multiprocessor event notifcations.
- *
- * The number of RTR0MpNotificationInit calls must match the calls to this
- * function exactly.
- *
- * @returns IPRT status code.
- * @param   pvOS            Reserved, pass NULL.
- */
-RTR0DECL(void) RTR0MpNotificationTerm(void *pvOS);
-
 #endif /* IN_RING0 */
 
 /** @} */

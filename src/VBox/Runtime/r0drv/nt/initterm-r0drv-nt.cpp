@@ -45,10 +45,9 @@
 /** The Nt CPU set.
  * KeQueryActiveProcssors() cannot be called at all IRQLs and therefore we'll
  * have to cache it. Fortunately, Nt doesn't really support taking CPUs offline
- * or online. It's first with W2K8 that support for adding / onlining cpus at
- * runtime is (officially) supported. Once we start caring about this, we'll
- * simply use the native MP event callback and update this variable as cpus
- * comes online.
+ * or online. It's first with W2K8 that support for CPU hotplugging was added.
+ * Once we start caring about this, we'll simply let the native MP event callback
+ * and update this variable as CPUs comes online. (The code is done already.)
  */
 RTCPUSET g_rtMpNtCpuSet;
 
@@ -77,19 +76,12 @@ int rtR0InitNative(void)
     RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
     g_pfnrtNtKeFlushQueuedDpcs = (PFNMYKEFLUSHQUEUEDDPCS)MmGetSystemRoutineAddress(&RoutineName);
 
-
-#if 0 /* W2K8 support */
-    return RTR0MpNotificationInit(NULL);
-#else
     return VINF_SUCCESS;
-#endif
 }
 
 
 void rtR0TermNative(void)
 {
-#if 0 /* W2K8 support */
     RTR0MpNotificationTerm(NULL);
-#endif
 }
 

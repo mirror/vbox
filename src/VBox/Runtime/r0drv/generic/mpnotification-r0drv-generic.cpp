@@ -51,14 +51,14 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
 }
 
 
-RTR0DECL(int) RTR0MpNotificationInit(void *pvOS)
+int rtR0MpNotificationInit(void)
 {
     NOREF(pvOS);
     return VINF_SUCCESS;
 }
 
 
-RTR0DECL(void) RTR0MpNotificationTerm(void *pvOS)
+void rtR0MpNotificationTerm(void)
 {
     NOREF(pvOS);
 }

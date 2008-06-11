@@ -275,7 +275,7 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
 }
 
 
-RTR0DECL(int) RTR0MpNotificationInit(void *pvOS)
+int rtR0MpNotificationInit(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -284,7 +284,7 @@ RTR0DECL(int) RTR0MpNotificationInit(void *pvOS)
         rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTMpNotifySpinLock);
         if (RT_SUCCESS(rc))
         {
-            rc = rtR0MpNotificationNativeInit(pvOS);
+            rc = rtR0MpNotificationNativeInit();
             if (RT_SUCCESS(rc))
                 return rc;
 
@@ -297,7 +297,7 @@ RTR0DECL(int) RTR0MpNotificationInit(void *pvOS)
 }
 
 
-RTR0DECL(void) RTR0MpNotificationTerm(void *pvOS)
+void rtR0MpNotificationTerm(void)
 {
     RTSPINLOCK hSpinlock = g_hRTMpNotifySpinLock;
     if (hSpinlock != NIL_RTSPINLOCK)
@@ -309,7 +309,7 @@ RTR0DECL(void) RTR0MpNotificationTerm(void *pvOS)
             PRTMPNOTIFYREG pHead;
             RTSPINLOCKTMP Tmp;
 
-            rtR0MpNotificationNativeTerm(pvOS);
+            rtR0MpNotificationNativeTerm();
 
             /* pick up the list and the spinlock. */
             RTSpinlockAcquire(hSpinlock, &Tmp);

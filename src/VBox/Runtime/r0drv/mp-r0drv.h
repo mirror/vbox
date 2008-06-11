@@ -61,10 +61,16 @@ typedef struct RTMPARGS
 /** Pointer to a RTMpOn* argument packet. */
 typedef RTMPARGS *PRTMPARGS;
 
-int rtR0MpNotificationNativeInit(void *pvOS);
-void rtR0MpNotificationNativeTerm(void *pvOS);
+/* Called from initterm-r0drv.cpp: */
+int rtR0MpNotificationInit(void);
+void rtR0MpNotificationTerm(void);
+
+/* The following is only relevant when using mpnotifcation-r0drv.cpp: */
+int rtR0MpNotificationNativeInit(void);
+void rtR0MpNotificationNativeTerm(void);
 void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
 
 __END_DECLS
 
 #endif
+

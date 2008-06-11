@@ -35,7 +35,9 @@
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/mp.h>
+#ifndef IN_GUEST /* play safe for now */
+# include "r0drv/mp-r0drv.h"
+#endif
 
 #include "internal/initterm.h"
 #include "internal/thread.h"
@@ -60,7 +62,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
         if (RT_SUCCESS(rc))
         {
 #ifndef IN_GUEST /* play safe for now */
-            rc = RTR0MpNotificationInit(NULL); /** @todo drop the arg and rename to rtR0* */
+            rc = rtR0MpNotificationInit();
 #endif
             if (RT_SUCCESS(rc))
                 return rc;
@@ -81,7 +83,7 @@ RTR0DECL(void) RTR0Term(void)
     rtThreadTerm();
 #endif
 #ifndef IN_GUEST /* play safe for now */
-    RTR0MpNotificationTerm(NULL); /** @todo drop the arg and rename to rtR0* */
+    rtR0MpNotificationTerm();
 #endif
     rtR0TermNative();
 }

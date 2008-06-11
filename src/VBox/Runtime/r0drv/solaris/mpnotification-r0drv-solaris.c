@@ -67,16 +67,14 @@ static int rtMpNotificationSolarisCallback(cpu_setup_t enmSolarisEvent, int iCpu
 }
 
 
-int rtR0MpNotificationNativeInit(void *pvOS)
+int rtR0MpNotificationNativeInit(void)
 {
-    NOREF(pvOS);
     register_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
 }
 
 
-void rtR0MpNotificationNativeTerm(void *pvOS)
+void rtR0MpNotificationNativeTerm(void)
 {
-    NOREF(pvOS);
     unregister_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
 }
 
