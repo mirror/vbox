@@ -369,6 +369,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxDiskImageManagerDlg.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsHD.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsHD.ui
+
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsCD.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsCD.ui
 
@@ -548,6 +551,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxDiskImageManagerDlg.h \
 	include/VBoxVMSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
+	include/VBoxVMSettingsHD.h \
 	include/VBoxVMSettingsCD.h \
 	include/VBoxVMSettingsFD.h \
 	include/VBoxVMSettingsAudio.h \
@@ -632,6 +636,7 @@ VirtualBox_SOURCES = \
 	src/VBoxVMLogViewer.cpp \
 	src/VBoxDiskImageManagerDlg.cpp \
 	src/VBoxVMSettingsGeneral.cpp \
+	src/VBoxVMSettingsHD.cpp \
 	src/VBoxVMSettingsCD.cpp \
 	src/VBoxVMSettingsFD.cpp \
 	src/VBoxVMSettingsAudio.cpp \
