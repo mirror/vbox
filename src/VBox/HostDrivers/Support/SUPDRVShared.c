@@ -3990,6 +3990,112 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
 
 
 /**
+ * Callback used by supdrvDetermineAsyncTSC to read the TSC on a CPU.
+ *
+ * @param   idCpu       Ignored.
+ * @param   pvUser1     Where to put the TSC.
+ * @param   pvUser2     Ignored.
+ */
+static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    *(uint64_t *)pvUser1 = ASMReadTSC();
+}
+
+
+/**
+ * Determine if Async GIP mode is required because of TSC drift.
+ *
+ * When using the default/normal timer code it is essential that the time stamp counter
+ * (TSC) runs never backwards, that is, a read operation to the counter should return
+ * a bigger value than any previous read operation. This is guaranteed by the latest
+ * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
+ * case we have to choose the asynchronous timer mode.
+ *
+ * @param   pu64Diff    pointer to the determined difference between different cores.
+ * @return  false if the time stamp counters appear to be synchron, true otherwise.
+ */
+bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
+{
+    static uint64_t s_aTsc[8][RTCPUSET_MAX_CPUS];
+    uint64_t u64Diff, u64DiffMin, u64DiffMax, u64TscLast;
+    int iSlot, iCpu, cCpus;
+    bool fBackwards;
+    RTCPUSET OnlineCpus;
+    int rc;
+
+    *pu64DiffCores = 1;
+
+    RTMpGetOnlineSet(&OnlineCpus);
+    cCpus = RTCpuSetCount(&OnlineCpus);
+    if (cCpus < 2)
+        return false;
+    Assert(cCpus <= RT_ELEMENTS(s_aTsc[0]));
+
+    /*
+     * Collect data from the online CPUs.
+     */
+    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
+    {
+        RTCPUID iCpuSet = 0;
+        for (iCpu = 0; iCpu < cCpus; iCpu++)
+        {
+            while (!RTCpuSetIsMemberByIndex(&OnlineCpus, iCpuSet))
+            {
+                iCpuSet++; /* skip offline CPU */
+                dprintf2(("skipping %d\n", iCpuSet));
+            }
+            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpuSet), supdrvDetermineAsyncTscWorker, &s_aTsc[iSlot][iCpu], NULL);
+            if (rc == VERR_NOT_SUPPORTED)
+                return false;
+            iCpuSet++;
+        }
+    }
+
+    /*
+     * Check that the TSC reads are strictly ascending.
+     */
+    /** @todo This doesn't work if a CPU is offline. Make these loops ignore
+     *        offline CPUs. */
+    fBackwards = false;
+    u64DiffMin = (uint64_t)~0;
+    u64TscLast = 0;
+    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
+    {
+        uint64_t u64Tsc0 = s_aTsc[iSlot][0];
+        u64DiffMax = 0;
+        if (u64Tsc0 <= u64TscLast)
+        {
+            dprintf2(("iSlot=%d u64Tsc0=%#x%#08x u64TscLast=%#x%#08x\n", iSlot,
+                      (long)(u64Tsc0 >> 32), (long)u64Tsc0, (long)(u64TscLast >> 32), (long)u64TscLast));
+            fBackwards = true;
+        }
+        u64TscLast = u64Tsc0;
+        for (iCpu = 1; iCpu < cCpus; iCpu++)
+        {
+            uint64_t u64TscN = s_aTsc[iSlot][iCpu];
+            if (u64TscN <= u64TscLast)
+            {
+                dprintf2(("iSlot=%d iCpu=%d u64TscN=%#x%#08x u64TscLast=%#x%#08x\n", iSlot, iCpu,
+                          (long)(u64TscN >> 32), (long)u64TscN, (long)(u64TscLast >> 32), (long)u64TscLast));
+                fBackwards = true;
+            }
+            u64TscLast = u64TscN;
+
+            u64Diff = u64TscN > u64Tsc0 ? u64TscN - u64Tsc0 : u64Tsc0 - u64TscN;
+            if (u64DiffMax < u64Diff)
+                u64DiffMax = u64Diff;
+        }
+        if (u64DiffMin > u64DiffMax)
+            u64DiffMin = u64DiffMax;
+    }
+    /* informational */
+    *pu64DiffCores = u64DiffMin;
+
+    return fBackwards;
+}
+
+
+/**
  * Determin the GIP TSC mode.
  *
  * @returns The most suitable TSC mode.
@@ -3998,26 +4104,33 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
     /*
-     * The problem here is that AMD processors with power management features
-     * may easily end up with different TSCs because the CPUs or even cores
-     * on the same physical chip run at different frequencies to save power.
-     *
-     * It is rumoured that this will be corrected with Barcelona and it's
-     * expected that this will be indicated by the TscInvariant bit in
-     * cpuid(0x80000007). So, the "difficult" bit here is to correctly
-     * identify the older CPUs which don't do different frequency and
-     * can be relied upon to have somewhat uniform TSC between the cpus.
+     * On SMP we're faced with two problems:
+     *      (1) There might be a skew between the CPU, so that cpu0 
+     *          returns a TSC that is sligtly different from cpu1. 
+     *      (2) Power management (and other things) may cause the TSC
+     *          to run at a non-constant speed, and cause the speed
+     *          to be different on the cpus. This will result in (1).
+     * 
+     * So, on SMP systems we'll have to select the ASYNC update method
+     * if there are symphoms of these problems.
      */
     if (RTMpGetCount() > 1)
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
+        uint64_t u64DiffCoresIgnored;
 
         /* Permit the user and/or the OS specfic bits to force async mode. */
         if (supdrvOSGetForcedAsyncTscMode(pDevExt))
             return SUPGIPMODE_ASYNC_TSC;
 
-        /** @todo perform supdrvDetermineAsyncTsc here! */
+        /* Try check for current differences between the cpus. */
+        if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
+            return SUPGIPMODE_ASYNC_TSC;
 
+        /*
+         * If the CPU supports power management and is an AMD one we
+         * won't trust it unless it has the TscInvariant bit is set.
+         */
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
         if (    uEAX >= 1
@@ -4025,8 +4138,6 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
             &&  uECX == X86_CPUID_VENDOR_AMD_ECX
             &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
         {
-            /** @todo This is probably wrong. TscInvariant doesn't seem to mean that RdTSC returns the
-             * value everywhere, but rather that the rate is supposed to be the same. */
             /* Check for APM support and that TscInvariant is cleared. */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
             if (uEAX >= 0x80000007)
@@ -4255,111 +4366,6 @@ void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS,
          */
         ASMAtomicIncU32(&pGipCpu->u32TransactionId);
     }
-}
-
-
-/**
- * Callback used by supdrvDetermineAsyncTSC to read the TSC on a CPU.
- *
- * @param   idCpu       Ignored.
- * @param   pvUser1     Where to put the TSC.
- * @param   pvUser2     Ignored.
- */
-static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-    *(uint64_t *)pvUser1 = ASMReadTSC();
-}
-
-
-/**
- * Determine if Async GIP mode is required because of TSC drift.
- *
- * When using the default/normal timer code it is essential that the time stamp counter
- * (TSC) runs never backwards, that is, a read operation to the counter should return
- * a bigger value than any previous read operation. This is guaranteed by the latest
- * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
- * case we have to choose the asynchronous timer mode.
- *
- * @param   pu64Diff    pointer to the determined difference between different cores.
- * @return  false if the time stamp counters appear to be synchron, true otherwise.
- */
-bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
-{
-    static uint64_t s_aTsc[8][RTCPUSET_MAX_CPUS];
-    uint64_t u64Diff, u64DiffMin, u64DiffMax, u64TscLast;
-    int iSlot, iCpu, cCpus;
-    bool fBackwards;
-    RTCPUSET OnlineCpus;
-    int rc;
-
-    *pu64DiffCores = 1;
-
-    RTMpGetOnlineSet(&OnlineCpus);
-    cCpus = RTCpuSetCount(&OnlineCpus);
-    if (cCpus < 2)
-        return false;
-    Assert(cCpus <= RT_ELEMENTS(s_aTsc[0]));
-
-    /*
-     * Collect data from the online CPUs.
-     */
-    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
-    {
-        RTCPUID iCpuSet = 0;
-        for (iCpu = 0; iCpu < cCpus; iCpu++)
-        {
-            while (!RTCpuSetIsMemberByIndex(&OnlineCpus, iCpuSet))
-            {
-                iCpuSet++; /* skip offline CPU */
-                dprintf2(("skipping %d\n", iCpuSet));
-            }
-            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpuSet), supdrvDetermineAsyncTscWorker, &s_aTsc[iSlot][iCpu], NULL);
-            if (rc == VERR_NOT_SUPPORTED)
-                return false;
-            iCpuSet++;
-        }
-    }
-
-    /*
-     * Check that the TSC reads are strictly ascending.
-     */
-    /** @todo this doesn't work if a CPU is offline for some reason. */
-    fBackwards = false;
-    u64DiffMin = (uint64_t)~0;
-    u64TscLast = 0;
-    for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
-    {
-        uint64_t u64Tsc0 = s_aTsc[iSlot][0];
-        u64DiffMax = 0;
-        if (u64Tsc0 <= u64TscLast)
-        {
-            dprintf2(("iSlot=%d u64Tsc0=%#x%#08x u64TscLast=%#x%#08x\n", iSlot,
-                      (long)(u64Tsc0 >> 32), (long)u64Tsc0, (long)(u64TscLast >> 32), (long)u64TscLast));
-            fBackwards = true;
-        }
-        u64TscLast = u64Tsc0;
-        for (iCpu = 1; iCpu < cCpus; iCpu++)
-        {
-            uint64_t u64TscN = s_aTsc[iSlot][iCpu];
-            if (u64TscN <= u64TscLast)
-            {
-                dprintf2(("iSlot=%d iCpu=%d u64TscN=%#x%#08x u64TscLast=%#x%#08x\n", iSlot, iCpu,
-                          (long)(u64TscN >> 32), (long)u64TscN, (long)(u64TscLast >> 32), (long)u64TscLast));
-                fBackwards = true;
-            }
-            u64TscLast = u64TscN;
-
-            u64Diff = u64TscN > u64Tsc0 ? u64TscN - u64Tsc0 : u64Tsc0 - u64TscN;
-            if (u64DiffMax < u64Diff)
-                u64DiffMax = u64Diff;
-        }
-        if (u64DiffMin > u64DiffMax)
-            u64DiffMin = u64DiffMax;
-    }
-    /* informational */
-    *pu64DiffCores = u64DiffMin;
-
-    return fBackwards;
 }
 
 
