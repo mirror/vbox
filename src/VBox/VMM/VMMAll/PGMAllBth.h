@@ -1953,8 +1953,8 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
             LogFlow(("CheckPageFault: real page fault at %VGv PteSrc.u=%08x (2)\n", GCPtrPage, PteSrc.u));
 
             /* Check the present bit as the shadow tables can cause different error codes by being out of sync.
-            * See the 2nd case above as well.
-            */
+             * See the 2nd case above as well.
+             */
             if (pPdeSrc->n.u1Present && pPteSrc->n.u1Present)
                 TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
 
@@ -2949,6 +2949,49 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
     for (uint64_t iPML4E = 0; iPML4E < X86_PG_PAE_ENTRIES; iPML4E++)
     {
+        /* Shadow PML4E present? */
+        if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
+        {
+            /** @todo this is not efficient; figure out if we can reuse the existing cached version */
+            /* Guest PML4E not present (anymore). */
+            if (!pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E].n.u1Present)
+            {
+                /* Shadow PML4 present, so free all pdpt & pd entries. */
+                for (uint64_t iPDPTE = 0; iPDPTE < X86_PG_AMD64_PDPE_ENTRIES; iPDPTE++)
+                {
+                    PX86PDPT        pPdptDst;
+                    PX86PDPAE       pPDDst;
+                    RTGCUINTPTR     GCPtr = (iPML4E << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
+
+                    int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
+                    if (rc != VINF_SUCCESS)
+                    {
+                        AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                        continue;   /* next PDPTE */
+                    }
+
+                    if (pPdptDst->a[iPDPTE].n.u1Present)
+                    {
+                        for (unsigned iPD = 0; iPD < ELEMENTS(pPDDst->a); iPD++)
+                        {
+                            if (   pPDDst->a[iPD].n.u1Present
+                                && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
+                            {
+                                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PAE_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
+                                pPDDst->a[iPD].u = 0;
+                            }
+                        }
+
+                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPDPTE);
+                        pPdptDst->a[iPDPTE].u = 0;
+                    }
+                }
+            }
+            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PML4, iPML4E);
+            pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u = 0;
+            continue;
+        }
+
 #  else
     {
 #  endif
@@ -2960,13 +3003,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPDPTE * X86_PG_PAE_ENTRIES];
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
+            PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
 #   else
             PX86PML4E       pPml4eSrc;
             X86PDPE         PdpeSrc;
             PX86PDPT        pPdptDst;
             PX86PDPAE       pPDDst;
             PX86PDEPAE      pPDEDst;
-            RTGCUINTPTR     GCPtr   = (iPML4E << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
+            RTGCUINTPTR     GCPtr     = (iPML4E << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
             PGSTPD          pPDSrc    = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtr, &pPml4eSrc, &PdpeSrc, &iPDSrc);
 
             int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
@@ -2980,52 +3024,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             }
             Assert(pPDDst);
             pPDEDst = &pPDDst->a[0];
-
-            if (!pPml4eSrc->n.u1Present)
-            {
-                /* Guest PML4 not present (anymore). */
-                if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
-                {
-                    /* Shadow PML4 present, so free all pdpt & pd entries. */
-                    for (iPDPTE = 0; iPDPTE < ELEMENTS(pPdptDst->a); iPDPTE++)
-                    {
-                        if (pPdptDst->a[iPDPTE].n.u1Present)
-                        {
-                            GCPtr = (iPML4E << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
-
-                            rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
-                            if (rc != VINF_SUCCESS)
-                            {
-                                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
-                                continue;
-                            }
-
-                            for (unsigned iPD = 0; iPD < ELEMENTS(pPDDst->a); iPD++)
-                            {
-                                if (   pPDDst->a[iPD].n.u1Present
-                                    && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
-                                {
-                                    pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PAE_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
-                                    pPDDst->a[iPD].u = 0;
-                                }
-                            }
-
-                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPDPTE);
-                            pPdptDst->a[iPDPTE].u = 0;
-                        }
-                    }
-                }
-                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PML4, iPML4E);
-                pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present = 0;
-                break;
-            }
 #   endif
             Assert(iPDSrc == 0);
 
             if (pPDSrc == NULL)
             {
+                /** @todo this is not efficient; figure out if we can reuse the existing cached version */
                 /* PDPE not present */
-                if (pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present)
+                if (pPdptDst->a[iPDPTE].n.u1Present)
                 {
                     /* for each page directory entry */
                     for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
@@ -3042,9 +3048,18 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         }
                     }
                 }
-                if (!(pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].u & PGM_PLXFLAGS_MAPPING))
-                    pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
-                continue;
+                /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
+                if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_MAPPING))
+                {
+                    if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_PERMANENT))
+                    {
+                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPDPTE);
+                        pPdptDst->a[iPDPTE].u = 0;
+                    }
+                    else
+                        pPdptDst->a[iPDPTE].n.u1Present = 0;
+                }
+                continue;   /* next PDPTE */
             }
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
         {

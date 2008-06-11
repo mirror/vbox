@@ -472,6 +472,24 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+            case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+            {
+                /* Hopefully this doesn't happen very often:
+                 * - messing with the bits of pd pointers without changing the physical address
+                 */
+#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
+                const unsigned iShw = off / sizeof(X86PDPE);
+                if (    uShw.pPDPT->a[iShw].n.u1Present
+                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                {
+                    LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
+                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                    uShw.pPDPT->a[iShw].u = 0;
+                }
+#endif
+                break;
+            }
+
             default:
                 AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
         }
