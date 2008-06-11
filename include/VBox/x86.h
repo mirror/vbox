@@ -1647,7 +1647,7 @@ typedef X86PML4 *PX86PML4;
 typedef const X86PML4 *PCX86PML4;
 
 /** The page shift to get the PML4 index. */
-#define X86_PML4_SHIFT              UINT64_C(39)
+#define X86_PML4_SHIFT              39
 /** The PML4 index mask (apply to a shifted page address). */
 #define X86_PML4_MASK               0x1ff
 
