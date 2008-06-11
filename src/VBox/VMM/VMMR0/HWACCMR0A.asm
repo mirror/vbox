@@ -563,7 +563,7 @@ ALIGNCODE(16)
     pop     xAX         ; saved LDTR
     lldt    ax
 
-    pop     xSI         ; pCtx (needed in rsi by the macros below
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
     ; @todo use the automatic load feature for MSRs
@@ -596,7 +596,7 @@ ALIGNCODE(16)
     pop     xAX         ; saved LDTR
     lldt    ax
 
-    pop     xSI         ; pCtx (needed in rsi by the macros below
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
     ; @todo use the automatic load feature for MSRs
@@ -623,7 +623,7 @@ ALIGNCODE(16)
     pop     xAX         ; saved LDTR
     lldt    ax
 
-    pop     xSI         ; pCtx (needed in rsi by the macros below
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Save the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the host MSRs
     ; @todo use the automatic load feature for MSRs
