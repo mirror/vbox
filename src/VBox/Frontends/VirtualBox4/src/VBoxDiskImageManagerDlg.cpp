@@ -1123,8 +1123,6 @@ void VBoxDiskImageManagerDlg::addImage()
     QTreeWidget *tree = currentTreeWidget();
     DiskImageItem *item = toDiskImageItem (tree->currentItem());
 
-    mVBox = vboxGlobal().virtualBox();
-
     QString title;
     QString filter;
     VBoxDefs::DiskType type = currentTreeWidgetType();
