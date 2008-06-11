@@ -82,6 +82,5 @@ int rtR0InitNative(void)
 
 void rtR0TermNative(void)
 {
-    RTR0MpNotificationTerm(NULL);
 }
 
