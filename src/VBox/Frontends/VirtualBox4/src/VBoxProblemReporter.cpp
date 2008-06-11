@@ -1086,6 +1086,35 @@ bool VBoxProblemReporter::confirmHardDiskUnregister (QWidget *parent,
         tr ("Unregister", "hard disk"));
 }
 
+int VBoxProblemReporter::confirmDetachSATASlots (QWidget *aParent)
+{
+    return messageOkCancel (aParent, Question,
+        tr ("<p>There are hard disks attached to SATA ports of this virtual "
+            "machine. If you disable the SATA controller, all these hard disks "
+            "will be automatically detached.</p>"
+            "<p>Are you sure that you want to "
+            "disable the SATA controller?</p>"),
+        0 /* aAutoConfirmId */,
+        tr ("Disable", "hard disk"));
+}
+
+int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (QWidget* aParent)
+{
+    return message (aParent, Info,
+        tr ("<p>There are no unused hard disks available for the newly created "
+            "attachment.</p>"
+            "<p>Press the <b>Create</b> button to start the <i>New Virtual "
+            "Disk</i> wizard and create a new hard disk, or press the "
+            "<b>Select</b> button to open the <i>Virtual Disk Manager</i> "
+            "and select what to do.</p>"),
+        0, /* aAutoConfirmId */
+        QIMessageBox::Yes,
+        QIMessageBox::No | QIMessageBox::Default,
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        tr ("&Create", "hard disk"),
+        tr ("Select", "hard disk"));
+}
+
 void VBoxProblemReporter::cannotCreateHardDiskImage (
     QWidget *parent, const CVirtualBox &vbox, const QString &src,
     const CVirtualDiskImage &vdi, const CProgress &progress)
