@@ -1875,10 +1875,11 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
  */
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
     /*
      * Only allow 32-bit code.
      */
-    if (SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
+    if (SELMGetSelectorType(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
     {
         RTGCPTR pbCode;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
@@ -1951,6 +1952,8 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
+
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
     {
@@ -1971,7 +1974,7 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         /*
         * Only allow 32-bit code.
         */
-        if (SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid))
+        if (SELMGetSelectorType(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid))
         {
             RTGCPTR pbCode;
             int rc = SELMValidateAndConvertCSAddr(pVM, pCtx->eflags, pCtx->ss, pCtx->cs, &pCtx->csHid, (RTGCPTR)pCtx->eip, &pbCode);

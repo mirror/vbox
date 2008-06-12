@@ -2117,10 +2117,8 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel,
         /* we're not in v86 mode here */
         fakeflags.u32 = 0;
 
-        bool fCode32 = SELMIsSelector32Bit(pVM, fakeflags, Sel, pHiddenSel);
-
-        //assuming 32 bits code for now
-        Assert(fCode32); NOREF(fCode32);
+        /* Assuming 32 bits code for now. */
+        Assert(SELMGetSelectorType(pVM, fakeflags, Sel, pHiddenSel) == CPUMODE_32BIT);
 
         pInstrGC = SELMToFlat(pVM, fakeflags, Sel, pHiddenSel, pInstrGC);
 
