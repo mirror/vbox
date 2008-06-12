@@ -102,7 +102,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     uint32_t cbInstr;
     int rc = DISCoreOneEx(GCPtr,
                           pSelInfo->Raw.Gen.u1DefBig
-                          ? enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Reserved
+                          ? enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long
                           ? CPUMODE_64BIT
                           : CPUMODE_32BIT
                           : CPUMODE_16BIT,

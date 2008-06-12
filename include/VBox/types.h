@@ -422,8 +422,8 @@ typedef struct VBOXDESCGENERIC
     unsigned    u4LimitHigh : 4;
     /** 52    - Available for system software. */
     unsigned    u1Available : 1;
-    /** 53    - Reserved - 0. In long mode this is the 'Long' (L) attribute bit. */
-    unsigned    u1Reserved : 1;
+    /** 53    - 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    unsigned    u1Long : 1;
     /** 54    - This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
     unsigned    u1DefBig : 1;

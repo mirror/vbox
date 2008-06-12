@@ -87,6 +87,7 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  */
 SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
 {
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
     Assert(pHiddenSel || !CPUMAreHiddenSelRegsValid(pVM));
 
    /*
@@ -130,6 +131,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
  */
 SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
     /*
      * Deal with real & v86 mode first.
      */
@@ -449,11 +451,19 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                 :   uLevel >= pHidCS->Attr.n.u2Dpl /* hope I got this right now... */
                     )
             {
+                /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+                if (    CPUMIsGuestInLongMode(pVM)
+                    &&  pHidCS->Attr.n.u1Long)
+                {
+                    *ppvFlat = Addr;
+                    return VINF_SUCCESS;
+                }
+
                 /*
                  * Limit check. Note that the limit in the hidden register is the 
                  * final value. The granularity bit was included in its calculation.
                  */
-                uint32_t    u32Limit = pHidCS->u32Limit;
+                uint32_t u32Limit = pHidCS->u32Limit;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
                     *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHidCS->u64Base );
@@ -614,7 +624,7 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
     pVM->selm.s.Tss.esp1 = (uint32_t)esp;
 }
 
-
+#ifndef IN_RING0
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
  *
@@ -689,7 +699,7 @@ l_tryagain:
 
     return VINF_SUCCESS;
 }
-
+#endif
 
 /**
  * Returns Guest TSS pointer

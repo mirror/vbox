@@ -444,7 +444,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             pHyperCtx->reg##Hid.Attr.n.u4Type        = selInfo.Raw.Gen.u4Type;          \
             pHyperCtx->reg##Hid.Attr.n.u2Dpl         = selInfo.Raw.Gen.u2Dpl;           \
             pHyperCtx->reg##Hid.Attr.n.u1DescType    = selInfo.Raw.Gen.u1DescType;      \
-            pHyperCtx->reg##Hid.Attr.n.u1Reserved    = selInfo.Raw.Gen.u1Reserved;      \
+            pHyperCtx->reg##Hid.Attr.n.u1Long        = selInfo.Raw.Gen.u1Long;          \
         }
 
 /* execute the switch. */
