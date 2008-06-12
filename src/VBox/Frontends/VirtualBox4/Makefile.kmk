@@ -1039,7 +1039,7 @@ OTHER_CLEAN += $(qmfile)
 
 $(qmfile): $(tsfile) | $$(call DIRDEP,$(dir $(qmfile)))
 	$$(call MSG_TOOLS,lrelease,$(target),$(tsfile),$$@)
-	$$(QUIET)$$(VBOX_LRELEASE4) -nocompress $(tsfile) -qm $$@
+	$$(QUIET)$$(VBOX_LRELEASE4) -nocompress -silent $(tsfile) -qm $$@
 
 endef
 
