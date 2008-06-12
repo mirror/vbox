@@ -119,6 +119,8 @@ extern long strtol(const char*,char**,int);
 # ifdef DEBUG_michael
 #  define TRACE_ENTRY() \
 do { xf86Msg(X_INFO, "%s: entering\n", __PRETTY_FUNCTION__); } while(0)
+# else
+#  define TRACE_ENTRY()
 # endif
 #endif
 
