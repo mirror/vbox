@@ -23,12 +23,9 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include	$(KBUILD_PATH)/subheader.kmk
 
-# This can only be built on a real Linux system.
-if1of ($(KBUILD_TARGET),linux l4)
- include $(PATH_SUB_CURRENT)/module/Makefile.kmk
- include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
- include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
-endif
+include $(PATH_SUB_CURRENT)/module/Makefile.kmk
+include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
+include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 
 ifndef VBOX_OSE
  PACKING     += $(PATH_BIN)/additions/VBoxLinuxAdditions.run
@@ -38,7 +35,7 @@ ifndef VBOX_OSE
 endif
 
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
-VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
+VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

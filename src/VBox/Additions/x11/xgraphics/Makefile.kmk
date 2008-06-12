@@ -26,7 +26,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # vboxvideo_drv
 #
-if1of ($(KBUILD_TARGET),linux l4)
+if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxvideo_drv
  vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
  vboxvideo_drv_DEFS.linux = linux
@@ -102,7 +102,7 @@ if1of ($(KBUILD_TARGET),linux l4)
  vboxvideo_drv_SOURCES = \
 	vboxvideo_68.c \
 	vboxutils_68.c
-endif   # target linux, l4
+endif   # target linux
 
 
 #
@@ -115,7 +115,7 @@ endif   # target linux, l4
 #
 DLLS += vboxvideo_drv_70
 vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
-if1of ($(KBUILD_TARGET), l4 linux)
+if1of ($(KBUILD_TARGET), linux)
  vboxvideo_drv_70_CFLAGS += \
 	-Wno-conversion -Wno-unused-parameter $(VBOX_GCC_Wno-variadic-macros) # template?
 endif
