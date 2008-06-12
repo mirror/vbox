@@ -25,7 +25,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += VBoxDisp
 VBoxDisp_TEMPLATE    = VBOXGUESTR0
-ifdef VBOX_SIGN_ADDITIONS
+ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxDisp_NOINST     = true
 endif
 VBoxDisp_SYSSUFF     = .dll
