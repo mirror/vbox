@@ -28,7 +28,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 SYSMODS += VBoxGuest
 VBoxGuest_TEMPLATE    = VBOXGUESTR0
-ifdef VBOX_SIGN_ADDITIONS
+ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuest_NOINST     = true
 endif
 VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL

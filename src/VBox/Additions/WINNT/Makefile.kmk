@@ -69,6 +69,7 @@ VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
 $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
 	$(call VBOX_EDIT_INF32_FN,$<,$@)
+## @todo 64-bit todo here ^^^^^^^.
 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
@@ -76,7 +77,7 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(TARGET_VBoxControl) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 755 $< $(@D)
 
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe: $$(TARGET_VBoxTray) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe:    $$(TARGET_VBoxTray) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 755 $< $(@D)
 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(call DIRDEP,$$(@D))
@@ -90,6 +91,7 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
 	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
+## @todo 64-bit todo here ^^^^^^^.
 
 endif # signing
 
