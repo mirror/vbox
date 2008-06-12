@@ -369,7 +369,7 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
 
         if (rc != STATUS_WAIT_0)
         {
-            dprintf(("VBoxHGCMCallback: The external event was signalled or the wait timed out or terminated.\n"));
+            dprintf(("VBoxHGCMCallback: The external event was signalled or the wait timed out or terminated rc = 0x%08X.\n", rc));
             break;
         }
 
