@@ -232,7 +232,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
 SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits);
 
 /**
- * Return the selector type
+ * Return the cpu mode corresponding to the (CS) selector
  *
  * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM        VM Handle.
@@ -240,7 +240,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSE
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(DISCPUMODE) SELMGetSelectorType(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel);
+SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
 
 /**
  * Returns flat address and limit of LDT by LDT selector.

@@ -509,7 +509,7 @@ PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            cpu.mode = SELMGetSelectorType(pVM, pRegFrame->eflags, pRegFrame->cs, 0);
+            cpu.mode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, 0);
             if(cpu.mode != CPUMODE_32BIT)
             {
                 AssertFailed();
