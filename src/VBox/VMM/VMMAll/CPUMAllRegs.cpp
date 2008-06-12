@@ -821,38 +821,38 @@ CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
     return VINF_SUCCESS;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR0(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR0(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr0;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR1(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR1(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr1;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR2(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR2(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr2;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR3(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR3(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr3;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR6(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR6(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr6;
 }
 
-CPUMDECL(RTGCUINTREG) CPUMGetGuestDR7(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestDR7(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr7;
 }
 
 /** @todo drx should be an array */
-CPUMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint32_t *pValue)
+CPUMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue)
 {
     switch (iReg)
     {
@@ -1222,44 +1222,44 @@ CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM)
 }
 
 
-CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, RTGCUINTREG uDr0)
+CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, uint64_t uDr0)
 {
     pVM->cpum.s.Guest.dr0 = uDr0;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, RTGCUINTREG uDr1)
+CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, uint64_t uDr1)
 {
     pVM->cpum.s.Guest.dr1 = uDr1;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, RTGCUINTREG uDr2)
+CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, uint64_t uDr2)
 {
     pVM->cpum.s.Guest.dr2 = uDr2;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, RTGCUINTREG uDr3)
+CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, uint64_t uDr3)
 {
     pVM->cpum.s.Guest.dr3 = uDr3;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, RTGCUINTREG uDr6)
+CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, uint64_t uDr6)
 {
     pVM->cpum.s.Guest.dr6 = uDr6;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, RTGCUINTREG uDr7)
+CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, uint64_t uDr7)
 {
     pVM->cpum.s.Guest.dr7 = uDr7;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 /** @todo drx should be an array */
-CPUMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint32_t Value)
+CPUMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value)
 {
     switch (iReg)
     {
