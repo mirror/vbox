@@ -52,16 +52,14 @@ ifeq ($(VBOX_PATH_QT4),)
  ifeq ($(KBUILD_TARGET),darwin)
   VBOX_PATH_QT4 := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
   ifeq ($(VBOX_PATH_QT4),)
-   ifneq ($(wildcard /Library/Frameworks/QtCore.framework),) 
+   ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
     # Using the global installation (for OSE).
     VBOX_PATH_QT4 ?= /usr
     VBOX_PATH_QT4_FRAMEWORKS ?= /Library/Frameworks
    endif
   endif
  else ifeq ($(KBUILD_TARGET),win)
-  ifeq ($(KBUILD_TARGET_ARCH),x86)
-    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
-  endif
+  VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
  endif
 endif
 ifeq ($(VBOX_PATH_QT4),)
