@@ -2,19 +2,6 @@
 ## @file
 # Top-level makefile for the VirtualBox Guest Additions.
 #
-# Cross building of the additions is generally done by remote building
-# by means of smbfs, cifs, VBOX_ONLY_ADDITIONS=1 and setting KBUILD_TARGET
-# to the desired target.
-#
-# Limited support for cross building the windows additions using wine
-# is provided. There are a couple of issues with the approach (lack of
-# signing, no VC++ 8 support, ++) that makes it unsuitable for releases.
-#
-# Building the linux additions as part of the l4 build is ok because
-# l4 is built on a linux platform. This is why we have to check if
-# KBUILD_TARGET is l4 or linux in some places, though most of the magic
-# is done in the templates (Config.kmk).
-#
 
 #
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.
@@ -35,6 +22,15 @@
 DEPTH = ../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
+#
+# Cross building of the additions is generally done by remote building
+# by means of smbfs, cifs, VBOX_ONLY_ADDITIONS=1 and setting KBUILD_TARGET
+# and KBUILD_TARGET_ARCH to the desired target and architecture.
+#
+# Limited support for cross building the windows additions using wine
+# is provided. There are a couple of issues with the approach (lack of
+# signing, no VC++ 8 support, ++) that makes it unsuitable for releases.
+#
 #
 # Note! VBOX_WITH_ADDITIONS is checked for by our parent makefile.
 #

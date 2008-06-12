@@ -27,7 +27,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # vboxmouse_drv
 #
-if1of ($(KBUILD_TARGET),linux l4)
+if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxmouse_drv
  vboxmouse_drv_TEMPLATE = VBOXGUESTR3XF86MOD
  vboxmouse_drv_DEFS.linux = linux
