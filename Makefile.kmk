@@ -547,11 +547,11 @@ VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 
 additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
+	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
 	rsync -av --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
-	ssh vbox@192.168.27.5 " cd /cygdrive/c/vbox && PATH_OUT_BASE=Z:/add/out tools/env.sh kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
-#	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\add && set PATH_DEVTOOLS=c:\\vbox\\tools && c:\\vbox\\tools\\env.cmd -KBUILD c:\\vbox\\kBuild && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)"
+	ssh vbox@192.168.27.5 " cd /cygdrive/c/vbox && PATH_OUT_BASE=Z:/add/out tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86)"
+#	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\add && set PATH_DEVTOOLS=c:\\vbox\\tools && c:\\vbox\\tools\\env.cmd -KBUILD c:\\vbox\\kBuild && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk $(VBOX_ADDITIONS_BUILD.x86)"
 endif
 
 additions-build-solaris.x86:
@@ -570,9 +570,9 @@ additions-build-os2.x86:
 
 additions-build-linux.x86:
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
-	+ $(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86)
+	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
-	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD.x86) "
+	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 endif
 
 

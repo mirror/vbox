@@ -36,69 +36,125 @@ DEPTH = ../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
-# Make some indicator adjustments to keep things simple in these makefiles.
+# Note! VBOX_WITH_ADDITIONS is checked for by our parent makefile.
 #
-ifdef VBOX_ADDITIONS_LINUX_ONLY
- VBOX_ADDITIONS_XYZ_ONLY = 1
- VBOX_WITH_LINUX_ADDITIONS = 1
- VBOX_WITH_WIN32_ADDITIONS =
-else ifdef VBOX_ADDITIONS_WIN32_ONLY
- VBOX_ADDITIONS_XYZ_ONLY = 1
- VBOX_WITH_WIN32_ADDITIONS = 1
- VBOX_WITH_LINUX_ADDITIONS =
-endif
-ifdef VBOX_WITH_WIN32_ADDITIONS
- VBOX_WITH_ADDITIONS_ISO.win.x86 = 1
-endif
-ifdef VBOX_WITH_LINUX_ADDITIONS
- VBOX_WITH_ADDITIONS_ISO.linux.x86 = 1
-endif
-ifeq ($(KBUILD_TARGET),solaris)
- VBOX_WITH_ADDITIONS_ISO.solaris.x86 = 1
-endif
-ifeq ($(KBUILD_TARGET),freebsd)
- VBOX_WITH_ADDITIONS_ISO.freebsd.x86 = 1
-endif
+# Note! VBOX_WITH_X11_ADDITIONS is set in Config.kmk
+#
+# Note! The additions build box will set the VBOX_WITH_ADDITIONS_ISO.win.x86
+#       variables before invoking us from the root makefile.
+#
+#  ==>  All we have to worry about is what to do on the target we're on.
+#
+VBOX_WITH_ADDITIONS_ISO.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = 1
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
-ifdef VBOX_WITH_WIN32_ADDITIONS
- include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
-endif
-ifdef VBOX_WITH_LINUX_ADDITIONS
- include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
-endif
+
 ifdef VBOX_WITH_X11_ADDITIONS
  include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
 endif
-ifeq ($(KBUILD_TARGET),solaris)
- include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
-endif
+
 ifeq ($(KBUILD_TARGET),freebsd)
  include $(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
 endif
+ifeq ($(KBUILD_TARGET),linux)
+ include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
+endif
+#ifeq ($(KBUILD_TARGET),os2)
+# include $(PATH_SUB_CURRENT)/os2/Makefile.kmk
+#endif
+ifeq ($(KBUILD_TARGET),solaris)
+ include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
+endif
+ifeq ($(KBUILD_TARGET),win)
+ include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
+endif
 
 # The packing target rule, but only if we're on the local build box.
+# (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
- ifndef VBOX_ADDITIONS_XYZ_ONLY
-  PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
- endif
+ PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
+#
+# File per-OS/arch file specs for the additions iso (alphabetical order).
+#
+# We test for the VBOX_WITH_ADDITIONS_ISO.os.arch so that we don't have to
+# do the $(if )'ing down where the GUESTADDITIONS_FILESPEC.os.arch down
+# in the dependency list and mkisofs command.
+#
 
-#
-# The x86 Windows .iso file spec.
-#
+ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.amd64
+ VBOX_PATH_ADDITIONS.freebsd.amd64 = $(PATH_OUT_BASE)/freebsd.amd64/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.freebsd.amd64 = \
+ 	VBoxFreeBSDAdditions-amd64.tbz=$(VBOX_PATH_ADDITIONS.freebsd.amd64)/VBoxFreeBSDAdditions.tbz
+endif
+ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.x86
+ VBOX_PATH_ADDITIONS.freebsd.x86 = $(PATH_OUT_BASE)/freebsd.x86/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.freebsd.x86 = \
+ 	VBoxFreeBSDAdditions-x86.tbz=$(VBOX_PATH_ADDITIONS.freebsd.x86)/VBoxFreeBSDAdditions.tbz
+endif
+
+
+ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
+ VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
+	os2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
+	os2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
+	os2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
+	os2/libc063.dll=./os2/Bin/libc063.dll \
+	os2/readme.txt=./os2/Bin/readme.txt \
+	os2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
+else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
+	os2/VBoxGuest.sys=./os2/Bin/VBoxGuest.sys \
+	os2/VBoxService.exe=./os2/Bin/VBoxService.exe \
+	os2/gengradd.dll=./os2/Bin/gengradd.dll \
+	os2/libc063.dll=./os2/Bin/libc063.dll \
+	os2/readme.txt=./os2/Bin/readme.txt \
+	os2/vboxmouse.sys=./os2/Bin/vboxmouse.sys
+endif
+
+
+ifdef VBOX_WITH_ADDITIONS_ISO.linux.amd64
+ VBOX_PATH_ADDITIONS.linux.amd64 = $(PATH_OUT_BASE)/linux.amd64/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.linux.amd64 = \
+ 	VBoxLinuxAdditions-amd64.run=$(VBOX_PATH_ADDITIONS.linux.amd64)/VBoxLinuxAdditions.run
+endif
+ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
+ VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions
+## @todo 64-bit additions: rename this package, update docs (?) and tests (?). create wrapper? create gnome/kde autorun app (xplatform) ?
+ GUESTADDITIONS_FILESPEC.linux.x86 = \
+ 	VBoxLinuxAdditions.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
+endif
+
+
+ifdef VBOX_WITH_ADDITIONS_ISO.solaris.amd64
+ VBOX_PATH_ADDITIONS.solaris.amd64 = $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.solaris.amd64 = \
+ 	VBoxSolarisAdditions-amd64.pkg=$(VBOX_PATH_ADDITIONS.solaris.amd64)/VBoxSolarisAdditions.pkg
+endif
+ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
+ VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
+## @todo 64-bit additions: rename this package, update docs (?) and tests (?).
+ GUESTADDITIONS_FILESPEC.solaris.x86 = \
+ 	VBoxSolarisAdditions.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
+endif
+
+
+ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
+ ## @todo 64-bit windows additions:
+ # It's going to be most of the files from above, except they must not have the same name on
+ # the iso (left hand side).
+ # We probably an autorun wrapper which launches the right installer, unless there is
+ # some Autorun.inf magic for this or that it can be done from the x86 installer.
+ # Also, we MUST fix the .inf / .cat problem mentioned in the todo above.
+endif
 ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
- ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
- else
-  # 32-only hack
-  VBOX_PATH_ADDITIONS.win.x86 = $(VBOX_PATH_ADDITIONS)
- endif
- ## @todo We're missing the .cat files and using the wrong .inf files here.
+ ## @todo We're missing the .cat files and using the wrong .inf files here! This is kind of serious...
+ VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.win.x86 = \
 	driver/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
@@ -122,76 +178,8 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	driver/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
 	driver/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMRXNP.dll
  endif
-endif
+endif # win.x86
 
-#
-# The OS/2 .iso file spec.
-#
-ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
- ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
- else
-  VBOX_PATH_ADDITIONS.os2.x86 = $(VBOX_PATH_ADDITIONS)
- endif
- GUESTADDITIONS_FILESPEC.os2.x86 = \
-	os2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
-	os2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
-	os2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
-	os2/libc063.dll=./os2/Bin/libc063.dll \
-	os2/readme.txt=./os2/Bin/readme.txt \
-	os2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
-else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
- GUESTADDITIONS_FILESPEC.os2.x86 = \
-	os2/VBoxGuest.sys=./os2/Bin/VBoxGuest.sys \
-	os2/VBoxService.exe=./os2/Bin/VBoxService.exe \
-	os2/gengradd.dll=./os2/Bin/gengradd.dll \
-	os2/libc063.dll=./os2/Bin/libc063.dll \
-	os2/readme.txt=./os2/Bin/readme.txt \
-	os2/vboxmouse.sys=./os2/Bin/vboxmouse.sys
-endif
-
-#
-# The x86 Linux .iso file spec.
-#
-ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
- ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions
- else
-  # 32-bit only hack
-  VBOX_PATH_ADDITIONS.linux.x86 = $(VBOX_PATH_ADDITIONS)
- endif
- GUESTADDITIONS_FILESPEC.linux.x86 = \
- 	VBoxLinuxAdditions.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
-endif
-
-
-#
-# The x86 Solaris .iso file spec.
-#
-ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
- ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
- else
-  # 32-bit only hack
-  VBOX_PATH_ADDITIONS.solaris.x86 = $(VBOX_PATH_ADDITIONS)
- endif
- GUESTADDITIONS_FILESPEC.solaris.x86 = \
- 	VBoxSolarisAdditions.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
-endif
-
-#
-# The x86 FreeBSD .iso file spec.
-#
-ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.x86
- ifdef VBOX_ONLY_ADDITIONS
-  VBOX_PATH_ADDITIONS.freebsd.x86 = $(PATH_OUT_BASE)/freebsd.x86/$(KBUILD_TYPE)/bin/additions
- else
-  # 32-bit only hack
-  VBOX_PATH_ADDITIONS.freebsd.x86 = $(VBOX_PATH_ADDITIONS)
- endif
- GUESTADDITIONS_FILESPEC.freebsd.x86 = \
- 	VBoxFreeBSDAdditions.tbz=$(VBOX_PATH_ADDITIONS.freebsd.x86)/VBoxFreeBSDAdditions.tbz
-endif
 
 #
 # Build the Guest Additions ISO image.
@@ -201,10 +189,14 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(filter-out %=deleteme=,\
 			$(subst =,=deleteme= ,\
 				$(GUESTADDITIONS_FILESPEC.win.x86) \
+				$(GUESTADDITIONS_FILESPEC.win.amd64) \
 				$(GUESTADDITIONS_FILESPEC.solaris.x86) \
+				$(GUESTADDITIONS_FILESPEC.solaris.amd64) \
 				$(GUESTADDITIONS_FILESPEC.os2.x86) \
 				$(GUESTADDITIONS_FILESPEC.linux.x86) \
+				$(GUESTADDITIONS_FILESPEC.linux.amd64) \
 				$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
+				$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
 			)\
 		) \
 		$(VBOX_SVN_REV_KMK) \
@@ -216,10 +208,14 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 3 \
 		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
 		$(GUESTADDITIONS_FILESPEC.win.x86) \
+		$(GUESTADDITIONS_FILESPEC.win.amd64) \
 		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
+		$(GUESTADDITIONS_FILESPEC.solaris.amd64) \
 		$(GUESTADDITIONS_FILESPEC.os2.x86) \
 		$(GUESTADDITIONS_FILESPEC.linux.x86) \
-		$(GUESTADDITIONS_FILESPEC.freebsd.x86)
+		$(GUESTADDITIONS_FILESPEC.linux.amd64) \
+		$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
+		$(GUESTADDITIONS_FILESPEC.freebsd.amd64)
 endif
 
 
