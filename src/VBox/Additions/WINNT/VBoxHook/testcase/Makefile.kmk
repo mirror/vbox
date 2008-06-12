@@ -24,6 +24,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
+
 #
 # Structure size testcase.
 #

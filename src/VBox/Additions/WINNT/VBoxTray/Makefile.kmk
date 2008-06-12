@@ -41,7 +41,6 @@ VBoxTray_SOURCES  = \
         VBoxMemBalloon.cpp \
 	helpers.cpp \
 	VBoxTray.rc
-
 VBoxTray_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3)
 
