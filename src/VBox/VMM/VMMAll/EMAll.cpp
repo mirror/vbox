@@ -1904,9 +1904,16 @@ EMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestReg
 
     int rc = CPUMGetGuestDRx(pVM, SrcRegDrx, &val64);
     AssertMsgRCReturn(rc, ("CPUMGetGuestDRx %d failed\n", SrcRegDrx), VERR_EM_INTERPRETER);
-    rc = DISWriteReg32(pRegFrame, DestRegGen, (uint32_t)val64);
+    if (CPUMIsGuestInLongMode(pVM))
+    {
+        rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
+    }
+    else
+        rc = DISWriteReg32(pRegFrame, DestRegGen, (uint32_t)val64);
+
     if (VBOX_SUCCESS(rc))
         return VINF_SUCCESS;
+
     return VERR_EM_INTERPRETER;
 }
 
@@ -1914,17 +1921,18 @@ static int emInterpretMovDRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 {
     int rc = VERR_EM_INTERPRETER;
 
-    if(pCpu->param1.flags == USE_REG_GEN32 && pCpu->param2.flags == USE_REG_DBG)
+    if((pCpu->param1.flags == USE_REG_GEN32 || pCpu->param1.flags == USE_REG_GEN64) && pCpu->param2.flags == USE_REG_DBG)
     {
         rc = EMInterpretDRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen, pCpu->param2.base.reg_dbg);
     }
     else
-    if(pCpu->param1.flags == USE_REG_DBG && pCpu->param2.flags == USE_REG_GEN32)
+    if(pCpu->param1.flags == USE_REG_DBG && (pCpu->param2.flags == USE_REG_GEN32 || pCpu->param2.flags == USE_REG_GEN64))
     {
         rc = EMInterpretDRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_dbg, pCpu->param2.base.reg_gen);
     }
     else
         AssertMsgFailed(("Unexpected debug register move\n"));
+
     return rc;
 }
 
