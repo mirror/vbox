@@ -33,6 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/x86.h>
+#include <VBox/dis.h>
 
 
 __BEGIN_DECLS
@@ -231,16 +232,15 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
 SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits);
 
 /**
- * Checks if a selector is 32-bit or 16-bit.
+ * Return the selector type
  *
- * @returns True if it is 32-bit.
- * @returns False if it is 16-bit.
+ * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM        VM Handle.
  * @param   eflags     Current eflags register
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel);
+SELMDECL(DISCPUMODE) SELMGetSelectorType(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel);
 
 /**
  * Returns flat address and limit of LDT by LDT selector.

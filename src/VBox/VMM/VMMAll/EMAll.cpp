@@ -166,7 +166,7 @@ EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pC
  */
 EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
-    int rc = DISCoreOneEx(GCPtrInstr, SELMIsSelector32Bit(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT,
+    int rc = DISCoreOneEx(GCPtrInstr, SELMGetSelectorType(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
 #ifdef IN_GC
                           NULL, NULL,
 #else
@@ -208,7 +208,7 @@ EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFa
     {
         uint32_t    cbOp;
         DISCPUSTATE Cpu;
-        Cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
+        Cpu.mode = SELMGetSelectorType(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
         rc = emDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)pbCode, &cbOp);
         if (VBOX_SUCCESS(rc))
         {
@@ -630,7 +630,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == false)
+            if (SELMGetSelectorType(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == CPUMODE_16BIT)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */

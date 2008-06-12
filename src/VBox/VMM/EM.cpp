@@ -1507,7 +1507,7 @@ int emR3RawRingSwitch(PVM pVM)
             if (pCtx->SysEnter.cs != 0)
             {
                 rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
-                                        SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+                                        (SELMGetSelectorType(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
                 if (VBOX_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVM, "Patched sysenter instruction");
@@ -1758,7 +1758,7 @@ int emR3RawPrivileged(PVM pVM)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
-                                        SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+                                        (SELMGetSelectorType(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
             if (VBOX_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
@@ -1865,7 +1865,7 @@ int emR3RawPrivileged(PVM pVM)
 #endif
         if (    (pCtx->ss & X86_SEL_RPL) == 0
             &&  !pCtx->eflags.Bits.u1VM
-            &&  SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid))
+            &&  SELMGetSelectorType(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
         {
             uint32_t size;
 
@@ -2108,7 +2108,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PATM_HC_MMIO_PATCH_READ:
             rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
-                                    PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
+                                    PATMFL_MMIO_ACCESS | ((SELMGetSelectorType(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0));
             if (VBOX_FAILURE(rc))
                 rc = emR3RawExecuteInstruction(pVM, "MMIO");
             break;

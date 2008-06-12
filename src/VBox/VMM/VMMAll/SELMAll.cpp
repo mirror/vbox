@@ -535,14 +535,13 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
 
 
 /**
- * Checks if a selector is 32-bit or 16-bit.
+ * Return the selector type
  *
- * @returns True if it is 32-bit.
- * @returns False if it is 16-bit.
+ * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM     VM Handle.
  * @param   Sel     The selector.
  */
-static bool selmIsSelector32Bit(PVM pVM, RTSEL Sel)
+static DISCPUMODE selmGetSelectorType(PVM pVM, RTSEL Sel)
 {
     Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
@@ -556,21 +555,20 @@ static bool selmIsSelector32Bit(PVM pVM, RTSEL Sel)
         PVBOXDESC   paLDT = (PVBOXDESC)((char *)pVM->selm.s.CTXMID(,PtrLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
-    return Desc.Gen.u1DefBig;
+    return (Desc.Gen.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
 }
 
 
 /**
- * Checks if a selector is 32-bit or 16-bit.
+ * Return the selector type
  *
- * @returns True if it is 32-bit.
- * @returns False if it is 16-bit.
+ * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM        VM Handle.
  * @param   eflags     Current eflags register
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
+SELMDECL(DISCPUMODE) SELMGetSelectorType(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
     if (!CPUMAreHiddenSelRegsValid(pVM))
     {
@@ -579,13 +577,18 @@ SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSEL
          */
         if (    CPUMIsGuestInRealMode(pVM)
             ||  eflags.Bits.u1VM)
-            return false;
+            return CPUMODE_16BIT;
 
-        return selmIsSelector32Bit(pVM, Sel);
+        return selmGetSelectorType(pVM, Sel);
     }
-    return pHiddenSel->Attr.n.u1DefBig;
-}
+    if (    CPUMIsGuestInLongMode(pVM)
+        &&  pHiddenSel->Attr.n.u1Long)
+        return CPUMODE_64BIT;
 
+    /* Else compatibility or 32 bits mode. */
+    return (pHiddenSel->Attr.n.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    
+}
 
 /**
  * Returns Hypervisor's Trap 08 (\#DF) selector.
