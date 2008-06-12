@@ -1796,4 +1796,3 @@ CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM)
 
     return enmMode;
 }
-
