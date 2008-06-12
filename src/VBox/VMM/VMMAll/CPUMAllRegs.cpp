@@ -396,7 +396,7 @@ CPUMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
     *pCtxCoreDst = *pCtxCore;
 
     /* Mask away invalid parts of the cpu context. */
-    if (CPUMGetGuestMode(pVM) != CPUMMODE_LONG)
+    if (!CPUMIsGuestInLongMode(pVM))
     {
         uint64_t u64Mask = UINT64_C(0xffffffff);
 
