@@ -28,6 +28,7 @@
 #include "QIDialogButtonBox.h"
 #include "VBoxToolBar.h"
 
+/* Qt includes */
 #include <QLineEdit>
 #include <QToolButton>
 #include <QPushButton>
