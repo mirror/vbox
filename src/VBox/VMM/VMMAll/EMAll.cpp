@@ -1864,12 +1864,23 @@ static int emInterpretMovCRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  */
 EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
-    uint32_t val32;
+    uint64_t val;
+    int      rc;
 
-    int rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
+    if (CPUMIsGuestInLongMode(pVM))
+    {
+        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
+    }
+    else 
+    {
+        uint32_t val32;
+        rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
+        val = val32;
+    }
+
     if (VBOX_SUCCESS(rc))
     {
-        rc = CPUMSetGuestDRx(pVM, DestRegDrx, val32);
+        rc = CPUMSetGuestDRx(pVM, DestRegDrx, val);
         if (VBOX_SUCCESS(rc))
             return rc;
         AssertMsgFailed(("CPUMSetGuestDRx %d failed\n", DestRegDrx));

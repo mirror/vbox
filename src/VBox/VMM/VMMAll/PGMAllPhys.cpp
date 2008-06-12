@@ -987,7 +987,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
     /*
      * PAE or 32-bit?
      */
-    Assert(CPUMGetGuestMode(pVM) != CPUMMODE_LONG);
+    Assert(!CPUMIsGuestInLongMode(pVM));
 
     int rc;
     if (!(fFlags & X86_CR4_PAE))

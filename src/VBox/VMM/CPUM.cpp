@@ -789,7 +789,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
     switch (enmType)
     {
         case CPUMDUMPTYPE_TERSE:
-            if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
+            if (CPUMIsGuestInLongMode(pVM))
             {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
@@ -817,7 +817,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             break;
 
         case CPUMDUMPTYPE_DEFAULT:
-            if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
+            if (CPUMIsGuestInLongMode(pVM))
             {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
@@ -853,7 +853,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             break;
 
         case CPUMDUMPTYPE_VERBOSE:
-            if (CPUMGetGuestMode(pVM) == CPUMMODE_LONG)
+            if (CPUMIsGuestInLongMode(pVM))
             {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"

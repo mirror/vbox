@@ -517,6 +517,17 @@ DECLINLINE(bool) CPUMIsGuestInPagedProtectedMode(PVM pVM)
 }
 
 /**
+ * Tests if the guest is running in long mode or not.
+ *
+ * @returns true if in long mode, otherwise false.
+ * @param   pVM     The VM handle.
+ */
+DECLINLINE(bool) CPUMIsGuestInLongMode(PVM pVM)
+{
+    return (CPUMGetGuestEFER(pVM) & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
+}
+
+/**
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
