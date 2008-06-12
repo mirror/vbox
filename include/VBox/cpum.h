@@ -534,7 +534,7 @@ DECLINLINE(bool) CPUMIsGuestInLongMode(PVM pVM)
 }
 
 /**
- * Tests if the guest is running in paged protected or not.
+ * Tests if the guest is running in 16 bits paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
  * @param   pVM     The VM handle.
@@ -542,7 +542,7 @@ DECLINLINE(bool) CPUMIsGuestInLongMode(PVM pVM)
 CPUMDECL(bool) CPUMIsGuestIn16BitCode(PVM pVM);
 
 /**
- * Tests if the guest is running in paged protected or not.
+ * Tests if the guest is running in 32 bits paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
  * @param   pVM     The VM handle.
@@ -550,12 +550,19 @@ CPUMDECL(bool) CPUMIsGuestIn16BitCode(PVM pVM);
 CPUMDECL(bool) CPUMIsGuestIn32BitCode(PVM pVM);
 
 /**
- * Tests if the guest is running in paged protected or not.
+ * Tests if the guest is running in 64 bits mode or not.
  *
- * @returns true if in paged protected mode, otherwise false.
+ * @returns true if in 64 bits protected mode, otherwise false.
  * @param   pVM     The VM handle.
+ * @param   pCtx    Current CPU context
  */
-CPUMDECL(bool) CPUMIsGuestIn64BitCode(PVM pVM);
+DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVM pVM, PCCPUMCTXCORE pCtx)
+{
+    if (!CPUMIsGuestInLongMode(pVM))
+        return false;
+
+    return pCtx->csHid.Attr.n.u1Long;
+}
 
 /**
  * Gets the CPU vendor 
