@@ -134,34 +134,16 @@ endif
 
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
-if1of ($(KBUILD_TARGET),l4 linux os2 solaris win)
- VBOX_WITH_ADDITIONS = 1
-else ifdef VBOX_WITH_WIN32_ADDITIONS # for ssh cross builds -remove later!
- VBOX_WITH_ADDITIONS = 1
-else ifdef VBOX_WITH_LINUX_ADDITIONS # for ssh cross builds - remove later!
+#if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
+if1of ($(KBUILD_TARGET), linux solaris win)
  VBOX_WITH_ADDITIONS = 1
 endif
 # Build the optional ring-0 part of the additions for syntax checking.
 # (Ignored ifndef VBOX_WITH_ADDITIONS. Hack for 32/64 linux issues.)
 VBOX_WITH_ADDITION_DRIVERS = 1
-# Build windows additions.
-# Note! VBOX_WITH_WIN32_ADDITIONS will be removed later.
-if1of ($(KBUILD_TARGET), win)
- VBOX_WITH_WIN32_ADDITIONS = 1
-endif
-# Build linux additions.
-# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later.
-if1of ($(KBUILD_TARGET),l4 linux)
- VBOX_WITH_LINUX_ADDITIONS = 1
-endif
 # Build X11 additions. Can be disabled separately.
-ifndef VBOX_WITH_X11_ADDITIONS
- ifdef VBOX_WITH_LINUX_ADDITIONS
-  VBOX_WITH_X11_ADDITIONS = 1
- endif
- if1of ($(KBUILD_TARGET), solaris)
-  VBOX_WITH_X11_ADDITIONS = 1
- endif
+if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd solaris)
+ VBOX_WITH_X11_ADDITIONS = 1
 endif
 # Enable the building of shared folders in the windows additions.
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
@@ -459,8 +441,6 @@ endif
 ifdef VBOX_WITHOUT_ADDITIONS
  # Zap anything that could be contradicting this.
  VBOX_WITH_ADDITIONS :=
- VBOX_WITH_WIN32_ADDITIONS :=
- VBOX_WITH_LINUX_ADDITIONS :=
 endif
 
 #
@@ -621,13 +601,9 @@ ifndef VBOX_GCC_TOOL
   ifeq ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),x86.amd64) ## @todo mixing target/host here!
    VBOX_GCC_TOOL := GXX32
    VBOX_WITH_VBOXDRV=
-   VBOX_WITH_LINUX_ADDITIONS=
-   VBOX_WITH_WIN32_ADDITIONS=
   else ifeq ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),amd64.x86)
    VBOX_GCC_TOOL := GXX64
    VBOX_WITH_VBOXDRV=
-   VBOX_WITH_LINUX_ADDITIONS=
-   VBOX_WITH_WIN32_ADDITIONS=
   endif
  endif
 endif
