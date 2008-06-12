@@ -248,13 +248,14 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                     /* The callback returns without completing the request,
                      * that means the wait was interrrupted. That can happen
                      * if system reboots or the VBoxService ended abnormally.
-                     * In both cases it is OK to just leave the allocated memory
-                     * in the physical heap. The memory leak does not affect normal
-                     * operations.
-                     * @todo VbglGRCancel (&pHGCMCall->header.header) need to be implemented.
-                     *       The host will not write to the cancelled memory.
+                     *
+                     * Cancel the request, the host will not write to the
+                     * memory related to the cancelled request.
                      */
                     pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
+
+                    pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
+                    VbglGRPerform (&pHGCMCall->header.header);
                 }
             }
         }

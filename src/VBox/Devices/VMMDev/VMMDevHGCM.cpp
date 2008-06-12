@@ -73,6 +73,9 @@ struct VBOXHGCMCMD
     /* The type of the command. */
     VBOXHGCMCMDTYPE enmCmdType;
 
+    /* Whether the command was cancelled by the guest. */
+    bool fCancelled;
+
     /* GC physical address of the guest request. */
     RTGCPHYS        GCPhys;
 
@@ -178,6 +181,34 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd
     
     return rc;
 }
+
+
+static PVBOXHGCMCMD vmmdevHGCMFindCommand (VMMDevState *pVMMDevState, RTGCPHYS GCPhys)
+{
+    PVBOXHGCMCMD pCmd = NULL;
+
+    int rc = vmmdevHGCMCmdListLock (pVMMDevState);
+    
+    if (VBOX_SUCCESS (rc))
+    {
+        pCmd = pVMMDevState->pHGCMCmdList;
+
+        while (pCmd)
+        {
+            if (pCmd->GCPhys == GCPhys)
+            {
+                break;
+            }
+            pCmd = pCmd->pNext;
+        }
+
+        vmmdevHGCMCmdListUnlock (pVMMDevState);
+    }
+    
+    LogFlowFunc(("%p\n", pCmd));
+    return pCmd;
+}
+
 
 static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
                                  uint32_t iParm,
@@ -745,24 +776,52 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
     return rc;
 }
 
+/* @thread EMT */
+int vmmdevHGCMCancel (VMMDevState *pVMMDevState, VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPhys)
+{
+    int rc = VINF_SUCCESS;
+
+    NOREF(pHGCMCancel);
+
+    Log(("vmmdevHGCMCancel\n"));
+
+    /* Find the command in the list. */
+    PVBOXHGCMCMD pCmd = vmmdevHGCMFindCommand (pVMMDevState, GCPhys);
+
+    if (pCmd)
+    {
+        pCmd->fCancelled = true;
+    }
+    else
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    return rc;
+}
+
 static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHeader)
 {
     switch (pCmd->enmCmdType)
     {
         case VBOXHGCMCMDTYPE_CONNECT:
-            if (pHeader->header.requestType == VMMDevReq_HGCMConnect) return VINF_SUCCESS;
+            if (   pHeader->header.requestType == VMMDevReq_HGCMConnect
+                || pHeader->header.requestType == VMMDevReq_HGCMCancel) return VINF_SUCCESS;
             break;
 
         case VBOXHGCMCMDTYPE_DISCONNECT:
-            if (pHeader->header.requestType == VMMDevReq_HGCMDisconnect) return VINF_SUCCESS;
+            if (   pHeader->header.requestType == VMMDevReq_HGCMDisconnect
+                || pHeader->header.requestType == VMMDevReq_HGCMCancel) return VINF_SUCCESS;
             break;
 
         case VBOXHGCMCMDTYPE_CALL:
 #ifdef VBOX_WITH_64_BITS_GUESTS
             if (   pHeader->header.requestType == VMMDevReq_HGCMCall32
-                || pHeader->header.requestType == VMMDevReq_HGCMCall64) return VINF_SUCCESS;
+                || pHeader->header.requestType == VMMDevReq_HGCMCall64
+                || pHeader->header.requestType == VMMDevReq_HGCMCancel) return VINF_SUCCESS;
 #else
-            if (   pHeader->header.requestType == VMMDevReq_HGCMCall) return VINF_SUCCESS;
+            if (   pHeader->header.requestType == VMMDevReq_HGCMCall
+                || pHeader->header.requestType == VMMDevReq_HGCMCancel) return VINF_SUCCESS;
 #endif /* VBOX_WITH_64_BITS_GUESTS */
 
             break;
@@ -780,19 +839,65 @@ static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHea
 
 DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    VMMDevState             *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
-    VMMDevHGCMRequestHeader *pHeader;
-    int                      rc = VINF_SUCCESS;
+    VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
 
-    pHeader = (VMMDevHGCMRequestHeader *)RTMemAllocZ (pCmd->cbSize);
-    Assert(pHeader);
-    if (pHeader == NULL)
-        return;
+    int rc = VINF_SUCCESS;
 
-    PDMDevHlpPhysRead(pVMMDevState->pDevIns, (RTGCPHYS)pCmd->GCPhys, pHeader, pCmd->cbSize);
-
-    if (result != VINF_HGCM_SAVE_STATE)
+    if (result == VINF_HGCM_SAVE_STATE)
     {
+        /* If the completion routine was called because HGCM saves its state,
+         * then currently nothing to be done here. The pCmd stays in the list
+         * and will be saved later when the VMMDev state will be saved.
+         *
+         * It it assumed that VMMDev saves state after the HGCM services,
+         * and, therefore, VBOXHGCMCMD structures are not removed by
+         * vmmdevHGCMSaveState from the list, while HGCM uses them.
+         */
+        LogFlowFunc(("VINF_HGCM_SAVE_STATE for command %p\n", pCmd));
+        return;
+    }
+
+    /* Check whether the command has been already cancelled by the guest.
+     * If it was cancelled, then the data must not be written back to the
+     * guest RAM.
+     */
+    if (pCmd->fCancelled)
+    {
+        /* Just remove the command from the internal list, so the memory can be freed. */
+        LogFlowFunc(("A cancelled command %p\n", pCmd));
+        vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+    }
+    else
+    {
+        /* Preallocated block for requests which have up to 8 parameters (most of requests). */
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        uint8_t au8Prealloc[sizeof (VMMDevHGCMCall) + 8 * sizeof (HGCMFunctionParameter64)];
+#else
+        uint8_t au8Prealloc[sizeof (VMMDevHGCMCall) + 8 * sizeof (HGCMFunctionParameter)];
+#endif /* VBOX_WITH_64_BITS_GUESTS */
+
+        VMMDevHGCMRequestHeader *pHeader;
+
+        if (pCmd->cbSize <= sizeof (au8Prealloc))
+        {
+            pHeader = (VMMDevHGCMRequestHeader *)&au8Prealloc[0];
+        }
+        else
+        {
+            pHeader = (VMMDevHGCMRequestHeader *)RTMemAlloc (pCmd->cbSize);
+            Assert(pHeader);
+            if (pHeader == NULL)
+            {
+                LogRel(("VMMDev: Failed to allocate %d bytes for HGCM request completion!!!\n", pCmd->cbSize));
+
+                /* Do some cleanup. The command have to be excluded from list of active commands anyway. */
+                vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+                return;
+            }
+        }
+
+        PDMDevHlpPhysRead(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
+
         /* Setup return codes. */
         pHeader->result = result;
         
@@ -994,30 +1099,36 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
         }
         else
         {
-            /* Return error to the guest. */
+            /* Command type is wrong. Return error to the guest. */
             pHeader->header.rc = rc;
         }
 
-        /* Mark request as processed*/
+        /* Mark request as processed. */
         pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
 
         /* Write back the request */
         PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
 
-        /* It it assumed that VMMDev saves state after the HGCM services. */
+        /* The command has been completely processed and can be removed from the list. */
         vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
 
         /* Now, when the command was removed from the internal list, notify the guest. */
         VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
 
-        if (pCmd->paLinPtrs)
+        if ((uint8_t *)pHeader != &au8Prealloc[0])
         {
-            RTMemFree (pCmd->paLinPtrs);
+            /* Only if it was allocated from heap. */
+            RTMemFree (pHeader);
         }
-        
-        RTMemFree (pCmd);
     }
-    RTMemFree(pHeader);
+
+    /* Deallocate the command memory. */
+    if (pCmd->paLinPtrs)
+    {
+        RTMemFree (pCmd->paLinPtrs);
+    }
+        
+    RTMemFree (pCmd);
 
     return;
 }
