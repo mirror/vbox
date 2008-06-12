@@ -53,7 +53,9 @@
 //TODO: opcode type (harmless, potentially dangerous, dangerous)
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#ifndef DIS_CORE_ONLY
 static char SZINVALID_OPCODE[] = "Invalid Opcode";
+#endif
 
 #define INVALID_OPCODE  \
     OP(SZINVALID_OPCODE,     0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_INVALID)
