@@ -1633,7 +1633,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
         if (pDesc->Gen.u1Granularity)
             cbLimit <<= PAGE_SHIFT;
 
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
                                 iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
                                 pDesc->Gen.u2Dpl, pszPresent, pszAccessed, pszGranularity, pszBig,
                                 pDesc->Gen.u1Available, pDesc->Gen.u1Long, pszHyper);
