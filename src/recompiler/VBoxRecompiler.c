@@ -1601,6 +1601,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
      * Copy the registers which require no special handling.
      */
 #ifdef TARGET_X86_64
+    /* Note that the high dwords of 64 bits registers are undefined in 32 bits mode and are undefined after a mode change. */
     Assert(R_EAX == 0);
     pVM->rem.s.Env.regs[R_EAX]  = pCtx->rax;
     Assert(R_ECX == 1);
@@ -2048,6 +2049,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
 ////    dprintf2(("FPU state CW=%04X TT=%04X SW=%04X (%04X)\n", env->fpuc, env->fpstt, env->fpus, pVMCtx->fpu.FSW));
 
 #ifdef TARGET_X86_64
+    /* Note that the high dwords of 64 bits registers are undefined in 32 bits mode and are undefined after a mode change. */
     pCtx->rdi           = pVM->rem.s.Env.regs[R_EDI];
     pCtx->rsi           = pVM->rem.s.Env.regs[R_ESI];
     pCtx->rbp           = pVM->rem.s.Env.regs[R_EBP];
