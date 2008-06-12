@@ -236,7 +236,7 @@ GLOBALNAME IDEnterTarget
     and     edx, ~X86_CR4_PAE
 %endif
     mov     eax, cr0
-    and     eax, ~X86_CR0_PG
+    and     eax, (~X86_CR0_PG) & 0xffffffff ; prevent yasm warning
     mov     cr0, eax
     DEBUG_CHAR('4')
     mov     cr4, edx
@@ -758,7 +758,7 @@ GLOBALNAME IDExitTarget
     or      edx, X86_CR4_PAE
 %endif
     mov     eax, cr0
-    and     eax, ~X86_CR0_PG
+    and     eax, (~X86_CR0_PG) & 0xffffffff ; prevent yasm warning
     mov     cr0, eax
     DEBUG_CHAR('2')
     mov     cr4, edx

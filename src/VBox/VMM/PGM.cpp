@@ -2649,6 +2649,9 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
         break;
+    default:
+        AssertFailed();
+        break;
     }
     return VINF_SUCCESS;
 }
