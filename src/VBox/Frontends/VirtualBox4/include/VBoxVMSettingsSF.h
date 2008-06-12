@@ -26,6 +26,7 @@
 #include "VBoxVMSettingsSF.gen.h"
 #include "QIWithRetranslateUI.h"
 
+/* Qt includes */
 #include <QDialog>
 
 class VBoxVMSettingsDlg;

@@ -1,0 +1,206 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxVMSettingsFD</class>
+ <widget class="QWidget" name="VBoxVMSettingsFD" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>410</width>
+    <height>194</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>5</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="mGbFD" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="whatsThis" >
+      <string>When checked, mounts the specified media to the Floppy drive of the virtual machine.</string>
+     </property>
+     <property name="title" >
+      <string>&amp;Mount Floppy Drive</string>
+     </property>
+     <property name="checkable" >
+      <bool>true</bool>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" >
+      <property name="topMargin" >
+       <number>5</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QRadioButton" name="mRbHostFD" >
+          <property name="whatsThis" >
+           <string>Mounts the specified host Floppy drive to the virtual Floppy drive.</string>
+          </property>
+          <property name="text" >
+           <string>Host Floppy &amp;Drive</string>
+          </property>
+          <property name="autoExclusive" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="mCbHostFD" >
+          <property name="whatsThis" >
+           <string>Lists host Floppy drives available to mount to the virtual machine.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>0</width>
+            <height>10</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QRadioButton" name="mRbIsoFD" >
+          <property name="whatsThis" >
+           <string>Mounts the specified Floppy image to the virtual Floppy drive.</string>
+          </property>
+          <property name="text" >
+           <string>&amp;Image File</string>
+          </property>
+          <property name="autoExclusive" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>0</width>
+            <height>10</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType" >
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>19</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="VBoxMediaComboBox" name="mCbIsoFD" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="mTbIsoFD" >
+          <property name="whatsThis" >
+           <string>Invokes the Virtual Disk Manager to select a Floppy image to mount.</string>
+          </property>
+          <property name="text" >
+           <string/>
+          </property>
+          <property name="autoRaise" >
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>VBoxMediaComboBox</class>
+   <extends>QComboBox</extends>
+   <header>VBoxMediaComboBox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
