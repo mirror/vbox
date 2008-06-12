@@ -46,7 +46,13 @@ __BEGIN_DECLS
  */
 typedef struct CPUMSELREGHID
 {
-    /** Base register. */
+    /** Base register.
+     *
+     *  Long mode remarks:
+     *  - Unused in long mode for CS, DS, ES, SS
+     *  - 32 bits for FS & GS; FS(GS)_BASE msr used for the base address
+     *  - 64 bits for TR & LDTR 
+     */
     uint64_t    u64Base;
     /** Limit (expanded). */
     uint32_t    u32Limit;
