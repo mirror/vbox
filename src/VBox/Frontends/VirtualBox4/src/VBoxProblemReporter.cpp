@@ -2131,10 +2131,11 @@ void VBoxProblemReporter::showHelpAboutDialog()
     QString COMVersion = vbox.GetVersion();
     AssertWrapperOk (vbox);
 
+    // this (QWidget*) cast is necessary to work around a gcc-3.2 bug */
 #if VBOX_OSE
-    VBoxAboutDlg (mainWindowShown(), COMVersion).exec();
+    VBoxAboutDlg ((QWidget*)mainWindowShown(), COMVersion).exec();
 #else
-    VBoxAboutNonOSEDlg (mainWindowShown(), COMVersion).exec();
+    VBoxAboutNonOSEDlg ((QWidget*)mainWindowShown(), COMVersion).exec();
 #endif
 }
 
