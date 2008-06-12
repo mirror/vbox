@@ -264,7 +264,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
     pDesc->Gen.u1Available      = 0;
-    pDesc->Gen.u1Reserved       = 0;
+    pDesc->Gen.u1Long           = 0;
     pDesc->Gen.u1DefBig         = 1; /* def 32 bit */
     pDesc->Gen.u1Granularity    = 1; /* 4KB limit */
 
@@ -280,7 +280,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
     pDesc->Gen.u1Available      = 0;
-    pDesc->Gen.u1Reserved       = 0;
+    pDesc->Gen.u1Long           = 0;
     pDesc->Gen.u1DefBig         = 1; /* big */
     pDesc->Gen.u1Granularity    = 1; /* 4KB limit */
 
@@ -296,7 +296,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
     pDesc->Gen.u1Available      = 0;
-    pDesc->Gen.u1Reserved       = 1; /* The Long (L) attribute bit. */
+    pDesc->Gen.u1Long           = 1; /* The Long (L) attribute bit. */
     pDesc->Gen.u1DefBig         = 0; /* With L=1 this must be 0. */
     pDesc->Gen.u1Granularity    = 1; /* 4KB limit */
 
@@ -315,7 +315,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
     pDesc->Gen.u1Available      = 0;
-    pDesc->Gen.u1Reserved       = 0;
+    pDesc->Gen.u1Long           = 0;
     pDesc->Gen.u1DefBig         = 0;
     pDesc->Gen.u1Granularity    = 0; /* byte limit */
 
@@ -334,7 +334,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
     pDesc->Gen.u1Available      = 0;
-    pDesc->Gen.u1Reserved       = 0;
+    pDesc->Gen.u1Long           = 0;
     pDesc->Gen.u1DefBig         = 0;
     pDesc->Gen.u1Granularity    = 0; /* byte limit */
 }
@@ -1191,7 +1191,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         pDesc->Gen.u8BaseHigh1  = RT_BYTE3(GCPtrShadowLDT);
         pDesc->Gen.u8BaseHigh2  = RT_BYTE4(GCPtrShadowLDT);
         pDesc->Gen.u1Available  = 0;
-        pDesc->Gen.u1Reserved   = 0;
+        pDesc->Gen.u1Long       = 0;
         if (cbLdt > 0xffff)
         {
             cbLdt = 0xffff;

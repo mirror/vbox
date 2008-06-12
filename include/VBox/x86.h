@@ -1807,8 +1807,8 @@ typedef struct X86DESCGENERIC
     unsigned    u4LimitHigh : 4;
     /** Available for system software. */
     unsigned    u1Available : 1;
-    /** Reserved - 0. */
-    unsigned    u1Reserved : 1;
+    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    unsigned    u1Long : 1;
     /** This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
     unsigned    u1DefBig : 1;
@@ -1842,8 +1842,8 @@ typedef struct X86DESCATTRBITS
     unsigned    u4LimitHigh : 4;
     /** Available for system software. */
     unsigned    u1Available : 1;
-    /** Reserved - 0. */
-    unsigned    u1Reserved : 1;
+    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    unsigned    u1Long : 1;
     /** This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
     unsigned    u1DefBig : 1;
