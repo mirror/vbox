@@ -100,6 +100,25 @@ void QLivePointer::setPointer (QWidget **aPointer)
 }
 
 
+class VBoxWarnIconLabel: public QWidget
+{
+public:
+    VBoxWarnIconLabel (QWidget *aParent = NULL)
+      : QWidget (aParent)
+    {
+        QHBoxLayout *layout = new QHBoxLayout (this);
+        VBoxGlobal::setLayoutMargin (layout, 0);
+        layout->addWidget (&mIcon);
+        layout->addWidget (&mLabel);
+    }
+    void setWarningPixmap (const QPixmap& aPixmap) { mIcon.setPixmap (aPixmap); }
+    void setWarningText (const QString& aText) { mLabel.setText (aText); }
+
+private:
+    QLabel mIcon;
+    QLabel mLabel;
+};
+
 VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                                       const QString &aCategory,
                                       const QString &aControl)
@@ -113,10 +132,18 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* Apply UI decorations */
     Ui::VBoxVMSettingsDlg::setupUi (this);
 
+    mWarnIconLabel = new VBoxWarnIconLabel();
+    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
+    mButtonBox->button (QDialogButtonBox::Ok)->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
+    mButtonBox->button (QDialogButtonBox::Cancel)->setWhatsThis (tr ("Cancels changes and closes the dialog."));
+    mButtonBox->button (QDialogButtonBox::Help)->setWhatsThis (tr ("Displays the dialog help."));
+
     /* Setup warning icon */
     QIcon icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
     if (!icon.isNull())
-        mLbWarnIcon->setPixmap (icon.pixmap (16, 16));
+        mWarnIconLabel->setWarningPixmap (icon.pixmap (16, 16));
+
+    mButtonBox->addExtraWidget (mWarnIconLabel);
 
     /* Page title font is derived from the system font */
     QFont f = font();
@@ -143,9 +170,9 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
     /* Common connections */
 
-    connect (mBtnOk, SIGNAL (clicked()), this, SLOT (accept()));
-    connect (mBtnCancel, SIGNAL (clicked()), this, SLOT (reject()));
-    connect (mBtnHelp, SIGNAL (clicked()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
@@ -363,9 +390,8 @@ void VBoxVMSettingsDlg::enableOk (const QIWidgetValidator*)
     if (mValid != newValid)
     {
         mValid = newValid;
-        mBtnOk->setEnabled (mValid);
-        mLbWarnText->setHidden (mValid);
-        mLbWarnIcon->setHidden (mValid);
+        mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (mValid);
+        mWarnIconLabel->setVisible (!mValid);
     }
 }
 

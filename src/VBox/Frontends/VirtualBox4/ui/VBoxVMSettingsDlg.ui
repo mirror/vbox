@@ -347,90 +347,21 @@
     </widget>
    </item>
    <item row="3" column="0" colspan="2" >
-    <layout class="QHBoxLayout" >
-     <item>
-      <widget class="QPushButton" name="mBtnHelp" >
-       <property name="whatsThis" >
-        <string>Displays the dialog help.</string>
-       </property>
-       <property name="text" >
-        <string>Help</string>
-       </property>
-       <property name="shortcut" >
-        <string>F1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer>
-       <property name="orientation" >
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" >
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="mLbWarnIcon" >
-       <property name="maximumSize" >
-        <size>
-         <width>16</width>
-         <height>16</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="mLbWarnText" >
-       <property name="text" >
-        <string>Invalid settings detected</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer>
-       <property name="orientation" >
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" >
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="mBtnOk" >
-       <property name="whatsThis" >
-        <string>Accepts (saves) changes and closes the dialog.</string>
-       </property>
-       <property name="text" >
-        <string>&amp;Ok</string>
-       </property>
-       <property name="default" >
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="mBtnCancel" >
-       <property name="whatsThis" >
-        <string>Cancels changes and closes the dialog.</string>
-       </property>
-       <property name="text" >
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QIDialogButtonBox" name="mButtonBox" >
+     <property name="standardButtons" >
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../VirtualBox.qrc" />
  </resources>
