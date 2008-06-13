@@ -344,9 +344,9 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
         /* Convert source address ds:esi. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
+        rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->esi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          (PRTGCPTR)&pu8Virt, NULL);
+                          (PRTGCPTR)&pu8Virt);
         if (VBOX_SUCCESS(rc))
         {
 
@@ -403,9 +403,9 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
         /* Convert destination address. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid,
-                                SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                                (RTGCPTR *)&pu8Virt, NULL);
+        rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->edi,
+                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                          (RTGCPTR *)&pu8Virt);
         if (VBOX_FAILURE(rc))
             return VINF_EM_RAW_GUEST_TRAP;
 
@@ -1318,9 +1318,9 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid,
+    int rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->edi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrDst, NULL);
+                          &GCPtrDst);
     if (VBOX_FAILURE(rc))
     {
         Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
@@ -1473,9 +1473,9 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
+    int rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->esi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrSrc, NULL);
+                          &GCPtrSrc);
     if (VBOX_FAILURE(rc))
     {
         Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));

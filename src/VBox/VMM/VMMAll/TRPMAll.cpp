@@ -554,7 +554,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (   !esp_r0
                         || !ss_r0
                         || (ss_r0 & X86_SEL_RPL) != ((dpl == 0) ? 1 : dpl)
-                        || SELMToFlatEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
+                        || SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
                        )
                     {
                         Log(("Invalid ring 0 stack %04X:%VRv\n", ss_r0, esp_r0));
@@ -568,7 +568,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     esp_r0 = pRegFrame->esp;
 
                     if (    eflags.Bits.u1VM    /* illegal */
-                        ||  SELMToFlatEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
+                        ||  SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
                         AssertMsgFailed(("Invalid stack %04X:%VRv??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
                         goto failure;
