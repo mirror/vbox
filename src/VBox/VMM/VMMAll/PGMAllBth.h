@@ -3016,8 +3016,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             if (   pPDDst->a[iPD].n.u1Present
                                 && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
                             {
-                                AssertCompile(PGMPOOL_IDX_AMD64_PD == SHW_POOL_ROOT_IDX);
-                                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_AMD64_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
+                                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
                                 pPDDst->a[iPD].u = 0;
                             }
                         }
