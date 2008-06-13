@@ -24,6 +24,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
+ifndef VBOX_OSE # not yet
+ include $(PATH_SUB_CURRENT)/PC/VMI/Makefile.kmk
+endif
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
@@ -208,6 +211,7 @@ VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VmiBiosBin$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),l4)
