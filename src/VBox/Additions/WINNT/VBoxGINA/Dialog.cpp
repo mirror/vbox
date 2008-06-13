@@ -108,10 +108,10 @@ void hookDialogBoxes(PVOID pWinlogonFunctions, DWORD dwWlxVersion)
 
 #define CREDPOLL_TIMERID 0x1243
 
-BOOL CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog box
-                                       UINT   uMsg,     // message
-                                       WPARAM wParam,   // first message parameter
-                                       LPARAM lParam)   // second message parameter
+INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog box
+                                          UINT   uMsg,     // message
+                                          WPARAM wParam,   // first message parameter
+                                          LPARAM lParam)   // second message parameter
 {
     BOOL bResult;
     static HWND hwndUserId, hwndPassword, hwndDomain = 0;
@@ -249,7 +249,6 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
             return pfWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
                                        MyWlxLoggedOutSASDlgProc, dwInitParam);
          }
-
       }
    }
 

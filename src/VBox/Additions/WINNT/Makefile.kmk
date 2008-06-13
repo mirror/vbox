@@ -28,9 +28,7 @@ include $(PATH_SUB_CURRENT)/i8042prt/Makefile.kmk
 include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
-ifneq ($(KBUILD_TARGET_ARCH),amd64) ## @todo Not 64-bit ready yet (minor issues).
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
-endif
 include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
 ifndef VBOX_OSE
