@@ -49,7 +49,7 @@
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  */
-static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
+SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
     Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
@@ -80,21 +80,23 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  *
  * @returns Flat address.
  * @param   pVM         VM Handle.
- * @param   eflags      Current eflags
- * @param   Sel         Selector part.
- * @param   pHiddenSel  Hidden selector register
+ * @param   SelReg      Selector register
+ * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
+SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
-    Assert(pHiddenSel || !CPUMAreHiddenSelRegsValid(pVM));
+    PCPUMSELREGHID pHiddenSel;
+    RTSEL          Sel;
+    int            rc;
 
-   /*
-    * Deal with real & v86 mode first.
-    */
+    rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel); AssertRC(rc);
+
+    /*
+     * Deal with real & v86 mode first.
+     */
     if (    CPUMIsGuestInRealMode(pVM)
-        ||  eflags.Bits.u1VM)
+        ||  pCtxCore->eflags.Bits.u1VM)
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
 
@@ -107,7 +109,24 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
 
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (!CPUMAreHiddenSelRegsValid(pVM))
-        return selmToFlat(pVM, Sel, Addr);
+        return SELMToFlatBySel(pVM, Sel, Addr);
+
+    /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+    if (    CPUMIsGuestInLongMode(pVM)
+        &&  pCtxCore->csHid.Attr.n.u1Long)
+    {
+        switch (SelReg)
+        {
+        case DIS_SELREG_FS:
+            return (RTGCPTR)(CPUMGetGuestFSBASE(pVM) + Addr);
+
+        case DIS_SELREG_GS:
+            return (RTGCPTR)(CPUMGetGuestGSBASE(pVM) + Addr);
+
+        default:
+            return Addr;    /* base 0 */
+        }
+    }
     return (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
 }
 

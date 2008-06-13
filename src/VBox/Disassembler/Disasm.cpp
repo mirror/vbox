@@ -122,24 +122,24 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 #endif
 
     //reset instruction settings
-    pCpu->prefix      = PREFIX_NONE;
-    pCpu->prefix_seg  = 0;
-    pCpu->ModRM.u     = 0;
-    pCpu->SIB.u       = 0;
-    pCpu->lastprefix  = 0;
+    pCpu->prefix        = PREFIX_NONE;
+    pCpu->enmPrefixSeg  = DIS_SELREG_DS;
+    pCpu->ModRM.u       = 0;
+    pCpu->SIB.u         = 0;
+    pCpu->lastprefix    = 0;
     pCpu->param1.parval = 0;
     pCpu->param2.parval = 0;
     pCpu->param3.parval = 0;
     pCpu->param1.szParam[0] = 0;
     pCpu->param2.szParam[0] = 0;
     pCpu->param3.szParam[0] = 0;
-    pCpu->param1.size  = 0;
-    pCpu->param2.size  = 0;
-    pCpu->param3.size  = 0;
-    pCpu->param1.flags = 0;
-    pCpu->param2.flags = 0;
-    pCpu->param3.flags = 0;
-    pCpu->uFilter      = uFilter;
+    pCpu->param1.size   = 0;
+    pCpu->param2.size   = 0;
+    pCpu->param3.size   = 0;
+    pCpu->param1.flags  = 0;
+    pCpu->param2.flags  = 0;
+    pCpu->param3.flags  = 0;
+    pCpu->uFilter       = uFilter;
     pCpu->pfnDisasmFnTable = pfnFullDisasm;
 
     if (pszOutput)
@@ -191,10 +191,10 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 
                 // segment override prefix byte
                 case OP_SEG:
-                    pCpu->prefix_seg = paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START;
+                    pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
                     /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                     if (   pCpu->mode != CPUMODE_64BIT
-                        || pCpu->prefix_seg >= OP_PARM_REG_FS)
+                        || pCpu->enmPrefixSeg >= OP_PARM_REG_FS)
                     {
                         pCpu->prefix    |= PREFIX_SEG;
                     }

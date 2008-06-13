@@ -233,12 +233,17 @@ typedef enum
 /** index in {ES, CS, SS, DS, FS, GS}
  * @{
  */
-#define USE_REG_ES                      0
-#define USE_REG_CS                      1
-#define USE_REG_SS                      2
-#define USE_REG_DS                      3
-#define USE_REG_FS                      4
-#define USE_REG_GS                      5
+typedef enum
+{
+    DIS_SELREG_ES = 0,
+    DIS_SELREG_CS = 1,
+    DIS_SELREG_SS = 2,
+    DIS_SELREG_DS = 3,
+    DIS_SELREG_FS = 4,
+    DIS_SELREG_GS = 5,
+    /** The usual 32-bit paranoia. */
+    DIS_SEGREG_32BIT_HACK = 0x7fffffff
+} DIS_SELREG;
 /** @} */
 
 #define USE_REG_FP0                     0
@@ -357,7 +362,7 @@ typedef struct _OP_PARAMETER
         /** XMM0 - XMM7 */
         uint32_t    reg_xmm;
         /** {ES, CS, SS, DS, FS, GS} */
-        uint32_t    reg_seg;
+        DIS_SELREG  reg_seg;
         /** TR0-TR7 (?) */
         uint32_t    reg_test;
         /** CR0-CR4 */
@@ -407,7 +412,7 @@ typedef struct _DISCPUSTATE
     /* Per instruction prefix settings */
     uint32_t        prefix;
     /** segment prefix value. */
-    uint32_t        prefix_seg;
+    DIS_SELREG      enmPrefixSeg;
     /** rex prefix value (64 bits only */
     uint32_t        prefix_rex;
     /** addressing mode (16 or 32 bits). (CPUMODE_*) */
@@ -585,9 +590,9 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
 DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
                           PDISCPUSTATE pCpu, unsigned *pcbInstruction);
 
-DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
-DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
-DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
+DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
+DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
+DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
 /**
  * Returns the value of the parameter in pParam
@@ -610,13 +615,13 @@ DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
 DISDECL(int) DISFetchReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t *pVal);
-DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal);
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
+DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal);
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8);
 DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, unsigned reg32, uint16_t val16);
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, unsigned reg32, uint32_t val32);
 DISDECL(int) DISWriteReg64(PCPUMCTXCORE pRegFrame, unsigned reg64, uint64_t val64);
-DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL val);
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val);
 DISDECL(int) DISPtrReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t **ppReg);
 DISDECL(int) DISPtrReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t **ppReg);
 DISDECL(int) DISPtrReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t **ppReg);

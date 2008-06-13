@@ -228,11 +228,10 @@ CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   Sel         selector
- * @param   pHiddenSel  The hidden selector register.
+ * @param   pCtxCore    CPU context
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTRCPTR pInstrGC);
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC);
 
 /**
  * Scan and analyse code

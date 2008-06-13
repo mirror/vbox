@@ -444,6 +444,8 @@ CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
 CPUMDECL(uint64_t)  CPUMGetGuestEFER(PVM pVM);
+CPUMDECL(uint64_t)  CPUMGetGuestFSBASE(PVM pVM);
+CPUMDECL(uint64_t)  CPUMGetGuestGSBASE(PVM pVM);
 /** @} */
 
 /** @name Guest Register Setters.

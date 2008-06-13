@@ -151,12 +151,26 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
  *
  * @returns Flat address.
  * @param   pVM         VM Handle.
- * @param   eflags      Current eflags
- * @param   Sel         Selector part.
- * @param   pHiddenSel  Hidden selector register
+ * @param   SelReg      Selector register
+ * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTGCPTR Addr);
+SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
+
+/**
+ * Converts a GC selector based address to a flat address.
+ *
+ * No limit checks are done. Use the SELMToFlat*() or SELMValidate*() functions
+ * for that.
+ *
+ * Note: obsolete; DO NOT USE!
+ *
+ * @returns Flat address.
+ * @param   pVM     VM Handle.
+ * @param   Sel     Selector part.
+ * @param   Addr    Address part.
+ */
+SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 
 /** Flags for SELMToFlatEx().
  * @{ */

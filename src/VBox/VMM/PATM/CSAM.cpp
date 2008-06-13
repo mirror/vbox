@@ -2098,11 +2098,10 @@ CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fS
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   Sel         selector
- * @param   pHiddenSel  The hidden selector register.
+ * @param   pCtxCore    CPU context
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTRCPTR pInstrGC)
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
 {
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
@@ -2112,16 +2111,10 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel,
 
     if (CSAMIsEnabled(pVM))
     {
-        X86EFLAGS fakeflags;
-
-        /* we're not in v86 mode here */
-        fakeflags.u32 = 0;
-
         /* Assuming 32 bits code for now. */
-        Assert(SELMGetCpuModeFromSelector(pVM, fakeflags, Sel, pHiddenSel) == CPUMODE_32BIT);
+        Assert(SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, &pCtxCore->csHid) == CPUMODE_32BIT);
 
-        pInstrGC = SELMToFlat(pVM, fakeflags, Sel, pHiddenSel, pInstrGC);
-
+        pInstrGC = SELMToFlat(pVM, DIS_SELREG_CS, pCtxCore, pInstrGC);
         return CSAMR3CheckCode(pVM, pInstrGC);
     }
     return VINF_SUCCESS;
@@ -2365,14 +2358,10 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             RTRCPTR pHandler;
             CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
-            X86EFLAGS fakeflags;
             SELMSELINFO selInfo;
 
-            /* we're not in v86 mode here */
-            fakeflags.u32 = 0;
-
             pHandler = VBOXIDTE_OFFSET(*pGuestIdte);
-            pHandler = SELMToFlat(pVM, fakeflags, pGuestIdte->Gen.u16SegSel, 0, pHandler);
+            pHandler = SELMToFlatBySel(pVM, pGuestIdte->Gen.u16SegSel, pHandler);
 
             rc = SELMR3GetSelectorInfo(pVM, pGuestIdte->Gen.u16SegSel, &selInfo);
             if (    VBOX_FAILURE(rc)

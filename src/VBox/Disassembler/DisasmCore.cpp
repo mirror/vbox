@@ -172,25 +172,25 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
     /*
      * Reset instruction settings
      */
-    pCpu->prefix     = PREFIX_NONE;
-    pCpu->prefix_seg = 0;
-    pCpu->lastprefix = 0;
-    pCpu->ModRM.u    = 0;
-    pCpu->SIB.u      = 0;
+    pCpu->prefix        = PREFIX_NONE;
+    pCpu->enmPrefixSeg  = DIS_SELREG_DS;
+    pCpu->lastprefix    = 0;
+    pCpu->ModRM.u       = 0;
+    pCpu->SIB.u         = 0;
     pCpu->param1.parval = 0;
     pCpu->param2.parval = 0;
     pCpu->param3.parval = 0;
     pCpu->param1.szParam[0] = '\0';
     pCpu->param2.szParam[0] = '\0';
     pCpu->param3.szParam[0] = '\0';
-    pCpu->param1.flags = 0;
-    pCpu->param2.flags = 0;
-    pCpu->param3.flags = 0;
-    pCpu->param1.size  = 0;
-    pCpu->param2.size  = 0;
-    pCpu->param3.size  = 0;
-    pCpu->pfnReadBytes = 0;
-    pCpu->uFilter      = OPTYPE_ALL;
+    pCpu->param1.flags  = 0;
+    pCpu->param2.flags  = 0;
+    pCpu->param3.flags  = 0;
+    pCpu->param1.size   = 0;
+    pCpu->param2.size   = 0;
+    pCpu->param3.size   = 0;
+    pCpu->pfnReadBytes  = 0;
+    pCpu->uFilter       = OPTYPE_ALL;
     pCpu->pfnDisasmFnTable = pfnFullDisasm;
 
     return VBOX_SUCCESS(disCoreOne(pCpu, InstructionAddr, pcbInstruction));
@@ -216,15 +216,15 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
     /*
      * Reset instruction settings
      */
-    pCpu->prefix     = PREFIX_NONE;
-    pCpu->prefix_seg = 0;
-    pCpu->lastprefix = 0;
-    pCpu->mode       = enmCpuMode;
-    pCpu->ModRM.u    = 0;
-    pCpu->SIB.u      = 0;
-    pCpu->param1.parval = 0;
-    pCpu->param2.parval = 0;
-    pCpu->param3.parval = 0;
+    pCpu->prefix            = PREFIX_NONE;
+    pCpu->enmPrefixSeg      = DIS_SELREG_DS;
+    pCpu->lastprefix        = 0;
+    pCpu->mode              = enmCpuMode;
+    pCpu->ModRM.u           = 0;
+    pCpu->SIB.u             = 0;
+    pCpu->param1.parval     = 0;
+    pCpu->param2.parval     = 0;
+    pCpu->param3.parval     = 0;
     pCpu->param1.szParam[0] = '\0';
     pCpu->param2.szParam[0] = '\0';
     pCpu->param3.szParam[0] = '\0';
@@ -297,10 +297,10 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
 
             // segment override prefix byte
             case OP_SEG:
-                pCpu->prefix_seg = paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START;
+                pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pCpu->mode != CPUMODE_64BIT
-                    || pCpu->prefix_seg >= OP_PARM_REG_FS)
+                    || pCpu->enmPrefixSeg >= OP_PARM_REG_FS)
                 {
                     pCpu->prefix    |= PREFIX_SEG;
                 }
@@ -1526,7 +1526,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
     if (pParam->param <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
-        pParam->base.reg_seg = pParam->param - OP_PARM_REG_SEG_START;
+        pParam->base.reg_seg = (DIS_SELREG)(pParam->param - OP_PARM_REG_SEG_START);
         pParam->flags |= USE_REG_SEG;
         pParam->size   = 2;
     }
@@ -2120,7 +2120,7 @@ static const char *szModRMSegReg[6]   = {"ES", "CS", "SS", "DS", "FS", "GS"};
 static const int   BaseModRMReg16[8]  = { USE_REG_BX, USE_REG_BX, USE_REG_BP, USE_REG_BP, USE_REG_SI, USE_REG_DI, USE_REG_BP, USE_REG_BX};
 static const int   IndexModRMReg16[4] = { USE_REG_SI, USE_REG_DI, USE_REG_SI, USE_REG_DI};
 //*****************************************************************************
-void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam, int fRegAddr)
+void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam, int fRegAddr)
 {
     int subtype, type, mod;
 
@@ -2154,7 +2154,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     {
     case OP_PARM_b:
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
-        if (idx > (int)RT_ELEMENTS(szModRMReg8))
+        if (idx > RT_ELEMENTS(szModRMReg8))
             disasmAddString(pParam->szParam, szModRMReg8_64[idx]);
         else
             disasmAddString(pParam->szParam, szModRMReg8[idx]);
@@ -2193,7 +2193,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
 }
 //*****************************************************************************
 //*****************************************************************************
-void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam)
+void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam)
 {
     disasmAddString(pParam->szParam, szModRMReg1616[idx]);
     pParam->flags |= USE_REG_GEN16;
@@ -2206,23 +2206,23 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pP
 }
 //*****************************************************************************
 //*****************************************************************************
-void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam)
+void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam)
 {
 #if 0 //def DEBUG_Sander
-    AssertMsg(idx < (int)ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
+    AssertMsg(idx < ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
 #endif
 #ifdef IN_RING3
-    if (idx >= (int)ELEMENTS(szModRMSegReg))
+    if (idx >= ELEMENTS(szModRMSegReg))
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
         DIS_THROW(ExceptionInvalidParameter);
     }
 #endif
 
-    idx = RT_MIN(idx, (int)ELEMENTS(szModRMSegReg)-1);
+    idx = RT_MIN(idx, ELEMENTS(szModRMSegReg)-1);
     disasmAddString(pParam->szParam, szModRMSegReg[idx]);
     pParam->flags |= USE_REG_SEG;
-    pParam->base.reg_seg = idx;
+    pParam->base.reg_seg = (DIS_SELREG)idx;
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -2308,7 +2308,7 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
         break; //no pointer type specified/necessary
     }
     if (pCpu->prefix & PREFIX_SEG)
-        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%s:", szModRMSegReg[pCpu->prefix_seg]);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%s:", szModRMSegReg[pCpu->enmPrefixSeg]);
 }
 #ifndef IN_GC
 //*****************************************************************************
