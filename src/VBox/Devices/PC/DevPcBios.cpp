@@ -1142,7 +1142,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     LogFlow(("pcbiosReset:\n"));
 
     if (pData->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
+        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + VBOX_DMI_TABLE_SIZE);
 }
 
 
@@ -1375,7 +1375,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pData->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + VBOX_DMI_TABLE_SIZE);
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, false /* fShadow */, "DMI tables");
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pData->au8DMIPage, false /* fShadow */, "DMI tables");
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -1505,6 +1505,16 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               false /* fShadow */, "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
+
+#ifndef VBOX_OSE
+    /*
+     * Map the VMI BIOS into memory.
+     */
+    AssertReleaseMsg(g_cbVmiBiosBinary == _4K, ("cbVmiBiosBinary=%#x\n", g_cbVmiBiosBinary));
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_VMI_BIOS_BASE, g_cbVmiBiosBinary, g_abVmiBiosBinary, false, "VMI BIOS");
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
 
     /*
      * Call reset to set values and stuff.

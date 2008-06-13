@@ -41,7 +41,10 @@ const void *g_apvVBoxDDDependencies2[] =
 {
     (void *)&g_abPcBiosBinary,
     (void *)&g_abVgaBiosBinary,
-    (void *)&g_abNetBiosBinary
+    (void *)&g_abNetBiosBinary,
+#ifndef VBOX_OSE
+    (void *)&g_abVmiBiosBinary,
+#endif
 };
 
 
