@@ -1278,20 +1278,22 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGMPOOL_IDX_PD          1
 /** The extended PAE page directory (2048 entries, works as root currently). */
 #define PGMPOOL_IDX_PAE_PD      2
- /** PAE Page Directory Table 0. */
+/** PAE Page Directory Table 0. */
 #define PGMPOOL_IDX_PAE_PD_0    3
- /** PAE Page Directory Table 1. */
+/** PAE Page Directory Table 1. */
 #define PGMPOOL_IDX_PAE_PD_1    4
- /** PAE Page Directory Table 2. */
+/** PAE Page Directory Table 2. */
 #define PGMPOOL_IDX_PAE_PD_2    5
- /** PAE Page Directory Table 3. */
+/** PAE Page Directory Table 3. */
 #define PGMPOOL_IDX_PAE_PD_3    6
+/** AMD64 Page Directory Table. */
+#define PGMPOOL_IDX_AMD64_PD    7
 /** Page Directory Pointer Table (PAE root, not currently used). */
-#define PGMPOOL_IDX_PDPT        7
+#define PGMPOOL_IDX_PDPT        8
 /** Page Map Level-4 (64-bit root). */
-#define PGMPOOL_IDX_PML4        8
+#define PGMPOOL_IDX_PML4        9
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       9
+#define PGMPOOL_IDX_FIRST       10
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST        0x3fff
 /** @} */
@@ -1308,9 +1310,9 @@ typedef struct PGMPOOLUSER
     /** The index to the next item in the chain. NIL_PGMPOOL_USER_INDEX is no next. */
     uint16_t            iNext;
     /** The user page index. */
-    uint16_t            iUser;
+    uint32_t            iUser;
     /** Index into the user table. */
-    uint16_t            iUserTable;
+    uint32_t            iUserTable;
 } PGMPOOLUSER, *PPGMPOOLUSER;
 typedef const PGMPOOLUSER *PCPGMPOOLUSER;
 #pragma pack()
@@ -1368,6 +1370,8 @@ typedef enum PGMPOOLKIND
 
     /** Shw: 64-bit page directory pointer table;   Gst: 64-bit page directory pointer table. */
     PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT,
+    /** Shw: 64-bit page directory table;   Gst: 64-bit page directory table. */
+    PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD,
 
     /** Shw: Root 32-bit page directory. */
     PGMPOOLKIND_ROOT_32BIT_PD,
@@ -2622,10 +2626,10 @@ void            pgmR3PoolReset(PVM pVM);
 #ifdef IN_GC
 void           *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
-int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint16_t iUserTable, PPPGMPOOLPAGE ppPage);
+int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
 PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
-void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint16_t iUserTable);
-void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint16_t iUserTable);
+void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
+void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolFlushAll(PVM pVM);
 void            pgmPoolClearAll(PVM pVM);

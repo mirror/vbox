@@ -778,7 +778,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         AssertRCReturn(rc, rc);
 
         Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-        rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_PAE_PD_FOR_PAE_PD, PGMPOOL_IDX_PDPT, iPdPt, &pShwPage);
+        rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, PGMPOOL_IDX_PDPT, iPml4e * X86_PG_PAE_ENTRIES + iPdPt, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
 

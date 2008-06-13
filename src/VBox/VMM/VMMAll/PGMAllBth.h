@@ -2152,6 +2152,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
+    const unsigned  iPml4e = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    const unsigned  iPdPte = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdpt;
@@ -2165,6 +2167,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 # endif
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
+
+    /* Calculate unique identifier for the PD pool allocations. */
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+    const unsigned iPoolIdx = (iPml4e * X86_PG_PAE_ENTRIES + iPdPte) * X86_PG_PAE_ENTRIES + iPDDst;
+# else
+    const unsigned iPoolIdx = iPDDst;
+# endif
 
 # ifndef PGM_WITHOUT_MAPPINGS
     /*
@@ -2226,7 +2235,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPoolIdx, &pShwPage);
         }
         else
         {
@@ -2235,7 +2244,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, SHW_POOL_ROOT_IDX, iPoolIdx, &pShwPage);
         }
         if (rc == VINF_SUCCESS)
             pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -3007,12 +3016,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             if (   pPDDst->a[iPD].n.u1Present
                                 && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
                             {
-                                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PAE_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
+                                AssertCompile(PGMPOOL_IDX_AMD64_PD == SHW_POOL_ROOT_IDX);
+                                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_AMD64_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
                                 pPDDst->a[iPD].u = 0;
                             }
                         }
 
-                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPDPTE);
+                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPML4E * X86_PG_PAE_ENTRIES + iPDPTE);
                         pPdptDst->a[iPDPTE].u = 0;
                     }
                 }
@@ -3070,9 +3080,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
                         {
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
-                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PAE_PD, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
+                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, (iPML4E * X86_PG_PAE_ENTRIES + iPDPTE) * X86_PG_PAE_ENTRIES + iPD);
 #   else
-                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PAE_PD, iPDPTE * X86_PG_PAE_ENTRIES + iPD);
+                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPDPTE * X86_PG_PAE_ENTRIES + iPD);
 #   endif
                             pPDEDst[iPD].u = 0;
                         }
@@ -3083,7 +3093,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 {
                     if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_PERMANENT))
                     {
-                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPDPTE);
+#   if PGM_GST_TYPE == PGM_TYPE_AMD64
+                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PDPT, iPML4E * X86_PG_PAE_ENTRIES + iPDPTE);
+#   else
+                        AssertFailed(); /* can't happen; the 4 pdpt pages are fixed! */
+#   endif
                         pPdptDst->a[iPDPTE].u = 0;
                     }
                     else
@@ -3161,8 +3175,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                     for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
-#  elif PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE
                     const unsigned iPdShw = iPD + iPDPTE * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
+#  elif PGM_GST_TYPE == PGM_TYPE_AMD64
+                    const unsigned iPdShw = iPD + (iPDPTE + iPML4E * X86_PG_PAE_ENTRIES) * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                     const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
