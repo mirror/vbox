@@ -1976,7 +1976,7 @@ static void pgmPoolTrackFreeUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iU
      */
     PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
 
-    /* Special: For PAE and 32-bit paging, there are usually no more than one user. */
+    /* Special: For PAE and 32-bit paging, there is usually no more than one user. */
     uint16_t i = pPage->iUserHead;
     if (    i != NIL_PGMPOOL_USER_INDEX
         &&  paUsers[i].iUser == iUser
@@ -3472,7 +3472,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         if (VBOX_SUCCESS(rc2))
         {
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            LogFlow(("pgmPoolAlloc: returns %Vrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
+            LogFlow(("pgmPoolAlloc: cached returns %Vrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
         }
     }
