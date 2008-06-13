@@ -68,38 +68,6 @@ static QTreeWidgetItem* findItem (QTreeWidget *aView,
     return list.count() ? list [0] : 0;
 }
 
-/**
- *  QObject live pointer class to make alive link of some pointer to some
- *  QWidget. It will be nulled in case of linked QWidget is destroyed.
- */
-QLivePointer* QLivePointer::mThis = 0;
-
-void QLivePointer::link (QWidget *aParent, QWidget **aPointer)
-{
-    if (!mThis)
-        mThis = new QLivePointer();
-    mThis->setParent (aParent);
-    mThis->setPointer (aPointer);
-}
-
-void QLivePointer::kill()
-{
-    delete mThis;
-}
-
-QLivePointer::~QLivePointer()
-{
-    *mPointer = 0;
-    mThis = 0;
-}
-
-void QLivePointer::setPointer (QWidget **aPointer)
-{
-    mPointer = aPointer;
-    *mPointer = static_cast<QWidget*> (parent());
-}
-
-
 class VBoxWarnIconLabel: public QWidget
 {
 public:
@@ -127,7 +95,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     , mAllowResetFirstRunFlag (false)
     , mValid (true)
     , mWhatsThisTimer (new QTimer (this))
-    , mWhatsThisCandidate (0)
+    , mWhatsThisCandidate (NULL)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsDlg::setupUi (this);
@@ -470,6 +438,21 @@ void VBoxVMSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
     mLbWhatsThis->setText (text);
 }
 
+void VBoxVMSettingsDlg::resetFirstRunFlag()
+{
+    if (mAllowResetFirstRunFlag)
+        mResetFirstRunFlag = true;
+}
+
+void VBoxVMSettingsDlg::whatsThisCandidateDestroyed (QObject *aObj /*= NULL*/)
+{
+    /* sanity */
+    Assert (mWhatsThisCandidate == aObj);
+
+    if (mWhatsThisCandidate == aObj)
+        mWhatsThisCandidate = NULL;
+}
+
 bool VBoxVMSettingsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     if (!aObject->isWidgetType())
@@ -485,12 +468,27 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
         case QEvent::Leave:
         {
             if (aEvent->type() == QEvent::Enter)
-                QLivePointer::link (widget, &mWhatsThisCandidate);
+            {
+                /* What if Qt sends Enter w/o Leave... */
+                if (mWhatsThisCandidate)
+                    disconnect (mWhatsThisCandidate, SIGNAL (destroyed (QObject *)),
+                                this, SLOT (whatsThisCandidateDestroyed (QObject *)));
+
+                mWhatsThisCandidate = widget;
+                /* make sure we don't reference a deleted object after the
+                 * timer is shot */
+                connect (mWhatsThisCandidate, SIGNAL (destroyed (QObject *)),
+                         this, SLOT (whatsThisCandidateDestroyed (QObject *)));
+            }
             else
             {
-                QLivePointer::kill();
-                mWhatsThisCandidate = 0;
+                /* cleanup */
+                if (mWhatsThisCandidate)
+                    disconnect (mWhatsThisCandidate, SIGNAL (destroyed (QObject *)),
+                                this, SLOT (whatsThisCandidateDestroyed (QObject *)));
+                mWhatsThisCandidate = NULL;
             }
+
             mWhatsThisTimer->start (100);
             break;
         }
@@ -539,12 +537,6 @@ QString VBoxVMSettingsDlg::pagePath (QWidget *aPage)
                       .arg (mPageStack->indexOf (aPage), 2, 10, QChar ('0')),
                   1);
     return ::path (li);
-}
-
-void VBoxVMSettingsDlg::resetFirstRunFlag()
-{
-    if (mAllowResetFirstRunFlag)
-        mResetFirstRunFlag = true;
 }
 
 void VBoxVMSettingsDlg::setWarning (const QString &aWarning)

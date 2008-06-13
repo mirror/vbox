@@ -33,37 +33,10 @@ class VBoxWarnIconLabel;
 class QTimer;
 class QWidgetStack;
 
-/**
- *  QObject live pointer class to make alive link of some pointer to
- *  some object. It will be nulled in case of object in destroyed.
- */
-class QLivePointer : public QObject
-{
-    Q_OBJECT;
-
-public:
-
-    static void link (QWidget *aParent, QWidget **aPointer);
-    static void kill();
-
-protected:
-
-    QLivePointer() {}
-   ~QLivePointer();
-
-private:
-
-    void setPointer (QWidget **aPointer);
-
-    static QLivePointer *mThis;
-
-    QWidget **mPointer;
-};
-
-class VBoxVMSettingsDlg : public QDialog, 
+class VBoxVMSettingsDlg : public QDialog,
                           public Ui::VBoxVMSettingsDlg
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
@@ -81,6 +54,7 @@ private slots:
     void settingsGroupChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrev);
     void updateWhatsThis (bool gotFocus = false);
     void resetFirstRunFlag();
+    void whatsThisCandidateDestroyed (QObject *aObj = NULL);
 
 private:
 
