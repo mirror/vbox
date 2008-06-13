@@ -496,7 +496,7 @@ static int VBoxVFS_Root(vfs_t *pVFS, vnode_t **ppVNode)
 
 static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat)
 {
-    SHFLVOLINFO         VolumeInfo;    
+    SHFLVOLINFO         VolumeInfo;
     uint32_t            cbBuffer;
     vboxvfs_globinfo_t *pVBoxVFSGlobalInfo;
     dev32_t             Dev32;
@@ -520,7 +520,7 @@ static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat)
     pStat->f_blocks      = VolumeInfo.ullTotalAllocationBytes / VolumeInfo.ulBytesPerAllocationUnit;
     pStat->f_files       = 1000;
     pStat->f_ffree       = 1000; /* don't return 0 here since the guest may think that it is not possible to create any more files */
-    pStat->f_namemax     = 255;   /* @todo is this correct?? */
+    pStat->f_namemax     = 255;  /* @todo is this correct?? */
 
     strlcpy(pStat->f_basetype, vfssw[pVFS->vfs_fstype].vsw_name, sizeof(pStat->f_basetype));
     strlcpy(pStat->f_fstr, DEVICE_NAME, sizeof(pStat->f_fstr));
