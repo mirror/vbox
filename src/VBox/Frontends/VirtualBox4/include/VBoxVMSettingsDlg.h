@@ -28,6 +28,8 @@
 
 class QIWidgetValidator;
 class VBoxMediaComboBox;
+class VBoxWarnIconLabel;
+
 class QTimer;
 class QWidgetStack;
 
@@ -92,6 +94,7 @@ private:
     /* Common */
     CMachine mMachine;
     QString  mWarnString;
+    VBoxWarnIconLabel *mWarnIconLabel;
 
     /* Flags */
     bool mPolished;
