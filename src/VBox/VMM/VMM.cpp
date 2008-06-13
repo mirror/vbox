@@ -2015,7 +2015,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc))
+        if (VBOX_FAILURE(rc) || rc == VINF_EM_DBG_HYPER_ASSERTION)
             return rc;
         /* Resume R0 */
     }
@@ -2273,6 +2273,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          * Cancel the longjmp operation that's in progress.
          */
         case VMMCALLHOST_VM_R0_HYPER_ASSERTION:
+            pVM->vmm.s.enmCallHostOperation = VMMCALLHOST_INVALID;
             pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call = false;
 #ifdef RT_ARCH_X86
             pVM->vmm.s.CallHostR0JmpBuf.eip = 0;
