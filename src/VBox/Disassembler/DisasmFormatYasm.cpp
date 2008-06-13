@@ -616,7 +616,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_SEGMENT_OVERRIDE() \
         do { \
             if (pCpu->prefix & PREFIX_SEG) \
-                PUT_STR(s_szSegPrefix[pCpu->prefix_seg], 3); \
+                PUT_STR(s_szSegPrefix[pCpu->enmPrefixSeg], 3); \
         } while (0)
 
 
@@ -628,7 +628,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param2.flags)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param3.flags))
         {
-            PUT_STR(s_szSegPrefix[pCpu->prefix_seg], 2);
+            PUT_STR(s_szSegPrefix[pCpu->enmPrefixSeg], 2);
             PUT_C(' ');
         }
 
@@ -898,7 +898,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 
                         if (pfnGetSymbol)
                         {
-                            int rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
+                            int rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
                             if (RT_SUCCESS(rc))
                             {
                                 PUT_SZ(" [");
@@ -949,17 +949,17 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             case USE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->parval);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->parval);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->parval);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint64_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint64_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
@@ -1013,17 +1013,17 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             case USE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->disp16);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint16_t)pParam->disp16, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint16_t)pParam->disp16, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->disp32);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint32_t)pParam->disp32, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint32_t)pParam->disp32, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case USE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->disp64);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(USE_REG_CS), (uint64_t)pParam->disp64, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DIS_SELREG_CS), (uint64_t)pParam->disp64, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();

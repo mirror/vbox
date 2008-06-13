@@ -1657,7 +1657,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             /* mov ss, src? */
             if (    (pCpu->param1.flags & USE_REG_SEG)
-                &&  (pCpu->param1.base.reg_seg == USE_REG_SS))
+                &&  (pCpu->param1.base.reg_seg == DIS_SELREG_SS))
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %VRv\n", pCurInstrGC));
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
@@ -3372,7 +3372,7 @@ PATMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
     RTRCPTR     pPatchTargetGC = 0;
 
     pBranchTarget = pCtx->edx;
-    pBranchTarget = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pBranchTarget);
+    pBranchTarget = SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pBranchTarget);
 
     /* First we check if the duplicate function target lies in some existing function patch already. Will save some space. */
     pPage = pBranchTarget & PAGE_BASE_GC_MASK;
@@ -3986,7 +3986,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)) == 0)
     {
-        RTRCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
+        RTRCPTR pInstrGCFlat = SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
         if (pInstrGCFlat != pInstrGC)
         {
             Log(("PATMR3InstallPatch: code selector not wide open: %04x:%VRv != %VRv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
@@ -6051,7 +6051,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
                     Log(("Faulting push -> go back to the original instruction\n"));
 
                     /* continue at the original instruction */
-                    *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
+                    *ppNewEip = pNewEip - SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), 0);
                     STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
                     return VINF_SUCCESS;
                 }
@@ -6118,7 +6118,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
             rc = VINF_SUCCESS;  /* Continue at original instruction. */
         }
 
-        *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
+        *ppNewEip = pNewEip - SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), 0);
         STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
         return rc;
     }
@@ -6151,7 +6151,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
 #endif
 
     /* Return original address, correct by subtracting the CS base address. */
-    *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
+    *ppNewEip = pNewEip - SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), 0);
 
     /* Reset the PATM stack. */
     CTXSUFF(pVM->patm.s.pGCState)->Psp = PATM_STACK_SIZE;

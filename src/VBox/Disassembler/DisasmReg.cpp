@@ -156,22 +156,22 @@ static const unsigned g_aReg8Index[] =
  */
 static const unsigned g_aRegSegIndex[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, es),         /* USE_REG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, cs),         /* USE_REG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ss),         /* USE_REG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, ds),         /* USE_REG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fs),         /* USE_REG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gs)          /* USE_REG_GS */
+    RT_OFFSETOF(CPUMCTXCORE, es),         /* DIS_SELREG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, cs),         /* DIS_SELREG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ss),         /* DIS_SELREG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, ds),         /* DIS_SELREG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fs),         /* DIS_SELREG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gs)          /* DIS_SELREG_GS */
 };
 
 static const unsigned g_aRegHidSegIndex[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* USE_REG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* USE_REG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* USE_REG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* USE_REG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* USE_REG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* USE_REG_GS */
+    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* DIS_SELREG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* DIS_SELREG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* DIS_SELREG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* DIS_SELREG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* DIS_SELREG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* DIS_SELREG_GS */
 };
 
 /**
@@ -222,12 +222,12 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
+DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 {
     if (pCpu->prefix & PREFIX_SEG)
     {
         /* Use specified SEG: prefix. */
-        return pCpu->prefix_seg;
+        return pCpu->enmPrefixSeg;
     }
     else
     {
@@ -239,10 +239,10 @@ DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
             AssertCompile(USE_REG_ESP == USE_REG_SP);
             AssertCompile(USE_REG_EBP == USE_REG_BP);
             if (pParam->base.reg_gen == USE_REG_ESP || pParam->base.reg_gen == USE_REG_EBP)
-                return USE_REG_SS;
+                return DIS_SELREG_SS;
         }
         /* Default is use DS: for data access. */
-        return USE_REG_DS;
+        return DIS_SELREG_DS;
     }
 }
 //*****************************************************************************
@@ -250,19 +250,19 @@ DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
 {
     Assert(pCpu->prefix & PREFIX_SEG);
-    switch(pCpu->prefix_seg)
+    switch(pCpu->enmPrefixSeg)
     {
-    case USE_REG_ES:
+    case DIS_SELREG_ES:
         return 0x26;
-    case USE_REG_CS:
+    case DIS_SELREG_CS:
         return 0x2E;
-    case USE_REG_SS:
+    case DIS_SELREG_SS:
         return 0x36;
-    case USE_REG_DS:
+    case DIS_SELREG_DS:
         return 0x3E;
-    case USE_REG_FS:
+    case DIS_SELREG_FS:
         return 0x64;
-    case USE_REG_GS:
+    case DIS_SELREG_GS:
         return 0x65;
     default:
         AssertFailed();
@@ -371,7 +371,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg)
  * Returns the value of the specified segment register
  *
  */
-DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal)
+DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal)
 {
     AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
@@ -384,7 +384,7 @@ DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal)
  * Returns the value of the specified segment register including a pointer to the hidden register in the supplied cpu context
  *
  */
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
 {
     AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
@@ -446,7 +446,7 @@ DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8)
  * Updates the specified segment register
  *
  */
-DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL val)
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val)
 {
     AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 

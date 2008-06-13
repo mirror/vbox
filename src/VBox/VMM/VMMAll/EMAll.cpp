@@ -343,16 +343,8 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 /* Convert sel:addr to a flat GC address */
 static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, POP_PARAMETER pParam, RTGCPTR pvAddr)
 {
-    int   prefix_seg, rc;
-    RTSEL sel;
-    CPUMSELREGHID *pSelHidReg;
-
-    prefix_seg = DISDetectSegReg(pCpu, pParam);
-    rc = DISFetchRegSegEx(pRegFrame, prefix_seg, &sel, &pSelHidReg);
-    if (VBOX_FAILURE(rc))
-        return pvAddr;
-
-    return SELMToFlat(pVM, pRegFrame->eflags, sel, pSelHidReg, pvAddr);
+    DIS_SELREG enmPrefixSeg = DISDetectSegReg(pCpu, pParam);
+    return SELMToFlat(pVM, enmPrefixSeg, pRegFrame, pvAddr);
 }
 
 #if defined(IN_GC) && (defined(VBOX_STRICT) || defined(LOG_ENABLED))
@@ -638,7 +630,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */
-            pStackVal = SELMToFlat(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid, (RTGCPTR)pRegFrame->esp);
+            pStackVal = SELMToFlat(pVM, DIS_SELREG_SS, pRegFrame, (RTGCPTR)pRegFrame->esp);
             if (pStackVal == 0)
                 return VERR_EM_INTERPRETER;
 
@@ -2036,7 +2028,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     pGCState->uVMFlags |= X86_EFL_IF;
 
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
-    Assert(pvFault == SELMToFlat(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip));
+    Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->eip));
 
     pVM->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pCpu->opsize;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);

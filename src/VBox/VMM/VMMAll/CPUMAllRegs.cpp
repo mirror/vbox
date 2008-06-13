@@ -888,6 +888,16 @@ CPUMDECL(uint64_t) CPUMGetGuestEFER(PVM pVM)
     return pVM->cpum.s.Guest.msrEFER;
 }
 
+CPUMDECL(uint64_t) CPUMGetGuestFSBASE(PVM pVM)
+{
+    return pVM->cpum.s.Guest.msrFSBASE;
+}
+
+CPUMDECL(uint64_t) CPUMGetGuestGSBASE(PVM pVM)
+{
+    return pVM->cpum.s.Guest.msrGSBASE;
+}
+
 /**
  * Gets a CpuId leaf.
  *
