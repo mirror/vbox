@@ -90,7 +90,7 @@ private:
 VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                                       const QString &aCategory,
                                       const QString &aControl)
-    : QDialog (aParent)
+    : QIMainDialog (aParent)
     , mPolished (false)
     , mAllowResetFirstRunFlag (false)
     , mValid (true)
@@ -99,6 +99,10 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsDlg::setupUi (this);
+
+#ifndef Q_WS_MAC
+    setWindowIcon (QIcon (":/settings_16px.png"));
+#endif /* Q_WS_MAC */
 
     mWarnIconLabel = new VBoxWarnIconLabel();
     mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
@@ -456,11 +460,11 @@ void VBoxVMSettingsDlg::whatsThisCandidateDestroyed (QObject *aObj /*= NULL*/)
 bool VBoxVMSettingsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     if (!aObject->isWidgetType())
-        return QDialog::eventFilter (aObject, aEvent);
+        return QIMainDialog::eventFilter (aObject, aEvent);
 
     QWidget *widget = static_cast<QWidget*> (aObject);
     if (widget->topLevelWidget() != this)
-        return QDialog::eventFilter (aObject, aEvent);
+        return QIMainDialog::eventFilter (aObject, aEvent);
 
     switch (aEvent->type())
     {
@@ -501,12 +505,12 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
             break;
     }
 
-    return QDialog::eventFilter (aObject, aEvent);
+    return QIMainDialog::eventFilter (aObject, aEvent);
 }
 
 void VBoxVMSettingsDlg::showEvent (QShowEvent *aEvent)
 {
-    QDialog::showEvent (aEvent);
+    QIMainDialog::showEvent (aEvent);
 
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
