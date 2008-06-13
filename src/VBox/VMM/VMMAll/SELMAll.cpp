@@ -431,6 +431,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RT
     return VERR_SELECTOR_NOT_PRESENT;
 }
 
+#ifndef IN_RING0
 /**
  * Converts a GC selector based address to a flat address.
  *
@@ -636,7 +637,7 @@ SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Ad
     }
     return VERR_SELECTOR_NOT_PRESENT;
 }
-
+#endif /* !IN_RING0 */
 
 /**
  * Validates and converts a GC selector based code address to a flat
