@@ -24,6 +24,7 @@
 #define __VBoxVMSettingsDlg_h__
 
 #include "VBoxVMSettingsDlg.gen.h"
+#include "QIMainDialog.h"
 #include "COMDefs.h"
 
 class QIWidgetValidator;
@@ -33,7 +34,7 @@ class VBoxWarnIconLabel;
 class QTimer;
 class QWidgetStack;
 
-class VBoxVMSettingsDlg : public QDialog,
+class VBoxVMSettingsDlg : public QIMainDialog,
                           public Ui::VBoxVMSettingsDlg
 {
     Q_OBJECT

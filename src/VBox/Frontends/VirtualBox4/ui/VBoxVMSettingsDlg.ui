@@ -17,343 +17,342 @@
  additional information or have any questions.
  </comment>
  <class>VBoxVMSettingsDlg</class>
- <widget class="QDialog" name="VBoxVMSettingsDlg" >
+ <widget class="QMainWindow" name="VBoxVMSettingsDlg" >
   <property name="geometry" >
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>686</width>
-    <height>610</height>
+    <width>526</width>
+    <height>424</height>
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Dialog</string>
+   <string>Settings</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/settings_16px.png</iconset>
-  </property>
-  <layout class="QGridLayout" >
-   <property name="horizontalSpacing" >
-    <number>9</number>
-   </property>
-   <property name="verticalSpacing" >
-    <number>9</number>
-   </property>
-   <item rowspan="3" row="0" column="0" >
-    <widget class="QTreeWidget" name="mTwSelector" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Expanding" hsizetype="Minimum" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="verticalScrollBarPolicy" >
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="horizontalScrollBarPolicy" >
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="rootIsDecorated" >
-      <bool>false</bool>
-     </property>
-     <property name="uniformRowHeights" >
-      <bool>true</bool>
-     </property>
-     <column>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QGridLayout" >
+    <property name="horizontalSpacing" >
+     <number>9</number>
+    </property>
+    <property name="verticalSpacing" >
+     <number>9</number>
+    </property>
+    <item rowspan="3" row="0" column="0" >
+     <widget class="QTreeWidget" name="mTwSelector" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Minimum" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="verticalScrollBarPolicy" >
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy" >
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="rootIsDecorated" >
+       <bool>false</bool>
+      </property>
+      <property name="uniformRowHeights" >
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text" >
+        <string>Category</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>[id]</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>[link]</string>
+       </property>
+      </column>
+      <item>
+       <property name="text" >
+        <string> General </string>
+       </property>
+       <property name="icon" >
+-       <iconset resource="../VirtualBox.qrc" >:/machine_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>00</string>
+       </property>
+       <property name="text" >
+        <string>#general</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Hard Disks </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/diskim_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>01</string>
+       </property>
+       <property name="text" >
+        <string>#hdds</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> CD/DVD-ROM </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/cd_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>02</string>
+       </property>
+       <property name="text" >
+        <string>#dvd</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Floppy </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/fd_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>03</string>
+       </property>
+       <property name="text" >
+        <string>#floppy</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Audio </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/sound_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>04</string>
+       </property>
+       <property name="text" >
+        <string>#audio</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Network </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/nw_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>05</string>
+       </property>
+       <property name="text" >
+        <string>#network</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Serial Ports </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/serial_port_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>06</string>
+       </property>
+       <property name="text" >
+        <string>#serialPorts</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Parallel Ports </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/parallel_port_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>07</string>
+       </property>
+       <property name="text" >
+        <string>#parallelPorts</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> USB </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/usb_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>08</string>
+       </property>
+       <property name="text" >
+        <string>#usb</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Shared Folders </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/shared_folder_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>09</string>
+       </property>
+       <property name="text" >
+        <string>#sfolders</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Remote Display </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/vrdp_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>10</string>
+       </property>
+       <property name="text" >
+        <string>#vrdp</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="0" column="1" >
+     <widget class="QLabel" name="mLbTitle" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="palette" >
+       <palette>
+        <active>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </active>
+        <inactive>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </inactive>
+        <disabled>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </disabled>
+       </palette>
+      </property>
+      <property name="font" >
+       <font>
+        <family>Sans Serif</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="autoFillBackground" >
+       <bool>true</bool>
+      </property>
+      <property name="frameShape" >
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Sunken</enum>
+      </property>
       <property name="text" >
-       <string>Category</string>
+       <string/>
       </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>[id]</string>
+      <property name="margin" >
+       <number>7</number>
       </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>[link]</string>
+     </widget>
+    </item>
+    <item row="1" column="1" >
+     <widget class="QStackedWidget" name="mPageStack" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-     </column>
-     <item>
-      <property name="text" >
-       <string> General </string>
+      <property name="currentIndex" >
+       <number>10</number>
       </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/machine_16px.png</iconset>
+      <widget class="QWidget" name="mPageGeneral" />
+      <widget class="QWidget" name="mPageHD" />
+      <widget class="QWidget" name="mPageCD" />
+      <widget class="QWidget" name="mPageFD" />
+      <widget class="QWidget" name="mPageAudio" />
+      <widget class="QWidget" name="mPageNetwork" />
+      <widget class="QWidget" name="mPageSerial" />
+      <widget class="QWidget" name="mPageParallel" />
+      <widget class="QWidget" name="mPageUSB" />
+      <widget class="QWidget" name="mPageShared" />
+      <widget class="QWidget" name="mPageVrdp" />
+     </widget>
+    </item>
+    <item row="2" column="1" >
+     <widget class="QLabel" name="mLbWhatsThis" >
+      <property name="frameShape" >
+       <enum>QFrame::Box</enum>
       </property>
-      <property name="text" >
-       <string>00</string>
-      </property>
-      <property name="text" >
-       <string>#general</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Hard Disks </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/diskim_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>01</string>
-      </property>
-      <property name="text" >
-       <string>#hdds</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> CD/DVD-ROM </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/cd_16px.png</iconset>
+      <property name="frameShadow" >
+       <enum>QFrame::Sunken</enum>
       </property>
       <property name="text" >
-       <string>02</string>
+       <string/>
       </property>
-      <property name="text" >
-       <string>#dvd</string>
+      <property name="alignment" >
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
       </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Floppy </string>
+      <property name="wordWrap" >
+       <bool>true</bool>
       </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/fd_16px.png</iconset>
+      <property name="margin" >
+       <number>7</number>
       </property>
-      <property name="text" >
-       <string>03</string>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="2" >
+     <widget class="QIDialogButtonBox" name="mButtonBox" >
+      <property name="standardButtons" >
+       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
       </property>
-      <property name="text" >
-       <string>#floppy</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Audio </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/sound_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>04</string>
-      </property>
-      <property name="text" >
-       <string>#audio</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Network </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/nw_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>05</string>
-      </property>
-      <property name="text" >
-       <string>#network</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Serial Ports </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/serial_port_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>06</string>
-      </property>
-      <property name="text" >
-       <string>#serialPorts</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Parallel Ports </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/parallel_port_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>07</string>
-      </property>
-      <property name="text" >
-       <string>#parallelPorts</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> USB </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/usb_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>08</string>
-      </property>
-      <property name="text" >
-       <string>#usb</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Shared Folders </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/shared_folder_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>09</string>
-      </property>
-      <property name="text" >
-       <string>#sfolders</string>
-      </property>
-     </item>
-     <item>
-      <property name="text" >
-       <string> Remote Display </string>
-      </property>
-      <property name="icon" >
-       <iconset resource="../VirtualBox.qrc" >:/vrdp_16px.png</iconset>
-      </property>
-      <property name="text" >
-       <string>10</string>
-      </property>
-      <property name="text" >
-       <string>#vrdp</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="0" column="1" >
-    <widget class="QLabel" name="mLbTitle" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="palette" >
-      <palette>
-       <active>
-        <colorrole role="Window" >
-         <brush brushstyle="SolidPattern" >
-          <color alpha="255" >
-           <red>255</red>
-           <green>255</green>
-           <blue>255</blue>
-          </color>
-         </brush>
-        </colorrole>
-       </active>
-       <inactive>
-        <colorrole role="Window" >
-         <brush brushstyle="SolidPattern" >
-          <color alpha="255" >
-           <red>255</red>
-           <green>255</green>
-           <blue>255</blue>
-          </color>
-         </brush>
-        </colorrole>
-       </inactive>
-       <disabled>
-        <colorrole role="Window" >
-         <brush brushstyle="SolidPattern" >
-          <color alpha="255" >
-           <red>255</red>
-           <green>255</green>
-           <blue>255</blue>
-          </color>
-         </brush>
-        </colorrole>
-       </disabled>
-      </palette>
-     </property>
-     <property name="font" >
-      <font>
-       <family>Sans Serif</family>
-       <pointsize>11</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="autoFillBackground" >
-      <bool>true</bool>
-     </property>
-     <property name="frameShape" >
-      <enum>QFrame::Box</enum>
-     </property>
-     <property name="frameShadow" >
-      <enum>QFrame::Sunken</enum>
-     </property>
-     <property name="text" >
-      <string/>
-     </property>
-     <property name="margin" >
-      <number>7</number>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1" >
-    <widget class="QStackedWidget" name="mPageStack" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="currentIndex" >
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="mPageGeneral" />
-     <widget class="QWidget" name="mPageHD" />
-     <widget class="QWidget" name="mPageCD" />
-     <widget class="QWidget" name="mPageFD" />
-     <widget class="QWidget" name="mPageAudio" />
-     <widget class="QWidget" name="mPageNetwork" />
-     <widget class="QWidget" name="mPageSerial" />
-     <widget class="QWidget" name="mPageParallel" />
-     <widget class="QWidget" name="mPageUSB" />
-     <widget class="QWidget" name="mPageShared" />
-     <widget class="QWidget" name="mPageVrdp" />
-    </widget>
-   </item>
-   <item row="2" column="1" >
-    <widget class="QLabel" name="mLbWhatsThis" >
-     <property name="frameShape" >
-      <enum>QFrame::Box</enum>
-     </property>
-     <property name="frameShadow" >
-      <enum>QFrame::Sunken</enum>
-     </property>
-     <property name="text" >
-      <string/>
-     </property>
-     <property name="alignment" >
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-     </property>
-     <property name="wordWrap" >
-      <bool>true</bool>
-     </property>
-     <property name="margin" >
-      <number>7</number>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="2" >
-    <widget class="QIDialogButtonBox" name="mButtonBox" >
-     <property name="standardButtons" >
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-  </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
