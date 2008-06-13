@@ -194,7 +194,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
                     /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                     if (   pCpu->mode != CPUMODE_64BIT
-                        || pCpu->enmPrefixSeg >= OP_PARM_REG_FS)
+                        || pCpu->enmPrefixSeg >= DIS_SELREG_FS)
                     {
                         pCpu->prefix    |= PREFIX_SEG;
                     }
