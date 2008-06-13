@@ -199,6 +199,24 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
  *
  * @returns VBox status
  * @param   pVM         VM Handle.
+ * @param   SelReg      Selector register
+ * @param   pCtxCore    CPU context
+ * @param   Addr        Address part.
+ * @param   fFlags      SELMTOFLAT_FLAGS_*
+ *                      GDT entires are valid.
+ * @param   ppvGC       Where to store the GC flat address.
+ */
+SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
+
+/**
+ * Converts a GC selector based address to a flat address.
+ *
+ * Some basic checking is done, but not all kinds yet.
+ * 
+ * Note: Obsolete: DO NOT USE
+ *
+ * @returns VBox status
+ * @param   pVM         VM Handle.
  * @param   eflags      Current eflags
  * @param   Sel         Selector part.
  * @param   Addr        Address part.
@@ -209,7 +227,7 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
  * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
  *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, PCPUMSELREGHID pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
+SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.

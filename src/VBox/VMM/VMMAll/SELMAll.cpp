@@ -51,7 +51,7 @@
  */
 SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
-    Assert(!CPUMAreHiddenSelRegsValid(pVM));
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** DON'T USE! */
 
     /** @todo check the limit. */
     VBOXDESC    Desc;
@@ -138,6 +138,306 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
  *
  * @returns VBox status
  * @param   pVM         VM Handle.
+ * @param   SelReg      Selector register
+ * @param   pCtxCore    CPU context
+ * @param   Addr        Address part.
+ * @param   fFlags      SELMTOFLAT_FLAGS_*
+ *                      GDT entires are valid.
+ * @param   ppvGC       Where to store the GC flat address.
+ */
+SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
+{
+    PCPUMSELREGHID pHiddenSel;
+    RTSEL          Sel;
+    int            rc;
+
+    rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel); AssertRC(rc);
+
+    /*
+     * Deal with real & v86 mode first.
+     */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  pCtxCore->eflags.Bits.u1VM)
+    {
+        RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
+        if (ppvGC)
+        {
+            if (    pHiddenSel
+                &&  CPUMAreHiddenSelRegsValid(pVM))
+                *ppvGC = (RTGCPTR)(pHiddenSel->u64Base + uFlat);
+            else
+                *ppvGC = (RTGCPTR)(((RTGCUINTPTR)Sel << 4) + uFlat);
+        }
+        return VINF_SUCCESS;
+    }
+
+
+    uint32_t    u32Limit;
+    RTGCPTR     pvFlat;
+    uint32_t    u1Present, u1DescType, u1Granularity, u4Type;
+
+    /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
+#ifndef IN_GC
+    if (    pHiddenSel
+        &&  CPUMAreHiddenSelRegsValid(pVM))
+    {
+        bool fCheckLimit = true;
+
+        u1Present     = pHiddenSel->Attr.n.u1Present;
+        u1Granularity = pHiddenSel->Attr.n.u1Granularity;
+        u1DescType    = pHiddenSel->Attr.n.u1DescType;
+        u4Type        = pHiddenSel->Attr.n.u4Type;
+
+        u32Limit      = pHiddenSel->u32Limit;
+
+        /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+        if (    CPUMIsGuestInLongMode(pVM)
+            &&  pCtxCore->csHid.Attr.n.u1Long)
+        {
+            fCheckLimit = false;
+            switch (SelReg)
+            {
+            case DIS_SELREG_FS:
+                pvFlat = (CPUMGetGuestFSBASE(pVM) + Addr);
+                break;
+
+            case DIS_SELREG_GS:
+                pvFlat = (CPUMGetGuestGSBASE(pVM) + Addr);
+                break;
+
+            default:
+                pvFlat = Addr;
+                break;
+            }
+        }
+        else
+            pvFlat = (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
+
+        /*
+        * Check if present.
+        */
+        if (u1Present)
+        {
+            /*
+            * Type check.
+            */
+            switch (u4Type)
+            {
+
+                /** Read only selector type. */
+                case X86_SEL_TYPE_RO:
+                case X86_SEL_TYPE_RO_ACC:
+                case X86_SEL_TYPE_RW:
+                case X86_SEL_TYPE_RW_ACC:
+                case X86_SEL_TYPE_EO:
+                case X86_SEL_TYPE_EO_ACC:
+                case X86_SEL_TYPE_ER:
+                case X86_SEL_TYPE_ER_ACC:
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if (fCheckLimit && (RTGCUINTPTR)Addr > u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                case X86_SEL_TYPE_EO_CONF:
+                case X86_SEL_TYPE_EO_CONF_ACC:
+                case X86_SEL_TYPE_ER_CONF:
+                case X86_SEL_TYPE_ER_CONF_ACC:
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if (fCheckLimit && (RTGCUINTPTR)Addr > u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                case X86_SEL_TYPE_RO_DOWN:
+                case X86_SEL_TYPE_RO_DOWN_ACC:
+                case X86_SEL_TYPE_RW_DOWN:
+                case X86_SEL_TYPE_RW_DOWN_ACC:
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if (fCheckLimit)
+                    {
+                        if (!u1Granularity && (RTGCUINTPTR)Addr > (RTGCUINTPTR)0xffff)
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                        if ((RTGCUINTPTR)Addr <= u32Limit)
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    }
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                default:
+                    return VERR_INVALID_SELECTOR;
+
+            }
+        }
+    }
+    else
+#endif /* !IN_GC */
+#ifndef IN_RING0
+    {
+        VBOXDESC Desc;
+
+        if (!(Sel & X86_SEL_LDT))
+        {
+            if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
+                && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
+                return VERR_INVALID_SELECTOR;
+            Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        }
+        else
+        {
+            if ((unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.cbLdtLimit)
+                return VERR_INVALID_SELECTOR;
+
+            /** @todo handle LDT page(s) not present! */
+#ifdef IN_GC
+            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+#else
+            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+#endif
+            Desc = paLDT[Sel >> X86_SEL_SHIFT];
+        }
+
+        /* calc limit. */
+        u32Limit = X86DESC_LIMIT(Desc);
+        if (Desc.Gen.u1Granularity)
+            u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+
+        /* calc address assuming straight stuff. */
+        pvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
+
+        u1Present     = Desc.Gen.u1Present;
+        u1Granularity = Desc.Gen.u1Granularity;
+        u1DescType    = Desc.Gen.u1DescType;
+        u4Type        = Desc.Gen.u4Type;
+
+        /*
+        * Check if present.
+        */
+        if (u1Present)
+        {
+            /*
+            * Type check.
+            */
+#define BOTH(a, b) ((a << 16) | b)
+            switch (BOTH(u1DescType, u4Type))
+            {
+
+                /** Read only selector type. */
+                case BOTH(1,X86_SEL_TYPE_RO):
+                case BOTH(1,X86_SEL_TYPE_RO_ACC):
+                case BOTH(1,X86_SEL_TYPE_RW):
+                case BOTH(1,X86_SEL_TYPE_RW_ACC):
+                case BOTH(1,X86_SEL_TYPE_EO):
+                case BOTH(1,X86_SEL_TYPE_EO_ACC):
+                case BOTH(1,X86_SEL_TYPE_ER):
+                case BOTH(1,X86_SEL_TYPE_ER_ACC):
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if ((RTGCUINTPTR)Addr > u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                case BOTH(1,X86_SEL_TYPE_EO_CONF):
+                case BOTH(1,X86_SEL_TYPE_EO_CONF_ACC):
+                case BOTH(1,X86_SEL_TYPE_ER_CONF):
+                case BOTH(1,X86_SEL_TYPE_ER_CONF_ACC):
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if ((RTGCUINTPTR)Addr > u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                case BOTH(1,X86_SEL_TYPE_RO_DOWN):
+                case BOTH(1,X86_SEL_TYPE_RO_DOWN_ACC):
+                case BOTH(1,X86_SEL_TYPE_RW_DOWN):
+                case BOTH(1,X86_SEL_TYPE_RW_DOWN_ACC):
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if (!u1Granularity && (RTGCUINTPTR)Addr > (RTGCUINTPTR)0xffff)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    if ((RTGCUINTPTR)Addr <= u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                case BOTH(0,X86_SEL_TYPE_SYS_286_TSS_AVAIL):
+                case BOTH(0,X86_SEL_TYPE_SYS_LDT):
+                case BOTH(0,X86_SEL_TYPE_SYS_286_TSS_BUSY):
+                case BOTH(0,X86_SEL_TYPE_SYS_286_CALL_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_TASK_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_286_INT_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_286_TRAP_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_386_TSS_AVAIL):
+                case BOTH(0,X86_SEL_TYPE_SYS_386_TSS_BUSY):
+                case BOTH(0,X86_SEL_TYPE_SYS_386_CALL_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_386_INT_GATE):
+                case BOTH(0,X86_SEL_TYPE_SYS_386_TRAP_GATE):
+                    if (!(fFlags & SELMTOFLAT_FLAGS_NO_PL))
+                    {
+                        /** @todo fix this mess */
+                    }
+                    /* check limit. */
+                    if ((RTGCUINTPTR)Addr > u32Limit)
+                        return VERR_OUT_OF_SELECTOR_BOUNDS;
+                    /* ok */
+                    if (ppvGC)
+                        *ppvGC = pvFlat;
+                    return VINF_SUCCESS;
+
+                default:
+                    return VERR_INVALID_SELECTOR;
+
+            }
+#undef BOTH
+        }
+    }
+#endif /* !IN_RING0 */
+    return VERR_SELECTOR_NOT_PRESENT;
+}
+
+/**
+ * Converts a GC selector based address to a flat address.
+ *
+ * Some basic checking is done, but not all kinds yet.
+ *
+ * @returns VBox status
+ * @param   pVM         VM Handle.
  * @param   eflags      Current eflags
  * @param   Sel         Selector part.
  * @param   Addr        Address part.
@@ -148,9 +448,10 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
  * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
  *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
+SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
+    Assert(!CPUMIsGuestInLongMode(pVM));    /** DON'T USE! */
+
     /*
      * Deal with real & v86 mode first.
      */
