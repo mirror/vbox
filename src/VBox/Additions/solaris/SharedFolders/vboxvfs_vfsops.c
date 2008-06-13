@@ -54,7 +54,6 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
 static int VBoxVFS_Unmount(vfs_t *pVFS, int fFlags, cred_t *pCred);
 static int VBoxVFS_Root(vfs_t *pVFS, vnode_t **ppVNode);
 static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat);
-static int VBoxVFS_Sync(vfs_t *pVFS, short fFlags, cred_t *pCred);
 static int VBoxVFS_VGet(vfs_t *pVFS, vnode_t **ppVNode, struct fid *pFid);
 static void VBoxVFS_FreeVFS(vfs_t *pVFS);
 
@@ -202,7 +201,6 @@ static int VBoxVFS_Init(int fType, char *pszName)
                     VFSNAME_UNMOUNT,  { .vfs_unmount =   VBoxVFS_Unmount },
                     VFSNAME_ROOT,     { .vfs_root =      VBoxVFS_Root    },
                     VFSNAME_STATVFS,  { .vfs_statvfs =   VBoxVFS_Statfs  },
-                    VFSNAME_SYNC,     { .vfs_sync =      VBoxVFS_Sync    },
                     VFSNAME_VGET,     { .vfs_vget =      VBoxVFS_VGet    },
                     VFSNAME_FREEVFS,  { .vfs_freevfs =   VBoxVFS_FreeVFS },
                     NULL,             NULL
@@ -295,7 +293,15 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     }
     mutex_exit(&pVNode->v_lock);
 
-    /* I don't think we really need to support kernel mount arguments anymore. */
+    /* From what I understood the options are already parsed at a higher level */
+    if (   (pMount->flags & MS_DATA)
+        && pMount->datalen > 0)
+    {
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: unparsed options not supported.\n"));
+        return EINVAL;
+    }
+
+    /* Will be removed eventually... */
 #if 0
     /* Retreive arguments. */
     bzero(&Args, sizeof(Args));
@@ -394,7 +400,6 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
         LogRel((DEVICE_NAME ":VBoxVFS_Mount: cannot mount from swap.\n"));
         rc = EINVAL;
     }
-
     if (!rc)
     {
         VN_RELE(pVNodeDev);
@@ -402,19 +407,19 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     }
 
     /* Allocate the global info. structure. */
-    pVBoxVFSGlobalInfo = RTMemAlloc(sizeof(*pVBoxVFSGlobalInfo));
+    pVBoxVFSGlobalInfo = RTMemAllocZ(sizeof(*pVBoxVFSGlobalInfo));
     if (!pVBoxVFSGlobalInfo)
     {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for global struct.\n", sizeof(*pVBoxVFSGlobalInfo)));
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for global struct.\n", sizeof(*pVBoxVFSGlobalInfo)));
         return ENOMEM;
     }
 
-    cbShflShareName = offsetof (SHFLSTRING, String.utf8) + cbShare + 1;
+    cbShflShareName = offsetof(SHFLSTRING, String.utf8) + cbShare + 1;
     pShflShareName  = RTMemAllocZ(cbShflShareName);
     if (!pShflShareName)
     {
         RTMemFree(pVBoxVFSGlobalInfo);
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));
         return ENOMEM;
     }
 
@@ -435,10 +440,10 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     pVBoxVFSGlobalInfo->Uid = Uid;
     pVBoxVFSGlobalInfo->Gid = Gid;
     pVBoxVFSGlobalInfo->pVFS = pVFS;
-    pVBoxVFSGlobalInfo->Dev = Dev;
     pVBoxVFSGlobalInfo->pVNodeDev = pVNodeDev;
     pVFS->vfs_data = pVBoxVFSGlobalInfo;
     pVFS->vfs_fstype = g_VBoxVFSType;
+    pVFS->vfs_dev = Dev;
     vfs_make_fsid(&pVFS->vfs_fsid, Dev, g_VBoxVFSType);
 
     /* @todo root vnode */
@@ -472,6 +477,8 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
     if (VBOX_FAILURE(rc))
         LogRel((DEVICE_NAME ":VBoxVFS_Unmount: failed to unmap shared folder. rc=%d\n", rc));
 
+    VN_RELE(pVBoxVFSGlobalInfo->pVNodeRoot);
+
     RTMemFree(pVBoxVFSGlobalInfo);
     pVFS->vfs_data = NULL;
 
@@ -480,21 +487,50 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
 
 static int VBoxVFS_Root(vfs_t *pVFS, vnode_t **ppVNode)
 {
+    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = VFS2VBOXVFS(pVFS);
+    *ppVNode = pVBoxVFSGlobalInfo->pVNodeRoot;
+    VN_HOLD(*ppVNode);
+
     return 0;
 }
 
 static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat)
 {
-    return 0;
-}
+    SHFLVOLINFO         VolumeInfo;    
+    uint32_t            cbBuffer;
+    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo;
+    dev32_t             Dev32;
+    int                 rc;
 
-static int VBoxVFS_Sync(vfs_t *pVFS, short fFlags, cred_t *pCred)
-{
+    pVBoxVFSGlobalInfo = VFS2VBOXVFS(pVFS);
+    cbBuffer = sizeof(VolumeInfo);
+    rc = vboxCallFSInfo(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbBuffer,
+                    (PSHFLDIRINFO)&VolumeInfo);
+    if (VBOX_FAILURE(rc))
+        return RTErrConvertToErrno(rc);
+
+    bzero(pStat, sizeof(*pStat));
+    cmpldev(&Dev32, pVFS->vfs_dev);
+    pStat->f_fsid        = Dev32;
+    pStat->f_flag        = vf_to_stf(pVFS->vfs_flag);
+    pStat->f_bsize       = VolumeInfo.ulBytesPerAllocationUnit;
+    pStat->f_frsize      = VolumeInfo.ulBytesPerAllocationUnit;
+    pStat->f_bfree       = VolumeInfo.ullAvailableAllocationBytes / VolumeInfo.ulBytesPerAllocationUnit;
+    pStat->f_bavail      = VolumeInfo.ullAvailableAllocationBytes / VolumeInfo.ulBytesPerAllocationUnit;
+    pStat->f_blocks      = VolumeInfo.ullTotalAllocationBytes / VolumeInfo.ulBytesPerAllocationUnit;
+    pStat->f_files       = 1000;
+    pStat->f_ffree       = 1000; /* don't return 0 here since the guest may think that it is not possible to create any more files */
+    pStat->f_namemax     = 255;   /* @todo is this correct?? */
+
+    strlcpy(pStat->f_basetype, vfssw[pVFS->vfs_fstype].vsw_name, sizeof(pStat->f_basetype));
+    strlcpy(pStat->f_fstr, DEVICE_NAME, sizeof(pStat->f_fstr));
+
     return 0;
 }
 
 static int VBoxVFS_VGet(vfs_t *pVFS, vnode_t **ppVNode, struct fid *pFid)
 {
+    /* -- TODO -- */
     return 0;
 }
 
