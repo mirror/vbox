@@ -68,6 +68,7 @@ INCPNG=""
 LIBPNG="-lpng"
 QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr"
+QT4DIR_PKGCONFIG=1
 QT4UIC3DIR="/usr/bin"
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
@@ -1250,21 +1251,36 @@ check_qt4()
       fail
     fi
   else
-    if which_wrapper pkg-config > /dev/null; then
-      qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
-      if [ $? -ne 0 ]; then
-        log_failure "not found"
-  #      fail
+    if [ $QT4DIR_PKGCONFIG -eq 1 ]; then
+      # default is to use pkg-config
+      if which_wrapper pkg-config > /dev/null; then
+        qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
+        if [ $? -ne 0 ]; then
+          log_failure "not found"
+    #      fail
+        else
+          FLGQT4=`pkg-config QtCore --cflags`
+          INCQT4=`strip_I "$FLGQT4"`
+          LIBQT4=`pkg-config QtCore --libs`
+          foundqt4=1
+        fi
       else
-        FLGQT4=`pkg-config QtCore --cflags`
-        INCQT4=`strip_I "$FLGQT4"`
-        LIBQT4=`pkg-config QtCore --libs`
-        foundqt4=1
+        log_failure "pkg-config not found"
+# not yet
+#       fail
       fi
     else
-      log_failure "pkg-config not found"
-# not yet
-#     fail
+      # do it the old way (e.g. user has specified QT4DIR)
+      for q in $QT4DIR; do
+        INCQT4="$q/include $q/include/QtCore"
+        LIBQT4="-L$q/lib -lQtCore"
+        FLGQT4="-DQT_SHARED"
+        I_INCQT4=`prefix_I "$INCQT4"`
+        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLDQT4" qt4 qt4 nofatal; then
+          foundqt4=1
+          break;
+        fi
+      done
     fi
   fi
   if [ -n "$foundqt4" ]; then
@@ -1610,7 +1626,7 @@ Paths:
   --with-linux=DIR         Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR        directory for Qt3 headers/libraries [$QT3DIR]
-  --with-qt4-dir=DIR       directory for Qt4 headers/libraries [$QT4DIR]
+  --with-qt4-dir=DIR       directory for Qt4 headers/libraries [pkgconfig]
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
@@ -1655,6 +1671,7 @@ for option in $*; do
       ;;
     --with-qt4-dir=*)
       QT4DIR=`echo $option | cut -d'=' -f2`
+      QT4DIR_PKGCONFIG=0
       ;;
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
