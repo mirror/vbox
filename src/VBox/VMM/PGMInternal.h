@@ -1286,14 +1286,12 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGMPOOL_IDX_PAE_PD_2    5
 /** PAE Page Directory Table 3. */
 #define PGMPOOL_IDX_PAE_PD_3    6
-/** AMD64 Page Directory Table. */
-#define PGMPOOL_IDX_AMD64_PD    7
 /** Page Directory Pointer Table (PAE root, not currently used). */
-#define PGMPOOL_IDX_PDPT        8
+#define PGMPOOL_IDX_PDPT        7
 /** Page Map Level-4 (64-bit root). */
-#define PGMPOOL_IDX_PML4        9
+#define PGMPOOL_IDX_PML4        8
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       10
+#define PGMPOOL_IDX_FIRST       9
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST        0x3fff
 /** @} */
