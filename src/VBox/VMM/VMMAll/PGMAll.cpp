@@ -722,15 +722,17 @@ PGMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
 
 #ifndef IN_GC
 /**
- * Gets the SHADOW page directory pointer for the specified address. Allocates
- * backing pages in case the PDPT or page dirctory is missing.
+ * Syncs the SHADOW page directory pointer for the specified address. Allocates
+ * backing pages in case the PDPT or PML4 entry is missing.
  *
  * @returns VBox status.
  * @param   pVM         VM handle.
  * @param   GCPtr       The address.
+ * @param   pGstPml4e   Guest PML4 entry
+ * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-PGMDECL(int) PGMShwGetAllocLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE *ppPD)
+PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -755,10 +757,13 @@ PGMDECL(int) PGMShwGetAllocLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE
         AssertRCReturn(rc, rc);
 
         /* The PDPT was cached or created; hook it up now. */
-        pPml4e->u |= pShwPage->Core.Key;
+        pPml4e->u |=   pShwPage->Core.Key 
+                    | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
     }
     else
     {
+        AssertMsg((pGstPml4e->u & (X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX)) == (pPml4e->u & (X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX)), ("pGstMpl4e.u=%RX64 pPml4e->u=%RX64\n", pGstPml4e->u, pPml4e->u));
+
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
@@ -783,10 +788,13 @@ PGMDECL(int) PGMShwGetAllocLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPAE
         AssertRCReturn(rc, rc);
 
         /* The PD was cached or created; hook it up now. */
-        pPdpe->u |= pShwPage->Core.Key;
+        pPdpe->u |=    pShwPage->Core.Key
+                    | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
     }
     else
     {
+        AssertMsg((pGstPdpe->u & (X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX)) == (pPdpe->u & (X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX)), ("pGstPdpe.u=%RX64 pPdpe->u=%RX64\n", pGstPdpe->u, pPdpe->u));
+
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
