@@ -755,18 +755,15 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
             return VINF_PGM_SYNC_CR3;
 
         AssertRCReturn(rc, rc);
-
-        /* The PDPT was cached or created; hook it up now. */
-        pPml4e->u |=   pShwPage->Core.Key 
-                    | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
     }
     else
     {
-        AssertMsg((pGstPml4e->u & (X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX)) == (pPml4e->u & (X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX)), ("pGstMpl4e.u=%RX64 pPml4e->u=%RX64\n", pGstPml4e->u, pPml4e->u));
-
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
+    /* The PDPT was cached or created; hook it up now. */
+    pPml4e->u |=   pShwPage->Core.Key 
+                | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);    
@@ -786,18 +783,15 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
             return VINF_PGM_SYNC_CR3;
 
         AssertRCReturn(rc, rc);
-
-        /* The PD was cached or created; hook it up now. */
-        pPdpe->u |=    pShwPage->Core.Key
-                    | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
     }
     else
     {
-        AssertMsg((pGstPdpe->u & (X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX)) == (pPdpe->u & (X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX)), ("pGstPdpe.u=%RX64 pPdpe->u=%RX64\n", pGstPdpe->u, pPdpe->u));
-
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
+    /* The PD was cached or created; hook it up now. */
+    pPdpe->u |=    pShwPage->Core.Key
+                | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
