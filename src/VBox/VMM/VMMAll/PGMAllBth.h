@@ -109,12 +109,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #   elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned     iPDSrc;
-    PX86PML4E    pPml4e;
-    X86PDPE      Pdpe;
+    PX86PML4E    pPml4eSrc;
+    X86PDPE      PdpeSrc;
     PGSTPD       pPDSrc;
 
-    pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, pvFault, &pPml4e, &Pdpe, &iPDSrc);
-    Assert(pPml4e);
+    pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, pvFault, &pPml4eSrc, &PdpeSrc, &iPDSrc);
+    Assert(pPml4eSrc);
 #   endif
     /* Quick check for a valid guest trap. */
     if (!pPDSrc)
@@ -148,8 +148,18 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = (((RTGCUINTPTR)pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
+#  if PGM_GST_TYPE == PGM_TYPE_PROT
+    /* AMD-V nested paging */
+    X86PML4E     Pml4eSrc;
+    X86PDPE      PdpeSrc;
+    PX86PML4E    pPml4eSrc = &Pml4eSrc;
 
-    rc = PGMShwGetAllocLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, &pPDDst);
+    /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
+    Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
+    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
+#  endif
+
+    rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
@@ -1454,14 +1464,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
     X86PDEPAE       PdeDst;
+    PX86PDPT        pPdpt;
 
-    int rc = PGMShwGetAllocLongModePDPtr(pVM, GCPtrPage, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
-        return rc;
-    }
-    Assert(pPDDst);
+    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdpt, &pPDDst);
+    AssertRCReturn(rc, rc);
+    Assert(pPDDst && pPdpt);
     PdeDst = pPDDst->a[iPDDst];
 # endif
     Assert(PdeDst.n.u1Present);
@@ -2147,7 +2154,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
-    rc = PGMShwGetAllocLongModePDPtr(pVM, GCPtrPage, &pPDDst);
+    PX86PDPT        pPdpt;
+    rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdpt, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
@@ -2594,9 +2602,9 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         return VINF_SUCCESS; /* not present */
 #  elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned        iPDSrc;
-    PX86PML4E       pPml4e;
-    X86PDPE         Pdpe;
-    PGSTPD          pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtrPage, &pPml4e, &Pdpe, &iPDSrc);
+    PX86PML4E       pPml4eSrc;
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtrPage, &pPml4eSrc, &PdpeSrc, &iPDSrc);
     if (!pPDSrc)
         return VINF_SUCCESS; /* not present */
 #  endif
@@ -2624,7 +2632,18 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         PX86PDPAE       pPDDst;
         X86PDEPAE       PdeDst;
 
-        int rc = PGMShwGetAllocLongModePDPtr(pVM, GCPtrPage, &pPDDst);
+#  if PGM_GST_TYPE == PGM_TYPE_PROT
+        /* AMD-V nested paging */
+        X86PML4E     Pml4eSrc;
+        X86PDPE      PdpeSrc;
+        PX86PML4E    pPml4eSrc = &Pml4eSrc;
+
+        /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
+        Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
+        PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
+#  endif
+
+        int rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
@@ -2705,9 +2724,9 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     }
 #  elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned        iPDSrc;
-    PX86PML4E       pPml4e;
-    X86PDPE         Pdpe;
-    PGSTPD          pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtrPage, &pPml4e, &Pdpe, &iPDSrc);
+    PX86PML4E       pPml4eSrc;
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtrPage, &pPml4eSrc, &PdpeSrc, &iPDSrc);
     if (!pPDSrc)
     {
         Log(("PGMVerifyAccess: access violation for %VGv due to non-present PDPTR\n", GCPtrPage));
@@ -2732,7 +2751,18 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     PX86PDPAE       pPDDst;
     PX86PDEPAE      pPdeDst;
 
-    rc = PGMShwGetAllocLongModePDPtr(pVM, GCPtrPage, &pPDDst);
+#  if PGM_GST_TYPE == PGM_TYPE_PROT
+    /* AMD-V nested paging */
+    X86PML4E     Pml4eSrc;
+    X86PDPE      PdpeSrc;
+    PX86PML4E    pPml4eSrc = &Pml4eSrc;
+
+    /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
+    Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
+    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
+#  endif
+
+    rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
@@ -2949,12 +2979,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
     for (uint64_t iPML4E = 0; iPML4E < X86_PG_PAE_ENTRIES; iPML4E++)
     {
-        /* Shadow PML4E present? */
-        if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
+        /* Guest PML4E not present (anymore). */
+        if (!pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E].n.u1Present)
         {
             /** @todo this is not efficient; figure out if we can reuse the existing cached version */
-            /* Guest PML4E not present (anymore). */
-            if (!pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E].n.u1Present)
+            /* Shadow PML4E present? */
+            if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
             {
                 /* Shadow PML4 present, so free all pdpt & pd entries. */
                 for (uint64_t iPDPTE = 0; iPDPTE < X86_PG_AMD64_PDPE_ENTRIES; iPDPTE++)
