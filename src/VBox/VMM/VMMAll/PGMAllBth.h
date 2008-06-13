@@ -3016,9 +3016,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         pPdptDst->a[iPDPTE].u = 0;
                     }
                 }
+                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PML4, iPML4E);
+                pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u = 0;
             }
-            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK), PGMPOOL_IDX_PML4, iPML4E);
-            pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u = 0;
             continue;
         }
 
