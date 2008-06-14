@@ -1216,7 +1216,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
 
     /*
      * Allocate the usage record.
-     * (We keep freed usage records around to simplity SUPR0ObjAddRef().)
+     * (We keep freed usage records around to simplify SUPR0ObjAddRef().)
      */
     RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
 
