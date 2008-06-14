@@ -1476,7 +1476,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     {
         /*
          * Create a new interface to this network.
-         * On failure we close the network. On success it remains open untill the
+         * On failure we close the network. On success it remains open until the
          * interface is destroyed or the last session is doing cleanup (order problems).
          */
         rc = INTNETNetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
