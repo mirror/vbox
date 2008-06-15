@@ -41,7 +41,8 @@ ifeq ($(KBUILD_TARGET),darwin)
  # the bundles
  INST_VIRTUALBOX      = $(INST_DIST)VirtualBox.app/
  INST_VBOXDRV         = $(INST_DIST)VBoxDrv.kext/
- INST_VBOXTAP         = $(INST_DIST)VBoxTAP.kext/
+ INST_VBOXNETFLT      = $(INST_DIST)VBoxNetFlt.kext/
+ INST_VBOXNETTAP      = $(INST_DIST)VBoxNetTap.kext/
  INST_VBOXUSB         = $(INST_DIST)VBoxUSB.kext/
 
  # put everything in the VirtualBox app bundle.
