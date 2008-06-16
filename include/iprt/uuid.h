@@ -68,8 +68,8 @@ RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid);
  * Compares two UUID values.
  *
  * @returns 0 if eq, < 0 or > 0.
- * @param   pUuid1          First value to compare.
- * @param   pUuid2          Second value to compare.
+ * @param   pUuid1          First value to compare. NULL is treated like if RTUuidIsNull() return true.
+ * @param   pUuid2          Second value to compare. NULL is treated like if RTUuidIsNull() return true.
  */
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
 
@@ -77,8 +77,8 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
  * Compares a UUID value with a UUID string.
  *
  * @returns 0 if eq, < 0 or > 0.
- * @param   pUuid1          First value to compare.
- * @param   pszString2      The 2nd UUID in string form.
+ * @param   pUuid1          First value to compare. NULL is not allowed.
+ * @param   pszString2      The 2nd UUID in string form. NULL of malformed string is not permitted.
  */
 RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString);
 
