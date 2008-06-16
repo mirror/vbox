@@ -250,7 +250,7 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
  * @param   InstructionAddr Instruction address.
  * @param   pcbInstruction  Where to store the instruction size. Can be NULL.
  */
-int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
+static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
 {
     const OPCODE *paOneByteMap;
 
