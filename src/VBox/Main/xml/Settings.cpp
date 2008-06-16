@@ -1010,7 +1010,7 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                 do
                 {
                     xmlDocPtr newDoc = xsltApplyStylesheet (xslt, doc, NULL);
-                    if (newDoc == NULL)
+                    if (newDoc == NULL && errorStr == NULL)
                         throw LogicError (RT_SRC_POS);
 
                     if (errorStr != NULL)
