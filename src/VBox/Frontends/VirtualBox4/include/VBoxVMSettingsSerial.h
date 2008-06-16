@@ -28,10 +28,10 @@
 
 class VBoxVMSettingsDlg;
 
-class VBoxVMSettingsSerial : public QWidget,
+class VBoxVMSettingsSerial : public QWidget, 
                              public Ui::VBoxVMSettingsSerial
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

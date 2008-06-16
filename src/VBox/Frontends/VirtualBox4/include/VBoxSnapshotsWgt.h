@@ -37,7 +37,7 @@ class QMenu;
 class VBoxSnapshotsWgt : public QIWithRetranslateUI<QWidget>,
                          public Ui::VBoxSnapshotsWgt
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

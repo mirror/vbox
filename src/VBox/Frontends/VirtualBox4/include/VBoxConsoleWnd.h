@@ -56,7 +56,7 @@ class VBoxSwitchMenu;
 
 class VBoxConsoleWnd : public QIWithRetranslateUI2<QMainWindow>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -348,7 +348,7 @@ private:
 class VBoxVMSettingsSF;
 class VBoxSFDialog : public QIWithRetranslateUI<QDialog>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

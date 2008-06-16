@@ -32,7 +32,7 @@
 class VBoxNewHDWzd : public QIWithRetranslateUI<QIAbstractWizard>,
                      public Ui::VBoxNewHDWzd
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

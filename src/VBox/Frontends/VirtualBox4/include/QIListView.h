@@ -29,14 +29,14 @@
 
 class QIListView: public QListView
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
     QIListView (QWidget *aParent = 0);
 
 protected slots:
     void focusChanged (QWidget *aOld, QWidget *aNow);
-};
+}; 
 
 class QIItemDelegate: public QItemDelegate
 {
@@ -45,7 +45,7 @@ public:
         : QItemDelegate (aParent) {}
 
 protected:
-    void drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption,
+    void drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption, 
                          const QModelIndex &aIndex) const;
 };
 
