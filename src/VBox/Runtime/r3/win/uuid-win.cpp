@@ -130,8 +130,8 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
 
     /* copy it. */
     int rc = VINF_SUCCESS;
-    size_t cch = strlen((char *)pszTmpStr);
-    if (cch < cchString)
+    size_t cchTmpStr = strlen((char *)pszTmpStr);
+    if (cchTmpStr < cchString)
         memcpy(pszString, pszTmpStr, cchTmpStr + 1);
     else
         rc = ERROR_BUFFER_OVERFLOW;
