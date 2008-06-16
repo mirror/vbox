@@ -585,6 +585,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/strformattype.cpp \
 	common/string/string.cpp \
 	common/string/strprintf.cpp \
+	common/string/strtonum.cpp \
 	common/string/unidata.cpp \
 	common/string/utf-8.cpp \
 	common/string/utf-16.cpp \
