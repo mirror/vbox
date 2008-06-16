@@ -171,7 +171,8 @@ class HGCMService
 class HGCMClient: public HGCMObject
 {
     public:
-        HGCMClient () : HGCMObject(HGCMOBJ_CLIENT) {};
+        HGCMClient () : HGCMObject(HGCMOBJ_CLIENT), pService(NULL),
+                        pvData(NULL) {};
         ~HGCMClient ();
 
         int Init (HGCMService *pSvc);
@@ -185,7 +186,8 @@ class HGCMClient: public HGCMObject
 
 HGCMClient::~HGCMClient ()
 {
-    RTMemFree (pvData);
+    if (pService->SizeOfClient () > 0)
+        RTMemFree (pvData);
 }
 
 int HGCMClient::Init (HGCMService *pSvc)
