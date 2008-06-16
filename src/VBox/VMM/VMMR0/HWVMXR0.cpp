@@ -1518,6 +1518,11 @@ ResumeExecution:
                 TRPMSetErrorCode(pVM, errCode);
                 TRPMSetFaultAddress(pVM, exitQualification);
 
+if (exitQualification == 0x805ce018)
+{ 
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+    break;
+}
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
                 rc = PGMTrap0eHandler(pVM, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
                 Log2(("PGMTrap0eHandler %VGv returned %Vrc\n", pCtx->rip, rc));
@@ -1990,6 +1995,9 @@ ResumeExecution:
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
         /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
+        rc = VERR_EM_INTERPRETER;
+        break;
+
     case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
     case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
     case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
