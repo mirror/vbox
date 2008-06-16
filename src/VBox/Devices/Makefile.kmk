@@ -211,7 +211,7 @@ VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VmiBiosBin$(VBOX_SUFF_LIB) \
+	$(if $(VBOX_OSE),,$(PATH_LIB)/VmiBiosBin$(VBOX_SUFF_LIB)) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),l4)
