@@ -101,10 +101,10 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
     int rc = DISCoreOneEx(GCPtr,
-                          pSelInfo->Raw.Gen.u1DefBig
-                          ? enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long
+                          enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long
                           ? CPUMODE_64BIT
-                          : CPUMODE_32BIT
+                          : pSelInfo->Raw.Gen.u1DefBig
+                          ? CPUMODE_32BIT
                           : CPUMODE_16BIT,
                           dbgfR3DisasInstrRead,
                           &pState->Cpu,
@@ -307,7 +307,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
             pCtxCore = CPUMGetHyperCtxCore(pVM);
         Sel        = pCtxCore->cs;
         pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
-        GCPtr      = pCtxCore->eip;
+        GCPtr      = pCtxCore->rip;
     }
 
     /*
@@ -333,6 +333,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.Raw.Gen.u1Present   = pHiddenSel->Attr.n.u1Present;
         SelInfo.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
         SelInfo.Raw.Gen.u1DefBig    = pHiddenSel->Attr.n.u1DefBig;
+        SelInfo.Raw.Gen.u1Long      = pHiddenSel->Attr.n.u1Long;
         SelInfo.Raw.Gen.u1DescType  = pHiddenSel->Attr.n.u1DescType;
         SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
         fRealModeAddress            = SelInfo.fRealMode;
