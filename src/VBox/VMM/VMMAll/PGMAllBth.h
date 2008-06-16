@@ -1054,7 +1054,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              * Conflict - Let SyncPT deal with it to avoid duplicate code.
              */
             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-            Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
+            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE);
             rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, GCPtrPage);
         }
         else if (   PdeSrc.n.u1User != PdeDst.n.u1User
