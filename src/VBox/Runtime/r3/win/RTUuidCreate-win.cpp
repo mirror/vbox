@@ -40,7 +40,6 @@
 #include <iprt/err.h>
 
 
-/** @todo split out this guy */
 RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
     /* check params */
