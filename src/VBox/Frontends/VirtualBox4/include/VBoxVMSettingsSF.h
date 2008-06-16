@@ -50,7 +50,7 @@ typedef QList<SFolderName> SFoldersNameList;
 class VBoxVMSettingsSF : public QIWithRetranslateUI<QWidget>,
                          public Ui::VBoxVMSettingsSF
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
@@ -123,7 +123,7 @@ private:
 
 class VBoxAddSFDialog : public QIWithRetranslateUI<QDialog>
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

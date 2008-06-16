@@ -29,7 +29,7 @@
 class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QDialog>,
                             public Ui::VBoxTakeSnapshotDlg
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

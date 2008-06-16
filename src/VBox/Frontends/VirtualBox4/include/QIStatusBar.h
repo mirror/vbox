@@ -30,7 +30,7 @@ class QPaintEvent;
 
 class QIStatusBar : public QStatusBar
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

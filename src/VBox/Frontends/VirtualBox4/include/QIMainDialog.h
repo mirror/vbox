@@ -33,7 +33,7 @@ class QSizeGrip;
 
 class QIMainDialog: public QMainWindow
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

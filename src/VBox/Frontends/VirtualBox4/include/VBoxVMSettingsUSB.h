@@ -30,10 +30,10 @@ class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 class VBoxUSBMenu;
 
-class VBoxVMSettingsUSB : public QWidget, 
+class VBoxVMSettingsUSB : public QWidget,
                           public Ui::VBoxVMSettingsUSB
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

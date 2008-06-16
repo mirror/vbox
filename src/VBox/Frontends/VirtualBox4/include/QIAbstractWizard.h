@@ -41,7 +41,7 @@ class QStackedWidget;
  */
 class QITextEdit : public QTextEdit
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
@@ -78,7 +78,7 @@ private:
  */
 class QIAbstractWizard : public QDialog
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

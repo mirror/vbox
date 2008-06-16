@@ -41,7 +41,7 @@ public:
     QString name() const { return mName; }
     QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) :QPixmap (":/os_unknown.png"); }
     QUuid id() const { return mId; }
-    
+
     QString sessionStateName() const;
     QIcon sessionStateIcon() const { return mAccessible ? vboxGlobal().toIcon (mState) : QPixmap (":/state_aborted_16px.png"); }
 
@@ -88,7 +88,7 @@ Q_DECLARE_METATYPE(VBoxVMItem *);
 
 class VBoxVMModel: public QAbstractListModel
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
     enum { SnapShotDisplayRole = Qt::UserRole,
@@ -137,7 +137,7 @@ private:
 
 class VBoxVMListView: public QIListView
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
     VBoxVMListView (QWidget *aParent = 0);
@@ -162,7 +162,7 @@ protected slots:
 protected:
     void mousePressEvent (QMouseEvent *aEvent);
     bool selectCurrent();
-}; 
+};
 
 class VBoxVMItemPainter: public QIItemDelegate
 {
@@ -180,9 +180,9 @@ private:
     inline QFontMetrics fontMetric (const QModelIndex &aIndex, int aRole) const { return QFontMetrics (aIndex.data (aRole).value<QFont>()); }
     inline QIcon::Mode iconMode (QStyle::State aState) const
     {
-        if (!(aState & QStyle::State_Enabled)) 
+        if (!(aState & QStyle::State_Enabled))
             return QIcon::Disabled;
-        if (aState & QStyle::State_Selected) 
+        if (aState & QStyle::State_Selected)
             return QIcon::Selected;
         return QIcon::Normal;
     }

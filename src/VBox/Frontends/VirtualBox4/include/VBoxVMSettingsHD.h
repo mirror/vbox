@@ -134,7 +134,7 @@ public:
   * selection mechanism */
 class HDItemsModel : public QAbstractTableModel
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
@@ -178,7 +178,7 @@ private:
 /** QComboBox class reimplementation used as editor for hd slot */
 class HDSltEditor : public QComboBox
 {
-    Q_OBJECT;
+    Q_OBJECT
     Q_PROPERTY (QVariant slot READ slot WRITE setSlot USER true);
 
 public:
@@ -206,7 +206,7 @@ private:
 /** VBoxMediaComboBox class reimplementation used as editor for hd vdi */
 class HDVdiEditor : public VBoxMediaComboBox
 {
-    Q_OBJECT;
+    Q_OBJECT
     Q_PROPERTY (QVariant vdi READ vdi WRITE setVdi USER true);
 
 public:
@@ -238,7 +238,7 @@ private:
   * selected IDE & SATA slots unique */
 class HDSlotUniquizer : public QObject
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
@@ -273,10 +273,10 @@ private:
 };
 
 /** QWidget class reimplementation used as hard disks settings */
-class VBoxVMSettingsHD : public QWidget, 
+class VBoxVMSettingsHD : public QWidget,
                          public Ui::VBoxVMSettingsHD
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
