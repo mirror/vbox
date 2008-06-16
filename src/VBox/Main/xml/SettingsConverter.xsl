@@ -7,7 +7,7 @@
  *  Template to convert old VirtualBox settings files to the most recent format.
 
      Copyright (C) 2006-2008 Sun Microsystems, Inc.
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -15,7 +15,7 @@
      Foundation, in version 2 as it comes in the "COPYING" file of the
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-    
+
      Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
      Clara, CA 95054 USA or visit http://www.sun.com if you need
      additional information or have any questions.
@@ -433,15 +433,22 @@ Value '<xsl:value-of select="@mode"/>' of 'BootMenu::mode' attribute is invalid.
   </LPT>
 </xsl:template>
 
+<!-- @todo add lastStateChange with the current timestamp if missing.
+  *  current-dateTime() is available only in XPath 2.0 so we will need to pass
+  *  the current time as a parameter to the XSLT processor. -->
+<!--
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
                      vb:Machine"
               mode="v1.3">
   <xsl:copy>
-    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
     <xsl:if test="not(@lastStateChange)">
-      <xsl:attribute name="lastStateChange"></xsl:attribute>
+      <xsl:attribute name="lastStateChange">
+        <xsl:value-of select="current-dateTime()"/>
+      </xsl:attribute>
     </xsl:if>
+    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
   </xsl:copy>
 </xsl:template>
+-->
 
 </xsl:stylesheet>
