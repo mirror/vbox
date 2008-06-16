@@ -2287,9 +2287,23 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_K6_EFER:
-        AssertFailed();
-        pCtx->msrEFER = val;
+    {
+        uint64_t uMask = 0;
+
+        /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
+        CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_NX)
+            uMask |= MSR_K6_EFER_NXE;
+        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+            uMask |= MSR_K6_EFER_LME;
+        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_SEP)
+            uMask |= MSR_K6_EFER_SCE;
+
+        /* There are a few more: e.g. MSR_K6_EFER_FFXSR, MSR_K6_EFER_LMSLE */
+        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
+        pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
         break;
+    }
 
     case MSR_K8_SF_MASK:
         pCtx->msrSFMASK = val;
