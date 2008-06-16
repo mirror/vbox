@@ -74,6 +74,8 @@ typedef struct
     PGMPAGEMAPLOCK  PageMapLock;
     /** Whether the PageMapLock is valid or not. */
     bool            fLocked;
+    /** 64 bits mode or not. */
+    bool            f64Bits;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
 
 
@@ -98,10 +100,11 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->pvPageHC        = NULL;
     pState->pVM             = pVM;
     pState->fLocked         = false;
+    pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long;
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
     int rc = DISCoreOneEx(GCPtr,
-                          enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long
+                          pState->f64Bits
                           ? CPUMODE_64BIT
                           : pSelInfo->Raw.Gen.u1DefBig
                           ? CPUMODE_32BIT
@@ -214,14 +217,17 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
         }
 
         /* check the segemnt limit */
-        if (PtrSrc > pState->cbSegLimit)
+        if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
         uint32_t cb = PAGE_SIZE - (GCPtr & PAGE_OFFSET_MASK);
-        RTGCUINTPTR cbSeg = pState->GCPtrSegEnd - GCPtr;
-        if (cb > cbSeg && cbSeg)
-            cb = cbSeg;
+        if (!pState->f64Bits)
+        {
+            RTGCUINTPTR cbSeg = pState->GCPtrSegEnd - GCPtr;
+            if (cb > cbSeg && cbSeg)
+                cb = cbSeg;
+        }
         if (cb > cbRead)
             cb = cbRead;
 
