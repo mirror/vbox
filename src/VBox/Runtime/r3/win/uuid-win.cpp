@@ -63,6 +63,7 @@ RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid)
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 {
     /* check params */
+    /** @todo this isn't working the same way as uuid-generic.cpp. */
     AssertPtrReturn(pUuid1, -1);
     AssertPtrReturn(pUuid1, 1);
 
