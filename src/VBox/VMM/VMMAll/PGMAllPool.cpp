@@ -617,7 +617,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage
     uint32_t cbWritten;
     int rc2 = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, &cbWritten);
     if (VBOX_SUCCESS(rc2))
-        pRegFrame->eip += pCpu->opsize;
+        pRegFrame->rip += pCpu->opsize;
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_GC
@@ -689,7 +689,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
         pRegFrame->edi += 4;
         pRegFrame->ecx--;
     }
-    pRegFrame->eip += pCpu->opsize;
+    pRegFrame->rip += pCpu->opsize;
 
     /* See use in pgmPoolAccessHandlerSimple(). */
     PGM_INVL_GUEST_TLBS();
@@ -732,11 +732,11 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
     uint32_t cb;
     int rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, &cb);
     if (VBOX_SUCCESS(rc))
-        pRegFrame->eip += pCpu->opsize;
+        pRegFrame->rip += pCpu->opsize;
     else if (rc == VERR_EM_INTERPRETER)
     {
         LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv - opcode=%d\n",
-                  pRegFrame->cs, (RTGCPTR)pRegFrame->eip, pCpu->pCurInstr->opcode));
+                  pRegFrame->cs, (RTGCPTR)pRegFrame->rip, pCpu->pCurInstr->opcode));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         STAM_COUNTER_INC(&pPool->CTXMID(StatMonitor,EmulateInstr));
     }
@@ -835,8 +835,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
         /* REP prefix, don't bother. */
         STAM_COUNTER_INC(&pPool->CTXMID(StatMonitor,RepPrefix));
-        Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x eip=%#x opcode=%d prefix=%#x\n",
-              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, pRegFrame->eip, Cpu.pCurInstr->opcode, Cpu.prefix));
+        Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x eip=%VGv opcode=%d prefix=%#x\n",
+              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, pRegFrame->rip, Cpu.pCurInstr->opcode, Cpu.prefix));
     }
 
     /*

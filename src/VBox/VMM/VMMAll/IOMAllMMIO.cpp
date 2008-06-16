@@ -944,8 +944,8 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatGCMMIOHandler, a);
-    Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%RGv\n",
-          GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->eip));
+    Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%VGv\n",
+          GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->rip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);
@@ -1077,7 +1077,7 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
      * On success advance EIP.
      */
     if (rc == VINF_SUCCESS)
-        pCtxCore->eip += cbOp;
+        pCtxCore->rip += cbOp;
     else
     {
         STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIOFailures);

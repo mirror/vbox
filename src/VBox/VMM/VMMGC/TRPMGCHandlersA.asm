@@ -270,6 +270,10 @@ GenericTrapErrCode:
     mov     dword [esp + CPUMCTXCORE.cs], eax
     mov     eax, [esp + 08h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
+%if GC_ARCH_BITS == 64
+    ; zero out the high dword
+    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+%endif
     mov     eax, [esp + 10h + ESPOFF]           ; eflags
     mov     [esp + CPUMCTXCORE.eflags], eax
 
@@ -749,6 +753,10 @@ ti_GenericInterrupt:
 
     mov     eax, [esp + 04h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
+%if GC_ARCH_BITS == 64
+    ; zero out the high dword
+    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+%endif
     mov     eax, dword [esp + 08h + ESPOFF]     ; cs
     mov     [esp + CPUMCTXCORE.cs], eax
     mov     eax, [esp + 0ch + ESPOFF]           ; eflags
@@ -1048,6 +1056,10 @@ BEGINPROC_EXPORTED TRPMGCHandlerTrap08
 
     mov     eax, [ecx + VBOXTSS.eip]
     mov     [esp + CPUMCTXCORE.eip], eax
+%if GC_ARCH_BITS == 64
+    ; zero out the high dword
+    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+%endif
     mov     eax, [ecx + VBOXTSS.eflags]
     mov     [esp + CPUMCTXCORE.eflags], eax
 

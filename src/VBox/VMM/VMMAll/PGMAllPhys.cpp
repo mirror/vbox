@@ -97,7 +97,7 @@ PGMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
                     /** @todo Find other instructions we can safely skip, possibly
                      * adding this kind of detection to DIS or EM. */
                     case OP_MOV:
-                        pRegFrame->eip += cbOp;
+                        pRegFrame->rip += cbOp;
                         STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestROMWriteHandled);
                         return VINF_SUCCESS;
                 }
