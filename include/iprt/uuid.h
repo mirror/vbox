@@ -62,7 +62,7 @@ RTDECL(int)  RTUuidClear(PRTUUID pUuid);
  * @returns true if UUID is null.
  * @param   pUuid           uuid to check.
  */
-RTDECL(int)  RTUuidIsNull(PCRTUUID pUuid);
+RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid);
 
 /**
  * Compares two UUID values.
@@ -74,6 +74,15 @@ RTDECL(int)  RTUuidIsNull(PCRTUUID pUuid);
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
 
 /**
+ * Compares a UUID value with a UUID string.
+ *
+ * @returns 0 if eq, < 0 or > 0.
+ * @param   pUuid1          First value to compare.
+ * @param   pszString2      The 2nd UUID in string form.
+ */
+RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString);
+
+/**
  * Converts binary UUID to its string representation.
  *
  * @returns iprt status code.
@@ -81,7 +90,7 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
  * @param   pszString       Where to store result string.
  * @param   cchString       pszString buffer length, must be >= RTUUID_STR_LENGTH.
  */
-RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString);
+RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString);
 
 /**
  * Converts UUID from its string representation to binary format.

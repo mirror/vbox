@@ -43,16 +43,11 @@
 /* WARNING: This implementation ASSUMES little endian. */
 
 
-/**
- * Generates a new UUID value.
- *
- * @returns iprt status code.
- * @param   pUuid           Where to store generated uuid.
- */
+/** @todo move to a different file. */
 RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
     /* validate input. */
-    AssertReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
 
     RTRandBytes(pUuid, sizeof(*pUuid));
     pUuid->Gen.u16ClockSeq = (pUuid->Gen.u16ClockSeq & 0x3fff) | 0x8000;
@@ -62,53 +57,37 @@ RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 }
 
 
-/**
- * Makes a null UUID value.
- *
- * @returns iprt status code.
- * @param   pUuid           Where to store generated null uuid.
- */
 RTDECL(int)  RTUuidClear(PRTUUID pUuid)
 {
-    AssertReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
     pUuid->au64[0] = 0;
     pUuid->au64[1] = 0;
     return VINF_SUCCESS;
 }
 
 
-/**
- * Checks if UUID is null.
- *
- * @returns true if UUID is null.
- * @param   pUuid           uuid to check.
- */
-RTDECL(int)  RTUuidIsNull(PCRTUUID pUuid)
+RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid)
 {
-    AssertReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
     return !pUuid->au64[0]
         && !pUuid->au64[1];
 }
 
 
-/**
- * Compares two UUID values.
- *
- * @returns 0 if eq, < 0 or > 0.
- * @param   pUuid1          First value to compare.
- * @param   pUuid2          Second value to compare.
- */
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 {
     /*
      * Special cases.
      */
+    /** @todo This differs in the windows implementation... check out which behavior we really want. */
     if (pUuid1 == pUuid2)
         return 0;
     if (!pUuid1)
         return RTUuidIsNull(pUuid2) ? 0 : -1;
     if (!pUuid2)
         return RTUuidIsNull(pUuid1) ? 0 : 1;
+    AssertPtr(pUuid1);
+    AssertPtr(pUuid2);
 
     /*
      * Standard cases.
@@ -137,19 +116,28 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 }
 
 
-/**
- * Converts binary UUID to its string representation.
- *
- * @returns iprt status code.
- * @param   pUuid           Uuid to convert.
- * @param   pszString       Where to store result string.
- * @param   cchString       pszString buffer length, must be >= RTUUID_STR_LENGTH.
- */
-RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
+RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
+{
+    /* check params */
+    AssertPtrReturn(pUuid1, -1);
+    AssertPtrReturn(pszString, 1);
+
+    /*
+     * Try convert the string to a UUID and then compare the two.
+     */
+    RTUUID Uuid2;
+    int rc = RTUuidFromStr(&Uuid2, pszString);
+    AssertRCReturn(rc, 1);
+
+    return RTUuidCompare(pUuid1, &Uuid2);
+}
+
+
+RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
 {
     /* validate parameters */
-    AssertReturn(pUuid, VERR_INVALID_PARAMETER);
-    AssertReturn(pszString, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszString, VERR_INVALID_PARAMETER);
     AssertReturn(cchString >= RTUUID_STR_LENGTH, VERR_INVALID_PARAMETER);
 
     /*
@@ -213,13 +201,6 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
 }
 
 
-/**
- * Converts UUID from its string representation to binary format.
- *
- * @returns iprt status code.
- * @param   pUuid           Where to store result Uuid.
- * @param   pszString       String with UUID text data.
- */
 RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
 {
     /* 0xff if not a hex number, otherwise the value. (Assumes UTF-8 encoded strings.) */
@@ -246,8 +227,8 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
     /*
      * Validate parameters.
      */
-    AssertReturn(pUuid, VERR_INVALID_PARAMETER);
-    AssertReturn(pszString, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszString, VERR_INVALID_PARAMETER);
 
 #define MY_CHECK(expr) do { if (RT_UNLIKELY(!(expr))) return VERR_INVALID_UUID_FORMAT; } while (0)
 #define MY_ISXDIGIT(ch) (s_aDigits[(ch) & 0xff] != 0xff)
