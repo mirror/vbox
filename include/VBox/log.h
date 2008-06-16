@@ -219,6 +219,10 @@ typedef enum LOGGROUP
     LOG_GROUP_MM_PHYS,
     /** MM Page pool group. */
     LOG_GROUP_MM_POOL,
+    /** The network filter driver group. */
+    LOG_GROUP_NET_FLT_DRV,
+    /** The network tap driver group. */
+    LOG_GROUP_NET_TAP_DRV,
     /** PATM group. */
     LOG_GROUP_PATM,
     /** PDM group. */
@@ -271,10 +275,16 @@ typedef enum LOGGROUP
     LOG_GROUP_STAM,
     /** SUP group. */
     LOG_GROUP_SUP,
+    /** SUPport driver group. */
+    LOG_GROUP_SUP_DRV,
     /** TM group. */
     LOG_GROUP_TM,
     /** TRPM group. */
     LOG_GROUP_TRPM,
+    /** USB driver group. */
+    LOG_GROUP_USB_DRV,
+    /** USBFilter group. */
+    LOG_GROUP_USB_FILTER,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
     /** Raw virtual disk backend. */
@@ -390,6 +400,8 @@ typedef enum LOGGROUP
     "MM_HYPER_HEAP",\
     "MM_PHYS",      \
     "MM_POOL",      \
+    "NET_FLT_DRV",  \
+    "NET_TAP_DRV",  \
     "PATM",         \
     "PDM",          \
     "PDM_ASYNC_COMPLETION", \
@@ -416,8 +428,11 @@ typedef enum LOGGROUP
     "SSM",          \
     "STAM",         \
     "SUP",          \
+    "SUP_DRV",      \
     "TM",           \
     "TRPM",         \
+    "USB_DRV",      \
+    "USB_FILTER",   \
     "VD",           \
     "VD_RAW",       \
     "VD_VDI",       \
