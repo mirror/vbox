@@ -28,10 +28,10 @@
 
 class VBoxVMSettingsDlg;
 
-class VBoxVMSettingsParallel : public QWidget, 
+class VBoxVMSettingsParallel : public QWidget,
                                public Ui::VBoxVMSettingsParallel
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

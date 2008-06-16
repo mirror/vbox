@@ -38,7 +38,7 @@ class VBoxProgressBar;
 class VBoxDiskImageManagerDlg : public QIWithRetranslateUI2<QIMainDialog>,
                                 public Ui::VBoxDiskImageManagerDlg
 {
-    Q_OBJECT;
+    Q_OBJECT
 
     enum TabIndex { HDTab = 0,
                     CDTab,
@@ -128,7 +128,7 @@ private:
     void createInfoString (InfoPaneLabel *&aInfo, QWidget* aRoot, bool aLeftRightMargin, int aRow, int aCol, int aRowSpan = 1, int aColSpan = 1) const;
 
     void makeWarningMark (DiskImageItem *aItem, VBoxMedia::Status aStatus, VBoxDefs::DiskType aType) const;
-    
+
     static QString DVDImageUsage (const QUuid &aId, QString &aSnapshotUsage);
     static QString FloppyImageUsage (const QUuid &aId, QString &aSnapshotUsage);
     static void DVDImageSnapshotUsage (const QUuid &aId, const CSnapshot &aSnapshot, QString &aUsage);

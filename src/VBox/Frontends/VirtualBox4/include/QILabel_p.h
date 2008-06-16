@@ -32,7 +32,7 @@
 
 class QILabelPrivate: public QLabel
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 

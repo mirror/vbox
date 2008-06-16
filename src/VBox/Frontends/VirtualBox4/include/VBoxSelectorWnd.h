@@ -46,7 +46,7 @@ class QUuid;
 
 class VBoxSelectorWnd: public QIWithRetranslateUI2<QMainWindow>
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
 
