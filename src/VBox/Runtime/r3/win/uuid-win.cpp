@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT UUID (unique identifiers) handling (win32 host).
+ * IPRT - UUID, Windows implementation.
  */
 
 /*
@@ -39,22 +39,6 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
-
-
-/** @todo split out this guy */
-RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
-{
-    /* check params */
-    AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
-
-    RPC_STATUS rc = UuidCreate((UUID *)pUuid);
-    if (    rc == RPC_S_OK
-        || rc == RPC_S_UUID_LOCAL_ONLY)
-        return VINF_SUCCESS;
-
-    /* error exit */
-    return RTErrConvertFromWin32(rc);
-}
 
 
 RTDECL(int)  RTUuidClear(PRTUUID pUuid)
