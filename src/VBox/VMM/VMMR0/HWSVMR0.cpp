@@ -1713,9 +1713,23 @@ ResumeExecution:
 
     /* Emulate in ring 3. */
     case SVM_EXIT_MSR:
-        /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
-        rc = VERR_EM_INTERPRETER;
+    {
+        uint32_t cbSize;
+
+        /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
+        Log(("SVM: %s\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr"));
+        rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        if (rc == VINF_SUCCESS)
+        {
+            /* EIP has been updated already. */
+
+            /* Only resume if successful. */
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Vrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr", rc));
         break;
+    }
 
     case SVM_EXIT_MONITOR:
     case SVM_EXIT_RDPMC:

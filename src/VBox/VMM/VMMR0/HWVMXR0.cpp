@@ -1698,6 +1698,26 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
+    case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
+    {
+        uint32_t cbSize;
+
+        /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
+        Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
+        rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        if (rc == VINF_SUCCESS)
+        {
+            /* EIP has been updated already. */
+
+            /* Only resume if successful. */
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Vrc\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr", rc));
+        break;
+    }
+
     case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
     {
         switch (VMX_EXIT_QUALIFICATION_CRX_ACCESS(exitQualification))
