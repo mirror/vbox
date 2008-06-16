@@ -121,7 +121,10 @@ typedef struct INTNETBUF
     /** Number of frame bytes sent. */
     STAMCOUNTER     cbStatSend;
 } INTNETBUF;
+/** Pointer to an interface buffer. */
 typedef INTNETBUF *PINTNETBUF;
+/** Pointer to a const interface buffer. */
+typedef INTNETBUF const *PCINTNETBUF;
 
 /** Internal networking interface handle. */
 typedef uint32_t    INTNETIFHANDLE;
@@ -151,7 +154,7 @@ typedef INTNETIFHANDLE *PINTNETIFHANDLE;
 typedef struct INTNETHDR
 {
     /** Header type. This is currently serving as a magic, it
-     * can be extended later to encode special command packets and stuff.. */
+     * can be extended later to encode special command packets and stuff. */
     uint16_t        u16Type;
     /** The size of the frame. */
     uint16_t        cbFrame;
@@ -159,8 +162,12 @@ typedef struct INTNETHDR
      * This is used to keep the frame it self continguous in virtual memory and
      * thereby both simplify reading and   */
     int32_t         offFrame;
-} INTNETHDR, *PINTNETHDR;
+} INTNETHDR;
 #pragma pack()
+/** Pointer to a packet header.*/
+typedef INTNETHDR *PINTNETHDR;
+/** Pointer to a const packet header.*/
+typedef INTNETHDR const *PCINTNETHDR;
 
 /** INTNETHDR::u16Type value for normal frames. */
 #define INTNETHDR_TYPE_FRAME    0x2442
@@ -173,7 +180,7 @@ typedef struct INTNETHDR
  * @param   pHdr        Pointer to the packet header
  * @param   pBuf        The buffer the header is within. Only used in strict builds.
  */
-DECLINLINE(void *) INTNETHdrGetFramePtr(PINTNETHDR pHdr, PINTNETBUF pBuf)
+DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
 {
     uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
 #ifdef VBOX_STRICT
@@ -210,8 +217,343 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf)
     ASMAtomicXchgU32(&pRingBuf->offRead, offRead);
 }
 
+
+/**
+ * Scatter / Gather segment (internal networking).
+ */
+typedef struct INTNETSEG
+{
+    /** The physical address. NIL_RTHCPHYS is not set. */
+    RTHCPHYS        Phys;
+    /** Pointer to the segment data. */
+    void           *pv;
+    /** The segment size. */
+    uint32_t        cb;
+} INTNETSEG;
+/** Pointer to a internal networking packet segment. */
+typedef INTNETSEG *PINTNETSEG;
+/** Pointer to a internal networking packet segment. */
+typedef INTNETSEG const *PCINTNETSEG;
+
+
+/**
+ * Scatter / Gather list (internal networking).
+ *
+ * This is used when communicating with the trunk port.
+ */
+typedef struct INTNETSG
+{
+    /** The total length of the scatter gather list. */
+    uint32_t        cbTotal;
+    /** The number of users (references).
+     * This is used by the SGRelease code to decide when it can be freed. */
+    uint16_t volatile cUsers;
+    /** Flags, see INTNETSG_FLAGS_* */
+    uint16_t volatile fFlags;
+    /** The number of segments allocated. */
+    uint16_t        cSegsAlloc;
+    /** The number of segments actually used. */
+    uint16_t        cSegsUsed;
+    /** Variable sized list of segments. */
+    INTNETSEG       aSegs[1];
+} INTNETSG;
+/** Pointer to a scatter / gather list. */
+typedef INTNETSG *PINTNETSG;
+/** Pointer to a const scatter / gather list. */
+typedef INTNETSG const *PCINTNETSG;
+
+/** @name INTNETSG::fFlags definitions.
+ * @{ */
+/** Set if the SG is free. */
+#define INTNETSG_FLAGS_FREE     RT_BIT_32(1)
+/** Set if the SG is a temporary one that will become invalid upon return.
+ * Try to finish using it before returning, and if that's not possible copy
+ * to other buffers.
+ * When not set, the callee should always free the SG.
+ * Attempts to free it made by the callee will be quietly ignored. */
+#define INTNETSG_FLAGS_TEMP     RT_BIT_32(2)
+/** @} */
+
+
+/**
+ * Initializes a scatter / gather buffer from a internal networking packet.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ *                      (The fFlags, cUsers, and cSegsAlloc members are left untouched.)
+ * @param   pHdr        Pointer to the packet header.
+ * @param   pBuf        The buffer the header is within. Only used in strict builds.
+ * @remarks Perhaps move this...
+ */
+DECLINLINE(void) INTNETSgInitFromPkt(PINTNETSG pSG, PCINTNETHDR pPktHdr, PCINTNETBUF pBuf)
+{
+    pSG->cSegsUsed = 1;
+    pSG->cbTotal = pSG->aSegs[0].cb = pPktHdr->cbFrame;
+    pSG->aSegs[0].pv = INTNETHdrGetFramePtr(pPktHdr, pBuf);
+    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+}
+
+
+
+/** Pointer to the switch side of a trunk port. */
+typedef struct INTNETTRUNKSWPORT *PINTNETTRUNKSWPORT;
+/**
+ * This is the port on the internal network 'switch', i.e.
+ * what the driver is connected to.
+ *
+ * This is only used for the in-kernel trunk connections.
+ */
+typedef struct INTNETTRUNKSWPORT
+{
+    /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
+    uint32_t u32Version;
+
+    /**
+     * Selects whether outgoing SGs should have their physical address set.
+     *
+     * By enabling physical addresses in the scatter / gather segments it should
+     * be possible to save some unnecessary address translation and memory locking
+     * in the network stack. (Internal networking knows the physical address for
+     * all the INTNETBUF data and that it's locked memory.) There is a negative
+     * side effects though, frames that crosses page boundraries will require
+     * multiple scather / gather segments.
+     *
+     * @returns The old setting.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   fEnable     Whether to enable or disable it.
+     *
+     * @remarks Will grab the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pIfPort, bool fEnable));
+
+    /**
+     * Frame from the host that's about to hit the wire.
+     *
+     * @returns true if we've handled it and it should be dropped.
+     *          false if it should hit the wire.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         The (scatter /) gather structure for the frame.
+     *                      This will only be use during the call, so a temporary one can
+     *                      be used. The Phys member will not be used.
+     *
+     * @remarks Will grab the network semaphore.
+     *
+     * @remark  NAT and TAP will use this interface.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnRecvHost,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+
+    /**
+     * Frame from the wire that's about to hit the network stack.
+     *
+     * @returns true if we've handled it and it should be dropped.
+     *          false if it should hit the network stack.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         The (scatter /) gather structure for the frame.
+     *                      This will only be use during the call, so a temporary one can
+     *                      be used. The Phys member will not be used.
+     *
+     * @remarks Will grab the network semaphore.
+     *
+     * @remark  NAT and TAP will not this interface.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnRecvWire,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+
+    /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
+    uint32_t u32VersionEnd;
+} INTNETTRUNKSWPORT;
+
+/** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
+#define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
+
+
+/** Pointer to the interface side of a trunk port. */
+typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
+/**
+ * This is the port on the trunk interface, i.e. the driver
+ * side which the internal network is connected to.
+ *
+ * This is only used for the in-kernel trunk connections.
+ */
+typedef struct INTNETTRUNKIFPORT
+{
+    /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
+    uint32_t u32Version;
+
+    /**
+     * Changes the active state of the interface.
+     *
+     * The interface is created in the suspended (non-active) state and then activated
+     * when the VM/network is started. It may be suspended and re-activated later
+     * for various reasons. It will finally be suspended again before disconnecting
+     * the interface from the internal network, however, this might be done immediately
+     * before disconnecting and may leave an incoming frame waiting on the internal network
+     * semaphore.
+     *
+     * @returns The previous state.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   fActive     True if the new state is 'active', false if the new state is 'suspended'.
+     *
+     * @remarks Called while owning the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnSetActive,(PINTNETTRUNKIFPORT pIfPort, bool fActive));
+
+    /**
+     * Tests if the mac address belongs to any of the host NICs
+     * and should take the pfnSendToHost route.
+     *
+     * @returns true / false.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pvMac       Pointer to the mac address. This can be cast to PCPDMMAC (fixme: make it an common type?)
+     *
+     * @remarks Called while owning the network semaphore.
+     *
+     * @remarks TAP and NAT will compare with their own MAC address and let all their
+     *          traffic go over the pfnSendToHost method.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, /*PCPDMMAC*/ void const *pvMac));
+
+    /**
+     * Tests whether the host is operating the interface is promiscuous mode.
+     *
+     * The default behavior of internal networking 'switch' is to 'autodetect'
+     * promiscuous mode on the trunk port, which is where this method is used.
+     * For security reasons this default my of course be overridden so that the
+     * host cannot sniff at what's going on.
+     *
+     * Note that this differs from operating the trunk port on the switch in
+     * 'promiscuous' mode, because that relates to the bits going to the wire.
+     *
+     * @returns true / false.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     *
+     * @remarks Called while owning the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnIsPromiscuous,(PINTNETTRUNKIFPORT pIfPort));
+
+    /**
+     * Send the frame to the host.
+     *
+     * This path is taken if pfnIsHostMac returns true and the trunk port on the
+     * internal network is configured to let traffic thru to the host. It may also
+     * be taken if the host is in promiscuous mode and the internal network is
+     * configured to respect this for internal targets.
+     *
+     * @return  VBox status code. Error generally means we'll drop the packet.
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
+     *                      This will never be a temporary one, so, it's safe to
+     *                      do this asynchronously to save unnecessary buffer
+     *                      allocating and copying.
+     *
+     * @remarks Called while owning the network semaphore?
+     *
+     * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnSendToHost,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+
+    /**
+     * Put the frame on the wire.
+     *
+     * This path is taken if pfnIsHostMac returns false and the trunk port on the
+     * internal network is configured to let traffic out on the wire. This may also
+     * be taken for both internal and host traffic if the trunk port is configured
+     * to be in promiscuous mode.
+     *
+     * @return  VBox status code. Error generally means we'll drop the packet.
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
+     *                      This will never be a temporary one, so, it's safe to
+     *                      do this asynchronously to save unnecessary buffer
+     *                      allocating and copying.
+     *
+     * @remarks Called while owning the network semaphore?
+     *
+     * @remarks TAP and NAT will call pfnSGRelease and return successfully.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnSendToWire,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+
+    /**
+     * This is called by the pfnSendToHost and pfnSendToWire code when they are
+     * done with a SG.
+     *
+     * It may be called after they return if the frame was pushed in an
+     * async manner.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         Pointer to the (scatter /) gather structure.
+     *
+     * @remarks Will grab the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+
+    /**
+     * Destroys this network interface port.
+     *
+     * This is called either when disconnecting the trunk interface at runtime or
+     * when the network is being torn down. In both cases, the interface will be
+     * suspended first. Note that this may still cause races in the receive path...
+     *
+     * @param   pIfPort     Pointer to this structure.
+     *
+     * @remarks Called while owning the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnDestroy,(PINTNETTRUNKIFPORT pIfPort));
+
+    /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
+    uint32_t u32VersionEnd;
+} INTNETTRUNKIFPORT;
+
+/** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
+#define INTNETTRUNKIFPORT_VERSION   UINT32_C(0xA2CDe001)
+
+
+/**
+ * The component factory interface for create a network
+ * interface filter (like VBoxNetFlt).
+ */
+typedef struct INTNETTRUNKNETFLTFACTORY
+{
+    /**
+     * Create an instance for the specfied host interface.
+     *
+     * The initial interface active state is false (suspended).
+     *
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS and *ppIfPort set on success.
+     * @retval  VERR_INTNET_FLT_IF_NOT_FOUND if the interface was not found.
+     * @retval  VERR_INTNET_FLT_IF_BUSY if the interface is already connected.
+     * @retval  VERR_INTNET_FLT_IF_FAILED if it failed for some other reason.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     * @param   pszName             The interface name (OS specific).
+     * @param   pSwitchPort         Pointer to the port interface on the switch that
+     *                              this interface is being connected to.
+     * @param   ppIfPort            Where to store the pointer to the interface port
+     *                              on success.
+     *
+     * @remarks Called while owning the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnCreate,(INTNETTRUNKNETFLTFACTORY pIfFactory, const char *pszName,
+                                         PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
+} INTNETTRUNKNETFLTFACTORY;
+/** Pointer to the trunk factory. */
+typedef INTNETTRUNKNETFLTFACTORY *PINTNETTRUNKNETFLTFACTORY;
+
+/** The UUID for the current network interface filter factory. */
+#define INTNETTRUNKNETFLTFACTORY_UUID_STR   "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
+
+
+
+
 /** The maximum length of a network name. */
-#define INTNET_MAX_NETWORK_NAME 128
+#define INTNET_MAX_NETWORK_NAME     128
 
 
 /**
