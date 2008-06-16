@@ -134,7 +134,10 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
     if (cchTmpStr < cchString)
         memcpy(pszString, pszTmpStr, cchTmpStr + 1);
     else
+    {
+        AssertFailed();
         rc = ERROR_BUFFER_OVERFLOW;
+    }
 
     /* free buffer */
 #ifdef RPC_UNICODE_SUPPORTED
