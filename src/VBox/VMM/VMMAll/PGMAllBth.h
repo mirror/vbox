@@ -864,7 +864,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     && PGM_SHW_TYPE != PGM_TYPE_NESTED
     int rc;
 
-    LogFlow(("InvalidatePage %x\n", GCPtrPage));
+    LogFlow(("InvalidatePage %VGv\n", GCPtrPage));
     /*
      * Get the shadow PD entry and skip out if this PD isn't present.
      * (Guessing that it is frequent for a shadow PDE to not be present, do this first.)
@@ -990,6 +990,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
+            LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+                     GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
             pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4);
             pPml4eDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
@@ -998,6 +1000,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
     else
     {
+        LogFlow(("InvalidatePage: Out-of-sync PML4E (P) at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+                    GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
@@ -1026,6 +1030,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
+            LogFlow(("InvalidatePage: Out-of-sync PDPE (A) at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                     GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
             pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PML4, iPml4);
             pPdpeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
@@ -1034,6 +1040,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
     else
     {
+        LogFlow(("InvalidatePage: Out-of-sync PDPE (P) at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                    GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
         pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PDPT, iPDDst);
         pPdpeDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
@@ -1075,6 +1083,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
+            LogFlow(("InvalidatePage: Out-of-sync (A) at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+                     GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
@@ -1159,6 +1169,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              * We could do this for some flushes in GC too, but we need an algorithm for
              * deciding which 4MB pages containing code likely to be executed very soon.
              */
+            LogFlow(("InvalidatePage: Out-of-sync PD at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+                     GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4MBPages));
