@@ -41,7 +41,6 @@
 /* WARNING: This implementation ASSUMES little endian. Needs testing on big endian! */
 
 
-/** @todo move to a different file. */
 RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
     /* validate input. */
