@@ -44,6 +44,9 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#ifdef VBOX_WITH_INFO_SVC
+#include <VBox/HostServices/VBoxInfoSvc.h>
+#endif /* VBOX_WITH_INFO_SVC */
 
 
 /*
@@ -235,6 +238,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pIdeInst = NULL;      /* /Devices/piix3ide/0/ */
     PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
 	PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
+#ifdef VBOX_WITH_INFO_SVC
+    PCFGMNODE pGuest = NULL;        /* /Guest */
+    PCFGMNODE pRegistry = NULL;     /* /Guest/Registry */
+#endif /* VBOX_WITH_INFO_SVC defined */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
@@ -1638,6 +1645,37 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
         }
     }
+#ifdef VBOX_WITH_INFO_SVC
+    /*
+     * Shared information services
+     */
+    {
+        /* Load the service */
+        rc = pConsole->mVMMDev->hgcmLoadService ("VBoxSharedInfoSvc", "VBoxSharedInfoSvc");
+
+        if (VBOX_FAILURE (rc))
+        {
+            LogRel(("VBoxSharedInfoSvc is not available. rc = %Vrc\n", rc));
+            /* That is not a fatal failure. */
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            rc = CFGMR3InsertNode(pRoot,     "Guest", &pGuest);                            RC_CHECK();
+            rc = CFGMR3InsertNode(pGuest,    "Registry", &pRegistry);                      RC_CHECK();
+            /* Setup the service. */
+            VBOXHGCMSVCPARM parm;
+
+            parm.type = VBOX_HGCM_SVC_PARM_PTR;
+            parm.u.pointer.addr = pRegistry;
+            parm.u.pointer.size = sizeof(pRegistry);  /* We don't actually care. */
+
+            pConsole->mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", svcInfo::SET_CFGM_NODE, 1, &parm);
+
+            Log(("Set VBoxSharedInfoSvc guest registry\n"));
+        }
+    }
+#endif /* VBOX_WITH_INFO_SVC defined */
 
     /*
      * CFGM overlay handling.
