@@ -48,10 +48,11 @@
  * @param   pVM     VM Handle.
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
+ * @remarks Don't use when in long mode.
  */
 SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** DON'T USE! */
+    Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
 
     /** @todo check the limit. */
     VBOXDESC    Desc;
@@ -60,11 +61,11 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
     else
     {
         /** @todo handle LDT pages not present! */
-        #ifdef IN_GC
+#ifdef IN_GC
         PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-        #else
+#else
         PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-        #endif
+#endif
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
@@ -448,10 +449,11 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RT
  * @param   ppvGC       Where to store the GC flat address.
  * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
  *                      the selector. NULL is allowed.
+ * @remarks Don't use when in long mode.
  */
 SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** DON'T USE! */
+    Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
 
     /*
      * Deal with real & v86 mode first.
@@ -781,7 +783,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                 }
 
                 /*
-                 * Limit check. Note that the limit in the hidden register is the 
+                 * Limit check. Note that the limit in the hidden register is the
                  * final value. The granularity bit was included in its calculation.
                  */
                 uint32_t u32Limit = pHidCS->u32Limit;
@@ -908,7 +910,7 @@ SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL
 
     /* Else compatibility or 32 bits mode. */
     return (pHiddenSel->Attr.n.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    
+
 }
 
 /**
