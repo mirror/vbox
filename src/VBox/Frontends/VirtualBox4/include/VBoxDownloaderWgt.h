@@ -48,7 +48,7 @@ typedef happyhttp::Connection HConnect;
  */
 class VBoxDownloaderWgt : public QIWithRetranslateUI<QWidget>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

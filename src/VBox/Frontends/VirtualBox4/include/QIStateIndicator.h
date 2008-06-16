@@ -29,7 +29,7 @@
 
 class QIStateIndicator : public QFrame
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

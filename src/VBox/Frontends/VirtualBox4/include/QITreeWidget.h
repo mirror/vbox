@@ -28,7 +28,7 @@
 
 class QITreeWidget: public QTreeWidget
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

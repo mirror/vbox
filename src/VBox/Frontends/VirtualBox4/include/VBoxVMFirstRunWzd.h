@@ -32,7 +32,7 @@
 class VBoxVMFirstRunWzd : public QIWithRetranslateUI<QIAbstractWizard>,
                           public Ui::VBoxVMFirstRunWzd
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

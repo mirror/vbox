@@ -30,7 +30,7 @@
 class VBoxCloseVMDlg : public QIWithRetranslateUI2<QIDialog>,
                        public Ui::VBoxCloseVMDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

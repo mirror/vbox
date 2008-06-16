@@ -29,7 +29,7 @@
 class VBoxAboutDlg : public QIWithRetranslateUI<QDialog>,
                      public Ui::VBoxAboutDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

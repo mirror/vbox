@@ -34,7 +34,7 @@ class QTimer;
 class VBoxVMInformationDlg : public QIWithRetranslateUI2<QIMainDialog>,
                              public Ui::VBoxVMInformationDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

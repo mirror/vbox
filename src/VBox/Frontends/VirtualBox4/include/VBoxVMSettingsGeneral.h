@@ -29,10 +29,10 @@
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsGeneral : public QWidget,
+class VBoxVMSettingsGeneral : public QWidget, 
                               public Ui::VBoxVMSettingsGeneral
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

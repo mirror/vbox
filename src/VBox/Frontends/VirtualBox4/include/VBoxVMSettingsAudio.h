@@ -28,7 +28,7 @@
 
 class VBoxVMSettingsAudio : public QWidget, public Ui::VBoxVMSettingsAudio
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

@@ -55,7 +55,7 @@
  */
 class VBoxVMDetailsView : public QIWithRetranslateUI<QStackedWidget>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -213,7 +213,7 @@ void VBoxVMDetailsView::retranslateUi()
  */
 class VBoxVMDescriptionPage : public QIWithRetranslateUI<QWidget>
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

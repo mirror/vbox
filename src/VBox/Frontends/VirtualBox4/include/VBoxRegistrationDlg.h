@@ -37,7 +37,7 @@ class VBoxNetworkFramework;
 class VBoxRegistrationDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
                             public Ui::VBoxRegistrationDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 

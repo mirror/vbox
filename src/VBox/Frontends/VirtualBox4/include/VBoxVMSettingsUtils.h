@@ -53,7 +53,7 @@ enum
  */
 class BootItemsTable : public QTreeWidget
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -200,7 +200,7 @@ public:
  */
 class QITableView : public QTableView
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
