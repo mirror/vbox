@@ -47,6 +47,9 @@ ifneq ($(KBUILD_TARGET),win)
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
+ifdef VBOX_WITH_INFO_SVC
+ VBOX_MAIN_DEFS += VBOX_WITH_INFO_SVC
+endif
 if1of ($(KBUILD_TARGET), linux freebsd solaris)
  VBOX_MAIN_DEFS += VBOX_MAIN_USE_SEMRW
 #else
