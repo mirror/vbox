@@ -350,7 +350,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_NUM_S8(num)  PUT_NUM_SIGN(4,  "0%02xh", num, int8_t,  uint8_t)
 #define PUT_NUM_S16(num) PUT_NUM_SIGN(6,  "0%04xh", num, int16_t, uint16_t)
 #define PUT_NUM_S32(num) PUT_NUM_SIGN(10, "0%08xh", num, int32_t, uint32_t)
-#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%08xh", num, int64_t, uint64_t)
+#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%016xh", num, int64_t, uint64_t)
 
 
     /*
