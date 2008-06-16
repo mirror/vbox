@@ -250,7 +250,7 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
  * @param   InstructionAddr Instruction address.
  * @param   pcbInstruction  Where to store the instruction size. Can be NULL.
  */
-static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
+int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
 {
     const OPCODE *paOneByteMap;
 
@@ -273,105 +273,126 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         pCpu->opmode     = pCpu->mode;
     }
 
-    while(1)
+#ifdef IN_RING3
+# ifndef __L4ENV__  /* Unfortunately, we have no exception handling in l4env */
+    try
+# else
+    pCpu->pJumpBuffer = &jumpbuffer;
+    if (setjmp(jumpbuffer) == 0)
+# endif
+#endif
     {
-        uint8_t codebyte = DISReadByte(pCpu, InstructionAddr+iByte);
-        uint8_t opcode   = paOneByteMap[codebyte].opcode;
-
-        /* Hardcoded assumption about OP_* values!! */
-        if (opcode <= OP_LAST_PREFIX)
+        while(1)
         {
-            /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
-            if (opcode != OP_REX)
-            {
-                /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                pCpu->lastprefix = opcode;
-                pCpu->prefix &= ~PREFIX_REX;
-            }
+            uint8_t codebyte = DISReadByte(pCpu, InstructionAddr+iByte);
+            uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
-            switch (opcode)
+            /* Hardcoded assumption about OP_* values!! */
+            if (opcode <= OP_LAST_PREFIX)
             {
-            case OP_INVALID:
-                AssertMsgFailed(("Invalid opcode!!\n"));
-                return VERR_GENERAL_FAILURE; /** @todo better error code. */
-
-            // segment override prefix byte
-            case OP_SEG:
-                pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
-                /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
-                if (   pCpu->mode != CPUMODE_64BIT
-                    || pCpu->enmPrefixSeg >= DIS_SELREG_FS)
+                /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
+                if (opcode != OP_REX)
                 {
-                    pCpu->prefix    |= PREFIX_SEG;
+                    /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
+                    pCpu->lastprefix = opcode;
+                    pCpu->prefix &= ~PREFIX_REX;
                 }
-                iByte += sizeof(uint8_t);
-                continue;   //fetch the next byte
 
-            // lock prefix byte
-            case OP_LOCK:
-                pCpu->prefix |= PREFIX_LOCK;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
+                switch (opcode)
+                {
+                case OP_INVALID:
+                    AssertMsgFailed(("Invalid opcode!!\n"));
+                    return VERR_GENERAL_FAILURE; /** @todo better error code. */
 
-            // address size override prefix byte
-            case OP_ADDRSIZE:
-                pCpu->prefix |= PREFIX_ADDRSIZE;
-                if (pCpu->mode == CPUMODE_16BIT)
-                    pCpu->addrmode = CPUMODE_32BIT;
-                else
-                if (pCpu->mode == CPUMODE_32BIT)
-                    pCpu->addrmode = CPUMODE_16BIT;
-                else
-                    pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
+                // segment override prefix byte
+                case OP_SEG:
+                    pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
+                    /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
+                    if (   pCpu->mode != CPUMODE_64BIT
+                        || pCpu->enmPrefixSeg >= DIS_SELREG_FS)
+                    {
+                        pCpu->prefix    |= PREFIX_SEG;
+                    }
+                    iByte += sizeof(uint8_t);
+                    continue;   //fetch the next byte
 
-                iByte        += sizeof(uint8_t);
-                continue;   //fetch the next byte
+                // lock prefix byte
+                case OP_LOCK:
+                    pCpu->prefix |= PREFIX_LOCK;
+                    iByte       += sizeof(uint8_t);
+                    continue;   //fetch the next byte
 
-            // operand size override prefix byte
-            case OP_OPSIZE:
-                pCpu->prefix |= PREFIX_OPSIZE;
-                if (pCpu->mode == CPUMODE_16BIT)
-                    pCpu->opmode = CPUMODE_32BIT;
-                else
-                    pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+                // address size override prefix byte
+                case OP_ADDRSIZE:
+                    pCpu->prefix |= PREFIX_ADDRSIZE;
+                    if (pCpu->mode == CPUMODE_16BIT)
+                        pCpu->addrmode = CPUMODE_32BIT;
+                    else
+                    if (pCpu->mode == CPUMODE_32BIT)
+                        pCpu->addrmode = CPUMODE_16BIT;
+                    else
+                        pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
 
-                iByte        += sizeof(uint8_t);
-                continue;   //fetch the next byte
+                    iByte        += sizeof(uint8_t);
+                    continue;   //fetch the next byte
 
-            // rep and repne are not really prefixes, but we'll treat them as such
-            case OP_REPE:
-                pCpu->prefix |= PREFIX_REP;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
+                // operand size override prefix byte
+                case OP_OPSIZE:
+                    pCpu->prefix |= PREFIX_OPSIZE;
+                    if (pCpu->mode == CPUMODE_16BIT)
+                        pCpu->opmode = CPUMODE_32BIT;
+                    else
+                        pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
 
-            case OP_REPNE:
-                pCpu->prefix |= PREFIX_REPNE;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
+                    iByte        += sizeof(uint8_t);
+                    continue;   //fetch the next byte
 
-            case OP_REX:
-                Assert(pCpu->mode == CPUMODE_64BIT);
-                /* REX prefix byte */
-                pCpu->prefix    |= PREFIX_REX;
-                pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
-                iByte           += sizeof(uint8_t);
+                // rep and repne are not really prefixes, but we'll treat them as such
+                case OP_REPE:
+                    pCpu->prefix |= PREFIX_REP;
+                    iByte       += sizeof(uint8_t);
+                    continue;   //fetch the next byte
 
-                if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
-                    pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
-                continue;   //fetch the next byte
+                case OP_REPNE:
+                    pCpu->prefix |= PREFIX_REPNE;
+                    iByte       += sizeof(uint8_t);
+                    continue;   //fetch the next byte
+
+                case OP_REX:
+                    Assert(pCpu->mode == CPUMODE_64BIT);
+                    /* REX prefix byte */
+                    pCpu->prefix    |= PREFIX_REX;
+                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                    iByte           += sizeof(uint8_t);
+
+                    if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
+                        pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
+                    continue;   //fetch the next byte
+                }
             }
+
+            unsigned uIdx = iByte;
+            iByte += sizeof(uint8_t); //first opcode byte
+
+            pCpu->opaddr = InstructionAddr + uIdx;
+            pCpu->opcode = codebyte;
+
+            cbInc = ParseInstruction(InstructionAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
+            iByte += cbInc;
+            break;
         }
-
-        unsigned uIdx = iByte;
-        iByte += sizeof(uint8_t); //first opcode byte
-
-        pCpu->opaddr = InstructionAddr + uIdx;
-        pCpu->opcode = codebyte;
-
-        cbInc = ParseInstruction(InstructionAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
-        iByte += cbInc;
-        break;
     }
+#ifdef IN_RING3
+# ifndef __L4ENV__
+    catch(...)
+# else
+    else  /* setjmp has returned a non-zero value: an exception occured */
+# endif
+    {
+        pCpu->opsize = 0;
+        return VERR_DIS_GEN_FAILURE;
+    }
+#endif
 
     pCpu->opsize = iByte;
     if (pcbInstruction)
