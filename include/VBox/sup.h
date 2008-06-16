@@ -689,9 +689,9 @@ typedef struct SUPDRVFACTORY
      *
      * @param   pSession            The SUPDRV session making the query.
      * @param   pSupDrvFactory      Pointer to this structure.
-     * @param   pInterfaceUuid      The UUID of the factory interface.
+     * @param   pszInterfaceUuid    The UUID of the factory interface.
      */
-    DECLR0CALLBACKMEMBER(void *, pfnQueryFactoryInterface,(PSUPDRVSESSION pSession, struct SUPDRVFACTORY *pSupDrvFactory, PCRTUUID pInterfaceUuid));
+    DECLR0CALLBACKMEMBER(void *, pfnQueryFactoryInterface,(PSUPDRVSESSION pSession, struct SUPDRVFACTORY *pSupDrvFactory, const char *pszInterfaceUuid));
 } SUPDRVFACTORY;
 /** Pointer to a support driver factory. */
 typedef SUPDRVFACTORY *PSUPDRVFACTORY;
