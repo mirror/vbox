@@ -142,11 +142,11 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, ui
 EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pCtxCore->eflags, pCtxCore->ss, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid, (RTGCPTR)pCtxCore->eip, &GCPtrInstr);
+    int rc = SELMValidateAndConvertCSAddr(pVM, pCtxCore->eflags, pCtxCore->ss, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid, (RTGCPTR)pCtxCore->rip, &GCPtrInstr);
     if (VBOX_FAILURE(rc))
     {
-        Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
-             pCtxCore->cs, pCtxCore->eip, pCtxCore->ss & X86_SEL_RPL, rc));
+        Log(("EMInterpretDisasOne: Failed to convert %RTsel:%VGv (cpl=%d) - rc=%Vrc !!\n",
+             pCtxCore->cs, pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
         return rc;
     }
     return EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)GCPtrInstr, pCtxCore, pCpu, pcbInstr);
@@ -202,8 +202,8 @@ EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFa
 {
     RTGCPTR pbCode;
 
-    LogFlow(("EMInterpretInstruction %VRv fault %VGv\n", pRegFrame->eip, pvFault));
-    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
+    LogFlow(("EMInterpretInstruction %VGv fault %VGv\n", pRegFrame->rip, pvFault));
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
     if (VBOX_SUCCESS(rc))
     {
         uint32_t    cbOp;
@@ -216,7 +216,7 @@ EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFa
             rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, pvFault, pcbSize);
             if (VBOX_SUCCESS(rc))
             {
-                pRegFrame->eip += cbOp; /* Move on to the next instruction. */
+                pRegFrame->rip += cbOp; /* Move on to the next instruction. */
             }
             return rc;
         }
@@ -280,7 +280,7 @@ EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu,
 #ifdef IN_GC
     int rc = IOMGCIOPortHandler(pVM, pCtxCore, pCpu);
     if (IOM_SUCCESS(rc))
-        pCtxCore->eip += cbOp;
+        pCtxCore->rip += cbOp;
     return rc;
 #else
     AssertReleaseMsgFailed(("not implemented\n"));
@@ -730,7 +730,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -746,7 +746,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
 
 #ifdef IN_GC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv, pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv, pParam1=%VGv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
 #endif
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (VBOX_FAILURE(rc))
@@ -815,7 +815,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     if (pCpu->param1.size != pCpu->param2.size)
     {
         AssertMsgReturn(pCpu->param1.size >= pCpu->param2.size, /* should never happen! */
-                        ("%s at %VGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), pRegFrame->eip, pCpu->param1.size, pCpu->param2.size),
+                        ("%s at %VGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), pRegFrame->rip, pCpu->param1.size, pCpu->param2.size),
                         VERR_EM_INTERPRETER);
 
         /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -832,7 +832,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     /* Safety check (in theory it could cross a page boundary and fault there though) */
     Assert(   TRPMHasTrap(pVM)
            && (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW));
-    AssertMsgReturn(GCPtrPar1 == pvFault, ("eip=%VGv, GCPtrPar1=%VGv pvFault=%VGv\n", pRegFrame->eip, GCPtrPar1, pvFault), VERR_EM_INTERPRETER);
+    AssertMsgReturn(GCPtrPar1 == pvFault, ("eip=%VGv, GCPtrPar1=%VGv pvFault=%VGv\n", pRegFrame->rip, GCPtrPar1, pvFault), VERR_EM_INTERPRETER);
 # endif
 
     /* Register and immediate data == PARMTYPE_IMMEDIATE */
@@ -904,7 +904,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -1193,14 +1193,14 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 break;
 
             default:
-                Log(("emInterpretMov: unexpected type=%d eip=%VRv\n", param2.type, pRegFrame->eip));
+                Log(("emInterpretMov: unexpected type=%d eip=%VGv\n", param2.type, pRegFrame->rip));
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
             if (pCpu->mode == CPUMODE_64BIT)
-                LogFlow(("EMInterpretInstruction at %08x: OP_MOV %VGv <- %RX64 (%d) &val32=%08x\n", pRegFrame->eip, pDest, val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %RX64 (%d) &val32=%08x\n", pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
-                LogFlow(("EMInterpretInstruction at %08x: OP_MOV %VGv <- %08X  (%d) &val32=%08x\n", pRegFrame->eip, pDest, (uint32_t)val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %08X  (%d) &val32=%08x\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
 #endif
 
             Assert(param2.size <= 8 && param2.size > 0);
@@ -1208,7 +1208,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 #if 0 /* CSAM/PATM translates aliases which causes this to incorrectly trigger. See #2609 and #1498. */
 #ifdef IN_GC
             /* Safety check (in theory it could cross a page boundary and fault there though) */
-            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->eip, pDest, pvFault), VERR_EM_INTERPRETER);
+            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->rip, pDest, pvFault), VERR_EM_INTERPRETER);
 #endif
 #endif
             rc = emRamWrite(pVM, pDest, &val64, param2.size);
@@ -1327,7 +1327,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -1409,7 +1409,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -1484,7 +1484,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VRv pParam1=%VRv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -2028,7 +2028,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     pGCState->uVMFlags |= X86_EFL_IF;
 
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
-    Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->eip));
+    Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
 
     pVM->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pCpu->opsize;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);

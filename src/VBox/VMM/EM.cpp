@@ -1239,7 +1239,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
             rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
             if (VBOX_SUCCESS(rc))
             {
-                pCtx->eip += Cpu.opsize;
+                pCtx->rip += Cpu.opsize;
                 STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
                 return rc;
             }
@@ -1294,7 +1294,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
      *   as io instructions tend to come in packages of more than one
      */
     DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "IO EMU");
+    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "IO EMU");
     if (VBOX_SUCCESS(rc))
     {
         rc = VINF_EM_RAW_EMULATE_INSTR;
@@ -1346,7 +1346,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
          */
         if (IOM_SUCCESS(rc))
         {
-            pCtx->eip += Cpu.opsize;
+            pCtx->rip += Cpu.opsize;
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
             return rc;
         }
@@ -1418,7 +1418,7 @@ static int emR3RawGuestTrap(PVM pVM)
         DISCPUSTATE cpu;
 
         /* If MONITOR & MWAIT are supported, then interpret them here. */
-        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &cpu, "Guest Trap (#UD): ");
+        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
         if (    VBOX_SUCCESS(rc)
             && (cpu.pCurInstr->opcode == OP_MONITOR || cpu.pCurInstr->opcode == OP_MWAIT))
         {
@@ -1434,7 +1434,7 @@ static int emR3RawGuestTrap(PVM pVM)
                 rc = EMInterpretInstructionCPU(pVM, &cpu, CPUMCTX2CORE(pCtx), 0, &size);
                 if (VBOX_SUCCESS(rc))
                 {
-                    pCtx->eip += cpu.opsize;
+                    pCtx->rip += cpu.opsize;
                     return rc;
                 }
                 return emR3RawExecuteInstruction(pVM, "Monitor: ");
@@ -1445,7 +1445,7 @@ static int emR3RawGuestTrap(PVM pVM)
     {
         DISCPUSTATE cpu;
 
-        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &cpu, "Guest Trap: ");
+        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
         if (VBOX_SUCCESS(rc) && (cpu.pCurInstr->optype & OPTYPE_PORTIO))
         {
             /*
@@ -1499,7 +1499,7 @@ int emR3RawRingSwitch(PVM pVM)
     /*
      * sysenter, syscall & callgate
      */
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "RSWITCH: ");
+    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "RSWITCH: ");
     if (VBOX_SUCCESS(rc))
     {
         if (Cpu.pCurInstr->opcode == OP_SYSENTER)
@@ -1784,7 +1784,7 @@ int emR3RawPrivileged(PVM pVM)
     DISCPUSTATE Cpu;
     int         rc;
 
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "PRIV: ");
+    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "PRIV: ");
     if (VBOX_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_STATISTICS
@@ -1799,7 +1799,7 @@ int emR3RawPrivileged(PVM pVM)
                 break;
             case OP_CLI:
                 STAM_COUNTER_INC(&pStats->StatCli);
-                emR3RecordCli(pVM, pCtx->eip);
+                emR3RecordCli(pVM, pCtx->rip);
                 break;
             case OP_STI:
                 STAM_COUNTER_INC(&pStats->StatSti);
@@ -1875,15 +1875,15 @@ int emR3RawPrivileged(PVM pVM)
                 case OP_CLI:
                     pCtx->eflags.u32 &= ~X86_EFL_IF;
                     Assert(Cpu.opsize == 1);
-                    pCtx->eip += Cpu.opsize;
+                    pCtx->rip += Cpu.opsize;
                     STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
                     return VINF_EM_RESCHEDULE_REM; /* must go to the recompiler now! */
 
                 case OP_STI:
                     pCtx->eflags.u32 |= X86_EFL_IF;
-                    EMSetInhibitInterruptsPC(pVM, pCtx->eip + Cpu.opsize);
+                    EMSetInhibitInterruptsPC(pVM, pCtx->rip + Cpu.opsize);
                     Assert(Cpu.opsize == 1);
-                    pCtx->eip += Cpu.opsize;
+                    pCtx->rip += Cpu.opsize;
                     STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
                     return VINF_SUCCESS;
 
@@ -1923,7 +1923,7 @@ int emR3RawPrivileged(PVM pVM)
                     rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
                     if (VBOX_SUCCESS(rc))
                     {
-                        pCtx->eip += Cpu.opsize;
+                        pCtx->rip += Cpu.opsize;
                         STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->opcode == OP_MOV_CR
@@ -2369,9 +2369,9 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 
         /* Prefetch pages for EIP and ESP */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
-        rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip));
+        rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
         if (rc == VINF_SUCCESS)
-            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp));
+            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
         if (rc != VINF_SUCCESS)
         {
             if (rc != VINF_PGM_SYNC_CR3)
@@ -2634,7 +2634,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
     int      rc = VERR_INTERNAL_ERROR;
     PCPUMCTX pCtx = pVM->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%08x)\n", pCtx->cs, pCtx->eip));
+    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%VGv)\n", pCtx->cs, pCtx->rip));
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
