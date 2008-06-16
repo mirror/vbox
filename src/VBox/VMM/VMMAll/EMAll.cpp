@@ -2300,7 +2300,7 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
             uMask |= MSR_K6_EFER_SCE;
 
         /* There are a few more: e.g. MSR_K6_EFER_FFXSR, MSR_K6_EFER_LMSLE */
-        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
+        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
         pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
         break;
     }
