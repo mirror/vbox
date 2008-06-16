@@ -1787,10 +1787,10 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 {
     uint64_t val;
     uint64_t oldval;
+    uint64_t msrEFER;
     int      rc;
 
-/** @todo Clean up this mess. */
-
+    /** @todo Clean up this mess. */
     if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
     {
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
@@ -1823,6 +1823,39 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
                 rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
                 AssertRCReturn(rc, rc);
             }
+
+            /* Deal with long mode enabling/disabling. */
+            msrEFER = CPUMGetGuestEFER(pVM);
+            if (msrEFER & MSR_K6_EFER_LME)
+            {
+                if (    !(oldval & X86_CR0_PG)
+                    &&  (val & X86_CR0_PG))
+                {
+                    /* Illegal to have an active 64 bits CS selector (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+                    if (pRegFrame->csHid.Attr.n.u1Long)
+                    {
+                        AssertMsgFailed(("Illegal enabling of paging with CS.u1Long = 1!!\n"));
+                        return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                    }
+
+                    /* Illegal to switch to long mode before activating PAE first (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+                    if (!(CPUMGetGuestCR4(pVM) & X86_CR4_PAE))
+                    {
+                        AssertMsgFailed(("Illegal enabling of paging with PAE disabled!!\n"));
+                        return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                    }
+
+                    msrEFER |= MSR_K6_EFER_LMA;
+                }
+                else
+                if (    (oldval & X86_CR0_PG)
+                    &&  !(val & X86_CR0_PG))
+                {
+                    msrEFER &= ~MSR_K6_EFER_LMA;
+                    /* @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
+                }
+                CPUMSetGuestEFER(pVM, msrEFER);
+            }
             return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
 
         case USE_REG_CR2:
@@ -1844,6 +1877,16 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
             oldval = CPUMGetGuestCR4(pVM);
             rc = CPUMSetGuestCR4(pVM, val); AssertRC(rc);
             val   = CPUMGetGuestCR4(pVM);
+
+            msrEFER = CPUMGetGuestEFER(pVM);
+            /* Illegal to disable PAE when long mode is active. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+            if (    (msrEFER & MSR_K6_EFER_LMA)
+                &&  (oldval & X86_CR4_PAE)
+                &&  !(val & X86_CR4_PAE))
+            {
+                return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+            }
+
             if (    (oldval & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE))
                 !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
             {
@@ -2298,6 +2341,14 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
             uMask |= MSR_K6_EFER_LME;
         if (u32Features & X86_CPUID_AMD_FEATURE_EDX_SEP)
             uMask |= MSR_K6_EFER_SCE;
+
+        /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+        if (    ((pCtx->msrEFER & MSR_K6_EFER_LME) != (val & uMask & MSR_K6_EFER_LME))
+            &&  (pCtx->cr0 & X86_CR0_PG))
+        {
+            AssertMsgFailed(("Illegal MSR_K6_EFER_LME change: paging is enabled!!\n"));
+            return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+        }
 
         /* There are a few more: e.g. MSR_K6_EFER_FFXSR, MSR_K6_EFER_LMSLE */
         AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
