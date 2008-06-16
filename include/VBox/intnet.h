@@ -540,7 +540,7 @@ typedef struct INTNETTRUNKNETFLTFACTORY
      *
      * @remarks Called while owning the network semaphore.
      */
-    DECLR0CALLBACKMEMBER(int, pfnCreate,(INTNETTRUNKNETFLTFACTORY pIfFactory, const char *pszName,
+    DECLR0CALLBACKMEMBER(int, pfnCreate,(struct INTNETTRUNKNETFLTFACTORY *pIfFactory, const char *pszName,
                                          PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
 } INTNETTRUNKNETFLTFACTORY;
 /** Pointer to the trunk factory. */
