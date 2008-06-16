@@ -1615,7 +1615,7 @@ Configuration:
   --disable-pulse          disable the PulseAudio backend
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --build-libxml2          build libxml2 from sources
-  --build-libxslt          build libxslt from sources (not OSE!)
+  --build-libxslt          build libxslt from sources
   --setup-wine             setup a Wine directory and register the hhc hack
 
 Paths:
