@@ -286,6 +286,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
 	r3/win/uuid-win.cpp \
+	r3/win/RTUuidCreate-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
@@ -300,6 +301,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	r3/linux/sched-linux.cpp \
@@ -347,6 +349,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
 	generic/timer-generic.cpp \
@@ -384,6 +387,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
@@ -419,6 +423,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -454,6 +459,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -504,6 +510,7 @@ RuntimeR3L4_SOURCES = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
