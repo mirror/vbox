@@ -89,13 +89,14 @@
 #  define GST_PDPE_ENTRIES          X86_PG_PAE_PDPE_ENTRIES
 #  define GST_PDPT_SHIFT            X86_PDPT_SHIFT
 #  define GST_PDPT_MASK             X86_PDPT_MASK_PAE
+#  define GST_PTE_PG_MASK           X86_PTE_PAE_PG_MASK
 # else
 #  define GST_TOTAL_PD_ENTRIES      (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
 #  define GST_PDPE_ENTRIES          X86_PG_AMD64_PDPE_ENTRIES
 #  define GST_PDPT_SHIFT            X86_PDPT_SHIFT
 #  define GST_PDPT_MASK             X86_PDPT_MASK_AMD64
+#  define GST_PTE_PG_MASK           X86_PTE_PAE_PG_MASK_FULL
 # endif
-# define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
 # define GST_PT_SHIFT               X86_PT_PAE_SHIFT
 # define GST_PT_MASK                X86_PT_PAE_MASK
 # define GST_CR3_PAGE_MASK          X86_CR3_PAE_PAGE_MASK
