@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Top-level makefile for the VBox Host Services.
+# Sub-Makefile for the Shared Info Services Host Service.
 #
 
 #
@@ -19,26 +19,28 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include	$(KBUILD_PATH)/subheader.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
 
-# Include sub-makefiles.
-ifdef VBOX_WITH_SHARED_FOLDERS
- include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
-endif
-if1of ($(KBUILD_TARGET), win linux solaris)
- ifdef VBOX_WITH_OGL
-  include $(PATH_SUB_CURRENT)/SharedOpenGL/Makefile.kmk
- endif
-endif
-if1of ($(KBUILD_TARGET), win linux solaris darwin)
- ifdef VBOX_WITH_SHARED_CLIPBOARD
-  include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
- endif
-endif
-ifdef VBOX_WITH_INFO_SVC
- include $(PATH_SUB_CURRENT)/SharedInfoServices/Makefile.kmk
-endif
+#
+# The shared folder service DLL.
+#
+DLLS += VBoxSharedInfoSvc
+VBoxSharedInfoSvc_TEMPLATE  = VBOXR3
+VBoxSharedInfoSvc_NAME.os2  = VBoxSIS
+VBoxSharedInfoSvc_DEFS      = VBOX_HGCM
+VBoxSharedInfoSvc_INCS      = $(PATH_ROOT)/src/VBox/Main/include
+VBoxSharedInfoSvc_INCS.win  = \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
+	$(VBOX_PATH_SDK)
 
-include	$(KBUILD_PATH)/subfooter.kmk
+VBoxSharedInfoSvc_SOURCES = \
+	service.cpp
 
+VBoxSharedInfoSvc_LIBS = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME) \
+	$(LIB_REM)
+
+include $(KBUILD_PATH)/subfooter.kmk
