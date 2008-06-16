@@ -1528,6 +1528,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         if (VBOX_SUCCESS(rc))
         {
             RTUUID Uuid;
+            RTTIMESPEC ts;
             int rc2;
 
             rc2 = pDisk->pLast->Backend->pfnGetUuid(pDisk->pLast->pvBackendData,
@@ -1539,6 +1540,12 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
             if (VBOX_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentModificationUuid(pImage->pvBackendData,
                                                               &Uuid);
+            rc2 = pDisk->pLast->Backend->pfnGetTimeStamp(pDisk->pLast->pvBackendData,
+                                                             &ts);
+            if (VBOX_SUCCESS(rc2))
+                pImage->Backend->pfnSetParentTimeStamp(pImage->pvBackendData, &ts);
+
+            rc2 = pImage->Backend->pfnSetParentFilename(pImage->pvBackendData, pDisk->pLast->pszFilename);
         }
 
         if (VBOX_SUCCESS(rc))

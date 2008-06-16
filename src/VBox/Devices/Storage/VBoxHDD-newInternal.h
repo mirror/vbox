@@ -375,6 +375,51 @@ typedef struct VBOXHDDBACKEND
      */
     DECLR3CALLBACKMEMBER(void, pfnDump, (void *pvBackendData));
 
+    /**
+     * Get a time stamp of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pTimeStamp      Where to store the time stamp.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetTimeStamp, (void *pvBackendData, PRTTIMESPEC pTimeStamp));
+
+    /**
+     * Get the parent time stamp of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pTimeStamp      Where to store the time stamp.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetParentTimeStamp, (void *pvBackendData, PRTTIMESPEC pTimeStamp));
+
+    /**
+     * Set the parent time stamp of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pTimeStamp      Where to get the time stamp from.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetParentTimeStamp, (void *pvBackendData, PCRTTIMESPEC pTimeStamp));
+
+    /**
+     * Get the relative path to parent image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData     Opaque state data for this image.
+     * @param   pszParentFilename Where to store the path.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetParentFilename, (void *pvBackendData, char **ppszParentFilename));
+
+    /**
+     * Set the relative path to parent image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData     Opaque state data for this image.
+     * @param   pszParentFilename Where to get the path from.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pvBackendData, const char *pszParentFilename));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */
