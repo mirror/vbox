@@ -4634,6 +4634,41 @@ static void vmdkDump(void *pBackendData)
 }
 
 
+static int vmdkGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int vmdkGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int vmdkSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int vmdkGetParentFilename(void *pvBackendData, char **ppszParentFilename)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int vmdkSetParentFilename(void *pvBackendData, const char *pszParentFilename)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
 VBOXHDDBACKEND g_VmdkBackend =
 {
     /* pszBackendName */
@@ -4702,5 +4737,15 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnSetParentModificationUuid */
     vmdkSetParentModificationUuid,
     /* pfnDump */
-    vmdkDump
+    vmdkDump,
+    /* pfnGetTimeStamp */
+    vmdkGetTimeStamp,
+    /* pfnGetParentTimeStamp */
+    vmdkGetParentTimeStamp,
+    /* pfnSetParentTimeStamp */
+    vmdkSetParentTimeStamp,
+    /* pfnGetParentFilename */
+    vmdkGetParentFilename,
+    /* pfnSetParentFilename */
+    vmdkSetParentFilename
 };

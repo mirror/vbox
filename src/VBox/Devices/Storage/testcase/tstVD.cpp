@@ -41,7 +41,7 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
                        const char *pszFormat, va_list va)
 {
     g_cErrors++;
-    RTPrintf("tstVD: Error %Vrc at %s:%u (%s): ");
+    RTPrintf("tstVD: Error %Vrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
     RTPrintf("\n");
 }
@@ -475,8 +475,8 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     generateRandomSegments(&ctx, paBaseSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
     generateRandomSegments(&ctx, paDiffSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 128u, 255u);
 
-    PSEGMENT pSegment;
-    /*RTPrintf("Base segments:\n");
+    /*PSEGMENT pSegment;
+    RTPrintf("Base segments:\n");
     for (pSegment = paBaseSegments; pSegment->u32Length; pSegment++)
         RTPrintf("off: %08Lx len: %05x val: %02x\n", pSegment->u64Offset, pSegment->u32Length, pSegment->u8Value);*/
     writeSegmentsToDisk(pVD, pvBuf, paBaseSegments);
@@ -582,6 +582,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
 #undef CHECK
     return 0;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -702,6 +703,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VMDK test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#endif
 
     rc = tstVDCreateWriteOpenRead("VHD", "tmpVDCreate.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
@@ -709,7 +711,6 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VHD test failed (creating image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#endif
 
     rc = tstVDOpenCreateWriteMerge("VHD", "tmpVDBase.vhd", "tmpVDDiff.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
