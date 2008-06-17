@@ -404,6 +404,12 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsVRDP.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsDlg.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsGeneral.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsDlg.ui
+
 #
 # The targets.
 #
@@ -563,7 +569,9 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsUSB.h \
 	include/VBoxVMSettingsSF.h \
 	include/VBoxVMSettingsVRDP.h \
-	include/VBoxVMSettingsDlg.h
+	include/VBoxVMSettingsDlg.h \
+	include/VBoxGlobalSettingsGeneral.h \
+	include/VBoxGlobalSettingsDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -648,7 +656,9 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsUSB.cpp \
 	src/VBoxVMSettingsSF.cpp \
 	src/VBoxVMSettingsVRDP.cpp \
-	src/VBoxVMSettingsDlg.cpp
+	src/VBoxVMSettingsDlg.cpp \
+	src/VBoxGlobalSettingsGeneral.cpp \
+	src/VBoxGlobalSettingsDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 ifndef VBOX_OSE

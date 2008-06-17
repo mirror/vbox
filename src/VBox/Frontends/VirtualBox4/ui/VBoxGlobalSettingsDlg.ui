@@ -1,1361 +1,263 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxGlobalSettingsDlg</class>
-<comment>
-:mode=html:tabSize=4:indentSize=4:noTabs=true:
-:folding=explicit:collapseFolds=1:
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ Copyright (C) 2008 Sun Microsystems, Inc.
 
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
-     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
-     Clara, CA 95054 USA or visit http://www.sun.com if you need
-     additional information or have any questions.
-</comment>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>VBoxGlobalSettingsDlg</cstring>
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxGlobalSettingsDlg</class>
+ <widget class="QMainWindow" name="VBoxGlobalSettingsDlg" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>526</width>
+    <height>424</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>VirtualBox Preferences</string>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QGridLayout" >
+    <property name="horizontalSpacing" >
+     <number>9</number>
     </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>580</width>
-            <height>370</height>
-        </rect>
+    <property name="verticalSpacing" >
+     <number>9</number>
     </property>
-    <property name="caption">
-        <string>VirtualBox Preferences</string>
-    </property>
-    <property name="sizeGripEnabled">
-        <bool>true</bool>
-    </property>
-    <property name="whatsThis" stdset="0">
-        <string>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</string>
-    </property>
-    <grid>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <property name="margin">
-            <number>11</number>
-        </property>
-        <property name="spacing">
-            <number>10</number>
-        </property>
-        <property name="resizeMode">
-            <enum>Minimum</enum>
-        </property>
-        <widget class="QListView" row="0" column="0" rowspan="3" colspan="1">
-            <column>
-                <property name="text">
-                    <string>Category</string>
-                </property>
-                <property name="clickable">
-                    <bool>false</bool>
-                </property>
-                <property name="resizable">
-                    <bool>true</bool>
-                </property>
-            </column>
-            <column>
-                <property name="text">
-                    <string>[id]</string>
-                </property>
-                <property name="clickable">
-                    <bool>false</bool>
-                </property>
-                <property name="resizable">
-                    <bool>false</bool>
-                </property>
-            </column>
-            <column>
-                <property name="text">
-                    <string>[link]</string>
-                </property>
-                <property name="clickable">
-                    <bool>false</bool>
-                </property>
-                <property name="resizable">
-                    <bool>false</bool>
-                </property>
-            </column>
-        <item>
-            <property name="text">
-                <string> General </string>
-            </property>
-            <property name="text">
-                <string>0</string>
-            </property>
-            <property name="text">
-                <string>#general</string>
-            </property>
-            <property name="pixmap">
-                <pixmap>:/machine_16px.png</pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-        </item>
-        <item>
-            <property name="text">
-                <string> Input </string>
-            </property>
-            <property name="text">
-                <string>1</string>
-            </property>
-            <property name="text">
-                <string>#input</string>
-            </property>
-            <property name="pixmap">
-                <pixmap>:/hostkey_16px.png</pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-        </item>
-        <item>
-            <property name="text">
-                <string> USB </string>
-            </property>
-            <property name="text">
-                <string>2</string>
-            </property>
-            <property name="text">
-                <string>#usb</string>
-            </property>
-            <property name="pixmap">
-                <pixmap>:/usb_16px.png</pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-        </item>
-        <item>
-            <property name="text">
-                <string> Language </string>
-            </property>
-            <property name="text">
-                <string>3</string>
-            </property>
-            <property name="text">
-                <string>#language</string>
-            </property>
-            <property name="pixmap">
-                <pixmap>:/site_16px.png</pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-            <property name="pixmap">
-                <pixmap></pixmap>
-            </property>
-        </item>
-            <property name="name">
-                <cstring>listView</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>0</hsizetype>
-                    <vsizetype>7</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="allColumnsShowFocus">
-                <bool>true</bool>
-            </property>
-            <property name="itemMargin">
-                <number>3</number>
-            </property>
-        </widget>
-        <widget class="QLabel" row="0" column="1">
-            <property name="name">
-                <cstring>titleLabel</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>5</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="backgroundMode">
-                <enum>PaletteBase</enum>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>11</pointsize>
-                    <bold>1</bold>
-                </font>
-            </property>
-            <property name="frameShape">
-                <enum>Box</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Sunken</enum>
-            </property>
-            <property name="lineWidth">
-                <number>1</number>
-            </property>
-            <property name="margin">
-                <number>7</number>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-            <property name="buddy" stdset="0">
-                <cstring></cstring>
-            </property>
-        </widget>
-        <widget class="QWidgetStack" row="1" column="1">
-            <property name="name">
-                <cstring>widgetStack</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>7</hsizetype>
-                    <vsizetype>7</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>pageGeneral</cstring>
-                </property>
-                <attribute name="id">
-                    <number>0</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>groupBox1</cstring>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>7</hsizetype>
-                                <vsizetype>5</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="title">
-                            <string>Default &amp;Folders</string>
-                        </property>
-                        <grid>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <property name="spacing">
-                                <number>5</number>
-                            </property>
-                            <widget class="QLineEdit" row="0" column="1">
-                                <property name="name">
-                                    <cstring>leVDIFolder</cstring>
-                                </property>
-                                <property name="frameShape">
-                                    <enum>LineEditPanel</enum>
-                                </property>
-                                <property name="frameShadow">
-                                    <enum>Sunken</enum>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</string>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="1" column="0">
-                                <property name="name">
-                                    <cstring>textLabel2_2</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>Machines</string>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="0">
-                                <property name="name">
-                                    <cstring>textLabel1_2</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>VDI files</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton" row="1" column="3">
-                                <property name="name">
-                                    <cstring>tbResetMachineFolder</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/eraser_16px.png</iconset>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton" row="0" column="3">
-                                <property name="name">
-                                    <cstring>tbResetVDIFolder</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/eraser_16px.png</iconset>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
-                                </property>
-                            </widget>
-                            <widget class="QLineEdit" row="1" column="1">
-                                <property name="name">
-                                    <cstring>leMachineFolder</cstring>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton" row="0" column="2">
-                                <property name="name">
-                                    <cstring>tbSelectVDIFolder</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/select_file_16px.png</iconset>
-                                </property>
-                                <property name="textLabel">
-                                    <string>Select</string>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the default VDI folder.</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton" row="1" column="2">
-                                <property name="name">
-                                    <cstring>tbSelectMachineFolder</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/select_file_16px.png</iconset>
-                                </property>
-                                <property name="textLabel">
-                                    <string>Select</string>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the default virtual machine folder.</string>
-                                </property>
-                            </widget>
-                        </grid>
-                    </widget>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>groupBox2</cstring>
-                        </property>
-                        <property name="title">
-                            <string>V&amp;RDP Authentication Library</string>
-                        </property>
-                        <hbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <property name="spacing">
-                                <number>5</number>
-                            </property>
-                            <widget class="QLineEdit">
-                                <property name="name">
-                                    <cstring>leVRDPLib</cstring>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton">
-                                <property name="name">
-                                    <cstring>tbSelectVRDPLib</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/select_file_16px.png</iconset>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the VRDP authentication library file.</string>
-                                </property>
-                            </widget>
-                            <widget class="QToolButton">
-                                <property name="name">
-                                    <cstring>tbResetVRDPLib</cstring>
-                                </property>
-                                <property name="focusPolicy">
-                                    <enum>TabFocus</enum>
-                                </property>
-                                <property name="text">
-                                    <string></string>
-                                </property>
-                                <property name="iconSet">
-                                    <iconset>:/eraser_16px.png</iconset>
-                                </property>
-                                <property name="autoRaise">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</string>
-                                </property>
-                            </widget>
-                        </hbox>
-                    </widget>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>groupBox3</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Extended Features</string>
-                        </property>
-                        <hbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QCheckBox">
-                                <property name="name">
-                                    <cstring>chbVTX</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>Enable &amp;VT-x/AMD-V</string>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>Defines whether virtual machines should try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</string>
-                                </property>
-                            </widget>
-                        </hbox>leVRDPLib
-                    </widget>
-                    <spacer>
-                        <property name="name">
-                            <cstring>spacer4</cstring>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="sizeType">
-                            <enum>Expanding</enum>
-                        </property>
-                        <property name="sizeHint">
-                            <size>
-                                <width>20</width>
-                                <height>31</height>
-                            </size>
-                        </property>
-                    </spacer>
-                </vbox>
-            </widget>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>pageKeyboard</cstring>
-                </property>
-                <attribute name="id">
-                    <number>1</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>grbKeyboard</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Keyboard</string>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>layout47</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QLayoutWidget">
-                                        <property name="name">
-                                            <cstring>layoutHostKey</cstring>
-                                        </property>
-                                        <hbox>
-                                            <property name="name">
-                                                <cstring>unnamed</cstring>
-                                            </property>
-                                            <widget class="QLabel">
-                                                <property name="name">
-                                                    <cstring>txHostKey</cstring>
-                                                </property>
-                                                <property name="text">
-                                                    <string>&amp;Host Key</string>
-                                                </property>
-                                            </widget>
-                                        </hbox>
-                                    </widget>
-                                    <spacer>
-                                        <property name="name">
-                                            <cstring>spacer22</cstring>
-                                        </property>
-                                        <property name="orientation">
-                                            <enum>Horizontal</enum>
-                                        </property>
-                                        <property name="sizeType">
-                                            <enum>Expanding</enum>
-                                        </property>
-                                        <property name="sizeHint">
-                                            <size>
-                                                <width>40</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                    </spacer>
-                                </hbox>
-                            </widget>
-                            <widget class="QCheckBox">
-                                <property name="name">
-                                    <cstring>chbAutoCapture</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>&amp;Auto capture keyboard</string>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
-                                </property>
-                            </widget>
-                        </vbox>
-                    </widget>
-                    <spacer>
-                        <property name="name">
-                            <cstring>spacer23</cstring>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="sizeType">
-                            <enum>Expanding</enum>
-                        </property>
-                        <property name="sizeHint">
-                            <size>
-                                <width>20</width>
-                                <height>40</height>
-                            </size>
-                        </property>
-                    </spacer>
-                </vbox>
-            </widget>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>pageUSB</cstring>
-                </property>
-                <attribute name="id">
-                    <number>2</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>grbUSBFilters</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;USB Device Filters</string>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>layout148</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QListView">
-                                        <column>
-                                            <property name="text">
-                                                <string>[name]</string>
-                                            </property>
-                                            <property name="clickable">
-                                                <bool>false</bool>
-                                            </property>
-                                            <property name="resizable">
-                                                <bool>true</bool>
-                                            </property>
-                                        </column>
-                                        <property name="name">
-                                            <cstring>lvUSBFilters</cstring>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</string>
-                                        </property>
-                                    </widget>
-                                    <widget class="QLayoutWidget">
-                                        <property name="name">
-                                            <cstring>layout147</cstring>
-                                        </property>
-                                        <vbox>
-                                            <property name="name">
-                                                <cstring>unnamed</cstring>
-                                            </property>
-                                            <property name="spacing">
-                                                <number>0</number>
-                                            </property>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbAddUSBFilter</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ins</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Add Empty (Ins)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbAddUSBFilterFrom</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Alt+Ins</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Add From (Alt+Ins)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbRemoveUSBFilter</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Del</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Remove (Del)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Removes the selected USB filter.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbUSBFilterUp</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ctrl+Up</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Move Up (Ctrl+Up)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Moves the selected USB filter up.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbUSBFilterDown</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ctrl+Down</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Move Down (Ctrl+Down)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Moves the selected USB filter down.</string>
-                                                </property>
-                                            </widget>
-                                            <spacer>
-                                                <property name="name">
-                                                    <cstring>spacer106</cstring>
-                                                </property>
-                                                <property name="orientation">
-                                                    <enum>Vertical</enum>
-                                                </property>
-                                                <property name="sizeType">
-                                                    <enum>Expanding</enum>
-                                                </property>
-                                                <property name="sizeHint">
-                                                    <size>
-                                                        <width>20</width>
-                                                        <height>0</height>
-                                                    </size>
-                                                </property>
-                                            </spacer>
-                                        </vbox>
-                                    </widget>
-                                </hbox>
-                            </widget>
-                        </vbox>
-                    </widget>
-                </vbox>
-            </widget>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>pageLanguage</cstring>
-                </property>
-                <attribute name="id">
-                    <number>3</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <property name="spacing">
-                        <number>0</number>
-                    </property>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>gbInterface</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Interface Language</string>
-                        </property>
-                        <hbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <property name="spacing">
-                                <number>10</number>
-                            </property>
-                            <widget class="QListView">
-                                <column>
-                                    <property name="text">
-                                        <string>Language</string>
-                                    </property>
-                                    <property name="clickable">
-                                        <bool>false</bool>
-                                    </property>
-                                    <property name="resizable">
-                                        <bool>true</bool>
-                                    </property>
-                                </column>
-                                <property name="name">
-                                    <cstring>lvLanguages</cstring>
-                                </property>
-                                <property name="sizePolicy">
-                                    <sizepolicy>
-                                        <hsizetype>4</hsizetype>
-                                        <vsizetype>7</vsizetype>
-                                        <horstretch>0</horstretch>
-                                        <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                </property>
-                                <property name="resizeMode">
-                                    <enum>NoColumn</enum>
-                                </property>
-                                <property name="whatsThis" stdset="0">
-                                    <string>
-&lt;qt&gt;Lists all available user interface languages. The effective language is
-written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.&lt;/qt&gt;
-                                    </string>
-                                </property>
-                            </widget>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>layout7</cstring>
-                                </property>
-                                <vbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QLayoutWidget">
-                                        <property name="name">
-                                            <cstring>layout6</cstring>
-                                        </property>
-                                        <grid>
-                                            <property name="name">
-                                                <cstring>unnamed</cstring>
-                                            </property>
-                                            <widget class="QLabel" row="1" column="1">
-                                                <property name="name">
-                                                    <cstring>tlAuthorData</cstring>
-                                                </property>
-                                                <property name="sizePolicy">
-                                                    <sizepolicy>
-                                                        <hsizetype>3</hsizetype>
-                                                        <vsizetype>1</vsizetype>
-                                                        <horstretch>0</horstretch>
-                                                        <verstretch>0</verstretch>
-                                                    </sizepolicy>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="alignment">
-                                                    <set>WordBreak|AlignTop</set>
-                                                </property>
-                                            </widget>
-                                            <widget class="QLabel" row="1" column="0">
-                                                <property name="name">
-                                                    <cstring>tlAuthorName</cstring>
-                                                </property>
-                                                <property name="sizePolicy">
-                                                    <sizepolicy>
-                                                        <hsizetype>1</hsizetype>
-                                                        <vsizetype>1</vsizetype>
-                                                        <horstretch>0</horstretch>
-                                                        <verstretch>0</verstretch>
-                                                    </sizepolicy>
-                                                </property>
-                                                <property name="text">
-                                                    <string>Author(s):</string>
-                                                </property>
-                                                <property name="alignment">
-                                                    <set>AlignTop</set>
-                                                </property>
-                                            </widget>
-                                            <widget class="QLabel" row="0" column="0">
-                                                <property name="name">
-                                                    <cstring>tlLangName</cstring>
-                                                </property>
-                                                <property name="sizePolicy">
-                                                    <sizepolicy>
-                                                        <hsizetype>1</hsizetype>
-                                                        <vsizetype>1</vsizetype>
-                                                        <horstretch>0</horstretch>
-                                                        <verstretch>0</verstretch>
-                                                    </sizepolicy>
-                                                </property>
-                                                <property name="text">
-                                                    <string>Language:</string>
-                                                </property>
-                                                <property name="alignment">
-                                                    <set>AlignTop</set>
-                                                </property>
-                                            </widget>
-                                            <widget class="QLabel" row="0" column="1">
-                                                <property name="name">
-                                                    <cstring>tlLangData</cstring>
-                                                </property>
-                                                <property name="sizePolicy">
-                                                    <sizepolicy>
-                                                        <hsizetype>3</hsizetype>
-                                                        <vsizetype>1</vsizetype>
-                                                        <horstretch>0</horstretch>
-                                                        <verstretch>0</verstretch>
-                                                    </sizepolicy>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="alignment">
-                                                    <set>WordBreak|AlignTop</set>
-                                                </property>
-                                            </widget>
-                                        </grid>
-                                    </widget>
-                                    <spacer>
-                                        <property name="name">
-                                            <cstring>spacer7</cstring>
-                                        </property>
-                                        <property name="orientation">
-                                            <enum>Vertical</enum>
-                                        </property>
-                                        <property name="sizeType">
-                                            <enum>Expanding</enum>
-                                        </property>
-                                        <property name="sizeHint">
-                                            <size>
-                                                <width>20</width>
-                                                <height>0</height>
-                                            </size>
-                                        </property>
-                                    </spacer>
-                                </vbox>
-                            </widget>
-                            <!--spacer>
-                                <property name="name">
-                                    <cstring>spacer8</cstring>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Horizontal</enum>
-                                </property>
-                                <property name="sizeType">
-                                    <enum>Expanding</enum>
-                                </property>
-                                <property name="sizeHint">
-                                    <size>
-                                        <width>0</width>
-                                        <height>20</height>
-                                    </size>
-                                </property>
-                            </spacer-->
-                        </hbox>
-                    </widget>
-                </vbox>
-            </widget>
-        </widget>
-        <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
-            <property name="name">
-                <cstring>layout57</cstring>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonHelp</cstring>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="text">
-                        <string>Help</string>
-                    </property>
-                    <property name="accel">
-                        <string>F1</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="whatsThis" stdset="0">
-                        <string>Displays the dialog help.</string>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>warningSpacer</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>16</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>warningPixmap</cstring>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>0</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="scaledContents">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>warningLabel</cstring>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>7</hsizetype>
-                            <vsizetype>5</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="text">
-                        <string>Invalid settings detected</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignVCenter</set>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer49</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>16</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonOk</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;OK</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="default">
-                        <bool>true</bool>
-                    </property>
-                    <property name="whatsThis" stdset="0">
-                        <string>Accepts (saves) changes and closes the dialog.</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonCancel</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Cancel</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="whatsThis" stdset="0">
-                        <string>Cancels changes and closes the dialog.</string>
-                    </property>
-                </widget>
-            </hbox>
-        </widget>
-    </grid>
-</widget>
-<connections>
-    <connection>
-        <sender>buttonOk</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>accept()</slot>
-    </connection>
-    <connection>
-        <sender>buttonCancel</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>reject()</slot>
-    </connection>
-    <connection>
-        <sender>listView</sender>
-        <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>listView_currentChanged(QListViewItem*)</slot>
-    </connection>
-    <connection>
-        <sender>tbResetVDIFolder</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbResetFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbSelectVDIFolder</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbSelectFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbResetMachineFolder</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbResetFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbSelectMachineFolder</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbSelectFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbResetVRDPLib</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbResetFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbSelectVRDPLib</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbSelectFolder_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>lvUSBFilters</sender>
-        <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>lvUSBFilters_currentChanged(QListViewItem*)</slot>
-    </connection>
-    <connection>
-        <sender>tbAddUSBFilter</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbAddUSBFilter_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbAddUSBFilterFrom</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbAddUSBFilterFrom_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbRemoveUSBFilter</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbRemoveUSBFilter_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbUSBFilterUp</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbUSBFilterUp_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>tbUSBFilterDown</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbUSBFilterDown_clicked()</slot>
-    </connection>
-    <connection>
-        <sender>lvLanguages</sender>
-        <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>lvLanguages_currentChanged(QListViewItem*)</slot>
-    </connection>
-    <connection>
-        <sender>buttonHelp</sender>
-        <signal>clicked()</signal>
-        <receiver>&amp;vboxProblem()</receiver>
-        <slot>showHelpHelpDialog()</slot>
-    </connection>
-</connections>
-<tabstops>
-    <tabstop>listView</tabstop>
-    <tabstop>chbAutoCapture</tabstop>
-    <tabstop>leVDIFolder</tabstop>
-    <tabstop>tbSelectVDIFolder</tabstop>
-    <tabstop>tbResetVDIFolder</tabstop>
-    <tabstop>leMachineFolder</tabstop>
-    <tabstop>tbSelectMachineFolder</tabstop>
-    <tabstop>tbResetMachineFolder</tabstop>
-    <tabstop>leVRDPLib</tabstop>
-    <tabstop>tbSelectVRDPLib</tabstop>
-    <tabstop>tbResetVRDPLib</tabstop>
-    <tabstop>chbVTX</tabstop>
-    <tabstop>lvUSBFilters</tabstop>
-    <tabstop>tbAddUSBFilter</tabstop>
-    <tabstop>tbAddUSBFilterFrom</tabstop>
-    <tabstop>tbRemoveUSBFilter</tabstop>
-    <tabstop>tbUSBFilterUp</tabstop>
-    <tabstop>tbUSBFilterDown</tabstop>
-    <tabstop>lvLanguages</tabstop>
-    <tabstop>buttonHelp</tabstop>
-    <tabstop>buttonOk</tabstop>
-    <tabstop>buttonCancel</tabstop>
-</tabstops>
-<includes>
-    <include location="global" impldecl="in implementation">qvalidator.h</include>
-    <include location="global" impldecl="in implementation">qmessagebox.h</include>
-    <include location="global" impldecl="in implementation">qfont.h</include>
-    <include location="global" impldecl="in implementation">qpainter.h</include>
-    <include location="global" impldecl="in implementation">qobjectlist.h</include>
-    <include location="global" impldecl="in implementation">qfiledialog.h</include>
-    <include location="global" impldecl="in implementation">qtimer.h</include>
-    <include location="global" impldecl="in implementation">qeventloop.h</include>
-    <include location="local" impldecl="in declaration">COMDefs.h</include>
-    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
-    <include location="local" impldecl="in declaration">QIHotKeyEdit.h</include>
-    <include location="local" impldecl="in declaration">VBoxGlobalSettings.h</include>
-    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
-    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
-    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
-    <include location="local" impldecl="in implementation">QILabel.h</include>
-</includes>
-<forwards>
-    <forward>class VBoxUSBMenu</forward>
-    <forward>class QILabel</forward>
-</forwards>
-<variables>
-    <variable access="private">bool polished;</variable>
-    <variable access="private">bool valid;</variable>
-    <variable access="private">QTimer *whatsThisTimer;</variable>
-    <variable access="private">QWidget *whatsThisCandidate;</variable>
-    <variable access="private">QIHotKeyEdit *hkeHostKey;</variable>
-    <variable access="private">QIWidgetValidator *wvalGeneral;</variable>
-    <variable access="private">QIWidgetValidator *wvalKeyboard;</variable>
-    <variable access="private">QString warningString;</variable>
-    <variable access="private">QWidgetStack *wstUSBFilters;</variable>
-    <variable access="private">bool mUSBFilterListModified;</variable>
-    <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
-    <variable access="private">bool mLanguageChanged;</variable>
-    <variable access="private">QILabel *whatsThisLabel;</variable>
-</variables>
-<slots>
-    <slot>listView_currentChanged( QListViewItem * item )</slot>
-    <slot>enableOk( const QIWidgetValidator * wval )</slot>
-    <slot>revalidate( QIWidgetValidator * )</slot>
-    <slot>updateWhatsThis( bool gotFocus = false )</slot>
-    <slot>tbResetFolder_clicked()</slot>
-    <slot>tbSelectFolder_clicked()</slot>
-    <slot>addUSBFilter( const CUSBDeviceFilter &amp;, bool )</slot>
-    <slot>lvUSBFilters_currentChanged( QListViewItem * )</slot>
-    <slot>lvUSBFilters_setCurrentText( const QString &amp; )</slot>
-    <slot>tbAddUSBFilter_clicked()</slot>
-    <slot>tbAddUSBFilterFrom_clicked()</slot>
-    <slot>menuAddUSBFilterFrom_activated( QAction * )</slot>
-    <slot>tbRemoveUSBFilter_clicked()</slot>
-    <slot>tbUSBFilterUp_clicked()</slot>
-    <slot>tbUSBFilterDown_clicked()</slot>
-    <slot>lvLanguages_currentChanged( QListViewItem* )</slot>
-</slots>
-<functions>
-    <function access="private">init()</function>
-    <function access="private" returnType="QString">pagePath( QWidget * )</function>
-    <function access="private" returnType="bool">event( QEvent * )</function>
-    <function access="protected">showEvent( QShowEvent * )</function>
-    <function>getFrom( const CSystemProperties &amp; props, const VBoxGlobalSettings &amp; gs )</function>
-    <function>putBackTo( CSystemProperties &amp; props, VBoxGlobalSettings &amp; gs )</function>
-    <function access="protected">setWarning( const QString &amp; )</function>
-    <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
-    <function access="private">fixLanguageChange()</function>
-</functions>
-<pixmapinproject/>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+    <item rowspan="3" row="0" column="0" >
+     <widget class="QTreeWidget" name="mTwSelector" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Minimum" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="verticalScrollBarPolicy" >
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy" >
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="rootIsDecorated" >
+       <bool>false</bool>
+      </property>
+      <property name="uniformRowHeights" >
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text" >
+        <string>Category</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>[id]</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>[link]</string>
+       </property>
+      </column>
+      <item>
+       <property name="text" >
+        <string> General </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/machine_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>00</string>
+       </property>
+       <property name="text" >
+        <string>#general</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Input </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/diskim_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>01</string>
+       </property>
+       <property name="text" >
+        <string>#input</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> USB </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/usb_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>02</string>
+       </property>
+       <property name="text" >
+        <string>#usb</string>
+       </property>
+      </item>
+      <item>
+       <property name="text" >
+        <string> Language </string>
+       </property>
+       <property name="icon" >
+        <iconset resource="../VirtualBox.qrc" >:/vrdp_16px.png</iconset>
+       </property>
+       <property name="text" >
+        <string>03</string>
+       </property>
+       <property name="text" >
+        <string>#language</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="0" column="1" >
+     <widget class="QLabel" name="mLbTitle" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="palette" >
+       <palette>
+        <active>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </active>
+        <inactive>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </inactive>
+        <disabled>
+         <colorrole role="Window" >
+          <brush brushstyle="SolidPattern" >
+           <color alpha="255" >
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </disabled>
+       </palette>
+      </property>
+      <property name="font" >
+       <font>
+        <family>Sans Serif</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="autoFillBackground" >
+       <bool>true</bool>
+      </property>
+      <property name="frameShape" >
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="text" >
+       <string/>
+      </property>
+      <property name="margin" >
+       <number>7</number>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" >
+     <widget class="QStackedWidget" name="mPageStack" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="currentIndex" >
+       <number>3</number>
+      </property>
+      <widget class="QWidget" name="mPageGeneral" />
+      <widget class="QWidget" name="mPageInput" />
+      <widget class="QWidget" name="mPageUSB" />
+      <widget class="QWidget" name="mPageLanguage" />
+     </widget>
+    </item>
+    <item row="2" column="1" >
+     <widget class="QLabel" name="mLbWhatsThis" >
+      <property name="frameShape" >
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="text" >
+       <string/>
+      </property>
+      <property name="alignment" >
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+      <property name="wordWrap" >
+       <bool>true</bool>
+      </property>
+      <property name="margin" >
+       <number>7</number>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="2" >
+     <widget class="QIDialogButtonBox" name="mButtonBox" >
+      <property name="standardButtons" >
+       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
+ <connections/>
+</ui>
