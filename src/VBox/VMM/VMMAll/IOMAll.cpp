@@ -76,86 +76,84 @@ static unsigned iomGetRegSize(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam)
  * @param   pCpu                Pointer to current disassembler context.
  * @param   pParam              Pointer to parameter of instruction to proccess.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
- * @param   pu32Data            Where to store retrieved data.
- * @param   pcbSize             Where to store the size of data (1, 2, 4).
+ * @param   pu64Data            Where to store retrieved data.
+ * @param   pcbSize             Where to store the size of data (1, 2, 4, 8).
  */
-bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint32_t *pu32Data, unsigned *pcbSize)
+bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize)
 {
     if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32))
     {
         *pcbSize  = 0;
-        *pu32Data = 0;
+        *pu64Data = 0;
         return false;
     }
 
     if (pParam->flags & USE_REG_GEN32)
     {
         *pcbSize  = 4;
-        DISFetchReg32(pRegFrame, pParam->base.reg_gen, pu32Data);
+        DISFetchReg32(pRegFrame, pParam->base.reg_gen, (uint32_t *)pu64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN16)
     {
         *pcbSize  = 2;
-        DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu32Data);
+        DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN8)
     {
         *pcbSize  = 1;
-        DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu32Data);
+        DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN64)
     {
-        AssertFailed();
         *pcbSize  = 8;
-        ///DISFetchReg64(pRegFrame, pParam->base.reg_gen, pu32Data);
+        DISFetchReg64(pRegFrame, pParam->base.reg_gen, pu64Data);
         return true;
     }
 
     if (pParam->flags & (USE_IMMEDIATE64))
     {
-        AssertFailed();
         *pcbSize  = 8;
-        *pu32Data = (uint32_t)pParam->parval;
+        *pu64Data = pParam->parval;
         return true;
     }
 
     if (pParam->flags & (USE_IMMEDIATE32|USE_IMMEDIATE32_SX8))
     {
         *pcbSize  = 4;
-        *pu32Data = (uint32_t)pParam->parval;
+        *pu64Data = (uint32_t)pParam->parval;
         return true;
     }
 
     if (pParam->flags & (USE_IMMEDIATE16|USE_IMMEDIATE16_SX8))
     {
         *pcbSize  = 2;
-        *pu32Data = (uint16_t)pParam->parval;
+        *pu64Data = (uint16_t)pParam->parval;
         return true;
     }
 
     if (pParam->flags & USE_IMMEDIATE8)
     {
         *pcbSize  = 1;
-        *pu32Data = (uint8_t)pParam->parval;
+        *pu64Data = (uint8_t)pParam->parval;
         return true;
     }
 
     if (pParam->flags & USE_REG_SEG)
     {
         *pcbSize  = 2;
-        DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu32Data);
+        DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu64Data);
         return true;
     } /* Else - error. */
 
     AssertFailed();
     *pcbSize  = 0;
-    *pu32Data = 0;
+    *pu64Data = 0;
     return false;
 }
 
@@ -168,36 +166,42 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
  * @param   pCpu                Pointer to current disassembler context.
  * @param   pParam              Pointer to parameter of instruction to proccess.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
- * @param   u32Data             8/16/32 bit data to store.
+ * @param   u64Data             8/16/32/64 bit data to store.
  */
-bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, unsigned u32Data)
+bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u64Data)
 {
-    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE32_SX8 | USE_IMMEDIATE16_SX8))
+    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE32_SX8 | USE_IMMEDIATE16_SX8))
     {
         return false;
     }
 
     if (pParam->flags & USE_REG_GEN32)
     {
-        DISWriteReg32(pRegFrame, pParam->base.reg_gen, u32Data);
+        DISWriteReg32(pRegFrame, pParam->base.reg_gen, (uint32_t)u64Data);
+        return true;
+    }
+
+    if (pParam->flags & USE_REG_GEN64)
+    {
+        DISWriteReg64(pRegFrame, pParam->base.reg_gen, u64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN16)
     {
-        DISWriteReg16(pRegFrame, pParam->base.reg_gen, (uint16_t)u32Data);
+        DISWriteReg16(pRegFrame, pParam->base.reg_gen, (uint16_t)u64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN8)
     {
-        DISWriteReg8(pRegFrame, pParam->base.reg_gen, (uint8_t)u32Data);
+        DISWriteReg8(pRegFrame, pParam->base.reg_gen, (uint8_t)u64Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_SEG)
     {
-        DISWriteRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL)u32Data);
+        DISWriteRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL)u64Data);
         return true;
     }
 
@@ -874,7 +878,7 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
      * Get port number from second parameter.
      * And get the register size from the first parameter.
      */
-    uint32_t    uPort = 0;
+    uint64_t    uPort = 0;
     unsigned    cbSize = 0;
     bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uPort, &cbSize);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
@@ -933,7 +937,7 @@ IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
      * Get port number from first parameter.
      * And get the register size and value from the second parameter.
      */
-    uint32_t    uPort = 0;
+    uint64_t    uPort = 0;
     unsigned    cbSize = 0;
     bool fRc = iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uPort, &cbSize);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
@@ -941,14 +945,14 @@ IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (rc == VINF_SUCCESS)
     {
-        uint32_t    u32Data = 0;
-        fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u32Data, &cbSize);
+        uint64_t u64Data = 0;
+        fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u64Data, &cbSize);
         AssertMsg(fRc, ("Failed to get reg value!\n")); NOREF(fRc);
 
         /*
          * Attempt to write to the port.
          */
-        rc = IOMIOPortWrite(pVM, uPort, u32Data, cbSize);
+        rc = IOMIOPortWrite(pVM, uPort, u64Data, cbSize);
         AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
     }
     else
