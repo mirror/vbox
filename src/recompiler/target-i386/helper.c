@@ -4449,7 +4449,7 @@ int emulate_single_instr(CPUX86State *env1)
     int csize;
     void (*gen_func)(void);
     uint8_t *tc_ptr;
-    uint32_t old_eip;
+    target_ulong old_eip;
 
     /* ensures env is loaded in ebp! */
     CPUX86State *savedenv = env;
@@ -4589,7 +4589,7 @@ int emulate_single_instr(CPUX86State *env1)
      */
     if (env->hflags & HF_INHIBIT_IRQ_MASK)
     {
-        Log(("REM: Emulating next instruction due to instruction fusing (HF_INHIBIT_IRQ_MASK)\n"));
+        Log(("REM: Emulating next instruction due to instruction fusing (HF_INHIBIT_IRQ_MASK) at %VGv\n", env->eip));
         env->hflags &= ~HF_INHIBIT_IRQ_MASK;
         emulate_single_instr(env);
     }
