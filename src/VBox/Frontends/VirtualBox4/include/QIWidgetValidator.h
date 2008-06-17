@@ -116,3 +116,4 @@ private:
 };
 
 #endif // __QIWidgetValidator_h__
+
