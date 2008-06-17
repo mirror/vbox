@@ -143,6 +143,7 @@ IOMR3DECL(int) IOMR3Init(PVM pVM)
         STAM_REG(pVM, &pVM->iom.s.StatGCMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/GC/MMIO/Access1",        STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
         STAM_REG(pVM, &pVM->iom.s.StatGCMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/GC/MMIO/Access2",        STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
         STAM_REG(pVM, &pVM->iom.s.StatGCMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/GC/MMIO/Access4",        STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
+        STAM_REG(pVM, &pVM->iom.s.StatGCMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/GC/MMIO/Access8",        STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
         STAM_REG(pVM, &pVM->iom.s.StatGCIOPortHandler,    STAMTYPE_PROFILE, "/IOM/GC/PortIOHandler",       STAMUNIT_TICKS_PER_CALL, "Profiling of the IOMGCPortIOHandler() body, only success calls.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstIn,           STAMTYPE_COUNTER, "/IOM/GC/Inst/In",             STAMUNIT_OCCURENCES,     "Counter of any IN instructions.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstOut,          STAMTYPE_COUNTER, "/IOM/GC/Inst/Out",            STAMUNIT_OCCURENCES,     "Counter of any OUT instructions.");
