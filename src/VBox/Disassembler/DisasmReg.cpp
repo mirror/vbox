@@ -528,6 +528,9 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->disp8;
             else
+            if (pCpu->mode == CPUMODE_64BIT)
+                pParamVal->val.val64 += (int64_t)pParam->disp8;
+            else
                 pParamVal->val.val16 += (int16_t)pParam->disp8;
         }
         else
@@ -536,6 +539,9 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->disp16;
             else
+            if (pCpu->mode == CPUMODE_64BIT)
+                pParamVal->val.val64 += (int64_t)pParam->disp16;
+            else
                 pParamVal->val.val16 += pParam->disp16;
         }
         else
@@ -543,6 +549,9 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         {
             if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += pParam->disp32;
+            else
+            if (pCpu->mode == CPUMODE_64BIT)
+                pParamVal->val.val64 += (int64_t)pParam->disp32;
             else
                 AssertFailed();
         }
