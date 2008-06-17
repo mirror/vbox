@@ -600,10 +600,20 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
     {
         // [scaled index] + disp32
         disasmAddString(pParam->szParam, &szTemp[0]);
-        pParam->flags |= USE_DISPLACEMENT32;
-        pParam->disp32 = pCpu->disp;
-        disasmAddChar(pParam->szParam, '+');
-        disasmPrintDisp32(pParam);
+        if (pCpu->addrmode == CPUMODE_32BIT)
+        {
+            pParam->flags |= USE_DISPLACEMENT32;
+            pParam->disp32 = pCpu->disp;
+            disasmAddChar(pParam->szParam, '+');
+            disasmPrintDisp32(pParam);
+        }
+        else
+        {   /* sign-extend to 64 bits */
+            pParam->flags |= USE_DISPLACEMENT64;
+            pParam->disp64 = pCpu->disp;
+            disasmAddChar(pParam->szParam, '+');
+            disasmPrintDisp64(pParam);
+        }
     }
     else
     {
@@ -2256,6 +2266,12 @@ void disasmPrintAbs32(POP_PARAMETER pParam)
 void disasmPrintDisp32(POP_PARAMETER pParam)
 {
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%08Xh", pParam->disp32);
+}
+//*****************************************************************************
+//*****************************************************************************
+void disasmPrintDisp64(POP_PARAMETER pParam)
+{
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%16RX64h", pParam->disp64);
 }
 //*****************************************************************************
 //*****************************************************************************

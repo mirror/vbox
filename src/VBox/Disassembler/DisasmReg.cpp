@@ -547,21 +547,20 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
-            if (pCpu->mode == CPUMODE_32BIT)
-                pParamVal->val.val32 += pParam->disp32;
-            else
-            if (pCpu->mode == CPUMODE_64BIT)
-                pParamVal->val.val64 += (int64_t)pParam->disp32;
-            else
-                AssertFailed();
+            Assert(pCpu->mode == CPUMODE_32BIT);
+            pParamVal->val.val32 += pParam->disp32;
+        }
+        else
+        if (pParam->flags & USE_DISPLACEMENT64)
+        {
+            Assert(pCpu->mode == CPUMODE_64BIT);
+            pParamVal->val.val64 += (int64_t)pParam->disp64;
         }
         else
         if (pParam->flags & USE_RIPDISPLACEMENT32)
         {
-            if (pCpu->mode == CPUMODE_64BIT)
-                pParamVal->val.val64 += pParam->disp32 + pCtx->rip;
-            else
-                AssertFailed();
+            Assert(pCpu->mode == CPUMODE_64BIT);
+            pParamVal->val.val64 += pParam->disp32 + pCtx->rip;
         }
         return VINF_SUCCESS;
     }
