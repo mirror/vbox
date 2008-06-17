@@ -1146,7 +1146,6 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
  */
 static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
     if(VBOX_FAILURE(rc))
@@ -1172,7 +1171,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             switch(param1.type)
             {
             case PARMTYPE_IMMEDIATE:
-                if(!(param1.flags & PARAM_VAL32))
+                if(!(param1.flags & (PARAM_VAL32|PARAM_VAL64)))
                     return VERR_EM_INTERPRETER;
                 /* fallthru */
 
@@ -1226,7 +1225,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             switch(param2.type)
             {
             case PARMTYPE_IMMEDIATE:
-                if(!(param2.flags & PARAM_VAL32))
+                if(!(param2.flags & (PARAM_VAL32|PARAM_VAL64)))
                     return VERR_EM_INTERPRETER;
                 /* fallthru */
 
