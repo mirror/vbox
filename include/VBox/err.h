@@ -1099,6 +1099,18 @@
 /** @} */
 
 
+/** @name Internal Networking Status Codes
+ * @
+ */
+/** The networking interface to filter was not found. */
+#define VERR_INTNET_FLT_IF_NOT_FOUND                (-3600)
+/** The networking interface to filter was busy (used by someone). */
+#define VERR_INTNET_FLT_IF_BUSY                     (-3601)
+/** Failed to create or connect to a networking interface filter. */
+#define VERR_INTNET_FLT_IF_FAILED                   (-3602)
+/** @}*/
+
+
 /** @name VBox VMX Status Codes
  * @{
  */
