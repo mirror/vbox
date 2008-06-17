@@ -36,8 +36,8 @@ PKGINFO_ARCH     = $(shell uname -p)
 PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
 VBOX_PATH_SOLARIS_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
 VBOX_PATH_X11_ADDITION_INSTALLER     := $(PATH_ROOT)/src/VBox/Additions/x11/installer
-SOLARISINSTDIR  := $(PATH_TARGET)/install
-SOLARISTEMPDIR  := $(PATH_TARGET)/tempinstall
+SOLARIS_INST_DIR  := $(PATH_TARGET)/install
+SOLARIS_TEMP_DIR  := $(PATH_TARGET)/tempinstall
 
 ifeq ($(KBUILD_TYPE),debug)
  BIN_COPY         := $(CP) -f
@@ -81,44 +81,44 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(PATH_SUB_CURRENT)/solaris/Makefile.kmk
 	$(call MSG_L1,Installing guest additions)
 	@# Clear out the existing package files if needed
-	$(QUIET)rm -rf $(SOLARISINSTDIR)
-	$(QUIET)rm -rf $(SOLARISTEMPDIR)
-	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)
-	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
-	$(QUIET)$(MKDIR) -p $(SOLARISTEMPDIR)
+	$(QUIET)rm -rf $(SOLARIS_INST_DIR)
+	$(QUIET)rm -rf $(SOLARIS_TEMP_DIR)
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
+	$(QUIET)$(MKDIR) -p $(SOLARIS_TEMP_DIR)
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
-		--output $(SOLARISINSTDIR)/vboxguest.pkginfo \
+		--output $(SOLARIS_INST_DIR)/vboxguest.pkginfo \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.pkginfo
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/makepackage.sh                   $(SOLARISINSTDIR)/makepackage.sh
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/postinstall.sh                   $(SOLARISINSTDIR)/postinstall.sh
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh                     $(SOLARISINSTDIR)/preremove.sh
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARISINSTDIR)/vboxguest.sh
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARISINSTDIR)/vboxservice.xml
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARISINSTDIR)/vboxguest.space
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt                           $(SOLARISINSTDIR)/vboxguest.copyright)
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARISINSTDIR)/vboxclient.desktop
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARISINSTDIR)/1099.vboxclient
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARISINSTDIR)/x11config.pl
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl                        $(SOLARISINSTDIR)/x11restore.pl
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf                    $(SOLARISINSTDIR)/solaris_xorg.conf
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh                         $(SOLARISINSTDIR)/VBoxRandR.sh
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/additions/vboxguest                                          $(SOLARISINSTDIR)/vboxguest
-	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)
-	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxClient                                      $(SOLARISINSTDIR)/VBoxClient
-	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxService                                     $(SOLARISINSTDIR)/VBoxService
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_13.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_14.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_70.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_71.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_14.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_70.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_71.so
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARISINSTDIR)/etc/devlink.tab
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/makepackage.sh                   $(SOLARIS_INST_DIR)/makepackage.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/postinstall.sh                   $(SOLARIS_INST_DIR)/postinstall.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh                     $(SOLARIS_INST_DIR)/preremove.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARIS_INST_DIR)/vboxguest.sh
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARIS_INST_DIR)/vboxservice.xml
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARIS_INST_DIR)/vboxguest.space
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt                           $(SOLARIS_INST_DIR)/vboxguest.copyright)
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARIS_INST_DIR)/vboxclient.desktop
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARIS_INST_DIR)/1099.vboxclient
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARIS_INST_DIR)/x11config.pl
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl                        $(SOLARIS_INST_DIR)/x11restore.pl
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf                    $(SOLARIS_INST_DIR)/solaris_xorg.conf
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh                         $(SOLARIS_INST_DIR)/VBoxRandR.sh
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARIS_INST_DIR)/vboxguest.conf
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/additions/vboxguest                                          $(SOLARIS_INST_DIR)/vboxguest
+	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxguest,)
+	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxClient                                      $(SOLARIS_INST_DIR)/VBoxClient
+	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxService                                     $(SOLARIS_INST_DIR)/VBoxService
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_13.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_71.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so                                       $(SOLARIS_INST_DIR)/vboxmouse_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so                                       $(SOLARIS_INST_DIR)/vboxmouse_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(SOLARIS_INST_DIR)/vboxmouse_drv_71.so
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARIS_INST_DIR)/etc/devlink.tab
 	$(call MSG_L1,Creating install package: $@)
-	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME)
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARISINSTDIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
+	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKGFILENAME) $(KBUILD_TARGET_ARCH)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
 

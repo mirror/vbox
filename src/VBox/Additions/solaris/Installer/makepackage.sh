@@ -19,10 +19,10 @@
 
 #
 # Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename
+#       makespackage.sh $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH)
 
-if test -z "$2"; then
-    echo "Usage: $0 installdir packagename"
+if test -z "$3"; then
+    echo "Usage: $0 installdir packagename x86|amd64"
     exit 1
 fi
 
@@ -55,8 +55,12 @@ find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|post
 $MY_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
 $MY_AWK 'NF == 6 && $2 == "none" { $3 = "opt/VirtualBoxAdditions/"$3"="$3 } { print }' prototype2 > prototype
 
-# install the kernel module to the right place (for now only 32-bit guests)
-$MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest" } { print }' prototype > prototype2
+# install the kernel module to the right place
+if test "$3" = "x86"; then
+    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6 = "sys" } { print }' prototype > prototype2
+else
+    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/amd64/vboxguest=vboxguest"; $6 = "sys" } { print }' prototype > prototype2
+fi
 $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf" { $3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf" } { print }' prototype2 > prototype
 
 # install the timesync SMF service
