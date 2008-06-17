@@ -1367,6 +1367,9 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             break; /* we're done */
     }
     Assert(rc != VINF_SUCCESS || *pcbBuffer > 0);
+    
+    if (rc == VERR_NO_MORE_FILES && *pcFiles != 0)
+        rc = VINF_SUCCESS; /* Successfully return these files. */
 
 end:
     if (pDirEntry)
