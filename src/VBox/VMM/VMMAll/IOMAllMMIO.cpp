@@ -142,6 +142,9 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
         case 4:
             STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO4Bytes);
             break;
+        case 8:
+            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO8Bytes);
+            break;
         default:
             /* No way. */
             AssertMsgFailed(("Invalid data length %d\n", cb));

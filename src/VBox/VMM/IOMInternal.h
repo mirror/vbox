@@ -402,6 +402,7 @@ typedef struct IOM
     STAMCOUNTER             StatGCMMIO1Byte;
     STAMCOUNTER             StatGCMMIO2Bytes;
     STAMCOUNTER             StatGCMMIO4Bytes;
+    STAMCOUNTER             StatGCMMIO8Bytes;
 
     RTUINT                  cMovsMaxBytes;
     RTUINT                  cStosMaxBytes;
