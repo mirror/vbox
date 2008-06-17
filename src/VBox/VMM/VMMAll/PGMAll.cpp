@@ -743,6 +743,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
+    /* Allocate page directory pointer table if not present. */
     pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & X86_PML4E_PG_MASK))
@@ -769,6 +770,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);    
     PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
 
+    /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
@@ -778,7 +780,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         AssertRCReturn(rc, rc);
 
         Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-        /* Create a reference back to the PML4E by using the index in its shadow page. */
+        /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, pShwPage->idx, iPdPt, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
