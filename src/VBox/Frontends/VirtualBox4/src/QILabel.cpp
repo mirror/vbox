@@ -257,9 +257,12 @@ void QILabelPrivate::setFullSizeSelection (bool bOn)
         setTextInteractionFlags (Qt::LinksAccessibleByMouse);
         /* The label should be able to get the focus */
         setFocusPolicy (Qt::StrongFocus);
-        /* Change the appearance in focus state a little bit */
+        /* Change the appearance in focus state a little bit.
+         * Note: Unfortunately QLabel, precisely the text of a QLabel isn't
+         * styleable. The trolls have forgotten the simplest case ... So this
+         * is done by changing the current used palette in the In/Out-focus
+         * events below. */
         setStyleSheet (QString("QLabel::focus {\
-                               color: palette(highlighted-text);\
                                background-color: palette(highlight);\
                                }"));
 //                                 border: 1px dotted black;
@@ -326,6 +329,26 @@ void QILabelPrivate::contextMenuEvent (QContextMenuEvent *aEvent)
     }else
         QLabel::contextMenuEvent (aEvent);
 }
+
+void QILabelPrivate::focusInEvent (QFocusEvent * /* aEvent */)
+{
+    if (mFullSizeSeclection)
+    {
+        /* Set the text color to the current used highlight text color. */
+        QPalette pal = qApp->palette();
+        pal.setBrush (QPalette::WindowText, pal.brush (QPalette::HighlightedText));
+        setPalette (pal);
+    }
+}
+
+void QILabelPrivate::focusOutEvent (QFocusEvent *aEvent)
+{
+    /* Reset to the default palette */
+    if (mFullSizeSeclection &&
+        aEvent->reason() != Qt::PopupFocusReason) /* For right mouse click */
+        setPalette (qApp->palette());
+}
+
 
 void QILabelPrivate::copy()
 {
