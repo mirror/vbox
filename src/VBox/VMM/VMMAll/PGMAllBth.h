@@ -2184,9 +2184,10 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     SHWPDE          PdeDst = *pPdeDst;
 
 # if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
-    PPGMPOOLPAGE pShwPdpte = NULL;
+    PPGMPOOLPAGE pShwPde = NULL;
     /* Fetch the pgm pool shadow descriptor. */
-    pShwPdpte = pgmPoolGetPage(pPool, pPdptDst->a[iPdPte].u & SHW_PDE_PG_MASK)
+    pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdPte].u & SHW_PDE_PG_MASK);
+    Assert(pShwPde);
 # endif
 
 # ifndef PGM_WITHOUT_MAPPINGS
@@ -2250,7 +2251,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
 # if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPdpte->idx,    iPDDst, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
 # else
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
 # endif
@@ -2263,7 +2264,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
 # if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, pShwPdpte->idx,    iPDDst, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, pShwPde->idx,    iPDDst, &pShwPage);
 # else
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
 # endif
