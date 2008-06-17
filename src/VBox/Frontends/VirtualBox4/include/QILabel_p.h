@@ -89,6 +89,8 @@ protected:
     void mouseReleaseEvent (QMouseEvent *aEvent);
     void mouseMoveEvent (QMouseEvent *aEvent);
     void contextMenuEvent (QContextMenuEvent *aEvent);
+    void focusInEvent (QFocusEvent *aEvent);
+    void focusOutEvent (QFocusEvent *aEvent);
 
 protected slots:
 
