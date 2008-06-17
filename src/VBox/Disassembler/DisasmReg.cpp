@@ -547,8 +547,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
-            Assert(pCpu->mode == CPUMODE_32BIT);
-            pParamVal->val.val32 += pParam->disp32;
+            if (pCpu->mode == CPUMODE_32BIT)
+                pParamVal->val.val32 += pParam->disp32;
+            else
+                pParamVal->val.val64 += pParam->disp32;
         }
         else
         if (pParam->flags & USE_DISPLACEMENT64)
