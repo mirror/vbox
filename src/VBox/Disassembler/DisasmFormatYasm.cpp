@@ -332,7 +332,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_NUM_8(num)  PUT_NUM(4,  "0%02xh", (uint8_t)(num))
 #define PUT_NUM_16(num) PUT_NUM(6,  "0%04xh", (uint16_t)(num))
 #define PUT_NUM_32(num) PUT_NUM(10, "0%08xh", (uint32_t)(num))
-#define PUT_NUM_64(num) PUT_NUM(18, "0%016xh", (uint64_t)(num))
+#define PUT_NUM_64(num) PUT_NUM(18, "0%016RX64h", (uint64_t)(num))
 
 #define PUT_NUM_SIGN(cch, fmt, num, stype, utype) \
             do { \
@@ -350,7 +350,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_NUM_S8(num)  PUT_NUM_SIGN(4,  "0%02xh", num, int8_t,  uint8_t)
 #define PUT_NUM_S16(num) PUT_NUM_SIGN(6,  "0%04xh", num, int16_t, uint16_t)
 #define PUT_NUM_S32(num) PUT_NUM_SIGN(10, "0%08xh", num, int32_t, uint32_t)
-#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%016xh", num, int64_t, uint64_t)
+#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%016RX64h", num, int64_t, uint64_t)
 
 
     /*
@@ -739,7 +739,6 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 
                         if (pParam->flags & (USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_RIPDISPLACEMENT32))
                         {
-                            Assert(!(pParam->flags & USE_DISPLACEMENT64));
                             int64_t off;
                             if (pParam->flags & USE_DISPLACEMENT8)
                                 off = pParam->disp8;
