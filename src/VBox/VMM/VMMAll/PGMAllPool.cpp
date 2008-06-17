@@ -3213,7 +3213,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     {
         paUsers[i].iNext = i + 1;
         paUsers[i].iUser = NIL_PGMPOOL_IDX;
-        paUsers[i].iUserTable = 0xfffffffe;
+        paUsers[i].iUserTable = 0xfffe;
     }
     paUsers[cMaxUsers - 1].iNext = NIL_PGMPOOL_USER_INDEX;
 #endif
