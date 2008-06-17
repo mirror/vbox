@@ -2184,9 +2184,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     SHWPDE          PdeDst = *pPdeDst;
 
 # if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
-    PPGMPOOLPAGE pShwPde = NULL;
     /* Fetch the pgm pool shadow descriptor. */
-    pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdPte].u & SHW_PDE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdPte].u & SHW_PDE_PG_MASK);
     Assert(pShwPde);
 # endif
 
@@ -3011,11 +3010,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
     for (uint64_t iPML4E = 0; iPML4E < X86_PG_PAE_ENTRIES; iPML4E++)
     {
-        PPGMPOOLPAGE pShwPml4e = NULL;
+        PPGMPOOLPAGE pShwPdpt = NULL;
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
         if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
-            pShwPml4e = pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK);
+            pShwPdpt = pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & SHW_PDE_PG_MASK);
 
         /* Guest PML4E not present (anymore). */
         if (!pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E].n.u1Present)
@@ -3024,7 +3023,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
             {
                 /* Shadow PML4 present, so free it. */
-                pgmPoolFreeByPage(pPool, pShwPml4e, PGMPOOL_IDX_PML4, iPML4E);
+                pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPML4E);
                 pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u = 0;
             }
             continue;
@@ -3037,7 +3036,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         for (uint64_t iPDPTE = 0; iPDPTE < GST_PDPE_ENTRIES; iPDPTE++)
         {
             unsigned        iPDSrc;
-            PPGMPOOLPAGE    pShwPdpte = NULL;
+            PPGMPOOLPAGE    pShwPde = NULL;
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
             PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPDPTE * X86_PG_PAE_ENTRIES];
@@ -3068,7 +3067,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
             /* Fetch the pgm pool shadow descriptor if the shadow pdpte is present. */
             if (pPdptDst->a[iPDPTE].n.u1Present) 
-                pShwPdpte = pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK);
+                pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & SHW_PDE_PG_MASK);
             else
                 Assert(pPDSrc == NULL);
 
@@ -3083,8 +3082,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_PERMANENT))
                         {
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
-                            Assert(pShwPml4e);
-                            pgmPoolFreeByPage(pPool, pShwPdpte, pShwPml4e->idx, iPDPTE);
+                            Assert(pShwPde);
+                            pgmPoolFreeByPage(pPool, pShwPde, pShwPde->idx, iPDPTE);
 #   else
                             AssertFailed(); /* can't happen; the 4 pdpt pages are fixed! */
 #   endif
@@ -3241,7 +3240,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             else
                             {
 #  if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
-                                pgmPoolFreeByPage(pPool, pShwPage, pShwPdpte->idx, iPdShw);
+                                pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPdShw);
 #  else
                                 pgmPoolFreeByPage(pPool, pShwPage, SHW_POOL_ROOT_IDX, iPdShw);
 #  endif
@@ -3272,7 +3271,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         if (pPDEDst->n.u1Present)
                         {
 #  if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
-                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), pShwPdpte->idx, iPdShw);
+                            pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), pShwPde->idx, iPdShw);
 #  else
                             pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdShw);
 #  endif
