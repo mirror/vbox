@@ -702,6 +702,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             else if (   (pParam->flags & USE_DISPLACEMENT32)
                                      && (int8_t)pParam->disp32 == (int32_t)pParam->disp32)
                                 PUT_SZ("dword ");
+                            else if (   (pParam->flags & USE_DISPLACEMENT64)
+                                     && (int8_t)pParam->disp64 == (int64_t)pParam->disp32)
+                                PUT_SZ("qword ");
                         }
                         if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
                             PUT_SEGMENT_OVERRIDE();
@@ -737,13 +740,15 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         if (pParam->flags & (USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_RIPDISPLACEMENT32))
                         {
                             Assert(!(pParam->flags & USE_DISPLACEMENT64));
-                            int32_t off;
+                            int64_t off;
                             if (pParam->flags & USE_DISPLACEMENT8)
                                 off = pParam->disp8;
                             else if (pParam->flags & USE_DISPLACEMENT16)
                                 off = pParam->disp16;
                             else if (pParam->flags & (USE_DISPLACEMENT32 | USE_RIPDISPLACEMENT32))
                                 off = pParam->disp32;
+                            else if (pParam->flags & USE_DISPLACEMENT64)
+                                off = pParam->disp64;
 
                             if (fBase || (pParam->flags & USE_INDEX))
                             {
@@ -757,6 +762,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_NUM_16(off);
                             else if (pParam->flags & USE_DISPLACEMENT32)
                                 PUT_NUM_32(off);
+                            else if (pParam->flags & USE_DISPLACEMENT64)
+                                PUT_NUM_64(off);
                             else
                             {
                                 PUT_NUM_32(off);

@@ -153,6 +153,7 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMET
 void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam);
 void disasmPrintAbs32(POP_PARAMETER pParam);
 void disasmPrintDisp32(POP_PARAMETER pParam);
+void disasmPrintDisp64(POP_PARAMETER pParam);
 void disasmPrintDisp8(POP_PARAMETER pParam);
 void disasmPrintDisp16(POP_PARAMETER pParam);
 

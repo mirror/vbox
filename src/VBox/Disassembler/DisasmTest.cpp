@@ -77,6 +77,7 @@ int main(int argc, char **argv)
             DISCPUSTATE cpu;
             char         szOutput[256];
 
+//__debugbreak();
             memset(&cpu, 0, sizeof(cpu));
             cpu.mode = CPUMODE_64BIT;
             if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
