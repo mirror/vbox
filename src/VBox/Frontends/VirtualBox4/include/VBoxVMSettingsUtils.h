@@ -23,12 +23,13 @@
 #ifndef __VBoxVMSettingsUtils_h__
 #define __VBoxVMSettingsUtils_h__
 
-/* Qt includes */
+#include <VBoxGlobal.h>
+
 //#include <QDialog>
-//#include <QHBoxLayout>
 //#include <QLineEdit>
 //#include <QPushButton>
-//#include <QLabel>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QTreeWidget>
 #include <QHeaderView>
 #include <QKeyEvent>
@@ -218,6 +219,30 @@ protected:
         QTableView::currentChanged (aCurrent, aPrevious);
         emit currentChanged (aCurrent);
     }
+};
+
+class VBoxWarnIconLabel: public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxWarnIconLabel (QWidget *aParent = NULL)
+        : QWidget (aParent)
+    {
+        QHBoxLayout *layout = new QHBoxLayout (this);
+        VBoxGlobal::setLayoutMargin (layout, 0);
+        layout->addWidget (&mIcon);
+        layout->addWidget (&mLabel);
+    }
+
+    void setWarningPixmap (const QPixmap& aPixmap) { mIcon.setPixmap (aPixmap); }
+    void setWarningText (const QString& aText) { mLabel.setText (aText); }
+
+private:
+
+    QLabel mIcon;
+    QLabel mLabel;
 };
 
 #endif // __VBoxVMSettingsUtils_h__

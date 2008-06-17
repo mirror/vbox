@@ -33,7 +33,6 @@ class VBoxMediaComboBox;
 class VBoxWarnIconLabel;
 
 class QTimer;
-class QWidgetStack;
 
 class VBoxVMSettingsDlg : public QIWithRetranslateUI<QIMainDialog>,
                           public Ui::VBoxVMSettingsDlg
@@ -69,7 +68,6 @@ private:
 
     QString pagePath (QWidget *aPage);
     void setWarning (const QString &aWarning);
-    void updateMediaShortcuts();
 
     QString dialogTitle() const;
 
