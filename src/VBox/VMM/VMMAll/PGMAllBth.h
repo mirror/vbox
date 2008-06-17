@@ -2183,9 +2183,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
 
-# if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdPte].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdPte].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 # endif
 
@@ -2249,7 +2249,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
-# if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
 # else
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
@@ -2262,7 +2262,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
-# if PGM_GST_TYPE == PGM_GST_PAE || PGM_GST_TYPE == PGM_GST_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, pShwPde->idx,    iPDDst, &pShwPage);
 # else
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
