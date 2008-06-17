@@ -30,7 +30,8 @@
 
 QTabWidget* VBoxVMSettingsSerial::mTabWidget = 0;
 
-VBoxVMSettingsSerial::VBoxVMSettingsSerial()
+VBoxVMSettingsSerial::VBoxVMSettingsSerial(QWidget* aParent /* = NULL */)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsSerial::setupUi (this);
@@ -47,11 +48,13 @@ VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     mLeIOPort->setMinimumWidth (mLeIOPort->minimumWidth());
 
     /* Set initial values */
+    /* Note: If you change one of the following don't forget retranslateUi. */
     mCbNumber->insertItem (0, vboxGlobal().toCOMPortName (0, 0));
     mCbNumber->insertItems (0, vboxGlobal().COMPortNames());
-    mCbMode->insertItem (0, vboxGlobal().toString (KPortMode_HostDevice));
-    mCbMode->insertItem (0, vboxGlobal().toString (KPortMode_HostPipe));
-    mCbMode->insertItem (0, vboxGlobal().toString (KPortMode_Disconnected));
+
+    mCbMode->addItem (""); /* KPortMode_Disconnected */
+    mCbMode->addItem (""); /* KPortMode_HostPipe */
+    mCbMode->addItem (""); /* KPortMode_HostDevice */
 
     /* Setup connections */
     connect (mGbSerial, SIGNAL (toggled (bool)),
@@ -60,6 +63,8 @@ VBoxVMSettingsSerial::VBoxVMSettingsSerial()
              this, SLOT (mCbNumberActivated (const QString &)));
     connect (mCbMode, SIGNAL (activated (const QString &)),
              this, SLOT (mCbModeActivated (const QString &)));
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsSerial::getFromMachine (const CMachine &aMachine,
@@ -84,13 +89,11 @@ void VBoxVMSettingsSerial::getFromMachine (const CMachine &aMachine,
         CSerialPort port = aMachine.GetSerialPort (slot);
         VBoxVMSettingsSerial *page = new VBoxVMSettingsSerial();
         page->getFromPort (port);
-        QString pageTitle = QString (tr ("Port %1", "serial ports"))
-                                     .arg (port.GetSlot());
-        mTabWidget->addTab (page, pageTitle);
+        mTabWidget->addTab (page, page->pageTitle());
 
         /* Setup validation. */
         QIWidgetValidator *wval =
-            new QIWidgetValidator (QString ("%1: %2").arg (aPath, pageTitle),
+            new QIWidgetValidator (QString ("%1: %2").arg (aPath, page->pageTitle()),
                                    aPage, mTabWidget);
         connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
                  aDlg, SLOT (enableOk (const QIWidgetValidator *)));
@@ -151,6 +154,17 @@ void VBoxVMSettingsSerial::mCbModeActivated (const QString &aText)
     mLePath->setEnabled (mode != KPortMode_Disconnected);
 }
 
+QString VBoxVMSettingsSerial::pageTitle() const
+{
+    QString pageTitle;
+    if (!mPort.isNull())
+    {
+        pageTitle = QString (tr ("Port %1", "serial ports"))
+            .arg (mPort.GetSlot());
+    }
+    return pageTitle;
+}
+
 void VBoxVMSettingsSerial::getFromPort (const CSerialPort &aPort)
 {
     mPort = aPort;
@@ -186,6 +200,22 @@ bool VBoxVMSettingsSerial::isUserDefined()
     ulong a, b;
     return !vboxGlobal().toCOMPortNumbers (mCbNumber->currentText(), a, b);
 }
+
+
+void VBoxVMSettingsSerial::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsSerial::retranslateUi (this);
+
+    mTabWidget->setTabText (mTabWidget->indexOf (this), pageTitle());
+
+    mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
+
+    mCbMode->setItemText (2, vboxGlobal().toString (KPortMode_HostDevice));
+    mCbMode->setItemText (1, vboxGlobal().toString (KPortMode_HostPipe));
+    mCbMode->setItemText (0, vboxGlobal().toString (KPortMode_Disconnected));
+}
+
 
 bool VBoxVMSettingsSerial::revalidate (QString &aWarning, QString &aTitle)
 {

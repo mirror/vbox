@@ -45,6 +45,9 @@ public:
     bool isValid() const;
     void rescan();
 
+    void setCaption (const QString& aCaption) { mCaption = aCaption; }
+    QString caption() const { return mCaption; } 
+
     QString warningText() const;
 
     void setOtherValid (bool aValid) { mOtherValid = aValid; }

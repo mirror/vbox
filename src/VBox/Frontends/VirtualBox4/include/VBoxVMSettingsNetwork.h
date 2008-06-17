@@ -24,19 +24,20 @@
 #define __VBoxVMSettingsNetwork_h__
 
 #include "VBoxVMSettingsNetwork.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsNetwork : public QWidget, 
+class VBoxVMSettingsNetwork : public QIWithRetranslateUI<QWidget>,
                               public Ui::VBoxVMSettingsNetwork
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsNetwork();
+    VBoxVMSettingsNetwork (QWidget *aParent = NULL);
 
     static void getFromMachine (const CMachine &aMachine,
                                 QWidget *aPage,
@@ -51,6 +52,10 @@ public:
     void putBackToAdapter();
 
     void setValidator (QIWidgetValidator *aValidator);
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -69,6 +74,9 @@ private slots:
 #endif
 
 private:
+
+    QString pageTitle() const;
+    void prepareComboboxes();
 
     static void prepareListNetworks();
 // #ifdef Q_WS_WIN

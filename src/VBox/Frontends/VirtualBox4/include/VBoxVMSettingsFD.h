@@ -24,12 +24,13 @@
 #define __VBoxVMSettingsFD_h__
 
 #include "VBoxVMSettingsFD.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsFD : public QWidget, 
+class VBoxVMSettingsFD : public QIWithRetranslateUI<QWidget>,
                          public Ui::VBoxVMSettingsFD
 {
     Q_OBJECT;
@@ -53,6 +54,10 @@ public:
 signals:
 
     void fdChanged();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

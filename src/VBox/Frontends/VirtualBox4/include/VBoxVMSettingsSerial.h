@@ -24,18 +24,19 @@
 #define __VBoxVMSettingsSerial_h__
 
 #include "VBoxVMSettingsSerial.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 
-class VBoxVMSettingsSerial : public QWidget, 
+class VBoxVMSettingsSerial : public QIWithRetranslateUI<QWidget>,
                              public Ui::VBoxVMSettingsSerial
 {
     Q_OBJECT;
 
-public:
 
-    VBoxVMSettingsSerial();
+public:
+    VBoxVMSettingsSerial (QWidget* aParent = NULL);
 
     static void getFromMachine (const CMachine &aMachine,
                                 QWidget *aPage,
@@ -46,6 +47,10 @@ public:
 
     static bool revalidate (QString &aWarning, QString &aTitle);
 
+protected:
+
+    void retranslateUi();
+
 private slots:
 
     void mGbSerialToggled (bool aOn);
@@ -53,6 +58,8 @@ private slots:
     void mCbModeActivated (const QString &aText);
 
 private:
+
+    QString pageTitle() const;
 
     void getFromPort (const CSerialPort &aPort);
     void putBackToPort();

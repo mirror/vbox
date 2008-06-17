@@ -30,7 +30,8 @@
 
 QTabWidget* VBoxVMSettingsParallel::mTabWidget = 0;
 
-VBoxVMSettingsParallel::VBoxVMSettingsParallel()
+VBoxVMSettingsParallel::VBoxVMSettingsParallel(QWidget* aParent /* = NULL */)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsParallel::setupUi (this);
@@ -47,6 +48,7 @@ VBoxVMSettingsParallel::VBoxVMSettingsParallel()
     mLeIOPort->setMinimumWidth (mLeIOPort->minimumWidth());
 
     /* Set initial values */
+    /* Note: If you change one of the following don't forget retranslateUi. */
     mCbNumber->insertItem (0, vboxGlobal().toCOMPortName (0, 0));
     mCbNumber->insertItems (0, vboxGlobal().COMPortNames());
 
@@ -55,6 +57,8 @@ VBoxVMSettingsParallel::VBoxVMSettingsParallel()
              this, SLOT (mGbParallelToggled (bool)));
     connect (mCbNumber, SIGNAL (activated (const QString &)),
              this, SLOT (mCbNumberActivated (const QString &)));
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsParallel::getFromMachine (const CMachine &aMachine,
@@ -79,13 +83,11 @@ void VBoxVMSettingsParallel::getFromMachine (const CMachine &aMachine,
         CParallelPort port = aMachine.GetParallelPort (slot);
         VBoxVMSettingsParallel *page = new VBoxVMSettingsParallel();
         page->getFromPort (port);
-        QString pageTitle = QString (tr ("Port %1", "parallel ports"))
-                                     .arg (port.GetSlot());
-        mTabWidget->addTab (page, pageTitle);
+        mTabWidget->addTab (page, page->pageTitle());
 
         /* Setup validation. */
         QIWidgetValidator *wval =
-            new QIWidgetValidator (QString ("%1: %2").arg (aPath, pageTitle),
+            new QIWidgetValidator (QString ("%1: %2").arg (aPath, page->pageTitle()),
                                    aPage, mTabWidget);
         connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
                  aDlg, SLOT (enableOk (const QIWidgetValidator *)));
@@ -113,6 +115,67 @@ void VBoxVMSettingsParallel::putBackToMachine()
         page->putBackToPort();
     }
 }
+
+bool VBoxVMSettingsParallel::revalidate (QString &aWarning, QString &aTitle)
+{
+    bool valid = true;
+    QStringList ports;
+    QStringList paths;
+
+    int index = 0;
+    for (; index < mTabWidget->count(); ++ index)
+    {
+        QWidget *tab = mTabWidget->widget (index);
+        VBoxVMSettingsParallel *page =
+            static_cast<VBoxVMSettingsParallel*> (tab);
+
+        /* Check the predefined port number unicity */
+        if (page->mGbParallel->isChecked() && !page->isUserDefined())
+        {
+            QString port = page->mCbNumber->currentText();
+            valid = !ports.contains (port);
+            if (!valid)
+            {
+                aWarning = tr ("Duplicate port number is selected ");
+                aTitle += ": " +
+                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                break;
+            }
+            ports << port;
+        }
+
+        /* Check the port path emptiness & unicity */
+        if (page->mGbParallel->isChecked())
+        {
+            QString path = page->mLePath->text();
+            valid = !path.isEmpty() && !paths.contains (path);
+            if (!valid)
+            {
+                aWarning = path.isEmpty() ?
+                    tr ("Port path is not specified ") :
+                    tr ("Duplicate port path is entered ");
+                aTitle += ": " +
+                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                break;
+            }
+            paths << path;
+        }
+    }
+
+    return valid;
+}
+
+
+void VBoxVMSettingsParallel::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsParallel::retranslateUi (this);
+
+    mTabWidget->setTabText (mTabWidget->indexOf (this), pageTitle());
+
+    mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
+}
+
 
 void VBoxVMSettingsParallel::mGbParallelToggled (bool aOn)
 {
@@ -165,52 +228,12 @@ bool VBoxVMSettingsParallel::isUserDefined()
     return !vboxGlobal().toCOMPortNumbers (mCbNumber->currentText(), a, b);
 }
 
-bool VBoxVMSettingsParallel::revalidate (QString &aWarning, QString &aTitle)
+QString VBoxVMSettingsParallel::pageTitle() const
 {
-    bool valid = true;
-    QStringList ports;
-    QStringList paths;
-
-    int index = 0;
-    for (; index < mTabWidget->count(); ++ index)
-    {
-        QWidget *tab = mTabWidget->widget (index);
-        VBoxVMSettingsParallel *page =
-            static_cast<VBoxVMSettingsParallel*> (tab);
-
-        /* Check the predefined port number unicity */
-        if (page->mGbParallel->isChecked() && !page->isUserDefined())
-        {
-            QString port = page->mCbNumber->currentText();
-            valid = !ports.contains (port);
-            if (!valid)
-            {
-                aWarning = tr ("Duplicate port number is selected ");
-                aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
-                break;
-            }
-            ports << port;
-        }
-
-        /* Check the port path emptiness & unicity */
-        if (page->mGbParallel->isChecked())
-        {
-            QString path = page->mLePath->text();
-            valid = !path.isEmpty() && !paths.contains (path);
-            if (!valid)
-            {
-                aWarning = path.isEmpty() ?
-                    tr ("Port path is not specified ") :
-                    tr ("Duplicate port path is entered ");
-                aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
-                break;
-            }
-            paths << path;
-        }
-    }
-
-    return valid;
+    QString pageTitle;
+    if (!mPort.isNull())
+        pageTitle = QString (tr ("Port %1", "parallel ports"))
+            .arg (mPort.GetSlot());
+    return pageTitle;
 }
 

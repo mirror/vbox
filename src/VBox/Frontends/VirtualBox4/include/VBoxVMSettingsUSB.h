@@ -24,13 +24,14 @@
 #define __VBoxVMSettingsUSB_h__
 
 #include "VBoxVMSettingsUSB.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 class VBoxUSBMenu;
 
-class VBoxVMSettingsUSB : public QWidget, 
+class VBoxVMSettingsUSB : public QIWithRetranslateUI<QWidget>,
                           public Ui::VBoxVMSettingsUSB
 {
     Q_OBJECT;
@@ -57,6 +58,10 @@ public:
 
     void getFrom (const CMachine &aMachine);
     void putBackTo();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -90,6 +95,8 @@ private:
     VBoxUSBMenu *mUSBDevicesMenu;
     bool mUSBFilterListModified;
     QList<CUSBDeviceFilter> mFilters;
+
+    QString mUSBFilterName;
 };
 
 #endif // __VBoxVMSettingsUSB_h__

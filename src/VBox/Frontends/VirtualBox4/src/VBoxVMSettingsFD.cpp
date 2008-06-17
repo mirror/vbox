@@ -35,7 +35,7 @@ VBoxVMSettingsFD* VBoxVMSettingsFD::mSettings = 0;
 VBoxVMSettingsFD::VBoxVMSettingsFD (QWidget *aParent,
                                     VBoxVMSettingsDlg *aDlg,
                                     const QString &aPath)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
     , mLastSelected (0)
 {
     /* Apply UI decorations */
@@ -63,6 +63,8 @@ VBoxVMSettingsFD::VBoxVMSettingsFD (QWidget *aParent,
     mCbIsoFD->setType (VBoxDefs::FD);
 
     mLastSelected = mRbHostFD;
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsFD::getFromMachine (const CMachine &aMachine,
@@ -231,6 +233,14 @@ bool VBoxVMSettingsFD::validate (QString &aWarning)
 
     return aWarning.isNull();
 }
+
+
+void VBoxVMSettingsFD::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsFD::retranslateUi (this);
+}
+
 
 void VBoxVMSettingsFD::onMediaChanged()
 {

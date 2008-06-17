@@ -32,7 +32,7 @@ VBoxVMSettingsVRDP* VBoxVMSettingsVRDP::mSettings = 0;
 VBoxVMSettingsVRDP::VBoxVMSettingsVRDP (QWidget *aParent,
                                         VBoxVMSettingsDlg *aDlg,
                                         const QString &aPath)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsVRDP::setupUi (this);
@@ -56,12 +56,12 @@ VBoxVMSettingsVRDP::VBoxVMSettingsVRDP (QWidget *aParent,
              mValidator, SLOT (revalidate()));
 
     /* Setup dialog */
-    mCbVRDPMethod->insertItem (0,
-        vboxGlobal().toString (KVRDPAuthType_Null));
-    mCbVRDPMethod->insertItem (1,
-        vboxGlobal().toString (KVRDPAuthType_External));
-    mCbVRDPMethod->insertItem (2,
-        vboxGlobal().toString (KVRDPAuthType_Guest));
+    mCbVRDPMethod->insertItem (0, ""); /* KVRDPAuthType_Null */
+    mCbVRDPMethod->insertItem (1, ""); /* KVRDPAuthType_External */
+    mCbVRDPMethod->insertItem (2, ""); /* KVRDPAuthType_Guest */
+
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsVRDP::getFromMachine (const CMachine &aMachine,
@@ -125,5 +125,19 @@ void VBoxVMSettingsVRDP::putBackTo()
     vrdp.SetPort (mLeVRDPPort->text().toULong());
     vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (mCbVRDPMethod->currentText()));
     vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
+}
+
+
+void VBoxVMSettingsVRDP::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsVRDP::retranslateUi (this);
+
+    mCbVRDPMethod->setItemText (0,
+        vboxGlobal().toString (KVRDPAuthType_Null));
+    mCbVRDPMethod->setItemText (1,
+        vboxGlobal().toString (KVRDPAuthType_External));
+    mCbVRDPMethod->setItemText (2,
+        vboxGlobal().toString (KVRDPAuthType_Guest));
 }
 

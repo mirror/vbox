@@ -39,7 +39,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
                                       FilterType aType,
                                       VBoxVMSettingsDlg *aDlg,
                                       const QString &aPath)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
     , mType (aType)
 {
     /* Apply UI decorations */
@@ -57,39 +57,11 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     mMupAction = new QAction (mTwFilters);
     mMdnAction = new QAction (mTwFilters);
 
-    mNewAction->setText (tr ("&Add Empty Filter"));
-    mAddAction->setText (tr ("A&dd Filter From Device"));
-    mDelAction->setText (tr ("&Remove Filter"));
-    mMupAction->setText (tr ("&Move Filter Up"));
-    mMdnAction->setText (tr ("M&ove Filter Down"));
-
     mNewAction->setShortcut (QKeySequence ("Ins"));
     mAddAction->setShortcut (QKeySequence ("Alt+Ins"));
     mDelAction->setShortcut (QKeySequence ("Del"));
     mMupAction->setShortcut (QKeySequence ("Ctrl+Up"));
     mMdnAction->setShortcut (QKeySequence ("Ctrl+Down"));
-
-    mNewAction->setToolTip (mNewAction->text().remove ('&') +
-        QString (" (%1)").arg (mNewAction->shortcut().toString()));
-    mAddAction->setToolTip (mAddAction->text().remove ('&') +
-        QString (" (%1)").arg (mAddAction->shortcut().toString()));
-    mDelAction->setToolTip (mDelAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelAction->shortcut().toString()));
-    mMupAction->setToolTip (mMupAction->text().remove ('&') +
-        QString (" (%1)").arg (mMupAction->shortcut().toString()));
-    mMdnAction->setToolTip (mMdnAction->text().remove ('&') +
-        QString (" (%1)").arg (mMdnAction->shortcut().toString()));
-
-    mNewAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
-                                  "initially set to empty strings. Note "
-                                  "that such a filter will match any "
-                                  "attached USB device."));
-    mAddAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
-                                  "set to the values of the selected USB "
-                                  "device attached to the host PC."));
-    mDelAction->setWhatsThis (tr ("Removes the selected USB filter."));
-    mMupAction->setWhatsThis (tr ("Moves the selected USB filter up."));
-    mMdnAction->setWhatsThis (tr ("Moves the selected USB filter down."));
 
     mNewAction->setIcon (VBoxGlobal::iconSet (":/usb_new_16px.png",
                                               ":/usb_new_disabled_16px.png"));
@@ -170,16 +142,14 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     /* Setup dialog */
     mTwFilters->header()->hide();
 
-    mCbRemote->insertItem (0, tr ("Any", "remote"));
-    mCbRemote->insertItem (1, tr ("Yes", "remote"));
-    mCbRemote->insertItem (2, tr ("No", "remote"));
+    mCbRemote->addItem (""); /* Any */
+    mCbRemote->addItem (""); /* Yes */
+    mCbRemote->addItem (""); /* No */
     mLbRemote->setHidden (mType != MachineType);
     mCbRemote->setHidden (mType != MachineType);
 
-    mCbAction->insertItem (0,
-        vboxGlobal().toString (KUSBDeviceFilterAction_Ignore));
-    mCbAction->insertItem (1,
-        vboxGlobal().toString (KUSBDeviceFilterAction_Hold));
+    mCbAction->insertItem (0, ""); /* KUSBDeviceFilterAction_Ignore */
+    mCbAction->insertItem (1, ""); /* KUSBDeviceFilterAction_Hold */
     mLbAction->setHidden (mType != HostType);
     mCbAction->setHidden (mType != HostType);
 
@@ -197,6 +167,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     setTabOrder (mLeSerialNo, mLePort);
     setTabOrder (mLePort, mCbRemote);
     setTabOrder (mCbRemote, mCbAction);
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsUSB::getFromMachine (const CMachine &aMachine,
@@ -281,6 +253,53 @@ void VBoxVMSettingsUSB::putBackTo()
 
     mUSBFilterListModified = false;
 }
+
+
+void VBoxVMSettingsUSB::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsUSB::retranslateUi (this);
+
+    mNewAction->setText (tr ("&Add Empty Filter"));
+    mAddAction->setText (tr ("A&dd Filter From Device"));
+    mDelAction->setText (tr ("&Remove Filter"));
+    mMupAction->setText (tr ("&Move Filter Up"));
+    mMdnAction->setText (tr ("M&ove Filter Down"));
+
+    mNewAction->setToolTip (mNewAction->text().remove ('&') +
+        QString (" (%1)").arg (mNewAction->shortcut().toString()));
+    mAddAction->setToolTip (mAddAction->text().remove ('&') +
+        QString (" (%1)").arg (mAddAction->shortcut().toString()));
+    mDelAction->setToolTip (mDelAction->text().remove ('&') +
+        QString (" (%1)").arg (mDelAction->shortcut().toString()));
+    mMupAction->setToolTip (mMupAction->text().remove ('&') +
+        QString (" (%1)").arg (mMupAction->shortcut().toString()));
+    mMdnAction->setToolTip (mMdnAction->text().remove ('&') +
+        QString (" (%1)").arg (mMdnAction->shortcut().toString()));
+
+    mNewAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
+                                  "initially set to empty strings. Note "
+                                  "that such a filter will match any "
+                                  "attached USB device."));
+    mAddAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
+                                  "set to the values of the selected USB "
+                                  "device attached to the host PC."));
+    mDelAction->setWhatsThis (tr ("Removes the selected USB filter."));
+    mMupAction->setWhatsThis (tr ("Moves the selected USB filter up."));
+    mMdnAction->setWhatsThis (tr ("Moves the selected USB filter down."));
+
+    mCbRemote->setItemText (0, tr ("Any", "remote"));
+    mCbRemote->setItemText (1, tr ("Yes", "remote"));
+    mCbRemote->setItemText (2, tr ("No", "remote"));
+
+    mCbAction->setItemText (0,
+        vboxGlobal().toString (KUSBDeviceFilterAction_Ignore));
+    mCbAction->setItemText (1,
+        vboxGlobal().toString (KUSBDeviceFilterAction_Hold));
+
+    mUSBFilterName = tr ("New Filter %1", "usb");
+}
+
 
 void VBoxVMSettingsUSB::usbAdapterToggled (bool aOn)
 {
@@ -415,8 +434,7 @@ void VBoxVMSettingsUSB::newClicked()
 {
     /* Search for the max available filter index */
     int maxFilterIndex = 0;
-    QString usbFilterName = tr ("New Filter %1", "usb");
-    QRegExp regExp (QString ("^") + usbFilterName.arg ("([0-9]+)") + QString ("$"));
+    QRegExp regExp (QString ("^") + mUSBFilterName.arg ("([0-9]+)") + QString ("$"));
     QTreeWidgetItemIterator iterator (mTwFilters);
     while (*iterator)
     {
@@ -430,7 +448,7 @@ void VBoxVMSettingsUSB::newClicked()
 
     /* Creating new usb filter */
     CUSBDeviceFilter filter = mMachine.GetUSBController()
-        .CreateDeviceFilter (usbFilterName.arg (maxFilterIndex + 1));
+        .CreateDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
 
     filter.SetActive (true);
     addUSBFilter (filter, true /* isNew */);

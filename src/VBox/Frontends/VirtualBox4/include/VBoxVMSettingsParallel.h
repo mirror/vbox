@@ -24,18 +24,19 @@
 #define __VBoxVMSettingsParallel_h__
 
 #include "VBoxVMSettingsParallel.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 
-class VBoxVMSettingsParallel : public QWidget, 
+class VBoxVMSettingsParallel : public QIWithRetranslateUI<QWidget>,
                                public Ui::VBoxVMSettingsParallel
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsParallel();
+    VBoxVMSettingsParallel (QWidget *aParent = NULL);
 
     static void getFromMachine (const CMachine &aMachine,
                                 QWidget *aPage,
@@ -45,6 +46,10 @@ public:
     static void putBackToMachine();
 
     static bool revalidate (QString &aWarning, QString &aTitle);
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -56,6 +61,8 @@ private:
     void getFromPort (const CParallelPort &aPort);
     void putBackToPort();
     bool isUserDefined();
+
+    QString pageTitle() const;
 
     static QTabWidget *mTabWidget;
 

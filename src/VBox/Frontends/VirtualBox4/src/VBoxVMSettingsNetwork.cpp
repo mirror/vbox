@@ -54,8 +54,9 @@ QStringList VBoxVMSettingsNetwork::mListNetworks = QStringList();
 // QString VBoxVMSettingsNetwork::mNoInterfaces = tr ("<No suitable interfaces>");
 // #endif
 
-VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
-    : mValidator (0)
+VBoxVMSettingsNetwork::VBoxVMSettingsNetwork(QWidget *aParent /* = NULL */)
+    : QIWithRetranslateUI<QWidget> (aParent)
+    , mValidator (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsNetwork::setupUi (this);
@@ -83,29 +84,8 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
                                                     ":/select_file_dis_16px.png"));
 #endif
 
-    /* Load initial values */
-
-    mCbAType->insertItem (0,
-        vboxGlobal().toString (KNetworkAdapterType_Am79C970A));
-    mCbAType->insertItem (1,
-        vboxGlobal().toString (KNetworkAdapterType_Am79C973));
-#ifdef VBOX_WITH_E1000
-    mCbAType->insertItem (2,
-        vboxGlobal().toString (KNetworkAdapterType_I82540EM));
-    mCbAType->insertItem (3,
-        vboxGlobal().toString (KNetworkAdapterType_I82543GC));
-#endif
-
-    mCbNAType->insertItem (0,
-        vboxGlobal().toString (KNetworkAttachmentType_Null));
-    mCbNAType->insertItem (1,
-        vboxGlobal().toString (KNetworkAttachmentType_NAT));
-#ifndef Q_WS_MAC /* Not yet on the Mac */
-    mCbNAType->insertItem (2,
-        vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
-    mCbNAType->insertItem (3,
-        vboxGlobal().toString (KNetworkAttachmentType_Internal));
-#endif
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsNetwork::getFromMachine (const CMachine &aMachine,
@@ -177,12 +157,11 @@ void VBoxVMSettingsNetwork::getFromMachine (const CMachine &aMachine,
         /* Creating Adapter's page */
         VBoxVMSettingsNetwork *page = new VBoxVMSettingsNetwork();
 
+        /* Set the mAdapter member which is necessary for next pageTitle call. */
+        page->mAdapter = adapter;
         /* Setup validation */
-        QString pageTitle = QString (tr ("Adapter %1", "network"))
-                                     .arg (adapter.GetSlot());
-
         QIWidgetValidator *wval =
-            new QIWidgetValidator (QString ("%1: %2").arg (aPath, pageTitle),
+            new QIWidgetValidator (QString ("%1: %2").arg (aPath, page->pageTitle()),
                                    aPage, aDlg);
         connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
                  aDlg, SLOT (enableOk (const QIWidgetValidator*)));
@@ -196,7 +175,7 @@ void VBoxVMSettingsNetwork::getFromMachine (const CMachine &aMachine,
         page->getFromAdapter (adapter);
 
         /* Attach Adapter's page to Tab Widget */
-        mTwAdapters->addTab (page, pageTitle);
+        mTwAdapters->addTab (page, page->pageTitle());
     }
 
     layout->addStretch();
@@ -365,6 +344,18 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
 
     mValidator->revalidate();
 }
+
+
+void VBoxVMSettingsNetwork::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsNetwork::retranslateUi (this);
+
+    mTwAdapters->setTabText (mTwAdapters->indexOf (this), pageTitle());
+
+    prepareComboboxes();
+}
+
 
 void VBoxVMSettingsNetwork::naTypeChanged (const QString &aString)
 {
@@ -553,6 +544,56 @@ void VBoxVMSettingsNetwork::updateListNetworks()
 //         vboxProblem().cannotRemoveHostInterface (host, iFace, this);
 // }
 // #endif
+
+QString VBoxVMSettingsNetwork::pageTitle() const
+{
+    QString pageTitle;
+    if (!mAdapter.isNull())
+    {
+        pageTitle = QString (tr ("Adapter %1", "network"))
+            .arg (mAdapter.GetSlot());
+    }
+    return pageTitle;
+}
+
+void VBoxVMSettingsNetwork::prepareComboboxes()
+{
+    /* Save the current selected value */
+    int currentAdapter = mCbAType->currentIndex();
+    /* Clear the driver box */
+    mCbAType->clear();
+    /* Refill them */
+    mCbAType->insertItem (0,
+        vboxGlobal().toString (KNetworkAdapterType_Am79C970A));
+    mCbAType->insertItem (1,
+        vboxGlobal().toString (KNetworkAdapterType_Am79C973));
+#ifdef VBOX_WITH_E1000
+    mCbAType->insertItem (2,
+        vboxGlobal().toString (KNetworkAdapterType_I82540EM));
+    mCbAType->insertItem (3,
+        vboxGlobal().toString (KNetworkAdapterType_I82543GC));
+#endif
+    /* Set the old value */
+    mCbAType->setCurrentIndex (currentAdapter);
+
+    /* Save the current selected value */
+    int currentAttachment = mCbNAType->currentIndex();
+    /* Clear the driver box */
+    mCbNAType->clear();
+    /* Refill them */
+    mCbNAType->insertItem (0,
+        vboxGlobal().toString (KNetworkAttachmentType_Null));
+    mCbNAType->insertItem (1,
+        vboxGlobal().toString (KNetworkAttachmentType_NAT));
+#ifndef Q_WS_MAC /* Not yet on the Mac */
+    mCbNAType->insertItem (2,
+        vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
+    mCbNAType->insertItem (3,
+        vboxGlobal().toString (KNetworkAttachmentType_Internal));
+#endif
+    /* Set the old value */
+    mCbNAType->setCurrentIndex (currentAttachment);
+}
 
 void VBoxVMSettingsNetwork::prepareListNetworks()
 {
