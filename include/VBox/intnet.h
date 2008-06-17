@@ -202,11 +202,11 @@ DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
  */
 DECLINLINE(void) INTNETRingSkipFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf)
 {
+    uint32_t    offRead   = pRingBuf->offRead;
+    PINTNETHDR  pHdr      = (PINTNETHDR)((uint8_t *)pBuf + offRead);
     Assert(pRingBuf->offRead < pBuf->cbBuf);
     Assert(pRingBuf->offRead >= pRingBuf->offStart);
     Assert(pRingBuf->offRead < pRingBuf->offEnd);
-    uint32_t    offRead   = pRingBuf->offRead;
-    PINTNETHDR  pHdr      = (PINTNETHDR)((uint8_t *)pBuf + offRead);
 
     /* skip the frame */
     offRead += pHdr->offFrame + pHdr->cbFrame;
