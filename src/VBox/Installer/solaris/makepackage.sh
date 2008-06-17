@@ -19,7 +19,7 @@
 
 #
 # Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename $(BUILD_TARGET_ARCH)
+#       makespackage.sh $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH) [VBIPackageName]
 
 if [ -z "$3" ]; then
     echo "Usage: $0 installdir packagename x86|amd64"
@@ -93,7 +93,7 @@ pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
 # $4 if exist would contain the path to the VBI package to include in the .tar.gz
 if test -f "$4"; then
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" $4 autoresponse ReadMe.txt
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" "$4" autoresponse ReadMe.txt
 else
     $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
 fi
