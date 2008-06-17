@@ -37,7 +37,6 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 
-/* Qt includes */
 #include <QTimer>
 
 /**
@@ -67,25 +66,6 @@ static QTreeWidgetItem* findItem (QTreeWidget *aView,
 
     return list.count() ? list [0] : 0;
 }
-
-class VBoxWarnIconLabel: public QWidget
-{
-public:
-    VBoxWarnIconLabel (QWidget *aParent = NULL)
-      : QWidget (aParent)
-    {
-        QHBoxLayout *layout = new QHBoxLayout (this);
-        VBoxGlobal::setLayoutMargin (layout, 0);
-        layout->addWidget (&mIcon);
-        layout->addWidget (&mLabel);
-    }
-    void setWarningPixmap (const QPixmap& aPixmap) { mIcon.setPixmap (aPixmap); }
-    void setWarningText (const QString& aText) { mLabel.setText (aText); }
-
-private:
-    QLabel mIcon;
-    QLabel mLabel;
-};
 
 VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                                       const QString &aCategory,
@@ -131,13 +111,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                                    6 /* seems that RichText adds some margin */ +
                                    mLbWhatsThis->fontMetrics().width ('m') * 40);
 
-    /*
-     *  Setup connections and set validation for pages
-     *  ----------------------------------------------------------------------
-     */
-
     /* Common connections */
-
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
     connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
@@ -150,13 +124,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     //QTreeWidgetItem *item = findItem (mTwSelector, "#parallelPorts", listView_Link);
     //Assert (item);
     //if (item) item->setHidden (true);
-
-    /*
-     *  Set initial values
-     *  ----------------------------------------------------------------------
-     */
-
-    /* Common settings */
 
     /* Hide unnecessary columns and header */
     mTwSelector->header()->hide();
@@ -223,6 +190,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
             }
         }
     }
+
     /* Applying language settings */
     retranslateUi();
 }
@@ -345,7 +313,7 @@ void VBoxVMSettingsDlg::retranslateUi()
     mButtonBox->button (QDialogButtonBox::Help)->setWhatsThis (tr ("Displays the dialog help."));
 
     setWindowTitle (dialogTitle());
-    
+
     /* We have to make sure that the Serial & Network subpages are retranslated
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already. */
@@ -441,12 +409,12 @@ void VBoxVMSettingsDlg::settingsGroupChanged (QTreeWidgetItem *aItem,
     }
 }
 
-void VBoxVMSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
+void VBoxVMSettingsDlg::updateWhatsThis (bool aGotFocus /* = false */)
 {
     QString text;
 
     QWidget *widget = 0;
-    if (!gotFocus)
+    if (!aGotFocus)
     {
         if (mWhatsThisCandidate && mWhatsThisCandidate != this)
             widget = mWhatsThisCandidate;
@@ -528,7 +496,7 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
         }
         case QEvent::FocusIn:
         {
-            updateWhatsThis (true /* gotFocus */);
+            updateWhatsThis (true /* aGotFocus */);
             break;
         }
         default:
@@ -553,7 +521,7 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *aEvent)
 
     mPolished = true;
 
-    /* resize to the minimum possible size */
+    /* Resize to the minimum possible size */
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
