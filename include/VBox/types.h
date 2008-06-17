@@ -560,6 +560,23 @@ typedef VBOXTSS *PVBOXTSS;
 typedef const VBOXTSS *PCVBOXTSS;
 
 
+/**
+ * MAC address.
+ * (The first 24 bits are the 'company id', where the first bit seems to have a special meaning if set.)
+ */
+typedef union PDMMAC
+{
+    /** 8-bit view. */
+    uint8_t     au8[6];
+    /** 16-bit view. */
+    uint16_t    au16[3];
+} PDMMAC;
+/** Pointer to a MAC address. */
+typedef PDMMAC *PPDMMAC;
+/** Pointer to a const MAC address. */
+typedef const PDMMAC *PCPDMMAC;
+
+
 /** @} */
 
 #endif
