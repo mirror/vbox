@@ -1197,9 +1197,9 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             }
 #ifdef LOG_ENABLED
             if (pCpu->mode == CPUMODE_64BIT)
-                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %RX64 (%d) &val32=%08x\n", pRegFrame->rip, pDest, val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %RX64 (%d) &val32=%VHv\n", pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
-                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %08X  (%d) &val32=%08x\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %08X  (%d) &val32=%VHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
 #endif
 
             Assert(param2.size <= 8 && param2.size > 0);
