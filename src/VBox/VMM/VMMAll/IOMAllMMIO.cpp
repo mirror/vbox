@@ -1408,7 +1408,7 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     if (pCpu->pCurInstr->opcode == OP_INSB)
         cb = 1;
     else
-        cb = pCpu->opmode == CPUMODE_32BIT ? 4 : 2;
+        cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -1568,7 +1568,7 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     if (pCpu->pCurInstr->opcode == OP_OUTSB)
         cb = 1;
     else
-        cb = (pCpu->opmode == CPUMODE_32BIT) ? 4 : 2;
+        cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
