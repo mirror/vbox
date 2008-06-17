@@ -25,6 +25,7 @@
 
 #include "VBoxVMSettingsHD.gen.h"
 #include "COMDefs.h"
+#include "QIWithRetranslateUI.h"
 #include "VBoxMediaComboBox.h"
 
 /* Qt includes */
@@ -273,7 +274,7 @@ private:
 };
 
 /** QWidget class reimplementation used as hard disks settings */
-class VBoxVMSettingsHD : public QWidget, 
+class VBoxVMSettingsHD : public QIWithRetranslateUI<QWidget>,
                          public Ui::VBoxVMSettingsHD
 {
     Q_OBJECT;
@@ -300,6 +301,8 @@ signals:
     void hdChanged();
 
 protected:
+
+    void retranslateUi();
 
     void getFrom();
     void putBackTo();

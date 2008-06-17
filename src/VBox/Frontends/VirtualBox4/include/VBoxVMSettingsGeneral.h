@@ -24,12 +24,13 @@
 #define __VBoxVMSettingsGeneral_h__
 
 #include "VBoxVMSettingsGeneral.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsGeneral : public QWidget, 
+class VBoxVMSettingsGeneral : public QIWithRetranslateUI<QWidget>,
                               public Ui::VBoxVMSettingsGeneral
 {
     Q_OBJECT;
@@ -52,6 +53,10 @@ signals:
 
     void tableChanged();
 
+protected:
+
+    void retranslateUi();
+
 private slots:
 
     void valueChangedRAM (int aVal);
@@ -69,6 +74,8 @@ private slots:
     void resetSnapshotFolder();
 
 private:
+
+    void adjustBootOrderTWSize ();
 
     static VBoxVMSettingsGeneral *mSettings;
 

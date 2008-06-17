@@ -29,6 +29,8 @@
 /* Qt includes */
 #include <QDir>
 
+#define ITEM_TYPE_ROLE Qt::UserRole + 1
+
 VBoxVMSettingsGeneral* VBoxVMSettingsGeneral::mSettings = 0;
 
 /**
@@ -54,7 +56,7 @@ static int calcPageStep (int aMax)
 VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
                                               VBoxVMSettingsDlg *aDlg,
                                               const QString &aPath)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsGeneral::setupUi (this);
@@ -118,8 +120,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
     /* Setup the scale so that ticks are at page step boundaries */
     mSlRam->setMinimum ((MinRAM / mSlRam->pageStep()) * mSlRam->pageStep());
     mSlRam->setMaximum (MaxRAM);
-    mLbRamMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MinRAM));
-    mLbRamMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MaxRAM));
     /* Limit min/max. size of QLineEdit */
     mLeRam->setMaximumSize (mLeRam->fontMetrics().width ("99999"),
                             mLeRam->minimumSizeHint().height());
@@ -133,8 +133,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
     /* Setup the scale so that ticks are at page step boundaries */
     mSlVideo->setMinimum ((MinVRAM / mSlVideo->pageStep()) * mSlVideo->pageStep());
     mSlVideo->setMaximum (MaxVRAM);
-    mLbVideoMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MinVRAM));
-    mLbVideoMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MaxVRAM));
     /* Limit min/max. size of QLineEdit */
     mLeVideo->setMaximumSize (mLeVideo->fontMetrics().width ("99999"),
                               mLeVideo->minimumSizeHint().height());
@@ -143,22 +141,18 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
     valueChangedVRAM (mSlVideo->value());
 
     /* Shared Clipboard mode */
-    mCbClipboard->insertItem (mCbClipboard->count(),
-        vboxGlobal().toString (KClipboardMode_Disabled));
-    mCbClipboard->insertItem (mCbClipboard->count(),
-        vboxGlobal().toString (KClipboardMode_HostToGuest));
-    mCbClipboard->insertItem (mCbClipboard->count(),
-        vboxGlobal().toString (KClipboardMode_GuestToHost));
-    mCbClipboard->insertItem (mCbClipboard->count(),
-        vboxGlobal().toString (KClipboardMode_Bidirectional));
+    mCbClipboard->addItem (""); /* KClipboardMode_Disabled */
+    mCbClipboard->addItem (""); /* KClipboardMode_HostToGuest */
+    mCbClipboard->addItem (""); /* KClipboardMode_GuestToHost */
+    mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
 
     /* IDE Controller Type */
-    mCbIDEController->insertItem (mCbIDEController->count(),
-        vboxGlobal().toString (KIDEControllerType_PIIX3));
-    mCbIDEController->insertItem (mCbIDEController->count(),
-        vboxGlobal().toString (KIDEControllerType_PIIX4));
+    mCbIDEController->addItem (""); /* KIDEControllerType_PIIX3 */
+    mCbIDEController->addItem (""); /* KIDEControllerType_PIIX4 */
 
     qApp->installEventFilter (this);
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsGeneral::getFromMachine (const CMachine &aMachine,
@@ -199,23 +193,21 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
 
     /* Boot-order */
     {
+        mTwBootOrder->clear();
         /* Load boot-items of current VM */
         QStringList uniqueList;
-        int minimumWidth = 0;
         for (int i = 1; i <= 4; ++ i)
         {
-            KDeviceType type = aMachine.GetBootOrder (i);
+            KDeviceType type = mMachine.GetBootOrder (i);
             if (type != KDeviceType_Null)
             {
                 QString name = vboxGlobal().toString (type);
                 QTreeWidgetItem *item =
                     new QTreeWidgetItem (mTwBootOrder, QStringList (name));
+                QVariant vtype (type);
+                item->setData (0, ITEM_TYPE_ROLE, vtype);
                 item->setCheckState (0, Qt::Checked);
                 uniqueList << name;
-
-                QFontMetrics fm (item->font (0));
-                int wid = fm.width (item->text (0));
-                if (wid > minimumWidth) minimumWidth = wid;
             }
         }
         /* Load other unique boot-items */
@@ -226,23 +218,12 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
             {
                 QTreeWidgetItem *item =
                     new QTreeWidgetItem (mTwBootOrder, QStringList (name));
+                item->setData (0, ITEM_TYPE_ROLE, i);
                 item->setCheckState (0, Qt::Unchecked);
                 uniqueList << name;
-
-                QFontMetrics fm (item->font (0));
-                int wid = fm.width (item->text (0));
-                if (wid > minimumWidth) minimumWidth = wid;
             }
         }
-        QFontMetrics fm (mTwBootOrder->topLevelItem (0)->font (0));
-        int minimumHeight = fm.height();
-
-        mTwBootOrder->setFixedWidth (minimumWidth +
-                                     28 /* check box */ +
-                                     4 /* viewport margin */);
-        mTwBootOrder->setFixedHeight (mTwBootOrder->topLevelItemCount() *
-                                      minimumHeight +
-                                      4 /* viewport margin */);
+        adjustBootOrderTWSize ();
     }
 
     /* ACPI */
@@ -359,6 +340,45 @@ void VBoxVMSettingsGeneral::putBackTo()
     mMachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
                            mCbSaveMounted->isChecked() ? "yes" : "no");
 }
+
+
+void VBoxVMSettingsGeneral::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsGeneral::retranslateUi (this);
+    mTwBootOrder->header()->setResizeMode (QHeaderView::ResizeToContents);
+    mTwBootOrder->resizeColumnToContents (0);
+    mTwBootOrder->updateGeometry();
+
+    CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    mLbRamMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestRAM()));
+    mLbRamMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestRAM()));
+    mLbVideoMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestVRAM()));
+    mLbVideoMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestVRAM()));
+
+    /* Retranslate the boot order items */
+    QTreeWidgetItemIterator it (mTwBootOrder);
+    while (*it) 
+    {
+        QTreeWidgetItem *item = (*it);
+        item->setText (0, vboxGlobal().toString (
+             static_cast<KDeviceType> (item->data (0, ITEM_TYPE_ROLE).toInt())));
+        ++it;
+    }
+    /* Readjust the tree widget size */
+    adjustBootOrderTWSize ();
+
+    /* Shared Clipboard mode */
+    mCbClipboard->setItemText (0, vboxGlobal().toString (KClipboardMode_Disabled));
+    mCbClipboard->setItemText (1, vboxGlobal().toString (KClipboardMode_HostToGuest));
+    mCbClipboard->setItemText (2, vboxGlobal().toString (KClipboardMode_GuestToHost));
+    mCbClipboard->setItemText (3, vboxGlobal().toString (KClipboardMode_Bidirectional));
+
+    /* IDE Controller Type */
+    mCbIDEController->setItemText (0, vboxGlobal().toString (KIDEControllerType_PIIX3));
+    mCbIDEController->setItemText (1, vboxGlobal().toString (KIDEControllerType_PIIX4));
+}
+
 
 void VBoxVMSettingsGeneral::valueChangedRAM (int aVal)
 {
@@ -494,3 +514,13 @@ bool VBoxVMSettingsGeneral::eventFilter (QObject *aObject, QEvent *aEvent)
     return QWidget::eventFilter (aObject, aEvent);
 }
 
+void VBoxVMSettingsGeneral::adjustBootOrderTWSize ()
+{
+    if (mTwBootOrder)
+    {
+        /* Calculate the optimal size of the tree widget & set it as fixed
+         * size. */
+        mTwBootOrder->setFixedSize (static_cast<QAbstractItemView*> (mTwBootOrder)->sizeHintForColumn (0) + 2 * mTwBootOrder->frameWidth(),
+                                    static_cast<QAbstractItemView*> (mTwBootOrder)->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + 2 * mTwBootOrder->frameWidth());
+    }
+}

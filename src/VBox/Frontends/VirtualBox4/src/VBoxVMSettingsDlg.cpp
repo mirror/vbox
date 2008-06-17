@@ -90,7 +90,7 @@ private:
 VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                                       const QString &aCategory,
                                       const QString &aControl)
-    : QIMainDialog (aParent)
+    : QIWithRetranslateUI<QIMainDialog> (aParent)
     , mPolished (false)
     , mAllowResetFirstRunFlag (false)
     , mValid (true)
@@ -105,10 +105,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 #endif /* Q_WS_MAC */
 
     mWarnIconLabel = new VBoxWarnIconLabel();
-    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
-    mButtonBox->button (QDialogButtonBox::Ok)->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
-    mButtonBox->button (QDialogButtonBox::Cancel)->setWhatsThis (tr ("Cancels changes and closes the dialog."));
-    mButtonBox->button (QDialogButtonBox::Help)->setWhatsThis (tr ("Displays the dialog help."));
 
     /* Setup warning icon */
     QIcon icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
@@ -227,13 +223,15 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
             }
         }
     }
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
-    setWindowTitle (aMachine.GetName() + tr (" - Settings"));
+    setWindowTitle (dialogTitle());
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -285,7 +283,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
     mResetFirstRunFlag = false;
 }
 
-
 COMResult VBoxVMSettingsDlg::putBackToMachine()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -331,6 +328,37 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     return COMResult();
 }
 
+
+void VBoxVMSettingsDlg::retranslateUi()
+{
+    /* Unfortunately retranslateUi clears the QTreeWidget to do the
+     * translation. So save the current selected index. */
+    int ci = mPageStack->currentIndex();
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsDlg::retranslateUi (this);
+    /* Set the old index */
+    mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci));
+
+    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
+    mButtonBox->button (QDialogButtonBox::Ok)->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
+    mButtonBox->button (QDialogButtonBox::Cancel)->setWhatsThis (tr ("Cancels changes and closes the dialog."));
+    mButtonBox->button (QDialogButtonBox::Help)->setWhatsThis (tr ("Displays the dialog help."));
+
+    setWindowTitle (dialogTitle());
+    
+    /* We have to make sure that the Serial & Network subpages are retranslated
+     * before they are revalidated. Cause: They do string comparing within
+     * vboxGlobal which is retranslated at that point already. */
+    QEvent* event = new QEvent (QEvent::LanguageChange);
+    qApp->sendEvent (mPageSerial, event);
+    qApp->sendEvent (mPageNetwork, event);
+
+    /* Revalidate all pages to retranslate the warning messages also. */
+    QList<QIWidgetValidator*> l = this->findChildren<QIWidgetValidator*>();
+    foreach (QIWidgetValidator *wval, l)
+        if (!wval->isValid())
+            revalidate (wval);
+}
 
 void VBoxVMSettingsDlg::enableOk (const QIWidgetValidator*)
 {
@@ -404,11 +432,13 @@ void VBoxVMSettingsDlg::onMediaEnumerationDone()
 void VBoxVMSettingsDlg::settingsGroupChanged (QTreeWidgetItem *aItem,
                                               QTreeWidgetItem *)
 {
-    Assert (aItem);
-    int id = aItem->text (1).toInt();
-    Assert (id >= 0);
-    mLbTitle->setText (::path (aItem));
-    mPageStack->setCurrentIndex (id);
+    if (aItem)
+    {
+        int id = aItem->text (1).toInt();
+        Assert (id >= 0);
+        mLbTitle->setText (::path (aItem));
+        mPageStack->setCurrentIndex (id);
+    }
 }
 
 void VBoxVMSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
@@ -553,5 +583,13 @@ void VBoxVMSettingsDlg::setWarning (const QString &aWarning)
         mLbWhatsThis->setText (mWarnString);
     else
         updateWhatsThis (true);
+}
+
+QString VBoxVMSettingsDlg::dialogTitle() const
+{
+    QString dialogTitle;
+    if (!mMachine.isNull())
+        dialogTitle = tr ("%1 - Settings").arg (mMachine.GetName());
+    return dialogTitle;
 }
 

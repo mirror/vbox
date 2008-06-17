@@ -24,12 +24,13 @@
 #define __VBoxVMSettingsCD_h__
 
 #include "VBoxVMSettingsCD.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsCD : public QWidget, 
+class VBoxVMSettingsCD : public QIWithRetranslateUI<QWidget>,
                          public Ui::VBoxVMSettingsCD
 {
     Q_OBJECT;
@@ -53,6 +54,10 @@ public:
 signals:
 
     void cdChanged();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 

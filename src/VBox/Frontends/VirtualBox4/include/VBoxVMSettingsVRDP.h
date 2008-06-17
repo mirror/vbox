@@ -24,12 +24,13 @@
 #define __VBoxVMSettingsVRDP_h__
 
 #include "VBoxVMSettingsVRDP.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 
-class VBoxVMSettingsVRDP : public QWidget, 
+class VBoxVMSettingsVRDP : public QIWithRetranslateUI<QWidget>,
                            public Ui::VBoxVMSettingsVRDP
 {
     Q_OBJECT;
@@ -47,6 +48,10 @@ public:
 
     void getFrom (const CMachine &aMachine);
     void putBackTo();
+
+protected:
+
+    void retranslateUi();
 
 private:
 

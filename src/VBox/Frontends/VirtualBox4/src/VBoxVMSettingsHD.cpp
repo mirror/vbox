@@ -395,7 +395,7 @@ CMachine VBoxVMSettingsHD::mMachine = CMachine();
 VBoxVMSettingsHD::VBoxVMSettingsHD (QWidget *aParent,
                                     VBoxVMSettingsDlg *aDlg,
                                     const QString &aPath)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
@@ -447,26 +447,9 @@ VBoxVMSettingsHD::VBoxVMSettingsHD (QWidget *aParent,
     mTwAts->addAction (mDelAction);
     mTwAts->addAction (mVdmAction);
 
-    mNewAction->setText (tr ("&Add Attachment"));
-    mDelAction->setText (tr ("&Remove Attachment"));
-    mVdmAction->setText (tr ("&Select Hard Disk"));
-
     mNewAction->setShortcut (QKeySequence ("Ins"));
     mDelAction->setShortcut (QKeySequence ("Del"));
     mVdmAction->setShortcut (QKeySequence ("Ctrl+Space"));
-
-    mNewAction->setToolTip (mNewAction->text().remove ('&') +
-        QString (" (%1)").arg (mNewAction->shortcut().toString()));
-    mDelAction->setToolTip (mDelAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelAction->shortcut().toString()));
-    mVdmAction->setToolTip (mVdmAction->text().remove ('&') +
-        QString (" (%1)").arg (mVdmAction->shortcut().toString()));
-
-    mNewAction->setWhatsThis (tr ("Adds a new hard disk attachment."));
-    mDelAction->setWhatsThis (tr ("Removes the highlighted hard disk attachment."));
-    mVdmAction->setWhatsThis (tr ("Invokes the Virtual Disk Manager to select "
-                                  "a hard disk to attach to the currently "
-                                  "highlighted slot."));
 
     mNewAction->setIcon (VBoxGlobal::iconSet (":/vdm_add_16px.png",
                                               ":/vdm_add_disabled_16px.png"));
@@ -506,6 +489,8 @@ VBoxVMSettingsHD::VBoxVMSettingsHD (QWidget *aParent,
     /* Fixing tab-order */
     setTabOrder (aDlg->mTwSelector, mCbSATA);
     setTabOrder (mCbSATA, mTwAts);
+    /* Applying language settings */
+    retranslateUi();
 }
 
 VBoxVMSettingsHD::~VBoxVMSettingsHD()
@@ -604,6 +589,30 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
     }
 
     return QWidget::eventFilter (aObject, aEvent);
+}
+
+
+void VBoxVMSettingsHD::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsHD::retranslateUi (this);
+
+    mNewAction->setText (tr ("&Add Attachment"));
+    mDelAction->setText (tr ("&Remove Attachment"));
+    mVdmAction->setText (tr ("&Select Hard Disk"));
+
+    mNewAction->setToolTip (mNewAction->text().remove ('&') +
+        QString (" (%1)").arg (mNewAction->shortcut().toString()));
+    mDelAction->setToolTip (mDelAction->text().remove ('&') +
+        QString (" (%1)").arg (mDelAction->shortcut().toString()));
+    mVdmAction->setToolTip (mVdmAction->text().remove ('&') +
+        QString (" (%1)").arg (mVdmAction->shortcut().toString()));
+
+    mNewAction->setWhatsThis (tr ("Adds a new hard disk attachment."));
+    mDelAction->setWhatsThis (tr ("Removes the highlighted hard disk attachment."));
+    mVdmAction->setWhatsThis (tr ("Invokes the Virtual Disk Manager to select "
+                                  "a hard disk to attach to the currently "
+                                  "highlighted slot."));
 }
 
 void VBoxVMSettingsHD::getFrom()

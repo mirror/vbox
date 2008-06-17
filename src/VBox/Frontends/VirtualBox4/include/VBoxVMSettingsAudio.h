@@ -24,9 +24,11 @@
 #define __VBoxVMSettingsAudio_h__
 
 #include "VBoxVMSettingsAudio.gen.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsAudio : public QWidget, public Ui::VBoxVMSettingsAudio
+class VBoxVMSettingsAudio : public QIWithRetranslateUI<QWidget>,
+                            public Ui::VBoxVMSettingsAudio
 {
     Q_OBJECT;
 
@@ -41,8 +43,15 @@ public:
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
+protected:
+
+    void retranslateUi();
+
 private:
 
+    void prepareComboboxes();
+
+    /* Private member vars */
     static VBoxVMSettingsAudio *mSettings;
 
     CMachine mMachine;

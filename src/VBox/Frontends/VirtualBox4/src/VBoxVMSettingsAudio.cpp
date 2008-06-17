@@ -26,40 +26,12 @@
 VBoxVMSettingsAudio* VBoxVMSettingsAudio::mSettings = 0;
 
 VBoxVMSettingsAudio::VBoxVMSettingsAudio (QWidget *aParent)
-    : QWidget (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsAudio::setupUi (this);
-
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_Null));
-#if defined Q_WS_WIN32
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_DirectSound));
-# ifdef VBOX_WITH_WINMM
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_WinMM));
-# endif
-#elif defined Q_OS_LINUX
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_OSS));
-# ifdef VBOX_WITH_ALSA
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_ALSA));
-# endif
-# ifdef VBOX_WITH_PULSE
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_Pulse));
-# endif
-#elif defined Q_OS_MACX
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_CoreAudio));
-#endif
-
-    mCbAudioController->insertItem (mCbAudioController->count(),
-        vboxGlobal().toString (KAudioControllerType_AC97));
-    mCbAudioController->insertItem (mCbAudioController->count(),
-        vboxGlobal().toString (KAudioControllerType_SB16));
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsAudio::getFromMachine (const CMachine &aMachine,
@@ -96,5 +68,61 @@ void VBoxVMSettingsAudio::putBackTo()
     audio.SetAudioController (vboxGlobal().toAudioControllerType (mCbAudioController->currentText()));
     audio.SetEnabled (mGbAudio->isChecked());
     AssertWrapperOk (audio);
+}
+
+
+void VBoxVMSettingsAudio::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsAudio::retranslateUi (this);
+    /* Fill the comboboxes */
+    prepareComboboxes();
+}
+
+void VBoxVMSettingsAudio::prepareComboboxes()
+{
+    /* Save the current selected value */
+    int currentDriver = mCbAudioDriver->currentIndex();
+    /* Clear the driver box */
+    mCbAudioDriver->clear();
+    /* Refill them */
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_Null));
+#if defined Q_WS_WIN32
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_DirectSound));
+# ifdef VBOX_WITH_WINMM
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_WinMM));
+# endif
+#elif defined Q_OS_LINUX
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_OSS));
+# ifdef VBOX_WITH_ALSA
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_ALSA));
+# endif
+# ifdef VBOX_WITH_PULSE
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_Pulse));
+# endif
+#elif defined Q_OS_MACX
+    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
+        vboxGlobal().toString (KAudioDriverType_CoreAudio));
+#endif
+    /* Set the old value */
+    mCbAudioDriver->setCurrentIndex (currentDriver);
+
+    /* Save the current selected value */
+    int currentController = mCbAudioController->currentIndex();
+    /* Clear the controller box */
+    mCbAudioController->clear();
+    /* Refill them */
+    mCbAudioController->insertItem (mCbAudioController->count(),
+        vboxGlobal().toString (KAudioControllerType_AC97));
+    mCbAudioController->insertItem (mCbAudioController->count(),
+        vboxGlobal().toString (KAudioControllerType_SB16));
+    /* Set the old value */
+    mCbAudioController->setCurrentIndex (currentController);
 }
 

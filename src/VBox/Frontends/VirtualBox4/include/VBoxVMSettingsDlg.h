@@ -25,6 +25,7 @@
 
 #include "VBoxVMSettingsDlg.gen.h"
 #include "QIMainDialog.h"
+#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
 class QIWidgetValidator;
@@ -34,10 +35,10 @@ class VBoxWarnIconLabel;
 class QTimer;
 class QWidgetStack;
 
-class VBoxVMSettingsDlg : public QIMainDialog,
+class VBoxVMSettingsDlg : public QIWithRetranslateUI<QIMainDialog>,
                           public Ui::VBoxVMSettingsDlg
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -46,6 +47,10 @@ public:
 
     void getFromMachine (const CMachine &aMachine);
     COMResult putBackToMachine();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -65,6 +70,8 @@ private:
     QString pagePath (QWidget *aPage);
     void setWarning (const QString &aWarning);
     void updateMediaShortcuts();
+
+    QString dialogTitle() const;
 
     /* Common */
     CMachine mMachine;
