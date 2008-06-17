@@ -418,10 +418,16 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile $(DOXYGEN_INPUT) | $(call DIRD
 # Generate x86.mac and err.mac.
 #
 incs:
-	$(SED) -f include/VBox/err.sed include/VBox/err.h > include/VBox/err.mac
-	echo '%include "iprt/err.mac"' >> include/VBox/err.mac
-	$(SED) -f include/VBox/err.sed include/iprt/err.h > include/iprt/err.mac
-	$(SED) -e '/__VBox_x86_h__/d' -e '/#define/!d' -e 's/#define/%define/' include/VBox/x86.h > include/VBox/x86.mac
+	$(SED) -f include/VBox/err.sed --output include/VBox/err.mac include/VBox/err.h
+	$(APPEND) include/VBox/err.mac '%include "iprt/err.mac"'
+	$(SED) -f include/VBox/err.sed --output include/iprt/err.mac include/iprt/err.h
+	$(SED) \
+		-e '/__VBox_x86_h__/d' \
+		-e '/#define/!d' \
+		-e '/\\$$/d' \
+		-e 's/#define/%define/' \
+		--output include/VBox/x86.mac \
+		include/VBox/x86.h
 
 
 #
