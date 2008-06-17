@@ -45,6 +45,7 @@
 #include <QMenuItem>
 #include <QStackedWidget>
 #include <QDesktopWidget>
+#include <QToolButton>
 
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
@@ -740,7 +741,7 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    VBoxGlobalSettingsDlg dlg (this, "VBoxGlobalSettingsDlg");
+    VBoxGlobalSettingsDlg dlg (this);
     dlg.getFrom (props, settings);
 
     if (dlg.exec() == QDialog::Accepted)
