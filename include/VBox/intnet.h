@@ -408,14 +408,14 @@ typedef struct INTNETTRUNKIFPORT
      * @returns true / false.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   pvMac       Pointer to the mac address. This can be cast to PCPDMMAC (fixme: make it an common type?)
+     * @param   pMac        Pointer to the mac address.
      *
      * @remarks Called while owning the network semaphore.
      *
      * @remarks TAP and NAT will compare with their own MAC address and let all their
      *          traffic go over the pfnSendToHost method.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, /*PCPDMMAC*/ void const *pvMac));
+    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCPDMMAC pMac));
 
     /**
      * Tests whether the host is operating the interface is promiscuous mode.
