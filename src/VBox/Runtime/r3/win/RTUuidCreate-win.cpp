@@ -46,7 +46,7 @@ RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
 
     RPC_STATUS rc = UuidCreate((UUID *)pUuid);
-    if (    rc == RPC_S_OK
+    if (   rc == RPC_S_OK
         || rc == RPC_S_UUID_LOCAL_ONLY)
         return VINF_SUCCESS;
 
