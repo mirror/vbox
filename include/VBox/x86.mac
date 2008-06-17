@@ -181,13 +181,14 @@
 %define X86_DR7_LEN_DWORD                   3
 %define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
 %define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(6) | RT_BIT(7))
+%define MSR_IA32_APICBASE                   0x1b
 %define MSR_IA32_FEATURE_CONTROL            0x3A
 %define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
 %define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
 %define MSR_IA32_SYSENTER_CS                0x174
 %define MSR_IA32_SYSENTER_ESP               0x175
 %define MSR_IA32_SYSENTER_EIP               0x176
-%define IA32_CR_PAT                         0x277
+%define MSR_IA32_CR_PAT                     0x277
 %define MSR_IA32_VMX_BASIC_INFO             0x480
 %define MSR_IA32_VMX_PINBASED_CTLS          0x481
 %define MSR_IA32_VMX_PROCBASED_CTLS         0x482
@@ -276,6 +277,7 @@
 %define X86_PTE_AVL_MASK                    (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
 %define X86_PTE_PG_MASK                     ( 0xfffff000 )
 %define X86_PTE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
+%define X86_PTE_PAE_PG_MASK_FULL            ( 0x000ffffffffff000ULL )
 %define X86_PTE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
 %define X86_PTE_PAE_NX                      RT_BIT_64(63)
 %define X86_PT_SHIFT                        12
@@ -325,9 +327,9 @@
 %define X86_PDPE_PG_MASK                    ( 0x0000fffffffff000ULL )
 %define X86_PDPE_PG_MASK                    ( 0x000ffffffffff000ULL )
 %define X86_PDPE_NX                         RT_BIT_64(63)
-%define X86_PDPTR_SHIFT             30
-%define X86_PDPTR_MASK_32           0x3
-%define X86_PDPTR_MASK              0x1ff
+%define X86_PDPT_SHIFT             30
+%define X86_PDPT_MASK_PAE          0x3
+%define X86_PDPT_MASK_AMD64        0x1ff
 %define X86_PML4E_P                         RT_BIT(0)
 %define X86_PML4E_RW                        RT_BIT(1)
 %define X86_PML4E_US                        RT_BIT(2)
