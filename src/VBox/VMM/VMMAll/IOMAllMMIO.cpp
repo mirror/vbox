@@ -234,11 +234,11 @@ static int iomInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE 
      * and call the callback to write it.
      */
     unsigned cb = 0;
-    uint32_t u32Data  = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u32Data, &cb);
+    uint64_t u64Data  = 0;
+    bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u64Data, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
 
-    int rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, &u32Data, cb);
+    int rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, &u64Data, cb);
     if (rc == VINF_SUCCESS)
         iomMMIOStatLength(pVM, cb);
     return rc;
@@ -701,8 +701,8 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
      * Get the operands.
      */
     unsigned cb = 0;
-    uint32_t uData1;
-    uint32_t uData2;
+    uint64_t uData1;
+    uint64_t uData2;
     int rc;
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
         /* cmp reg, [MMIO]. */
@@ -747,8 +747,8 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
 static int iomInterpretAND(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
     unsigned    cb = 0;
-    uint32_t    uData1;
-    uint32_t    uData2;
+    uint64_t    uData1;
+    uint64_t    uData2;
     bool        fAndWrite;
     int         rc;
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
@@ -777,7 +777,7 @@ static int iomInterpretAND(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
     if (rc == VINF_SUCCESS)
     {
         /* Emulate AND and update guest flags. */
-        uint32_t eflags = EMEmulateAnd(&uData1, uData2, cb);
+        uint32_t eflags = EMEmulateAnd((uint32_t *)&uData1, uData2, cb);
         if (fAndWrite)
             /* Store result to MMIO. */
             rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, &uData1, cb);
@@ -821,8 +821,8 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     unsigned    cb = 0;
-    uint32_t    uData1;
-    uint32_t    uData2;
+    uint64_t    uData1;
+    uint64_t    uData2;
     int         rc;
 
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
@@ -844,7 +844,7 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     if (rc == VINF_SUCCESS)
     {
         /* Emulate TEST (=AND without write back) and update guest EFLAGS. */
-        uint32_t eflags = EMEmulateAnd(&uData1, uData2, cb);
+        uint32_t eflags = EMEmulateAnd((uint32_t *)&uData1, uData2, cb);
         pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                               | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
         iomMMIOStatLength(pVM, cb);
@@ -877,8 +877,8 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 
     int         rc;
     unsigned    cb = 0;
-    uint32_t    uData1;
-    uint32_t    uData2;
+    uint64_t    uData1;
+    uint64_t    uData2;
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
     {
         /* xchg reg, [MMIO]. */
@@ -1561,7 +1561,7 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
      * Get port number from the first parameter.
      * And get the I/O register size from the opcode / prefix.
      */
-    uint32_t    Port = 0;
+    uint64_t    Port = 0;
     unsigned    cb = 0;
     bool fRc = iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &Port, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
