@@ -1798,6 +1798,8 @@ typedef struct CPUMDISASSTATE
     PGMPAGEMAPLOCK  PageMapLock;
     /** Whether the PageMapLock is valid or not. */
     bool            fLocked;
+    /** 64 bits mode or not. */
+    bool            f64Bits;
 } CPUMDISASSTATE, *PCPUMDISASSTATE;
 
 
@@ -1851,14 +1853,17 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
         }
 
         /* check the segemnt limit */
-        if (PtrSrc > pState->cbSegLimit)
+        if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
         uint32_t cb = PAGE_SIZE - (GCPtr & PAGE_OFFSET_MASK);
-        RTGCUINTPTR cbSeg = pState->GCPtrSegEnd - GCPtr;
-        if (cb > cbSeg && !cbSeg)
-            cb = cbSeg;
+        if (!pState->f64Bits)
+        {
+            RTGCUINTPTR cbSeg = pState->GCPtrSegEnd - GCPtr;
+            if (cb > cbSeg && cbSeg)
+                cb = cbSeg;
+        }
         if (cb > cbRead)
             cb = cbRead;
 
@@ -1889,11 +1894,13 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     CPUMDISASSTATE  State;
     int             rc;
 
+    const PGMMODE enmMode = PGMGetGuestMode(pVM);
     State.pCpu            = pCpu;
     State.pvPageGC        = 0;
     State.pvPageHC        = NULL;
     State.pVM             = pVM;
     State.fLocked         = false;
+    State.f64Bits         = false;
 
     /*
      * Get selector information.
@@ -1903,10 +1910,15 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     {
         if (CPUMAreHiddenSelRegsValid(pVM))
         {
+            State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->csHid.Attr.n.u1Long;
             State.GCPtrSegBase    = pCtx->csHid.u64Base;
             State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u64Base;
             State.cbSegLimit      = pCtx->csHid.u32Limit;
-            pCpu->mode            = pCtx->csHid.Attr.n.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+            pCpu->mode            = (State.f64Bits)
+                                    ? CPUMODE_64BIT
+                                    : pCtx->csHid.Attr.n.u1DefBig
+                                    ? CPUMODE_32BIT
+                                    : CPUMODE_16BIT;
         }
         else
         {
