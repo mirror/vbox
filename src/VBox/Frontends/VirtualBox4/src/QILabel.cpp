@@ -364,11 +364,11 @@ void QILabelPrivate::paintEvent (QPaintEvent *aEvent)
     if (mFullSizeSeclection &&
         hasFocus())
     {
-        QPainter painter(this);
+        QPainter painter (this);
         /* Paint a focus rect based on the current style. */
         QStyleOptionFocusRect option;
-        option.initFrom(this);
-        style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, &painter, this);
+        option.initFrom (this);
+        style()->drawPrimitive (QStyle::PE_FrameFocusRect, &option, &painter, this);
     }
 }
 
