@@ -179,16 +179,20 @@ start_network()
         # or two non-comment entries, possibly followed by a comment).
         if ((! expr match "$2" "#" > /dev/null) &&
             (test -z "$4" || expr match "$4" "#" > /dev/null)); then
+          # Name our parameters, to make this script slightly less unreadable
+          interface=$1
+          user=$2
+          bridge=$3
           # As the very first thing, try delete the interface. Might already
           # exist with different configuration. Ignore errors.
-          VBoxTunctl -d $1 > /dev/null 2>&1
+          VBoxTunctl -d $interface > /dev/null 2>&1
           case $user in
             +*)
-                group=`echo $2 | cut -c2-`
-                cmd="VBoxTunctl -t $1 -g $group"
+                group=`echo $user | cut -c2-`
+                cmd="VBoxTunctl -t $interface -g $group"
                 ;;
             *)
-                cmd="VBoxTunctl -t $1 -u $2"
+                cmd="VBoxTunctl -t $interface -u $user"
                 ;;
           esac
           # Try to create the interface
@@ -197,18 +201,18 @@ start_network()
             # appear immediately, so we loop trying to bring it up.
             i=1
             while [ $i -le 10 ]; do
-              ifconfig "$1" up 2> /dev/null
-              if ifconfig | grep "$1" > /dev/null; then
+              ifconfig "$interface" up 2> /dev/null
+              if ifconfig | grep "$interface" > /dev/null; then
                 # Add the interface to a bridge if one was specified
-                if [ -n "$3" ]; then
-                  if brctl addif "$3" "$1" 2> /dev/null; then
-                    echo "$1 $2 $3" >> "$VARFILE"
+                if [ -n "$bridge" ]; then
+                  if brctl addif "$bridge" "$interface" 2> /dev/null; then
+                    echo "$interface $user $bridge" >> "$VARFILE"
                   else
-                    echo "$1 $2" >> "$VARFILE"
-                    echo "Warning - failed to add interface $1 to the bridge $3"
+                    echo "$interface $user" >> "$VARFILE"
+                    echo "Warning - failed to add interface $interface to the bridge $bridge"
                   fi
                 else
-                  echo "$1 $2" >> "$VARFILE"
+                  echo "$interface $user" >> "$VARFILE"
                 fi
                 i=20
               else
@@ -217,10 +221,10 @@ start_network()
               fi
             done
             if [ $i -ne 20 ]; then
-              echo "Warning - failed to bring up the interface $1"
+              echo "Warning - failed to bring up the interface $interface"
             fi
           else
-            echo "Warning - failed to create the interface $1 for the user $2"
+            echo "Warning - failed to create the interface $interface for the user $user"
           fi
         else
           echo "Warning - invalid line in $CONFIG:"
