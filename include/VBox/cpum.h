@@ -575,7 +575,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVM pVM, PCCPUMCTXCORE pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 {
-    if ((pCtx->msrEFER & MSR_K6_EFER_LMA))
+    if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;
 
     return pCtx->csHid.Attr.n.u1Long;
