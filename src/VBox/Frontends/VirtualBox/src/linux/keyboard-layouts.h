@@ -1158,6 +1158,15 @@ static const char main_key_jp[MAIN_LEN][2] =
 "zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","<>","\\_","\\|"
 };
 
+/* Japan no 102nd key */
+static const char main_key_jp_no_102[MAIN_LEN][2] =
+{
+"*!","1!","2\"","3#","4$","5%","6&","7'","8(","9)","0~","-=","^~",
+"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","@`","[{",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL",";+",":*","]}",
+"zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","\x0\x0","\\_","\\|"
+};
+
 /* Kyrgyzstan */
 static const char main_key_kg[MAIN_LEN][2] =
 {
