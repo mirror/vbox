@@ -567,6 +567,21 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVM pVM, PCCPUMCTXCORE pCtx)
 }
 
 /**
+ * Tests if the guest is running in 64 bits mode or not.
+ *
+ * @returns true if in 64 bits protected mode, otherwise false.
+ * @param   pVM     The VM handle.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PVM pVM, PCCPUMCTX pCtx)
+{
+    if ((pCtx->msrEFER & MSR_K6_EFER_LMA))
+        return false;
+
+    return pCtx->csHid.Attr.n.u1Long;
+}
+
+/**
  * Gets the CPU vendor 
  *
  * @returns CPU vendor

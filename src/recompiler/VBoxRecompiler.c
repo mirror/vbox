@@ -1826,7 +1826,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
 
         /* FS & GS base addresses need to be loaded from the MSRs if in 64 bits mode. */
-        if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
+        if (CPUMIsGuestIn64BitCodeEx(pVM, pCtx))
         {
             /* Note that the base values in the hidden fs & gs registers are cut to 32 bits and can't be used in this case. */
             cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->msrFSBASE, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
