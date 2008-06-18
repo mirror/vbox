@@ -289,6 +289,12 @@ VBOX_WITH_64_BITS_GUESTS = 1
 else
 # VBOX_WITH_64_BITS_GUESTS = 1
 endif
+# Don't cross-build Linux sanity test modules
+ifeq ($(KBUILD_TARGET),linux)
+ ifneq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
+  VBOX_WITH_ADDITION_DRIVERS =
+ endif
+endif
 
 
 #
