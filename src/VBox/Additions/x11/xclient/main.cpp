@@ -25,11 +25,9 @@
 #include <iprt/initterm.h>
 #include <iprt/path.h>
 
-#include <iostream>
-#include <cstdio>
-
 #include <sys/types.h>
 #include <stdlib.h>       /* For exit */
+#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -174,7 +172,6 @@ void vboxClientSetSignalHandlers(void)
  */
 void vboxClientUsage(const char *pcszFileName)
 {
-    /* printf is better for i18n than iostream. */
     printf("Usage: %s [-d|--nodaemon]\n", pcszFileName);
     printf("Start the VirtualBox X Window System guest services.\n\n");
     printf("Options:\n");
@@ -208,7 +205,6 @@ int main(int argc, char *argv[])
         }
         else
         {
-            /* printf is better than iostream for i18n. */
             printf("%s: unrecognized option `%s'\n", pszFileName, argv[i]);
             printf("Try `%s --help' for more information\n", pszFileName);
             exit(1);
@@ -219,7 +215,7 @@ int main(int argc, char *argv[])
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
         {
-            std::cout << "VBoxClient: failed to daemonize. exiting."<< std::endl;
+            printf("VBoxClient: failed to daemonize. exiting.");
             return 1;
         }
     }
@@ -227,7 +223,7 @@ int main(int argc, char *argv[])
     RTR3Init(false);
     if (RT_FAILURE(VbglR3Init()))
     {
-        std::cout << "Failed to connect to the VirtualBox kernel service" << std::endl;
+        printf("Failed to connect to the VirtualBox kernel service");
         return 1;
     }
     if (fDaemonise && RT_FAILURE(vboxClientDropPrivileges()))
