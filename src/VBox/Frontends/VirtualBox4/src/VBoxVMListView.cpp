@@ -795,7 +795,9 @@ void VBoxVMItemPainter::paint (QPainter *aPainter, const QStyleOptionViewItem &a
     /* Get the appropriate pen for the current state */
     QPalette pal = option.palette;
     QPen pen = pal.color (QPalette::Active, QPalette::Text);
-    if (option.state & QStyle::State_Selected)
+    if (option.state & QStyle::State_Selected &&
+        (option.state & QStyle::State_HasFocus ||
+        QApplication::style()->styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, &option) == 0))
         pen =  pal.color (QPalette::Active, QPalette::HighlightedText);
     /* Start drawing */
     drawBackground (aPainter, option, aIndex);
