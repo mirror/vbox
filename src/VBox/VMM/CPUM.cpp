@@ -1029,6 +1029,11 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
     cpumR3InfoOne(pVM, &pVM->cpum.s.Guest, CPUMCTX2CORE(&pVM->cpum.s.Guest), pHlp, enmType, "");
+
+    char szInstruction[256];
+    int rc = DBGFR3DisasInstrCurrent(pVM, szInstruction, sizeof(szInstruction));
+    if (VBOX_SUCCESS(rc))
+        pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
 }
 
 
@@ -1257,8 +1262,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         uint32_t uEAX = Guest.eax;
 
         pHlp->pfnPrintf(pHlp,
-                        "Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
-                        "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
+                        "Family:                          %d  \tExtended: %d \tEffective: %d\n"
+                        "Model:                           %d  \tExtended: %d \tEffective: %d\n"
                         "Stepping:                        %d\n"
                         "APIC ID:                         %#04x\n"
                         "Logical CPUs:                    %d\n"
@@ -1434,8 +1439,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         Guest = pVM->cpum.s.aGuestCpuIdExt[1];
         uint32_t uEAX = Guest.eax;
         pHlp->pfnPrintf(pHlp,
-                        "Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
-                        "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
+                        "Family:                          %d  \tExtended: %d \tEffective: %d\n"
+                        "Model:                           %d  \tExtended: %d \tEffective: %d\n"
                         "Stepping:                        %d\n"
                         "Brand ID:                        %#05x\n",
                         (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
