@@ -157,6 +157,7 @@
  {"Italy", &main_key_it},
  {"Italy, Macintosh", &main_key_it_mac},
  {"Japan", &main_key_jp},
+ {"Japan, no 102nd key", &main_key_jp_no_102},
  {"Kyrgyzstan", &main_key_kg},
  {"Cambodia", &main_key_kh},
  {"Kazakhstan", &main_key_kz},
