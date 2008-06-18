@@ -3250,7 +3250,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Libérer cette image détachera celle-ci des machines virtuelle suivantes : &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Libérer cette image détachera celle-ci des machines virtuelles suivantes : &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
@@ -3633,12 +3633,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un ou plusieurs des disques durs virtuels, CD/DVD ou disquette affectés ne sont pas accessibles. En conséquence, vous ne pourrez pas utiliser les machines virtuelles qui emploient ces médias jusqu&apos;à ce qu&apos;ils soient accessibles.&lt;/p&gt;&lt;p&gt;Actionnez &lt;b&gt;Tester&lt;/b&gt; pour ouvrir le dialogue de gestion des disques et pour voir quels sont les médias inaccessibles, ou la pressez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Un ou plusieurs des disques durs virtuels, CD/DVD ou disquettes enregistrés ne sont pas accessibles. Vous ne pourrez pas utiliser les machines virtuelles qui emploient ces médias jusqu&apos;à ce qu&apos;ils soient accessibles.&lt;/p&gt;&lt;p&gt;Actionnez &lt;b&gt;Ouvrir&lt;/b&gt; pour ouvrir le dialogue de gestion des disques et pour voir quels sont les médias inaccessibles, ou la pressez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation>Tester</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
@@ -5591,7 +5591,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>Activer l&apos; IO A&amp;PIC</translation>
+        <translation>Activer l&apos;IO A&amp;PIC</translation>
     </message>
     <message>
         <source>Alt+P</source>
@@ -5601,7 +5601,7 @@ this feature after having installed a Windows guest operating system!</source>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivert pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
+        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivert pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -5997,7 +5997,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
