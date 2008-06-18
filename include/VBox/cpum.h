@@ -573,7 +573,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVM pVM, PCCPUMCTXCORE pCtx)
  * @param   pVM     The VM handle.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PVM pVM, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 {
     if ((pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;

@@ -961,7 +961,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
 
     /* 64 bits guest mode? */
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    if (CPUMIsGuestIn64BitCodeEx(pCtx))
     {
 #ifndef VBOX_WITH_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
