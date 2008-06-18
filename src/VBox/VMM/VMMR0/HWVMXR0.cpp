@@ -680,12 +680,29 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         VMX_WRITE_SELREG(DS, ds);
         AssertRC(rc);
 
-        /* @todo are the hidden base registers in sync with the MSRs? */
-        VMX_WRITE_SELREG(FS, fs);
-        AssertRC(rc);
+        /* The base values in the hidden fs & gs registers are not in sync with the msrs; they are cut to 32 bits. */
+        if (CPUMIsGuestIn64BitCodeEx(pCtx))
+        {
+            rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_FS,         pCtx->fs);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_FS_LIMIT,         pCtx->fsHid.u32Limit);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_FS_BASE,          pCtx->fsHid.u64Base);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_FS_ACCESS_RIGHTS, pCtx->fsHid.Attr.u);
+            AssertRC(rc);
 
-        VMX_WRITE_SELREG(GS, gs);
-        AssertRC(rc);
+            rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_GS,         pCtx->gs);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_GS_LIMIT,         pCtx->gsHid.u32Limit);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_GS_BASE,          pCtx->gsHid.u64Base);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_GS_ACCESS_RIGHTS, pCtx->gsHid.Attr.u);
+            AssertRC(rc);
+        }
+        else
+        {
+            VMX_WRITE_SELREG(FS, fs);
+            AssertRC(rc);
+
+            VMX_WRITE_SELREG(GS, gs);
+            AssertRC(rc);
+        }
     }
 
     /* Guest CPU context: LDTR. */
