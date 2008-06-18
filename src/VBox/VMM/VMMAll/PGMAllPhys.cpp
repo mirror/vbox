@@ -89,7 +89,7 @@ PGMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
             DISCPUSTATE Cpu;
             rc = EMInterpretDisasOne(pVM, pRegFrame, &Cpu, &cbOp);
             if (     RT_SUCCESS(rc)
-                &&   Cpu.mode == CPUMODE_32BIT
+                &&   Cpu.mode == CPUMODE_32BIT  /* @todo why does this matter? */
                 &&  !(Cpu.prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_SEG)))
             {
                 switch (Cpu.opcode)
