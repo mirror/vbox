@@ -1696,9 +1696,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
     pVM->rem.s.Env.fmask        = pCtx->msrSFMASK;
     pVM->rem.s.Env.kernelgsbase = pCtx->msrKERNELGSBASE;
 #endif
-    /* Note that FS_BASE & GS_BASE are already synced; QEmu keeps them in the hidden selector registers.
-     * So we basically assume the hidden registers are in sync with these MSRs (vt-x & amd-v). Correct??
-     */
 
 
     /*
@@ -1827,8 +1824,19 @@ REMR3DECL(int) REMR3State(PVM pVM)
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, (pCtx->dsHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
+
+        /* FS & GS base addresses need to be loaded from the MSRs if in 64 bits mode. */
+        if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
+        {
+            /* Note that the base values in the hidden fs & gs registers are cut to 32 bits and can't be used in this case. */
+            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->msrFSBASE, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
+            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->msrGSBASE, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
+        }
+        else
+        {
+            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
+            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
+        }
     }
     else
     {
