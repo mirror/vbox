@@ -2621,6 +2621,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         { "mappings",       NULL },
         { "hma",            NULL },
         { "cpumguest",      "verbose" },
+        { "cpumguestinstr", "verbose" },
         { "cpumhyper",      "verbose" },
         { "cpumhost",       "verbose" },
         { "mode",           "all" },
