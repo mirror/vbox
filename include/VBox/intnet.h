@@ -383,6 +383,36 @@ typedef struct INTNETTRUNKIFPORT
     uint32_t u32Version;
 
     /**
+     * Retain the object.
+     *
+     * It will normally be called while owning the internal network semaphore.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRetain,(PINTNETTRUNKIFPORT pIfPort));
+
+    /**
+     * Releases the object.
+     *
+     * This must be called for every pfnRetain call. Where possible, it
+     * should be executed without holding any locks unless the caller
+     * is certain it is not going to trigger the destructor.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
+
+    /**
+     * Disconnect from the switch and release the object.
+     *
+     * The is the counter action of the
+     * INTNETTRUNKNETFLTFACTORY::pfnCreateAndConnect method.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnDisconnectAndRelease,(PINTNETTRUNKIFPORT pIfPort));
+
+    /**
      * Changes the active state of the interface.
      *
      * The interface is created in the suspended (non-active) state and then activated
@@ -400,6 +430,22 @@ typedef struct INTNETTRUNKIFPORT
      * @remarks Called while owning the network semaphore.
      */
     DECLR0CALLBACKMEMBER(bool, pfnSetActive,(PINTNETTRUNKIFPORT pIfPort, bool fActive));
+
+    /**
+     * Waits for the interface to become idle.
+     *
+     * This method must be called before disconnecting and releasing the
+     * object in order to prevent racing incoming/outgoing packets and
+     * device enabling/disabling.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   cMillies    The number of milliseconds to wait. 0 means
+     *                      no waiting at all. Use RT_INDEFINITE_WAIT for
+     *                      an indefinite wait.
+     *
+     * @remarks Will not grab any semaphores.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
 
     /**
      * Tests if the mac address belongs to any of the host NICs
@@ -491,19 +537,6 @@ typedef struct INTNETTRUNKIFPORT
      * @remarks Will grab the network semaphore.
      */
     DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
-
-    /**
-     * Destroys this network interface port.
-     *
-     * This is called either when disconnecting the trunk interface at runtime or
-     * when the network is being torn down. In both cases, the interface will be
-     * suspended first. Note that this may still cause races in the receive path...
-     *
-     * @param   pIfPort     Pointer to this structure.
-     *
-     * @remarks Called while owning the network semaphore.
-     */
-    DECLR0CALLBACKMEMBER(bool, pfnDestroy,(PINTNETTRUNKIFPORT pIfPort));
 
     /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
     uint32_t u32VersionEnd;
