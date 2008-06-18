@@ -2141,9 +2141,11 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 //*****************************************************************************
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 static const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
-static const char *szModRMReg8_64[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8L", "R9L", "R10L", "R11L", "R12L", "R13L", "R14L", "R15L"};
+static const char *szModRMReg8_64[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B"};
 static const char *szModRMReg16[]     = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
+static const char *szModRMReg16_64[]  = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"};
 static const char *szModRMReg32[]     = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+static const char *szModRMReg32_64[]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"};
 static const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
 static const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
 #endif
@@ -2195,13 +2197,23 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER
         break;
 
     case OP_PARM_w:
-        disasmAddString(pParam->szParam, szModRMReg16[idx]);
+#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
+        if (idx > RT_ELEMENTS(szModRMReg8))
+            disasmAddString(pParam->szParam, szModRMReg16_64[idx]);
+        else
+            disasmAddString(pParam->szParam, szModRMReg16[idx]);
+#endif
         pParam->flags |= USE_REG_GEN16;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_d:
-        disasmAddString(pParam->szParam, szModRMReg32[idx]);
+#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
+        if (idx > RT_ELEMENTS(szModRMReg8))
+            disasmAddString(pParam->szParam, szModRMReg32_64[idx]);
+        else
+            disasmAddString(pParam->szParam, szModRMReg32[idx]);
+#endif
         pParam->flags |= USE_REG_GEN32;
         pParam->base.reg_gen = idx;
         break;

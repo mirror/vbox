@@ -94,7 +94,15 @@ static const unsigned g_aReg32Index[] =
     RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_ESP */
     RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_EBP */
     RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_ESI */
-    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_EDI */
+    RT_OFFSETOF(CPUMCTXCORE, edi),        /* USE_REG_EDI */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8  : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9  : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10 : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11 : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12 : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13 : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14 : dword access */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15 : dword access */
 };
 
 /**
@@ -117,7 +125,15 @@ static const unsigned g_aReg16Index[] =
     RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_SP */
     RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_BP */
     RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_SI */
-    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_DI */
+    RT_OFFSETOF(CPUMCTXCORE, edi),        /* USE_REG_DI */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8  : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9  : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10 : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11 : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12 : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13 : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14 : word access */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15 : word access */
 };
 
 /**
@@ -140,7 +156,15 @@ static const unsigned g_aReg8Index[] =
     RT_OFFSETOF(CPUMCTXCORE, eax) + 1,    /* USE_REG_AH */
     RT_OFFSETOF(CPUMCTXCORE, ecx) + 1,    /* USE_REG_CH */
     RT_OFFSETOF(CPUMCTXCORE, edx) + 1,    /* USE_REG_DH */
-    RT_OFFSETOF(CPUMCTXCORE, ebx) + 1     /* USE_REG_BH */
+    RT_OFFSETOF(CPUMCTXCORE, ebx) + 1,    /* USE_REG_BH */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8  : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9  : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10 : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11 : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12 : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13 : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14 : byte access */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15 : byte access */
 };
 
 /**
