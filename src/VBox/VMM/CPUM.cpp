@@ -90,6 +90,7 @@ static DECLCALLBACK(int)  cpumR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -194,11 +195,12 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Register info handlers.
      */
-    DBGFR3InfoRegisterInternal(pVM, "cpum",         "Displays the all the cpu states.",    &cpumR3InfoAll);
-    DBGFR3InfoRegisterInternal(pVM, "cpumguest",    "Displays the guest cpu state.",       &cpumR3InfoGuest);
-    DBGFR3InfoRegisterInternal(pVM, "cpumhyper",    "Displays the hypervisor cpu state.",  &cpumR3InfoHyper);
-    DBGFR3InfoRegisterInternal(pVM, "cpumhost",     "Displays the host cpu state.",        &cpumR3InfoHost);
-    DBGFR3InfoRegisterInternal(pVM, "cpuid",        "Displays the guest cpuid leaves.",    &cpumR3CpuIdInfo);
+    DBGFR3InfoRegisterInternal(pVM, "cpum",             "Displays the all the cpu states.",         &cpumR3InfoAll);
+    DBGFR3InfoRegisterInternal(pVM, "cpumguest",        "Displays the guest cpu state.",            &cpumR3InfoGuest);
+    DBGFR3InfoRegisterInternal(pVM, "cpumhyper",        "Displays the hypervisor cpu state.",       &cpumR3InfoHyper);
+    DBGFR3InfoRegisterInternal(pVM, "cpumhost",         "Displays the host cpu state.",             &cpumR3InfoHost);
+    DBGFR3InfoRegisterInternal(pVM, "cpuid",            "Displays the guest cpuid leaves.",         &cpumR3CpuIdInfo);
+    DBGFR3InfoRegisterInternal(pVM, "cpumguestinstr",   "Displays the current guest instruction.",  &cpumR3InfoGuestInstr);
 
     /*
      * Initialize the Guest CPU state.
@@ -969,6 +971,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     cpumR3InfoGuest(pVM, pHlp, pszArgs);
+    cpumR3InfoGuestInstr(pVM, pHlp, pszArgs);
     cpumR3InfoHyper(pVM, pHlp, pszArgs);
     cpumR3InfoHost(pVM, pHlp, pszArgs);
 }
@@ -1030,6 +1033,21 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
     cpumR3InfoOne(pVM, &pVM->cpum.s.Guest, CPUMCTX2CORE(&pVM->cpum.s.Guest), pHlp, enmType, "");
 
+    char szInstruction[256];
+    int rc = DBGFR3DisasInstrCurrent(pVM, szInstruction, sizeof(szInstruction));
+    if (VBOX_SUCCESS(rc))
+        pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
+}
+
+/**
+ * Display the current guest instruction
+ *
+ * @param   pVM         VM Handle.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
     char szInstruction[256];
     int rc = DBGFR3DisasInstrCurrent(pVM, szInstruction, sizeof(szInstruction));
     if (VBOX_SUCCESS(rc))
