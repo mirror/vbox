@@ -32,6 +32,8 @@
 #include <QHBoxLayout>
 #include <QClipboard>
 #include <QApplication>
+#include <QPainter>
+#include <QStyleOptionFocusRect>
 
 /* @todo: Compare the minimal size behavior in the qt3 & qt4 version. */
 
@@ -243,6 +245,8 @@ void QILabel::setText (const QString &aText)
 const QRegExp QILabelPrivate::mCopyRegExp = QRegExp ("<[^>]*>");
 QRegExp QILabelPrivate::mElideRegExp = QRegExp ("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]+)</compact>)");
 
+#define HOR_PADDING 1
+
 bool QILabelPrivate::fullSizeSelection () const
 {
     return mFullSizeSeclection;
@@ -257,15 +261,19 @@ void QILabelPrivate::setFullSizeSelection (bool bOn)
         setTextInteractionFlags (Qt::LinksAccessibleByMouse);
         /* The label should be able to get the focus */
         setFocusPolicy (Qt::StrongFocus);
-        /* Change the appearance in focus state a little bit.
+        /* Change the appearance in the focus state a little bit.
          * Note: Unfortunately QLabel, precisely the text of a QLabel isn't
          * styleable. The trolls have forgotten the simplest case ... So this
-         * is done by changing the current used palette in the In/Out-focus
-         * events below. */
+         * is done by changing the currently used palette in the In/Out-focus
+         * events below. Next broken feature is drawing a simple dotted line
+         * around the label. So this is done manually in the paintEvent. Not
+         * sure if the stylesheet stuff is ready for production environments. */
         setStyleSheet (QString("QLabel::focus {\
                                background-color: palette(highlight);\
-                               }"));
-//                                 border: 1px dotted black;
+                               }\
+                               QLabel {\
+                               padding: 0px %1px 0px %1px;\
+                               }").arg (HOR_PADDING));
     }
     else
     {
@@ -349,6 +357,21 @@ void QILabelPrivate::focusOutEvent (QFocusEvent *aEvent)
         setPalette (qApp->palette());
 }
 
+void QILabelPrivate::paintEvent (QPaintEvent *aEvent)
+{
+    QLabel::paintEvent (aEvent);
+
+    if (mFullSizeSeclection &&
+        hasFocus())
+    {
+        QPainter painter(this);
+        /* Paint a focus rect based on the current style. */
+        QStyleOptionFocusRect option;
+        option.initFrom(this);
+        style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, &painter, this);
+    }
+}
+
 
 void QILabelPrivate::copy()
 {
@@ -399,7 +422,7 @@ QString QILabelPrivate::compressText (const QString &aText) const
             /* What size will the text have without the compact text */
             int flatWidth = fm.width (flatStr);
             /* Create the shortened text */
-            QString newStr = fm.elidedText (elideStr, toTextElideMode (elideModeStr), width() - flatWidth);
+            QString newStr = fm.elidedText (elideStr, toTextElideMode (elideModeStr), width() - (2 * HOR_PADDING) - flatWidth);
             /* Replace the compact part with the shortened text in the initial
              * string */
             text = QString (workStr).replace (compactStr, newStr);

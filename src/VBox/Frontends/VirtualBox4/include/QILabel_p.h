@@ -91,6 +91,7 @@ protected:
     void contextMenuEvent (QContextMenuEvent *aEvent);
     void focusInEvent (QFocusEvent *aEvent);
     void focusOutEvent (QFocusEvent *aEvent);
+    void paintEvent (QPaintEvent *aEvent);
 
 protected slots:
 
