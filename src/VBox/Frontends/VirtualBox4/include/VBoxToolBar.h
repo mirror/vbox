@@ -47,6 +47,10 @@ public:
         setMovable (false);
         if (layout())
             layout()->setContentsMargins (0, 0, 0, 0);;
+#ifdef Q_WS_WIN
+        /* Remove that ugly frame panel around the toolbar. */
+        setStyleSheet ("QToolBar { border: 0px none black; }");
+#endif // Q_WS_WIN
     }
 
     /**
