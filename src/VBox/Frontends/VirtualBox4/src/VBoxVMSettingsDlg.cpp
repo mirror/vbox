@@ -130,25 +130,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     mTwSelector->hideColumn (listView_Id);
     mTwSelector->hideColumn (listView_Link);
 
-    /* Adjust selector list */
-    int minWid = 0;
-    for (int i = 0; i < mTwSelector->topLevelItemCount(); ++ i)
-    {
-        QTreeWidgetItem *item = mTwSelector->topLevelItem (i);
-        QFontMetrics fm (item->font (0));
-        int wid = fm.width (item->text (0)) +
-                  16 /* icon */ + 2 * 8 /* 2 margins */;
-        minWid = wid > minWid ? wid : minWid;
-        int hei = fm.height() > 16 ?
-                  fm.height() /* text height */ :
-                  16 /* icon */ + 2 * 2 /* 2 margins */;
-        item->setSizeHint (0, QSize (wid, hei));
-    }
-    mTwSelector->setFixedWidth (minWid);
-
-    /* Sort selector by the id column (to have pages in the desired order) */
-    mTwSelector->sortItems (listView_Id, Qt::AscendingOrder);
-
     /* Initially select the first settings page */
     mTwSelector->setCurrentItem (mTwSelector->topLevelItem (0));
 
@@ -306,6 +287,13 @@ void VBoxVMSettingsDlg::retranslateUi()
     Ui::VBoxVMSettingsDlg::retranslateUi (this);
     /* Set the old index */
     mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci));
+
+    /* Adjust selector list */
+    mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)->sizeHintForColumn (0) + 2 * mTwSelector->frameWidth());
+
+    /* Sort selector by the id column (to have pages in the desired order) */
+    mTwSelector->sortItems (listView_Id, Qt::AscendingOrder);
+    mTwSelector->resizeColumnToContents (0);
 
     mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
     mButtonBox->button (QDialogButtonBox::Ok)->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
