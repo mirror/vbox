@@ -123,6 +123,10 @@ LINUXSTRIPBIN += \
 	VBoxSharedClipboard.so \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,)
 
+# Shared Info Services
+LINUXSTRIPBIN += \
+	$(if $(VBOX_WITH_INFO_SVC),VBoxSharedInfoSvc.so)
+
 ifdef VBOX_WITH_DOCS
  LINUXNOSTRIP += \
 	UserManual.pdf
