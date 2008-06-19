@@ -458,6 +458,15 @@ BEGINPROC VMXR0StartVM64
     LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
+    ; Load the guest MSRs for FS & GS base (saved in MYPUSHSEGS)
+    mov     rcx, MSR_K8_FS_BASE
+    mov     rax, qword [xSI + CPUMCTX.msrFSBASE]
+    wrmsr
+
+    mov     rcx, MSR_K8_GS_BASE
+    mov     rax, qword [xSI + CPUMCTX.msrGSBASE]
+    wrmsr
+
     ; Save the pCtx pointer
     push    xSI
 
