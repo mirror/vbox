@@ -1061,7 +1061,7 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
             /* Valid for both Intel and AMD CPUs, although only in 64 bits mode for Intel. */
             pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_SEP;
-            LogRel(("CPUMSetGuestCpuIdFeature: Enabled sysenter/exit\n"));
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled syscall/ret\n"));
             break;
         }
 
