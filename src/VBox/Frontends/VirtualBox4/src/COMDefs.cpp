@@ -190,8 +190,9 @@ void COMBase::ToSafeArray (const QVector <QString> &aVec,
                            com::SafeArray <BSTR> &aArr)
 {
     aArr.reset (aVec.size());
-    for (int i = 0; i < aVec.size(); ++i)
-        aArr [i] = SysAllocString ((const OLECHAR *) aVec.at (i).utf16());
+    for (int i = 0; i < aVec.size(); ++ i)
+        aArr [i] = SysAllocString ((const OLECHAR *)
+            (aVec.at (i).isNull() ? 0 : aVec.at (i).utf16()));
 }
 
 /* static */

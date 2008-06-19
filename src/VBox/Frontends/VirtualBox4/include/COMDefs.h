@@ -321,7 +321,8 @@ protected:
     {
     public:
 
-        BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *) s.utf16())) {}
+        BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *)
+            (s.isNull() ? 0 : s.utf16()))) {}
 
         ~BSTRIn()
         {
