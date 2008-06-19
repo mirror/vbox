@@ -641,51 +641,6 @@ void VBoxGlobalSettingsDlg::setWarning (const QString &aWarning)
         updateWhatsThis (true);
 }
 
-// /* USB Page */
-// void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
-//                                           bool aIsNew)
-// {
-//     /*
-//     Q3ListViewItem *currentItem = aIsNew
-//         ? lvUSBFilters->currentItem()
-//         : lvUSBFilters->lastItem();
-//
-//     VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
-//     settings->setup (VBoxUSBFilterSettings::HostType);
-//     settings->getFromFilter (aFilter);
-//
-//     USBListItem *item = new USBListItem (lvUSBFilters, currentItem);
-//     item->setOn (aFilter.GetActive());
-//     item->setText (lvUSBFilters_Name, aFilter.GetName());
-//
-//     item->mId = wstUSBFilters->addWidget (settings);
-//
-//     // fix the tab order so that main dialog's buttons are always the last
-//     setTabOrder (settings->focusProxy(), buttonHelp);
-//     setTabOrder (buttonHelp, buttonOk);
-//     setTabOrder (buttonOk, buttonCancel);
-//
-//     if (aIsNew)
-//     {
-//         lvUSBFilters->setSelected (item, true);
-//         lvUSBFilters_currentChanged (item);
-//         settings->leUSBFilterName->setFocus();
-//     }
-//
-//     connect (settings->leUSBFilterName, SIGNAL (textChanged (const QString &)),
-//              this, SLOT (lvUSBFilters_setCurrentText (const QString &)));
-//
-//     // setup validation
-//
-//     QIWidgetValidator *wval =
-//         new QIWidgetValidator (pagePath (pageUSB), settings, settings);
-//     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
-//              this, SLOT (enableOk (const QIWidgetValidator *)));
-//
-//     wval->revalidate();
-//     */
-// }
-
 // /* Language Page */
 // void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (Q3ListViewItem *aItem)
 // {
