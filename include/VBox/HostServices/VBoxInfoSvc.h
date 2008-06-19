@@ -56,6 +56,8 @@ enum eGuestFn
 
 /** Prefix for extra data keys used by the get and set key value functions */
 #define VBOX_SHARED_INFO_KEY_PREFIX          "Guest/"
+/** Helper macro for the length of the prefix VBOX_SHARED_INFO_KEY_PREFIX */
+#define VBOX_SHARED_INFO_PREFIX_LEN          (sizeof(VBOX_SHARED_INFO_KEY_PREFIX) - 1)
 /** Maximum length for extra data keys used by the get and set key value functions */
 enum { KEY_MAX_LEN = 64 };
 /** Maximum length for extra data key values used by the get and set key value functions */

@@ -81,6 +81,9 @@
 #include <VBox/VBoxDev.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#ifdef VBOX_WITH_INFO_SVC
+# include <VBox/HostServices/VBoxInfoSvc.h>
+#endif
 
 #include <set>
 #include <algorithm>
@@ -4012,6 +4015,7 @@ HRESULT Console::powerDown()
     AssertComRCReturnRC (autoCaller.rc());
 
     AutoWriteLock alock (this);
+    int vrc = VINF_SUCCESS;
 
     /* sanity */
     AssertReturn (mVMDestroying == false, E_FAIL);
@@ -4051,6 +4055,34 @@ HRESULT Console::powerDown()
 
         alock.enter();
     }
+# ifdef VBOX_WITH_INFO_SVC
+    /* Save all guest/host configuration registry entries to the machine XML
+     * file as extra data. */
+    PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "Guest/Registry/");
+    PCFGMLEAF pValue = CFGMR3GetFirstValue (pRegistry);
+    vrc = VINF_SUCCESS;
+    while (pValue != NULL && RT_SUCCESS(vrc))
+    {
+        using namespace svcInfo;
+        char szKeyName[KEY_MAX_LEN];
+        char szKeyValue[KEY_MAX_VALUE_LEN];
+        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + KEY_MAX_LEN];
+        vrc = CFGMR3GetValueName (pValue, szKeyName, KEY_MAX_LEN);
+        if (RT_SUCCESS(vrc))
+            vrc = CFGMR3QueryString (pRegistry, szKeyName, szKeyValue, sizeof(szKeyValue));
+        if (RT_SUCCESS(vrc))
+        {
+            strcpy(szExtraDataName, VBOX_SHARED_INFO_KEY_PREFIX);
+            strncpy(szExtraDataName + VBOX_SHARED_INFO_PREFIX_LEN, szKeyName, sizeof(szKeyName));
+            szExtraDataName[sizeof(szExtraDataName) - 1] = 0;
+        }
+        if (RT_SUCCESS(vrc))
+            if (FAILED(mMachine->SetExtraData(Bstr(szExtraDataName).raw(), Bstr(szKeyValue).raw())))
+                vrc = VERR_UNRESOLVED_ERROR;  /* We only need to know that we have to stop. */
+        if (RT_SUCCESS(vrc))
+            pValue = CFGMR3GetNextValue (pValue);
+    }
+# endif /* VBOX_WITH_INFO_SVC defined */
 #endif /* VBOX_HGCM */
 
     /* First, wait for all mpVM callers to finish their work if necessary */
@@ -4085,7 +4117,7 @@ HRESULT Console::powerDown()
                ("Invalid machine state: %d\n", mMachineState));
 
     HRESULT rc = S_OK;
-    int vrc = VINF_SUCCESS;
+    vrc = VINF_SUCCESS;
 
     /*
      *  Power off the VM if not already done that. In case of Stopping, the VM

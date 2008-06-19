@@ -1663,6 +1663,42 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             rc = CFGMR3InsertNode(pRoot,     "Guest", &pGuest);                            RC_CHECK();
             rc = CFGMR3InsertNode(pGuest,    "Registry", &pRegistry);                      RC_CHECK();
+            /* Load the saved machine registry.  This is stored as extra data
+             * keys in the machine XML file, starting with the prefix
+             * VBOX_SHARED_INFO_KEY_PREFIX. */
+            Bstr strExtraDataKey;
+            for (;;)
+            {
+                Bstr strNextExtraDataKey;
+                Bstr strExtraDataValue;
+        
+                /* get the next key */
+                hrc = pMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
+                                                    strExtraDataValue.asOutParam());
+        
+                /* stop if for some reason there's nothing more to request */
+                if (FAILED(hrc) || !strNextExtraDataKey)
+                    break;
+        
+                strExtraDataKey = strNextExtraDataKey;
+                Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
+        
+                /* we only care about keys starting with VBOX_SHARED_INFO_KEY_PREFIX */
+                if (strncmp(strExtraDataKeyUtf8.raw(), VBOX_SHARED_INFO_KEY_PREFIX, VBOX_SHARED_INFO_PREFIX_LEN) != 0)
+                    continue;
+                char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
+        
+                /* now let's have a look at the value */
+                Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
+                const char *pszCFGMValue = strCFGMValueUtf8.raw();
+                /* empty value means remove value which we've already done */
+                if (pszCFGMValue && *pszCFGMValue)
+                {
+                    rc = CFGMR3InsertString(pRegistry, pszCFGMValueName, pszCFGMValue);
+                    AssertMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszCFGMValueName));
+                }
+            }
+
             /* Setup the service. */
             VBOXHGCMSVCPARM parm;
 
