@@ -188,8 +188,10 @@ extern Bool vboxDisableGraphicsCap(VBOXPtr pVBox);
 
 extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
                                         uint32_t *pcy, uint32_t *pcBits,
-                                        uint32_t *piDisplay, VBOXPtr pVBox);
+                                        uint32_t *piDisplay);
 
-extern Bool vboxHostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
+extern Bool vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
+extern Bool vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
+extern Bool vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
 
 #endif /* _VBOXVIDEO_H_ */

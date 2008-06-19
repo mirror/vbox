@@ -87,6 +87,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibDaemonize.cpp \
 	VBoxGuestR3LibGR.cpp \
+	VBoxGuestR3LibInfoSvc.cpp \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibSeamless.cpp \
@@ -116,6 +117,7 @@ VBoxGuestR3LibXFree86_DEFS     = VBOX_HGCM VBOX_VBGLR3_XFREE86
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
+	VBoxGuestR3LibInfoSvc.cpp \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibVideo.cpp

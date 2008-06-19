@@ -469,8 +469,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 24;
 
-        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay,
-                                        pVBox))
+        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay))
         {
             /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
             if (cBits != 16)
@@ -514,12 +513,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         pScrn->display->modes[i] = pcHostModeName;
         ++i;
     }
-    if (vboxHostLikesVideoMode(1024, 768, pScrn->bitsPerPixel))
+    if (vboxHostLikesVideoMode(pScrn, 1024, 768, pScrn->bitsPerPixel))
     {
         pScrn->display->modes[i] = "1024x768";
         ++i;
     }
-    if (vboxHostLikesVideoMode(800, 600, pScrn->bitsPerPixel))
+    if (vboxHostLikesVideoMode(pScrn, 800, 600, pScrn->bitsPerPixel))
     {
         pScrn->display->modes[i] = "800x600";
         ++i;

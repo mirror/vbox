@@ -27,6 +27,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
+#include <VBox/HostServices/VBoxInfoSvc.h>  /* For Save and RetrieveVideoMode */
 
 #include "VBGLR3Internal.h"
 
@@ -230,4 +231,95 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
         LogRelFunc(("error querying video mode supported status from VMMDev."
                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req.header.rc));
     return fRc;
+}
+
+/**
+ * Save video mode parameters to the registry.
+ * 
+ * @returns iprt status value
+ * @param   pszName the name to save the mode parameters under
+ * @param   cx      mode width
+ * @param   cy      mode height
+ * @param   cBits   bits per pixel for the mode
+ */
+VBGLR3DECL(int) VbglR3SaveVideoMode(char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
+{
+    using namespace svcInfo;
+
+    char pcModeName[KEY_MAX_LEN];
+    char pcModeParms[KEY_MAX_VALUE_LEN];
+    uint32_t u32ClientId = 0;
+    RTStrPrintf(pcModeName, sizeof(pcModeName), "VideoMode/%s", pszName);
+    RTStrPrintf(pcModeParms, sizeof(pcModeParms), "%dx%dx%d", cx, cy, cBits);
+    int rc = VbglR3InfoSvcConnect(&u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3InfoSvcWriteKey(u32ClientId, pcModeName, pcModeParms);
+    if (u32ClientId != 0)
+        VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+    return rc;
+}
+
+
+/**
+ * Retrieve video mode parameters from the registry.
+ * 
+ * @returns iprt status value
+ * @param   pszName the name under which the mode parameters are saved
+ * @param   pcx     where to store the mode width
+ * @param   pcy     where to store the mode height
+ * @param   pcBits  where to store the bits per pixel for the mode
+ */
+VBGLR3DECL(int) VbglR3RetrieveVideoMode(char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
+{
+    using namespace svcInfo;
+
+    char pcModeName[KEY_MAX_LEN];
+    char pcModeParms[KEY_MAX_VALUE_LEN];
+    char *pszNext;
+    uint32_t u32ClientId;
+    uint32_t cx, cy, cBits;
+
+    RTStrPrintf(pcModeName, sizeof(pcModeName), "VideoMode/%s", pszName);
+    int rc = VbglR3InfoSvcConnect(&u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3InfoSvcReadKey(u32ClientId, pcModeName, pcModeParms,
+                                  sizeof(pcModeParms), NULL);
+    if (RT_SUCCESS(rc))
+        /* Extract the width from the string */
+        rc = RTStrToUInt32Ex(pcModeParms, &pszNext, 10, &cx);
+    if (   (VWRN_NUMBER_TOO_BIG == rc)
+        || (VWRN_NEGATIVE_UNSIGNED == rc)
+        || (RT_SUCCESS(rc) && (*pszNext != ',') && (*pszNext != 'x')))
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+    {
+        if ((*pszNext != ',') || (*pszNext != 'x'))
+            ++pszNext;
+        for (;' ' == *pszNext; ++pszNext);
+        rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cy);
+    }
+    if (   (VWRN_NUMBER_TOO_BIG == rc)
+        || (VWRN_NEGATIVE_UNSIGNED == rc)
+        || (RT_SUCCESS(rc) && (*pszNext != ',') && (*pszNext != 'x')))
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+    {
+        if ((*pszNext != ',') || (*pszNext != 'x'))
+            ++pszNext;
+        for (;' ' == *pszNext; ++pszNext);
+        rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cBits);
+    }
+    if (   (VWRN_NUMBER_TOO_BIG == rc)
+        || (VWRN_NEGATIVE_UNSIGNED == rc)
+        || (VWRN_TRAILING_CHARS == rc))
+        rc = VERR_INVALID_PARAMETER;
+    if (u32ClientId != 0)
+        VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+    if (RT_SUCCESS(rc))
+    {
+        *pcx = cx;
+        *pcy = cy;
+        *pcBits = cBits;
+    }
+    return rc;
 }
