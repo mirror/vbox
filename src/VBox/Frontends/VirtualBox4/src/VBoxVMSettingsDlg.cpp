@@ -216,8 +216,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
                                             this, pagePath (mPageParallel));
 
     /* USB */
-    VBoxVMSettingsUSB::getFromMachine (aMachine, mPageUSB,
-                                       this, pagePath (mPageUSB));
+    VBoxVMSettingsUSB::getFrom (aMachine, mPageUSB,
+                                this, pagePath (mPageUSB));
 
     /* Shared Folders */
     VBoxVMSettingsSF::getFromMachineEx (aMachine, mPageShared, this);
@@ -266,7 +266,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     VBoxVMSettingsParallel::putBackToMachine();
 
     /* USB */
-    VBoxVMSettingsUSB::putBackToMachine();
+    VBoxVMSettingsUSB::putBackTo();
 
     /* Shared folders */
     VBoxVMSettingsSF::putBackToMachineEx();

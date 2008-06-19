@@ -21,12 +21,15 @@
  */
 
 #include "VBoxVMSettingsUSB.h"
+#include "VBoxGlobalSettingsDlg.h"
 #include "VBoxVMSettingsDlg.h"
 #include "VBoxVMSettingsUtils.h"
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+
+//#define ENABLE_GLOBAL_USB
 
 inline static QString emptyToNull (const QString &str)
 {
@@ -35,9 +38,118 @@ inline static QString emptyToNull (const QString &str)
 
 VBoxVMSettingsUSB* VBoxVMSettingsUSB::mSettings = 0;
 
+void VBoxVMSettingsUSB::getFrom (QWidget *aPage,
+                                 VBoxGlobalSettingsDlg *aDlg,
+                                 const QString &aPath)
+{
+    /* USB Page */
+#ifdef ENABLE_GLOBAL_USB
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
+
+    /* Show an error message (if there is any).
+     * This message box may be suppressed if the user wishes so. */
+    if (!host.isReallyOk())
+        vboxProblem().cannotAccessUSB (host);
+
+    if (coll.isNull())
+    {
+#else
+    NOREF (aPage);
+    NOREF (aPath);
+#endif
+        /* Disable the USB controller category if the USB controller is
+         * not available (i.e. in VirtualBox OSE) */
+        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
+            "#usb", Qt::MatchExactly, listView_Link);
+        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
+        Assert (usbItem);
+        if (usbItem)
+            usbItem->setHidden (true);
+        return;
+#ifdef ENABLE_GLOBAL_USB
+    }
+
+    mSettings = new VBoxVMSettingsUSB (aPage, HostType, aDlg, aPath);
+    QVBoxLayout *layout = new QVBoxLayout (aPage);
+    layout->setContentsMargins (0, 0, 0, 0);
+    layout->addWidget (mSettings);
+
+    mSettings->getFromHost();
+
+    /* Fixing tab-order */
+    setTabOrder (aDlg->mTwSelector, mSettings->mTwFilters);
+    setTabOrder (mSettings->mTwFilters, mSettings->mLeName);
+    setTabOrder (mSettings->mLeName, mSettings->mLeVendorID);
+    setTabOrder (mSettings->mLeVendorID, mSettings->mLeManufacturer);
+    setTabOrder (mSettings->mLeManufacturer, mSettings->mLeProductID);
+    setTabOrder (mSettings->mLeProductID, mSettings->mLeProduct);
+    setTabOrder (mSettings->mLeProduct, mSettings->mLeRevision);
+    setTabOrder (mSettings->mLeRevision, mSettings->mLeSerialNo);
+    setTabOrder (mSettings->mLeSerialNo, mSettings->mLePort);
+    setTabOrder (mSettings->mLePort, mSettings->mCbAction);
+#endif
+}
+
+void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine,
+                                 QWidget *aPage,
+                                 VBoxVMSettingsDlg *aDlg,
+                                 const QString &aPath)
+{
+    CUSBController ctl = aMachine.GetUSBController();
+
+    /* Show an error message (if there is any).
+     * Note that we don't use the generic cannotLoadMachineSettings()
+     * call here because we want this message to be suppressable. */
+    if (!aMachine.isReallyOk())
+        vboxProblem().cannotAccessUSB (aMachine);
+
+    if (ctl.isNull())
+    {
+        /* Disable the USB controller category if the USB controller is
+         * not available (i.e. in VirtualBox OSE) */
+        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
+            "#usb", Qt::MatchExactly, listView_Link);
+        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
+        Assert (usbItem);
+        if (usbItem)
+            usbItem->setHidden (true);
+        return;
+    }
+
+    mSettings = new VBoxVMSettingsUSB (aPage, MachineType, aDlg, aPath);
+    QVBoxLayout *layout = new QVBoxLayout (aPage);
+    layout->setContentsMargins (0, 0, 0, 0);
+    layout->addWidget (mSettings);
+
+    mSettings->getFromMachine (aMachine);
+
+    /* Fixing tab-order */
+    setTabOrder (aDlg->mTwSelector, mSettings->mGbUSB);
+    setTabOrder (mSettings->mGbUSB, mSettings->mCbUSB2);
+    setTabOrder (mSettings->mCbUSB2, mSettings->mTwFilters);
+    setTabOrder (mSettings->mTwFilters, mSettings->mLeName);
+    setTabOrder (mSettings->mLeName, mSettings->mLeVendorID);
+    setTabOrder (mSettings->mLeVendorID, mSettings->mLeManufacturer);
+    setTabOrder (mSettings->mLeManufacturer, mSettings->mLeProductID);
+    setTabOrder (mSettings->mLeProductID, mSettings->mLeProduct);
+    setTabOrder (mSettings->mLeProduct, mSettings->mLeRevision);
+    setTabOrder (mSettings->mLeRevision, mSettings->mLeSerialNo);
+    setTabOrder (mSettings->mLeSerialNo, mSettings->mLePort);
+    setTabOrder (mSettings->mLePort, mSettings->mCbRemote);
+}
+
+void VBoxVMSettingsUSB::putBackTo()
+{
+    if (mSettings)
+        mSettings->mType == MachineType ? mSettings->putBackToMachine() :
+                                          mSettings->putBackToHost();
+}
+
+
 VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
                                       FilterType aType,
-                                      VBoxVMSettingsDlg *aDlg,
+                                      QWidget *aDlg,
                                       const QString &aPath)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mType (aType)
@@ -94,6 +206,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     toolBar->addAction (mDelAction);
     toolBar->addAction (mMupAction);
     toolBar->addAction (mMdnAction);
+    toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     mGbUSBFilters->layout()->addWidget (toolBar);
 
     /* Setup connections */
@@ -153,65 +266,53 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     mLbAction->setHidden (mType != HostType);
     mCbAction->setHidden (mType != HostType);
 
-    /* Fixing tab-order */
-    setTabOrder (aDlg->mTwSelector, mGbUSB);
-    setTabOrder (mGbUSB, mCbUSB2);
-    setTabOrder (mCbUSB2, mTwFilters);
-    setTabOrder (mTwFilters, mLeName);
-    setTabOrder (mLeName, mLeVendorID);
-    setTabOrder (mLeVendorID, mLeManufacturer);
-    setTabOrder (mLeManufacturer, mLeProductID);
-    setTabOrder (mLeProductID, mLeProduct);
-    setTabOrder (mLeProduct, mLeRevision);
-    setTabOrder (mLeRevision, mLeSerialNo);
-    setTabOrder (mLeSerialNo, mLePort);
-    setTabOrder (mLePort, mCbRemote);
-    setTabOrder (mCbRemote, mCbAction);
     /* Applying language settings */
     retranslateUi();
 }
 
-void VBoxVMSettingsUSB::getFromMachine (const CMachine &aMachine,
-                                        QWidget *aPage,
-                                        VBoxVMSettingsDlg *aDlg,
-                                        const QString &aPath)
+void VBoxVMSettingsUSB::getFromHost()
 {
-    CUSBController ctl = aMachine.GetUSBController();
+    mGbUSB->setVisible (false);
 
-    /* Show an error message (if there is any).
-     * Note that we don't use the generic cannotLoadMachineSettings()
-     * call here because we want this message to be suppressable. */
-    if (!aMachine.isReallyOk())
-        vboxProblem().cannotAccessUSB (aMachine);
-
-    if (ctl.isNull())
+    CHostUSBDeviceFilterEnumerator en = vboxGlobal().virtualBox().GetHost()
+                                        .GetUSBDeviceFilters().Enumerate();
+    while (en.HasMore())
     {
-        /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE) */
-        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
-            "#usb", Qt::MatchExactly, listView_Link);
-        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
-        Assert (usbItem);
-        if (usbItem)
-            usbItem->setHidden (true);
-        return;
+        CHostUSBDeviceFilter hostFilter = en.GetNext();
+        CUSBDeviceFilter filter = CUnknown (hostFilter);
+        addUSBFilter (filter, false /* isNew */);
     }
 
-    mSettings = new VBoxVMSettingsUSB (aPage, MachineType, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-
-    mSettings->getFrom (aMachine);
+    mTwFilters->setCurrentItem (mTwFilters->topLevelItem (0));
+    currentChanged (mTwFilters->currentItem());
 }
 
-void VBoxVMSettingsUSB::putBackToMachine()
+void VBoxVMSettingsUSB::putBackToHost()
 {
-    if (mSettings)
-        mSettings->putBackTo();
+    CHost host = vboxGlobal().virtualBox().GetHost();
+
+    if (mUSBFilterListModified)
+    {
+        /* First, remove all old filters */
+        for (ulong count = host.GetUSBDeviceFilters().GetCount(); count; -- count)
+            host.RemoveUSBDeviceFilter (0);
+
+        /* Then add all new filters */
+        for (int i = 0; i < mFilters.size(); ++ i)
+        {
+            CUSBDeviceFilter filter = mFilters [i];
+            filter.SetActive (mTwFilters->topLevelItem (i)->
+                checkState (0) == Qt::Checked);
+            CHostUSBDeviceFilter insertedFilter = CUnknown (filter);
+            host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
+                                        insertedFilter);
+        }
+    }
+
+    mUSBFilterListModified = false;
 }
 
-void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
+void VBoxVMSettingsUSB::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
@@ -228,7 +329,7 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
     currentChanged (mTwFilters->currentItem());
 }
 
-void VBoxVMSettingsUSB::putBackTo()
+void VBoxVMSettingsUSB::putBackToMachine()
 {
     CUSBController ctl = mMachine.GetUSBController();
 
@@ -447,8 +548,25 @@ void VBoxVMSettingsUSB::newClicked()
     }
 
     /* Creating new usb filter */
-    CUSBDeviceFilter filter = mMachine.GetUSBController()
-        .CreateDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
+    CUSBDeviceFilter filter;
+
+    if (mType == HostType)
+    {
+        CHost host = vboxGlobal().virtualBox().GetHost();
+        CHostUSBDeviceFilter hostFilter = host
+            .CreateUSBDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
+        hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
+        filter = CUnknown (hostFilter);
+    }
+    else if (mType == MachineType)
+    {
+        filter = mMachine.GetUSBController()
+            .CreateDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
+    }
+    else
+    {
+        AssertMsgFailed (("Invalid VBoxVMSettingsUSB type"));
+    }
 
     filter.SetActive (true);
     addUSBFilter (filter, true /* isNew */);
@@ -468,8 +586,26 @@ void VBoxVMSettingsUSB::addConfirmed (QAction *aAction)
     if (usb.isNull())
         return;
 
-    CUSBDeviceFilter filter = mMachine.GetUSBController()
-        .CreateDeviceFilter (vboxGlobal().details (usb));
+    /* Creating new usb filter */
+    CUSBDeviceFilter filter;
+
+    if (mType == HostType)
+    {
+        CHost host = vboxGlobal().virtualBox().GetHost();
+        CHostUSBDeviceFilter hostFilter = host
+            .CreateUSBDeviceFilter (vboxGlobal().details (usb));
+        hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
+        filter = CUnknown (hostFilter);
+    }
+    else if (mType == MachineType)
+    {
+        filter = mMachine.GetUSBController()
+            .CreateDeviceFilter (vboxGlobal().details (usb));
+    }
+    else
+    {
+        AssertMsgFailed (("Invalid VBoxVMSettingsUSB type"));
+    }
 
     filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
     filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));

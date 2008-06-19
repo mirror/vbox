@@ -258,50 +258,58 @@
          </widget>
         </item>
         <item row="3" column="2" >
-         <widget class="QLabel" name="mLbRemote" >
-          <property name="text" >
-           <string>R&amp;emote</string>
-          </property>
-          <property name="buddy" >
-           <cstring>mCbRemote</cstring>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="mLbRemote" >
+            <property name="text" >
+             <string>R&amp;emote</string>
+            </property>
+            <property name="buddy" >
+             <cstring>mCbRemote</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="mLbAction" >
+            <property name="text" >
+             <string>&amp;Action</string>
+            </property>
+            <property name="buddy" >
+             <cstring>mCbAction</cstring>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item row="3" column="3" >
-         <widget class="QComboBox" name="mCbRemote" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="whatsThis" >
-           <string>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i>No&lt;/i>), to a VRDP client's computer (&lt;i>Yes&lt;/i>), or both (&lt;i>Any&lt;/i>).</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2" >
-         <widget class="QLabel" name="mLbAction" >
-          <property name="text" >
-           <string>&amp;Action</string>
-          </property>
-          <property name="buddy" >
-           <cstring>mCbAction</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="3" >
-         <widget class="QComboBox" name="mCbAction" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="whatsThis" >
-           <string>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i>Ignore&lt;/i>) or grab it for later usage by virtual machines (&lt;i>Hold&lt;/i>).</string>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QComboBox" name="mCbRemote" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis" >
+             <string>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i>No&lt;/i>), to a VRDP client's computer (&lt;i>Yes&lt;/i>), or both (&lt;i>Any&lt;/i>).</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="mCbAction" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis" >
+             <string>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i>Ignore&lt;/i>) or grab it for later usage by virtual machines (&lt;i>Hold&lt;/i>).</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
