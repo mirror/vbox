@@ -295,6 +295,8 @@ ifeq ($(KBUILD_TARGET),linux)
   VBOX_WITH_ADDITION_DRIVERS =
  endif
 endif
+# Enable the host/guest information service and registry
+VBOX_WITH_INFO_SVC = 1
 
 
 #
