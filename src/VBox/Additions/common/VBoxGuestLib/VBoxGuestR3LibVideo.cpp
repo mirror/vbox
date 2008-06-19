@@ -276,7 +276,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(char *pszName, uint32_t *pcx, uint32_t *
     char pcModeName[KEY_MAX_LEN];
     char pcModeParms[KEY_MAX_VALUE_LEN];
     char *pszNext;
-    uint32_t u32ClientId;
+    uint32_t u32ClientId = 0;
     uint32_t cx, cy, cBits;
 
     RTStrPrintf(pcModeName, sizeof(pcModeName), "VideoMode/%s", pszName);
