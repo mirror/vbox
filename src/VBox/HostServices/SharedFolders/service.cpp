@@ -751,6 +751,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     if (pStatusLed)
                         pStatusLed->Actual.s.fReading = 0;
 
+                    if (rc == VERR_NO_MORE_FILES && cFiles != 0)
+                        rc = VINF_SUCCESS; /* Successfully return these files. */
+
                     if (VBOX_SUCCESS(rc))
                     {
                         /* Update parameters.*/
