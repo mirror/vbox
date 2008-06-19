@@ -23,18 +23,15 @@
 #ifndef __QIHotKeyEdit_h__
 #define __QIHotKeyEdit_h__
 
-#include <qlabel.h>
-//Added by qt3to4:
-#include <QPalette>
-#include <QFocusEvent>
-#if defined(Q_WS_X11)
-#include <qmap.h>
+#include <QLabel>
+#if defined (Q_WS_X11)
+#include <QMap>
 #endif
-#if defined(Q_WS_MAC)
+#if defined (Q_WS_MAC)
 #include <Carbon/Carbon.h>
 #endif
 
-#if defined(Q_WS_PM)
+#if defined (Q_WS_PM)
 /* Extra virtual keys returned by QIHotKeyEdit::virtualKey() */
 #define VK_LSHIFT   VK_USERFIRST + 0
 #define VK_LCTRL    VK_USERFIRST + 1
@@ -51,7 +48,7 @@ class QIHotKeyEdit : public QLabel
 
 public:
 
-    QIHotKeyEdit (QWidget *aParent, const char *aName = 0);
+    QIHotKeyEdit (QWidget *aParent);
     virtual ~QIHotKeyEdit();
 
     void setKey (int aKeyVal);
@@ -93,7 +90,7 @@ protected:
     void focusInEvent (QFocusEvent *);
     void focusOutEvent (QFocusEvent *);
 
-    void drawContents (QPainter *p);
+    void paintEvent (QPaintEvent *);
 
 private:
 
@@ -101,8 +98,6 @@ private:
 
     int mKeyVal;
     QString mSymbName;
-
-    QColorGroup mTrueACG;
 
 #if defined (Q_WS_PM)
     static QMap <int, QString> sKeyNames;
@@ -122,3 +117,4 @@ private:
 };
 
 #endif // __QIHotKeyEdit_h__
+
