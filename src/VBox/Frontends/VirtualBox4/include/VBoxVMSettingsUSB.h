@@ -27,6 +27,7 @@
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
+class VBoxGlobalSettingsDlg;
 class VBoxVMSettingsDlg;
 class QIWidgetValidator;
 class VBoxUSBMenu;
@@ -45,23 +46,31 @@ public:
         MachineType = 2
     };
 
-    VBoxVMSettingsUSB (QWidget *aParent,
-                       FilterType aType,
-                       VBoxVMSettingsDlg *aDlg,
-                       const QString &aPath);
-
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    static void getFrom (QWidget *aPage,
+                         VBoxGlobalSettingsDlg *aDlg,
+                         const QString &aPath);
+    static void getFrom (const CMachine &aMachine,
+                         QWidget *aPage,
+                         VBoxVMSettingsDlg *aDlg,
+                         const QString &aPath);
+    static void putBackTo();
 
 protected:
 
+    VBoxVMSettingsUSB (QWidget *aParent,
+                       FilterType aType,
+                       QWidget *aDlg,
+                       const QString &aPath);
+
+    void getFromHost();
+    void putBackToHost();
+
+    void getFromMachine (const CMachine &aMachine);
+    void putBackToMachine();
+
     void retranslateUi();
+
+    FilterType mType;
 
 private slots:
 
@@ -84,7 +93,6 @@ private:
     static VBoxVMSettingsUSB *mSettings;
 
     CMachine mMachine;
-    FilterType mType;
     QIWidgetValidator *mValidator;
     QAction *mNewAction;
     QAction *mAddAction;
