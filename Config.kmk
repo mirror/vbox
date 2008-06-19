@@ -197,7 +197,7 @@ VBOX_WITH_VBOXBFE = 1
 VBOX_WITH_QTGUI = 1
 # The Qt 4 GUI (experimental).
 ifndef VBOX_OSE
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86)
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86,win.x86)
   VBOX_WITH_QT4GUI = 1
  endif
 endif
