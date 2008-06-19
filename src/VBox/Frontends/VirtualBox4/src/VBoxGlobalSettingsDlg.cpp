@@ -33,7 +33,7 @@
 #include "VBoxVMSettingsUtils.h"
 
 #include "VBoxGlobalSettingsGeneral.h"
-//#include "VBoxGlobalSettingsInput.h"
+#include "VBoxGlobalSettingsInput.h"
 //#include "VBoxGlobalSettingsUSB.h"
 //#include "VBoxGlobalSettingsLanguage.h"
 
@@ -297,11 +297,6 @@ VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
     connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
 
-//     /* Keyboard page */
-//     wvalKeyboard = new QIWidgetValidator (pagePath (pageKeyboard), pageKeyboard, this);
-//     connect (wvalKeyboard, SIGNAL (validityChanged (const QIWidgetValidator *)),
-//              this, SLOT (enableOk( const QIWidgetValidator *)));
-
 //     /* Language page */
 //     lvLanguages->header()->hide();
 //     lvLanguages->setSorting (0);
@@ -374,10 +369,6 @@ VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
 void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
                                      const VBoxGlobalSettings &aGs)
 {
-//     /* Input Page */
-//     hkeHostKey->setKey (gs.hostKey() );
-//     chbAutoCapture->setChecked (gs.autoCapture());
-
 //     /* USB Page */
 // #ifdef DEBUG_dmik
 //     CHost host = vboxGlobal().virtualBox().GetHost();
@@ -434,10 +425,10 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
 //     }
 
     /* General Page */
-    VBoxGlobalSettingsGeneral::getFrom (aProps, aGs, mPageGeneral);
+    VBoxGlobalSettingsGeneral::getFrom (aProps, aGs, mPageGeneral, this);
 
     /* Input Page */
-    //VBoxGlobalSettingsInput::getFrom (aProps, aGs, mPageInput);
+    VBoxGlobalSettingsInput::getFrom (aProps, aGs, mPageInput, this);
 
     /* USB Page */
     //VBoxVMSettingsUSB::getFrom (aProps, aGs, mPageUSB,
@@ -454,10 +445,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
 COMResult VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &aProps,
                                             VBoxGlobalSettings &aGs)
 {
-//     /* Input Page */
-//     gs.setHostKey (hkeHostKey->key());
-//     gs.setAutoCapture (chbAutoCapture->isChecked());
-
 //     /* USB Page */
 //     /*
 //      *  first, remove all old filters (only if the list is changed,
@@ -507,7 +494,7 @@ COMResult VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &aProps,
     VBoxGlobalSettingsGeneral::putBackTo (aProps, aGs);
 
     /* Input Page */
-    //VBoxGlobalSettingsInput::putBackTo (aProps, aGs);
+    VBoxGlobalSettingsInput::putBackTo (aProps, aGs);
 
     /* USB Page */
     //VBoxVMSettingsUSB::putBackTo (aProps, aGs);
