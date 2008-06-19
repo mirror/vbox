@@ -720,6 +720,88 @@ PGMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return PGM_SHW_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
 }
 
+/**
+ * Syncs the SHADOW page directory pointer for the specified address. Allocates
+ * backing pages in case the PDPT entry is missing.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   pGstPdpe    Guest PDPT entry
+ * @param   ppPD        Receives address of page directory
+ */
+PGMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+{
+    PPGM           pPGM   = &pVM->pgm.s;
+    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOLPAGE   pShwPage;
+    int            rc;
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
+
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT  pPdpt = pVM->pgm.s.CTXMID(p,PaePDPT);
+    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
+
+    /* Allocate page directory if not present. */
+    if (    !pPdpe->n.u1Present
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+    {
+        PX86PDPE pPdptGst = &CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt];
+
+        Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
+        /* Create a reference back to the PDPT by using the index in its shadow page. */
+        rc = pgmPoolAlloc(pVM, pPdptGst->u & X86_PDPE_PG_MASK, PGMPOOLKIND_PAE_PD_FOR_PAE_PD, PGMPOOL_IDX_PDPT, iPdPt, &pShwPage);
+        if (rc == VERR_PGM_POOL_FLUSHED)
+            return VINF_PGM_SYNC_CR3;
+
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+    /* The PD was cached or created; hook it up now. */
+    pPdpe->u |=    pShwPage->Core.Key
+                | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Gets the SHADOW page directory pointer for the specified address.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   ppPdpt      Receives address of pdpt
+ * @param   ppPD        Receives address of page directory
+ */
+PGMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+{
+    PPGM           pPGM   = &pVM->pgm.s;
+    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOLPAGE   pShwPage;
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
+
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT  pPdpt = pVM->pgm.s.CTXMID(p,PaePDPT);
+    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
+
+    *ppPdpt = pPdpt;
+    if (!pPdpe->n.u1Present)
+        return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
+
+    pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+    AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+
 #ifndef IN_GC
 /**
  * Syncs the SHADOW page directory pointer for the specified address. Allocates
