@@ -61,7 +61,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION    7
+#define CPUM_SAVED_STATE_VERSION    8
 
 
 /*******************************************************************************
