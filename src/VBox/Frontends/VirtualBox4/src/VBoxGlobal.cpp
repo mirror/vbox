@@ -245,7 +245,7 @@ public:
                     {
                         /* disallow the change when there is an error*/
                         *error = SysAllocString ((const OLECHAR *)
-                                                 gs.lastError().utf16());
+                            (gs.lastError().isNull() ? 0 : gs.lastError().utf16()));
                         *allowChange = FALSE;
                     }
                     else
@@ -483,7 +483,8 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
         QString *initDir = (QString *)(lpData);
         if (!initDir->isEmpty())
         {
-            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (initDir->utf16()));
+            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (
+                initDir.isNull() ? 0 : initDir->utf16()));
             //SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->utf16()));
         }
     }
@@ -3260,7 +3261,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             BROWSEINFO bi;
             bi.hwndOwner = topParent ? topParent->winId() : 0;
             bi.pidlRoot = NULL;
-            bi.lpszTitle = (TCHAR*)title.utf16();
+            bi.lpszTitle = (TCHAR*)(title.isNull() ? 0 : title.utf16());
             bi.pszDisplayName = initPath;
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
             bi.lpfn = winGetExistDirCallbackProc;
@@ -3411,7 +3412,8 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
             AssertCompile (sizeof (TCHAR) == sizeof (QChar));
             TCHAR buf [1024];
             if (initSel.length() > 0 && initSel.length() < sizeof (buf))
-                memcpy (buf, initSel.utf16(), (initSel.length() + 1) * sizeof (TCHAR));
+                memcpy (buf, initSel.isNull() ? 0 : initSel.utf16(),
+                        (initSel.length() + 1) * sizeof (TCHAR));
             else
                 buf [0] = 0;
 
@@ -3420,11 +3422,11 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             ofn.lStructSize = sizeof (OPENFILENAME);
             ofn.hwndOwner = topParent ? topParent->winId() : 0;
-            ofn.lpstrFilter = (TCHAR *) winFilters.utf16();
+            ofn.lpstrFilter = (TCHAR *) winFilters.isNull() ? 0 : winFilters.utf16();
             ofn.lpstrFile = buf;
             ofn.nMaxFile = sizeof (buf) - 1;
-            ofn.lpstrInitialDir = (TCHAR *) workDir.utf16();
-            ofn.lpstrTitle = (TCHAR *) title.utf16();
+            ofn.lpstrInitialDir = (TCHAR *) workDir.isNull() ? 0 : workDir.utf16();
+            ofn.lpstrTitle = (TCHAR *) title.isNull() ? 0 : title.utf16();
             ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
                           OFN_EXPLORER | OFN_ENABLEHOOK |
                           OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
@@ -3755,7 +3757,8 @@ bool VBoxGlobal::openURL (const QString &aURL)
 
         void run()
         {
-            int rc = (int) ShellExecute (NULL, NULL, mURL.utf16(), NULL, NULL, SW_SHOW);
+            int rc = (int) ShellExecute (NULL, NULL, mURL.isNull() ? 0 : mURL.utf16(),
+                                         NULL, NULL, SW_SHOW);
             bool ok = rc > 32;
             QApplication::postEvent
                 (mObject,
