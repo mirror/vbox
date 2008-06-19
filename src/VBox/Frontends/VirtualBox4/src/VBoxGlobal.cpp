@@ -484,7 +484,7 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
         if (!initDir->isEmpty())
         {
             SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (
-                initDir.isNull() ? 0 : initDir->utf16()));
+                initDir->isNull() ? 0 : initDir->utf16()));
             //SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->utf16()));
         }
     }
