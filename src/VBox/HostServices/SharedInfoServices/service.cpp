@@ -31,6 +31,8 @@
  * service to create this node and to tell the service about it using the
  * SET_CFGM_NODE host call.  It is also the responsibility of the service
  * creator to save this information to disk and to retrieve it when needed.
+ * Since the CFGM APIs are single threaded, the creator must also ensure that
+ * no-one else accesses the configuration node while the service is running.
  * 
  * If this service is extended to deal with new requests it would probably be a
  * good idea to split it up into several files.
