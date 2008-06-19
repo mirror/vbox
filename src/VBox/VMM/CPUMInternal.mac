@@ -263,8 +263,6 @@ struc CPUM
     .Hyper.msrLSTAR           resb    8
     .Hyper.msrCSTAR           resb    8
     .Hyper.msrSFMASK          resb    8
-    .Hyper.msrFSBASE          resb    8
-    .Hyper.msrGSBASE          resb    8
     .Hyper.msrKERNELGSBASE    resb    8
 
     .Hyper.ldtrHid.u64Base    resq    1
@@ -276,7 +274,7 @@ struc CPUM
     .Hyper.trHid.Attr         resd    1
 
     ; padding
-    .Hyper.padding            resd    2
+    .Hyper.padding            resd    6
 
 
 
@@ -377,8 +375,6 @@ struc CPUM
     .Guest.msrLSTAR           resb    8
     .Guest.msrCSTAR           resb    8
     .Guest.msrSFMASK          resb    8
-    .Guest.msrFSBASE          resb    8
-    .Guest.msrGSBASE          resb    8
     .Guest.msrKERNELGSBASE    resb    8
 
     .Guest.ldtrHid.u64Base    resq    1
@@ -390,7 +386,7 @@ struc CPUM
     .Guest.trHid.Attr         resd    1
 
     ; padding
-    .Guest.padding            resd    2
+    .Guest.padding            resd    6
 
 
 

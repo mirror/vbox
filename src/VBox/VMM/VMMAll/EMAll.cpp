@@ -2243,11 +2243,11 @@ EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_K8_FS_BASE:
-        val = pCtx->msrFSBASE;
+        val = pCtx->fsHid.u64Base;
         break;
 
     case MSR_K8_GS_BASE:
-        val = pCtx->msrGSBASE;
+        val = pCtx->gsHid.u64Base;
         break;
 
     case MSR_K8_KERNEL_GS_BASE:
@@ -2372,11 +2372,11 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_K8_FS_BASE:
-        pCtx->msrFSBASE = val;
+        pCtx->fsHid.u64Base = val;
         break;
 
     case MSR_K8_GS_BASE:
-        pCtx->msrGSBASE = val;
+        pCtx->gsHid.u64Base = val;
         break;
 
     case MSR_K8_KERNEL_GS_BASE:
