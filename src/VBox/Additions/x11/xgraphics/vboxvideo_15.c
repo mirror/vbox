@@ -384,7 +384,10 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
     ScrnInfoPtr pScrn = output->scrn;
     int rc = MODE_OK;
     TRACE3("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
-    if (   vbox_device_available(VBOXGetRec(pScrn))
+    /* We always like modes specified by the user in the configuration
+     * file, as doing otherwise is likely to annoy people. */
+    if (   !(mode->type & M_T_USERDEF)
+        && vbox_device_available(VBOXGetRec(pScrn))
         && !vboxHostLikesVideoMode(pScrn, mode->HDisplay, mode->VDisplay,
                                    pScrn->bitsPerPixel)
        )
@@ -413,13 +416,17 @@ vbox_output_detect (xf86OutputPtr output)
 
 static void
 vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
-                      Bool isPreferred)
+                      Bool isPreferred, Bool isUserDef)
 {
     TRACE3("pszName=%s, x=%d, y=%d\n", pszName, x, y);
     DisplayModePtr pMode = xnfcalloc(1, sizeof(DisplayModeRec));
 
     pMode->status        = MODE_OK;
-    pMode->type          = isPreferred ? M_T_PREFERRED : M_T_BUILTIN;
+    /* We don't ask the host whether it likes user defined modes,
+     * as we assume that the user really wanted that mode. */
+    pMode->type          = isUserDef ? M_T_USERDEF : M_T_BUILTIN;
+    if (isPreferred)
+        pMode->type     |= M_T_PREFERRED;
     /* VBox only supports screen widths which are a multiple of 8 */
     pMode->HDisplay      = (x + 7) & ~7;
     pMode->HSyncStart    = pMode->HDisplay + 2;
@@ -443,6 +450,7 @@ vbox_output_get_modes (xf86OutputPtr output)
 {
     uint32_t x, y, bpp, display;
     bool rc;
+    unsigned i;
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
@@ -459,9 +467,15 @@ vbox_output_get_modes (xf86OutputPtr output)
         if (rc && (0 != x) && (0 != y)) {
             /* We prefer a slightly smaller size to a slightly larger one */
             x -= (x % 8);
-            vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
+            vbox_output_add_mode(&pModes, NULL, x, y, TRUE, FALSE);
         }
     }
+    /* Also report any modes the user may have requested in the xorg.conf
+     * configuration file. */
+    for (i = 0; pScrn->display->modes[i] != NULL; i++)
+        if (2 == sscanf(pScrn->display->modes[i], "%dx%d", &x, &y))
+            vbox_output_add_mode(&pModes, pScrn->display->modes[i], x, y,
+                                 FALSE, TRUE);
     TRACE2;
     return pModes;
 }
