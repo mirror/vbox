@@ -968,10 +968,6 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #else
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
-        rc = VMXWriteVMCS(VMX_VMCS_GUEST_FS_BASE, pCtx->msrFSBASE);
-        AssertRC(rc);
-        rc = VMXWriteVMCS(VMX_VMCS_GUEST_GS_BASE, pCtx->msrGSBASE);
-        AssertRC(rc);
     }
     else
     {
@@ -2094,18 +2090,6 @@ end:
         pCtx->SysEnter.eip      = val;
         VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
         pCtx->SysEnter.esp      = val;
-
-        /* 64 bits guest mode? */
-        if (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        {
-            /* Note: we assume that either you can't rely on fs/gs base staying intact when switching in and out of 64 bits mode or that in
-             *       reality it really doesn't matter (as the guest OS restores them manually).
-             */
-            VMXReadVMCS(VMX_VMCS_GUEST_FS_BASE, &val);
-            pCtx->msrFSBASE = val;
-            VMXReadVMCS(VMX_VMCS_GUEST_GS_BASE, &val);
-            pCtx->msrGSBASE = val;
-        }
     }
 
     /* Signal changes for the recompiler. */
