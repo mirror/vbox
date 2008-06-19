@@ -1001,9 +1001,9 @@ vboxDisableGraphicsCap(VBOXPtr pVBox)
  */
 Bool
 vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
-                            uint32_t *pcBits, uint32_t *piDisplay,
-                            VBOXPtr pVBox)
+                            uint32_t *pcBits, uint32_t *piDisplay)
 {
+    VBOXPtr pVBox = pScrn->driverPrivate;
     TRACE_ENTRY();
     if (!pVBox->useDevice)
         return FALSE;
@@ -1024,8 +1024,54 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
  * @param   cBits  the bpp of the mode being queried
  */
 Bool
-vboxHostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits)
+vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits)
 {
+    VBOXPtr pVBox = pScrn->driverPrivate;
     TRACE_ENTRY();
+    if (!pVBox->useDevice)
+        return TRUE;  /* If we can't ask the host then we like everything. */
     return VbglR3HostLikesVideoMode(cx, cy, cBits);
+}
+
+/**
+ * Save video mode parameters to the registry.
+ * 
+ * @returns iprt status value
+ * @param   pszName the name to save the mode parameters under
+ * @param   cx      mode width
+ * @param   cy      mode height
+ * @param   cBits   bits per pixel for the mode
+ */
+Bool
+vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits)
+{
+    VBOXPtr pVBox = pScrn->driverPrivate;
+    TRACE_ENTRY();
+    if (!pVBox->useDevice)
+        return FALSE;
+    return RT_SUCCESS(VbglR3SaveVideoMode("SavedMode", cx, cy, cBits));
+}
+
+/**
+ * Retrieve video mode parameters from the registry.
+ * 
+ * @returns iprt status value
+ * @param   pszName the name under which the mode parameters are saved
+ * @param   pcx     where to store the mode width
+ * @param   pcy     where to store the mode height
+ * @param   pcBits  where to store the bits per pixel for the mode
+ */
+Bool
+vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
+{
+    VBOXPtr pVBox = pScrn->driverPrivate;
+    TRACE_ENTRY();
+    if (!pVBox->useDevice)
+        return FALSE;
+    int rc = VbglR3RetrieveVideoMode("SavedMode", pcx, pcy, pcBits);
+    if (RT_SUCCESS(rc))
+        TRACE_LOG("Retrieved a video mode of %dx%dx%d\n", *pcx, *pcy, *pcBits);
+    else
+        TRACE_LOG("Failed to retrieve video mode, error %d\n", rc);
+    return (RT_SUCCESS(rc));
 }

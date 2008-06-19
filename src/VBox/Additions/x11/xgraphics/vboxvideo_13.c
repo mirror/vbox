@@ -51,7 +51,9 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-/* #define DEBUG_VIDEO 1 */
+#ifdef DEBUG_michael
+# define DEBUG_VIDEO 1
+#endif
 #ifdef DEBUG_VIDEO
 
 #define TRACE \
@@ -299,6 +301,8 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     VBOXSetMode(crtc->scrn, adjusted_mode);
     VBOXAdjustFrame(crtc->scrn->scrnIndex, x, y, 0);
+    vboxSaveVideoMode(crtc->scrn, adjusted_mode->HDisplay,
+                      adjusted_mode->VDisplay, crtc->scrn->bitsPerPixel);
 }
 
 static void
@@ -344,11 +348,12 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
+    ScrnInfoPtr pScrn = output->scrn;
     int rc = MODE_OK;
     TRACE3("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
-    if (   vbox_device_available(VBOXGetRec(output->scrn))
-        && !vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
-                                   output->scrn->bitsPerPixel)
+    if (   vbox_device_available(VBOXGetRec(pScrn))
+        && !vboxHostLikesVideoMode(pScrn, mode->HDisplay,
+                                   mode->VDisplay, pScrn->bitsPerPixel)
        )
         rc = MODE_BAD;
     TRACE3("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
@@ -412,8 +417,18 @@ vbox_output_get_modes (xf86OutputPtr output)
     TRACE;
     if (vbox_device_available(pVBox))
     {
-        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display, pVBox);
-        /* @todo - check the display number once we support multiple displays. */
+        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
+        /** @todo - check the display number once we support multiple displays. */
+        /* If we don't find a display request, see if we have a saved hint
+         * from a previous session. */
+        if (rc)
+            TRACE3("Got a display change request for %dx%d\n", x, y);
+        if (!rc || (0 == x) || (0 == y))
+        {
+            rc = vboxRetrieveVideoMode(pScrn, &x, &y, &bpp);
+            if (rc)
+                TRACE3("Retrieved a video mode of %dx%d\n", x, y);
+        }
         if (rc && (0 != x) && (0 != y)) {
             /* We prefer a slightly smaller size to a slightly larger one */
             x -= (x % 8);
@@ -719,7 +734,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         {
             /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
             if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits,
-                                               &iDisplay, pVBox)
+                                               &iDisplay)
                 && (cBits != 16)
                )
                 cBits = 24;

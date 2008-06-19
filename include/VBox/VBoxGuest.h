@@ -1564,6 +1564,16 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
 VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
 VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
 VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
+VBGLR3DECL(int)     VbglR3SaveVideoMode(char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits);
+VBGLR3DECL(int)     VbglR3RetrieveVideoMode(char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
+/** @}  */
+
+/** @name Information Services
+ * @{ */
+VBGLR3DECL(int)     VbglR3InfoSvcConnect(uint32_t *pu32ClientId);
+VBGLR3DECL(int)     VbglR3InfoSvcDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *pszValue);
+VBGLR3DECL(int)     VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey, char *pcValue, uint32_t cbValue, uint32_t *pcbActual);
 /** @}  */
 
 
