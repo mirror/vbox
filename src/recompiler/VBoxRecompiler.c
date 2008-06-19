@@ -1824,19 +1824,8 @@ REMR3DECL(int) REMR3State(PVM pVM)
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, (pCtx->dsHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
-
-        /* FS & GS base addresses need to be loaded from the MSRs if in 64 bits mode. */
-        if (CPUMIsGuestIn64BitCodeEx(pCtx))
-        {
-            /* Note that the base values in the hidden fs & gs registers are cut to 32 bits and can't be used in this case. */
-            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->msrFSBASE, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
-            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->msrGSBASE, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
-        }
-        else
-        {
-            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
-            cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
-        }
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
+        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
     }
     else
     {
@@ -2221,8 +2210,6 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->msrLSTAR         = pVM->rem.s.Env.lstar;
     pCtx->msrCSTAR         = pVM->rem.s.Env.cstar;
     pCtx->msrSFMASK        = pVM->rem.s.Env.fmask;
-    pCtx->msrFSBASE        = pVM->rem.s.Env.segs[R_FS].base;
-    pCtx->msrGSBASE        = pVM->rem.s.Env.segs[R_GS].base;
     pCtx->msrKERNELGSBASE  = pVM->rem.s.Env.kernelgsbase;
 #endif
 
@@ -2423,8 +2410,6 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->msrLSTAR         = pVM->rem.s.Env.lstar;
     pCtx->msrCSTAR         = pVM->rem.s.Env.cstar;
     pCtx->msrSFMASK        = pVM->rem.s.Env.fmask;
-    pCtx->msrFSBASE        = pVM->rem.s.Env.segs[R_FS].base;
-    pCtx->msrGSBASE        = pVM->rem.s.Env.segs[R_GS].base;
     pCtx->msrKERNELGSBASE  = pVM->rem.s.Env.kernelgsbase;
 #endif
 

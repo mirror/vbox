@@ -968,6 +968,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #else
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
+        /* Unconditionally update these as wrmsr might have changed them. */
+        rc = VMXWriteVMCS(VMX_VMCS_GUEST_FS_BASE, pCtx->fsHid.u64Base);
+        AssertRC(rc);
+        rc = VMXWriteVMCS(VMX_VMCS_GUEST_GS_BASE, pCtx->gsHid.u64Base);
+        AssertRC(rc);
     }
     else
     {

@@ -943,8 +943,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 "%sCSTAR        =%016RX64\n"
                 "%sLSTAR        =%016RX64\n"
                 "%sSFMASK       =%016RX64\n"
-                "%sFSBASE       =%016RX64\n"
-                "%sGSBASE       =%016RX64\n"
                 "%sKERNELGSBASE =%016RX64\n",
                 pszPrefix, pCtx->msrEFER,
                 pszPrefix, pCtx->msrPAT,
@@ -952,8 +950,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pszPrefix, pCtx->msrCSTAR,
                 pszPrefix, pCtx->msrLSTAR,
                 pszPrefix, pCtx->msrSFMASK,
-                pszPrefix, pCtx->msrFSBASE,
-                pszPrefix, pCtx->msrGSBASE,
                 pszPrefix, pCtx->msrKERNELGSBASE);
 
             break;

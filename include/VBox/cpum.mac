@@ -192,8 +192,6 @@ struc CPUMCTX
     .msrLSTAR           resb    8
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
-    .msrFSBASE          resb    8
-    .msrGSBASE          resb    8
     .msrKERNELGSBASE    resb    8
 
     .ldtrHid.u64Base    resq    1
@@ -205,7 +203,7 @@ struc CPUMCTX
     .trHid.Attr         resd    1
 
     ; padding
-    .padding            resd    2
+    .padding            resd    6
 endstruc
 
 %endif

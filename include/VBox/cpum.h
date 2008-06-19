@@ -327,8 +327,6 @@ typedef struct CPUMCTX
     uint64_t        msrLSTAR;       /* 64 bits mode syscall rip */
     uint64_t        msrCSTAR;       /* compatibility mode syscall rip */
     uint64_t        msrSFMASK;      /* syscall flag mask */
-    uint64_t        msrFSBASE;
-    uint64_t        msrGSBASE;
     uint64_t        msrKERNELGSBASE;/* swapgs exchange value */
     /** @} */
 
@@ -339,7 +337,7 @@ typedef struct CPUMCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-    uint32_t        padding[2];
+    uint32_t        padding[6];
 } CPUMCTX;
 #pragma pack()
 
@@ -444,8 +442,6 @@ CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
 CPUMDECL(uint64_t)  CPUMGetGuestEFER(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestFSBASE(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestGSBASE(PVM pVM);
 /** @} */
 
 /** @name Guest Register Setters.
