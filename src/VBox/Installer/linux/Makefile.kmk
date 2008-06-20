@@ -186,6 +186,7 @@ $(PATH_BIN)/$(PACKAGE_NAME): \
 		$(PATH_TARGET)/vboxdrv.sh \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt)
 	$(call MSG_TOOL,makeself,,$@)
+	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*.run)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
 		-e "s;_BUILD_;$(shell date);g" \
 		-e "s;_ARCH_;${KBUILD_TARGET_ARCH};g" \
