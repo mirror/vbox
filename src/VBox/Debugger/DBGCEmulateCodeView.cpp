@@ -1430,6 +1430,10 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                         pszPrefix, pCtx->msrSFMASK,
                         pszPrefix, pCtx->msrKERNELGSBASE);
 
+                    /*
+                    * Disassemble one instruction at cs:eip.
+                    */
+                    return pCmdHlp->pfnExec(pCmdHlp, "u %016x L 0", pCtx->rip);
             }
             else
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
@@ -1460,12 +1464,12 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
                     pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
-        }
 
-        /*
-         * Disassemble one instruction at cs:eip.
-         */
-        return pCmdHlp->pfnExec(pCmdHlp, "u %04x:%08x L 0", pCtx->cs, pCtx->eip);
+                    /*
+                    * Disassemble one instruction at cs:eip.
+                    */
+                    return pCmdHlp->pfnExec(pCmdHlp, "u %04x:%08x L 0", pCtx->cs, pCtx->eip);
+        }
     }
 
     /*
