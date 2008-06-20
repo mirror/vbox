@@ -354,11 +354,27 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.Raw.au32[1]         = 0;
         SelInfo.Raw.Gen.u16LimitLow = ~0;
         SelInfo.Raw.Gen.u4LimitHigh = ~0;
-        SelInfo.Raw.Gen.u1Present   = 1;
-        SelInfo.Raw.Gen.u1Granularity = 1;
-        SelInfo.Raw.Gen.u1DefBig    = 1;
-        SelInfo.Raw.Gen.u1DescType  = 1;
-        SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
+
+        if (CPUMAreHiddenSelRegsValid(pVM))
+        {   /* Assume the current CS defines the execution mode. */
+            pCtxCore   = CPUMGetGuestCtxCore(pVM);
+            pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
+
+            SelInfo.Raw.Gen.u1Present       = pHiddenSel->Attr.n.u1Present;
+            SelInfo.Raw.Gen.u1Granularity   = pHiddenSel->Attr.n.u1Granularity;;
+            SelInfo.Raw.Gen.u1DefBig        = pHiddenSel->Attr.n.u1DefBig;
+            SelInfo.Raw.Gen.u1Long          = pHiddenSel->Attr.n.u1Long;
+            SelInfo.Raw.Gen.u1DescType      = pHiddenSel->Attr.n.u1DescType;
+            SelInfo.Raw.Gen.u4Type          = pHiddenSel->Attr.n.u4Type;
+        }
+        else
+        {
+            SelInfo.Raw.Gen.u1Present   = 1;
+            SelInfo.Raw.Gen.u1Granularity = 1;
+            SelInfo.Raw.Gen.u1DefBig    = 1;
+            SelInfo.Raw.Gen.u1DescType  = 1;
+            SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
+        }
     }
     else if (   !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
              && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
