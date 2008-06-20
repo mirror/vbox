@@ -1194,7 +1194,15 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
     if (pStats)
         STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
 #endif
-    *pu32Value = 0;
+    /* Unassigned memory; this is actually not supposed to happen. */
+    switch (cbValue)
+    {
+        case 1: *(uint8_t *)pu32Value  = 0xff; break;
+        case 2: *(uint16_t *)pu32Value = 0xffff; break;
+        case 4: *(uint32_t *)pu32Value = 0xffffffff; break;
+        case 8: *(uint64_t *)pu32Value = 0xffffffffffffffff; break;
+        default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+    }
     Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
     return VINF_SUCCESS;
 }

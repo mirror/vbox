@@ -1314,7 +1314,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         default:
 #if 1                   /** @todo r=bird: Can you do this properly please. */
                             /** @todo Try MMIO; quick hack */
-                            if (cbRead <= 4 && IOMMMIORead(pVM, GCPhys, (uint32_t *)pvBuf, cbRead) == VINF_SUCCESS)
+                            if (cbRead <= 8 && IOMMMIORead(pVM, GCPhys, (uint32_t *)pvBuf, cbRead) == VINF_SUCCESS)
                                 goto end;
 #endif
 
@@ -1655,7 +1655,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         default:
 #if 1                   /** @todo r=bird: Can you do this properly please. */
                             /** @todo Try MMIO; quick hack */
-                            if (cbWrite <= 4 && IOMMMIOWrite(pVM, GCPhys, *(uint32_t *)pvBuf, cbWrite) == VINF_SUCCESS)
+                            if (cbWrite <= 8 && IOMMMIOWrite(pVM, GCPhys, *(uint32_t *)pvBuf, cbWrite) == VINF_SUCCESS)
                                 goto end;
 #endif
 
