@@ -1018,8 +1018,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     /* Check if the PML4 entry has changed. */
     if (pShwPdpt->GCPhys != GCPhysPdpt)
     {
-        LogFlow(("InvalidatePage: Out-of-sync PML4E (GCPhys) at %VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                    GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+        LogFlow(("InvalidatePage: Out-of-sync PML4E (GCPhys) at %VGv %VGp vs %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+                    GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
@@ -3078,23 +3078,34 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     for (uint64_t iPML4E = 0; iPML4E < X86_PG_PAE_ENTRIES; iPML4E++)
     {
         PPGMPOOLPAGE pShwPdpt = NULL;
+        PX86PML4E    pPml4eSrc, pPml4eDst;
+        RTGCPHYS     GCPhysPdptSrc;
+
+        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E];
+        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E];
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
-        if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
-            pShwPdpt = pgmPoolGetPage(pPool, pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u & X86_PML4E_PG_MASK);
+        if (!pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
+            continue;
+        pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
 
-        /* Guest PML4E not present (anymore). */
-        if (!pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E].n.u1Present)
+        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK;
+
+        /* Anything significant changed? */
+        if (    pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present
+            ||  GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
-            /* Shadow PML4E present? */
-            if (pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
-            {
-                /* Shadow PML4 present, so free it. */
-                pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPML4E);
-                pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].u = 0;
-            }
+            /* Free it. */
+            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                     pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPML4E);
+            pPml4eDst->u = 0;
             continue;
         }
+        /* Force an attribute sync. */
+        pPml4eDst->n.u1User      = pPml4eSrc->n.u1User;
+        pPml4eDst->n.u1Write     = pPml4eSrc->n.u1Write;
+        pPml4eDst->n.u1NoExecute = pPml4eSrc->n.u1NoExecute;
 
 #  else
     {
@@ -3104,11 +3115,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         {
             unsigned        iPDSrc;
             PPGMPOOLPAGE    pShwPde = NULL;
+            PX86PDPE        pPdpeDst;
+            RTGCPHYS        GCPhysPdeSrc;
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
             PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPDPTE * X86_PG_PAE_ENTRIES];
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
             PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
+            X86PDPE         PdpeSrc   = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPDPTE];
 #   else
             PX86PML4E       pPml4eSrc;
             X86PDPE         PdpeSrc;
@@ -3132,34 +3146,38 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #   endif
             Assert(iPDSrc == 0);
 
-            /* Fetch the pgm pool shadow descriptor if the shadow pdpte is present. */
-            if (pPdptDst->a[iPDPTE].n.u1Present) 
-                pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPDPTE].u & X86_PDPE_PG_MASK);
+            pPdpeDst = &pPdptDst->a[iPDPTE];
 
-            if (pPDSrc == NULL)
+            /* Fetch the pgm pool shadow descriptor if the shadow pdpte is present. */
+            if (!pPdpeDst->n.u1Present) 
+                continue;   /* next PDPTE */
+
+            pShwPde      = pgmPoolGetPage(pPool, pPdpeDst->u & X86_PDPE_PG_MASK);
+            GCPhysPdeSrc = PdpeSrc.u & X86_PDPE_PG_MASK;
+
+            /* Anything significant changed? */            
+            if (    PdpeSrc.n.u1Present != pPdpeDst->n.u1Present
+                ||  GCPhysPdeSrc != pShwPde->GCPhys)
             {
-                /* PDPE not present */
-                if (pPdptDst->a[iPDPTE].n.u1Present)
+                /* Free it. */
+                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                        pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+
+                /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
+                if (!(pPdpeDst->u & PGM_PLXFLAGS_MAPPING))
                 {
-                    /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
-                    if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_MAPPING))
-                    {
-                        if (!(pPdptDst->a[iPDPTE].u & PGM_PLXFLAGS_PERMANENT))
-                        {
-#   if PGM_GST_TYPE == PGM_TYPE_AMD64
-                            Assert(pShwPde);
-                            pgmPoolFreeByPage(pPool, pShwPde, pShwPde->idx, iPDPTE);
-#   else
-                            AssertFailed(); /* can't happen; the 4 pdpt pages are fixed! */
-#   endif
-                            pPdptDst->a[iPDPTE].u = 0;
-                        }
-                        else
-                            pPdptDst->a[iPDPTE].n.u1Present = 0;
-                    }
+                    pgmPoolFreeByPage(pPool, pShwPde, pShwPde->idx, iPDPTE);
+                    pPdpeDst->u = 0;
+                    continue;   /* next guest PDPTE */
                 }
-                continue;   /* next guest PDPTE */
             }
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+            /* Force an attribute sync. */
+            pPdpeDst->lm.u1User      = PdpeSrc.lm.u1User;
+            pPdpeDst->lm.u1Write     = PdpeSrc.lm.u1Write;
+            pPdpeDst->lm.u1NoExecute = PdpeSrc.lm.u1NoExecute;
+#  endif
+
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
         {
 #  endif /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
