@@ -676,7 +676,7 @@ CPUMDECL(void) CPUMSetGuestEFER(PVM pVM, uint64_t val)
     pVM->cpum.s.Guest.msrEFER = val;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
+CPUMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
     if (pcbLimit)
         *pcbLimit = pVM->cpum.s.Guest.idtr.cbIdt;

@@ -52,7 +52,7 @@ CPUMDECL(uint64_t) CPUMGetGuestRIP(PVM pVM)
     return 0;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
+CPUMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
     return 0;
 }

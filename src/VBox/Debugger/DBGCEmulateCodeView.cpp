@@ -1678,15 +1678,151 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 }
 
 
-static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP /*pCmdHlp*/, PCX86DESC64 /*pDesc*/, unsigned /*iEntry*/, bool /* fHyper */, bool * /*fDblEntry*/)
+static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigned iEntry, bool fHyper, bool *fDblEntry)
 {
     /* GUEST64 */
+    int rc;
+
+    const char *pszHyper = fHyper ? " HYPER" : "";
+    const char *pszPresent = pDesc->Gen.u1Present ? "P " : "NP";
+    if (pDesc->Gen.u1DescType)
+    {
+        static const char * const s_apszTypes[] =
+        {
+            "DataRO", /* 0 Read-Only */
+            "DataRO", /* 1 Read-Only - Accessed */
+            "DataRW", /* 2 Read/Write  */
+            "DataRW", /* 3 Read/Write - Accessed  */
+            "DownRO", /* 4 Expand-down, Read-Only  */
+            "DownRO", /* 5 Expand-down, Read-Only - Accessed */
+            "DownRW", /* 6 Expand-down, Read/Write  */
+            "DownRO", /* 7 Expand-down, Read/Write - Accessed */
+            "CodeEO", /* 8 Execute-Only */
+            "CodeEO", /* 9 Execute-Only - Accessed */
+            "CodeER", /* A Execute/Readable */
+            "CodeER", /* B Execute/Readable - Accessed */
+            "ConfE0", /* C Conforming, Execute-Only */
+            "ConfE0", /* D Conforming, Execute-Only - Accessed */
+            "ConfER", /* E Conforming, Execute/Readable */
+            "ConfER"  /* F Conforming, Execute/Readable - Accessed */
+        };
+        const char *pszAccessed = pDesc->Gen.u4Type & RT_BIT(0) ? "A " : "NA";
+        const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
+        const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
+        uint32_t u32Base = pDesc->Gen.u16BaseLow
+                         | ((uint32_t)pDesc->Gen.u8BaseHigh1 << 16)
+                         | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
+        uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        if (pDesc->Gen.u1Granularity)
+            cbLimit <<= PAGE_SHIFT;
+
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
+                                iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
+                                pDesc->Gen.u2Dpl, pszPresent, pszAccessed, pszGranularity, pszBig,
+                                pDesc->Gen.u1Available, pDesc->Gen.u1Long, pszHyper);
+    }
+    else
+    {
+        static const char * const s_apszTypes[] =
+        {
+            "Ill-0 ", /* 0 0000 Reserved (Illegal) */
+            "Ill-1 ", /* 1 0001 Available 16-bit TSS */
+            "LDT   ", /* 2 0010 LDT */
+            "Ill-3 ", /* 3 0011 Busy 16-bit TSS */
+            "Ill-4 ", /* 4 0100 16-bit Call Gate */
+            "Ill-5 ", /* 5 0101 Task Gate */
+            "Ill-6 ", /* 6 0110 16-bit Interrupt Gate */
+            "Ill-7 ", /* 7 0111 16-bit Trap Gate */
+            "Ill-8 ", /* 8 1000 Reserved (Illegal) */
+            "Tss64A", /* 9 1001 Available 32-bit TSS */
+            "Ill-A ", /* A 1010 Reserved (Illegal) */
+            "Tss64B", /* B 1011 Busy 32-bit TSS */
+            "Call64", /* C 1100 32-bit Call Gate */
+            "Ill-D ", /* D 1101 Reserved (Illegal) */
+            "Int64 ", /* E 1110 32-bit Interrupt Gate */
+            "Trap64"  /* F 1111 32-bit Trap Gate */
+        };
+        switch (pDesc->Gen.u4Type)
+        {
+            /* raw */
+            case X86_SEL_TYPE_SYS_UNDEFINED:
+            case X86_SEL_TYPE_SYS_UNDEFINED2:
+            case X86_SEL_TYPE_SYS_UNDEFINED4:
+            case X86_SEL_TYPE_SYS_UNDEFINED3:
+            case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
+            case X86_SEL_TYPE_SYS_286_TSS_BUSY:
+            case X86_SEL_TYPE_SYS_286_CALL_GATE:
+            case X86_SEL_TYPE_SYS_286_INT_GATE:
+            case X86_SEL_TYPE_SYS_286_TRAP_GATE:
+            case X86_SEL_TYPE_SYS_TASK_GATE:
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                break;
+
+            case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
+            case X86_SEL_TYPE_SYS_386_TSS_BUSY:
+            case X86_SEL_TYPE_SYS_LDT:
+            {
+                const char *pszBusy        = pDesc->Gen.u4Type & RT_BIT(1) ? "B " : "NB";
+                const char *pszBig         = pDesc->Gen.u1DefBig ? "BIG" : "   ";
+                const char *pszLong        = pDesc->Gen.u1Long ? "LONG" : "   ";
+
+                uint64_t u32Base = pDesc->Gen.u16BaseLow
+                                 | ((uint64_t)pDesc->Gen.u8BaseHigh1 << 16)
+                                 | ((uint64_t)pDesc->Gen.u8BaseHigh2 << 24)
+                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
+                uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%016RX64 Lim=%08x DPL=%d %s %s %s %sAVL=%d R=%d%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszBusy, pszLong, pszBig,
+                                        pDesc->Gen.u1Available, pDesc->Gen.u1Long | (pDesc->Gen.u1DefBig << 1),
+                                        pszHyper);
+                *fDblEntry = true;
+                break;
+            }
+
+            case X86_SEL_TYPE_SYS_386_CALL_GATE:
+            {
+                unsigned cParams = pDesc->au8[0] & 0x1f;
+                const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
+                RTSEL sel = pDesc->au16[1];
+                uint64_t off =    pDesc->au16[0] 
+                                | ((uint64_t)pDesc->au16[3] << 16)
+                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
+                *fDblEntry = true;
+                break;
+            }
+
+            case X86_SEL_TYPE_SYS_386_INT_GATE:
+            case X86_SEL_TYPE_SYS_386_TRAP_GATE:
+            {
+                RTSEL sel = pDesc->au16[1];
+                uint64_t off =    pDesc->au16[0] 
+                                | ((uint64_t)pDesc->au16[3] << 16)
+                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                *fDblEntry = true;
+                break;
+            }
+
+            /* impossible, just it's necessary to keep gcc happy. */
+            default:
+                return VINF_SUCCESS;
+        }
+    }
     return VINF_SUCCESS;
 }
 
 
 /**
- * Wroker function that displays one descriptor entry (GDT, LDT, IDT).
+ * Worker function that displays one descriptor entry (GDT, LDT, IDT).
  *
  * @returns pfnPrintf status code.
  * @param   pCmdHlp     The DBGC command helpers.

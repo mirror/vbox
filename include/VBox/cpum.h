@@ -401,7 +401,7 @@ typedef enum CPUMCPUVENDOR
 /** @name Guest Register Getters.
  * @{ */
 CPUMDECL(void)      CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR);
-CPUMDECL(uint32_t)  CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit);
+CPUMDECL(RTGCPTR)   CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit);
 CPUMDECL(RTSEL)     CPUMGetGuestTR(PVM pVM);
 CPUMDECL(RTSEL)     CPUMGetGuestLDTR(PVM pVM);
 CPUMDECL(uint64_t)  CPUMGetGuestCR0(PVM pVM);
