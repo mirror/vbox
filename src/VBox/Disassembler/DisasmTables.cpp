@@ -2228,14 +2228,14 @@ const OPCODE g_aMapX86_Group7_mod11_rm000[8] =
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
     OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
-    INVALID_OPCODE,
+    OP("swapgs",             0,                  0,          0,          OP_SWAPGS,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS )
 };
 
 const OPCODE g_aMapX86_Group7_mod11_rm001[8] =
 {
     /* 0F 01 MOD=11b */
-    INVALID_OPCODE,
-    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg,          0,          OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX, OP_PARM_NONE,   OPTYPE_HARMLESS ),
+    OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS ),
+    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,   OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX,OP_PARM_NONE,   OPTYPE_HARMLESS ),
     INVALID_OPCODE,
     INVALID_OPCODE,
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
