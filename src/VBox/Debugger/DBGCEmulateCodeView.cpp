@@ -1331,45 +1331,121 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
          */
         if (pDbgc->fRegTerse)
         {
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
-                "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %sss=%04x               %seflags=%08x\n",
-                pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 34 : 31, szEFlags,
-                pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, efl);
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
+            {
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
+                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
+                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
+                    "%sr14=%016RX64 %sr15=%016RX64\n"
+                    "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
+                    "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %sss=%04x                %seflags=%08x\n",
+                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
+                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
+                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
+                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 34 : 31, szEFlags,
+                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
+                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, efl);
+            }
+            else
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                    "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
+                    "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
+                    "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %sss=%04x               %seflags=%08x\n",
+                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
+                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 34 : 31, szEFlags,
+                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
+                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, efl);
         }
         else
         {
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
-                "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr0=%016RX64 %sdr1=%016RX64\n"
-                "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr2=%016RX64 %sdr3=%016RX64\n"
-                "%ses={%04x base=%016RX64 limit=%08x flags=%08x} %sdr4=%016RX64 %sdr5=%016RX64\n"
-                "%sfs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr6=%016RX64 %sdr7=%016RX64\n"
-                "%sgs={%04x base=%016RX64 limit=%08x flags=%08x} %scr0=%016RX64 %scr2=%016RX64\n"
-                "%sss={%04x base=%016RX64 limit=%08x flags=%08x} %scr3=%016RX64 %scr4=%016RX64\n"
-                "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
-                "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
-                "%sFCW=%04x %sFSW=%04x %sFTW=%04x\n"
-                ,
-                pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
-                pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
-                pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
-                pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
-                pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
-                pszPrefix, pCtx->gdtr.pGdt,pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, pCtxCore->eflags,
-                pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
-                pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
-                pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
+            {
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
+                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
+                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
+                    "%sr14=%016RX64 %sr15=%016RX64\n"
+                    "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
+                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%ses={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%sgs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%sss={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%scr0=%016RX64 %scr2=%016RX64 %scr3=%016RX64 %scr4=%016RX64\n"
+                    "%sdr0=%016RX64 %sdr1=%016RX64 %sdr2=%016RX64 %sdr3=%016RX64\n"
+                    "%sdr4=%016RX64 %sdr5=%016RX64 %sdr6=%016RX64 %sdr7=%016RX64\n"
+                    "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
+                    "%sldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                    "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                    "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
+                    ,
+                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
+                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
+                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
+                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, 
+                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, 
+                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, 
+                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, 
+                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, 
+                    pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                    pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
+                    pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
+                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                    pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
+
+                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                        "MSR:\n"
+                        "%sEFER         =%016RX64\n"
+                        "%sPAT          =%016RX64\n"
+                        "%sSTAR         =%016RX64\n"
+                        "%sCSTAR        =%016RX64\n"
+                        "%sLSTAR        =%016RX64\n"
+                        "%sSFMASK       =%016RX64\n"
+                        "%sKERNELGSBASE =%016RX64\n",
+                        pszPrefix, pCtx->msrEFER,
+                        pszPrefix, pCtx->msrPAT,
+                        pszPrefix, pCtx->msrSTAR,
+                        pszPrefix, pCtx->msrCSTAR,
+                        pszPrefix, pCtx->msrLSTAR,
+                        pszPrefix, pCtx->msrSFMASK,
+                        pszPrefix, pCtx->msrKERNELGSBASE);
+
+            }
+            else
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                    "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
+                    "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
+                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr0=%016RX64 %sdr1=%016RX64\n"
+                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr2=%016RX64 %sdr3=%016RX64\n"
+                    "%ses={%04x base=%016RX64 limit=%08x flags=%08x} %sdr4=%016RX64 %sdr5=%016RX64\n"
+                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr6=%016RX64 %sdr7=%016RX64\n"
+                    "%sgs={%04x base=%016RX64 limit=%08x flags=%08x} %scr0=%016RX64 %scr2=%016RX64\n"
+                    "%sss={%04x base=%016RX64 limit=%08x flags=%08x} %scr3=%016RX64 %scr4=%016RX64\n"
+                    "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
+                    "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
+                    "%sFCW=%04x %sFSW=%04x %sFTW=%04x\n"
+                    ,
+                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
+                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
+                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
+                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
+                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
+                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                    pszPrefix, pCtx->gdtr.pGdt,pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, pCtxCore->eflags,
+                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                    pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
+                    pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
         }
 
         /*
