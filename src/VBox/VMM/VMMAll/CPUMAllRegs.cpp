@@ -676,6 +676,60 @@ CPUMDECL(void) CPUMSetGuestEFER(PVM pVM, uint64_t val)
     pVM->cpum.s.Guest.msrEFER = val;
 }
 
+CPUMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
+{
+    uint64_t val = 0;
+
+    switch (idMsr)
+    {
+    case MSR_IA32_CR_PAT:
+        val = pVM->cpum.s.Guest.msrPAT;
+        break;
+
+    case MSR_IA32_SYSENTER_CS:
+        val = pVM->cpum.s.Guest.SysEnter.cs;
+        break;
+
+    case MSR_IA32_SYSENTER_EIP:
+        val = pVM->cpum.s.Guest.SysEnter.eip;
+        break;
+
+    case MSR_IA32_SYSENTER_ESP:
+        val = pVM->cpum.s.Guest.SysEnter.esp;
+        break;
+
+    case MSR_K6_EFER:
+        val = pVM->cpum.s.Guest.msrEFER;
+        break;
+
+    case MSR_K8_SF_MASK:
+        val = pVM->cpum.s.Guest.msrSFMASK;
+        break;
+
+    case MSR_K6_STAR:
+        val = pVM->cpum.s.Guest.msrSTAR;
+        break;
+
+    case MSR_K8_LSTAR:
+        val = pVM->cpum.s.Guest.msrLSTAR;
+        break;
+
+    case MSR_K8_CSTAR:
+        val = pVM->cpum.s.Guest.msrCSTAR;
+        break;
+
+    case MSR_K8_KERNEL_GS_BASE:
+        val = pVM->cpum.s.Guest.msrKERNELGSBASE;
+        break;
+
+    /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
+    default:
+        AssertFailed();
+        break;
+    }
+    return val;
+}
+
 CPUMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
     if (pcbLimit)
