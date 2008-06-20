@@ -1024,6 +1024,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
+        return VINF_SUCCESS;
     }
 
 
@@ -1077,6 +1078,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         pPdpeDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
+        return VINF_SUCCESS;
     }
 # endif
 
