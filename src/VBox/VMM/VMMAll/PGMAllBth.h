@@ -959,10 +959,17 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
 # endif /* IN_RING3 */
 
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPdpt = pgmPoolGetPageByHCPhys(pVM, pPml4eDst->u & SHW_PDPT_MASK);
+    Assert(pShwPdpt);
+# endif
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdPte].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdPte].u & SHW_PDPE_PG_MASK);
     Assert(pShwPde);
 # endif
 
@@ -976,9 +983,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can resync the PML4E when it's used.
              */
-            LogFlow(("InvalidatePage: Out-of-sync PML4E at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync PML4E at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                      GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
             pPml4eDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
@@ -988,9 +995,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
-            LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                      GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
             pPml4eDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
@@ -998,14 +1005,27 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
     else
     {
-        LogFlow(("InvalidatePage: Out-of-sync PML4E (P) at %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+        LogFlow(("InvalidatePage: Out-of-sync PML4E (P) at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                     GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFree(pVM, pPml4eDst->u & X86_PML4E_PG_MASK, PGMPOOL_IDX_PML4, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
         return VINF_SUCCESS;
     }
+    RTGCPHYS GCPhysPdpt = pPml4eSrc->u & GST_PDPT_MASK;
+
+    /* Check if the PML4 entry has changed. */
+    if (pShwPdpt->GCPhys != GCPhysPdpt)
+    {
+        LogFlow(("InvalidatePage: Out-of-sync PML4E (GCPhys) at %VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                    GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+        pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+        pPml4eDst->u = 0;
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
+        PGM_INVL_PG(GCPtrPage);
+    }
+
 
     Assert(pPdpeDst->n.u1Present && pPdpeDst->u & SHW_PDPT_MASK);
     if (PdpeSrc.n.u1Present)
@@ -1014,11 +1034,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             || (!PdpeSrc.lm.u1Write && pPdpeDst->lm.u1Write))
         {
             /*
-             * Mark not present so we can resync the PML4E when it's used.
+             * Mark not present so we can resync the PDPTE when it's used.
              */
-            LogFlow(("InvalidatePage: Out-of-sync PDPE at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync PDPE at %VGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-            pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdPte);
             pPdpeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
@@ -1028,9 +1048,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
-            LogFlow(("InvalidatePage: Out-of-sync PDPE (A) at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync PDPE (A) at %VGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-            pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdPte);
             pPdpeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
@@ -1038,13 +1058,25 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
     else
     {
-        LogFlow(("InvalidatePage: Out-of-sync PDPE (P) at %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+        LogFlow(("InvalidatePage: Out-of-sync PDPE (P) at %VGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
                     GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-        pgmPoolFree(pVM, pPdpeDst->u & SHW_PDPT_MASK, PGMPOOL_IDX_PDPT, iPDDst);
+        pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdPte);
         pPdpeDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
         return VINF_SUCCESS;
+    }
+    RTGCPHYS GCPhysPd = PdpeSrc.u & GST_PDPE_PG_MASK;
+
+    /* Check if the PDPT entry has changed. */
+    if (pShwPde->GCPhys != GCPhysPd)
+    {
+        LogFlow(("InvalidatePage: Out-of-sync PDPE (GCPhys) at %VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                    GCPtrPage, pShwPde->GCPhys, GCPhysPd, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+        pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdPte);
+        pPdpeDst->u = 0;
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
+        PGM_INVL_PG(GCPtrPage);
     }
 # endif
 

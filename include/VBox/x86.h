@@ -1433,6 +1433,8 @@ typedef const X86PDPAE *PCX86PDPAE;
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
 #if 1 /* we're using this internally and have to mask of the top 16-bit. */
 #define X86_PDPE_PG_MASK                    ( 0x0000fffffffff000ULL )
+/** @todo Get rid of the above hack; makes code unreadable. */
+#define X86_PDPE_PG_MASK_FULL               ( 0x000ffffffffff000ULL )
 #else
 #define X86_PDPE_PG_MASK                    ( 0x000ffffffffff000ULL )
 #endif
