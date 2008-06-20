@@ -137,6 +137,9 @@ endif
 ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThreadAdopt are properly updated
  RuntimeR3_DEFS         += RTCRITSECT_STRICT
 endif
+ifdef IPRT_WITH_POSIX_TIMERS
+ RuntimeR3_DEFS        += IPRT_WITH_POSIX_TIMERS
+endif
 RuntimeR3_INCS          = \
 	include \
 	$(PATH_ROOT)/src/libs/liblzf-1.51
