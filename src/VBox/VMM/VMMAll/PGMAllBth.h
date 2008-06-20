@@ -3096,8 +3096,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             ||  GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
             /* Free it. */
-            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                     pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                     (uint64_t)iPML4E << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
             pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPML4E);
             pPml4eDst->u = 0;
             continue;
@@ -3160,8 +3160,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 ||  GCPhysPdeSrc != pShwPde->GCPhys)
             {
                 /* Free it. */
-                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                        pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                        ((uint64_t)iPML4E << X86_PML4_SHIFT) + ((uint64_t)iPDPTE << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+#  else
+                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                        (uint64_t)iPDPTE << X86_PDPT_SHIFT, pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+#  endif
 
                 /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
                 if (!(pPdpeDst->u & PGM_PLXFLAGS_MAPPING))
