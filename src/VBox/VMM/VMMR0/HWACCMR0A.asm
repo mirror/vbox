@@ -70,8 +70,8 @@
     rdmsr
     push    rdx
     push    rax
-    xor     rdx, rdx
-    mov     rax, qword [xSI + %2]
+    mov     edx, dword [xSI + %2 + 4]
+    mov     eax, dword [xSI + %2]
     wrmsr
   %endmacro
 
@@ -80,7 +80,8 @@
   %macro LOADHOSTMSREX 2
     mov     rcx, %1
     rdmsr 
-    mov     qword [xSI + %2], rax
+    mov     dword [xSI + %2], eax
+    mov     dword [xSI + %2 + 4], edx
     pop     rax
     pop     rdx
     wrmsr
