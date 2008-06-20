@@ -1622,6 +1622,9 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
             &&  pDbgc->fReady)
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
     }
+    else
+        /* Received nonsense; just skip it. */
+        pDbgc->iRead = pDbgc->iWrite;
 
     return rc;
 }
