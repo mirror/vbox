@@ -1157,10 +1157,10 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
             case VINF_IOM_MMIO_UNUSED_00:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = 0x00; break;
-                    case 2: *(uint16_t *)pu32Value = 0x0000; break;
-                    case 4: *(uint32_t *)pu32Value = 0x00000000; break;
-                    case 8: *(uint64_t *)pu32Value = 0x0000000000000000; break;
+                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0x00); break;
+                    case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
+                    case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
+                    case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
@@ -1169,10 +1169,10 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
             case VINF_IOM_MMIO_UNUSED_FF:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = 0xff; break;
-                    case 2: *(uint16_t *)pu32Value = 0xffff; break;
-                    case 4: *(uint32_t *)pu32Value = 0xffffffff; break;
-                    case 8: *(uint64_t *)pu32Value = 0xffffffffffffffff; break;
+                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0xff); break;
+                    case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
+                    case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
+                    case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
