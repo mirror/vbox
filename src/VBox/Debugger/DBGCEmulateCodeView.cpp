@@ -1779,7 +1779,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                                         pDesc->Gen.u2Dpl, pszPresent, pszBusy, pszLong, pszBig,
                                         pDesc->Gen.u1Available, pDesc->Gen.u1Long | (pDesc->Gen.u1DefBig << 1),
                                         pszHyper);
-                *fDblEntry = true;
+                if (fDblEntry) *fDblEntry = true;
                 break;
             }
 
@@ -1794,7 +1794,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
-                *fDblEntry = true;
+                if (fDblEntry) *fDblEntry = true;
                 break;
             }
 
@@ -1808,7 +1808,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
-                *fDblEntry = true;
+                if (fDblEntry) *fDblEntry = true;
                 break;
             }
 
