@@ -320,6 +320,11 @@ CPUMDECL(uint32_t) CPUMGetHyperEIP(PVM pVM)
     return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eip;
 }
 
+CPUMDECL(uint64_t) CPUMGetHyperRIP(PVM pVM)
+{
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->rip;
+}
+
 CPUMDECL(uint32_t) CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit)
 {
     if (pcbLimit)
@@ -746,6 +751,11 @@ CPUMDECL(void) CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR)
 CPUMDECL(uint32_t) CPUMGetGuestEIP(PVM pVM)
 {
     return pVM->cpum.s.Guest.eip;
+}
+
+CPUMDECL(uint64_t) CPUMGetGuestRIP(PVM pVM)
+{
+    return pVM->cpum.s.Guest.rip;
 }
 
 CPUMDECL(uint32_t) CPUMGetGuestEAX(PVM pVM)
