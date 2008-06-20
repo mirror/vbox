@@ -76,6 +76,17 @@
   %endmacro
 
   ; Save a guest and load the corresponding host MSR (trashes rdx & rcx)
+  ; Only really useful for gs kernel base as that one can be changed behind our back (swapgs)
+  %macro LOADHOSTMSREX 2
+    mov     rcx, %1
+    rdmsr 
+    mov     qword [xSI + %2], rax
+    pop     rax
+    pop     rdx
+    wrmsr
+  %endmacro
+
+  ; Load the corresponding host MSR (trashes rdx & rcx)
   %macro LOADHOSTMSR 1
     mov     rcx, %1
     pop     rax
@@ -565,7 +576,7 @@ ALIGNCODE(16)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ; @todo use the automatic load feature for MSRs
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K8_CSTAR
     LOADHOSTMSR MSR_K8_LSTAR
@@ -598,7 +609,7 @@ ALIGNCODE(16)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ; @todo use the automatic load feature for MSRs
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K8_CSTAR
     LOADHOSTMSR MSR_K8_LSTAR
@@ -625,7 +636,7 @@ ALIGNCODE(16)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ; @todo use the automatic load feature for MSRs
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K8_CSTAR
     LOADHOSTMSR MSR_K8_LSTAR
