@@ -882,7 +882,8 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     }
 #elif defined(RT_OS_SOLARIS)
     struct stat DevStat;
-    if (!fstat(RawFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+    if (!fstat(RawFile, &DevStat) && (   S_ISBLK(DevStat.st_mode)
+                                      || S_ISCHR(DevStat.st_mode)))
     {
         struct dk_minfo mediainfo;
         if (!ioctl(RawFile, DKIOCGMEDIAINFO, &mediainfo))
@@ -892,7 +893,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     }
     else
     {
-        RTPrintf("File '%s' is no block device\n", rawdisk.raw());
+        RTPrintf("File '%s' is no block or char device\n", rawdisk.raw());
         return VERR_INVALID_PARAMETER;
     }
 #else /* all unrecognized OSes */
