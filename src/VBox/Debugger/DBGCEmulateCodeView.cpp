@@ -1465,7 +1465,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             /*
              * Disassemble one instruction at cs:rip.
              */
-            return pCmdHlp->pfnExec(pCmdHlp, "u %016x L 0", pCtx->rip);
+            return pCmdHlp->pfnExec(pCmdHlp, "u %016RX64 L 0", pCtx->rip);
         }
         else
         {
