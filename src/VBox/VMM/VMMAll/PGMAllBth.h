@@ -1485,24 +1485,33 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
      * Get the shadow PDE, find the shadow page table in the pool.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    const unsigned iPDDst = GCPtrPage >> SHW_PD_SHIFT;
-    X86PDE          PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
+    const unsigned iPDDst    = GCPtrPage >> SHW_PD_SHIFT;
+    X86PDE          PdeDst   = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    const unsigned iPDDst = GCPtrPage >> SHW_PD_SHIFT;
-    X86PDEPAE       PdeDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst];
+    const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
+    const unsigned  iPdPte   = (GCPtrPage >> X86_PDPT_SHIFT);   /* no mask; flat index into the 2048 entry array. */
+    PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);
+    X86PDEPAE       PdeDst   = pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
-    const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    const unsigned  iPdPte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPAE       pPDDst;
     X86PDEPAE       PdeDst;
-    PX86PDPT        pPdpt;
+    PX86PDPT        pPdptDst;
 
-    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdpt, &pPDDst);
+    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
     AssertRCReturn(rc, rc);
-    Assert(pPDDst && pPdpt);
+    Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
 # endif
     Assert(PdeDst.n.u1Present);
-    PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
+    PPGMPOOLPAGE pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
+
+# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdPte].u & X86_PDPE_PG_MASK);
+    Assert(pShwPde);
+# endif
 
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
@@ -1717,7 +1726,13 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
      * Mark the PDE not present. Restart the instruction and let #PF call SyncPT.
      * Yea, I'm lazy.
      */
-    pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
+    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+    pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
+# else
+    pgmPoolFreeByPage(pPool, pShwPage, SHW_POOL_ROOT_IDX, iPDDst);
+# endif
+
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
     pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst].u    = 0;
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
