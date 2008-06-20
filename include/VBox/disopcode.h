@@ -584,6 +584,8 @@
 #define OP_MOV_DR       600
 #define OP_MOV_TR       601
 
+#define OP_SWAPGS       610
+
 /* VT-x instructions */
 #define OP_VMREAD       650
 #define OP_VMWRITE      651
