@@ -1115,6 +1115,7 @@ typedef const X86PTPAE *PCX86PTPAE;
  *       soon.
  */
 #define X86_PDE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
+#define X86_PDE_PAE_PG_MASK_FULL            ( 0x000ffffffffff000ULL )
 #else
 #define X86_PDE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
 #endif
