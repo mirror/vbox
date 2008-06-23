@@ -36,9 +36,15 @@ enum eHostFn
 {
     /** Pass the address of the console object from Main to the service */
     SET_CFGM_NODE = 1,
-    /** Get the value attached to an extra data key in the machine XML file */
+    /** 
+     * Get the value attached to an extra data key in the machine XML file.
+     * The parameter format matches that of GET_CONFIG_KEY. 
+     */
     GET_CONFIG_KEY_HOST = 2,
-    /** Set the value attached to an extra data key in the machine XML file */
+    /** 
+     * Set the value attached to an extra data key in the machine XML file.
+     * The parameter format matches that of SET_CONFIG_KEY.
+     */
     SET_CONFIG_KEY_HOST = 3
 };
 
@@ -80,7 +86,6 @@ typedef struct _GetConfigKey
      *  - Only ASCII characters with no spaces
      *  - Less than or equal to VBOX_SHARED_INFO_KEY_MAX_LEN bytes in length
      *  - Zero terminated
-     *  - Starting with the string VBOX_SHARED_INFO_KEY_PREFIX
      */
     HGCMFunctionParameter key;
 
@@ -91,8 +96,9 @@ typedef struct _GetConfigKey
 
     /**
      * The size of the value.  If this is greater than the size of the array
-     * supplied by the guest then no data was transferred and the call must
-     * be repeated. (OUT uint32_t)
+     * supplied in the second parameter then no data was transferred and the
+     * call must be repeated.  If it is zero then no value was found.
+     * (OUT uint32_t)
      */
     HGCMFunctionParameter size;
 } GetConfigKey;
@@ -107,14 +113,14 @@ typedef struct _SetConfigKey
      *  - Only ASCII characters with no spaces
      *  - Less than or equal to VBOX_SHARED_INFO_KEY_MAX_LEN bytes in length
      *  - Zero terminated
-     *  - Starting with the string VBOX_SHARED_INFO_KEY_PREFIX
      */
     HGCMFunctionParameter key;
 
     /**
      * The value of the key (IN pointer)
      * Criteria as for the key parameter, but with length less that or equal to
-     * VBOX_SHARED_INFO_KEY_MAX_VALUE_LEN
+     * VBOX_SHARED_INFO_KEY_MAX_VALUE_LEN.  A null pointer causes the value to
+     * be removed from the database.
      */
     HGCMFunctionParameter value;
 } SetConfigKey;
