@@ -3089,7 +3089,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             continue;
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
 
-        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK;
+        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK_FULL;
 
         /* Anything significant changed? */
         if (    pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present
@@ -3582,7 +3582,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         }
 
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
-        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK;
+        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK_FULL;
 
         if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
         {
