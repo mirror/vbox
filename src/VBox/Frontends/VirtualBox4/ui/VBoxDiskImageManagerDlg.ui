@@ -60,6 +60,9 @@
          <layout class="QVBoxLayout" >
           <item>
            <widget class="QITreeWidget" name="mHdsTree" >
+            <property name="contextMenuPolicy" >
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
             <property name="acceptDrops" >
              <bool>true</bool>
             </property>
@@ -108,6 +111,9 @@
          <layout class="QVBoxLayout" >
           <item>
            <widget class="QITreeWidget" name="mCdsTree" >
+            <property name="contextMenuPolicy" >
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
             <property name="acceptDrops" >
              <bool>true</bool>
             </property>
@@ -151,6 +157,9 @@
          <layout class="QVBoxLayout" >
           <item>
            <widget class="QITreeWidget" name="mFdsTree" >
+            <property name="contextMenuPolicy" >
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
             <property name="acceptDrops" >
              <bool>true</bool>
             </property>
