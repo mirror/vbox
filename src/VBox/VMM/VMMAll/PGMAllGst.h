@@ -92,6 +92,7 @@
 #  define GST_PDPT_SHIFT            X86_PDPT_SHIFT
 #  define GST_PDPT_MASK             X86_PDPT_MASK_PAE
 #  define GST_PTE_PG_MASK           X86_PTE_PAE_PG_MASK
+#  define GST_CR3_PAGE_MASK         X86_CR3_PAE_PAGE_MASK
 # else
 #  define GST_TOTAL_PD_ENTRIES      (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
 #  define GST_PDPE_ENTRIES          X86_PG_AMD64_PDPE_ENTRIES
@@ -99,10 +100,10 @@
 #  define GST_PDPE_PG_MASK          X86_PDPE_PG_MASK_FULL
 #  define GST_PDPT_MASK             X86_PDPT_MASK_AMD64
 #  define GST_PTE_PG_MASK           X86_PTE_PAE_PG_MASK_FULL
+#  define GST_CR3_PAGE_MASK         X86_CR3_AMD64_PAGE_MASK
 # endif
 # define GST_PT_SHIFT               X86_PT_PAE_SHIFT
 # define GST_PT_MASK                X86_PT_PAE_MASK
-# define GST_CR3_PAGE_MASK          X86_CR3_PAE_PAGE_MASK
 #endif
 
 
@@ -465,7 +466,20 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 PGM_INVL_PG(GCPtr);
             }
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
+            PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+
             pVM->pgm.s.pGstPaePML4HC = (R3R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+
+            if (pVM->pgm.s.pShwAmd64CR3)
+                pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pShwAmd64CR3->GCPhys >> PAGE_SHIFT);
+
+            Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
+            rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.pShwAmd64CR3);
+            if (rc == VERR_PGM_POOL_FLUSHED)
+            {
+                AssertFailed(); /* check if we handle this properly!! */
+                return VINF_PGM_SYNC_CR3;
+            }
 # endif
         }
         else
@@ -509,6 +523,12 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     pVM->pgm.s.pGstPaePML4HC = 0;
+    if (pVM->pgm.s.pShwAmd64CR3)
+    {
+        PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+        pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pShwAmd64CR3->GCPhys >> PAGE_SHIFT);
+    }
+
 #else /* prot/real mode stub */
     /* nothing to do */
 #endif

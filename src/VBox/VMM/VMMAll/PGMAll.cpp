@@ -824,6 +824,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     int            rc;
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
+    Assert(pVM->pgm.s.pShwAmd64CR3);
 
     /* Allocate page directory pointer table if not present. */
     pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
@@ -833,7 +834,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
 
         Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
-        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, PGMPOOL_IDX_PML4, iPml4e, &pShwPage);
+        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
 
