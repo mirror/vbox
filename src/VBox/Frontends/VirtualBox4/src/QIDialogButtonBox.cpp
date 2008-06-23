@@ -21,6 +21,7 @@
  */
 
 #include "QIDialogButtonBox.h"
+#include "QIHelpButton.h"
 
 #include <iprt/assert.h>
 
@@ -36,6 +37,15 @@ QIDialogButtonBox::QIDialogButtonBox (StandardButtons aButtons, Qt::Orientation 
     setStandardButtons (aButtons);
 
     retranslateUi();
+}
+
+QPushButton *QIDialogButtonBox::button (StandardButton aWhich) const
+{
+    QPushButton *button = QDialogButtonBox::button (aWhich);
+    if (!button &&
+        aWhich == QDialogButtonBox::Help)
+        button = mHelpButton;
+    return button;
 }
 
 QPushButton *QIDialogButtonBox::addButton (const QString &aText, ButtonRole aRole)
@@ -65,6 +75,7 @@ void QIDialogButtonBox::addExtraWidget (QWidget* aWidget)
     layout->insertWidget (index + 1, aWidget);
     layout->insertStretch(index + 2);
 }
+
 
 void QIDialogButtonBox::addExtraLayout (QLayout* aLayout)
 {
@@ -97,11 +108,15 @@ int QIDialogButtonBox::findEmptySpace (QBoxLayout *aLayout) const
 
 void QIDialogButtonBox::retranslateUi()
 {
-    QPushButton *btn = button (QDialogButtonBox::Help);
+    QPushButton *btn = QDialogButtonBox::button (QDialogButtonBox::Help);
     if (btn)
     {
-        btn->setText (tr ("&Help"));
-        if (btn->shortcut().isEmpty())
-            btn->setShortcut (QKeySequence::HelpContents); 
+        /* Use our very own help button if the user requested for one. */
+        if (!mHelpButton)
+            mHelpButton = new QIHelpButton;
+        mHelpButton->initFrom (btn);
+        removeButton (btn);
+        QDialogButtonBox::addButton (mHelpButton, QDialogButtonBox::HelpRole);
     }
 }
+
