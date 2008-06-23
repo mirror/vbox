@@ -549,6 +549,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR3_PAGE_MASK                   (0xfffff000)
 /** Bits  5-31 - - PAE Page directory page number. */
 #define X86_CR3_PAE_PAGE_MASK               (0xffffffe0)
+/** Bits 12-51 - - AMD64 Page directory page number. */
+#define X86_CR3_AMD64_PAGE_MASK             UINT64_C(0x000ffffffffff000)
 /** @} */
 
 
