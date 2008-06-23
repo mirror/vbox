@@ -647,6 +647,20 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-pattern <pattern>] [-descriptions]\n"
                  "\n");
     }
+
+    if (u64Cmd & USAGE_GETCONFIGVAL)
+    {
+        RTPrintf("VBoxManage getconfigval     <vmname>|<uuid> <key>\n"
+                 "\n");
+    }
+
+    if (u64Cmd & USAGE_SETCONFIGVAL)
+    {
+        RTPrintf("VBoxManage setconfigval     <vmname>|<uuid> <key>\n"
+                 "                            [<value>] (no value deletes key)\n"
+                 "\n");
+    }
+
 }
 
 /**
@@ -7455,6 +7469,86 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static int handleGetConfigVal(int argc, char *argv[],
+                            ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+{
+    HRESULT rc = S_OK;
+
+    if (argc != 2)
+        return errorSyntax(USAGE_GETCONFIGVAL, "Incorrect number of parameters");
+
+    ComPtr<IMachine> machine;
+    /* assume it's a UUID */
+    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    if (FAILED(rc) || !machine)
+    {
+        /* must be a name */
+        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+    }
+    if (machine)
+    {
+#if 0
+        /* enumeration? */
+        if (strcmp(argv[1], "enumerate") == 0)
+        {
+            Bstr extraDataKey;
+
+            do
+            {
+                Bstr nextExtraDataKey;
+                Bstr nextExtraDataValue;
+                HRESULT rcEnum = machine->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
+                                                              nextExtraDataValue.asOutParam());
+                extraDataKey = nextExtraDataKey;
+
+                if (SUCCEEDED(rcEnum) && extraDataKey)
+                {
+                    RTPrintf("Key: %lS, Value: %lS\n", nextExtraDataKey.raw(), nextExtraDataValue.raw());
+                }
+            } while (extraDataKey);
+        }
+        else
+#endif /* 0 */
+        {
+            Bstr value;
+            CHECK_ERROR(machine, GetConfigRegistryValue(Bstr(argv[1]), value.asOutParam()));
+            if (value)
+                RTPrintf("Value: %lS\n", value.raw());
+            else
+                RTPrintf("No value set!\n");
+        }
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
+static int handleSetConfigVal(int argc, char *argv[],
+                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+{
+    HRESULT rc = S_OK;
+
+    if (argc < 2)
+        return errorSyntax(USAGE_SETCONFIGVAL, "Not enough parameters");
+
+    ComPtr<IMachine> machine;
+    /* assume it's a UUID */
+    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    if (FAILED(rc) || !machine)
+    {
+        /* must be a name */
+        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+    }
+    if (machine)
+    {
+        if (argc < 3)
+            CHECK_ERROR(machine, SetConfigRegistryValue(Bstr(argv[1]), NULL));
+        else if (argc == 3)
+            CHECK_ERROR(machine, SetConfigRegistryValue(Bstr(argv[1]), Bstr(argv[2])));
+        else
+            return errorSyntax(USAGE_SETCONFIGVAL, "Too many parameters");
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 enum ConvertSettings
 {
     ConvertSettings_No      = 0,
@@ -7789,6 +7883,8 @@ int main(int argc, char *argv[])
         { "usbfilter",        handleUSBFilter },
         { "sharedfolder",     handleSharedFolder },
         { "vmstatistics",     handleVMStatistics },
+        { "getconfigval",     handleGetConfigVal },
+        { "setconfigval",     handleSetConfigVal },
         { NULL,               NULL }
     };
 
