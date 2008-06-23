@@ -81,14 +81,14 @@
 # define PGSTPDE                    PX86PDEPAE
 # define GST_BIG_PAGE_SIZE          X86_PAGE_2M_SIZE
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_2M_OFFSET_MASK
-# define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK
+# define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK_FULL
 # define GST_PDE_BIG_PG_MASK        X86_PDE2M_PAE_PG_MASK
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
 # if PGM_GST_TYPE == PGM_TYPE_PAE
 #  define GST_TOTAL_PD_ENTRIES      (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
 #  define GST_PDPE_ENTRIES          X86_PG_PAE_PDPE_ENTRIES
-#  define GST_PDPE_PG_MASK          X86_PDPE_PG_MASK
+#  define GST_PDPE_PG_MASK          X86_PDPE_PG_MASK_FULL
 #  define GST_PDPT_SHIFT            X86_PDPT_SHIFT
 #  define GST_PDPT_MASK             X86_PDPT_MASK_PAE
 #  define GST_PTE_PG_MASK           X86_PTE_PAE_PG_MASK

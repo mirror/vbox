@@ -402,17 +402,25 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             {
-                const unsigned iShw = off / sizeof(X86PTEPAE);
+                const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
                     VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
+
+                if (uShw.pPDPae->a[iShw].n.u1Present)
+                {
+                    LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                    uShw.pPDPae->a[iShw].u = 0;
+                }
+
                 /* paranoia / a bit assumptive. */
-                else if (   pCpu
-                         && (off & 7)
-                         && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
+                if (   pCpu
+                    && (off & 7)
+                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
                 {
                     const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
                     if (    iShw2 != iShw
@@ -423,19 +431,13 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
+                    if (uShw.pPDPae->a[iShw2].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
+                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw2);
+                        uShw.pPDPae->a[iShw2].u = 0;
+                    }
                 }
-#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
-                if (    uShw.pPDPae->a[iShw].n.u1Present
-                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
-                {
-                    LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-# ifdef IN_GC       /* TLB load - we're pushing things a bit... */
-                    ASMProbeReadByte(pvAddress);
-# endif
-                    pgmPoolFree(pPool->CTXSUFF(pVM), uShwpPDPae->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
-                    uShw.pPDPae->a[iShw].u = 0;
-                }
-#endif
                 break;
             }
 
@@ -478,16 +480,29 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
-                const unsigned iShw = off / sizeof(X86PDPE);
-                if (    uShw.pPDPT->a[iShw].n.u1Present
-                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
-                    LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
-                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
-                    uShw.pPDPT->a[iShw].u = 0;
+                    const unsigned iShw = off / sizeof(X86PDPE);
+                    if (uShw.pPDPT->a[iShw].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
+                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                        uShw.pPDPT->a[iShw].u = 0;
+                    }
+                    /* paranoia / a bit assumptive. */
+                    if (   pCpu
+                        && (off & 7)
+                        && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                    {
+                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDPE);
+                        if (uShw.pPDPT->a[iShw2].n.u1Present)
+                        {
+                            LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
+                            pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw2].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw2);
+                            uShw.pPDPT->a[iShw2].u = 0;
+                        }
+                    }
                 }
-#endif
                 break;
             }
 
