@@ -29,8 +29,6 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-//#define ENABLE_GLOBAL_USB
-
 inline static QString emptyToNull (const QString &str)
 {
     return str.isEmpty() ? QString::null : str;
@@ -42,34 +40,6 @@ void VBoxVMSettingsUSB::getFrom (QWidget *aPage,
                                  VBoxGlobalSettingsDlg *aDlg,
                                  const QString &aPath)
 {
-    /* USB Page */
-#ifdef ENABLE_GLOBAL_USB
-    CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
-
-    /* Show an error message (if there is any).
-     * This message box may be suppressed if the user wishes so. */
-    if (!host.isReallyOk())
-        vboxProblem().cannotAccessUSB (host);
-
-    if (coll.isNull())
-    {
-#else
-    NOREF (aPage);
-    NOREF (aPath);
-#endif
-        /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE) */
-        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
-            "#usb", Qt::MatchExactly, listView_Link);
-        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
-        Assert (usbItem);
-        if (usbItem)
-            usbItem->setHidden (true);
-        return;
-#ifdef ENABLE_GLOBAL_USB
-    }
-
     mSettings = new VBoxVMSettingsUSB (aPage, HostType, aDlg, aPath);
     QVBoxLayout *layout = new QVBoxLayout (aPage);
     layout->setContentsMargins (0, 0, 0, 0);
@@ -88,7 +58,6 @@ void VBoxVMSettingsUSB::getFrom (QWidget *aPage,
     setTabOrder (mSettings->mLeRevision, mSettings->mLeSerialNo);
     setTabOrder (mSettings->mLeSerialNo, mSettings->mLePort);
     setTabOrder (mSettings->mLePort, mSettings->mCbAction);
-#endif
 }
 
 void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine,

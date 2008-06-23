@@ -35,7 +35,7 @@
 #include "VBoxGlobalSettingsGeneral.h"
 #include "VBoxGlobalSettingsInput.h"
 #include "VBoxVMSettingsUSB.h"
-//#include "VBoxGlobalSettingsLanguage.h"
+#include "VBoxGlobalSettingsLanguage.h"
 
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
@@ -43,6 +43,8 @@
 
 #include <QTimer>
 #include <QPushButton>
+
+//#define ENABLE_GLOBAL_USB
 
 /**
  *  Returns the path to the item in the form of 'grandparent > parent > item'
@@ -71,182 +73,6 @@ static QTreeWidgetItem* findItem (QTreeWidget *aView,
 
     return list.count() ? list [0] : 0;
 }
-
-// /* Language page */
-// /* Defined in VBoxGlobal.cpp */
-// extern const char *gVBoxLangSubDir;
-// extern const char *gVBoxLangFileBase;
-// extern const char *gVBoxLangFileExt;
-// extern const char *gVBoxLangIDRegExp;
-// extern const char *gVBoxBuiltInLangName;
-// class LanguageItem : public Q3ListViewItem
-// {
-// public:
-//
-//     enum { TypeId = 1001 };
-//
-//     LanguageItem (Q3ListView *aParent, const QTranslator &aTranslator,
-//                   const QString &aId, bool aBuiltIn = false)
-//         : Q3ListViewItem (aParent), mBuiltIn (aBuiltIn), mInvalid (false)
-//     {
-//         Assert (!aId.isEmpty());
-//
-// //        QTranslatorMessage transMes;
-//
-//         /* Note: context/source/comment arguments below must match strings
-//          * used in VBoxGlobal::languageName() and friends (the latter are the
-//          * source of information for the lupdate tool that generates
-//          * translation files) */
-//
-//         QString nativeLanguage = tratra (aTranslator,
-//             "@@@", "English", "Native language name");
-//         QString nativeCountry = tratra (aTranslator,
-//             "@@@", "--", "Native language country name "
-//             "(empty if this language is for all countries)");
-//
-//         QString englishLanguage = tratra (aTranslator,
-//             "@@@", "English", "Language name, in English");
-//         QString englishCountry = tratra (aTranslator,
-//             "@@@", "--", "Language country name, in English "
-//             "(empty if native country name is empty)");
-//
-//         QString translatorsName = tratra (aTranslator,
-//             "@@@", "Sun Microsystems, Inc.", "Comma-separated list of translators");
-//
-//         QString itemName = nativeLanguage;
-//         QString langName = englishLanguage;
-//
-//         if (!aBuiltIn)
-//         {
-//             if (nativeCountry != "--")
-//                 itemName += " (" + nativeCountry + ")";
-//
-//             if (englishCountry != "--")
-//                 langName += " (" + englishCountry + ")";
-//
-//             if (itemName != langName)
-//                 langName = itemName + " / " + langName;
-//         }
-//         else
-//         {
-//             itemName += VBoxGlobalSettingsDlg::tr (" (built-in)", "Language");
-//             langName += VBoxGlobalSettingsDlg::tr (" (built-in)", "Language");
-//         }
-//
-//         setText (0, itemName);
-//         setText (1, aId);
-//         setText (2, langName);
-//         setText (3, translatorsName);
-//     }
-//
-//     /* Constructs an item for an invalid language ID (i.e. when a language
-//      * file is missing or corrupt). */
-//     LanguageItem (Q3ListView *aParent, const QString &aId)
-//         : Q3ListViewItem (aParent), mBuiltIn (false), mInvalid (true)
-//     {
-//         Assert (!aId.isEmpty());
-//
-//         setText (0, QString ("<%1>").arg (aId));
-//         setText (1, aId);
-//         setText (2, VBoxGlobalSettingsDlg::tr ("<unavailable>", "Language"));
-//         setText (3, VBoxGlobalSettingsDlg::tr ("<unknown>", "Author(s)"));
-//     }
-//
-//     /* Constructs an item for the default language ID (column 1 will be set
-//      * to QString::null) */
-//     LanguageItem (Q3ListView *aParent)
-//         : Q3ListViewItem (aParent), mBuiltIn (false), mInvalid (false)
-//     {
-//         setText (0, VBoxGlobalSettingsDlg::tr ("Default", "Language"));
-//         setText (1, QString::null);
-//         /* empty strings of some reasonable length to prevent the info part
-//          * from being shrinked too much when the list wants to be wider */
-//         setText (2, "                ");
-//         setText (3, "                ");
-//     }
-//
-//     int rtti() const { return TypeId; }
-//
-//     int compare (Q3ListViewItem *aItem, int aColumn, bool aAscending) const
-//     {
-//         QString thisId = text (1);
-//         QString thatId = aItem->text (1);
-//         if (thisId.isNull())
-//             return -1;
-//         if (thatId.isNull())
-//             return 1;
-//         if (mBuiltIn)
-//             return -1;
-//         if (aItem->rtti() == TypeId && ((LanguageItem *) aItem)->mBuiltIn)
-//             return 1;
-//         return Q3ListViewItem::compare (aItem, aColumn, aAscending);
-//     }
-//
-//     void paintCell (QPainter *aPainter, const QColorGroup &aGroup,
-//                     int aColumn, int aWidth, int aAlign)
-//     {
-//         QFont font = aPainter->font();
-//
-//         if (mInvalid)
-//             font.setItalic (true);
-//         /* mark the effectively active language */
-//         if (text (1) == VBoxGlobal::languageId())
-//             font.setBold (true);
-//
-//         if (aPainter->font() != font)
-//             aPainter->setFont (font);
-//
-//         Q3ListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aAlign);
-//
-//         if (mBuiltIn)
-//         {
-//             int y = height() - 1;
-//             aPainter->setPen (aGroup.mid());
-//             aPainter->drawLine (0, y, aWidth - 1, y);
-//         }
-//     }
-//
-//     int width (const QFontMetrics &aFM, const Q3ListView *aLV, int aC) const
-//     {
-//         QFont font = aLV->font();
-//
-//         if (mInvalid)
-//             font.setItalic (true);
-//         /* mark the effectively active language */
-//         if (text (1) == VBoxGlobal::languageId())
-//             font.setBold (true);
-//
-//         QFontMetrics fm = aFM;
-//         if (aLV->font() != font)
-//             fm = QFontMetrics (font);
-//
-//         return Q3ListViewItem::width (fm, aLV, aC);
-//     }
-//
-//     void setup ()
-//     {
-//         Q3ListViewItem::setup();
-//         if (mBuiltIn)
-//             setHeight (height() + 1);
-//     }
-//
-// private:
-//
-//     QString tratra (const QTranslator &aTranslator, const char *aCtxt,
-//                        const char *aSrc, const char *aCmnt)
-//     {
-// //#warning port me: check this
-//         QString msg = aTranslator.translate (aCtxt, aSrc, aCmnt);
-// //        QString msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt).translation();
-//         /* return the source text if no translation is found */
-//         if (msg.isEmpty())
-//             msg = QString (aSrc);
-//         return msg;
-//     }
-//
-//     bool mBuiltIn : 1;
-//     bool mInvalid : 1;
-// };
 
 VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
     : QIWithRetranslateUI<QIMainDialog> (aParent)
@@ -297,63 +123,10 @@ VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
     connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
 
-//     /* Language page */
-//     lvLanguages->header()->hide();
-//     lvLanguages->setSorting (0);
-//
-//     char szNlsPath[RTPATH_MAX];
-//     int rc = RTPathAppPrivateNoArch (szNlsPath, sizeof(szNlsPath));
-//     AssertRC (rc);
-//     QString nlsPath = QString (szNlsPath) + gVBoxLangSubDir;
-//     QDir nlsDir (nlsPath);
-//     QStringList files = nlsDir.entryList (QString ("%1*%2")
-//                                           .arg (gVBoxLangFileBase, gVBoxLangFileExt),
-//                                           QDir::Files);
-//     QTranslator translator;
-//     /* add the default language */
-//     new LanguageItem (lvLanguages);
-//     /* add the built-in language */
-//     new LanguageItem (lvLanguages, translator, gVBoxBuiltInLangName, true /* built-in */);
-//     /* add all existing languages */
-//     for (QStringList::Iterator it = files.begin(); it != files.end(); ++ it)
-//     {
-//         QString fileName = *it;
-//         QRegExp regExp (QString (gVBoxLangFileBase) + gVBoxLangIDRegExp);
-//         int pos = regExp.search (fileName);
-//         if (pos == -1)
-//             continue;
-//
-//         bool loadOk = translator.load (fileName, nlsPath);
-//         if (!loadOk)
-//             continue;
-//
-//         new LanguageItem (lvLanguages, translator, regExp.cap (1));
-//     }
-//     lvLanguages->adjustColumn (0);
-
     /* Hide unnecessary columns and header */
     mTwSelector->header()->hide();
     mTwSelector->hideColumn (listView_Id);
     mTwSelector->hideColumn (listView_Link);
-
-    /* Adjust selector list */
-    int minWid = 0;
-    for (int i = 0; i < mTwSelector->topLevelItemCount(); ++ i)
-    {
-        QTreeWidgetItem *item = mTwSelector->topLevelItem (i);
-        QFontMetrics fm (item->font (0));
-        int wid = fm.width (item->text (0)) +
-                  16 /* icon */ + 2 * 8 /* 2 margins */;
-        minWid = wid > minWid ? wid : minWid;
-        int hei = fm.height() > 16 ?
-                  fm.height() /* text height */ :
-                  16 /* icon */ + 2 * 2 /* 2 margins */;
-        item->setSizeHint (0, QSize (wid, hei));
-    }
-    mTwSelector->setFixedWidth (minWid);
-
-    /* Sort selector by the id column (to have pages in the desired order) */
-    mTwSelector->sortItems (listView_Id, Qt::AscendingOrder);
 
     /* Initially select the first settings page */
     mTwSelector->setCurrentItem (mTwSelector->topLevelItem (0));
@@ -369,22 +142,6 @@ VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
 void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
                                      const VBoxGlobalSettings &aGs)
 {
-//     /* Language page */
-//     QString langId = gs.languageId();
-//     Q3ListViewItem *item = lvLanguages->findItem (langId, 1);
-//     if (!item)
-//     {
-//         /* add an item for an invalid language to represent it in the list */
-//         item = new LanguageItem (lvLanguages, langId);
-//         lvLanguages->adjustColumn (0);
-//     }
-//     Assert (item);
-//     if (item)
-//     {
-//         lvLanguages->setCurrentItem (item);
-//         lvLanguages->setSelected (item, true);
-//     }
-
     /* General Page */
     VBoxGlobalSettingsGeneral::getFrom (aProps, aGs, mPageGeneral, this);
 
@@ -392,10 +149,11 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
     VBoxGlobalSettingsInput::getFrom (aProps, aGs, mPageInput, this);
 
     /* USB Page */
-    VBoxVMSettingsUSB::getFrom (mPageUSB, this, pagePath (mPageUSB));
+    if (mPageUSB->isEnabled())
+        VBoxVMSettingsUSB::getFrom (mPageUSB, this, pagePath (mPageUSB));
 
     /* Language Page */
-    //VBoxGlobalSettingsLanguage::getFrom (aProps, aGs, mPageLanguage);
+    VBoxGlobalSettingsLanguage::getFrom (aProps, aGs, mPageLanguage, this);
 }
 
 /**
@@ -405,15 +163,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &aProps,
 COMResult VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &aProps,
                                             VBoxGlobalSettings &aGs)
 {
-//     /* Language Page */
-//     Q3ListViewItem *selItem = lvLanguages->selectedItem();
-//     Assert (selItem);
-//     if (mLanguageChanged && selItem)
-//     {
-//         gs.setLanguageId (selItem->text (1));
-//         VBoxGlobal::loadLanguage (selItem->text (1));
-//     }
-
     /* General Page */
     VBoxGlobalSettingsGeneral::putBackTo (aProps, aGs);
 
@@ -424,7 +173,7 @@ COMResult VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &aProps,
     VBoxVMSettingsUSB::putBackTo();
 
     /* Language Page */
-    //VBoxGlobalSettingsLanguage::putBackTo (aProps, aGs);
+    VBoxGlobalSettingsLanguage::putBackTo (aProps, aGs);
 
     return COMResult();
 }
@@ -438,6 +187,17 @@ void VBoxGlobalSettingsDlg::retranslateUi()
     Ui::VBoxGlobalSettingsDlg::retranslateUi (this);
     /* Set the old index */
     mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci));
+
+    /* Update QTreeWidget with available items */
+    updateAvailability();
+
+    /* Adjust selector list */
+    mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)
+        ->sizeHintForColumn (0) + 2 * mTwSelector->frameWidth());
+
+    /* Sort selector by the id column (to have pages in the desired order) */
+    mTwSelector->sortItems (listView_Id, Qt::AscendingOrder);
+    mTwSelector->resizeColumnToContents (0);
 
     mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
     mButtonBox->button (QDialogButtonBox::Ok)->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
@@ -641,45 +401,31 @@ void VBoxGlobalSettingsDlg::setWarning (const QString &aWarning)
         updateWhatsThis (true);
 }
 
-// /* Language Page */
-// void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (Q3ListViewItem *aItem)
-// {
-//     Assert (aItem);
-//     if (!aItem) return;
-//
-//     /* disable labels for the Default language item */
-//     bool enabled = !aItem->text (1).isNull();
-//
-//     tlLangName->setEnabled (enabled);
-//     tlAuthorName->setEnabled (enabled);
-//     tlLangData->setText (aItem->text (2));
-//     tlAuthorData->setText (aItem->text (3));
-//
-//     mLanguageChanged = true;
-// }
-//
-// void VBoxGlobalSettingsDlg::fixLanguageChange()
-// {
-//     /* fix for usb page */
-//
-// #ifdef DEBUG_dmik
-//     CHost host = vboxGlobal().virtualBox().GetHost();
-//     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
-//     if (coll.isNull())
-//     {
-// #endif
-//         /* disable the USB host filters category if the USB is
-//          * not available (i.e. in VirtualBox OSE) */
-//
-//         Q3ListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
-//         Assert (usbItem);
-//         usbItem->setVisible (false);
-//
-//         /* disable validators if any */
-//         pageUSB->setEnabled (false);
-//
-// #ifdef DEBUG_dmik
-//     }
-// #endif
-// }
+void VBoxGlobalSettingsDlg::updateAvailability()
+{
+#ifdef ENABLE_GLOBAL_USB
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
+
+    /* Show an error message (if there is any).
+     * This message box may be suppressed if the user wishes so. */
+    if (!host.isReallyOk())
+        vboxProblem().cannotAccessUSB (host);
+
+    if (coll.isNull())
+    {
+#endif
+        /* Disable the USB controller category if the USB controller is
+         * not available (i.e. in VirtualBox OSE) */
+        QList<QTreeWidgetItem*> items = mTwSelector->findItems (
+            "#usb", Qt::MatchExactly, listView_Link);
+        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
+        Assert (usbItem);
+        if (usbItem)
+            usbItem->setHidden (true);
+        mPageUSB->setEnabled (false);
+#ifdef ENABLE_GLOBAL_USB
+    }
+#endif
+}
 
