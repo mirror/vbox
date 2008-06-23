@@ -1310,7 +1310,7 @@ typedef struct PGMPOOLUSER
     /** The user page index. */
     uint16_t            iUser;
     /** Index into the user table. */
-    uint16_t            iUserTable;
+    uint32_t            iUserTable;
 } PGMPOOLUSER, *PPGMPOOLUSER;
 typedef const PGMPOOLUSER *PCPGMPOOLUSER;
 #pragma pack()
@@ -2624,10 +2624,10 @@ void            pgmR3PoolReset(PVM pVM);
 #ifdef IN_GC
 void           *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
-int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint16_t iUserTable, PPPGMPOOLPAGE ppPage);
+int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
 PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
-void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint16_t iUserTable);
-void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint16_t iUserTable);
+void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
+void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolFlushAll(PVM pVM);
 void            pgmPoolClearAll(PVM pVM);
