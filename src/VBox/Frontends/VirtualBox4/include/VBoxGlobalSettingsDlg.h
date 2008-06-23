@@ -68,7 +68,7 @@ private:
 
     QString pagePath (QWidget *aPage);
     void setWarning (const QString &aWarning);
-    void updateMediaShortcuts();
+    void updateAvailability();
 
     /* Common */
     QString  mWarnString;
