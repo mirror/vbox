@@ -120,11 +120,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
              this, SLOT (onMediaEnumerationDone()));
 
-    /* Parallel Port Page (currently disabled) */
-    //QTreeWidgetItem *item = findItem (mTwSelector, "#parallelPorts", listView_Link);
-    //Assert (item);
-    //if (item) item->setHidden (true);
-
     /* Hide unnecessary columns and header */
     mTwSelector->header()->hide();
     mTwSelector->hideColumn (listView_Id);
@@ -180,6 +175,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
+    updateAvailability();
+
     setWindowTitle (dialogTitle());
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -212,19 +209,22 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
                                           this, pagePath (mPageSerial));
 
     /* Parallel Ports */
-    VBoxVMSettingsParallel::getFromMachine (aMachine, mPageParallel,
-                                            this, pagePath (mPageParallel));
+    if (mPageParallel->isEnabled())
+        VBoxVMSettingsParallel::getFromMachine (aMachine, mPageParallel,
+                                                this, pagePath (mPageParallel));
 
     /* USB */
-    VBoxVMSettingsUSB::getFrom (aMachine, mPageUSB,
-                                this, pagePath (mPageUSB));
+    if (mPageUSB->isEnabled())
+        VBoxVMSettingsUSB::getFrom (aMachine, mPageUSB,
+                                    this, pagePath (mPageUSB));
 
     /* Shared Folders */
     VBoxVMSettingsSF::getFromMachineEx (aMachine, mPageShared, this);
 
     /* Vrdp */
-    VBoxVMSettingsVRDP::getFromMachine (aMachine, mPageVrdp,
-                                        this, pagePath (mPageVrdp));
+    if (mPageVrdp->isEnabled())
+        VBoxVMSettingsVRDP::getFromMachine (aMachine, mPageVrdp,
+                                            this, pagePath (mPageVrdp));
 
     /* Finally set the reset First Run Wizard flag to "false" to make sure
      * user will see this dialog if he hasn't change the boot-order
@@ -287,6 +287,9 @@ void VBoxVMSettingsDlg::retranslateUi()
     Ui::VBoxVMSettingsDlg::retranslateUi (this);
     /* Set the old index */
     mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci));
+
+    /* Update QTreeWidget with available items */
+    updateAvailability();
 
     /* Adjust selector list */
     mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)->sizeHintForColumn (0) + 2 * mTwSelector->frameWidth());
@@ -547,5 +550,54 @@ QString VBoxVMSettingsDlg::dialogTitle() const
     if (!mMachine.isNull())
         dialogTitle = tr ("%1 - Settings").arg (mMachine.GetName());
     return dialogTitle;
+}
+
+void VBoxVMSettingsDlg::updateAvailability()
+{
+    if (mMachine.isNull())
+        return;
+
+    /* Parallel Port Page (currently disabled) */
+    QTreeWidgetItem *parallelItem =
+        findItem (mTwSelector, "#parallelPorts", listView_Link);
+    Assert (parallelItem);
+    if (parallelItem)
+        parallelItem->setHidden (true);
+    mPageParallel->setEnabled (false);
+
+    /* USB Stuff */
+    CUSBController ctl = mMachine.GetUSBController();
+    /* Show an error message (if there is any).
+     * Note that we don't use the generic cannotLoadMachineSettings()
+     * call here because we want this message to be suppressable. */
+    if (!mMachine.isReallyOk())
+        vboxProblem().cannotAccessUSB (mMachine);
+    if (ctl.isNull())
+    {
+        /* Disable the USB controller category if the USB controller is
+         * not available (i.e. in VirtualBox OSE) */
+        QTreeWidgetItem *usbItem =
+            findItem (mTwSelector, "#usb", listView_Link);
+        Assert (usbItem);
+        if (usbItem)
+            usbItem->setHidden (true);
+        mPageUSB->setEnabled (false);
+    }
+
+    /* VRDP Stuff */
+    CVRDPServer vrdp = mMachine.GetVRDPServer();
+    if (vrdp.isNull())
+    {
+        /* Disable the VRDP category if VRDP is
+         * not available (i.e. in VirtualBox OSE) */
+        QTreeWidgetItem *vrdpItem =
+            findItem (mTwSelector, "#vrdp", listView_Link);
+        Assert (vrdpItem);
+        if (vrdpItem)
+            vrdpItem->setHidden (true);
+        mPageVrdp->setEnabled (false);
+        /* If mMachine has something to say, show the message */
+        vboxProblem().cannotLoadMachineSettings (mMachine, false /* strict */);
+    }
 }
 

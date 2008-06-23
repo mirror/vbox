@@ -65,27 +65,6 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine,
                                  VBoxVMSettingsDlg *aDlg,
                                  const QString &aPath)
 {
-    CUSBController ctl = aMachine.GetUSBController();
-
-    /* Show an error message (if there is any).
-     * Note that we don't use the generic cannotLoadMachineSettings()
-     * call here because we want this message to be suppressable. */
-    if (!aMachine.isReallyOk())
-        vboxProblem().cannotAccessUSB (aMachine);
-
-    if (ctl.isNull())
-    {
-        /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE) */
-        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
-            "#usb", Qt::MatchExactly, listView_Link);
-        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
-        Assert (usbItem);
-        if (usbItem)
-            usbItem->setHidden (true);
-        return;
-    }
-
     mSettings = new VBoxVMSettingsUSB (aPage, MachineType, aDlg, aPath);
     QVBoxLayout *layout = new QVBoxLayout (aPage);
     layout->setContentsMargins (0, 0, 0, 0);
@@ -237,6 +216,11 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
 
     /* Applying language settings */
     retranslateUi();
+}
+
+VBoxVMSettingsUSB::~VBoxVMSettingsUSB()
+{
+    mSettings = 0;
 }
 
 void VBoxVMSettingsUSB::getFromHost()

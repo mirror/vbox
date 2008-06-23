@@ -107,13 +107,14 @@ void VBoxVMSettingsParallel::getFromMachine (const CMachine &aMachine,
 
 void VBoxVMSettingsParallel::putBackToMachine()
 {
-    for (int index = 0; index < mTabWidget->count(); ++ index)
-    {
-        VBoxVMSettingsParallel *page =
-            (VBoxVMSettingsParallel*) mTabWidget->widget (index);
-        Assert (page);
-        page->putBackToPort();
-    }
+    if (mTabWidget)
+        for (int index = 0; index < mTabWidget->count(); ++ index)
+        {
+            VBoxVMSettingsParallel *page =
+                (VBoxVMSettingsParallel*) mTabWidget->widget (index);
+            Assert (page);
+            page->putBackToPort();
+        }
 }
 
 bool VBoxVMSettingsParallel::revalidate (QString &aWarning, QString &aTitle)
