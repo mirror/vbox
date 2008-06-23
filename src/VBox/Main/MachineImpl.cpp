@@ -73,6 +73,9 @@
 
 #include <VBox/err.h>
 #include <VBox/param.h>
+#ifdef VBOX_WITH_INFO_SVC
+# include <VBox/HostServices/VBoxInfoSvc.h>
+#endif
 
 #include <algorithm>
 
@@ -2648,6 +2651,146 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     BOOL dummy;
     return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
+
+/**
+ * Read a value from the host/guest configuration registry.  If a session is
+ * currently open for the guest then query the console object for the value,
+ * since the current values of the registry will be held in RAM in the
+ * session.  Otherwise read the value from machine extra data, where it is
+ * stored between sessions.
+ * 
+ * @note since the way this method is implemented depends on whether or not
+ *       a session is currently open, we grab a write lock on the object, in
+ *       order to ensure that the session state does not change during the
+ *       call, and to force us to block if it is currently changing (either
+ *       way) between open and closed. 
+ */
+STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
+{
+    if (!VALID_PTR(aValue))
+        return E_POINTER;
+
+#ifndef VBOX_WITH_INFO_SVC
+    HRESULT hrc = E_NOTIMPL;
+#else
+    using namespace svcInfo;
+
+    HRESULT hrc = E_FAIL;
+    AutoWriteLock alock (this);
+    switch (mData->mSession.mState)
+    {
+        case SessionState_Closed:
+        {
+            /* The "+ 1" in the length is the null terminator. */
+            Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
+            BSTR strKeyRaw = strKey.mutableRaw();
+
+            /* String manipulation in Main is pretty painful, especially given
+             * how often it is needed. */
+            for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
+                /* I take it this is legal, at least g++ accepts it. */
+                strKeyRaw[i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
+            /* The "+ 1" in the length is the null terminator. */
+            for (unsigned i = 0, len = Bstr(aKey).length() + 1; i < len; ++i)
+                strKeyRaw[i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey[i];
+            hrc = GetExtraData(strKey, aValue);
+            break;
+        }
+        case SessionState_Open:
+        {
+            /*
+             *  Get the console from the direct session (note that we don't leave the
+             *  lock here because GetRemoteConsole must not call us back).
+             */
+            ComPtr <IConsole> console;
+            hrc = mData->mSession.mDirectControl->GetRemoteConsole (console.asOutParam());
+            if (!SUCCEEDED (hrc))
+                /* The failure may w/o any error info (from RPC), so provide one */
+                hrc = setError (hrc, tr ("Failed to get a console object from the direct session"));
+            else
+            {
+                ComAssertRet (!console.isNull(), E_FAIL);
+                hrc = console->GetConfigRegistryValue (aKey, aValue);
+            }
+            break;
+        }
+        default:
+            /* If we get here then I have misunderstood the semantics.  Quite possible. */
+            AssertLogRel(false);
+            hrc = E_UNEXPECTED;
+    }
+#endif  /* VBOX_WITH_INFO_SVC not defined */
+    return hrc;
+}
+
+/**
+ * Write a value to the host/guest configuration registry.  If a session is
+ * currently open for the guest then query the console object for the value,
+ * since the current values of the registry will be held in RAM in the
+ * session.  Otherwise read the value from machine extra data, where it is
+ * stored between sessions.
+ * 
+ * @note since the way this method is implemented depends on whether or not
+ *       a session is currently open, we grab a write lock on the object, in
+ *       order to ensure that the session state does not change during the
+ *       call, and to force us to block if it is currently changing (either
+ *       way) between open and closed. 
+ */
+STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue)
+{
+#ifndef VBOX_WITH_INFO_SVC
+    HRESULT hrc = E_NOTIMPL;
+#else
+    using namespace svcInfo;
+
+    HRESULT hrc = E_FAIL;
+    AutoWriteLock alock (this);
+    switch (mData->mSession.mState)
+    {
+        case SessionState_Closed:
+        {
+            /* The "+ 1" in the length is the null terminator. */
+            Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
+            BSTR strKeyRaw = strKey.mutableRaw();
+
+            /* String manipulation in Main is pretty painful, especially given
+             * how often it is needed. */
+            for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
+                /* I take it this is legal, at least g++ accepts it. */
+                strKeyRaw[i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
+            /* The "+ 1" in the length is the null terminator. */
+            for (unsigned i = 0, len = Bstr(aKey).length() + 1; i < len; ++i)
+                strKeyRaw[i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey[i];
+            hrc = SetExtraData(strKey, aValue);
+            break;
+        }
+        case SessionState_Open:
+        {
+            /*
+             *  Get the console from the direct session (note that we don't leave the
+             *  lock here because GetRemoteConsole must not call us back).
+             */
+            ComPtr <IConsole> console;
+            hrc = mData->mSession.mDirectControl->GetRemoteConsole (console.asOutParam());
+            if (!SUCCEEDED (hrc))
+                /* The failure may w/o any error info (from RPC), so provide one */
+                hrc = setError (hrc, tr ("Failed to get a console object from the direct session"));
+            else
+            {
+                ComAssertRet (!console.isNull(), E_FAIL);
+                hrc = console->SetConfigRegistryValue (aKey, aValue);
+            }
+            break;
+        }
+        default:
+            /* If we get here then I have misunderstood the semantics.  Quite possible. */
+            AssertLogRel(false);
+            hrc = E_UNEXPECTED;
+    }
+#endif  /* VBOX_WITH_INFO_SVC not defined */
+    return hrc;
+}
+
 
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
