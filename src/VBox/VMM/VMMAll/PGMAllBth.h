@@ -3594,7 +3594,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
         if (GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
-            AssertMsgFailed(("Physical address doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs RX64\n", pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
+            AssertMsgFailed(("Physical address doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs %RX64\n", pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
             GCPtr += UINT64_C(_2M * 512 * 512);
             cErrors++;
             continue;
@@ -3669,7 +3669,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
             if (GCPhysPdeSrc != pShwPde->GCPhys)
             {
-                AssertMsgFailed(("Physical address doesn't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs RX64\n", pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
+                AssertMsgFailed(("Physical address doesn't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs %RX64\n", pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
                 GCPtr += 512 * _2M;
                 cErrors++;
                 continue;
