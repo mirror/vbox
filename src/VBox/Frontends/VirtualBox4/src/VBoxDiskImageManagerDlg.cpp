@@ -56,13 +56,11 @@ class DiskImageItem : public QTreeWidgetItem
 {
 public:
 
-    enum { TypeId = QTreeWidgetItem::UserType + 1 };
-
     DiskImageItem (DiskImageItem *aParent) :
-        QTreeWidgetItem (aParent, TypeId), mStatus (VBoxMedia::Unknown) {}
+        QTreeWidgetItem (aParent, QITreeWidget::BasicItemType), mStatus (VBoxMedia::Unknown) {}
 
     DiskImageItem (QTreeWidget *aParent) :
-        QTreeWidgetItem (aParent, TypeId), mStatus (VBoxMedia::Unknown) {}
+        QTreeWidgetItem (aParent, QITreeWidget::BasicItemType), mStatus (VBoxMedia::Unknown) {}
 
     void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
     const VBoxMedia &media() const { return mMedia; }
@@ -181,7 +179,7 @@ public:
     DiskImageItem* operator*()
     {
         QTreeWidgetItem *item = QTreeWidgetItemIterator::operator*();
-        return item && item->type() == DiskImageItem::TypeId ?
+        return item && item->type() == QITreeWidget::BasicItemType ?
             static_cast<DiskImageItem*> (item) : NULL;
     }
 
@@ -1456,7 +1454,7 @@ DiskImageItem *VBoxDiskImageManagerDlg::toDiskImageItem (QTreeWidgetItem *aItem)
     /* Convert the QTreeWidgetItem to a DiskImageItem if it is valid. */
     DiskImageItem *item = NULL;
     if (aItem &&
-        aItem->type() == DiskImageItem::TypeId)
+        aItem->type() == QITreeWidget::BasicItemType)
         item = static_cast <DiskImageItem *> (aItem);
 
     return item;

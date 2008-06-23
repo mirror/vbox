@@ -23,14 +23,29 @@
 #ifndef __QITreeWidget_h__
 #define __QITreeWidget_h__
 
-/* Qt includes */
 #include <QTreeWidget>
 
+/*
+ * QTreeWidget class which extends standard QTreeWidget's functionality.
+ */
 class QITreeWidget: public QTreeWidget
 {
     Q_OBJECT;
 
 public:
+
+    /*
+     * There are two allowed QTreeWidgetItem types which may be used with
+     * QITreeWidget: basic and complex.
+     * Complex type used in every place where the particular item have to
+     * be separately repainted with it's own content.
+     * Basic are used in all other places.
+     */
+    enum
+    {
+        BasicItemType   = QTreeWidgetItem::UserType + 1,
+        ComplexItemType = QTreeWidgetItem::UserType + 2
+    };
 
     QITreeWidget (QWidget *aParent = 0);
 
@@ -40,8 +55,24 @@ protected:
 
     virtual Qt::DropActions supportedDropActions () const;
 
+    void paintEvent (QPaintEvent *);
+
     /* Protected member vars */
     Qt::DropActions mSupportedDropActions;
+};
+
+/*
+ * Interface for more complex items which requires special repainting
+ * routine inside QITreeWidget's viewport.
+ */
+class ComplexTreeWidgetItem : public QTreeWidgetItem
+{
+public:
+
+    ComplexTreeWidgetItem (QTreeWidget *aParent)
+        : QTreeWidgetItem  (aParent, QITreeWidget::ComplexItemType) {}
+
+    virtual void paintItem (QPainter *aPainter) = 0;
 };
 
 #endif /* __QITreeWidget_h__ */

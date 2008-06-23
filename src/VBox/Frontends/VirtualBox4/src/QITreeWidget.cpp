@@ -22,8 +22,7 @@
 
 #include "QITreeWidget.h"
 
-/* Qt includes */
-#include <QMouseEvent>
+#include <QPainter>
 
 QITreeWidget::QITreeWidget (QWidget *aParent)
     : QTreeWidget (aParent)
@@ -38,5 +37,40 @@ void QITreeWidget::setSupportedDropActions (Qt::DropActions aAction)
 Qt::DropActions QITreeWidget::supportedDropActions() const
 {
     return mSupportedDropActions;
+}
+
+void QITreeWidget::paintEvent (QPaintEvent *aEvent)
+{
+    /* Painter for items */
+    QPainter painter (viewport());
+
+    /* Here we let the items make some painting inside the viewport. */
+    QTreeWidgetItemIterator it (this);
+    while (*it)
+    {
+        switch ((*it)->type())
+        {
+            case ComplexItemType:
+            {
+                /* Let the ComplexItem paint itself */
+                ComplexTreeWidgetItem *i = static_cast<ComplexTreeWidgetItem*> (*it);
+                i->paintItem (&painter);
+                break;
+            }
+            case BasicItemType:
+            {
+                /* Do nothing for BasicItem */
+                break;
+            }
+            default:
+            {
+                /* Wrong item is used */
+                break;
+            }
+        }
+        ++ it;
+    }
+
+    QTreeWidget::paintEvent (aEvent);
 }
 
