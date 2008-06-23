@@ -37,6 +37,10 @@ VBoxSharedFolders_INCS.win  = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)
 
+	
+VBoxSharedFolders_LDFLAGS.darwin = \
+	-framework Carbon
+
 VBoxSharedFolders_SOURCES = \
 	service.cpp \
 	shflhandle.cpp \

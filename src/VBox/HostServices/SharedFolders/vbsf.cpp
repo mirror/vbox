@@ -32,6 +32,9 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>
+#ifdef RT_OS_DARWIN
+#include <Carbon/Carbon.h>
+#endif
 
 #undef LogFlow
 #define LogFlow Log
@@ -231,6 +234,36 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
     }
     else
     {
+#ifdef RT_OS_DARWIN
+		SHFLSTRING *pPathParameter = pPath;
+		size_t cbPathLength;
+		CFMutableStringRef inStr = ::CFStringCreateMutable(NULL, 0);
+		uint16_t ucs2Length;
+		CFRange rangeCharacters;
+		
+		// Is 8 times length enough for decomposed in worst case...?
+		cbPathLength = sizeof(SHFLSTRING) + pPathParameter->u16Length * 8 + 2;
+		pPath = (SHFLSTRING *)RTMemAllocZ (cbPathLength);
+		if (!pPath)
+		{
+			rc = VERR_NO_MEMORY;
+			Log(("RTMemAllocZ %x failed!!\n", cbPathLength));
+			return rc;
+		}
+		
+		::CFStringAppendCharacters(inStr, (UniChar*)pPathParameter->String.ucs2, pPathParameter->u16Length / sizeof(pPathParameter->String.ucs2[0]));
+		::CFStringNormalize(inStr, kCFStringNormalizationFormD);
+		ucs2Length = ::CFStringGetLength(inStr);
+		
+		rangeCharacters.location = 0;
+		rangeCharacters.length = ucs2Length;
+		::CFStringGetCharacters(inStr, rangeCharacters, pPath->String.ucs2);
+		pPath->String.ucs2[ucs2Length] = 0x0000; // NULL terminated
+		pPath->u16Length = ucs2Length * sizeof(pPath->String.ucs2[0]);
+		pPath->u16Size = pPath->u16Length + sizeof(pPath->String.ucs2[0]);
+		
+		CFRelease(inStr);
+#endif
         /* Client sends us UCS2, so convert it to UTF8. */
         Log(("Root %ls path %.*ls\n", pwszRoot, pPath->u16Length/sizeof(pPath->String.ucs2[0]), pPath->String.ucs2));
 
@@ -255,6 +288,10 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             if (VBOX_FAILURE(rc))
             {
                 AssertFailed();
+#ifdef RT_OS_DARWIN
+                RTMemFree(pPath);
+                pPath = pPathParameter;
+#endif
                 return rc;
             }
 
@@ -298,6 +335,10 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 if (VBOX_FAILURE(rc))
                 {
                     AssertFailed();
+#ifdef RT_OS_DARWIN
+                	RTMemFree(pPath);
+                	pPath = pPathParameter;
+#endif
                     return rc;
                 }
 
@@ -312,6 +353,10 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             /* Nul terminate the string */
             *dst = 0;
         }
+#ifdef RT_OS_DARWIN
+        RTMemFree(pPath);
+        pPath = pPathParameter;
+#endif
     }
 
     if (VBOX_SUCCESS (rc))
@@ -1340,6 +1385,28 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             int rc2 = RTStrToUtf16Ex(pDirEntry->szName, RTSTR_MAX, &pwszString, pDirEntry->cbName+1, NULL);
             AssertRC(rc2);
 
+#ifdef RT_OS_DARWIN
+			{
+				// Convert to
+				// Normalization Form C (composed Unicode). We need this because
+				// Mac OS X file system uses NFD (Normalization Form D :decomposed Unicode)
+				// while most other OS', server-side programs usually expect NFC.
+				uint16_t ucs2Length;
+				CFRange rangeCharacters;
+				CFMutableStringRef inStr = ::CFStringCreateMutable(NULL, 0);
+				
+				::CFStringAppendCharacters(inStr, (UniChar *)pwszString, RTUtf16Len (pwszString));
+				::CFStringNormalize(inStr, kCFStringNormalizationFormC);
+				ucs2Length = ::CFStringGetLength(inStr);
+				
+				rangeCharacters.location = 0;
+				rangeCharacters.length = ucs2Length;
+				::CFStringGetCharacters(inStr, rangeCharacters, pwszString);
+				pwszString[ucs2Length] = 0x0000; // NULL terminated
+				
+				CFRelease(inStr);
+			}
+#endif
             pSFDEntry->name.u16Length = RTUtf16Len (pSFDEntry->name.String.ucs2) * 2;
             pSFDEntry->name.u16Size = pSFDEntry->name.u16Length + 2;
 
