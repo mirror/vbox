@@ -36,13 +36,8 @@ public:
 
     void setSupportedDropActions (Qt::DropActions aAction);
 
-signals:
-
-    void itemRightClicked (const QPoint &aPos, QTreeWidgetItem *aItem, int aColumn);
-
 protected:
 
-    void mousePressEvent (QMouseEvent *aEvent);
     virtual Qt::DropActions supportedDropActions () const;
 
     /* Protected member vars */

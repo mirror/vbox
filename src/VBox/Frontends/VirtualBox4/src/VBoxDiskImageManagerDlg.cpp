@@ -280,8 +280,8 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
     connect (mHdsTree, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mHdsTree, SIGNAL (itemRightClicked (const QPoint &, QTreeWidgetItem *, int)),
-             this, SLOT (processRightClick (const QPoint &, QTreeWidgetItem *, int)));
+    connect (mHdsTree, SIGNAL (customContextMenuRequested (const QPoint &)),
+             this, SLOT (showContextMenu (const QPoint &)));
 
     mCdsTree->header()->setResizeMode (0, QHeaderView::Stretch);
     mCdsTree->header()->setResizeMode (1, QHeaderView::ResizeToContents);
@@ -292,8 +292,8 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
     connect (mCdsTree, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mCdsTree, SIGNAL (itemRightClicked (const QPoint &, QTreeWidgetItem *, int)),
-             this, SLOT (processRightClick (const QPoint &, QTreeWidgetItem *, int)));
+    connect (mCdsTree, SIGNAL (customContextMenuRequested (const QPoint &)),
+             this, SLOT (showContextMenu (const QPoint &)));
 
     mFdsTree->header()->setResizeMode (0, QHeaderView::Stretch);
     mFdsTree->header()->setResizeMode (1, QHeaderView::ResizeToContents);
@@ -304,8 +304,8 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
     connect (mFdsTree, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mFdsTree, SIGNAL (itemRightClicked (const QPoint &, QTreeWidgetItem *, int)),
-             this, SLOT (processRightClick (const QPoint &, QTreeWidgetItem *, int)));
+    connect (mFdsTree, SIGNAL (customContextMenuRequested (const QPoint &)),
+             this, SLOT (showContextMenu (const QPoint &)));
 
     /* Context menu composing */
     mActionsContextMenu = new QMenu (this);
@@ -1575,13 +1575,15 @@ void VBoxDiskImageManagerDlg::processDoubleClick (QTreeWidgetItem * /* aItem */,
         accept();
 }
 
-void VBoxDiskImageManagerDlg::processRightClick (const QPoint &aPos, QTreeWidgetItem *aItem, int /* aColumn */)
+void VBoxDiskImageManagerDlg::showContextMenu (const QPoint &aPos)
 {
-    if (aItem)
+    QTreeWidget *curWidget = currentTreeWidget();
+    QTreeWidgetItem *curItem = curWidget->itemAt (aPos);
+    if (curItem)
     {
         /* Make sure the item is selected and current */
-        setCurrentItem (currentTreeWidget(), aItem);
-        mActionsContextMenu->exec (aPos);
+        setCurrentItem (curWidget, curItem);
+        mActionsContextMenu->exec (curWidget->viewport()->mapToGlobal (aPos));
     }
 }
 
