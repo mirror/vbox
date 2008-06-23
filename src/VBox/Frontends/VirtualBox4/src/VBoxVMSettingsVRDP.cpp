@@ -69,24 +69,6 @@ void VBoxVMSettingsVRDP::getFromMachine (const CMachine &aMachine,
                                          VBoxVMSettingsDlg *aDlg,
                                          const QString &aPath)
 {
-    CVRDPServer vrdp = aMachine.GetVRDPServer();
-
-    if (vrdp.isNull())
-    {
-        /* Disable the VRDP category if VRDP is
-         * not available (i.e. in VirtualBox OSE) */
-        QList<QTreeWidgetItem*> items = aDlg->mTwSelector->findItems (
-            "#vrdp", Qt::MatchExactly, listView_Link);
-        QTreeWidgetItem *vrdpItem = items.count() ? items [0] : 0;
-        Assert (vrdpItem);
-        if (vrdpItem)
-            vrdpItem->setHidden (true);
-        return;
-
-        /* If aMachine has something to say, show the message */
-        vboxProblem().cannotLoadMachineSettings (aMachine, false /* strict */);
-    }
-
     mSettings = new VBoxVMSettingsVRDP (aPage, aDlg, aPath);
     QVBoxLayout *layout = new QVBoxLayout (aPage);
     layout->setContentsMargins (0, 0, 0, 0);
@@ -103,7 +85,8 @@ void VBoxVMSettingsVRDP::getFromMachine (const CMachine &aMachine,
 
 void VBoxVMSettingsVRDP::putBackToMachine()
 {
-    mSettings->putBackTo();
+    if (mSettings)
+        mSettings->putBackTo();
 }
 
 void VBoxVMSettingsVRDP::getFrom (const CMachine &aMachine)

@@ -62,6 +62,8 @@ protected:
                        QWidget *aDlg,
                        const QString &aPath);
 
+   ~VBoxVMSettingsUSB();
+
     void getFromHost();
     void putBackToHost();
 

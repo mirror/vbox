@@ -71,6 +71,8 @@ private:
 
     QString dialogTitle() const;
 
+    void updateAvailability();
+
     /* Common */
     CMachine mMachine;
     QString  mWarnString;

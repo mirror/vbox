@@ -417,9 +417,7 @@ void VBoxGlobalSettingsDlg::updateAvailability()
 #endif
         /* Disable the USB controller category if the USB controller is
          * not available (i.e. in VirtualBox OSE) */
-        QList<QTreeWidgetItem*> items = mTwSelector->findItems (
-            "#usb", Qt::MatchExactly, listView_Link);
-        QTreeWidgetItem *usbItem = items.count() ? items [0] : 0;
+        QTreeWidgetItem *usbItem = findItem (mTwSelector, "#usb", listView_Link);
         Assert (usbItem);
         if (usbItem)
             usbItem->setHidden (true);
