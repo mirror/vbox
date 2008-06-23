@@ -2494,7 +2494,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="f95c0793-7737-49a1-85d9-6da81097173b"
+     uuid="ceb17b5b-fd1f-424f-9dd3-2ab04c06eefc"
      wsmap="managed"
      >
     <desc>
@@ -3466,6 +3466,42 @@
         </desc>
       </param>
     </method>
+    
+    <method name="getConfigRegistryValue">
+      <desc>
+        Reads a value from the machine's host/guest configuration registry.
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>
+          The name of the key to read.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>
+          The value of the key.  If the key does not exist then this will be
+          empty.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setConfigRegistryValue">
+      <desc>
+        Sets, changes or deletes a value in the machine's host/guest
+        configuration registry.
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>
+          The name of the key to set, change or delete.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>
+          The new value of the key to set, change or delete.  If the key does
+          not yet exist and @a value is non-empty, it will be created.  If
+          @a value is empty, the key will be deleted if it exists.
+        </desc>
+      </param>
+    </method>
 
   </interface>
 
@@ -3961,7 +3997,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="d5a1cbda-f5d7-4824-9afe-d640c94c7dcf"
+     uuid="8b029405-b41f-40c2-9d01-b854a39f7d48"
      wsmap="managed"
      >
     <desc>
@@ -4527,6 +4563,42 @@
         <link to="#registerCallback"/>.
       </desc>
       <param name="callback" type="IConsoleCallback" dir="in"/>
+    </method>
+
+    <method name="getConfigRegistryValue">
+      <desc>
+        Reads a value from the host/guest configuration registry.
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>
+          The name of the key to read.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>
+          The value of the key.  If the key does not exist then this will be
+          empty.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setConfigRegistryValue">
+      <desc>
+        Sets, changes or deletes a value in the host/guest configuration
+        registry.
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>
+          The name of the key to set, change or delete.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>
+          The new value of the key to set, change or delete.  If the key does
+          not yet exist and @a value is non-empty, it will be created.  If
+          @a value is empty, the key will be deleted if it exists.
+        </desc>
+      </param>
     </method>
 
   </interface>
