@@ -3075,17 +3075,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         iPdNoMapping  = ~0U;
     }
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-    for (uint64_t iPML4E = 0; iPML4E < X86_PG_PAE_ENTRIES; iPML4E++)
+    for (uint64_t iPml4e = 0; iPml4e < X86_PG_PAE_ENTRIES; iPml4e++)
     {
         PPGMPOOLPAGE pShwPdpt = NULL;
         PX86PML4E    pPml4eSrc, pPml4eDst;
         RTGCPHYS     GCPhysPdptSrc;
 
-        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPML4E];
-        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E];
+        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4e];
+        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
-        if (!pVM->pgm.s.CTXMID(p,PaePML4)->a[iPML4E].n.u1Present)
+        if (!pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e].n.u1Present)
             continue;
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
 
@@ -3097,8 +3097,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         {
             /* Free it. */
             LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                     (uint64_t)iPML4E << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPML4E);
+                     (uint64_t)iPml4e << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
             pPml4eDst->u = 0;
             continue;
         }
@@ -3129,7 +3129,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             PX86PDPT        pPdptDst;
             PX86PDPAE       pPDDst;
             PX86PDEPAE      pPDEDst;
-            RTGCUINTPTR     GCPtr     = (iPML4E << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
+            RTGCUINTPTR     GCPtr     = (iPml4e << X86_PML4_SHIFT) || (iPDPTE << X86_PDPT_SHIFT);
             PGSTPD          pPDSrc    = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtr, &pPml4eSrc, &PdpeSrc, &iPDSrc);
 
             int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
@@ -3162,7 +3162,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 /* Free it. */
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
                 LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                        ((uint64_t)iPML4E << X86_PML4_SHIFT) + ((uint64_t)iPDPTE << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+                        ((uint64_t)iPml4e << X86_PML4_SHIFT) + ((uint64_t)iPDPTE << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
 #  else
                 LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                         (uint64_t)iPDPTE << X86_PDPT_SHIFT, pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
@@ -3496,7 +3496,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     unsigned    cErrors = 0;
 
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
-    || PGM_GST_TYPE == PGM_TYPE_PAE
+    || PGM_GST_TYPE == PGM_TYPE_PAE \
+    || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
     bool        fBigPagesSupported = true;
@@ -3535,342 +3536,524 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 #  endif
 #endif /* !IN_RING0 */
 
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    const GSTPD    *pPDSrc = CTXSUFF(pPGM->pGuestPD);
-# endif
-
     /*
      * Get and check the Shadow CR3.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    const X86PD    *pPDDst  = pPGM->CTXMID(p,32BitPD);
-    unsigned        cPDEs   = ELEMENTS(pPDDst->a);
-# else
-    const X86PDPAE *pPDDst  = pPGM->CTXMID(ap,PaePDs[0]); /* use it as a 2048 entry PD */
-    unsigned        cPDEs   = ELEMENTS(pPDDst->a) * ELEMENTS(pPGM->apHCPaePDs);
+    unsigned        cPDEs       = X86_PG_ENTRIES;
+    unsigned        ulIncrement = X86_PG_ENTRIES * PAGE_SIZE;
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
+    unsigned        cPDEs       = X86_PG_PAE_ENTRIES * 4;   /* treat it as a 2048 entry table. */
+#  else
+    unsigned        cPDEs       = X86_PG_PAE_ENTRIES;
+#  endif
+    unsigned        ulIncrement = X86_PG_PAE_ENTRIES * PAGE_SIZE;
+# elif PGM_SHW_TYPE == PGM_TYPE_AMD64
+    unsigned        cPDEs       = X86_PG_PAE_ENTRIES;
+    unsigned        ulIncrement = X86_PG_PAE_ENTRIES * PAGE_SIZE;
 # endif
     if (cb != ~(RTGCUINTPTR)0)
         cPDEs = RT_MIN(cb >> SHW_PD_SHIFT, 1);
 
 /** @todo call the other two PGMAssert*() functions. */
 
-# if PGM_GST_TYPE == PGM_TYPE_PAE
-    /*
-     * Check the 4 PDPTs too.
-     */
-    for (unsigned i = 0; i < 4; i++)
-    {
-        RTHCPTR  HCPtr;
-        RTHCPHYS HCPhys;
-        RTGCPHYS GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
-        int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
-        if (VBOX_SUCCESS(rc2))
-        {
-            AssertMsg(   pVM->pgm.s.apGstPaePDsHC[i]    == (R3R0PTRTYPE(PX86PDPAE))HCPtr
-                      && pVM->pgm.s.aGCPhysGstPaePDs[i] == GCPhys,
-                      ("idx %d apGstPaePDsHC %VHv vs %VHv aGCPhysGstPaePDs %VGp vs %VGp\n",
-                       i, pVM->pgm.s.apGstPaePDsHC[i], HCPtr, pVM->pgm.s.aGCPhysGstPaePDs[i], GCPhys));
-        }
-    }
+# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
+    PPGMPOOL    pPool         = pVM->pgm.s.CTXSUFF(pPool);
 # endif
 
-    /*
-     * Iterate the shadow page directory.
-     */
-    GCPtr = (GCPtr >> SHW_PD_SHIFT) << SHW_PD_SHIFT;
-    unsigned iPDDst = GCPtr >> SHW_PD_SHIFT;
-    cPDEs += iPDDst;
-    for (;
-         iPDDst < cPDEs;
-         iPDDst++, GCPtr += _4G / cPDEs)
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+
+    for (; iPml4e < X86_PG_PAE_ENTRIES; iPml4e++)
     {
-# if PGM_GST_TYPE == PGM_TYPE_PAE
-        uint32_t        iPDSrc;
-        PGSTPD          pPDSrc = pgmGstGetPaePDPtr(pPGM, (RTGCUINTPTR)GCPtr, &iPDSrc);
-        if (!pPDSrc)
+        PPGMPOOLPAGE pShwPdpt = NULL;
+        PX86PML4E    pPml4eSrc, pPml4eDst;
+        RTGCPHYS     GCPhysPdptSrc;
+
+        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4e];
+        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
+
+        /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
+        if (!pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e].n.u1Present)
         {
-            AssertMsg(!pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK].n.u1Present, ("Guest PDTPR not present, shadow PDPTR %VX64\n", pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK].u));
+            GCPtr += UINT64_C(_2M * 512 * 512);
             continue;
         }
-#endif
 
-        const SHWPDE PdeDst = pPDDst->a[iPDDst];
-        if (PdeDst.u & PGM_PDFLAGS_MAPPING)
+        pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
+        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK;
+
+        if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
         {
-            Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-            if ((PdeDst.u & X86_PDE_AVL_MASK) != PGM_PDFLAGS_MAPPING)
-            {
-                AssertMsgFailed(("Mapping shall only have PGM_PDFLAGS_MAPPING set! PdeDst.u=%#RX64\n", (uint64_t)PdeDst.u));
-                cErrors++;
-                continue;
-            }
+            AssertMsgFailed(("Present bit doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
+            GCPtr += UINT64_C(_2M * 512 * 512);
+            cErrors++;
+            continue;
         }
-        else if (   (PdeDst.u & X86_PDE_P)
-                 || ((PdeDst.u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
-                )
+
+        if (GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
-            HCPhysShw = PdeDst.u & SHW_PDE_PG_MASK;
-            PPGMPOOLPAGE pPoolPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
-            if (!pPoolPage)
-            {
-                AssertMsgFailed(("Invalid page table address %VGp at %VGv! PdeDst=%#RX64\n",
-                                 HCPhysShw, GCPtr, (uint64_t)PdeDst.u));
-                cErrors++;
-                continue;
-            }
-            const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR(pVM, pPoolPage);
+            AssertMsgFailed(("Physical address doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs RX64\n", pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
+            GCPtr += UINT64_C(_2M * 512 * 512);
+            cErrors++;
+            continue;
+        }
 
-            if (PdeDst.u & (X86_PDE4M_PWT | X86_PDE4M_PCD))
-            {
-                AssertMsgFailed(("PDE flags PWT and/or PCD is set at %VGv! These flags are not virtualized! PdeDst=%#RX64\n",
-                                 GCPtr, (uint64_t)PdeDst.u));
-                cErrors++;
-            }
-
-            if (PdeDst.u & (X86_PDE4M_G | X86_PDE4M_D))
-            {
-                AssertMsgFailed(("4K PDE reserved flags at %VGv! PdeDst=%#RX64\n",
-                                 GCPtr, (uint64_t)PdeDst.u));
-                cErrors++;
-            }
-
-            const GSTPDE PdeSrc = pPDSrc->a[(iPDDst >> (GST_PD_SHIFT - SHW_PD_SHIFT)) & GST_PD_MASK];
-            if (!PdeSrc.n.u1Present)
-            {
-                AssertMsgFailed(("Guest PDE at %VGv is not present! PdeDst=%#RX64 PdeSrc=%#RX64\n",
-                                 GCPtr, (uint64_t)PdeDst.u, (uint64_t)PdeSrc.u));
-                cErrors++;
-                continue;
-            }
-
-            if (    !PdeSrc.b.u1Size
-                ||  !fBigPagesSupported)
-            {
-                GCPhysGst = PdeSrc.u & GST_PDE_PG_MASK;
-# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                GCPhysGst |= (iPDDst & 1) * (PAGE_SIZE / 2);
-# endif
-            }
-            else
-            {
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-                if (PdeSrc.u & X86_PDE4M_PG_HIGH_MASK)
-                {
-                    AssertMsgFailed(("Guest PDE at %VGv is using PSE36 or similar! PdeSrc=%#RX64\n",
-                                     GCPtr, (uint64_t)PdeSrc.u));
-                    cErrors++;
-                    continue;
-                }
-# endif
-                GCPhysGst = PdeSrc.u & GST_PDE_BIG_PG_MASK;
-# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
-# endif
-            }
-
-            if (    pPoolPage->enmKind
-                !=  (!PdeSrc.b.u1Size || !fBigPagesSupported ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
-            {
-                AssertMsgFailed(("Invalid shadow page table kind %d at %VGv! PdeSrc=%#RX64\n",
-                                 pPoolPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
-                cErrors++;
-            }
-
-            PPGMPAGE pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
-            if (!pPhysPage)
-            {
-                AssertMsgFailed(("Cannot find guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
-                                 GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
-                cErrors++;
-                continue;
-            }
-
-            if (GCPhysGst != pPoolPage->GCPhys)
-            {
-                AssertMsgFailed(("GCPhysGst=%VGp != pPage->GCPhys=%VGp at %VGv\n",
-                                 GCPhysGst, pPoolPage->GCPhys, GCPtr));
-                cErrors++;
-                continue;
-            }
-
-            if (    !PdeSrc.b.u1Size
-                ||  !fBigPagesSupported)
-            {
-                /*
-                 * Page Table.
-                 */
-                const GSTPT *pPTSrc;
-                rc = PGM_GCPHYS_2_PTR(pVM, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
-                if (VBOX_FAILURE(rc))
-                {
-                    AssertMsgFailed(("Cannot map/convert guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
-                                     GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
-                    cErrors++;
-                    continue;
-                }
-                if (    (PdeSrc.u & (X86_PDE_P | X86_PDE_US | X86_PDE_RW/* | X86_PDE_A*/))
-                    !=  (PdeDst.u & (X86_PDE_P | X86_PDE_US | X86_PDE_RW/* | X86_PDE_A*/)))
-                {
-                    /// @todo We get here a lot on out-of-sync CR3 entries. The access handler should zap them to avoid false alarms here!
-                    // (This problem will go away when/if we shadow multiple CR3s.)
-                    AssertMsgFailed(("4K PDE flags mismatch at %VGv! PdeSrc=%#RX64 PdeDst=%#RX64\n",
-                                     GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                    cErrors++;
-                    continue;
-                }
-                if (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)
-                {
-                    AssertMsgFailed(("4K PDEs cannot have PGM_PDFLAGS_TRACK_DIRTY set! GCPtr=%VGv PdeDst=%#RX64\n",
-                                     GCPtr, (uint64_t)PdeDst.u));
-                    cErrors++;
-                    continue;
-                }
-
-                /* iterate the page table. */
-# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-                const unsigned offPTSrc  = ((GCPtr >> SHW_PD_SHIFT) & 1) * 512;
+        if (    pPml4eDst->n.u1User      != pPml4eSrc->n.u1User
+            ||  pPml4eDst->n.u1Write     != pPml4eSrc->n.u1Write
+            ||  pPml4eDst->n.u1NoExecute != pPml4eSrc->n.u1NoExecute)
+        {
+            AssertMsgFailed(("User/Write/NoExec bits don't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
+            GCPtr += UINT64_C(_2M * 512 * 512);
+            cErrors++;
+            continue;
+        }
 # else
-                const unsigned offPTSrc  = 0;
+    {
 # endif
-                for (unsigned iPT = 0, off = 0;
-                     iPT < ELEMENTS(pPTDst->a);
-                     iPT++, off += PAGE_SIZE)
+
+# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
+        /*
+         * Check the PDPTEs too.
+         */
+        unsigned iPdpte = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+
+        for (;iPdpte <= SHW_PDPT_MASK; iPdpte++)
+        {
+            unsigned        iPDSrc;
+            PPGMPOOLPAGE    pShwPde = NULL;
+            PX86PDPE        pPdpeDst;
+            RTGCPHYS        GCPhysPdeSrc;
+#   if PGM_GST_TYPE == PGM_TYPE_PAE
+            PX86PDPAE       pPDDst    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
+            PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtr, &iPDSrc);
+            PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
+            X86PDPE         PdpeSrc   = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
+#   else
+            PX86PML4E       pPml4eSrc;
+            X86PDPE         PdpeSrc;
+            PX86PDPT        pPdptDst;
+            PX86PDPAE       pPDDst;
+            PGSTPD          pPDSrc    = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtr, &pPml4eSrc, &PdpeSrc, &iPDSrc);
+
+            int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
+            if (rc != VINF_SUCCESS)
+            {
+                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                GCPtr += 512 * _2M;
+                continue;   /* next PDPTE */
+            }
+            Assert(pPDDst);
+#   endif
+            Assert(iPDSrc == 0);
+
+            pPdpeDst = &pPdptDst->a[iPdpte];
+
+            if (!pPdpeDst->n.u1Present) 
+            {
+                GCPtr += 512 * _2M;
+                continue;   /* next PDPTE */
+            }
+
+            pShwPde      = pgmPoolGetPage(pPool, pPdpeDst->u & X86_PDPE_PG_MASK);
+            GCPhysPdeSrc = PdpeSrc.u & X86_PDPE_PG_MASK;
+
+            if (pPdpeDst->n.u1Present != PdpeSrc.n.u1Present)
+            {
+                AssertMsgFailed(("Present bit doesn't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64\n", pPdpeDst->u, PdpeSrc.u));
+                GCPtr += 512 * _2M;
+                cErrors++;
+                continue;
+            }
+
+            if (GCPhysPdeSrc != pShwPde->GCPhys)
+            {
+                AssertMsgFailed(("Physical address doesn't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs RX64\n", pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
+                GCPtr += 512 * _2M;
+                cErrors++;
+                continue;
+            }
+
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+            if (    pPdpeDst->lm.u1User      != PdpeSrc.lm.u1User
+                ||  pPdpeDst->lm.u1Write     != PdpeSrc.lm.u1Write
+                ||  pPdpeDst->lm.u1NoExecute != PdpeSrc.lm.u1NoExecute)
+            {
+                AssertMsgFailed(("User/Write/NoExec bits don't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64\n", pPdpeDst->u, PdpeSrc.u));
+                GCPtr += 512 * _2M;
+                cErrors++;
+                continue;
+            }
+#  endif
+
+# else
+        {
+# endif
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+            const GSTPD *pPDSrc = CTXSUFF(pPGM->pGuestPD);
+#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+            const X86PD    *pPDDst = pPGM->CTXMID(p,32BitPD);
+#  else
+            const PX86PDPAE pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];       /* We treat this as a PD with 2048 entries, so no need to and with SHW_PD_MASK to get iPDDst */
+#  endif
+# endif
+            /*
+            * Iterate the shadow page directory.
+            */
+            GCPtr = (GCPtr >> SHW_PD_SHIFT) << SHW_PD_SHIFT;
+            unsigned iPDDst = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
+
+            for (;
+                iPDDst < cPDEs;
+                iPDDst++, GCPtr += ulIncrement)
+            {
+                const SHWPDE PdeDst = pPDDst->a[iPDDst];
+                if (PdeDst.u & PGM_PDFLAGS_MAPPING)
                 {
-                    const SHWPTE PteDst = pPTDst->a[iPT];
-
-                    /* skip not-present entries. */
-                    if (!(PteDst.u & (X86_PTE_P | PGM_PTFLAGS_TRACK_DIRTY))) /** @todo deal with ALL handlers and CSAM !P pages! */
-                        continue;
-                    Assert(PteDst.n.u1Present);
-
-                    const GSTPTE PteSrc = pPTSrc->a[iPT + offPTSrc];
-                    if (!PteSrc.n.u1Present)
+                    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                    if ((PdeDst.u & X86_PDE_AVL_MASK) != PGM_PDFLAGS_MAPPING)
                     {
-#ifdef IN_RING3
-                        PGMAssertHandlerAndFlagsInSync(pVM);
-                        PGMR3DumpHierarchyGC(pVM, cr3, cr4, (PdeSrc.u & GST_PDE_PG_MASK));
-#endif
-                        AssertMsgFailed(("Out of sync (!P) PTE at %VGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%VGv iPTSrc=%x PdeSrc=%x physpte=%VGp\n",
-                                         GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u, pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],
-                                         (PdeSrc.u & GST_PDE_PG_MASK) + (iPT + offPTSrc)*sizeof(PteSrc)));
+                        AssertMsgFailed(("Mapping shall only have PGM_PDFLAGS_MAPPING set! PdeDst.u=%#RX64\n", (uint64_t)PdeDst.u));
+                        cErrors++;
+                        continue;
+                    }
+                }
+                else if (   (PdeDst.u & X86_PDE_P)
+                        || ((PdeDst.u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
+                        )
+                {
+                    HCPhysShw = PdeDst.u & SHW_PDE_PG_MASK;
+                    PPGMPOOLPAGE pPoolPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
+                    if (!pPoolPage)
+                    {
+                        AssertMsgFailed(("Invalid page table address %VGp at %VGv! PdeDst=%#RX64\n",
+                                        HCPhysShw, GCPtr, (uint64_t)PdeDst.u));
+                        cErrors++;
+                        continue;
+                    }
+                    const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR(pVM, pPoolPage);
+
+                    if (PdeDst.u & (X86_PDE4M_PWT | X86_PDE4M_PCD))
+                    {
+                        AssertMsgFailed(("PDE flags PWT and/or PCD is set at %VGv! These flags are not virtualized! PdeDst=%#RX64\n",
+                                        GCPtr, (uint64_t)PdeDst.u));
+                        cErrors++;
+                    }
+
+                    if (PdeDst.u & (X86_PDE4M_G | X86_PDE4M_D))
+                    {
+                        AssertMsgFailed(("4K PDE reserved flags at %VGv! PdeDst=%#RX64\n",
+                                        GCPtr, (uint64_t)PdeDst.u));
+                        cErrors++;
+                    }
+
+                    const GSTPDE PdeSrc = pPDSrc->a[(iPDDst >> (GST_PD_SHIFT - SHW_PD_SHIFT)) & GST_PD_MASK];
+                    if (!PdeSrc.n.u1Present)
+                    {
+                        AssertMsgFailed(("Guest PDE at %VGv is not present! PdeDst=%#RX64 PdeSrc=%#RX64\n",
+                                        GCPtr, (uint64_t)PdeDst.u, (uint64_t)PdeSrc.u));
                         cErrors++;
                         continue;
                     }
 
-                    uint64_t fIgnoreFlags = GST_PTE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_G | X86_PTE_D | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT;
-# if 1 /** @todo sync accessed bit properly... */
-                    fIgnoreFlags |= X86_PTE_A;
+                    if (    !PdeSrc.b.u1Size
+                        ||  !fBigPagesSupported)
+                    {
+                        GCPhysGst = PdeSrc.u & GST_PDE_PG_MASK;
+# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+                        GCPhysGst |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
-
-                    /* match the physical addresses */
-                    HCPhysShw = PteDst.u & SHW_PTE_PG_MASK;
-                    GCPhysGst = PteSrc.u & GST_PTE_PG_MASK;
-
-# ifdef IN_RING3
-                    rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
-                    if (VBOX_FAILURE(rc))
-                    {
-                        if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
-                        {
-                            AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                            continue;
-                        }
-                    }
-                    else if (HCPhysShw != (HCPhys & SHW_PTE_PG_MASK))
-                    {
-                        AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-# endif
-
-                    pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
-                    if (!pPhysPage)
-                    {
-# ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
-                        if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
-                        {
-                            AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                            continue;
-                        }
-# endif
-                        if (PteDst.n.u1Write)
-                        {
-                            AssertMsgFailed(("Invalid guest page at %VGv is writable! GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPtr + off, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                        }
-                        fIgnoreFlags |= X86_PTE_RW;
-                    }
-                    else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
-                    {
-                        AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-
-                    /* flags */
-                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
-                    {
-                        if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
-                        {
-                            if (PteDst.n.u1Write)
-                            {
-                                AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                                cErrors++;
-                                continue;
-                            }
-                            fIgnoreFlags |= X86_PTE_RW;
-                        }
-                        else
-                        {
-                            if (PteDst.n.u1Present)
-                            {
-                                AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VHp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                                cErrors++;
-                                continue;
-                            }
-                            fIgnoreFlags |= X86_PTE_P;
-                        }
                     }
                     else
                     {
-                        if (!PteSrc.n.u1Dirty && PteSrc.n.u1Write)
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+                        if (PdeSrc.u & X86_PDE4M_PG_HIGH_MASK)
                         {
-                            if (PteDst.n.u1Write)
+                            AssertMsgFailed(("Guest PDE at %VGv is using PSE36 or similar! PdeSrc=%#RX64\n",
+                                            GCPtr, (uint64_t)PdeSrc.u));
+                            cErrors++;
+                            continue;
+                        }
+# endif
+                        GCPhysGst = PdeSrc.u & GST_PDE_BIG_PG_MASK;
+# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+                        GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
+# endif
+                    }
+
+                    if (    pPoolPage->enmKind
+                        !=  (!PdeSrc.b.u1Size || !fBigPagesSupported ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
+                    {
+                        AssertMsgFailed(("Invalid shadow page table kind %d at %VGv! PdeSrc=%#RX64\n",
+                                        pPoolPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
+                        cErrors++;
+                    }
+
+                    PPGMPAGE pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+                    if (!pPhysPage)
+                    {
+                        AssertMsgFailed(("Cannot find guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
+                                        GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
+                        cErrors++;
+                        continue;
+                    }
+
+                    if (GCPhysGst != pPoolPage->GCPhys)
+                    {
+                        AssertMsgFailed(("GCPhysGst=%VGp != pPage->GCPhys=%VGp at %VGv\n",
+                                        GCPhysGst, pPoolPage->GCPhys, GCPtr));
+                        cErrors++;
+                        continue;
+                    }
+
+                    if (    !PdeSrc.b.u1Size
+                        ||  !fBigPagesSupported)
+                    {
+                        /*
+                        * Page Table.
+                        */
+                        const GSTPT *pPTSrc;
+                        rc = PGM_GCPHYS_2_PTR(pVM, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
+                        if (VBOX_FAILURE(rc))
+                        {
+                            AssertMsgFailed(("Cannot map/convert guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
+                                            GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
+                            cErrors++;
+                            continue;
+                        }
+                        if (    (PdeSrc.u & (X86_PDE_P | X86_PDE_US | X86_PDE_RW/* | X86_PDE_A*/))
+                            !=  (PdeDst.u & (X86_PDE_P | X86_PDE_US | X86_PDE_RW/* | X86_PDE_A*/)))
+                        {
+                            /// @todo We get here a lot on out-of-sync CR3 entries. The access handler should zap them to avoid false alarms here!
+                            // (This problem will go away when/if we shadow multiple CR3s.)
+                            AssertMsgFailed(("4K PDE flags mismatch at %VGv! PdeSrc=%#RX64 PdeDst=%#RX64\n",
+                                            GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
+                            cErrors++;
+                            continue;
+                        }
+                        if (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)
+                        {
+                            AssertMsgFailed(("4K PDEs cannot have PGM_PDFLAGS_TRACK_DIRTY set! GCPtr=%VGv PdeDst=%#RX64\n",
+                                            GCPtr, (uint64_t)PdeDst.u));
+                            cErrors++;
+                            continue;
+                        }
+
+                        /* iterate the page table. */
+# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+                        /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
+                        const unsigned offPTSrc  = ((GCPtr >> SHW_PD_SHIFT) & 1) * 512;
+# else
+                        const unsigned offPTSrc  = 0;
+# endif
+                        for (unsigned iPT = 0, off = 0;
+                            iPT < ELEMENTS(pPTDst->a);
+                            iPT++, off += PAGE_SIZE)
+                        {
+                            const SHWPTE PteDst = pPTDst->a[iPT];
+
+                            /* skip not-present entries. */
+                            if (!(PteDst.u & (X86_PTE_P | PGM_PTFLAGS_TRACK_DIRTY))) /** @todo deal with ALL handlers and CSAM !P pages! */
+                                continue;
+                            Assert(PteDst.n.u1Present);
+
+                            const GSTPTE PteSrc = pPTSrc->a[iPT + offPTSrc];
+                            if (!PteSrc.n.u1Present)
                             {
-                                AssertMsgFailed(("!DIRTY page at %VGv is writable! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+# ifdef IN_RING3
+                                PGMAssertHandlerAndFlagsInSync(pVM);
+                                PGMR3DumpHierarchyGC(pVM, cr3, cr4, (PdeSrc.u & GST_PDE_PG_MASK));
+# endif
+                                AssertMsgFailed(("Out of sync (!P) PTE at %VGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%VGv iPTSrc=%x PdeSrc=%x physpte=%VGp\n",
+                                                GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u, pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],
+                                                (PdeSrc.u & GST_PDE_PG_MASK) + (iPT + offPTSrc)*sizeof(PteSrc)));
                                 cErrors++;
                                 continue;
                             }
-                            if (!(PteDst.u & PGM_PTFLAGS_TRACK_DIRTY))
+
+                            uint64_t fIgnoreFlags = GST_PTE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_G | X86_PTE_D | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT;
+# if 1 /** @todo sync accessed bit properly... */
+                            fIgnoreFlags |= X86_PTE_A;
+# endif
+
+                            /* match the physical addresses */
+                            HCPhysShw = PteDst.u & SHW_PTE_PG_MASK;
+                            GCPhysGst = PteSrc.u & GST_PTE_PG_MASK;
+
+# ifdef IN_RING3
+                            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
+                            if (VBOX_FAILURE(rc))
+                            {
+                                if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
+                                {
+                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                    cErrors++;
+                                    continue;
+                                }
+                            }
+                            else if (HCPhysShw != (HCPhys & SHW_PTE_PG_MASK))
+                            {
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                                continue;
+                            }
+# endif
+
+                            pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+                            if (!pPhysPage)
+                            {
+# ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
+                                if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
+                                {
+                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                    cErrors++;
+                                    continue;
+                                }
+# endif
+                                if (PteDst.n.u1Write)
+                                {
+                                    AssertMsgFailed(("Invalid guest page at %VGv is writable! GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPtr + off, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                    cErrors++;
+                                }
+                                fIgnoreFlags |= X86_PTE_RW;
+                            }
+                            else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
+                            {
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                                continue;
+                            }
+
+                            /* flags */
+                            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
+                            {
+                                if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
+                                {
+                                    if (PteDst.n.u1Write)
+                                    {
+                                        AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    fIgnoreFlags |= X86_PTE_RW;
+                                }
+                                else
+                                {
+                                    if (PteDst.n.u1Present)
+                                    {
+                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VHp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    fIgnoreFlags |= X86_PTE_P;
+                                }
+                            }
+                            else
+                            {
+                                if (!PteSrc.n.u1Dirty && PteSrc.n.u1Write)
+                                {
+                                    if (PteDst.n.u1Write)
+                                    {
+                                        AssertMsgFailed(("!DIRTY page at %VGv is writable! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    if (!(PteDst.u & PGM_PTFLAGS_TRACK_DIRTY))
+                                    {
+                                        AssertMsgFailed(("!DIRTY page at %VGv is not marked TRACK_DIRTY! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    if (PteDst.n.u1Dirty)
+                                    {
+                                        AssertMsgFailed(("!DIRTY page at %VGv is marked DIRTY! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                    }
+# if 0 /** @todo sync access bit properly... */
+                                    if (PteDst.n.u1Accessed != PteSrc.n.u1Accessed)
+                                    {
+                                        AssertMsgFailed(("!DIRTY page at %VGv is has mismatching accessed bit! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                    }
+                                    fIgnoreFlags |= X86_PTE_RW;
+# else
+                                    fIgnoreFlags |= X86_PTE_RW | X86_PTE_A;
+# endif
+                                }
+                                else if (PteDst.u & PGM_PTFLAGS_TRACK_DIRTY)
+                                {
+                                    /* access bit emulation (not implemented). */
+                                    if (PteSrc.n.u1Accessed || PteDst.n.u1Present)
+                                    {
+                                        AssertMsgFailed(("PGM_PTFLAGS_TRACK_DIRTY set at %VGv but no accessed bit emulation! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    if (!PteDst.n.u1Accessed)
+                                    {
+                                        AssertMsgFailed(("!ACCESSED page at %VGv is has the accessed bit set! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                    }
+                                    fIgnoreFlags |= X86_PTE_P;
+                                }
+# ifdef DEBUG_sandervl
+                                fIgnoreFlags |= X86_PTE_D | X86_PTE_A;
+# endif
+                            }
+
+                            if (    (PteSrc.u & ~fIgnoreFlags) != (PteDst.u & ~fIgnoreFlags)
+                                &&  (PteSrc.u & ~(fIgnoreFlags | X86_PTE_RW)) != (PteDst.u & ~fIgnoreFlags)
+                            )
+                            {
+                                AssertMsgFailed(("Flags mismatch at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, (uint64_t)PteSrc.u & ~fIgnoreFlags, (uint64_t)PteDst.u & ~fIgnoreFlags,
+                                                fIgnoreFlags, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                                continue;
+                            }
+                        } /* foreach PTE */
+                    }
+                    else
+                    {
+                        /*
+                        * Big Page.
+                        */
+                        uint64_t fIgnoreFlags = X86_PDE_AVL_MASK | GST_PDE_PG_MASK | X86_PDE4M_G | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_PWT | X86_PDE4M_PCD;
+                        if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
+                        {
+                            if (PdeDst.n.u1Write)
+                            {
+                                AssertMsgFailed(("!DIRTY page at %VGv is writable! PdeSrc=%#RX64 PdeDst=%#RX64\n",
+                                                GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
+                                cErrors++;
+                                continue;
+                            }
+                            if (!(PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY))
                             {
                                 AssertMsgFailed(("!DIRTY page at %VGv is not marked TRACK_DIRTY! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                                GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
                                 cErrors++;
                                 continue;
                             }
-                            if (PteDst.n.u1Dirty)
-                            {
-                                AssertMsgFailed(("!DIRTY page at %VGv is marked DIRTY! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                                cErrors++;
-                            }
 # if 0 /** @todo sync access bit properly... */
-                            if (PteDst.n.u1Accessed != PteSrc.n.u1Accessed)
+                            if (PdeDst.n.u1Accessed != PdeSrc.b.u1Accessed)
                             {
                                 AssertMsgFailed(("!DIRTY page at %VGv is has mismatching accessed bit! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                                GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
                                 cErrors++;
                             }
                             fIgnoreFlags |= X86_PTE_RW;
@@ -3878,233 +4061,159 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             fIgnoreFlags |= X86_PTE_RW | X86_PTE_A;
 # endif
                         }
-                        else if (PteDst.u & PGM_PTFLAGS_TRACK_DIRTY)
+                        else if (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)
                         {
                             /* access bit emulation (not implemented). */
-                            if (PteSrc.n.u1Accessed || PteDst.n.u1Present)
+                            if (PdeSrc.b.u1Accessed || PdeDst.n.u1Present)
                             {
-                                AssertMsgFailed(("PGM_PTFLAGS_TRACK_DIRTY set at %VGv but no accessed bit emulation! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                AssertMsgFailed(("PGM_PDFLAGS_TRACK_DIRTY set at %VGv but no accessed bit emulation! PdeSrc=%#RX64 PdeDst=%#RX64\n",
+                                                GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
                                 cErrors++;
                                 continue;
                             }
-                            if (!PteDst.n.u1Accessed)
+                            if (!PdeDst.n.u1Accessed)
                             {
-                                AssertMsgFailed(("!ACCESSED page at %VGv is has the accessed bit set! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                AssertMsgFailed(("!ACCESSED page at %VGv is has the accessed bit set! PdeSrc=%#RX64 PdeDst=%#RX64\n",
+                                                GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
                                 cErrors++;
                             }
                             fIgnoreFlags |= X86_PTE_P;
                         }
-# ifdef DEBUG_sandervl
-                        fIgnoreFlags |= X86_PTE_D | X86_PTE_A;
-# endif
-                    }
 
-                    if (    (PteSrc.u & ~fIgnoreFlags) != (PteDst.u & ~fIgnoreFlags)
-                        &&  (PteSrc.u & ~(fIgnoreFlags | X86_PTE_RW)) != (PteDst.u & ~fIgnoreFlags)
-                       )
-                    {
-                        AssertMsgFailed(("Flags mismatch at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, (uint64_t)PteSrc.u & ~fIgnoreFlags, (uint64_t)PteDst.u & ~fIgnoreFlags,
-                                         fIgnoreFlags, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-                } /* foreach PTE */
-            }
-            else
-            {
-                /*
-                 * Big Page.
-                 */
-                uint64_t fIgnoreFlags = X86_PDE_AVL_MASK | GST_PDE_PG_MASK | X86_PDE4M_G | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_PWT | X86_PDE4M_PCD;
-                if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
-                {
-                    if (PdeDst.n.u1Write)
-                    {
-                        AssertMsgFailed(("!DIRTY page at %VGv is writable! PdeSrc=%#RX64 PdeDst=%#RX64\n",
-                                         GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                        cErrors++;
-                        continue;
-                    }
-                    if (!(PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY))
-                    {
-                        AssertMsgFailed(("!DIRTY page at %VGv is not marked TRACK_DIRTY! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                        cErrors++;
-                        continue;
-                    }
-# if 0 /** @todo sync access bit properly... */
-                    if (PdeDst.n.u1Accessed != PdeSrc.b.u1Accessed)
-                    {
-                        AssertMsgFailed(("!DIRTY page at %VGv is has mismatching accessed bit! PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                        cErrors++;
-                    }
-                    fIgnoreFlags |= X86_PTE_RW;
-# else
-                    fIgnoreFlags |= X86_PTE_RW | X86_PTE_A;
-# endif
-                }
-                else if (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)
-                {
-                    /* access bit emulation (not implemented). */
-                    if (PdeSrc.b.u1Accessed || PdeDst.n.u1Present)
-                    {
-                        AssertMsgFailed(("PGM_PDFLAGS_TRACK_DIRTY set at %VGv but no accessed bit emulation! PdeSrc=%#RX64 PdeDst=%#RX64\n",
-                                         GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                        cErrors++;
-                        continue;
-                    }
-                    if (!PdeDst.n.u1Accessed)
-                    {
-                        AssertMsgFailed(("!ACCESSED page at %VGv is has the accessed bit set! PdeSrc=%#RX64 PdeDst=%#RX64\n",
-                                         GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                        cErrors++;
-                    }
-                    fIgnoreFlags |= X86_PTE_P;
-                }
+                        if ((PdeSrc.u & ~fIgnoreFlags) != (PdeDst.u & ~fIgnoreFlags))
+                        {
+                            AssertMsgFailed(("Flags mismatch (B) at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PdeSrc=%#RX64 PdeDst=%#RX64\n",
+                                            GCPtr, (uint64_t)PdeSrc.u & ~fIgnoreFlags, (uint64_t)PdeDst.u & ~fIgnoreFlags,
+                                            fIgnoreFlags, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
+                            cErrors++;
+                        }
 
-                if ((PdeSrc.u & ~fIgnoreFlags) != (PdeDst.u & ~fIgnoreFlags))
-                {
-                    AssertMsgFailed(("Flags mismatch (B) at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PdeSrc=%#RX64 PdeDst=%#RX64\n",
-                                     GCPtr, (uint64_t)PdeSrc.u & ~fIgnoreFlags, (uint64_t)PdeDst.u & ~fIgnoreFlags,
-                                     fIgnoreFlags, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-                    cErrors++;
-                }
+                        /* iterate the page table. */
+                        for (unsigned iPT = 0, off = 0;
+                            iPT < ELEMENTS(pPTDst->a);
+                            iPT++, off += PAGE_SIZE, GCPhysGst += PAGE_SIZE)
+                        {
+                            const SHWPTE PteDst = pPTDst->a[iPT];
 
-                /* iterate the page table. */
-                for (unsigned iPT = 0, off = 0;
-                     iPT < ELEMENTS(pPTDst->a);
-                     iPT++, off += PAGE_SIZE, GCPhysGst += PAGE_SIZE)
-                {
-                    const SHWPTE PteDst = pPTDst->a[iPT];
+                            if (PteDst.u & PGM_PTFLAGS_TRACK_DIRTY)
+                            {
+                                AssertMsgFailed(("The PTE at %VGv emulating a 2/4M page is marked TRACK_DIRTY! PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                            }
 
-                    if (PteDst.u & PGM_PTFLAGS_TRACK_DIRTY)
-                    {
-                        AssertMsgFailed(("The PTE at %VGv emulating a 2/4M page is marked TRACK_DIRTY! PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                    }
+                            /* skip not-present entries. */
+                            if (!PteDst.n.u1Present) /** @todo deal with ALL handlers and CSAM !P pages! */
+                                continue;
 
-                    /* skip not-present entries. */
-                    if (!PteDst.n.u1Present) /** @todo deal with ALL handlers and CSAM !P pages! */
-                        continue;
+                            fIgnoreFlags = X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT;
 
-                    fIgnoreFlags = X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT;
-
-                    /* match the physical addresses */
-                    HCPhysShw = PteDst.u & X86_PTE_PAE_PG_MASK;
+                            /* match the physical addresses */
+                            HCPhysShw = PteDst.u & X86_PTE_PAE_PG_MASK;
 
 # ifdef IN_RING3
-                    rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
-                    if (VBOX_FAILURE(rc))
-                    {
-                        if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
-                        {
-                            AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                        }
-                    }
-                    else if (HCPhysShw != (HCPhys & X86_PTE_PAE_PG_MASK))
-                    {
-                        AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-# endif
-
-                    pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
-                    if (!pPhysPage)
-                    {
-# ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
-                        if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
-                        {
-                            AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                            continue;
-                        }
-# endif
-                        if (PteDst.n.u1Write)
-                        {
-                            AssertMsgFailed(("Invalid guest page at %VGv is writable! GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                             GCPtr + off, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                            cErrors++;
-                        }
-                        fIgnoreFlags |= X86_PTE_RW;
-                    }
-                    else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
-                    {
-                        AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-
-                    /* flags */
-                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
-                    {
-                        if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
-                        {
-                            if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
+                            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
+                            if (VBOX_FAILURE(rc))
                             {
-                                if (PteDst.n.u1Write)
+                                if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
-                                    AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                     GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                    cErrors++;
+                                }
+                            }
+                            else if (HCPhysShw != (HCPhys & X86_PTE_PAE_PG_MASK))
+                            {
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                                continue;
+                            }
+# endif
+                            pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+                            if (!pPhysPage)
+                            {
+# ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
+                                if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
+                                {
+                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %VGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                     continue;
                                 }
+# endif
+                                if (PteDst.n.u1Write)
+                                {
+                                    AssertMsgFailed(("Invalid guest page at %VGv is writable! GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                    GCPtr + off, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                    cErrors++;
+                                }
                                 fIgnoreFlags |= X86_PTE_RW;
                             }
-                        }
-                        else
-                        {
-                            if (PteDst.n.u1Present)
+                            else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
                             {
-                                AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }
-                            fIgnoreFlags |= X86_PTE_P;
-                        }
-                    }
 
-                    if (    (PdeSrc.u & ~fIgnoreFlags) != (PteDst.u & ~fIgnoreFlags)
-                        &&  (PdeSrc.u & ~(fIgnoreFlags | X86_PTE_RW)) != (PteDst.u & ~fIgnoreFlags) /* lazy phys handler dereg. */
-                       )
-                    {
-                        AssertMsgFailed(("Flags mismatch (BT) at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, (uint64_t)PdeSrc.u & ~fIgnoreFlags, (uint64_t)PteDst.u & ~fIgnoreFlags,
-                                         fIgnoreFlags, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
-                        cErrors++;
-                        continue;
-                    }
-                } /* foreach PTE */
-            }
-        }
-        /* not present */
+                            /* flags */
+                            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
+                            {
+                                if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
+                                {
+                                    if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
+                                    {
+                                        if (PteDst.n.u1Write)
+                                        {
+                                            AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                            GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                            cErrors++;
+                                            continue;
+                                        }
+                                        fIgnoreFlags |= X86_PTE_RW;
+                                    }
+                                }
+                                else
+                                {
+                                    if (PteDst.n.u1Present)
+                                    {
+                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                        cErrors++;
+                                        continue;
+                                    }
+                                    fIgnoreFlags |= X86_PTE_P;
+                                }
+                            }
 
-    } /* forearch PDE */
+                            if (    (PdeSrc.u & ~fIgnoreFlags) != (PteDst.u & ~fIgnoreFlags)
+                                &&  (PdeSrc.u & ~(fIgnoreFlags | X86_PTE_RW)) != (PteDst.u & ~fIgnoreFlags) /* lazy phys handler dereg. */
+                            )
+                            {
+                                AssertMsgFailed(("Flags mismatch (BT) at %VGv! %#RX64 != %#RX64 fIgnoreFlags=%#RX64 PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, (uint64_t)PdeSrc.u & ~fIgnoreFlags, (uint64_t)PteDst.u & ~fIgnoreFlags,
+                                                fIgnoreFlags, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                cErrors++;
+                                continue;
+                            }
+                        } /* for each PTE */
+                    }
+                }
+                /* not present */
+
+            } /* for each PDE */
+
+        } /* for each PDPTE */
+
+    } /* for each PML4E */
 
 # ifdef DEBUG
     if (cErrors)
         LogFlow(("AssertCR3: cErrors=%d\n", cErrors));
 # endif
 
-#elif PGM_GST_TYPE == PGM_TYPE_PAE
-//# error not implemented
-
-
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-//# error not implemented
-
-/*#else: guest real and protected mode */
 #endif
     return cErrors;
 
