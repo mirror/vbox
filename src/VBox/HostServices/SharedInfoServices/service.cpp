@@ -201,6 +201,11 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = CFGMR3QueryString(mpNode, pszKey, pcValue, cbValue);
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
         Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pcValue));
+    else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
+    {
+        VBoxHGCMParmUInt32Set(&paParms[2], 0);
+        rc = VINF_SUCCESS;
+    }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
@@ -284,7 +289,8 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         CFGMR3RemoveValue(mpNode, pszKey);
-        rc = CFGMR3InsertString(mpNode, pszKey, pszValue);
+        if (pszValue > 0)
+            rc = CFGMR3InsertString(mpNode, pszKey, pszValue);
     }
     if (RT_SUCCESS(rc))
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszKey, rc, pszValue));
@@ -326,19 +332,22 @@ int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
     if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
         rc = VERR_INVALID_PARAMETER;
 
-    /* Validate the format of the value. */
-    /* Only accept values in printable ASCII without spaces */
-    for (count = 0; (count < cbValue) && (pcValue[count] != '\0'); ++count)
-        if ((pcValue[count] < 33) || (pcValue[count] > 126))
+    if (cbValue != 0)
+    {
+        /* Validate the format of the value. */
+        /* Only accept values in printable ASCII without spaces */
+        for (count = 0; (count < cbValue) && (pcValue[count] != '\0'); ++count)
+            if ((pcValue[count] < 33) || (pcValue[count] > 126))
+                rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc) && (count == cbValue))
+            /* This would mean that no null terminator was found */
             rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count == cbValue))
-        /* This would mean that no null terminator was found */
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
-        rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
+            rc = VERR_INVALID_PARAMETER;
+    }
 
     if (RT_SUCCESS(rc))
-        LogFlow(("    pcKey=%s, pcValue=%s\n", pcKey, pcValue));
+        LogFlow(("    pcKey=%s, pcValue=%s\n", pcKey, cbValue > 0 ? pcValue : NULL));
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
