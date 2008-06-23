@@ -94,6 +94,8 @@
     <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
     <file alias="machine_16px.png">images/machine_16px.png</file>
     <file alias="help_16px.png">images/help_16px.png</file>
+    <file alias="help_button_normal_mac_22px.png">images/help_button_normal_mac_22px.png</file>
+    <file alias="help_button_pressed_mac_22px.png">images/help_button_pressed_mac_22px.png</file>
     <file alias="site_16px.png">images/site_16px.png</file>
     <file alias="register_16px.png">images/register_16px.png</file>
     <file alias="register_disabled_16px.png">images/register_disabled_16px.png</file>
