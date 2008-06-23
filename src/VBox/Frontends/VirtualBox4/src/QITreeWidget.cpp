@@ -26,7 +26,7 @@
 #include <QMouseEvent>
 
 QITreeWidget::QITreeWidget (QWidget *aParent)
-    : QTreeWidget (aParent) 
+    : QTreeWidget (aParent)
 {
 }
 
@@ -35,17 +35,7 @@ void QITreeWidget::setSupportedDropActions (Qt::DropActions aAction)
     mSupportedDropActions = aAction;
 }
 
-void QITreeWidget::mousePressEvent (QMouseEvent *aEvent)
-{
-    if (aEvent->button() == Qt::RightButton)
-    {
-        emit itemRightClicked (aEvent->globalPos(), itemAt (aEvent->pos()), columnAt (aEvent->pos().x()));
-        aEvent->accept();
-    }else
-        QTreeWidget::mousePressEvent (aEvent);
-}
-
-Qt::DropActions QITreeWidget::supportedDropActions () const
+Qt::DropActions QITreeWidget::supportedDropActions() const
 {
     return mSupportedDropActions;
 }

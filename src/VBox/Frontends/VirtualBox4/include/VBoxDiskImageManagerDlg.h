@@ -91,7 +91,7 @@ private slots:
     void processCurrentChanged (int index = -1);
     void processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem = NULL);
     void processDoubleClick (QTreeWidgetItem *aItem, int aColumn);
-    void processRightClick (const QPoint &aPos, QTreeWidgetItem *aItem, int aColumn);
+    void showContextMenu (const QPoint &aPos);
 
 private:
 
@@ -128,7 +128,7 @@ private:
     void createInfoString (InfoPaneLabel *&aInfo, QWidget* aRoot, bool aLeftRightMargin, int aRow, int aCol, int aRowSpan = 1, int aColSpan = 1) const;
 
     void makeWarningMark (DiskImageItem *aItem, VBoxMedia::Status aStatus, VBoxDefs::DiskType aType) const;
-    
+
     static QString DVDImageUsage (const QUuid &aId, QString &aSnapshotUsage);
     static QString FloppyImageUsage (const QUuid &aId, QString &aSnapshotUsage);
     static void DVDImageSnapshotUsage (const QUuid &aId, const CSnapshot &aSnapshot, QString &aUsage);
