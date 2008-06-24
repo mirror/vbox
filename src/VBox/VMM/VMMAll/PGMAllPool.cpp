@@ -317,6 +317,15 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 #  endif
                     uShw.pPTPae->a[iShw].u = 0;
                 }
+
+                /* paranoia / a bit assumptive. */
+                if (   pCpu
+                    && (off & 7)
+                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
+                {
+                    AssertFailed();
+                }
+
                 break;
             }
 
@@ -421,9 +430,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 if (   pCpu
                     && (off & 7)
-                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
+                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDEPAE))
                 {
-                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
+                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDEPAE);
                     if (    iShw2 != iShw
                         &&  iShw2 < ELEMENTS(uShw.pPDPae->a)
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
