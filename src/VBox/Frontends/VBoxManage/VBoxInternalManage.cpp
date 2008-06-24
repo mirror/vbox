@@ -907,6 +907,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     }
 #endif
 
+    /* Check whether cbSize is actually sensible. */
+    if (!cbSize || cbSize % 512)
+    {
+        RTPrintf("Detected size of raw disk '%s' is %s, an invalid value\n", rawdisk.raw(), cbSize);
+        return VERR_INVALID_PARAMETER;
+    }
+
     PVBOXHDD pDisk = NULL;
     VBOXHDDRAW RawDescriptor;
     HOSTPARTITIONS partitions;
