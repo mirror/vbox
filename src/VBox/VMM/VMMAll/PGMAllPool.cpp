@@ -261,6 +261,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             PX86PD      pPD;
             PX86PDPAE   pPDPae;
             PX86PDPT    pPDPT;
+            PX86PML4    pPML4;
         } uShw;
         uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
 
@@ -500,6 +501,37 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                             LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
                             pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
                             uShw.pPDPT->a[iShw2].u = 0;
+                        }
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+            {
+                /* Hopefully this doesn't happen very often:
+                 * - messing with the bits of pd pointers without changing the physical address
+                 */
+                if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                {
+                    const unsigned iShw = off / sizeof(X86PDPE);
+                    if (uShw.pPML4->a[iShw].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
+                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
+                        uShw.pPML4->a[iShw].u = 0;
+                    }
+                    /* paranoia / a bit assumptive. */
+                    if (   pCpu
+                        && (off & 7)
+                        && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                    {
+                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PML4E);
+                        if (uShw.pPML4->a[iShw2].n.u1Present)
+                        {
+                            LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
+                            pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
+                            uShw.pPML4->a[iShw2].u = 0;
                         }
                     }
                 }
@@ -1006,6 +1038,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+                case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
@@ -1021,6 +1054,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
             switch (enmKind2)
             {
@@ -1042,7 +1076,6 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
             return false;
 
         default:
@@ -1233,10 +1266,10 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
                 case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+                case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
                 case PGMPOOLKIND_ROOT_32BIT_PD:
                 case PGMPOOLKIND_ROOT_PAE_PD:
                 case PGMPOOLKIND_ROOT_PDPT:
-                case PGMPOOLKIND_ROOT_PML4:
                 {
                     /* find the head */
                     while (pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
@@ -1290,6 +1323,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PDPT:
             break;
 
@@ -1303,7 +1337,6 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PML4:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
@@ -1372,6 +1405,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PDPT:
             break;
 
@@ -1385,7 +1419,6 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PML4:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
@@ -2066,9 +2099,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
             return 8;
 
         default:
@@ -2103,9 +2136,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
             return 8;
 
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
@@ -2423,9 +2456,9 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
             break;
-        case PGMPOOLKIND_ROOT_PML4:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            /* GCPhys >> PAGE_SHIFT is the index here */
             break;
         default:
             AssertMsgFailed(("enmKind=%d\n", pUserPage->enmKind));
@@ -2450,7 +2483,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_ROOT_PML4:
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
             u.pau64[pUser->iUserTable] = 0;
             break;
 
@@ -3131,12 +3164,6 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
             case PGMPOOLKIND_ROOT_PAE_PD:
                 for (unsigned iPage = 0; iPage < X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES; iPage++)
                     if ((u.pau64[iPage] & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == X86_PDE_P)
-                        u.pau64[iPage] = 0;
-                break;
-
-            case PGMPOOLKIND_ROOT_PML4:
-                for (unsigned iPage = 0; iPage < X86_PG_PAE_ENTRIES; iPage++)
-                    if ((u.pau64[iPage] & (PGM_PLXFLAGS_PERMANENT | X86_PML4E_P)) == X86_PML4E_P)
                         u.pau64[iPage] = 0;
                 break;
 
