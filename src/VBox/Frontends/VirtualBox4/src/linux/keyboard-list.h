@@ -29,11 +29,11 @@
 # error This file must be included from within keyboard-tables.h
 #endif /* ___VBox_keyboard_tables_h */
 
-/* This file contains a list of the keyboard layouts in 
+/* This file contains a list of the keyboard layouts in
    keyboard-layouts.h, along with the name of the layout, for the
    library to run through when it is trying to guess the current
    layout. */
- 
+
  {"U.S. English", &main_key_us},
  {"U.S. English, no 102nd key", &main_key_us_101},
  {"U.S. English, International (with dead keys)", &main_key_us_intl},

@@ -41,7 +41,7 @@
    these tables simply contain the X keysym values truncated to the
    least significant byte.  In fact, there is no need to do any
    additional translation of the values (the original code translated
-   them to whatever character set was deemed appropriate, rather 
+   them to whatever character set was deemed appropriate, rather
    inconsistently) as long as we use the same algorithm for creating
    the tables and doing the lookups.
 
