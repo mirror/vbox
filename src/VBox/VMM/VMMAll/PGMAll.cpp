@@ -858,7 +858,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];       
+        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
         PX86PDPT  pPdptGst;
         rc = PGM_GCPHYS_2_PTR(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, &pPdptGst);
         AssertRCReturn(rc, rc);

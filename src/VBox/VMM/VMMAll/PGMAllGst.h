@@ -529,6 +529,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
         pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pShwAmd64CR3->GCPhys >> PAGE_SHIFT);
+        pVM->pgm.s.pShwAmd64CR3 = NULL;
     }
 
 #else /* prot/real mode stub */
