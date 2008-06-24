@@ -142,7 +142,7 @@ const CMachine& VBoxNewVMWzd::machine() const
 
 void VBoxNewVMWzd::retranslateUi()
 {
-   /* Translate uic generated strings */
+    /* Translate uic generated strings */
     Ui::VBoxNewVMWzd::retranslateUi (this);
 
     CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOS->currentIndex());
@@ -150,7 +150,6 @@ void VBoxNewVMWzd::retranslateUi()
     mTextRAMBest->setText (
         tr ("The recommended base memory size is <b>%1</b> MB.")
             .arg (type.GetRecommendedRAM()));
-    mSlRAM->setValue (type.GetRecommendedRAM());
     mTextVDIBest->setText (
         tr ("The recommended size of the boot hard disk is <b>%1</b> MB.")
             .arg (type.GetRecommendedHDD()));
@@ -227,7 +226,7 @@ void VBoxNewVMWzd::showNewVDIWizard()
         uuidHD = chd.GetId();
         /* update media combobox */
         VBoxMedia::Status status =
-            chd.GetAccessible() == TRUE ? VBoxMedia::Ok :
+            chd.GetAccessible() ? VBoxMedia::Ok :
             chd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
         vboxGlobal().addMedia (VBoxMedia (CUnknown (chd), VBoxDefs::HD, status));
@@ -252,6 +251,7 @@ void VBoxNewVMWzd::cbOSActivated (int aItem)
 {
     CGuestOSType type = vboxGlobal().vmGuestOSType (aItem);
     mPmOS->setPixmap (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
+    mSlRAM->setValue (type.GetRecommendedRAM());
 }
 
 void VBoxNewVMWzd::currentMediaChanged (int /* aItem */)
