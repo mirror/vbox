@@ -64,7 +64,7 @@ const Global::OSType Global::sOSTypes [SchemaDefs::OSTypeId_COUNT] =
     { SchemaDefs_OSTypeId_freebsd,     "FreeBSD",             VBOXOSTYPE_FreeBSD,      64,   4,  2 * _1K },
     { SchemaDefs_OSTypeId_openbsd,     "OpenBSD",             VBOXOSTYPE_OpenBSD,      64,   4,  2 * _1K },
     { SchemaDefs_OSTypeId_netbsd,      "NetBSD",              VBOXOSTYPE_NetBSD,       64,   4,  2 * _1K },
-    { SchemaDefs_OSTypeId_netware,     "Netware",             VBOXOSTYPE_Netware,     128,   4,  4 * _1K },
+    { SchemaDefs_OSTypeId_netware,     "Netware",             VBOXOSTYPE_Netware,     512,   4,  4 * _1K },
     { SchemaDefs_OSTypeId_solaris,     "Solaris",             VBOXOSTYPE_Solaris,     512,  12, 16 * _1K },
     { SchemaDefs_OSTypeId_opensolaris, "OpenSolaris",         VBOXOSTYPE_OpenSolaris, 512,  12, 16 * _1K },
     { SchemaDefs_OSTypeId_l4,          "L4",                  VBOXOSTYPE_L4,           64,   4,  2 * _1K }
