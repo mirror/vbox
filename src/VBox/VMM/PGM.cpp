@@ -1263,14 +1263,12 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
     pVM->pgm.s.pHCPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pHCPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
     if (    !pVM->pgm.s.pHC32BitPD
         ||  !pVM->pgm.s.apHCPaePDs[0]
         ||  !pVM->pgm.s.apHCPaePDs[1]
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
-        ||  !pVM->pgm.s.pHCPaePDPT
-        ||  !pVM->pgm.s.pHCPaePML4)
+        ||  !pVM->pgm.s.pHCPaePDPT)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
         return VERR_NO_PAGE_MEMORY;
@@ -1284,7 +1282,6 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
     pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
-    pVM->pgm.s.HCPhysPaePML4    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePML4);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
@@ -1298,8 +1295,6 @@ static int pgmR3InitPaging(PVM pVM)
         pVM->pgm.s.pHCPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
         /* The flags will be corrected when entering and leaving long mode. */
     }
-
-    ASMMemZero32(pVM->pgm.s.pHCPaePML4, PAGE_SIZE);
 
     CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhys32BitPD);
 

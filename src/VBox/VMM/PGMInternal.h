@@ -1288,12 +1288,10 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGMPOOL_IDX_PAE_PD_3    6
 /** Page Directory Pointer Table (PAE root, not currently used). */
 #define PGMPOOL_IDX_PDPT        7
-/** Page Map Level-4 (64-bit root). */
-#define PGMPOOL_IDX_PML4        8
-/** AMD64 cr3 level. */
-#define PGMPOOL_IDX_AMD64_CR3   9
+/** AMD64 CR3 level index.*/
+#define PGMPOOL_IDX_AMD64_CR3   8
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       10
+#define PGMPOOL_IDX_FIRST       9
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST        0x3fff
 /** @} */
@@ -1373,17 +1371,18 @@ typedef enum PGMPOOLKIND
     /** Shw: 64-bit page directory table;   Gst: 64-bit page directory table. */
     PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD,
 
+    /** Shw: 64-bit PML4;   Gst: 64-bit PML4. */
+    PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4,
+
     /** Shw: Root 32-bit page directory. */
     PGMPOOLKIND_ROOT_32BIT_PD,
     /** Shw: Root PAE page directory */
     PGMPOOLKIND_ROOT_PAE_PD,
     /** Shw: Root PAE page directory pointer table (legacy, 4 entries). */
     PGMPOOLKIND_ROOT_PDPT,
-    /** Shw: Root page map level-4 table. */
-    PGMPOOLKIND_ROOT_PML4,
 
     /** The last valid entry. */
-    PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_PML4
+    PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_PDPT
 } PGMPOOLKIND;
 
 

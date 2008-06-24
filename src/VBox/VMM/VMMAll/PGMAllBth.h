@@ -879,6 +879,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
 # else /* AMD64 */
     /* PML4 */
+    AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
+
     const unsigned  iPml4e    = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
     const unsigned  iPdPte    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -985,7 +987,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              */
             LogFlow(("InvalidatePage: Out-of-sync PML4E at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                      GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e);
             pPml4eDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
@@ -997,7 +999,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              */
             LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                      GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e);
             pPml4eDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
@@ -1007,7 +1009,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     {
         LogFlow(("InvalidatePage: Out-of-sync PML4E (P) at %VGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                     GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
@@ -1020,7 +1022,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     {
         LogFlow(("InvalidatePage: Out-of-sync PML4E (GCPhys) at %VGv %VGp vs %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                     GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNPs));
         PGM_INVL_PG(GCPtrPage);
@@ -3098,7 +3100,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             /* Free it. */
             LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                      (uint64_t)iPml4e << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFreeByPage(pPool, pShwPdpt, PGMPOOL_IDX_PML4, iPml4e);
+            pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pShwAmd64CR3->idx, iPml4e);
             pPml4eDst->u = 0;
             continue;
         }
