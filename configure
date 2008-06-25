@@ -319,6 +319,28 @@ check_environment()
 check_gcc()
 {
   test_header gcc
+  if [ -n "$CC_COMPAT" ]; then
+    if check_avail "$CC_COMPAT" CC_COMPAT really; then
+      cc_compat_ver=`$CC_COMPAT -dumpversion` 2>/dev/null
+      if [ $? -ne 0 ]; then
+        log_failure "cannot execute '$CC_COMPAT -dumpversion'"
+        fail really
+      fi
+      cc_compat_maj=`echo $cc_compat_ver|cut -d. -f1`
+      cc_compat_min=`echo $cc_compat_ver|cut -d. -f2`
+      if [ $cc_compat_maj -lt 3 \
+         -o \( $cc_compat_maj -eq 3 -a $cc_compat_min -lt 2 \) \
+         -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -lt 1 \) \
+         -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -gt 2 \) \
+         -o $cc_compat_maj -gt 4 ]; then
+        log ""
+        log "  ** Version $cc_compat_ver of the compatibility gcc found. Expected gcc 3.x with x>1"
+        log "  ** or gcc 4.x with 0<x<3"
+        fail really
+      fi
+      cnf_append "VBOX_RECOMPILER_OP_GCC" "$CC_COMPAT"
+    fi
+  fi
   if check_avail "$CC" CC really; then
     cc_ver=`$CC -dumpversion` 2>/dev/null
     if [ $? -ne 0 ]; then
@@ -346,26 +368,6 @@ check_gcc()
           log "  ** for a package compat-gcc-34 on Fedora systems or something similar on other"
           log "  ** distributions and call configure with parameter --with-gcc-compat=gcc34."
           fail really
-        fi
-        if check_avail "$CC_COMPAT" CC_COMPAT really; then
-          cc_compat_ver=`$CC_COMPAT -dumpversion` 2>/dev/null
-          if [ $? -ne 0 ]; then
-            log_failure "cannot execute '$CC_COMPAT -dumpversion'"
-            fail really
-          fi
-          cc_compat_maj=`echo $cc_compat_ver|cut -d. -f1`
-          cc_compat_min=`echo $cc_compat_ver|cut -d. -f2`
-          if [ $cc_compat_maj -lt 3 \
-               -o \( $cc_compat_maj -eq 3 -a $cc_compat_min -lt 2 \) \
-               -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -lt 1 \) \
-               -o \( $cc_compat_maj -eq 4 -a $cc_compat_min -gt 2 \) \
-               -o $cc_compat_maj -gt 4 ]; then
-            log ""
-            log "  ** Version $cc_compat_ver of the compatibility gcc found. Expected gcc 3.x with x>1"
-            log "  ** or gcc 4.x with 0<x<3"
-            fail really
-          fi
-          cnf_append "VBOX_RECOMPILER_OP_GCC" "$CC_COMPAT"
         fi
       # gcc-4.0 is allowed for Darwin only
       elif [ $cc_maj -lt 3 \
@@ -1621,6 +1623,7 @@ Configuration:
 Paths:
   --with-gcc=PATH          location of the gcc compiler [$CC]
   --with-g++=PATH          location of the g++ compiler [$CXX]
+  --with-gcc-compat=PATH   location of the gcc compiler for recompiler [$CC]
   --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
   --with-iasl=PATH         location of the iasl compiler [$IASL]
   --with-linux=DIR         Linux kernel source directory [$LINUX]
