@@ -3466,7 +3466,7 @@
         </desc>
       </param>
     </method>
-    
+
     <method name="getConfigRegistryValue">
       <desc>
         Reads a value from the machine's host/guest configuration registry.
@@ -3505,22 +3505,22 @@
 
     <method name="getProcessorUsage">
       <desc>
-        Returns the current processor usage measured over all cores of all
-        processors in the host system. 
+        Returns the current processor usage by this virtual machine measured
+        over all cores of all processors in the host system.
 
-        <note>
-          The maximum value is 1000000000 which means that all cores of all CPUs 
-          are completely used.
-        </note>
+        The values returned for each parameter are in range from <tt>0</tt> (the
+        machine is powered off or does not load the CPUs at all) to
+        <tt>1 000 000 000</tt> (all cores of all CPUs are fully in use by this
+        machine).
       </desc>
       <param name="user" type="unsigned long" dir="out">
-        <desc>The pecentage of processor time spent executing in user 
-          mode.
+        <desc>
+          Pecentage of processor time spent executing in user mode.
         </desc>
       </param>
       <param name="system" type="unsigned long" dir="out">
-        <desc>The pecentage of processor time spent executing in kernel
-          mode.
+        <desc>
+          Pecentage of processor time spent executing in kernel mode.
         </desc>
       </param>
     </method>
@@ -5043,26 +5043,32 @@
 
     <method name="getProcessorUsage">
       <desc>
-        Returns the current processor usage measured over all cores of all
-        processors in the host system. 
+        Returns the processor usage by the whole host system measured over all
+        cores of all processors of the host machine.
+
+        The values returned for each parameter are in range from <tt>0</tt> (the
+        machine is powered off or doesn't load the CPUs at all) to
+        <tt>1 000 000 000</tt> (all cores of all CPUs are fully loaded by this
+        machine).
 
         <note>
-          The maximum value is 1000000000 which means that all cores of all CPUs 
+          The maximum value is 1000000000 which means that all cores of all CPUs
           are completely used.
         </note>
       </desc>
       <param name="user" type="unsigned long" dir="out">
-        <desc>The pecentage of processor time spent executing in user 
-          mode.
+        <desc>
+          Pecentage of processor time spent executing in user mode.
         </desc>
       </param>
       <param name="system" type="unsigned long" dir="out">
-        <desc>The pecentage of processor time spent executing in kernel
-          mode.
+        <desc>
+          Pecentage of processor time spent executing in kernel mode.
         </desc>
       </param>
       <param name="idle" type="unsigned long" dir="out">
-        <desc>The pecentage of processor time spent doing nothing.
+        <desc>
+          Pecentage of processor time spent doing nothing.
         </desc>
       </param>
     </method>

@@ -168,40 +168,20 @@ HRESULT Host::init (VirtualBox *parent)
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /*
-     * Start resource usage sampler.
-     */
-    //printf("Creating sampling timer with Host::staticSamplerCallback, this=%p\n", this);
-    int rc = RTTimerCreate(&m_pUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL, Host::staticSamplerCallback, this);
-    if (RT_FAILURE(rc))
+    /* Start resource usage sampler */
     {
-        AssertMsgFailed(("Failed to create resource usage sampling timer, rc=%d!\n", rc));
-        return E_FAIL;
+        int vrc = RTTimerCreate (&mUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL,
+                                 UsageSamplerCallback, this);
+        AssertMsgRC (vrc, ("Failed to create resource usage sampling "
+                           "timer (%Rra)\n", vrc));
+        if (RT_FAILURE (vrc))
+            return E_FAIL;
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     setReady(true);
     return S_OK;
 }
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Host::staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
-{
-    ((Host*)pvUser)->usageSamplerCallback();
-}
-
-void Host::usageSamplerCallback()
-{
-    int rc = RTSystemProcessorGetUsageStats(&m_CpuStats);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to get CPU stats, rc=%d!\n", rc));
-    }
-    //printf("Host::usageSamplerCallback: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
-    //     m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
-    //printf("user=%.2f system=%.2f idle=%.2f\n", m_CpuStats.u32User/10000000., m_CpuStats.u32System/10000000., m_CpuStats.u32Idle/10000000.);
-}
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 /**
  *  Uninitializes the host object and sets the ready flag to FALSE.
@@ -230,13 +210,11 @@ void Host::uninit()
 #endif
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /*
-     * Destroy resource usage sampler.
-     */
-    int rc = RTTimerDestroy(m_pUsageSampler);
-    if (RT_FAILURE(rc))
+    /* Destroy resource usage sampler */
     {
-        AssertMsgFailed(("Failed to destroy resource usage sampling timer, rc=%d!\n", rc));
+        int vrc = RTTimerDestroy (mUsageSampler);
+        AssertMsgRC (vrc, ("Failed to destroy resource usage "
+                           "sampling timer (%Rra)\n", vrc));
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -1127,23 +1105,15 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 #endif
 }
 
-/**
- * Obtains the results of the latest measurement of overall CPU 
- * usage on this host. 
- * 
- * @returns error code.
- *
- * @param   user      out   % of CPU time spent in user mode.
- * @param   system    out   % of CPU time spent in kernel mode.
- * @param   idle      out   % of idle CPU time.
- * 
- */
-STDMETHODIMP Host::GetProcessorUsage(ULONG *user, ULONG *system, ULONG *idle)
+STDMETHODIMP Host::GetProcessorUsage (ULONG *aUser, ULONG *aSystem, ULONG *aIdle)
 {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    *user   = m_CpuStats.u32User;
-    *system = m_CpuStats.u32System;
-    *idle   = m_CpuStats.u32Idle;
+    if (aUser == NULL || aSystem == NULL || aIdle == NULL)
+        return E_POINTER;
+
+    *aUser   = mCpuStats.u32User;
+    *aSystem = mCpuStats.u32System;
+    *aIdle   = mCpuStats.u32Idle;
 
     return S_OK;
 #else /* !VBOX_WITH_RESOURCE_USAGE_API */
@@ -2743,4 +2713,27 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 }
 
 #endif /* RT_OS_WINDOWS */
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+
+/* static */
+void Host::UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    AssertReturnVoid (pvUser != NULL);
+    static_cast <Host *> (pvUser)->usageSamplerCallback();
+}
+
+void Host::usageSamplerCallback()
+{
+    int vrc = RTSystemProcessorGetUsageStats (&mCpuStats);
+    AssertMsgRC (vrc, ("Failed to get CPU stats (%Rra)\n", vrc));
+
+//  LogFlowThisFunc (("user=%u%% system=%u%% &mCpuStats=%p\n",
+//                    mCpuStats.u32User / 10000000,
+//                    mCpuStats.u32System / 10000000, &mCpuStats);
+//  LogFlowThisFunc (("user=%.2f system=%.2f idle=%.2f\n", mCpuStats.u32User/10000000.,
+//                    mCpuStats.u32System/10000000., mCpuStats.u32Idle/10000000.);
+}
+
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
