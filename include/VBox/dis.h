@@ -232,7 +232,7 @@ typedef enum
 #define USE_REG_R15W                    15
 /** @} */
 
-/** index in {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "DIL", "SIL", "BPL", "SPL"}
+/** index in {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "SPL", "BPL", "SIL", "DIL"}
  * @{
  */
 #define USE_REG_AL                      0
@@ -251,10 +251,10 @@ typedef enum
 #define USE_REG_R13B                    13
 #define USE_REG_R14B                    14
 #define USE_REG_R15B                    15
-#define USE_REG_DIL                     16
-#define USE_REG_SIL                     17
-#define USE_REG_BPL                     18
-#define USE_REG_SPL                     19
+#define USE_REG_SPL                     16
+#define USE_REG_BPL                     17
+#define USE_REG_SIL                     18
+#define USE_REG_DIL                     19
 
 /** @} */
 
