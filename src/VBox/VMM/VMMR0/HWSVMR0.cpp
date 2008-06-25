@@ -607,7 +607,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* Always enable caching. */
         val &= ~(X86_CR0_CD|X86_CR0_NW);
 
-        /* Note: WP is not relevant in nested paging mode as we catch accesses on the (host) physical level. */
+        /* Note: WP is not relevant in nested paging mode as we catch accesses on the (guest) physical level. */
         /* Note: In nested paging mode the guest is allowed to run with paging disabled; the guest physical to host physical translation will remain active. */
         if (!pVM->hwaccm.s.fNestedPaging)
         {
@@ -697,6 +697,23 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
     /* vmrun will fail without MSR_K6_EFER_SVME. */
     pVMCB->guest.u64EFER   = pCtx->msrEFER | MSR_K6_EFER_SVME;
+
+    /* 64 bits guest mode? */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    {
+#if !defined(VBOX_WITH_64_BITS_GUESTS) || HC_ARCH_BITS != 64
+        return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#else
+        pVM->hwaccm.s.svm.pfnVMRun = SVMVMRun64;
+#endif
+        /* Unconditionally update these as wrmsr might have changed them. (HWACCM_CHANGED_GUEST_SEGMENT_REGS will not be set) */
+        pVMCB->guest.FS.u64Base    = pCtx->fsHid.u64Base;
+        pVMCB->guest.GS.u64Base    = pCtx->gsHid.u64Base;
+    }
+    else
+    {
+        pVM->hwaccm.s.svm.pfnVMRun = SVMVMRun;
+    }
 
     /** TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
@@ -906,7 +923,7 @@ ResumeExecution:
     Assert(pVMCB->ctrl.u64MSRPMPhysAddr == pVM->hwaccm.s.svm.pMSRBitmapPhys);
     Assert(pVMCB->ctrl.u64LBRVirt == 0);
 
-    SVMVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVM->hwaccm.s.svm.pVMCBPhys, pCtx);
+    pVM->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVM->hwaccm.s.svm.pVMCBPhys, pCtx);
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatInGC, x);
 
     /**
