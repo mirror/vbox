@@ -182,8 +182,8 @@ void tstASMCpuId(void)
     if (cFunctions >= 1)
     {
         ASMCpuId(1, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %#x \tExtended: %#x \tEffectiv: %#x\n"
-                 "Model:                           %#x \tExtended: %#x \tEffectiv: %#x\n"
+        RTPrintf("Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
+                 "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
                  "Stepping:                        %d\n"
                  "APIC ID:                         %#04x\n"
                  "Logical CPUs:                    %d\n"
@@ -280,8 +280,8 @@ void tstASMCpuId(void)
     if (cExtFunctions >= 0x80000001)
     {
         ASMCpuId(0x80000001, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %#x \tExtended: %#x \tEffectiv: %#x\n"
-                 "Model:                           %#x \tExtended: %#x \tEffectiv: %#x\n"
+        RTPrintf("Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
+                 "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
                  "Stepping:                        %d\n"
                  "Brand ID:                        %#05x\n",
                  (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
