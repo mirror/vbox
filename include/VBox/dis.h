@@ -203,8 +203,8 @@ typedef enum
 #define USE_REG_EBP                     5
 #define USE_REG_ESI                     6
 #define USE_REG_EDI                     7
-#define USE_REG_R8                      8
-#define USE_REG_R9                      9
+#define USE_REG_R8D                     8
+#define USE_REG_R9D                     9
 #define USE_REG_R10D                    10
 #define USE_REG_R11D                    11
 #define USE_REG_R12D                    12
@@ -224,6 +224,8 @@ typedef enum
 #define USE_REG_BP                      5
 #define USE_REG_SI                      6
 #define USE_REG_DI                      7
+#define USE_REG_R8W                     8
+#define USE_REG_R9W                     9
 #define USE_REG_R10W                    10
 #define USE_REG_R11W                    11
 #define USE_REG_R12W                    12
