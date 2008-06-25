@@ -192,7 +192,7 @@ typedef enum
 #define USE_REG_R15                     15
 /** @} */
 
-/** index in {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"}
+/** index in {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"}
  * @{
  */
 #define USE_REG_EAX                     0
@@ -203,8 +203,17 @@ typedef enum
 #define USE_REG_EBP                     5
 #define USE_REG_ESI                     6
 #define USE_REG_EDI                     7
+#define USE_REG_R8                      8
+#define USE_REG_R9                      9
+#define USE_REG_R10D                    10
+#define USE_REG_R11D                    11
+#define USE_REG_R12D                    12
+#define USE_REG_R13D                    13
+#define USE_REG_R14D                    14
+#define USE_REG_R15D                    15
+
 /** @} */
-/** index in {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"}
+/** index in {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"}
  * @{
  */
 #define USE_REG_AX                      0
@@ -215,9 +224,15 @@ typedef enum
 #define USE_REG_BP                      5
 #define USE_REG_SI                      6
 #define USE_REG_DI                      7
+#define USE_REG_R10W                    10
+#define USE_REG_R11W                    11
+#define USE_REG_R12W                    12
+#define USE_REG_R13W                    13
+#define USE_REG_R14W                    14
+#define USE_REG_R15W                    15
 /** @} */
 
-/** index in {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"}
+/** index in {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "DIL", "SIL", "BPL", "SPL"}
  * @{
  */
 #define USE_REG_AL                      0
@@ -228,6 +243,19 @@ typedef enum
 #define USE_REG_CH                      5
 #define USE_REG_DH                      6
 #define USE_REG_BH                      7
+#define USE_REG_R8B                     8
+#define USE_REG_R9B                     9
+#define USE_REG_R10B                    10
+#define USE_REG_R11B                    11
+#define USE_REG_R12B                    12
+#define USE_REG_R13B                    13
+#define USE_REG_R14B                    14
+#define USE_REG_R15B                    15
+#define USE_REG_DIL                     16
+#define USE_REG_SIL                     17
+#define USE_REG_BPL                     18
+#define USE_REG_SPL                     19
+
 /** @} */
 
 /** index in {ES, CS, SS, DS, FS, GS}
