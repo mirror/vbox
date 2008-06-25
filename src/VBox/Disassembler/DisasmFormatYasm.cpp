@@ -41,7 +41,7 @@ static const char g_aszYasmRegGen8x86[8][4] =
 };
 static const char g_aszYasmRegGen8Amd64[16][5] =
 {
-    "al\0\0", "cl\0\0", "dl\0\0", "bl\0\0", "spb\0",  "bpb\0",  "sib\0",  "dib\0",  "r8b\0",  "r9b\0",  "r10b",  "r11b",  "r12b",  "r13b",  "r14b",  "r15b"
+    "al\0\0", "cl\0\0", "dl\0\0", "bl\0\0", "spl\0",  "bpl\0",  "sil\0",  "dil\0",  "r8b\0",  "r9b\0",  "r10b",  "r11b",  "r12b",  "r13b",  "r14b",  "r15b"
 };
 static const char g_aszYasmRegGen16[16][5] =
 {
