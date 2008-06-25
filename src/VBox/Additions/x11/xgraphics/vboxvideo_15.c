@@ -448,7 +448,6 @@ vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    uint32_t x, y, bpp, display;
     bool rc;
     unsigned i;
     DisplayModePtr pModes = NULL;
@@ -458,6 +457,7 @@ vbox_output_get_modes (xf86OutputPtr output)
     TRACE;
     if (vbox_device_available(pVBox))
     {
+        uint32_t x, y, bpp, display;
         rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
         /* @todo - check the display number once we support multiple displays. */
         /* If we don't find a display request, see if we have a saved hint
@@ -473,9 +473,12 @@ vbox_output_get_modes (xf86OutputPtr output)
     /* Also report any modes the user may have requested in the xorg.conf
      * configuration file. */
     for (i = 0; pScrn->display->modes[i] != NULL; i++)
+    {
+        int x, y;
         if (2 == sscanf(pScrn->display->modes[i], "%dx%d", &x, &y))
             vbox_output_add_mode(&pModes, pScrn->display->modes[i], x, y,
                                  FALSE, TRUE);
+    }
     TRACE2;
     return pModes;
 }
@@ -916,11 +919,11 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 /**
  * This function hooks into the chain that is called when framebuffer access
  * is allowed or disallowed by a call to EnableDisableFBAccess in the server.
- * In other words, it observes when the server wishes access to the 
+ * In other words, it observes when the server wishes access to the
  * framebuffer to be enabled and when it should be disabled.  We need to know
  * this because we disable access ourselves during mode switches (presumably
  * the server should do this but it doesn't) and want to know whether to
- * restore it or not afterwards. 
+ * restore it or not afterwards.
  */
 static void
 vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
