@@ -269,7 +269,7 @@ int pgmR3PoolInit(PVM pVM)
     /* The Shadow AMD64 CR3. */
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageHC  = 0;
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageHC  = pVM->pgm.s.pHCPaePDPT;     /* not used */
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
 
