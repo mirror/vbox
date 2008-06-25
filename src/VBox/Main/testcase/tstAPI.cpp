@@ -918,6 +918,68 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
+#if 1
+    for (int i = 0; i < 10; i++)
+    {
+        ComPtr <IHost> host;
+        CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
+        ULONG user, system, idle;
+        host->GetProcessorUsage(&user, &system, &idle);
+        printf("user=%u system=%u idle=%u\n", user/10000000, system/10000000, idle/10000000);
+        sleep(1);
+    }
+#endif
+
+#if 1
+    {
+        ComPtr <IMachine> machine;
+        Bstr name = argc > 1 ? argv [1] : "dsl";
+        printf ("Getting a machine object named '%ls'...\n", name.raw());
+        CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
+        Guid guid;
+        CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
+        printf ("Opening a remote session for this machine...\n");
+        ComPtr <IProgress> progress;
+        CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, Bstr("gui"),
+                                                       NULL, progress.asOutParam()));
+        printf ("Waiting for the session to open...\n");
+        CHECK_RC_BREAK (progress->WaitForCompletion (-1));
+        ComPtr <IMachine> sessionMachine;
+        printf ("Getting sessioned machine object...\n");
+        CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
+        ComPtr <IConsole> console;
+        printf ("Getting console object...\n");
+        CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
+        for (int i = 0; i < 10; i++)
+        {
+            ComPtr <IHost> host;
+            CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
+            ULONG user, system;
+            sessionMachine->GetProcessorUsage(&user, &system);
+            printf("VM: user=%u system=%u\n", user/10000000, system/10000000);
+            sleep(1);
+        }
+        printf ("Press enter to pause the VM execution in the remote session...");
+        getchar();
+        CHECK_RC (console->Pause());
+        for (int i = 0; i < 10; i++)
+        {
+            ComPtr <IHost> host;
+            CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
+            ULONG user, system;
+            sessionMachine->GetProcessorUsage(&user, &system);
+            printf("VM: user=%u system=%u\n", user/10000000, system/10000000);
+            sleep(1);
+        }
+        printf ("Press enter to power off VM...");
+        getchar();
+        CHECK_RC (console->PowerDown());
+        printf ("Press enter to close this session...");
+        getchar();
+        session->Close();
+    }
+#endif
+
     printf ("Press enter to release Session and VirtualBox instances...");
     getchar();
 

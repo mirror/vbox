@@ -2494,7 +2494,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="ceb17b5b-fd1f-424f-9dd3-2ab04c06eefc"
+     uuid="d6181581-e7c7-418a-b3b6-2da10b11a763"
      wsmap="managed"
      >
     <desc>
@@ -3499,6 +3499,28 @@
           The new value of the key to set, change or delete.  If the key does
           not yet exist and @a value is non-empty, it will be created.  If
           @a value is empty, the key will be deleted if it exists.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getProcessorUsage">
+      <desc>
+        Returns the current processor usage measured over all cores of all
+        processors in the host system. 
+
+        <note>
+          The maximum value is 1000000000 which means that all cores of all CPUs 
+          are completely used.
+        </note>
+      </desc>
+      <param name="user" type="unsigned long" dir="out">
+        <desc>The pecentage of processor time spent executing in user 
+          mode.
+        </desc>
+      </param>
+      <param name="system" type="unsigned long" dir="out">
+        <desc>The pecentage of processor time spent executing in kernel
+          mode.
         </desc>
       </param>
     </method>
@@ -4793,7 +4815,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="81729c26-1aec-46f5-b7c0-cc7364738fdb"
+     uuid="a42a480f-d554-4be0-b11c-6c2e54dd1274"
      wsmap="managed"
      >
     <desc>
@@ -5019,6 +5041,31 @@
       </param>
     </method>
 
+    <method name="getProcessorUsage">
+      <desc>
+        Returns the current processor usage measured over all cores of all
+        processors in the host system. 
+
+        <note>
+          The maximum value is 1000000000 which means that all cores of all CPUs 
+          are completely used.
+        </note>
+      </desc>
+      <param name="user" type="unsigned long" dir="out">
+        <desc>The pecentage of processor time spent executing in user 
+          mode.
+        </desc>
+      </param>
+      <param name="system" type="unsigned long" dir="out">
+        <desc>The pecentage of processor time spent executing in kernel
+          mode.
+        </desc>
+      </param>
+      <param name="idle" type="unsigned long" dir="out">
+        <desc>The pecentage of processor time spent doing nothing.
+        </desc>
+      </param>
+    </method>
   </interface>
 
   <!--

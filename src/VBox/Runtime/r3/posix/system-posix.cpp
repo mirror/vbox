@@ -34,8 +34,12 @@
 *******************************************************************************/
 #include <iprt/system.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
+#include <iprt/mem.h>
 
 #include <unistd.h>
+#include <stdio.h>
 #if !defined(RT_OS_SOLARIS)
 # include <sys/sysctl.h>
 #endif
@@ -87,3 +91,122 @@ RTR3DECL(uint64_t) RTSystemProcessorGetActiveMask(void)
     return ((uint64_t)1 << cCpus) - 1;
 }
 
+/**
+ * Gets the current figures of overall system processor usage.
+ *  
+ * @remarks To get meaningful stats this function has to be 
+ *          called twice with a bit of delay between calls. This
+ *          is due to the fact that at least two samples of
+ *          system usage stats are needed to calculate the load.
+ *  
+ * @returns None.
+ */
+RTDECL(int) RTSystemProcessorGetUsageStats(PRTCPUUSAGESTATS pStats)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t u32UserNow, u32NiceNow, u32SystemNow, u32IdleNow;
+    uint32_t u32UserDelta, u32SystemDelta, u32IdleDelta, u32BusyDelta, u32TotalDelta;
+    FILE *f = fopen("/proc/stat", "r");
+
+    if (f)
+    {
+        if (fscanf(f, "cpu %u %u %u %u", &u32UserNow, &u32NiceNow, &u32SystemNow, &u32IdleNow) == 4)
+        {
+            u32UserDelta   = (u32UserNow - pStats->u32RawUser) + (u32NiceNow - pStats->u32RawNice);
+            u32SystemDelta = u32SystemNow - pStats->u32RawSystem;
+            u32IdleDelta   = u32IdleNow - pStats->u32RawIdle;
+            u32BusyDelta   = u32UserDelta + u32SystemDelta;
+            u32TotalDelta  = u32BusyDelta + u32IdleDelta;
+            pStats->u32User   = (uint32_t)(IPRT_USAGE_MULTIPLIER * u32UserDelta / u32TotalDelta);
+            pStats->u32System = (uint32_t)(IPRT_USAGE_MULTIPLIER * u32SystemDelta / u32TotalDelta);
+            pStats->u32Idle   = (uint32_t)(IPRT_USAGE_MULTIPLIER * u32IdleDelta / u32TotalDelta);
+            /* Update the base. */
+            pStats->u32RawUser   = u32UserNow;
+            pStats->u32RawNice   = u32NiceNow;
+            pStats->u32RawSystem = u32SystemNow;
+            pStats->u32RawIdle   = u32IdleNow;
+        }
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+}
+
+/**
+ * Gets the current processor usage for a partucilar process.
+ *  
+ * @remarks To get meaningful stats this function has to be 
+ *          called twice with a bit of delay between calls. This
+ *          is due to the fact that at least two samples of
+ *          system usage stats are needed to calculate the load.
+ *  
+ * @returns None.
+ */
+RTDECL(int) RTProcessGetProcessorUsageStats(RTPROCESS pid, PRTPROCCPUUSAGESTATS pStats)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t u32UserNow, u32NiceNow, u32SystemNow, u32IdleNow;
+    uint32_t u32UserDelta, u32SystemDelta;
+    uint64_t u64TotalNow, u64TotalDelta;
+    FILE *f = fopen("/proc/stat", "r");
+
+    if (f)
+    {
+        if (fscanf(f, "cpu %u %u %u %u", &u32UserNow, &u32NiceNow, &u32SystemNow, &u32IdleNow) == 4)
+        {
+            char *pszName;
+            pid_t pid2;
+            char c;
+            int iTmp;
+            unsigned uTmp;
+            unsigned long ulTmp, ulUserNow, ulSystemNow;
+            char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+
+            u64TotalNow = (uint64_t)u32UserNow + u32NiceNow + u32SystemNow + u32IdleNow;
+            fclose(f);
+            RTStrAPrintf(&pszName, "/proc/%d/stat", pid);
+            //printf("Opening %s...\n", pszName);
+            f = fopen(pszName, "r");
+            RTMemFree(pszName);
+
+            if (f)
+            {
+                if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
+                           &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
+                           &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulUserNow, &ulSystemNow) == 15)
+                {
+                    Assert((pid_t)pid == pid2);
+                    u32UserDelta      = ulUserNow - pStats->u32RawProcUser;
+                    u32SystemDelta    = ulSystemNow - pStats->u32RawProcSystem;
+                    u64TotalDelta     = u64TotalNow - pStats->u64RawTotal;
+                    pStats->u32User   = (uint32_t)(IPRT_USAGE_MULTIPLIER * u32UserDelta / u64TotalDelta);
+                    pStats->u32System = (uint32_t)(IPRT_USAGE_MULTIPLIER * u32SystemDelta / u64TotalDelta);
+//                  printf("%d: user=%u%% system=%u%% / raw user=%u raw system=%u total delta=%u\n", pid,
+//                         pStats->u32User / 10000000, pStats->u32System / 10000000,
+//                         pStats->u32RawProcUser, pStats->u32RawProcSystem, u64TotalDelta);
+                    /* Update the base. */
+                    pStats->u32RawProcUser   = ulUserNow;
+                    pStats->u32RawProcSystem = ulSystemNow;
+                    pStats->u64RawTotal      = u64TotalNow;
+//                  printf("%d: updated raw user=%u raw system=%u raw total=%u\n", pid,
+//                         pStats->u32RawProcUser, pStats->u32RawProcSystem, pStats->u64RawTotal);
+                }
+                else
+                    rc = VERR_FILE_IO_ERROR;
+            }
+            else
+                rc = VERR_ACCESS_DENIED;
+        }
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+}

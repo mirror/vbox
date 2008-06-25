@@ -33,6 +33,34 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
+#define IPRT_USAGE_MULTIPLIER UINT64_C(1000000000)
+
+/* This structure holds both computed and raw values of overall CPU load counters. */
+typedef struct
+{
+    uint32_t u32User;
+    uint32_t u32System;
+    uint32_t u32Idle;
+    /* Internal raw counter values. */
+    uint32_t u32RawUser;
+    uint32_t u32RawNice;
+    uint32_t u32RawSystem;
+    uint32_t u32RawIdle;
+} RTCPUUSAGESTATS;
+typedef RTCPUUSAGESTATS *PRTCPUUSAGESTATS;
+
+/* This structure holds both computed and raw values of per-VM CPU load counters. */
+typedef struct
+{
+    uint32_t u32User;
+    uint32_t u32System;
+    /* Internal raw counter values. */
+    uint64_t u64RawTotal;
+    uint32_t u32RawProcUser;
+    uint32_t u32RawProcSystem;
+} RTPROCCPUUSAGESTATS;
+typedef RTPROCCPUUSAGESTATS *PRTPROCCPUUSAGESTATS;
+
 
 __BEGIN_DECLS
 
@@ -55,6 +83,41 @@ RTDECL(unsigned) RTSystemProcessorGetCount(void);
  */
 RTDECL(uint64_t) RTSystemProcessorGetActiveMask(void);
 
+/**
+ * Gets the current figures of overall system processor usage.
+ *  
+ * @remarks To get meaningful stats this function has to be 
+ *          called twice with a bit of delay between calls. This
+ *          is due to the fact that at least two samples of
+ *          system usage stats are needed to calculate the load.
+ *  
+ * @returns IPRT status code.
+ * @param   pStats  Pointer to the structure that contains the 
+ *                  results. Note that this structure is
+ *                  modified with each call to this function and
+ *                  is used to provide both in and out values.
+ */
+RTDECL(int) RTSystemProcessorGetUsageStats(PRTCPUUSAGESTATS pStats);
+
+/**
+ * Gets the current processor usage for a partucilar process.
+ *  
+ * @remarks To get meaningful stats this function has to be 
+ *          called twice with a bit of delay between calls. This
+ *          is due to the fact that at least two samples of
+ *          system usage stats are needed to calculate the load.
+ *  
+ * @returns IPRT status code.
+ * @param   pid     VM process id. 
+ * @param   pStats  Pointer to the structure that contains the 
+ *                  results. Note that this structure is
+ *                  modified with each call to this function and
+ *                  is used to provide both in and out values.
+ *  
+ * @todo    Perharps this function should be moved somewhere 
+ *          else.
+ */
+RTDECL(int) RTProcessGetProcessorUsageStats(RTPROCESS pid, PRTPROCCPUUSAGESTATS pStats);
 
 /** @} */
 
