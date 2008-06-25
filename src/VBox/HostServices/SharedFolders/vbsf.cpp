@@ -235,12 +235,15 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
     else
     {
 #ifdef RT_OS_DARWIN
+/** @todo This belongs in rtPathToNative or in the windows shared folder file system driver...
+ * The question is simply whether the NFD normalization is actually applied on a (virtaul) file
+ * system level in darwin, or just by the user mode application libs. */
 		SHFLSTRING *pPathParameter = pPath;
 		size_t cbPathLength;
 		CFMutableStringRef inStr = ::CFStringCreateMutable(NULL, 0);
 		uint16_t ucs2Length;
 		CFRange rangeCharacters;
-		
+
 		// Is 8 times length enough for decomposed in worst case...?
 		cbPathLength = sizeof(SHFLSTRING) + pPathParameter->u16Length * 8 + 2;
 		pPath = (SHFLSTRING *)RTMemAllocZ (cbPathLength);
@@ -250,18 +253,18 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 			Log(("RTMemAllocZ %x failed!!\n", cbPathLength));
 			return rc;
 		}
-		
+
 		::CFStringAppendCharacters(inStr, (UniChar*)pPathParameter->String.ucs2, pPathParameter->u16Length / sizeof(pPathParameter->String.ucs2[0]));
 		::CFStringNormalize(inStr, kCFStringNormalizationFormD);
 		ucs2Length = ::CFStringGetLength(inStr);
-		
+
 		rangeCharacters.location = 0;
 		rangeCharacters.length = ucs2Length;
 		::CFStringGetCharacters(inStr, rangeCharacters, pPath->String.ucs2);
 		pPath->String.ucs2[ucs2Length] = 0x0000; // NULL terminated
 		pPath->u16Length = ucs2Length * sizeof(pPath->String.ucs2[0]);
 		pPath->u16Size = pPath->u16Length + sizeof(pPath->String.ucs2[0]);
-		
+
 		CFRelease(inStr);
 #endif
         /* Client sends us UCS2, so convert it to UTF8. */
@@ -1386,6 +1389,9 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             AssertRC(rc2);
 
 #ifdef RT_OS_DARWIN
+/** @todo This belongs in rtPathToNative or in the windows shared folder file system driver...
+ * The question is simply whether the NFD normalization is actually applied on a (virtaul) file
+ * system level in darwin, or just by the user mode application libs. */
 			{
 				// Convert to
 				// Normalization Form C (composed Unicode). We need this because
@@ -1394,16 +1400,16 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 				uint16_t ucs2Length;
 				CFRange rangeCharacters;
 				CFMutableStringRef inStr = ::CFStringCreateMutable(NULL, 0);
-				
+
 				::CFStringAppendCharacters(inStr, (UniChar *)pwszString, RTUtf16Len (pwszString));
 				::CFStringNormalize(inStr, kCFStringNormalizationFormC);
 				ucs2Length = ::CFStringGetLength(inStr);
-				
+
 				rangeCharacters.location = 0;
 				rangeCharacters.length = ucs2Length;
 				::CFStringGetCharacters(inStr, rangeCharacters, pwszString);
 				pwszString[ucs2Length] = 0x0000; // NULL terminated
-				
+
 				CFRelease(inStr);
 			}
 #endif
@@ -1434,7 +1440,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             break; /* we're done */
     }
     Assert(rc != VINF_SUCCESS || *pcbBuffer > 0);
-    
+
 end:
     if (pDirEntry)
         RTMemFree(pDirEntry);
