@@ -377,7 +377,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     AssertReturn (aParent, E_INVALIDARG);
     AssertReturn (aConfigFile, E_INVALIDARG);
     AssertReturn (aMode != Init_New || (aName != NULL && *aName != '\0'),
-			      E_INVALIDARG);
+                  E_INVALIDARG);
     AssertReturn (aMode != Init_Registered || aId != NULL, E_FAIL);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -495,6 +495,19 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
         else
             autoInitSpan.setLimited();
     }
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /*
+     * Start resource usage sampler.
+     */
+    printf("Creating sampling timer with Machine::staticSamplerCallback, this=%p\n", this);
+    int result = RTTimerCreate(&m_pUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL, Machine::staticSamplerCallback, this);
+    if (RT_FAILURE(result))
+    {
+        AssertMsgFailed(("Failed to create resource usage sampling timer, rc=%d!\n", result));
+        rc = E_FAIL;
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     LogFlowThisFunc (("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
                       "rc=%08X\n",
@@ -620,6 +633,17 @@ void Machine::uninit()
      */
     AutoMultiWriteLock2 alock (mParent, this);
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /*
+     * Destroy resource usage sampler.
+     */
+    int rc = RTTimerDestroy(m_pUsageSampler);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to destroy resource usage sampling timer, rc=%d!\n", rc));
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
     if (!mData->mSession.mMachine.isNull())
     {
         /* Theoretically, this can only happen if the VirtualBox server has been
@@ -677,6 +701,34 @@ void Machine::uninit()
 
     LogFlowThisFuncLeave();
 }
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+void Machine::staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    ((Machine*)pvUser)->usageSamplerCallback();
+}
+
+void Machine::usageSamplerCallback()
+{
+    //LogFlowThisFunc(("mData->mSession.mPid = %u &m_CpuStats = %p)\n", mData->mSession.mPid, &m_CpuStats));
+    if (mData->mSession.mPid != NIL_RTPROCESS) {
+        int rc = RTProcessGetProcessorUsageStats(mData->mSession.mPid, &m_CpuStats);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to get CPU stats, rc=%d!\n", rc));
+        }
+    }
+    else
+    {
+        m_CpuStats.u32User   = 0;
+        m_CpuStats.u32System = 0;
+    }
+//  printf("Machine::usageSamplerCallback: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
+//         m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
+    //printf("user=%.2f system=%.2f\n", m_CpuStats.u32User/10000000., m_CpuStats.u32System/10000000.);
+}
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 
 // IMachine properties
 /////////////////////////////////////////////////////////////////////////////
@@ -2789,6 +2841,29 @@ STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue
     }
 #endif  /* VBOX_WITH_INFO_SVC not defined */
     return hrc;
+}
+
+/**
+ * Obtains the results of the latest measurement of CPU usage by 
+ * this machine. 
+ * 
+ * @returns error code.
+ *
+ * @param   user      out   % of CPU time spent in user mode.
+ * @param   system    out   % of CPU time spent in kernel mode.
+ * 
+ */
+STDMETHODIMP Machine::GetProcessorUsage(ULONG *user, ULONG *system)
+{
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    *user   = m_CpuStats.u32User;
+    *system = m_CpuStats.u32System;
+//  printf("Machine::GetProcessorUsage: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
+//         m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
+    return S_OK;
+#else /* !VBOX_WITH_RESOURCE_USAGE_API */
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 
@@ -8528,6 +8603,21 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     *aMachineState = mData->mMachineState;
 
     return S_OK;
+}
+
+/**
+ * Obtains the results of the latest measurement of CPU usage by 
+ * this machine. 
+ * 
+ * @returns error code.
+ *
+ * @param   user      out   % of CPU time spent in user mode.
+ * @param   system    out   % of CPU time spent in kernel mode.
+ * 
+ */
+STDMETHODIMP SessionMachine::GetProcessorUsage(ULONG *user, ULONG *system)
+{
+    return mPeer->GetProcessorUsage(user, system);
 }
 
 // public methods only for internal purposes

@@ -60,3 +60,15 @@ RTDECL(uint64_t) RTSystemProcessorGetActiveMask(void)
     return SysInfo.dwActiveProcessorMask;
 }
 
+RTDECL(int) RTSystemProcessorGetUsageStats(PRTCPUUSAGESTATS pStats)
+{
+    /* @todo Implement! */
+    return VERR_NOT_IMPLEMENTED;
+}
+
+RTDECL(int) RTProcessGetProcessorUsageStats(RTPROCESS pid, PRTPROCCPUUSAGESTATS pStats)
+{
+    /* @todo Implement! */
+    return VERR_NOT_IMPLEMENTED;
+}
+

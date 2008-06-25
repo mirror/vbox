@@ -167,9 +167,41 @@ HRESULT Host::init (VirtualBox *parent)
     AssertComRCReturn(hrc, hrc);
 #endif /* VBOX_WITH_USB */
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /*
+     * Start resource usage sampler.
+     */
+    //printf("Creating sampling timer with Host::staticSamplerCallback, this=%p\n", this);
+    int rc = RTTimerCreate(&m_pUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL, Host::staticSamplerCallback, this);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to create resource usage sampling timer, rc=%d!\n", rc));
+        return E_FAIL;
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
     setReady(true);
     return S_OK;
 }
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+void Host::staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    ((Host*)pvUser)->usageSamplerCallback();
+}
+
+void Host::usageSamplerCallback()
+{
+    int rc = RTSystemProcessorGetUsageStats(&m_CpuStats);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to get CPU stats, rc=%d!\n", rc));
+    }
+    //printf("Host::usageSamplerCallback: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
+    //     m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
+    //printf("user=%.2f system=%.2f idle=%.2f\n", m_CpuStats.u32User/10000000., m_CpuStats.u32System/10000000., m_CpuStats.u32Idle/10000000.);
+}
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 /**
  *  Uninitializes the host object and sets the ready flag to FALSE.
@@ -196,6 +228,17 @@ void Host::uninit()
 #ifdef VBOX_WITH_USB
     mUSBDeviceFilters.clear();
 #endif
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /*
+     * Destroy resource usage sampler.
+     */
+    int rc = RTTimerDestroy(m_pUsageSampler);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to destroy resource usage sampling timer, rc=%d!\n", rc));
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     setReady (FALSE);
 }
@@ -1082,6 +1125,30 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
      * (w/o treting it as a failure), for example, as in OSE */
     return E_NOTIMPL;
 #endif
+}
+
+/**
+ * Obtains the results of the latest measurement of overall CPU 
+ * usage on this host. 
+ * 
+ * @returns error code.
+ *
+ * @param   user      out   % of CPU time spent in user mode.
+ * @param   system    out   % of CPU time spent in kernel mode.
+ * @param   idle      out   % of idle CPU time.
+ * 
+ */
+STDMETHODIMP Host::GetProcessorUsage(ULONG *user, ULONG *system, ULONG *idle)
+{
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    *user   = m_CpuStats.u32User;
+    *system = m_CpuStats.u32System;
+    *idle   = m_CpuStats.u32Idle;
+
+    return S_OK;
+#else /* !VBOX_WITH_RESOURCE_USAGE_API */
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 // public methods only for internal purposes

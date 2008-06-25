@@ -47,6 +47,10 @@
 #include <iprt/file.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+#include <iprt/system.h>
+#include <iprt/timer.h>
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #include <list>
 
@@ -518,6 +522,8 @@ public:
     STDMETHOD(GetConfigRegistryValue) (INPTR BSTR aKey, BSTR *aValue);
     STDMETHOD(SetConfigRegistryValue) (INPTR BSTR aKey, INPTR BSTR aValue);
 
+    STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system);
+
     // public methods only for internal purposes
 
     /// @todo (dmik) add lock and make non-inlined after revising classes
@@ -738,6 +744,17 @@ protected:
 
     friend class SessionMachine;
     friend class SnapshotMachine;
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /** Static timer callback. */
+    static void staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    /** Member timer callback. */
+    void usageSamplerCallback();
+    /** Pointer to the usage sampling timer. */
+    PRTTIMER m_pUsageSampler;
+    /** Structure to hold processor usage stats. */
+    RTPROCCPUUSAGESTATS m_CpuStats;
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 };
 
 // SessionMachine class
@@ -807,6 +824,9 @@ public:
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
+
+    /* We need to override and call real Machine's method. */
+    STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system);
 
     // public methods only for internal purposes
 
