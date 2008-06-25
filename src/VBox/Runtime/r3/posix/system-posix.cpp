@@ -93,16 +93,17 @@ RTR3DECL(uint64_t) RTSystemProcessorGetActiveMask(void)
 
 /**
  * Gets the current figures of overall system processor usage.
- *  
- * @remarks To get meaningful stats this function has to be 
+ *
+ * @remarks To get meaningful stats this function has to be
  *          called twice with a bit of delay between calls. This
  *          is due to the fact that at least two samples of
  *          system usage stats are needed to calculate the load.
- *  
+ *
  * @returns None.
  */
 RTDECL(int) RTSystemProcessorGetUsageStats(PRTCPUUSAGESTATS pStats)
 {
+/** @todo r=bird: This is Linux specific and doesn't belong here. Move this to r3/linux/RTSystemGetCpuLoadStats-linux.cpp. */
     int rc = VINF_SUCCESS;
     uint32_t u32UserNow, u32NiceNow, u32SystemNow, u32IdleNow;
     uint32_t u32UserDelta, u32SystemDelta, u32IdleDelta, u32BusyDelta, u32TotalDelta;
@@ -138,12 +139,12 @@ RTDECL(int) RTSystemProcessorGetUsageStats(PRTCPUUSAGESTATS pStats)
 
 /**
  * Gets the current processor usage for a partucilar process.
- *  
- * @remarks To get meaningful stats this function has to be 
+ *
+ * @remarks To get meaningful stats this function has to be
  *          called twice with a bit of delay between calls. This
  *          is due to the fact that at least two samples of
  *          system usage stats are needed to calculate the load.
- *  
+ *
  * @returns None.
  */
 RTDECL(int) RTProcessGetProcessorUsageStats(RTPROCESS pid, PRTPROCCPUUSAGESTATS pStats)
@@ -152,11 +153,13 @@ RTDECL(int) RTProcessGetProcessorUsageStats(RTPROCESS pid, PRTPROCCPUUSAGESTATS 
     uint32_t u32UserNow, u32NiceNow, u32SystemNow, u32IdleNow;
     uint32_t u32UserDelta, u32SystemDelta;
     uint64_t u64TotalNow, u64TotalDelta;
+
+/** @todo r=bird: This is Linux specific and doesn't belong here. Move this to r3/linux/RTSystemGetCpuLoadStats-linux.cpp. */
     FILE *f = fopen("/proc/stat", "r");
 
     if (f)
     {
-        if (fscanf(f, "cpu %u %u %u %u", &u32UserNow, &u32NiceNow, &u32SystemNow, &u32IdleNow) == 4)
+        if (fscanf(f, "cpu %u %u %u %u", &u32UserNow, &u32NiceNow, &u32SystemNow, &u32IdleNow) == 4) /** @todo 'uint32_t' is not necessarily the same as 'unsigned int'. */
         {
             char *pszName;
             pid_t pid2;
