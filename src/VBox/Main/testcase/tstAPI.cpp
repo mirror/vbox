@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
         ULONG user, system, idle;
         host->GetProcessorUsage(&user, &system, &idle);
         printf("user=%u system=%u idle=%u\n", user/10000000, system/10000000, idle/10000000);
-        sleep(1);
+        RTThreadSleep(1000);
     }
 #endif
 
