@@ -36,6 +36,7 @@
 #include <Windows.h>
 #include <iprt/system.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 
 
 
