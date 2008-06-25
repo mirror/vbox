@@ -1,0 +1,105 @@
+# $Id$
+## @file
+# VBox - rdesktop with VRDP enhancements makefile.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+DEPTH = ../../../..
+include $(KBUILD_PATH)/header.kmk
+
+SOURCE_DIRECTORY = rdesktop-1.6.0-vrdp
+
+PROGRAMS = rdesktop-vrdp
+OTHERS = $(PATH_BIN)/rdesktop-vrdp.tar.gz
+OTHER_CLEAN = $(OTHERS) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+INSTALLS += rdesktop-vrdp-keymaps
+
+rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
+# rdesktop-vrdp_SDKS = VBOX_OPENSSL - crap, we don't build everything that's required here. :/
+rdesktop-vrdp_SOURCES = \
+	tcp.c \
+	iso.c \
+	mcs.c \
+	secure.c \
+	licence.c \
+	rdp.c \
+	orders.c \
+	bitmap.c \
+	cache.c \
+	rdp5.c \
+	channels.c \
+	rdpdr.c \
+	serial.c \
+	printer.c \
+	disk.c \
+	parallel.c \
+	printercache.c \
+	mppc.c \
+	pstcache.c \
+	lspci.c \
+	seamless.c \
+	ssl.c \
+	rdesktop.c \
+	xwin.c \
+	xkeymap.c \
+	ewmhints.c \
+	xclip.c \
+	cliprdr.c \
+	rdpsnd.c \
+	rdpsnd_dsp.c \
+	rdpsnd_oss.c
+rdesktop-vrdp_SOURCES += \
+	vrdp/rdpusb.c \
+	vrdp/USBProxyDevice-linux.c
+rdesktop-vrdp_DEFS = \
+	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.6.0\" \
+	PACKAGE_STRING=\"rdesktop\ 1.6.0\" PACKAGE_BUGREPORT=\"\" STDC_HEADERS=1 L_ENDIAN=1 \
+	HAVE_SYS_TYPES_H=1 HAVE_SYS_STAT_H=1 HAVE_STDLIB_H=1 HAVE_STRING_H=1 HAVE_MEMORY_H=1 \
+	HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_SYS_SELECT_H=1 \
+	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 ssldir=\"/usr\" \
+	EGD_SOCKET=\"/var/run/egd-pool\" WITH_RDPSND=1 HAVE_DIRENT_H=1 HAVE_DIRFD=1 HAVE_DECL_DIRFD=1 \
+	HAVE_ICONV=1 ICONV_CONST= HAVE_SYS_VFS_H=1 HAVE_SYS_STATVFS_H=1 HAVE_SYS_STATFS_H=1 \
+	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 STAT_STATVFS=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
+	HAVE_STRUCT_STATFS_F_NAMELEN=1 HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 \
+	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(DEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox-$(VBOX_VERSION_STRING)\")\"/rdesktop-vrdp-keymaps\" \
+	RDPSND_OSS=1 WITH_RDPUSB=1 RDESKTOP=1
+ifdef VBOX_WITHOUT_LINUX_COMPILER_H
+rdesktop-vrdp_DEFS += VBOX_WITHOUT_LINUX_COMPILER_H
+endif
+rdesktop-vrdp_LIBPATH = \
+	/usr/lib \
+	$(VBOX_LIBPATH_X11)
+rdesktop-vrdp_LIBS = \
+	X11 \
+	crypto
+
+rdesktop-vrdp-keymaps_INST    = $(INST_BIN)rdesktop-vrdp-keymaps
+rdesktop-vrdp-keymaps_MODE    = 644
+rdesktop-vrdp-keymaps_SOURCES = $(wildcard keymaps/*)
+
+include $(KBUILD_PATH)/footer.kmk
+
+rdesktop-vrdp_TARSOURCES = \
+	COPYING README configure configure.ac config.sub \
+	config.guess bootstrap install-sh Makefile.in proto.head \
+	proto.tail rdesktop.spec *.c *.h keymaps/?? keymaps/??-?? \
+	keymaps/common keymaps/modifiers keymaps/convert-map \
+	doc/HACKING doc/AUTHORS doc/TODO doc/ChangeLog \
+	doc/keymapping.txt doc/keymap-names.txt \
+	doc/ipv6.txt doc/licensing.txt doc/patches.txt \
+	doc/redirection.txt doc/rdesktop.1 \
+	vrdp/*.c vrdp/*.h
+
+$(PATH_TARGET)/$(SOURCE_DIRECTORY):
+	$(MKDIR) -p $(@D)
+	$(LN_SYMLINK) $(abspath $(PATH_CURRENT)) $@
+
+$(PATH_BIN)/rdesktop-vrdp.tar.gz: $(rdesktop-vrdp_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+	$(call MSG_TOOL,tar/gzip,,$@)
+	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(rdesktop-vrdp_TARSOURCES)) | gzip - > $@
