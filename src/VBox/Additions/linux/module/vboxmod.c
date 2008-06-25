@@ -71,6 +71,7 @@ do { \
 #include <VBox/VBoxDev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <linux/miscdevice.h>
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -612,6 +613,13 @@ static struct file_operations vbox_fops =
     .llseek  = no_llseek
 };
 
+static struct miscdevice gMiscDevice =
+{
+    minor:      MISC_DYNAMIC_MINOR,
+    name:       "vboxadd",
+    fops:       &vbox_fops
+};
+
 #ifndef IRQ_RETVAL
 /* interrupt handlers in 2.4 kernels don't return anything */
 # define irqreturn_t void
@@ -881,17 +889,29 @@ static __init int init(void)
     LogRel(("Starting VirtualBox version %s Guest Additions\n",
             VBOX_VERSION_STRING));
     /* register a character device */
-    err = register_chrdev(vbox_major, "vboxadd", &vbox_fops);
-    if (err < 0 || ((vbox_major & err) || (!vbox_major && !err)))
+    if (vbox_major > 0)
     {
-        LogRelFunc(("register_chrdev failed: vbox_major: %d, err = %d\n",
-                     vbox_major, err));
-        PCI_DEV_PUT(pcidev);
-        return -ENODEV;
+        err = register_chrdev(vbox_major, "vboxadd", &vbox_fops);
+        if (err < 0 || (vbox_major & err) || (!vbox_major && !err))
+        {
+            LogRelFunc(("register_chrdev failed: vbox_major: %d, err = %d\n",
+                        vbox_major, err));
+            PCI_DEV_PUT(pcidev);
+            return -ENODEV;
+        }
+        /* if no major code was set, take the return value */
+        if (!vbox_major)
+            vbox_major = err;
     }
-    /* if no major code was set, take the return value */
-    if (!vbox_major)
-        vbox_major = err;
+    else
+    {
+        err = misc_register(&gMiscDevice);
+        if (err)
+        {
+            LogRelFunc(("misc_register failed (rc=%d)\n", err));
+            return -ENODEV;
+        }
+    }
 
     /* allocate and initialize device extension */
     vboxDev = kmalloc(sizeof(*vboxDev), GFP_KERNEL);
