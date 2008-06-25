@@ -33,7 +33,7 @@
  * creator to save this information to disk and to retrieve it when needed.
  * Since the CFGM APIs are single threaded, the creator must also ensure that
  * no-one else accesses the configuration node while the service is running.
- * 
+ *
  * If this service is extended to deal with new requests it would probably be a
  * good idea to split it up into several files.
  */
@@ -110,7 +110,7 @@ public:
         return VINF_SUCCESS;
     }
 
-    /** 
+    /**
      * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
@@ -121,7 +121,7 @@ public:
         return VINF_SUCCESS;
     }
 
-    /** 
+    /**
      * @copydoc VBOXHGCMSVCHELPERS::pfnCall
      * Wraps to the call member function
      */
@@ -138,8 +138,8 @@ public:
         pSelf->call(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
     }
 
-    /** 
-     * @copydoc VBOXHGCMSVCHELPERS::pfnHostCall 
+    /**
+     * @copydoc VBOXHGCMSVCHELPERS::pfnHostCall
      * Wraps to the hostCall member function
      */
     static DECLCALLBACK(int) svcHostCall (void *pvService,
@@ -153,9 +153,9 @@ public:
     }
 private:
     int getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int validateGetKey(const char *pcKey, uint32_t cbKey, char *pcValue, uint32_t cbValue);
+    int validateGetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue);
     int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue, uint32_t cbValue);
+    int validateSetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue);
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                void *pvClient, uint32_t eFunction, uint32_t cParms,
                VBOXHGCMSVCPARM paParms[]);
@@ -166,7 +166,7 @@ private:
 /**
  * Retrieve a value from the guest registry by key, checking the validity
  * of the arguments passed.
- * 
+ *
  * @returns iprt status value
  * @param   cParms  the number of HGCM parameters supplied
  * @param   paParms the array of HGCM parameters
@@ -175,7 +175,7 @@ private:
 int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszKey, *pcValue;
+    char *pszKey, *pszValue;
     uint32_t cbKey, cbValue;
     size_t cbValueActual;
 
@@ -188,9 +188,9 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cbKey);
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pcValue, &cbValue);
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cbValue);
     if (RT_SUCCESS(rc))
-        rc = validateGetKey(pszKey, cbKey, pcValue, cbValue);
+        rc = validateGetKey(pszKey, cbKey, pszValue, cbValue);
     if (RT_SUCCESS(rc))
         rc = CFGMR3QuerySize(mpNode, pszKey, &cbValueActual);
     if (RT_SUCCESS(rc))
@@ -198,9 +198,9 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc) && (cbValueActual > cbValue))
         rc = VINF_BUFFER_OVERFLOW;
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
-        rc = CFGMR3QueryString(mpNode, pszKey, pcValue, cbValue);
+        rc = CFGMR3QueryString(mpNode, pszKey, pszValue, cbValue);
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
-        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pcValue));
+        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pszValue));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
     {
         VBoxHGCMParmUInt32Set(&paParms[2], 0);
@@ -217,13 +217,13 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * XML file)
  *
  * @returns IPRT status code
- * @param   pcKey     the key passed by the guest
- * @param   cbKey     the number of bytes in the array cbKey
- * @param   pcValue   the array to store the key into
+ * @param   pszKey    the key passed by the guest
+ * @param   cbKey     the number of bytes pszKey points to, including the terminating '\0'
+ * @param   pszValue  the buffer to store the key name into
  * @param   cbValue   the size of the array for storing the key value
  * @thread  HGCM
  */
-int Service::validateGetKey(const char *pcKey, uint32_t cbKey, char *pcValue, uint32_t cbValue)
+int Service::validateGetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue)
 {
     LogFlowFunc(("cbKey=%d, cbValue=%d\n", cbKey, cbValue));
 
@@ -234,8 +234,8 @@ int Service::validateGetKey(const char *pcKey, uint32_t cbKey, char *pcValue, ui
     if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
         rc = VERR_INVALID_PARAMETER;
     /* Only accept names in printable ASCII without spaces */
-    for (count = 0; (count < cbKey) && (pcKey[count] != '\0'); ++count)
-        if ((pcKey[count] < 33) || (pcKey[count] > 126))
+    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
+        if ((pszKey[count] < 33) || (pszKey[count] > 126))
             rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc) && (count == cbKey))
         /* This would mean that no null terminator was found */
@@ -244,7 +244,7 @@ int Service::validateGetKey(const char *pcKey, uint32_t cbKey, char *pcValue, ui
         rc = VERR_INVALID_PARAMETER;
 
     if (RT_SUCCESS(rc))
-        LogFlow(("    pcKey=%s\n", pcKey));
+        LogFlow(("    pszKey=%s\n", pszKey));
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -253,7 +253,7 @@ int Service::validateGetKey(const char *pcKey, uint32_t cbKey, char *pcValue, ui
 /**
  * Set a value in the guest registry by key, checking the validity
  * of the arguments passed.
- * 
+ *
  * @returns iprt status value
  * @param   cParms  the number of HGCM parameters supplied
  * @param   paParms the array of HGCM parameters
@@ -305,13 +305,13 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * XML file)
  *
  * @returns IPRT status code
- * @param   pcKey     the key passed by the guest
- * @param   cbKey     the number of bytes in the array cbKey
- * @param   pcValue   the value to store in the key
- * @param   cbValue   the number of bytes in the array pcValue
+ * @param   pszKey    the key passed by the guest
+ * @param   cbKey     the number of bytes in the buffer pszKey points to
+ * @param   pszValue  the value to store in the key
+ * @param   cbValue   the number of bytes in the buffer pszValue points to
  * @thread  HGCM
  */
-int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
+int Service::validateSetKey(const char *pszKey, uint32_t cbKey, char *pszValue,
                                    uint32_t cbValue)
 {
     LogFlowFunc(("cbKey=%d, cbValue=%d\n", cbKey, cbValue));
@@ -322,9 +322,10 @@ int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
     /* Validate the format of the key. */
     if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
         rc = VERR_INVALID_PARAMETER;
+    /** @todo duplicate check in validateGetKey, use separate method. mixing unsigned and uint32_t. */
     /* Only accept names in printable ASCII without spaces */
-    for (count = 0; (count < cbKey) && (pcKey[count] != '\0'); ++count)
-        if ((pcKey[count] < 33) || (pcKey[count] > 126))
+    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
+        if ((pszKey[count] < 33) || (pszKey[count] > 126))
             rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc) && (count == cbKey))
         /* This would mean that no null terminator was found */
@@ -336,8 +337,8 @@ int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
     {
         /* Validate the format of the value. */
         /* Only accept values in printable ASCII without spaces */
-        for (count = 0; (count < cbValue) && (pcValue[count] != '\0'); ++count)
-            if ((pcValue[count] < 33) || (pcValue[count] > 126))
+        for (count = 0; (count < cbValue) && (pszValue[count] != '\0'); ++count)
+            if ((pszValue[count] < 33) || (pszValue[count] > 126))
                 rc = VERR_INVALID_PARAMETER;
         if (RT_SUCCESS(rc) && (count == cbValue))
             /* This would mean that no null terminator was found */
@@ -347,7 +348,7 @@ int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
     }
 
     if (RT_SUCCESS(rc))
-        LogFlow(("    pcKey=%s, pcValue=%s\n", pcKey, cbValue > 0 ? pcValue : NULL));
+        LogFlow(("    pszKey=%s, pszValue=%s\n", pszKey, cbValue > 0 ? pszValue : NULL));
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -359,7 +360,7 @@ int Service::validateSetKey(const char *pcKey, uint32_t cbKey, char *pcValue,
  * @note    All functions which do not involve an unreasonable delay will be
  *          handled synchronously.  If needed, we will add a request handler
  *          thread in future for those which do.
- *          
+ *
  * @thread  HGCM
  */
 void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
