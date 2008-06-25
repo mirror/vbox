@@ -268,7 +268,7 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         //case ECOMM		70	/* Communication error on send */
 #endif
 #ifdef EPROTO
-        case EPROTO:            return VERR_UNRESOLVED_ERROR;  /* Roughly correct */
+        case EPROTO:            return VERR_NET_PROTOCOL_ERROR;
 #endif
 #ifdef EMULTIHOP
         //case EMULTIHOP	72	/* Multihop attempted */
