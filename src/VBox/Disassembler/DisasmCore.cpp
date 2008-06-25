@@ -2140,7 +2140,7 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 }
 //*****************************************************************************
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
-static const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "DIL", "SIL", "BPL", "SPL"};
+static const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "SPL", "BPL", "SIL", "DIL"};
 static const char *szModRMReg16[]     = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"};
 static const char *szModRMReg32[]     = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"};
 static const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
@@ -2183,7 +2183,6 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER
     switch (subtype)
     {
     case OP_PARM_b:
-        disasmAddString(pParam->szParam, szModRMReg8[idx]);
         Assert(idx < (pCpu->prefix & PREFIX_REX) ? 16 : 8);
 
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
@@ -2192,8 +2191,9 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER
             &&  idx >= USE_REG_AH 
             &&  idx <= USE_REG_BH)
         {
-            idx += (USE_REG_DIL - USE_REG_AH);
+            idx += (USE_REG_SPL - USE_REG_AH);
         }
+        disasmAddString(pParam->szParam, szModRMReg8[idx]);
 
         pParam->flags |= USE_REG_GEN8;
         pParam->base.reg_gen = idx;
