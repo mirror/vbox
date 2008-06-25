@@ -744,6 +744,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_NET_HOST_DOWN                      (-464)
 /** No route to host. */
 #define VERR_NET_HOST_UNREACHABLE               (-465)
+/** Protocol error. */
+#define VERR_NET_PROTOCOL_ERROR                 (-466)
 /** @} */
 
 
