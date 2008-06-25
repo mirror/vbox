@@ -2555,7 +2555,7 @@ void disValidateLockSequence(PDISCPUSTATE pCpu)
         case OP_SUB:
         case OP_XCHG:
         case OP_XOR:
-            if (pCpu->param1.flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT32 | USE_DISPLACEMENT16 | USE_DISPLACEMENT8 | USE_RIPDISPLACEMENT32))
+            if (pCpu->param1.flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT64 | USE_DISPLACEMENT32 | USE_DISPLACEMENT16 | USE_DISPLACEMENT8 | USE_RIPDISPLACEMENT32))
                 return;
             break;
 
