@@ -2553,7 +2553,7 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     CheckComRCReturnRC (rc);
 
     if (!accessible)
-        return setError (E_FAIL,
+        return setWarning (E_FAIL,
             tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
 
     mHWData.backup();
