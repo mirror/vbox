@@ -35,13 +35,9 @@
 *******************************************************************************/
 static const char g_szSpaces[] =
 "                                                                               ";
-static const char g_aszYasmRegGen8x86[8][4] =
+static const char g_aszYasmRegGen8[20][5] =
 {
-    "al\0",   "cl\0",   "dl\0",   "bl\0",   "ah\0",   "ch\0",   "dh\0",   "bh\0"
-};
-static const char g_aszYasmRegGen8Amd64[16][5] =
-{
-    "al\0\0", "cl\0\0", "dl\0\0", "bl\0\0", "spl\0",  "bpl\0",  "sil\0",  "dil\0",  "r8b\0",  "r9b\0",  "r10b",  "r11b",  "r12b",  "r13b",  "r14b",  "r15b"
+    "al\0\0", "cl\0\0", "dl\0\0", "bl\0\0", "ah\0\0", "ch\0\0", "dh\0\0", "bh\0\0", "r8b\0",  "r9b\0",  "r10b",  "r11b",  "r12b",  "r13b",  "r14b",  "r15b",  "spl\0",  "bpl\0",  "sil\0",  "dil\0"
 };
 static const char g_aszYasmRegGen16[16][5] =
 {
@@ -106,16 +102,12 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pP
 
     {
         case USE_REG_GEN8:
-            if (pCpu->opmode == CPUMODE_64BIT)
-            {
-                Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen8Amd64));
-                const char *psz = g_aszYasmRegGen8Amd64[pParam->base.reg_gen];
-                *pcchReg = 2 + !!psz[2] + !!psz[3];
-                return psz;
-            }
-            *pcchReg = 2;
-            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen8x86));
-            return g_aszYasmRegGen8x86[pParam->base.reg_gen];
+        {
+            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen8));
+            const char *psz = g_aszYasmRegGen8[pParam->base.reg_gen];
+            *pcchReg = 2 + !!psz[2] + !!psz[3];
+            return psz;
+        }
 
         case USE_REG_GEN16:
         {
@@ -183,7 +175,7 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pP
 
         case USE_REG_SEG:
         {
-            Assert(pParam->base.reg_seg < RT_ELEMENTS(g_aszYasmRegCRx));
+            Assert(pParam->base.reg_seg < (DIS_SELREG)RT_ELEMENTS(g_aszYasmRegCRx));
             const char *psz = g_aszYasmRegSeg[pParam->base.reg_seg];
             *pcchReg = 2;
             return psz;
