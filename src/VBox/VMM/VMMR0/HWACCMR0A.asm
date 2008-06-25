@@ -412,7 +412,7 @@ ENDPROC VMXR0StartVM32
 
 %ifdef RT_ARCH_AMD64
 ;/**
-; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
+; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
 ; * @param   fResume    vmlauch/vmresume
@@ -820,7 +820,7 @@ ENDPROC VMXActivateVMCS
 
 
 ;/**
-; * Prepares for and executes VMRUN
+; * Prepares for and executes VMRUN (32 bits guests)
 ; *
 ; * @returns VBox status code
 ; * @param   HCPhysVMCB     Physical address of host VMCB
@@ -828,7 +828,7 @@ ENDPROC VMXActivateVMCS
 ; * @param   pCtx           Guest context
 ; */
 BEGINPROC SVMVMRun
-%ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame - I'm lazy, sosume.
+%ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
     push    rdx
     push    rsi
@@ -925,6 +925,128 @@ BEGINPROC SVMVMRun
 %endif
     ret
 ENDPROC SVMVMRun
+
+%ifdef RT_ARCH_AMD64
+;/**
+; * Prepares for and executes VMRUN (64 bits guests)
+; *
+; * @returns VBox status code
+; * @param   HCPhysVMCB     Physical address of host VMCB
+; * @param   HCPhysVMCB     Physical address of guest VMCB
+; * @param   pCtx           Guest context
+; */
+BEGINPROC SVMVMRun64
+    ; fake a cdecl stack frame
+ %ifdef ASM_CALL64_GCC
+    push    rdx
+    push    rsi
+    push    rdi
+ %else
+    push    r8
+    push    rdx
+    push    rcx
+ %endif
+    push    0
+    push    rbp
+    mov     rbp, rsp
+    pushf
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP, RAX
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+    mov     rsi, [rbp + xS*2 + RTHCPHYS_CB*2]   ; pCtx
+    push    rsi                     ; push for saving the state at the end
+
+    ; Restore CR2
+    mov     rbx, [rsi + CPUMCTX.cr2]
+    mov     cr2, rbx
+
+    ; save host fs, gs, sysenter msr etc
+    mov     rax, [rbp + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    push    rax                     ; save for the vmload after vmrun
+    vmsave
+
+    ; setup eax for VMLOAD
+    mov     rax, [rbp + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+
+    ;/* Restore Guest's general purpose registers. */
+    ;/* RAX is loaded from the VMCB by VMRUN */
+    mov     rbx, qword [xSI + CPUMCTX.ebx]
+    mov     rcx, qword [xSI + CPUMCTX.ecx]
+    mov     rdx, qword [xSI + CPUMCTX.edx]
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rbp, qword [xSI + CPUMCTX.ebp]
+    mov     r8,  qword [xSI + CPUMCTX.r8]
+    mov     r9,  qword [xSI + CPUMCTX.r9]
+    mov     r10, qword [xSI + CPUMCTX.r10]
+    mov     r11, qword [xSI + CPUMCTX.r11]
+    mov     r12, qword [xSI + CPUMCTX.r12]
+    mov     r13, qword [xSI + CPUMCTX.r13]
+    mov     r14, qword [xSI + CPUMCTX.r14]
+    mov     r15, qword [xSI + CPUMCTX.r15]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch
+    clgi
+    sti
+
+    ; load guest fs, gs, sysenter msr etc
+    vmload
+    ; run the VM
+    vmrun
+
+    ;/* RAX is in the VMCB already; we can use it here. */
+
+    ; save guest fs, gs, sysenter msr etc
+    vmsave
+
+    ; load host fs, gs, sysenter msr etc
+    pop     rax                     ; pushed above
+    vmload
+
+    ; Set the global interrupt flag again, but execute cli to make sure IF=0.
+    cli
+    stgi
+
+    pop     rax                     ; pCtx
+
+    mov     qword [rax + CPUMCTX.ebx], rbx
+    mov     qword [rax + CPUMCTX.ecx], rcx
+    mov     qword [rax + CPUMCTX.edx], rdx
+    mov     qword [rax + CPUMCTX.esi], rsi
+    mov     qword [rax + CPUMCTX.edi], rdi
+    mov     qword [rax + CPUMCTX.ebp], rbp
+    mov     qword [rax + CPUMCTX.r8],  r8
+    mov     qword [rax + CPUMCTX.r9],  r9
+    mov     qword [rax + CPUMCTX.r10], r10
+    mov     qword [rax + CPUMCTX.r11], r11
+    mov     qword [rax + CPUMCTX.r12], r12
+    mov     qword [rax + CPUMCTX.r13], r13
+    mov     qword [rax + CPUMCTX.r14], r14
+    mov     qword [rax + CPUMCTX.r15], r15
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+    popf
+    pop     rbp
+    add     rsp, 4*xS
+    ret
+ENDPROC SVMVMRun64
+%endif ; RT_ARCH_AMD64
 
 
 %if GC_ARCH_BITS == 64

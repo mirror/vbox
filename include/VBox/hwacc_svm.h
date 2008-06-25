@@ -668,7 +668,7 @@ typedef struct _SVM_VMCB
 
 
 /**
- * Prepares for and executes VMRUN.
+ * Prepares for and executes VMRUN (32 bits guests).
  *
  * @returns VBox status code.
  * @param   pVMCBHostPhys   Physical address of host VMCB.
@@ -676,6 +676,16 @@ typedef struct _SVM_VMCB
  * @param   pCtx            Guest context.
  */
 DECLASM(int) SVMVMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx);
+
+/**
+ * Prepares for and executes VMRUN (64 bits guests).
+ *
+ * @returns VBox status code.
+ * @param   pVMCBHostPhys   Physical address of host VMCB.
+ * @param   pVMCBPhys       Physical address of the VMCB.
+ * @param   pCtx            Guest context.
+ */
+DECLASM(int) SVMVMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx);
 
 /**
  * Executes INVLPGA.

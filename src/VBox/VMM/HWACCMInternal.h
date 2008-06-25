@@ -276,6 +276,9 @@ typedef struct HWACCM
         /** Virtual address of the MSR bitmap. */
         R0PTRTYPE(void *)           pMSRBitmap;
 
+        /** Ring 0 handlers for VT-x. */
+        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx));
+
         /** SVM revision. */
         uint32_t                    u32Rev;
 
