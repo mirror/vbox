@@ -74,7 +74,13 @@ typedef struct RTTIMER
     uint8_t volatile        fSuspended;
     /** Flag indicating that the timer has been destroyed. */
     uint8_t volatile        fDestroyed;
-#ifndef IPRT_WITH_POSIX_TIMERS
+#ifndef IPRT_WITH_POSIX_TIMERS /** @todo We have to take the signals on a dedicated timer thread as
+                                * we (might) have code assuming that signals doesn't screw around
+                                * on existing threads. (It would be sufficient to have one thread
+                                * per signal of course since the signal will be masked while it's
+                                * running, however, it may just cause more compilcations than its
+                                * worth - sigwait/sigwaitinfo work atomically anyway...)
+                                * Also, must block the signal in the thread main procedure too. */
     /** The timer thread. */
     RTTHREAD                Thread;
     /** Event semaphore on which the thread is blocked. */
@@ -308,7 +314,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         return VERR_NOT_SUPPORTED;
 
-#ifndef IPRT_WITH_POSIX_TIMERS
+#ifndef IPRT_WITH_POSIX_TIMERS /** @todo the signal blocking applies to the new code too, see comment in the struct. */
     /*
      * Check if timer is busy.
      */
@@ -459,12 +465,12 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         rc = RTErrConvertFromErrno(sigaction(RT_TIMER_SIGNAL, &action, &old));
         if (RT_SUCCESS(rc))
         {
-    
+
             /* Ask to deliver RT_TIMER_SIGNAL upon timer expiration. */
             evt.sigev_notify = SIGEV_SIGNAL;
             evt.sigev_signo  = RT_TIMER_SIGNAL;
             evt.sigev_value.sival_ptr = pTimer; /* sigev_value gets copied to siginfo. */
-    
+
             rc = RTErrConvertFromErrno(timer_create(CLOCK_REALTIME, &evt, &pTimer->timer));
             if (RT_SUCCESS(rc))
             {
