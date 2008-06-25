@@ -957,7 +957,7 @@ int main(int argc, char *argv[])
             ULONG user, system;
             sessionMachine->GetProcessorUsage(&user, &system);
             printf("VM: user=%u system=%u\n", user/10000000, system/10000000);
-            sleep(1);
+            RTThreadSleep(1000);
         }
         printf ("Press enter to pause the VM execution in the remote session...");
         getchar();
