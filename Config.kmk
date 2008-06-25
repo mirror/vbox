@@ -140,8 +140,10 @@ if1of ($(KBUILD_TARGET), linux solaris win)
  VBOX_WITH_ADDITIONS = 1
 endif
 # Build the optional ring-0 part of the additions for syntax checking.
-# (Ignored ifndef VBOX_WITH_ADDITIONS. Hack for 32/64 linux issues.)
-VBOX_WITH_ADDITION_DRIVERS = 1
+# (Except when cross-building on linux since we're using /usr/src/...)
+ifn1of ($(KBUILD_TARGET).$(KBUILD_HOST_ARCH).$(KBUILD_TARGET_ARCH), linux.x86.amd64 linux.amd64.x86)
+ VBOX_WITH_ADDITION_DRIVERS = 1
+endif
 # Build X11 additions. Can be disabled separately.
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd solaris)
  VBOX_WITH_X11_ADDITIONS = 1
@@ -288,12 +290,6 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64 solaris.amd64 win.amd
 VBOX_WITH_64_BITS_GUESTS = 1
 else
 # VBOX_WITH_64_BITS_GUESTS = 1
-endif
-# Don't cross-build Linux sanity test modules
-ifeq ($(KBUILD_TARGET),linux)
- ifneq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
-  VBOX_WITH_ADDITION_DRIVERS =
- endif
 endif
 # Enable the host/guest information service and registry
 VBOX_WITH_INFO_SVC = 1
