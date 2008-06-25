@@ -3093,7 +3093,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUIN
 /**
  * @copydoc PDMDEVHLP::pfnIOPortRegisterGC
  */
-DECLINLINE(int) PDMDevHlpIOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTGCPTR pvUser,
+DECLINLINE(int) PDMDevHlpIOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
