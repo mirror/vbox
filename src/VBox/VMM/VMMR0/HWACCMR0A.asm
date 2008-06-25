@@ -927,6 +927,32 @@ BEGINPROC SVMVMRun
 ENDPROC SVMVMRun
 
 
+%if GC_ARCH_BITS == 64
+;;
+; Executes INVLPGA
+;
+; @param   pPageGC  msc:rcx  gcc:rdi  x86:[esp+04]  Virtual page to invalidate
+; @param   uASID    msc:rdx  gcc:rsi  x86:[esp+0C]  Tagged TLB id
+;
+;DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
+BEGINPROC SVMInvlpgA
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    mov     rax, rdi
+    mov     rcx, rsi
+ %else
+    movzx   rax, ecx
+    mov     rcx, rdx
+ %endif
+%else
+    mov     eax, [esp + 4]
+    mov     ecx, [esp + 0Ch]
+%endif
+    invlpga [xAX], ecx
+    ret
+ENDPROC SVMInvlpgA
+
+%else
 ;;
 ; Executes INVLPGA
 ;
@@ -937,10 +963,10 @@ ENDPROC SVMVMRun
 BEGINPROC SVMInvlpgA
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    mov     eax, edi                    ;; @todo 64-bit guest.
+    movzx   rax, edi
     mov     ecx, esi
  %else
-    mov     eax, ecx                    ;; @todo 64-bit guest.
+    movzx   rax, ecx
     mov     ecx, edx
  %endif
 %else
@@ -950,4 +976,6 @@ BEGINPROC SVMInvlpgA
     invlpga [xAX], ecx
     ret
 ENDPROC SVMInvlpgA
+
+%endif ; GC_ARCH_BITS != 64
 
