@@ -1400,11 +1400,11 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
                     pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
                     pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, 
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, 
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, 
-                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, 
-                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, 
+                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u,
+                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u,
                     pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
                     pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
@@ -1460,20 +1460,13 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
                     pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
         }
+
+        /*
+         * Disassemble one instruction at cs:[r|e]ip.
+         */
         if (CPUMIsGuestIn64BitCodeEx(pCtx))
-        {
-            /*
-             * Disassemble one instruction at cs:rip.
-             */
             return pCmdHlp->pfnExec(pCmdHlp, "u %016RX64 L 0", pCtx->rip);
-        }
-        else
-        {
-            /*
-             * Disassemble one instruction at cs:eip.
-             */
-            return pCmdHlp->pfnExec(pCmdHlp, "u %04x:%08x L 0", pCtx->cs, pCtx->eip);
-        }
+        return pCmdHlp->pfnExec(pCmdHlp, "u %04x:%08x L 0", pCtx->cs, pCtx->eip);
     }
 
     /*
@@ -1788,7 +1781,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 unsigned cParams = pDesc->au8[0] & 0x1f;
                 const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off =    pDesc->au16[0] 
+                uint64_t off =    pDesc->au16[0]
                                 | ((uint64_t)pDesc->au16[3] << 16)
                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
@@ -1802,7 +1795,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             {
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off =    pDesc->au16[0] 
+                uint64_t off =    pDesc->au16[0]
                                 | ((uint64_t)pDesc->au16[3] << 16)
                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
