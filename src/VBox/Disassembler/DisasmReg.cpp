@@ -109,7 +109,12 @@ static const unsigned g_aReg32Index[] =
  * Macro for accessing 32-bit general purpose registers in CPUMCTXCORE structure.
  */
 #define DIS_READ_REG32(p, idx)       (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]))
-#define DIS_WRITE_REG32(p, idx, val) (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]) = val)
+/* From http://www.cs.cmu.edu/~fp/courses/15213-s06/misc/asm64-handout.pdf:
+ * ``Perhaps unexpectedly, instructions that move or generate 32-bit register
+ *   values also set the upper 32 bits of the register to zero. Consequently
+ *   there is no need for an instruction movzlq.''
+ */
+#define DIS_WRITE_REG32(p, idx, val) (*(uint64_t *)((char *)(p) + g_aReg32Index[idx]) = (uint32_t)val)
 #define DIS_PTR_REG32(p, idx)        ( (uint32_t *)((char *)(p) + g_aReg32Index[idx]))
 
 /**
