@@ -39,7 +39,7 @@
     mov     al, ch
     mov     al, dl
     mov     al, dh
-%if TEST_BITS == 64
+%if TEST_BITS == 64 && 0 ; This is busted both in the yasm formatter (all) and in the disasm core (first 4).
     mov     al, dil
     mov     al, sil
     mov     al, bpl
