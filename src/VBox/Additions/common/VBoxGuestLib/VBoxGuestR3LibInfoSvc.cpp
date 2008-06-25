@@ -109,11 +109,13 @@ VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pszKey          The registry key to save to.
- * @param   pcValue         Where to store the value retrieved.
- * @param   cbValue         The size of the array pcValue
+ * @param   pszValue        Where to store the value retrieved.
+ * @param   cbValue         The size of the buffer pszValue points to.
+ * @param   pcbActual       Where to store the required buffer size. This should be set on buffer
+ *                          overflows errors but actually isn't... Optional.
  */
 VBGLR3DECL(int) VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey,
-                                     char *pcValue, uint32_t cbValue, uint32_t *pcbActual)
+                                     char *pszValue, uint32_t cbValue, uint32_t *pcbActual)
 {
     GetConfigKey Msg;
 
@@ -122,7 +124,7 @@ VBGLR3DECL(int) VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey,
     Msg.hdr.u32Function = GET_CONFIG_KEY;
     Msg.hdr.cParms = 3;
     VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
-    VbglHGCMParmPtrSet(&Msg.value, pcValue, cbValue);
+    VbglHGCMParmPtrSet(&Msg.value, pszValue, cbValue);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));

@@ -639,7 +639,7 @@ typedef enum
 
 typedef struct
 {
-    char achName[128];
+    char achName[128]; /**< This is really szName. */
 } HGCMServiceLocationHost;
 
 typedef struct HGCMSERVICELOCATION
@@ -1573,7 +1573,7 @@ VBGLR3DECL(int)     VbglR3RetrieveVideoMode(char *pszName, uint32_t *pcx, uint32
 VBGLR3DECL(int)     VbglR3InfoSvcConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3InfoSvcDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *pszValue);
-VBGLR3DECL(int)     VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey, char *pcValue, uint32_t cbValue, uint32_t *pcbActual);
+VBGLR3DECL(int)     VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey, char *pszValue, uint32_t cbValue, uint32_t *pcbActual);
 /** @}  */
 
 
