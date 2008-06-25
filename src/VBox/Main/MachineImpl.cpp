@@ -146,6 +146,10 @@ Machine::Data::Data()
 
     mSession.mPid = NIL_RTPROCESS;
     mSession.mState = SessionState_Closed;
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    mUsageSampler = NULL;
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 Machine::Data::~Data()
@@ -497,15 +501,14 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /*
-     * Start resource usage sampler.
-     */
-    printf("Creating sampling timer with Machine::staticSamplerCallback, this=%p\n", this);
-    int result = RTTimerCreate(&m_pUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL, Machine::staticSamplerCallback, this);
-    if (RT_FAILURE(result))
+    /* Start resource usage sampler */
     {
-        AssertMsgFailed(("Failed to create resource usage sampling timer, rc=%d!\n", result));
-        rc = E_FAIL;
+        vrc = RTTimerCreate (&mData->mUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL,
+                             Machine::UsageSamplerCallback, this);
+        AssertMsgRC (vrc, ("Failed to create resource usage "
+                            "sampling timer(%Rra)\n", vrc));
+        if (RT_FAILURE (vrc))
+            rc = E_FAIL;
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -634,13 +637,11 @@ void Machine::uninit()
     AutoMultiWriteLock2 alock (mParent, this);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /*
-     * Destroy resource usage sampler.
-     */
-    int rc = RTTimerDestroy(m_pUsageSampler);
-    if (RT_FAILURE(rc))
+    /* Destroy resource usage sampler */
     {
-        AssertMsgFailed(("Failed to destroy resource usage sampling timer, rc=%d!\n", rc));
+        int vrc = RTTimerDestroy (mData->mUsageSampler);
+        AssertMsgRC (vrc, ("Failed to destroy resource usage "
+                           "sampling timer (%Rra)\n", vrc));
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -701,34 +702,6 @@ void Machine::uninit()
 
     LogFlowThisFuncLeave();
 }
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Machine::staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
-{
-    ((Machine*)pvUser)->usageSamplerCallback();
-}
-
-void Machine::usageSamplerCallback()
-{
-    //LogFlowThisFunc(("mData->mSession.mPid = %u &m_CpuStats = %p)\n", mData->mSession.mPid, &m_CpuStats));
-    if (mData->mSession.mPid != NIL_RTPROCESS) {
-        int rc = RTProcessGetProcessorUsageStats(mData->mSession.mPid, &m_CpuStats);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed to get CPU stats, rc=%d!\n", rc));
-        }
-    }
-    else
-    {
-        m_CpuStats.u32User   = 0;
-        m_CpuStats.u32System = 0;
-    }
-//  printf("Machine::usageSamplerCallback: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
-//         m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
-    //printf("user=%.2f system=%.2f\n", m_CpuStats.u32User/10000000., m_CpuStats.u32System/10000000.);
-}
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
 
 // IMachine properties
 /////////////////////////////////////////////////////////////////////////////
@@ -2710,12 +2683,12 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
  * since the current values of the registry will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
  * stored between sessions.
- * 
+ *
  * @note since the way this method is implemented depends on whether or not
  *       a session is currently open, we grab a write lock on the object, in
  *       order to ensure that the session state does not change during the
  *       call, and to force us to block if it is currently changing (either
- *       way) between open and closed. 
+ *       way) between open and closed.
  */
 STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
 {
@@ -2781,12 +2754,12 @@ STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
  * since the current values of the registry will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
  * stored between sessions.
- * 
+ *
  * @note since the way this method is implemented depends on whether or not
  *       a session is currently open, we grab a write lock on the object, in
  *       order to ensure that the session state does not change during the
  *       call, and to force us to block if it is currently changing (either
- *       way) between open and closed. 
+ *       way) between open and closed.
  */
 STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue)
 {
@@ -2843,23 +2816,18 @@ STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue
     return hrc;
 }
 
-/**
- * Obtains the results of the latest measurement of CPU usage by 
- * this machine. 
- * 
- * @returns error code.
- *
- * @param   user      out   % of CPU time spent in user mode.
- * @param   system    out   % of CPU time spent in kernel mode.
- * 
- */
-STDMETHODIMP Machine::GetProcessorUsage(ULONG *user, ULONG *system)
+STDMETHODIMP Machine::GetProcessorUsage (ULONG *aUser, ULONG *aSystem)
 {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    *user   = m_CpuStats.u32User;
-    *system = m_CpuStats.u32System;
-//  printf("Machine::GetProcessorUsage: user=%u%% system=%u%% &m_CpuStats=%p this=%p\n",
-//         m_CpuStats.u32User / 10000000, m_CpuStats.u32System / 10000000, &m_CpuStats, this);
+    if (aUser == NULL || aSystem == NULL)
+        return E_POINTER;
+
+//  LogFlowThisFunc (("user=%u%% system=%u%% &mData->mCpuStats=%p\n",
+//                    mData->mCpuStats.u32User / 10000000,
+//                    mData->mCpuStats.u32System / 10000000, &mData->mCpuStats));
+
+    *aUser   = mData->mCpuStats.u32User;
+    *aSystem = mData->mCpuStats.u32System;
     return S_OK;
 #else /* !VBOX_WITH_RESOURCE_USAGE_API */
     return E_NOTIMPL;
@@ -7353,6 +7321,39 @@ void Machine::copyFrom (Machine *aThat)
         mParallelPorts [slot]->copyFrom (aThat->mParallelPorts [slot]);
 }
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+
+/* static */
+void Machine::UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    AssertReturnVoid (pvUser != NULL);
+    static_cast <Machine *> (pvUser)->usageSamplerCallback();
+}
+
+void Machine::usageSamplerCallback()
+{
+//  LogFlowThisFunc (("mData->mSession.mPid = %u &mData->mCpuStats = %p)\n",
+//                    mData->mSession.mPid, &m_CpuStats));
+    if (mData->mSession.mPid != NIL_RTPROCESS)
+    {
+        int vrc = RTProcessGetProcessorUsageStats (mData->mSession.mPid,
+                                                   &mData->mCpuStats);
+        AssertMsgRC (vrc, ("Failed to get CPU stats (%Rra)\n", vrc));
+    }
+    else
+    {
+        mData->mCpuStats.u32User   = 0;
+        mData->mCpuStats.u32System = 0;
+    }
+//  LogFlowThisFunc (("user=%u%% system=%u%% &mData->mCpuStats=%p\n",
+//                    mData->mCpuStats.u32User / 10000000,
+//                    mData->mCpuStats.u32System / 10000000, &mData->mCpuStats));
+//  LogFlowThisFunc (("user=%.2f system=%.2f\n",
+//                    mData->mCpuStats.u32User/10000000., mData->mCpuStats.u32System/10000000.));
+}
+
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 /////////////////////////////////////////////////////////////////////////////
 // SessionMachine class
 /////////////////////////////////////////////////////////////////////////////
@@ -8603,21 +8604,6 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     *aMachineState = mData->mMachineState;
 
     return S_OK;
-}
-
-/**
- * Obtains the results of the latest measurement of CPU usage by 
- * this machine. 
- * 
- * @returns error code.
- *
- * @param   user      out   % of CPU time spent in user mode.
- * @param   system    out   % of CPU time spent in kernel mode.
- * 
- */
-STDMETHODIMP SessionMachine::GetProcessorUsage(ULONG *user, ULONG *system)
-{
-    return mPeer->GetProcessorUsage(user, system);
 }
 
 // public methods only for internal purposes

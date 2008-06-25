@@ -167,6 +167,13 @@ public:
 
         ComObjPtr <Snapshot> mFirstSnapshot;
         ComObjPtr <Snapshot> mCurrentSnapshot;
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+        /** Pointer to the usage sampling timer. */
+        PRTTIMER mUsageSampler;
+        /** Structure to hold processor usage stats. */
+        RTPROCCPUUSAGESTATS mCpuStats;
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
     };
 
     /**
@@ -712,6 +719,13 @@ protected:
     HRESULT commit();
     void copyFrom (Machine *aThat);
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /** Static timer callback. */
+    static void UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    /** Member timer callback. */
+    void usageSamplerCallback();
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
     const InstanceType mType;
 
     const ComObjPtr <Machine, ComWeakRef> mPeer;
@@ -744,17 +758,6 @@ protected:
 
     friend class SessionMachine;
     friend class SnapshotMachine;
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /** Static timer callback. */
-    static void staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-    /** Member timer callback. */
-    void usageSamplerCallback();
-    /** Pointer to the usage sampling timer. */
-    PRTTIMER m_pUsageSampler;
-    /** Structure to hold processor usage stats. */
-    RTPROCCPUUSAGESTATS m_CpuStats;
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 };
 
 // SessionMachine class
@@ -824,9 +827,6 @@ public:
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
-
-    /* We need to override and call real Machine's method. */
-    STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system);
 
     // public methods only for internal purposes
 

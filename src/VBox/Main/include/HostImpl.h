@@ -109,7 +109,7 @@ public:
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
     STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter **aFilter);
 
-    STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system, ULONG *idle);
+    STDMETHOD(GetProcessorUsage) (ULONG *aUser, ULONG *aSystem, ULONG *aIdle);
 
     // public methods only for internal purposes
 
@@ -169,6 +169,13 @@ private:
                                                  void *aUser, int *aVrc);
 #endif
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /** Static timer callback. */
+    static void UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    /** Member timer callback. */
+    void usageSamplerCallback();
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
 #ifdef VBOX_WITH_USB
@@ -179,17 +186,10 @@ private:
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /** Static timer callback. */
-    static void staticSamplerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-    /** Member timer callback. */
-    void usageSamplerCallback();
-
     /** Pointer to the usage sampling timer. */
-    PRTTIMER m_pUsageSampler;
-    /** Time stamp of the last taken sample. */
-    //uint64_t m_tsLastSampleTaken;
+    PRTTIMER mUsageSampler;
     /** Structure to hold processor usage stats. */
-    RTCPUUSAGESTATS m_CpuStats;
+    RTCPUUSAGESTATS mCpuStats;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 };
 
