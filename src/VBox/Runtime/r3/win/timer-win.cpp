@@ -77,7 +77,7 @@
 __BEGIN_DECLS
 /* from sysinternals. */
 NTSYSAPI LONG NTAPI NtSetTimerResolution(IN ULONG DesiredResolution, IN BOOLEAN SetResolution, OUT PULONG CurrentResolution);
-NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MinimumResolution, OUT PULONG MaximumResolution, OUT PULONG CurrentResolution);
+NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MaximumResolution, OUT PULONG MinimumResolution, OUT PULONG CurrentResolution);
 __END_DECLS
 
 
@@ -289,21 +289,21 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
      * On windows we'll have to set the timer resolution before
      * we start the timer.
      */
-    ULONG Min = ~0;
-    ULONG Max = ~0;
-    ULONG Cur = ~0;
-    NtQueryTimerResolution(&Min, &Max, &Cur);
-    Log(("NtQueryTimerResolution -> Min=%lu Max=%lu Cur=%lu (100ns)\n", Min, Max, Cur));
-    if (Cur > Max && Cur > 10000 /* = 1ms */)
+    ULONG ulMax = ~0;
+    ULONG ulMin = ~0;
+    ULONG ulCur = ~0;
+    NtQueryTimerResolution(&ulMax, &ulMin, &ulCur);
+    Log(("NtQueryTimerResolution -> ulMax=%lu00ns ulMin=%lu00ns ulCur=%lu00ns\n", ulMax, ulMin, ulCur));
+    if (ulCur > ulMin && ulCur > 10000 /* = 1ms */)
     {
-        if (NtSetTimerResolution(10000, TRUE, &Cur) >= 0)
+        if (NtSetTimerResolution(10000, TRUE, &ulCur) >= 0)
             Log(("Changed timer resolution to 1ms.\n"));
-        else if (NtSetTimerResolution(20000, TRUE, &Cur) >= 0)
+        else if (NtSetTimerResolution(20000, TRUE, &ulCur) >= 0)
             Log(("Changed timer resolution to 2ms.\n"));
-        else if (NtSetTimerResolution(40000, TRUE, &Cur) >= 0)
+        else if (NtSetTimerResolution(40000, TRUE, &ulCur) >= 0)
             Log(("Changed timer resolution to 4ms.\n"));
-        else if (Max <= 50000 && NtSetTimerResolution(Max, TRUE, &Cur) >= 0)
-            Log(("Changed timer resolution to %lu *100ns.\n", Max));
+        else if (ulMin <= 50000 && NtSetTimerResolution(ulMin, TRUE, &ulCur) >= 0)
+            Log(("Changed timer resolution to %lu *100ns.\n", ulMin));
         else
         {
             AssertMsgFailed(("Failed to configure timer resolution!\n"));
@@ -329,11 +329,11 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
         pTimer->TimerId     = timeSetEvent(uMilliesInterval, 0, rttimerCallback, (DWORD_PTR)pTimer, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
         if (pTimer->TimerId)
         {
-            ULONG Min = ~0;
-            ULONG Max = ~0;
-            ULONG Cur = ~0;
-            NtQueryTimerResolution(&Min, &Max, &Cur);
-            Log(("NtQueryTimerResolution -> Min=%lu Max=%lu Cur=%lu (100ns)\n", Min, Max, Cur));
+            ULONG ulMax = ~0;
+            ULONG ulMin = ~0;
+            ULONG ulCur = ~0;
+            NtQueryTimerResolution(&ulMax, &ulMin, &ulCur);
+            Log(("NtQueryTimerResolution -> ulMax=%lu00ns ulMin=%lu00ns ulCur=%lu00ns\n", ulMax, ulMin, ulCur));
 
             *ppTimer = pTimer;
             return VINF_SUCCESS;

@@ -38,7 +38,7 @@
 
 extern "C" {
 /* from sysinternals. */
-NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MinimumResolution, OUT PULONG MaximumResolution, OUT PULONG CurrentResolution);
+NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MaximumResolution, OUT PULONG MinimumResolution, OUT PULONG CurrentResolution);
 }
 
 
@@ -47,8 +47,8 @@ int main()
     ULONG Min = ~0;
     ULONG Max = ~0;
     ULONG Cur = ~0;
-    NtQueryTimerResolution(&Min, &Max, &Cur);
-    printf("NtQueryTimerResolution -> Min=%lu Max=%lu Cur=%lu (100ns)\n", Min, Max, Cur);
+    NtQueryTimerResolution(&Max, &Min, &Cur);
+    printf("NtQueryTimerResolution -> Max=%lu00ns Min=%lu00ns Cur=%lu00ns\n", Min, Max, Cur);
 
 #if 0
     /* figure out the 100ns relative to the 1970 epoc. */
