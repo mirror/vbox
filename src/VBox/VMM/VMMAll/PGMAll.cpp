@@ -1036,7 +1036,7 @@ PGMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
     PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
     switch (enmShadowMode)
@@ -1066,7 +1066,7 @@ PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
+PGMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 {
     switch (enmShadowMode)
     {
@@ -1093,7 +1093,7 @@ PGMDECL(uint32_t) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetHyper32BitCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhys32BitPD;
 }
@@ -1104,7 +1104,7 @@ PGMDECL(uint32_t) PGMGetHyper32BitCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetHyperPaeCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysPaePDPT;
 }
@@ -1115,7 +1115,7 @@ PGMDECL(uint32_t) PGMGetHyperPaeCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetHyperAmd64CR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysPaePML4;
 }
@@ -1126,7 +1126,7 @@ PGMDECL(uint32_t) PGMGetHyperAmd64CR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetInterHCCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
 {
     switch (pVM->pgm.s.enmHostMode)
     {
@@ -1158,7 +1158,7 @@ PGMDECL(uint32_t) PGMGetInterHCCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetInterGCCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetInterGCCR3(PVM pVM)
 {
     switch (pVM->pgm.s.enmShadowMode)
     {
@@ -1188,7 +1188,7 @@ PGMDECL(uint32_t) PGMGetInterGCCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetInter32BitCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetInter32BitCR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysInterPD;
 }
@@ -1199,7 +1199,7 @@ PGMDECL(uint32_t) PGMGetInter32BitCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetInterPaeCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetInterPaeCR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysInterPaePDPT;
 }
@@ -1210,7 +1210,7 @@ PGMDECL(uint32_t) PGMGetInterPaeCR3(PVM pVM)
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-PGMDECL(uint32_t) PGMGetInterAmd64CR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetInterAmd64CR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysInterPaePML4;
 }
