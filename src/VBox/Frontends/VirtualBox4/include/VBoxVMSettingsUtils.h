@@ -25,9 +25,11 @@
 
 #include <VBoxGlobal.h>
 
-//#include <QDialog>
-//#include <QLineEdit>
-//#include <QPushButton>
+#ifdef Q_WS_WIN
+#include <QDialog>
+#include <QLineEdit>
+#include <QPushButton>
+#endif
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QTreeWidget>
@@ -100,84 +102,84 @@ private slots:
     }
 };
 
-// #ifdef Q_WS_WIN
-// /**
-//  *  QDialog class reimplementation to use for adding network interface.
-//  *  It has one line-edit field for entering network interface's name and
-//  *  common dialog's ok/cancel buttons.
-//  */
-// class VBoxAddNIDialog : public QDialog
-// {
-//     Q_OBJECT
-//
-// public:
-//
-//     VBoxAddNIDialog (QWidget *aParent, const QString &aIfaceName) :
-//         QDialog (aParent),
-//         mLeName (0)
-//     {
-//         setWindowTitle (tr ("Add Host Interface"));
-//         QVBoxLayout *mainLayout = new QVBoxLayout (this);
-//
-//         /* Setup Input layout */
-//         QHBoxLayout *inputLayout = new QHBoxLayout();
-//         QLabel *lbName = new QLabel (tr ("Interface Name"), this);
-//         mLeName = new QLineEdit (aIfaceName, this);
-//         mLeName->setWhatsThis (tr ("Descriptive name of the new "
-//                                    "network interface"));
-//         inputLayout->addWidget (lbName);
-//         inputLayout->addWidget (mLeName);
-//         connect (mLeName, SIGNAL (textChanged (const QString &)),
-//                  this, SLOT (validate()));
-//         mainLayout->addLayout (inputLayout);
-//
-//         /* Setup Button layout */
-//         QHBoxLayout *buttonLayout = new QHBoxLayout();
-//         mBtOk = new QPushButton (tr ("&OK"), this);
-//         QPushButton *btCancel = new QPushButton (tr ("Cancel"), this);
-//         connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
-//         connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
-//         buttonLayout->addWidget (mBtOk);
-//         buttonLayout->addStretch();
-//         buttonLayout->addWidget (btCancel);
-//         mainLayout->addLayout (buttonLayout);
-//
-//         /* resize to fit the aIfaceName in one string */
-//         int requiredWidth = mLeName->fontMetrics().width (aIfaceName) +
-//                             inputLayout->spacing() +
-//                             lbName->fontMetrics().width (lbName->text()) +
-//                             lbName->frameWidth() * 2 +
-//                             lbName->lineWidth() * 2 +
-//                             mainLayout->margin() * 2;
-//         resize (requiredWidth, minimumHeight());
-//
-//         /* Validate interface name field */
-//         validate();
-//     }
-//
-//     ~VBoxAddNIDialog() {}
-//
-//     QString getName() { return mLeName->text(); }
-//
-// private slots:
-//
-//     void validate()
-//     {
-//         mBtOk->setEnabled (!mLeName->text().isEmpty());
-//     }
-//
-// private:
-//
-//     void showEvent (QShowEvent *aEvent)
-//     {
-//         setFixedHeight (height());
-//         QDialog::showEvent (aEvent);
-//     }
-//
-//     QPushButton *mBtOk;
-//     QLineEdit   *mLeName;
-// };
-// #endif
+#ifdef Q_WS_WIN
+/**
+ *  QDialog class reimplementation to use for adding network interface.
+ *  It has one line-edit field for entering network interface's name and
+ *  common dialog's ok/cancel buttons.
+ */
+class VBoxAddNIDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+
+    VBoxAddNIDialog (QWidget *aParent, const QString &aIfaceName) :
+        QDialog (aParent),
+        mLeName (0)
+    {
+        setWindowTitle (tr ("Add Host Interface"));
+        QVBoxLayout *mainLayout = new QVBoxLayout (this);
+
+        /* Setup Input layout */
+        QHBoxLayout *inputLayout = new QHBoxLayout();
+        QLabel *lbName = new QLabel (tr ("Interface Name"), this);
+        mLeName = new QLineEdit (aIfaceName, this);
+        mLeName->setWhatsThis (tr ("Descriptive name of the new "
+                                   "network interface"));
+        inputLayout->addWidget (lbName);
+        inputLayout->addWidget (mLeName);
+        connect (mLeName, SIGNAL (textChanged (const QString &)),
+                 this, SLOT (validate()));
+        mainLayout->addLayout (inputLayout);
+
+        /* Setup Button layout */
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
+        mBtOk = new QPushButton (tr ("&OK"), this);
+        QPushButton *btCancel = new QPushButton (tr ("Cancel"), this);
+        connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
+        connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
+        buttonLayout->addWidget (mBtOk);
+        buttonLayout->addStretch();
+        buttonLayout->addWidget (btCancel);
+        mainLayout->addLayout (buttonLayout);
+
+        /* Resize to fit the aIfaceName in one string */
+        int requiredWidth = mLeName->fontMetrics().width (aIfaceName) +
+                            inputLayout->spacing() +
+                            lbName->fontMetrics().width (lbName->text()) +
+                            lbName->frameWidth() * 2 +
+                            lbName->lineWidth() * 2 +
+                            mainLayout->margin() * 2;
+        resize (requiredWidth, minimumHeight());
+
+        /* Validate interface name field */
+        validate();
+    }
+
+    ~VBoxAddNIDialog() {}
+
+    QString getName() { return mLeName->text(); }
+
+private slots:
+
+    void validate()
+    {
+        mBtOk->setEnabled (!mLeName->text().isEmpty());
+    }
+
+private:
+
+    void showEvent (QShowEvent *aEvent)
+    {
+        setFixedHeight (height());
+        QDialog::showEvent (aEvent);
+    }
+
+    QPushButton *mBtOk;
+    QLineEdit   *mLeName;
+};
+#endif
 
 class USBListItem : public QTreeWidgetItem
 {

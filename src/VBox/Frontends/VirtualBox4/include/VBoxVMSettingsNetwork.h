@@ -27,9 +27,17 @@
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsDlg;
 class QIWidgetValidator;
+class VBoxVMSettingsDlg;
+#ifdef Q_WS_WIN
+class QTreeWidget;
+class QTreeWidgetItem;
+#endif
 
+/*
+ * QWidget sub-class which represents one tab-page per each network adapter.
+ * It has generated UI part.
+ */
 class VBoxVMSettingsNetwork : public QIWithRetranslateUI<QWidget>,
                               public Ui::VBoxVMSettingsNetwork
 {
@@ -37,33 +45,26 @@ class VBoxVMSettingsNetwork : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    VBoxVMSettingsNetwork (QWidget *aParent = NULL);
-
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-    static bool revalidate (QString &aWarning, QString &aTitle);
-
-    void loadListNetworks (const QStringList &aList);
+    VBoxVMSettingsNetwork();
 
     void getFromAdapter (const CNetworkAdapter &aAdapter);
     void putBackToAdapter();
 
+    QString pageTitle() const;
+
     void setValidator (QIWidgetValidator *aValidator);
+    void setNetworksList (const QStringList &aList);
+
+#ifdef Q_WS_WIN
+    void setInterfaceName (const QString &);
+    QString interfaceName() const;
+#endif
 
 protected:
 
     void retranslateUi();
 
 private slots:
-
-    static void updateListNetworks();
-// #ifdef Q_WS_WIN
-//     static void addHostInterface();
-//     static void delHostInterface();
-// #endif
 
     void adapterToggled (bool aOn);
     void naTypeChanged (const QString &aString);
@@ -75,42 +76,110 @@ private slots:
 
 private:
 
-    QString pageTitle() const;
     void prepareComboboxes();
 
-    static void prepareListNetworks();
-// #ifdef Q_WS_WIN
-//     static void prepareListInterfaces();
-// #endif
+    CNetworkAdapter mAdapter;
+    QIWidgetValidator *mValidator;
+
+#ifdef Q_WS_WIN
+    QString mInterfaceName;
+#endif
+};
+
+
+#ifdef Q_WS_WIN
+/*
+ * QGroupBox sub-class which represents network interface list.
+ */
+class VBoxNIList : public QIWithRetranslateUI<QGroupBox>
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxNIList (QWidget *aParent);
+
+    bool isWrongInterface() const;
+    void setCurrentInterface (const QString &aName);
+
+signals:
+
+    void listChanged();
+    void currentInterfaceChanged (const QString &);
+
+private slots:
+
+    void onCurrentItemChanged (QTreeWidgetItem *aCurrent, QTreeWidgetItem *aPrev = 0);
+    void addHostInterface();
+    void delHostInterface();
+
+protected:
+
+    void retranslateUi();
+
+private:
+
+    void populateInterfacesList();
+
+    QTreeWidget *mList;
+
+    QAction *mAddAction;
+    QAction *mDelAction;
+};
+#endif
+
+
+/*
+ * QWidget sub-class which represents network settings page itself.
+ */
+class VBoxVMSettingsNetworkPage : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+public:
+
+    static void getFromMachine (const CMachine &aMachine,
+                                QWidget *aPage,
+                                VBoxVMSettingsDlg *aDlg,
+                                const QString &aPath);
+    static void putBackToMachine();
+    static bool revalidate (QString &aWarning, QString &aTitle);
+
+protected slots:
+
+    void updateNetworksList();
+#ifdef Q_WS_WIN
+    void onCurrentPageChanged (int);
+    void onCurrentInterfaceChanged (const QString &);
+#endif
+
+protected:
+
+    VBoxVMSettingsNetworkPage (QWidget *aParent);
+
+    void getFrom (const CMachine &aMachine,
+                  VBoxVMSettingsDlg *aDlg,
+                  const QString &aPath);
+    void putBackTo();
+    bool validate (QString &aWarning, QString &aTitle);
+
+    void retranslateUi();
+
+    void populateNetworksList();
+
+    static VBoxVMSettingsNetworkPage *mSettings;
 
     /* Widgets */
-    static QTabWidget *mTwAdapters;
-// #ifdef Q_WS_WIN
-//     static QGroupBox *mGbInterfaces;
-//     static QListWidget *mLwInterfaces;
-// #endif
-
-    /* Actions */
-// #ifdef Q_WS_WIN
-//     static QAction *mAddAction;
-//     static QAction *mDelAction;
-// #endif
-
-    /* Flags */
-    static bool mLockNetworkListUpdate;
+    QTabWidget *mTwAdapters;
+#ifdef Q_WS_WIN
+    VBoxNIList *mNIList;
+#endif
 
     /* Lists */
-    static QStringList mListNetworks;
-// #ifdef Q_WS_WIN
-//     static QStringList mListInterface;
-//     static QString mNoInterfaces;
-// #endif
+    QStringList mListNetworks;
 
-    QIWidgetValidator *mValidator;
-    CNetworkAdapter mAdapter;
-// #ifdef Q_WS_WIN
-//     QString mInterface_win;
-// #endif
+    /* Flags */
+    bool mLockNetworkListUpdate;
 };
 
 #endif // __VBoxVMSettingsNetwork_h__
