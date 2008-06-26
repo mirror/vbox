@@ -236,8 +236,8 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     aMachine.GetHWVirtExEnabled() == KTSBool_False ?
         mCbVirt->setCheckState (Qt::Unchecked) :
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
-        mCbVirt->setChecked (Qt::Checked) :
-        mCbVirt->setChecked (Qt::PartiallyChecked);
+        mCbVirt->setCheckState (Qt::Checked) :
+        mCbVirt->setCheckState (Qt::PartiallyChecked);
 
     /* PAE/NX */
     mCbPae->setChecked (aMachine.GetPAEEnabled());
@@ -358,7 +358,7 @@ void VBoxVMSettingsGeneral::retranslateUi()
 
     /* Retranslate the boot order items */
     QTreeWidgetItemIterator it (mTwBootOrder);
-    while (*it) 
+    while (*it)
     {
         QTreeWidgetItem *item = (*it);
         item->setText (0, vboxGlobal().toString (
