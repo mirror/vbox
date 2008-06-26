@@ -423,7 +423,11 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 if (uShw.pPDPae->a[iShw].n.u1Present)
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                    pgmPoolFree(pPool->CTXSUFF(pVM), 
+                                uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, 
+                                /* Note: hardcoded PAE implementation dependency */
+                                (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx, 
+                                (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw);
                     uShw.pPDPae->a[iShw].u = 0;
                 }
 
@@ -444,7 +448,11 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw2);
+                        pgmPoolFree(pPool->CTXSUFF(pVM), 
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, 
+                                    /* Note: hardcoded PAE implementation dependency */
+                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx, 
+                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw2 + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw2);
                         uShw.pPDPae->a[iShw2].u = 0;
                     }
                 }
