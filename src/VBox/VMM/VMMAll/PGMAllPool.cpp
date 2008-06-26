@@ -3055,6 +3055,29 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
     }
 }
 
+/**
+ * Clear references to shadowed pages in a 64-bit level 4 page table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPML4    The shadow page directory pointer table (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PML4 pShwPML4)
+{
+    for (unsigned i = 0; i < ELEMENTS(pShwPML4->a); i++)
+    {
+        if (pShwPML4->a[i].n.u1Present)
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPML4->a[i].u & X86_PDPE_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", pShwPML4->a[i].u & X86_PML4E_PG_MASK));
+            /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
+        }
+    }
+}
+
 
 /**
  * Clears all references made by this page.
@@ -3142,6 +3165,10 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             pgmPoolTrackDerefPDPT64Bit(pPool, pPage, (PX86PDPT)pvShw);
+            break;
+
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+            pgmPoolTrackDerefPML464Bit(pPool, pPage, (PX86PML4)pvShw);
             break;
 
         default:
