@@ -113,9 +113,9 @@ LINUXNOSTRIP = \
 ifdef VBOX_WITH_QT4GUI
   LINUXSTRIPBIN += \
 	VBoxKeyboard4.so \
-	VirtualBox4 \
-	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),)
+	VirtualBox4
   LINUXNOSTRIP += \
+	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
 	$(foreach f,\
 	  $(shell $(CAT_EXT) \
 	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt),\
