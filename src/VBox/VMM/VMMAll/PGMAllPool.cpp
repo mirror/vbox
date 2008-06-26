@@ -2514,8 +2514,11 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
             u.pau64[pUser->iUserTable] = 0;
+            break;
+
+        case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+            /* There are no references to this page; it's loaded into CR3. */
             break;
 
         default:
