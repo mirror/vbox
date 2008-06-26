@@ -3492,6 +3492,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 #else
     unsigned    cErrors = 0;
 
+#if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* @todo currently broken; crashes below somewhere */
+    AssertFailed();
+#endif
+
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
     || PGM_GST_TYPE == PGM_TYPE_PAE \
     || PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -3578,6 +3583,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             continue;
         }
 
+# if PGM_GST_TYPE == PGM_TYPE_PAE
+        /* not correct to call pgmPoolGetPage */
+# endif
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
         GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK_FULL;
 
