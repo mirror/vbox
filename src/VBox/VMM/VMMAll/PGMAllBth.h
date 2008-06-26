@@ -4120,7 +4120,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             if (!PteDst.n.u1Present) /** @todo deal with ALL handlers and CSAM !P pages! */
                                 continue;
 
-                            fIgnoreFlags = X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT | X86_PTE_D | X86_PTE_A | X86_PTE_G;
+                            fIgnoreFlags = X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT | X86_PTE_D | X86_PTE_A | X86_PTE_G | X86_PTE_PAE_NX;
 
                             /* match the physical addresses */
                             HCPhysShw = PteDst.u & X86_PTE_PAE_PG_MASK;
