@@ -2457,6 +2457,9 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     } u;
     u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pUserPage);
 
+    /* Safety precaution in case we change the paging for other modes too in the future. */
+    Assert(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key);
+
 #ifdef VBOX_STRICT
     /*
      * Some sanity checks.
@@ -3432,9 +3435,21 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     if (pPage->idx < PGMPOOL_IDX_FIRST)
     {
-        Log(("pgmPoolFlushPage: specaial root page, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
+        Log(("pgmPoolFlushPage: special root page, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
         return VINF_SUCCESS;
     }
+
+    /*
+     * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
+     */
+    if (    pPage->idx == PGMPOOL_IDX_AMD64_CR3
+        &&  PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key)
+    {
+        Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
+        return VINF_SUCCESS;
+    }
+    /* Safety precaution in case we change the paging for other modes too in the future. */
+    AssertFatal(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key);
 
     /*
      * Mark the page as being in need of a ASMMemZeroPage().
