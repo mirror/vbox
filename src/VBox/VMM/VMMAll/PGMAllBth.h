@@ -1526,7 +1526,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     Assert(PdeDst.n.u1Present);
     PPGMPOOLPAGE pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
 
-# if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
