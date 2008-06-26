@@ -41,7 +41,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
 #if 1
     ULONGLONG InterruptTime = KeQueryInterruptTime();
-    return (uint64_t)InterruptTime * 100;
+    return (uint64_t)InterruptTime * 100; /* The value is in 100ns, convert to ns units. */
 #else
     LARGE_INTEGER InterruptTime;
     do
