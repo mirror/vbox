@@ -111,7 +111,7 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 
 #include <VBox/pgm.h>
 
-PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
+PGMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
     return 0;
 }
