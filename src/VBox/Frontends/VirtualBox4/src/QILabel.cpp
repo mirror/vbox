@@ -92,6 +92,11 @@ QWidget *QILabel::buddy () const
     return mLabel->buddy();
 }
 
+int QILabel::frameWidth() const
+{
+    return mLabel->frameWidth();
+}
+
 bool QILabel::hasScaledContents () const
 {
     return mLabel->hasScaledContents();
@@ -127,14 +132,24 @@ const QPixmap *QILabel::pixmap () const
     return mLabel->pixmap();
 }
 
-void QILabel::setAlignment (Qt::Alignment aAlignment) 
-{ 
-    mLabel->setAlignment (aAlignment); 
+void QILabel::setAlignment (Qt::Alignment aAlignment)
+{
+    mLabel->setAlignment (aAlignment);
 }
 
 void QILabel::setBuddy (QWidget *aBuddy)
 {
     mLabel->setBuddy (aBuddy);
+}
+
+void QILabel::setFrameShadow (QFrame::Shadow aShadow)
+{
+    mLabel->setFrameShadow (aShadow);
+}
+
+void QILabel::setFrameShape (QFrame::Shape aShape)
+{
+    mLabel->setFrameShape (aShape);
 }
 
 void QILabel::setIndent (int aIndent)
@@ -148,8 +163,8 @@ void QILabel::setMargin (int aMargin)
 }
 
 void QILabel::setOpenExternalLinks (bool aOpen)
-{ 
-    mLabel->setOpenExternalLinks (aOpen); 
+{
+    mLabel->setOpenExternalLinks (aOpen);
 }
 
 void QILabel::setScaledContents (bool aOn)
@@ -162,14 +177,14 @@ void QILabel::setTextFormat (Qt::TextFormat aFormat)
     mLabel->setTextFormat (aFormat);
 }
 
-void QILabel::setTextInteractionFlags (Qt::TextInteractionFlags aFlags) 
-{ 
-    mLabel->setTextInteractionFlags (aFlags); 
+void QILabel::setTextInteractionFlags (Qt::TextInteractionFlags aFlags)
+{
+    mLabel->setTextInteractionFlags (aFlags);
 }
 
-void QILabel::setWordWrap (bool aOn) 
-{ 
-    mLabel->setWordWrap (aOn); 
+void QILabel::setWordWrap (bool aOn)
+{
+    mLabel->setWordWrap (aOn);
 }
 
 QString QILabel::text () const
@@ -237,6 +252,15 @@ void QILabel::setPixmap (const QPixmap &aPixmap)
 void QILabel::setText (const QString &aText)
 {
     mLabel->setFullText (aText);
+
+    /* If QILabel forced to be fixed vertically */
+    if (minimumHeight() == maximumHeight())
+    {
+        /* Check if new text requires label growing */
+        QSize sh (mLabel->width(), mLabel->heightForWidth (mLabel->width()));
+        if (sh.height() > minimumHeight())
+            setFixedHeight (sh.height());
+    }
 }
 
 /* QILabelPrivate implementation: */
@@ -297,7 +321,7 @@ void QILabelPrivate::mousePressEvent (QMouseEvent *aEvent)
 {
     if (aEvent->button() == Qt::LeftButton &&
         geometry().contains (aEvent->pos()) &&
-        mFullSizeSeclection) 
+        mFullSizeSeclection)
         mStartDragging = true;
     else
         QLabel::mousePressEvent (aEvent);
@@ -431,10 +455,10 @@ QString QILabelPrivate::compressText (const QString &aText) const
              * string */
             text = QString (workStr).replace (compactStr, newStr);
             /* For debug */
-//            printf ("%d, %s # %s # %s ## %s\n", pos, 
+//            printf ("%d, %s # %s # %s ## %s\n", pos,
 //                    qPrintable (compactStr),
 //                    qPrintable (elideModeStr),
-//                    qPrintable (elideStr), 
+//                    qPrintable (elideStr),
 //                    qPrintable (newStr));
         }
         strResult << text;
