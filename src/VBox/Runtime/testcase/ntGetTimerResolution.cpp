@@ -48,7 +48,7 @@ int main()
     ULONG Max = ~0;
     ULONG Cur = ~0;
     NtQueryTimerResolution(&Max, &Min, &Cur);
-    printf("NtQueryTimerResolution -> Max=%lu00ns Min=%lu00ns Cur=%lu00ns\n", Min, Max, Cur);
+    printf("NtQueryTimerResolution -> Max=%08luns Min=%08luns Cur=%08luns\n", Min * 100, Max * 100, Cur * 100);
 
 #if 0
     /* figure out the 100ns relative to the 1970 epoc. */
