@@ -567,11 +567,16 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             pCP->uEndHead = p[5];
             pCP->uEndSector = p[6] & 0x3f;
             uint32_t uStartOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
+            if (!uStartOffset)
+            {
+                RTPrintf("Invalid partition start offset. Aborting\n");
+                return VERR_INVALID_PARAMETER;
+            }
             pCP->uStart = uStart + uOffset + uStartOffset;
             pCP->uSize = RT_MAKE_U32_FROM_U8(p[12], p[13], p[14], p[15]);
             /* Fill out partitioning location info for EBR. */
             pCP->uPartDataStart = uStart + uOffset;
-            pCP->cPartDataSectors = RT_MIN(uStartOffset, 63);
+            pCP->cPartDataSectors = uStartOffset;
             p += 16;
             if (p[4] == 0)
                 uExtended = (unsigned)-1;
@@ -588,9 +593,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         } while (uExtended != (unsigned)-1);
     }
 
-    /* Sort partitions in ascending order of start sector. Also do a lot of
-     * consistency checking. */
-    uint64_t uPrevEnd = 0;
+    /* Sort partitions in ascending order of start sector, plus a trivial
+     * bit of consistency checking. */
     for (unsigned i = 0; i < pPart->cPartitions-1; i++)
     {
         unsigned uMinIdx = i;
@@ -622,6 +626,12 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             memcpy(&pPart->aPartitions[uMinIdx],
                    &pPart->aPartitions[pPart->cPartitions], sizeof(HOSTPARTITION));
         }
+    }
+
+    /* Now do a lot of consistency checking. */
+    uint64_t uPrevEnd = 0;
+    for (unsigned i = 0; i < pPart->cPartitions-1; i++)
+    {
         if (pPart->aPartitions[i].cPartDataSectors)
         {
             if (pPart->aPartitions[i].uPartDataStart < uPrevEnd)
@@ -642,7 +652,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
     /* Fill out partitioning location info for MBR. */
     pPart->aPartitions[0].uPartDataStart = 0;
-    pPart->aPartitions[0].cPartDataSectors = RT_MIN(pPart->aPartitions[0].uStart, 63);
+    pPart->aPartitions[0].cPartDataSectors = pPart->aPartitions[0].uStart;
 
     return VINF_SUCCESS;
 }
