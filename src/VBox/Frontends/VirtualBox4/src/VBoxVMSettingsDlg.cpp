@@ -201,8 +201,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &aMachine)
     VBoxVMSettingsAudio::getFromMachine (aMachine, mPageAudio);
 
     /* Network */
-    VBoxVMSettingsNetwork::getFromMachine (aMachine, mPageNetwork,
-                                           this, pagePath (mPageNetwork));
+    VBoxVMSettingsNetworkPage::getFromMachine (aMachine, mPageNetwork,
+                                               this, pagePath (mPageNetwork));
 
     /* Serial Ports */
     VBoxVMSettingsSerial::getFromMachine (aMachine, mPageSerial,
@@ -257,7 +257,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     VBoxVMSettingsAudio::putBackToMachine();
 
     /* Network */
-    VBoxVMSettingsNetwork::putBackToMachine();
+    VBoxVMSettingsNetworkPage::putBackToMachine();
 
     /* Serial ports */
     VBoxVMSettingsSerial::putBackToMachine();
@@ -370,7 +370,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
     else if (pg == mPageFD)
         valid = VBoxVMSettingsFD::revalidate (warningText);
     else if (pg == mPageNetwork)
-        valid = VBoxVMSettingsNetwork::revalidate (warningText, pageTitle);
+        valid = VBoxVMSettingsNetworkPage::revalidate (warningText, pageTitle);
     else if (pg == mPageSerial)
         valid = VBoxVMSettingsSerial::revalidate (warningText, pageTitle);
     else if (pg == mPageParallel)
