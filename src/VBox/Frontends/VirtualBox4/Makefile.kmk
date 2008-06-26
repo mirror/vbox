@@ -114,6 +114,10 @@ else
  ifeq ($(KBUILD_TARGET),win)
   VBOX_LIBS_QT4      = $(patsubst %, VBox%4, $(VBOX_MODULE_QT4))
   VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/VBox%4.dll, $(VBOX_MODULE_QT4))
+ else ifdef VBOX_WITH_QT4_SUN
+  # Qt4 compiled by Sun with altered library names
+  VBOX_LIBS_QT4      = $(patsubst %, VBox%, $(VBOX_MODULE_QT4))
+  VBOX_QT4_RUNTIME   =
  else
   VBOX_LIBS_QT4      = $(VBOX_MODULE_QT4)
   VBOX_QT4_RUNTIME   =
@@ -264,6 +268,8 @@ else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
     $(VBOX_XCURSOR_LIBS)
+  TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
+    $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
   # We have to add the framework path to both the linker and the compiler also.
   # Note that the -F flag is apple gcc only.
