@@ -28,7 +28,7 @@
 #define __QILabel_h__
 
 /* Qt includes */
-#include <QWidget>
+#include <QFrame>
 
 class QILabelPrivate;
 
@@ -50,6 +50,7 @@ public:
     /* Default QLabel methods */
     Qt::Alignment alignment() const;
     QWidget * buddy() const;
+    int frameWidth() const;
     bool hasScaledContents() const;
     int indent() const;
     int margin() const;
@@ -59,6 +60,8 @@ public:
     const QPixmap *pixmap() const;
     void setAlignment (Qt::Alignment aAlignment);
     void setBuddy (QWidget *aBuddy);
+    void setFrameShadow (QFrame::Shadow aShadow);
+    void setFrameShape (QFrame::Shape aShape);
     void setIndent (int aIndent);
     void setMargin (int aMargin);
     void setOpenExternalLinks (bool aOpen);
