@@ -1998,6 +1998,29 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
 endif
 
 #
+# Template for building static R3 executables and any static 
+# libraries they link with.
+#
+TEMPLATE_VBOXR3STATIC           = VBox Static Ring 3 EXE 
+TEMPLATE_VBOXR3STATIC_EXTENDS   = VBOXR3EXE
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBOXR3STATIC_CFLAGS   = $(filter-out -MD, $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT
+ TEMPLATE_VBOXR3STATIC_CXXFLAGS = $(filter-out -MD, $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT
+ TEMPLATE_VBOXR3STATIC_LDFLAGS  = $(filter-out /DISALLOWLIB:libcmt.lib, $(TEMPLATE_VBOXR3EXE_LDFLAGS)) \
+ 	/DISALLOWLIB:msvcrt.lib \
+ 	/DISALLOWLIB:msvcprt.lib
+ TEMPLATE_VBOXR3STATIC_LIBS     = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL)_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL)_LIB)/libcmt.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL)_LIB)/libcpmt.lib
+else # the gcc guys (untested!)
+ TEMPLATE_VBOXR3STATIC_CFLAGS   = $(TEMPLATE_VBOXR3EXE_CFLAGS) -static
+ TEMPLATE_VBOXR3STATIC_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -static
+ TEMPLATE_VBOXR3STATIC_OBJCFLAGS= $(TEMPLATE_VBOXR3EXE_OBJCFLAGS) -static
+ TEMPLATE_VBOXR3STATIC_LDFLAGS  = $(TEMPLATE_VBOXR3EXE_LDFLAGS) -static
+endif
+
+#
 # Ring-3 testcase.
 # This is the VBOXR3EXE template only with a different install dir.
 #
