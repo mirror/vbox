@@ -114,7 +114,7 @@ ifdef VBOX_WITH_QT4GUI
   LINUXSTRIPBIN += \
 	VBoxKeyboard4.so \
 	VirtualBox4 \
-	$(if $(VBOX_WITH_QT4_SUN),$(wildcard $(notdir $(PATH_BIN)/libVBox*)),)
+	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),)
   LINUXNOSTRIP += \
 	$(foreach f,\
 	  $(shell $(CAT_EXT) \
