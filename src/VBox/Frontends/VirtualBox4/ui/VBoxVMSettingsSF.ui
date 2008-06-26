@@ -60,7 +60,7 @@
          <enum>Qt::CustomContextMenu</enum>
         </property>
         <property name="whatsThis" >
-         <string>&lt;qt>Lists all shared folders accessible to this machine. Use &lt;tt>net use x: \\vboxsvr\share&lt;/tt> to access a shared folder named &lt;i>share&lt;/i> from a DOS-like OS, or &lt;tt>mount -t vboxsf share mount_point&lt;/tt> to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt></string>
+         <string>Lists all shared folders accessible to this machine. Use 'net use x: \\vboxsvr\share' to access a shared folder named &lt;i>share&lt;/i> from a DOS-like OS, or 'mount -t vboxsf share mount_point' to access it from a Linux OS. This feature requires Guest Additions.</string>
         </property>
         <property name="uniformRowHeights" >
          <bool>true</bool>
