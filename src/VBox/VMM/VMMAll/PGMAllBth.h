@@ -2213,7 +2213,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
     PX86PD          pPDDst   = pVM->pgm.s.CTXMID(p,32BitPD);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
+    const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;               /* 0 - 2047 */
     const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT);
     PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);
     PX86PDPAE       pPDDst   = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
@@ -3111,6 +3111,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 /* PDPE not present */
                 if (pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPdpte].n.u1Present)
                 {
+                    LogFlow(("SyncCR3: guest PDPE %d not present; clear shw pdpe\n", iPdpte));
  	                /* for each page directory entry */
  	                for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
  	                {
@@ -3250,6 +3251,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                     for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE
+	                const unsigned iPdShw = iPD + iPdpte * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                     const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
@@ -3349,6 +3352,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                     for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE
+	                const unsigned iPdShw = iPD + iPdpte * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                     const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
