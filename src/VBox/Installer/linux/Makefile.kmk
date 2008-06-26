@@ -93,7 +93,7 @@ endif
 # Do not strip anything of these files
 LINUXNOSTRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
-	$(if $(VBOX_WITH_QTGUI),\
+	$(if $(VBOX_WITH_QTGUI)$(VBOX_WITH_QT4GUI),\
 	  $(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html)) \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
@@ -101,13 +101,26 @@ LINUXNOSTRIP = \
 	VBox.sh \
 	VBox.png \
 	VBoxAddIF.sh \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox.desktop,) \
+	$(if $(VBOX_WITH_QTGUI)$(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
 	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
 	  $(shell $(CAT_EXT) \
 	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),) \
 	src \
 	sdk
+
+# Qt4 GUI
+ifdef VBOX_WITH_QT4GUI
+  LINUXSTRIPBIN += \
+	VBoxKeyboard4.so \
+	VirtualBox4 \
+	$(if $(VBOX_WITH_QT4_SUN),$(wildcard $(notdir $(PATH_BIN)/libVBox*)),)
+  LINUXNOSTRIP += \
+	$(foreach f,\
+	  $(shell $(CAT_EXT) \
+	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt),\
+	  nls4/VirtualBox_$(f).qm nls4/qt_$(f).qm)
+endif
 
 # Guest Additions
 LINUXNOSTRIP += \
