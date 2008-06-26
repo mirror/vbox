@@ -871,6 +871,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         /* Save our shadow CR3 register. */
         val = PGMGetHyperCR3(pVM);
+        Assert(val);
         rc = VMXWriteVMCS(VMX_VMCS_GUEST_CR3, val);
         AssertRC(rc);
     }
