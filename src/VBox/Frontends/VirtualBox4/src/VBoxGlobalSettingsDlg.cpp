@@ -110,11 +110,8 @@ VBoxGlobalSettingsDlg::VBoxGlobalSettingsDlg (QWidget *aParent)
     connect (mWhatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
 
     mLbWhatsThis->setFixedHeight (mLbWhatsThis->frameWidth() * 2 +
-                                  6 /* seems that RichText adds some margin */ +
+                                  mLbWhatsThis->margin() * 2 +
                                   mLbWhatsThis->fontMetrics().lineSpacing() * 4);
-    mLbWhatsThis->setMinimumWidth (mLbWhatsThis->frameWidth() * 2 +
-                                   6 /* seems that RichText adds some margin */ +
-                                   mLbWhatsThis->fontMetrics().width ('m') * 40);
 
     /* Common connections */
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
@@ -391,6 +388,11 @@ QString VBoxGlobalSettingsDlg::pagePath (QWidget *aPage)
 
 void VBoxGlobalSettingsDlg::setWarning (const QString &aWarning)
 {
+    /* Not touching QILabel until dialog is polished otherwise
+     * it can change its size to undefined */
+    if (!mPolished)
+        return;
+
     mWarnString = aWarning;
     if (!aWarning.isEmpty())
         mWarnString = QString ("<font color=red>%1</font>").arg (aWarning);
