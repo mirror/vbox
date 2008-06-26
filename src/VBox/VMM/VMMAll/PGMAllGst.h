@@ -480,7 +480,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 AssertFailed(); /* check if we handle this properly!! */
                 return VINF_PGM_SYNC_CR3;
             }
-            pVM->pgm.s.pHCPaePML4 = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pVM->pgm.s.pShwAmd64CR3);
+            pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pVM->pgm.s.pShwAmd64CR3);
+            pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pShwAmd64CR3->Core.Key;
 # endif
         }
         else
