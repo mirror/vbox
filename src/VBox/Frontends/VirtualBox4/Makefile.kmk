@@ -117,7 +117,7 @@ else
  else ifdef VBOX_WITH_QT4_SUN
   # Qt4 compiled by Sun with altered library names
   VBOX_LIBS_QT4      = $(patsubst %, VBox%, $(VBOX_MODULE_QT4))
-  VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/libVBox%.so, $(VBOX_MODULE_QT4))
+  VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/libVBox%.so.4, $(VBOX_MODULE_QT4))
  else
   VBOX_LIBS_QT4      = $(VBOX_MODULE_QT4)
   VBOX_QT4_RUNTIME   =
