@@ -168,6 +168,10 @@ endif
 
 # build the installer
 VBOX_WITH_INSTALLER = 1
+# Temporary build test
+if1of ($(KBUILD_TARGET),darwin)
+ VBOX_WITH_BUNDLED_INSTALLER = 1
+endif
 # enable VRDP server
 VBOX_WITH_VRDP = 1
 # build VRDP authentication modules
