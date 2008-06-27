@@ -537,7 +537,7 @@ DECLINLINE(bool) CPUMIsGuestInLongMode(PVM pVM)
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.
- * @param   pVM     The VM handle.
+ * @param   pCtx    Current CPU context
  */
 DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
 {
