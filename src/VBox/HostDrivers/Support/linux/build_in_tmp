@@ -40,7 +40,7 @@ then
            echo "$line" | grep -q built > /dev/null ||
            echo "$line" | grep -q installed > /dev/null; then
             version=`echo "$line" | sed "s/_MODULE_,\([^,]*\),.*/\1/;t;d"`
-            info "  removing old DKMS module _MODULE_ version $version"
+            echo "  removing old DKMS module _MODULE_ version $version"
             $DKMS remove -m _MODULE_ -v $version --all
         fi
     done
