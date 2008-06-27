@@ -508,7 +508,7 @@ int cpu_exec(CPUState *env1)
                 else
                 {
                     /* Seriously slows down realmode booting. */
-                    LogFlow(("EMRM: %04X:%08X SS:ESP=%04X:%08X IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
+                    LogFlow(("EMRM: %04X:%RGr SS:ESP=%04X:%RGr IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
                 }
 #endif /* !DEBUG_bird */
                 if(env->state & CPU_EMULATE_SINGLE_STEP)
