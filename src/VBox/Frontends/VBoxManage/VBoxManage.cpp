@@ -527,8 +527,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_CONVERTDD)
     {
-        RTPrintf("VBoxManage convertdd        <filename> <outputfile>\n"
-                 "VBoxManage convertdd        stdin <outputfile> <bytes>\n"
+        RTPrintf("VBoxManage convertdd        [-static] <filename> <outputfile>\n"
+                 "VBoxManage convertdd        [-static] stdin <outputfile> <bytes>\n"
                  "\n");
     }
 
@@ -3348,17 +3348,25 @@ static int handleCloneVDI(int argc, char *argv[],
 
 static int handleConvertDDImage(int argc, char *argv[])
 {
-#ifdef RT_OS_LINUX
-    const bool fReadFromStdIn = (argc >= 1) && !strcmp(argv[0], "stdin");
+    int arg = 0;
+    VDIIMAGETYPE enmImgType = VDI_IMAGE_TYPE_NORMAL;
+    if (argc >= 1 && !strcmp(argv[arg], "-static"))
+    {
+        arg++;
+        enmImgType = VDI_IMAGE_TYPE_FIXED;
+    }
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+    const bool fReadFromStdIn = (argc >= arg + 1) && !strcmp(argv[arg], "stdin");
 #else
     const bool fReadFromStdIn = false;
 #endif
 
-    if ((!fReadFromStdIn && argc != 2) || (fReadFromStdIn && argc != 3))
+    if ((!fReadFromStdIn && argc != arg + 2) || (fReadFromStdIn && argc != arg + 3))
         return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
 
     RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
-             argv[0], argv[1]);
+             argv[arg], argv[arg + 1]);
 
     /* open raw image file. */
     RTFILE File;
@@ -3366,32 +3374,32 @@ static int handleConvertDDImage(int argc, char *argv[])
     if (fReadFromStdIn)
         File = 0;
     else
-        rc = RTFileOpen(&File, argv[0], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&File, argv[arg], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (VBOX_FAILURE(rc))
     {
-        RTPrintf("File=\"%s\" open error: %Rrf\n", argv[0], rc);
+        RTPrintf("File=\"%s\" open error: %Rrf\n", argv[arg], rc);
         return rc;
     }
 
     uint64_t cbFile;
     /* get image size. */
     if (fReadFromStdIn)
-        cbFile = RTStrToUInt64(argv[2]);
+        cbFile = RTStrToUInt64(argv[arg + 2]);
     else
         rc = RTFileGetSize(File, &cbFile);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("Creating fixed image with size %RU64 bytes (%RU64MB)...\n", cbFile, (cbFile + _1M - 1) / _1M);
+        RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (enmImgType == VDI_IMAGE_TYPE_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
         char pszComment[256];
-        RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", argv[0]);
-        rc = VDICreateBaseImage(argv[1],
-                                VDI_IMAGE_TYPE_FIXED,
+        RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", argv[arg]);
+        rc = VDICreateBaseImage(argv[arg + 1],
+                                enmImgType,
                                 cbFile,
                                 pszComment, NULL, NULL);
         if (VBOX_SUCCESS(rc))
         {
             PVDIDISK pVdi = VDIDiskCreate();
-            rc = VDIDiskOpenImage(pVdi, argv[1], VDI_OPEN_FLAGS_NORMAL);
+            rc = VDIDiskOpenImage(pVdi, argv[arg + 1], VDI_OPEN_FLAGS_NORMAL);
             if (VBOX_SUCCESS(rc))
             {
                 /* alloc work buffer. */
@@ -3426,7 +3434,7 @@ static int handleConvertDDImage(int argc, char *argv[])
             {
                 /* delete image on error */
                 RTPrintf("Failed (%Vrc)!\n", rc);
-                VDIDeleteImage(argv[1]);
+                VDIDeleteImage(argv[arg + 1]);
             }
         }
         else
