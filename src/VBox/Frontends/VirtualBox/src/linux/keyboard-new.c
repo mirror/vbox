@@ -45,10 +45,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/** 
+ * Array containing the current mapping of keycodes to scan codes, detected
+ * using the keyboard layout algorithm in X11DRV_InitKeyboardByLayout.
+ */
 static unsigned keyc2scan[256];
+/** 
+ * Whether a keyboard was detected with a well-known keycode to scan code
+ * mapping.
+ */
+static unsigned use_builtin_table = 0;
+/** The index of the well-known keycode to scan code mapping in our table. */
+static unsigned builtin_table_number;
+/** Whether to output basic debugging information to standard output */
 static int log_kb_1 = 0;
+/** Whether to output verbose debugging information to standard output */
 static int log_kb_2 = 0;
 
+/** Output basic debugging information if wished */
 #define LOG_KB_1(a) \
 do { \
     if (log_kb_1) { \
@@ -56,6 +70,7 @@ do { \
     } \
 } while (0)
 
+/** Output verbose debugging information if wished */
 #define LOG_KB_2(a) \
 do { \
     if (log_kb_2) { \
@@ -63,28 +78,35 @@ do { \
     } \
 } while (0)
 
-/* Keyboard layout tables for guessing the current keyboard layout. */
+/** Keyboard layout tables for guessing the current keyboard layout. */
 #include "keyboard-tables.h"
 
+/** Tables of keycode to scan code mappings for well-known keyboard types. */
+#include "keyboard-types.h"
+
 /**
-  * Translate a keycode in a key event to a scan code, using the lookup
-  * table which we constructed earlier.
+  * Translate a keycode in a key event to a scan code, using the lookup table
+  * which we constructed earlier or a well-known mapping from our mapping
+  * table.
   *
-  * @returns the scan code number
+  * @returns the scan code number, with 0x100 added for extended scan codes
   * @param code the X11 key code to be looked up
   */
 
 unsigned X11DRV_KeyEvent(KeyCode code)
 {
-    return keyc2scan[code];
+    unsigned key;
+    if (use_builtin_table != 0)
+        key = main_keyboard_type_scans[builtin_table_number][code];
+    else
+        key = keyc2scan[code];
+    return key;
 }
 
-/**********************************************************************
- *		X11DRV_KEYBOARD_DetectLayout
- *
- * Called from X11DRV_InitKeyboard
- *  This routine walks through the defined keyboard layouts and selects
- *  whichever matches most closely.
+/**
+ * Called from X11DRV_InitKeyboardByLayout
+ *  See the comments for that function for a description what this function
+ *  does.
  *
  * @returns an index into the table of keyboard layouts, or 0 if absolutely
  *          nothing fits
@@ -213,16 +235,32 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
 }
 
 /**
- * Initialise the X11 keyboard driver.  In practice, this means building
- * up an internal table to map X11 keycodes to their equivalent PC scan
- * codes.
+ * Initialise the X11 keyboard driver by building up a table to convert X11
+ * keycodes to scan codes using a heuristic based on comparing the current
+ * keyboard map to known international keyboard layouts.
+ * The basic idea is to examine each key in the current layout to see which
+ * characters it produces in its normal and its "shifted" state, and to look
+ * for known keyboard layouts which it could belong to.  We then guess the
+ * current layout based on the number of matches we find.
+ * One difficulty with this approach is so-called Dvorak layouts, which are
+ * identical to non-Dvorak layouts, but with the keys in a different order.
+ * To deal with this, we compare the different candidate layouts to see in
+ * which one the X11 keycodes would be most sequential and hope that they
+ * really are layed out more or less sequentially.
+ * 
+ * The actual detection of the current layout is done in the sub-function
+ * X11DRV_KEYBOARD_DetectLayout.  Once we have determined the layout, since we 
+ * know which PC scan code corresponds to each key in the layout, we can use
+ * this information to associate the scan code with an X11 keycode, which is
+ * what the rest of this function does.
  *
  * @warning not re-entrant
  * @returns 1 if the layout found was optimal, 0 if it was not.  This is
  *          for diagnostic purposes
  * @param   display a pointer to the X11 display
  */
-int X11DRV_InitKeyboard(Display *display)
+static unsigned
+X11DRV_InitKeyboardByLayout(Display *display)
 {
     KeySym keysym;
     unsigned scan;
@@ -330,4 +368,69 @@ int X11DRV_InitKeyboard(Display *display)
         return 0;
     }
     return 1;
+}
+
+static unsigned
+X11DRV_InitKeyboardByType(Display *display)
+{
+    unsigned i = 0, found = 0;
+    
+    for (; (main_keyboard_type_list[i].comment != NULL) && (0 == found); ++i)
+        if (   (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].lctrl)
+            && (XKeysymToKeycode(display, XK_Shift_L)   == main_keyboard_type_list[i].lshift)
+            && (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].capslock)
+            && (XKeysymToKeycode(display, XK_Tab)       == main_keyboard_type_list[i].tab)
+            && (XKeysymToKeycode(display, XK_Escape)    == main_keyboard_type_list[i].esc)
+            && (XKeysymToKeycode(display, XK_Return)    == main_keyboard_type_list[i].enter)
+            && (XKeysymToKeycode(display, XK_Up)        == main_keyboard_type_list[i].up)
+            && (XKeysymToKeycode(display, XK_Down)      == main_keyboard_type_list[i].down)
+            && (XKeysymToKeycode(display, XK_Left)      == main_keyboard_type_list[i].left)
+            && (XKeysymToKeycode(display, XK_Right)     == main_keyboard_type_list[i].right)
+            && (XKeysymToKeycode(display, XK_F1)        == main_keyboard_type_list[i].f1)
+            && (XKeysymToKeycode(display, XK_F2)        == main_keyboard_type_list[i].f2)
+            && (XKeysymToKeycode(display, XK_F3)        == main_keyboard_type_list[i].f3)
+            && (XKeysymToKeycode(display, XK_F4)        == main_keyboard_type_list[i].f4)
+            && (XKeysymToKeycode(display, XK_F5)        == main_keyboard_type_list[i].f5)
+            && (XKeysymToKeycode(display, XK_F6)        == main_keyboard_type_list[i].f6)
+            && (XKeysymToKeycode(display, XK_F7)        == main_keyboard_type_list[i].f7)
+            && (XKeysymToKeycode(display, XK_F8)        == main_keyboard_type_list[i].f8)
+           )
+            found = 1;
+    use_builtin_table = found;
+    if (found != 0)
+        builtin_table_number = i - 1;
+    return found;
+}
+
+/**
+ * Initialise the X11 keyboard driver by finding which X11 keycodes correspond
+ * to which PC scan codes.  If the keyboard being used is not a PC keyboard,
+ * the X11 keycodes will be mapped to the scan codes which the equivalent keys
+ * on a PC keyboard would use.
+ * 
+ * We use two algorithms to try to determine the mapping.  See the comments
+ * attached to the two algorithm functions (X11DRV_InitKeyboardByLayout and
+ * X11DRV_InitKeyboardByType) for descriptions of the algorithms used.  Both
+ * functions tell us on return whether they think that they have correctly
+ * determined the mapping.  If both functions claim to have determined the
+ * mapping correctly, we prefer the second (ByType).  However, if neither does
+ * then we prefer the first (ByLayout), as it produces a fuzzy result which is
+ * still likely to be partially correct.
+ *
+ * @warning not re-entrant
+ * @returns 1 if the layout found was optimal, 0 if it was not.  This is
+ *          for diagnostic purposes
+ * @param   display     a pointer to the X11 display
+ * @param   byLayoutOK  diagnostic - set to one if detection by layout
+ *                      succeeded, and to 0 otherwise
+ * @param   byTypeOK    diagnostic - set to one if detection by type
+ *                      succeeded, and to 0 otherwise
+ */
+unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *byTypeOK)
+{
+    unsigned byLayout = X11DRV_InitKeyboardByLayout(display);
+    unsigned byType   = X11DRV_InitKeyboardByType(display);
+    *byLayoutOK = byLayout;
+    *byTypeOK   = byType;
+    return (byLayout || byType) ? 1 : 0;
 }
