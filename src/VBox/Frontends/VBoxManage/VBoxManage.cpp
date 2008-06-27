@@ -648,15 +648,15 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
-    if (u64Cmd & USAGE_GETCONFIGVAL)
+    if (u64Cmd & USAGE_GETGUESTPROPERTY)
     {
-        RTPrintf("VBoxManage getconfigval     <vmname>|<uuid> <key>\n"
+        RTPrintf("VBoxManage getguestproperty <vmname>|<uuid> <key>\n"
                  "\n");
     }
 
-    if (u64Cmd & USAGE_SETCONFIGVAL)
+    if (u64Cmd & USAGE_SETGUESTPROPERTY)
     {
-        RTPrintf("VBoxManage setconfigval     <vmname>|<uuid> <key>\n"
+        RTPrintf("VBoxManage setguestproperty <vmname>|<uuid> <key>\n"
                  "                            [<value>] (no value deletes key)\n"
                  "\n");
     }
@@ -7469,13 +7469,14 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleGetConfigVal(int argc, char *argv[],
-                            ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleGetGuestProperty(int argc, char *argv[],
+                                  ComPtr<IVirtualBox> virtualBox,
+                                  ComPtr<ISession> session)
 {
     HRESULT rc = S_OK;
 
     if (argc != 2)
-        return errorSyntax(USAGE_GETCONFIGVAL, "Incorrect number of parameters");
+        return errorSyntax(USAGE_GETGUESTPROPERTY, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -7511,7 +7512,7 @@ static int handleGetConfigVal(int argc, char *argv[],
 #endif /* 0 */
         {
             Bstr value;
-            CHECK_ERROR(machine, GetConfigRegistryValue(Bstr(argv[1]), value.asOutParam()));
+            CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam()));
             if (value)
                 RTPrintf("Value: %lS\n", value.raw());
             else
@@ -7521,13 +7522,14 @@ static int handleGetConfigVal(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSetConfigVal(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleSetGuestProperty(int argc, char *argv[],
+                                  ComPtr<IVirtualBox> virtualBox,
+                                  ComPtr<ISession> session)
 {
     HRESULT rc = S_OK;
 
     if (argc < 2)
-        return errorSyntax(USAGE_SETCONFIGVAL, "Not enough parameters");
+        return errorSyntax(USAGE_SETGUESTPROPERTY, "Not enough parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -7540,11 +7542,11 @@ static int handleSetConfigVal(int argc, char *argv[],
     if (machine)
     {
         if (argc < 3)
-            CHECK_ERROR(machine, SetConfigRegistryValue(Bstr(argv[1]), NULL));
+            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
         else if (argc == 3)
-            CHECK_ERROR(machine, SetConfigRegistryValue(Bstr(argv[1]), Bstr(argv[2])));
+            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
         else
-            return errorSyntax(USAGE_SETCONFIGVAL, "Too many parameters");
+            return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -7883,8 +7885,8 @@ int main(int argc, char *argv[])
         { "usbfilter",        handleUSBFilter },
         { "sharedfolder",     handleSharedFolder },
         { "vmstatistics",     handleVMStatistics },
-        { "getconfigval",     handleGetConfigVal },
-        { "setconfigval",     handleSetConfigVal },
+        { "getguestproperty", handleGetGuestProperty },
+        { "setguestproperty", handleSetGuestProperty },
         { NULL,               NULL }
     };
 

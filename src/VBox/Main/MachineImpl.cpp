@@ -2678,9 +2678,9 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 }
 
 /**
- * Read a value from the host/guest configuration registry.  If a session is
+ * Read a value from the host/guest property store.  If a session is
  * currently open for the guest then query the console object for the value,
- * since the current values of the registry will be held in RAM in the
+ * since the current values of the property store will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
  * stored between sessions.
  *
@@ -2690,7 +2690,7 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
  *       call, and to force us to block if it is currently changing (either
  *       way) between open and closed.
  */
-STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
     if (!VALID_PTR(aValue))
         return E_POINTER;
@@ -2735,7 +2735,7 @@ STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
             else
             {
                 ComAssertRet (!console.isNull(), E_FAIL);
-                hrc = console->GetConfigRegistryValue (aKey, aValue);
+                hrc = console->GetGuestProperty (aKey, aValue);
             }
             break;
         }
@@ -2749,9 +2749,9 @@ STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
 }
 
 /**
- * Write a value to the host/guest configuration registry.  If a session is
+ * Write a value to the host/guest property store.  If a session is
  * currently open for the guest then query the console object for the value,
- * since the current values of the registry will be held in RAM in the
+ * since the current values of the property store will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
  * stored between sessions.
  *
@@ -2761,7 +2761,7 @@ STDMETHODIMP Machine::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
  *       call, and to force us to block if it is currently changing (either
  *       way) between open and closed.
  */
-STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue)
+STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
 #ifndef VBOX_WITH_INFO_SVC
     HRESULT hrc = E_NOTIMPL;
@@ -2803,7 +2803,7 @@ STDMETHODIMP Machine::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue
             else
             {
                 ComAssertRet (!console.isNull(), E_FAIL);
-                hrc = console->SetConfigRegistryValue (aKey, aValue);
+                hrc = console->SetGuestProperty (aKey, aValue);
             }
             break;
         }
