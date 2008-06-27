@@ -293,31 +293,21 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
     if (RT_SUCCESS(rc))
         /* Extract the width from the string */
         rc = RTStrToUInt32Ex(szModeParms, &pszNext, 10, &cx);
-    if (   (VWRN_NUMBER_TOO_BIG == rc)
-        || (VWRN_NEGATIVE_UNSIGNED == rc)
-        || (RT_SUCCESS(rc) && (*pszNext != ',') && (*pszNext != 'x')))
+    if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
     {
-        if ((*pszNext != ',') || (*pszNext != 'x'))
-            ++pszNext;
-        for (;' ' == *pszNext; ++pszNext);
+        ++pszNext;
         rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cy);
     }
-    if (   (VWRN_NUMBER_TOO_BIG == rc)
-        || (VWRN_NEGATIVE_UNSIGNED == rc)
-        || (RT_SUCCESS(rc) && (*pszNext != ',') && (*pszNext != 'x')))
+    if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
     {
-        if ((*pszNext != ',') || (*pszNext != 'x'))
-            ++pszNext;
-        for (;' ' == *pszNext; ++pszNext);
-        rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cBits);
+        ++pszNext;
+        rc = RTStrToUInt32Full(pszNext, 10, &cBits);
     }
-    if (   (VWRN_NUMBER_TOO_BIG == rc)
-        || (VWRN_NEGATIVE_UNSIGNED == rc)
-        || (VWRN_TRAILING_CHARS == rc))
+    if (rc != VINF_SUCCESS)
         rc = VERR_INVALID_PARAMETER;
     if (u32ClientId != 0)
         VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
