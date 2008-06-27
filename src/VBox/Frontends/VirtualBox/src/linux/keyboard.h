@@ -34,10 +34,10 @@
 # define CCALL
 #endif
 #ifdef VBOX_HAVE_VISIBILITY_HIDDEN
-extern CCALL __attribute__((visibility("default"))) int X11DRV_InitKeyboard(Display *dpy);
+extern CCALL __attribute__((visibility("default"))) unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, unsigned *byTypeOK);
 extern CCALL __attribute__((visibility("default"))) unsigned X11DRV_KeyEvent(KeyCode code);
 #else
-extern CCALL int X11DRV_InitKeyboard(Display *dpy);
+extern CCALL unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, unsigned *byTypeOK);
 extern CCALL unsigned X11DRV_KeyEvent(KeyCode code);
 #endif
 

@@ -128,6 +128,7 @@ VBoxKeyboard_TARSOURCES = \
 	src/linux/keyboard-layouts.h \
 	src/linux/keyboard-list.h \
 	src/linux/keyboard-tables.h \
+	src/linux/keyboard-types.h \
 	src/linux/Makefile
 VBoxKeyboard_LIBS     = X11
 VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
