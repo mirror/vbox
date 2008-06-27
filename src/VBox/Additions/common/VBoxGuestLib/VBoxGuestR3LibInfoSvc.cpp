@@ -85,20 +85,40 @@ VBGLR3DECL(int) VbglR3InfoSvcDisconnect(uint32_t u32ClientId)
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
  * @param   pszKey          The registry key to save to.
- * @param   pszValue        The value to save.
+ * @param   pszValue        The value to store.  If this is NULL then the key
+ *                          will be removed.
  */
 VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *pszValue)
 {
-    SetConfigKey Msg;
+    int rc;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
-    Msg.hdr.u32ClientID = u32ClientId;
-    Msg.hdr.u32Function = SET_CONFIG_KEY;
-    Msg.hdr.cParms = 2;
-    VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
-    VbglHGCMParmPtrSet(&Msg.value, pszValue, strlen(pszValue) + 1);
+    if (pszValue != NULL)
+    {
+        SetConfigKey Msg;
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32Function = SET_CONFIG_KEY;
+        Msg.hdr.cParms = 2;
+        VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
+        VbglHGCMParmPtrSet(&Msg.value, pszValue, strlen(pszValue) + 1);
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            rc = Msg.hdr.result;
+    }
+    else
+    {
+        DelConfigKey Msg;
+
+        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32Function = DEL_CONFIG_KEY;
+        Msg.hdr.cParms = 1;
+        VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            rc = Msg.hdr.result;
+    }
     return rc;
 }
 
