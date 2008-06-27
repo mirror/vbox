@@ -1127,6 +1127,8 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.ssHid.u32Limit = env->segs[R_SS].limit;
         Ctx.ssHid.Attr.u   = (env->segs[R_SS].flags >> 8) & 0xF0FF;
 
+        Ctx.msrEFER        = env->efer;
+
         /* Hardware accelerated raw-mode:
          *
          * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
