@@ -286,29 +286,25 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         rc = VbglR3InfoSvcReadKey(u32ClientId, szModeName, szModeParms,
                                   sizeof(szModeParms), NULL); /** @todo add a VbglR3InfoSvcReadKeyF/FV that does the RTStrPrintf for you. */
     }
-/** @todo r=bird: this is kind of ugly.
- * What about just fixing the format as "CXxCYxCBITS" and then split it up into three strings by searching for the
- * two 'x'es. And then apply RTStrToUInt32Full to these in turn.
- * Also, the use of VERR_INVALID_PARAMETER seems inappropriate and confusing here. */
     if (RT_SUCCESS(rc))
         /* Extract the width from the string */
         rc = RTStrToUInt32Ex(szModeParms, &pszNext, 10, &cx);
     if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
-        rc = VERR_INVALID_PARAMETER;
+        rc = VERR_PARSE_ERROR;
     if (RT_SUCCESS(rc))
     {
         ++pszNext;
         rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cy);
     }
     if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
-        rc = VERR_INVALID_PARAMETER;
+        rc = VERR_PARSE_ERROR;
     if (RT_SUCCESS(rc))
     {
         ++pszNext;
         rc = RTStrToUInt32Full(pszNext, 10, &cBits);
     }
     if (rc != VINF_SUCCESS)
-        rc = VERR_INVALID_PARAMETER;
+        rc = VERR_PARSE_ERROR;
     if (u32ClientId != 0)
         VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     if (RT_SUCCESS(rc))
