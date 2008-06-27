@@ -2001,7 +2001,7 @@ typedef struct PGM
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                    HCPhysPaePML4;
     /** The pgm pool page descriptor for the current active CR3. */
-    R3R0PTRTYPE(PPGMPOOLPAGE)   pShwAmd64CR3;
+    R3R0PTRTYPE(PPGMPOOLPAGE)   pHCShwAmd64CR3;
 
     /** @}*/
 
