@@ -1783,7 +1783,7 @@
       <desc>
         Returns associated global extra data.
 
-        If the reuqested data @a key does not exist, this function will
+        If the requested data @a key does not exist, this function will
         succeed and return @c NULL in the @a value argument.
       </desc>
       <param name="key" type="wstring" dir="in">
@@ -1798,7 +1798,7 @@
       <desc>
         Sets associated global extra data.
 
-        If you pass @c NULL as a key @a vaule, the given @a key will be
+        If you pass @c NULL as a key @a value, the given @a key will be
         deleted.
 
         <note>
@@ -3467,9 +3467,9 @@
       </param>
     </method>
 
-    <method name="getConfigRegistryValue">
+    <method name="getGuestProperty">
       <desc>
-        Reads a value from the machine's host/guest configuration registry.
+        Reads a value from the machine's host/guest property store.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>
@@ -3484,10 +3484,10 @@
       </param>
     </method>
 
-    <method name="setConfigRegistryValue">
+    <method name="setGuestProperty">
       <desc>
         Sets, changes or deletes a value in the machine's host/guest
-        configuration registry.
+        property store.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>
@@ -4587,9 +4587,9 @@
       <param name="callback" type="IConsoleCallback" dir="in"/>
     </method>
 
-    <method name="getConfigRegistryValue">
+    <method name="getGuestProperty">
       <desc>
-        Reads a value from the host/guest configuration registry.
+        Reads a value from the host/guest property store.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>
@@ -4604,10 +4604,9 @@
       </param>
     </method>
 
-    <method name="setConfigRegistryValue">
+    <method name="setGuestProperty">
       <desc>
-        Sets, changes or deletes a value in the host/guest configuration
-        registry.
+        Sets, changes or deletes a value in the host/guest property store.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>

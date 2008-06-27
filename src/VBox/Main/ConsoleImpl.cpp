@@ -2486,7 +2486,7 @@ STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
     return S_OK;
 }
 
-STDMETHODIMP Console::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP Console::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
     if (!VALID_PTR(aValue))
         return E_POINTER;
@@ -2526,7 +2526,7 @@ STDMETHODIMP Console::GetConfigRegistryValue (INPTR BSTR aKey, BSTR *aValue)
     return hrc;
 }
 
-STDMETHODIMP Console::SetConfigRegistryValue (INPTR BSTR aKey, INPTR BSTR aValue)
+STDMETHODIMP Console::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
 #ifndef VBOX_WITH_INFO_SVC
     HRESULT hrc = E_NOTIMPL;
@@ -4131,7 +4131,7 @@ HRESULT Console::powerDown()
         alock.enter();
     }
 # ifdef VBOX_WITH_INFO_SVC
-    /* Save all guest/host configuration registry entries to the machine XML
+    /* Save all guest/host property store entries to the machine XML
      * file as extra data. */
     PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "Guest/Registry/");
     PCFGMLEAF pValue = CFGMR3GetFirstValue (pRegistry);

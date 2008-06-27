@@ -526,8 +526,8 @@ public:
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(CanShowConsoleWindow) (BOOL *aCanShow);
     STDMETHOD(ShowConsoleWindow) (ULONG64 *aWinId);
-    STDMETHOD(GetConfigRegistryValue) (INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetConfigRegistryValue) (INPTR BSTR aKey, INPTR BSTR aValue);
+    STDMETHOD(GetGuestProperty) (INPTR BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetGuestProperty) (INPTR BSTR aKey, INPTR BSTR aValue);
 
     STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system);
 

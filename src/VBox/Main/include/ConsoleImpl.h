@@ -147,8 +147,8 @@ public:
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
     STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
-    STDMETHOD(GetConfigRegistryValue)(INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetConfigRegistryValue)(INPTR BSTR aKey, INPTR BSTR aValue);
+    STDMETHOD(GetGuestProperty)(INPTR BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetGuestProperty)(INPTR BSTR aKey, INPTR BSTR aValue);
 
     // public methods for internal purposes only
 
