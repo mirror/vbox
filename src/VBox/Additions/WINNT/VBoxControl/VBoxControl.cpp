@@ -24,6 +24,7 @@
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
+#include <VBox/HostServices/VBoxInfoSvc.h>
 
 void printHelp()
 {
@@ -39,7 +40,11 @@ void printHelp()
            "\n"
            "VBoxControl   removecustommode <width> <height> <bpp>\n"
            "\n"
-           "VBoxControl   setvideomode <width> <height> <bpp> <screen>\n");
+           "VBoxControl   setvideomode <width> <height> <bpp> <screen>\n"
+           "\n"
+           "VBoxControl   getguestproperty <key>\n"
+           "\n"
+           "VBoxControl   setguestproperty <key> [<value>] (no value to delete)\n");
 }
 
 void printVersion()
@@ -778,6 +783,322 @@ printf("found mode at index %d\n", i);
 
 
 /**
+ * Open the VirtualBox guest device.
+ * @returns IPRT status value
+ * @param   hDevice  where to store the handle to the open device
+ */
+static int openGuestDevice(HANDLE *hDevice)
+{
+    if (!VALID_PTR(hDevice))
+        return VERR_INVALID_POINTER;
+    *hDevice = CreateFile(VBOXGUEST_DEVICE_NAME,
+                          GENERIC_READ | GENERIC_WRITE,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          NULL,
+                          OPEN_EXISTING,
+                          FILE_ATTRIBUTE_NORMAL,
+                          NULL);
+    return (*hDevice != INVALID_HANDLE_VALUE) ? VINF_SUCCESS : VERR_OPEN_FAILED;
+}
+
+
+/**
+ * Connect to an HGCM service.
+ * @returns IPRT status code
+ * @param   hDevice      handle to the VBox device
+ * @param   pszService   the name of the service to connect to
+ * @param   pu32ClientID where to store the connection handle
+ */
+static int hgcmConnect(HANDLE hDevice, char *pszService, uint32_t *pu32ClientID)
+{
+    if (!VALID_PTR(pszService) || !VALID_PTR(pu32ClientID))
+        return VERR_INVALID_POINTER;
+    VBoxGuestHGCMConnectInfo info;
+    int rc = VINF_SUCCESS;
+
+    memset (&info, 0, sizeof (info));
+    if (strlen(pszService) + 1 > sizeof(info.Loc.u.host.achName))
+        return false;
+    strcpy (info.Loc.u.host.achName, pszService);
+    info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+    DWORD cbReturned;
+    if (DeviceIoControl (hDevice,
+                         IOCTL_VBOXGUEST_HGCM_CONNECT,
+                         &info, sizeof (info),
+                         &info, sizeof (info),
+                         &cbReturned,
+                         NULL))
+        rc = info.result;
+    else
+        rc = VERR_FILE_IO_ERROR;
+    if (RT_SUCCESS(rc))
+        *pu32ClientID = info.u32ClientID;
+    return rc;
+}
+
+
+/** Set a 32bit unsigned integer parameter to an HGCM request */
+static void VbglHGCMParmUInt32Set(HGCMFunctionParameter *pParm, uint32_t u32)
+{
+    pParm->type = VMMDevHGCMParmType_32bit;
+    pParm->u.value64 = 0; /* init unused bits to 0 */
+    pParm->u.value32 = u32;
+}
+
+
+/** Get a 32bit unsigned integer returned from an HGCM request */
+static int VbglHGCMParmUInt32Get(HGCMFunctionParameter *pParm, uint32_t *pu32)
+{
+    if (pParm->type == VMMDevHGCMParmType_32bit)
+    {
+        *pu32 = pParm->u.value32;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_PARAMETER;
+}
+
+
+/** Set a pointer parameter to an HGCM request */
+static void VbglHGCMParmPtrSet(HGCMFunctionParameter *pParm, void *pv, uint32_t cb)
+{
+    pParm->type                    = VMMDevHGCMParmType_LinAddr;
+    pParm->u.Pointer.size          = cb;
+    pParm->u.Pointer.u.linearAddr  = (uintptr_t)pv;
+}
+
+
+/** Make an HGCM call */
+static int hgcmCall(HANDLE hDevice, VBoxGuestHGCMCallInfo *pMsg, size_t cbMsg)
+{
+    DWORD cbReturned;
+    int rc = VERR_NOT_SUPPORTED;
+
+    if (DeviceIoControl (hDevice,
+                         IOCTL_VBOXGUEST_HGCM_CALL,
+                         pMsg, cbMsg,
+                         pMsg, cbMsg,
+                         &cbReturned,
+                         NULL))
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Retrieve a property from the host/guest configuration registry
+ * @returns  IPRT status code
+ * @param hDevice handle to the VBox device
+ * @param   u32ClientID     The client id returned by VbglR3ClipboardConnect().
+ * @param   pszKey          The registry key to save to.
+ * @param   pszValue        Where to store the value retrieved.
+ * @param   cbValue         The size of the buffer pszValue points to.
+ * @param   pcbActual       Where to store the required buffer size on
+ *                          overflow or the value size on success.  A value
+ *                          of zero means that the property does not exist.
+ *                          Optional.
+ */
+static int hgcmInfoSvcGetProp(HANDLE hDevice, uint32_t u32ClientID,
+                              char *pszKey, char *pszValue,
+                              uint32_t cbValue, uint32_t *pcbActual)
+{
+    using namespace svcInfo;
+
+    if (!VALID_PTR(pszValue))
+        return VERR_INVALID_POINTER;
+    GetConfigKey Msg;
+
+    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.u32ClientID = u32ClientID;
+    Msg.hdr.u32Function = GET_CONFIG_KEY;
+    Msg.hdr.cParms = 3;
+    VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
+    VbglHGCMParmPtrSet(&Msg.value, pszValue, cbValue);
+    VbglHGCMParmUInt32Set(&Msg.size, 0);
+    int rc = hgcmCall(hDevice, &Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        rc = Msg.hdr.result;
+    uint32_t cbActual;
+    if (RT_SUCCESS(rc))
+        rc = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbActual != NULL)
+            *pcbActual = cbActual;
+        if (cbActual > cbValue)
+            rc = VINF_BUFFER_OVERFLOW;
+        else
+            rc = Msg.hdr.result;
+        if ((cbValue > 0) && (0 == cbActual))  /* No such property */
+            pszValue[0] = 0;
+            
+    }
+    return rc;
+}
+
+
+/**
+ * Store a property from the host/guest configuration registry
+ * @returns  IPRT status code
+ * @param hDevice handle to the VBox device
+ * @param   u32ClientID     The client id returned by VbglR3ClipboardConnect().
+ * @param   pszKey          The registry key to save to.
+ * @param   pszValue        The value to store.  If this is NULL then the key
+ *                          will be removed.
+ */
+static int hgcmInfoSvcSetProp(HANDLE hDevice, uint32_t u32ClientID,
+                              char *pszKey, char *pszValue)
+{
+    using namespace svcInfo;
+
+    if (!VALID_PTR(pszKey))
+        return VERR_INVALID_POINTER;
+    if (!VALID_PTR(pszValue) && (pszValue != NULL));
+    int rc;
+
+    if (pszValue != NULL)
+    {
+        SetConfigKey Msg;
+
+        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.u32ClientID = u32ClientID;
+        Msg.hdr.u32Function = SET_CONFIG_KEY;
+        Msg.hdr.cParms = 2;
+        VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
+        VbglHGCMParmPtrSet(&Msg.value, pszValue, strlen(pszValue) + 1);
+        rc = hgcmCall(hDevice, &Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            rc = Msg.hdr.result;
+    }
+    else
+    {
+        DelConfigKey Msg;
+
+        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.u32ClientID = u32ClientID;
+        Msg.hdr.u32Function = DEL_CONFIG_KEY;
+        Msg.hdr.cParms = 1;
+        VbglHGCMParmPtrSet(&Msg.key, pszKey, strlen(pszKey) + 1);
+        rc = hgcmCall(hDevice, &Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            rc = Msg.hdr.result;
+    }
+    return rc;
+}
+
+
+/** Disconnects from an HGCM service. */
+static void hgcmDisconnect(HANDLE hDevice, uint32_t u32ClientID)
+{
+    if (u32ClientID == 0)
+        return;
+
+    VBoxGuestHGCMDisconnectInfo info;
+    memset (&info, 0, sizeof (info));
+    info.u32ClientID = u32ClientID;
+
+    DWORD cbReturned;
+    DeviceIoControl (hDevice,
+                     IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                     &info, sizeof (info),
+                     &info, sizeof (info),
+                     &cbReturned,
+                     NULL);
+}
+
+
+/**
+ * Retrieves a value from the host/guest configuration registry.
+ * This is accessed through the "VBoxSharedInfoSvc" HGCM service.
+ *
+ * @returns IPRT status value
+ * @param   key  (string) the key which the value is stored under.
+ */
+static int handleGetGuestProperty(int argc, char *argv[])
+{
+    if (argc != 1)
+    {
+        printHelp();
+        return 1;
+    }
+    char szValue[svcInfo::KEY_MAX_VALUE_LEN];
+    HANDLE hDevice = INVALID_HANDLE_VALUE;
+    uint32_t u32ClientID = 0;
+    int rc = openGuestDevice(&hDevice);
+    if (!RT_SUCCESS(rc))
+        printf("Failed to open the VirtualBox device, RT error %d\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = hgcmConnect(hDevice, "VBoxSharedInfoSvc", &u32ClientID);
+        if (!RT_SUCCESS(rc))
+            printf("Failed to connect to the host/guest registry service, RT error %d\n", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = hgcmInfoSvcGetProp(hDevice, u32ClientID, argv[0], szValue,
+                                sizeof(szValue), NULL);
+        if (!RT_SUCCESS(rc))
+            printf("Failed to retrieve the property value, RT error %d\n", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        if (strlen(szValue) > 0)
+            printf("Value: %s\n", szValue);
+        else
+            printf("No value set!\n");
+    }
+    if (u32ClientID != 0)
+        hgcmDisconnect(hDevice, u32ClientID);
+    if (hDevice != INVALID_HANDLE_VALUE)
+        CloseHandle(hDevice);
+    return rc;
+}
+
+
+/**
+ * Writes a value to the host/guest configuration registry.
+ * This is accessed through the "VBoxSharedInfoSvc" HGCM service.
+ *
+ * @returns IPRT status value
+ * @param   key   (string) the key which the value is stored under.
+ * @param   value (string) the value to write.  If empty, the key will be
+ *                removed.
+ */
+static int handleSetGuestProperty(int argc, char *argv[])
+{
+    if (argc != 1 && argc != 2)
+    {
+        printHelp();
+        return 1;
+    }
+    HANDLE hDevice = INVALID_HANDLE_VALUE;
+    char *pszValue = NULL;
+    if (2 == argc)
+        pszValue = argv[1];
+    uint32_t u32ClientID = 0;
+    int rc = openGuestDevice(&hDevice);
+    if (!RT_SUCCESS(rc))
+        printf("Failed to open the VirtualBox device, RT error %d\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = hgcmConnect(hDevice, "VBoxSharedInfoSvc", &u32ClientID);
+        if (!RT_SUCCESS(rc))
+            printf("Failed to connect to the host/guest registry service, RT error %d\n", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = hgcmInfoSvcSetProp(hDevice, u32ClientID, argv[0], pszValue);
+        if (!RT_SUCCESS(rc))
+            printf("Failed to store the property value, RT error %d\n", rc);
+    }
+    if (u32ClientID != 0)
+        hgcmDisconnect(hDevice, u32ClientID);
+    if (hDevice != INVALID_HANDLE_VALUE)
+        CloseHandle(hDevice);
+    return rc;
+}
+
+
+/**
  * Main function
  */
 int main(int argc, char *argv[])
@@ -821,6 +1142,15 @@ int main(int argc, char *argv[])
     else if (stricmp(argv[1], "setvideomode") == 0)
     {
         handleSetVideoMode(argc - 2, &argv[2]);
+    }
+    else if (stricmp(argv[1], "getguestproperty") == 0)
+    {
+        int rc = handleGetGuestProperty(argc - 2, &argv[2]);
+        return RT_SUCCESS(rc) ? 0 : 1;
+    }
+    else if (stricmp(argv[1], "setguestproperty") == 0)
+    {
+        handleSetGuestProperty(argc - 2, &argv[2]);
     }
     else
     {
