@@ -752,15 +752,12 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /*
-     * Sysenter MSRs
+     * Sysenter MSRs (unconditional)
      */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SYSENTER_MSR)
-    {
-        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      pCtx->SysEnter.cs);
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     pCtx->SysEnter.eip);
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     pCtx->SysEnter.esp);
-        AssertRC(rc);
-    }
+    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      pCtx->SysEnter.cs);
+    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     pCtx->SysEnter.eip);
+    rc |= VMXWriteVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     pCtx->SysEnter.esp);
+    AssertRC(rc);
 
     /* Control registers */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
