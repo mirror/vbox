@@ -580,7 +580,7 @@ PGMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     int rc;
 
-    Log2(("PGMInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
+    Log3(("PGMInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
 
     /** @todo merge PGMGCInvalidatePage with this one */
 
