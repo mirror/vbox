@@ -3006,7 +3006,7 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     /* shadow */
     if (enmShadowMode != pVM->pgm.s.enmShadowMode)
     {
-        LogFlow(("PGMR3ChangeMode: Shadow mode: %d -> %d\n",  pVM->pgm.s.enmShadowMode, enmShadowMode));
+        LogFlow(("PGMR3ChangeMode: Shadow mode: %s -> %s\n",  pgmr3GuestModeString(pVM->pgm.s.enmShadowMode), pgmr3GuestModeString(enmShadowMode)));
         if (PGM_SHW_PFN(Exit, pVM))
         {
             int rc = PGM_SHW_PFN(Exit, pVM)(pVM);
