@@ -37,15 +37,20 @@ enum eHostFn
     /** Pass the address of the console object from Main to the service */
     SET_CFGM_NODE = 1,
     /** 
-     * Get the value attached to an extra data key in the machine XML file.
+     * Get the value attached to a configuration property key
      * The parameter format matches that of GET_CONFIG_KEY. 
      */
     GET_CONFIG_KEY_HOST = 2,
     /** 
-     * Set the value attached to an extra data key in the machine XML file.
+     * Set the value attached to a configuration property key
      * The parameter format matches that of SET_CONFIG_KEY.
      */
-    SET_CONFIG_KEY_HOST = 3
+    SET_CONFIG_KEY_HOST = 3,
+    /** 
+     * Remove the value attached to a configuration property key
+     * The parameter format matches that of DEL_CONFIG_KEY.
+     */
+    DEL_CONFIG_KEY_HOST = 4
 };
 
 /**
@@ -54,10 +59,12 @@ enum eHostFn
  */
 enum eGuestFn
 {
-    /** Get the value attached to an extra data key in the machine XML file */
+    /** Get the value attached to a configuration property key */
     GET_CONFIG_KEY = 1,
-    /** Set the value attached to an extra data key in the machine XML file */
-    SET_CONFIG_KEY = 2
+    /** Set the value attached to a configuration property key */
+    SET_CONFIG_KEY = 2,
+    /** Remove the value attached to a configuration property key */
+    DEL_CONFIG_KEY = 3
 };
 
 /** Prefix for extra data keys used by the get and set key value functions */
@@ -124,6 +131,20 @@ typedef struct _SetConfigKey
      */
     HGCMFunctionParameter value;
 } SetConfigKey;
+
+/** The guest is requesting to remove a configuration key */
+typedef struct _DelConfigKey
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /**
+     * The key to change up.  This must fit to a number of criteria, namely
+     *  - Only ASCII characters with no spaces
+     *  - Less than or equal to VBOX_SHARED_INFO_KEY_MAX_LEN bytes in length
+     *  - Zero terminated
+     */
+    HGCMFunctionParameter key;
+} DelConfigKey;
 #pragma pack ()
 
 } /* namespace svcInfo */
