@@ -152,15 +152,87 @@ public:
         return pSelf->hostCall(u32Function, cParms, paParms);
     }
 private:
+    int validateKey(const char *pszKey, uint32_t cbKey);
+    int validateValue(char *pszValue, uint32_t cbValue);
     int getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int validateGetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue);
     int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int validateSetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue);
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                void *pvClient, uint32_t eFunction, uint32_t cParms,
                VBOXHGCMSVCPARM paParms[]);
     int hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 };
+
+
+/**
+ * Checking that the key passed by the guest fits our criteria for a
+ * configuration key
+ *
+ * @returns IPRT status code
+ * @param   pszKey    the key passed by the guest
+ * @param   cbKey     the number of bytes pszKey points to, including the
+ *                    terminating '\0'
+ * @thread  HGCM
+ */
+int Service::validateKey(const char *pszKey, uint32_t cbKey)
+{
+    LogFlowFunc(("cbKey=%d\n", cbKey));
+
+    unsigned count;
+    int rc = VINF_SUCCESS;
+
+    /* Validate the format of the key. */
+    if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
+        rc = VERR_INVALID_PARAMETER;
+    /* Only accept names in printable ASCII without spaces */
+    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
+        if ((pszKey[count] < 33) || (pszKey[count] > 126))
+            rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc) && (count == cbKey))
+        /* This would mean that no null terminator was found */
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Check that the data passed by the guest fits our criteria for the value of
+ * a configuration key
+ *
+ * @returns IPRT status code
+ * @param   pszValue  the value to store in the key
+ * @param   cbValue   the number of bytes in the buffer pszValue points to
+ * @thread  HGCM
+ */
+int Service::validateValue(char *pszValue, uint32_t cbValue)
+{
+    LogFlowFunc(("cbValue=%d\n", cbValue));
+
+    uint32_t count;
+    int rc = VINF_SUCCESS;
+
+    if (cbValue != 0)
+    {
+        /* Validate the format of the value. */
+        /* Only accept values in printable ASCII without spaces */
+        for (count = 0; (count < cbValue) && (pszValue[count] != '\0'); ++count)
+            if ((pszValue[count] < 33) || (pszValue[count] > 126))
+                rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc) && (count == cbValue))
+            /* This would mean that no null terminator was found */
+            rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (RT_SUCCESS(rc))
+        LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
+    LogFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
 
 
 /**
@@ -190,7 +262,7 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cbValue);
     if (RT_SUCCESS(rc))
-        rc = validateGetKey(pszKey, cbKey, pszValue, cbValue);
+        rc = validateKey(pszKey, cbKey);
     if (RT_SUCCESS(rc))
         rc = CFGMR3QuerySize(mpNode, pszKey, &cbValueActual);
     if (RT_SUCCESS(rc))
@@ -207,45 +279,6 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = VINF_SUCCESS;
     }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Checking that the data passed by the guest fits our criteria for getting the
- * value of a configuration key (currently stored as extra data in the machine
- * XML file)
- *
- * @returns IPRT status code
- * @param   pszKey    the key passed by the guest
- * @param   cbKey     the number of bytes pszKey points to, including the terminating '\0'
- * @param   pszValue  the buffer to store the key name into
- * @param   cbValue   the size of the array for storing the key value
- * @thread  HGCM
- */
-int Service::validateGetKey(const char *pszKey, uint32_t cbKey, char *pszValue, uint32_t cbValue)
-{
-    LogFlowFunc(("cbKey=%d, cbValue=%d\n", cbKey, cbValue));
-
-    unsigned count;
-    int rc = VINF_SUCCESS;
-
-    /* Validate the format of the key. */
-    if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
-        rc = VERR_INVALID_PARAMETER;
-    /* Only accept names in printable ASCII without spaces */
-    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
-        if ((pszKey[count] < 33) || (pszKey[count] > 126))
-            rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count == cbKey))
-        /* This would mean that no null terminator was found */
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
-        rc = VERR_INVALID_PARAMETER;
-
-    if (RT_SUCCESS(rc))
-        LogFlow(("    pszKey=%s\n", pszKey));
-    LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -276,7 +309,9 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cbValue);
     if (RT_SUCCESS(rc))
-        rc = validateSetKey(pszKey, cbKey, pszValue, cbValue);
+        rc = validateKey(pszKey, cbKey);
+    if (RT_SUCCESS(rc))
+        rc = validateValue(pszValue, cbValue);
     if (RT_SUCCESS(rc))
     {
         /* Limit the number of keys that we can set. */
@@ -295,61 +330,6 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszKey, rc, pszValue));
     LogFlowThisFunc(("rc = %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Check that the data passed by the guest fits our criteria for setting the
- * value of a configuration key (currently stored as extra data in the machine
- * XML file)
- *
- * @returns IPRT status code
- * @param   pszKey    the key passed by the guest
- * @param   cbKey     the number of bytes in the buffer pszKey points to
- * @param   pszValue  the value to store in the key
- * @param   cbValue   the number of bytes in the buffer pszValue points to
- * @thread  HGCM
- */
-int Service::validateSetKey(const char *pszKey, uint32_t cbKey, char *pszValue,
-                                   uint32_t cbValue)
-{
-    LogFlowFunc(("cbKey=%d, cbValue=%d\n", cbKey, cbValue));
-
-    unsigned count;
-    int rc = VINF_SUCCESS;
-
-    /* Validate the format of the key. */
-    if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
-        rc = VERR_INVALID_PARAMETER;
-    /** @todo duplicate check in validateGetKey, use separate method. mixing unsigned and uint32_t. */
-    /* Only accept names in printable ASCII without spaces */
-    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
-        if ((pszKey[count] < 33) || (pszKey[count] > 126))
-            rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count == cbKey))
-        /* This would mean that no null terminator was found */
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
-        rc = VERR_INVALID_PARAMETER;
-
-    if (cbValue != 0)
-    {
-        /* Validate the format of the value. */
-        /* Only accept values in printable ASCII without spaces */
-        for (count = 0; (count < cbValue) && (pszValue[count] != '\0'); ++count)
-            if ((pszValue[count] < 33) || (pszValue[count] > 126))
-                rc = VERR_INVALID_PARAMETER;
-        if (RT_SUCCESS(rc) && (count == cbValue))
-            /* This would mean that no null terminator was found */
-            rc = VERR_INVALID_PARAMETER;
-        if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
-            rc = VERR_INVALID_PARAMETER;
-    }
-
-    if (RT_SUCCESS(rc))
-        LogFlow(("    pszKey=%s, pszValue=%s\n", pszKey, cbValue > 0 ? pszValue : NULL));
-    LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
