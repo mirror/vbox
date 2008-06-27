@@ -1417,7 +1417,6 @@ ResumeExecution:
     if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
         &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
     {
-        Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
         pVM->hwaccm.s.Event.fPending = true;
         /* Error code present? */
         if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
@@ -1425,9 +1424,13 @@ ResumeExecution:
             rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
             pVM->hwaccm.s.Event.errCode  = val;
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
+        {
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
             pVM->hwaccm.s.Event.errCode  = 0;
+        }
     }
 
 #ifdef VBOX_STRICT
