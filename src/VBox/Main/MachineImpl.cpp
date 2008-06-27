@@ -2700,6 +2700,8 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 #else
     using namespace svcInfo;
 
+    if (NULL == aKey)
+        return setError (E_INVALIDARG, tr ("Called with a NULL key argument"));
     HRESULT hrc = E_FAIL;
     AutoWriteLock alock (this);
     switch (mData->mSession.mState)
@@ -2768,6 +2770,8 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 #else
     using namespace svcInfo;
 
+    if (NULL == aKey)
+        return setError (E_INVALIDARG, tr ("Called with a NULL key argument"));
     HRESULT hrc = E_FAIL;
     AutoWriteLock alock (this);
     switch (mData->mSession.mState)
