@@ -642,7 +642,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /** @note The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 
-    if (!CPUMIsGuestInLongMode(pVM))
+    if (!CPUMIsGuestInLongModeEx(pCtx))
     {
         /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
         if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
