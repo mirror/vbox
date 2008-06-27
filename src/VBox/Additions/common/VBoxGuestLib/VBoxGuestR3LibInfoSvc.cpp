@@ -131,8 +131,10 @@ VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *
  * @param   pszKey          The registry key to save to.
  * @param   pszValue        Where to store the value retrieved.
  * @param   cbValue         The size of the buffer pszValue points to.
- * @param   pcbActual       Where to store the required buffer size. This should be set on buffer
- *                          overflows errors but actually isn't... Optional.
+ * @param   pcbActual       Where to store the required buffer size if cbValue
+ *                          is too small.  On success this contains the
+ *                          actual size of the value retrieved.  If there is 
+ *                          no such value this is set to zero.  Optional.
  */
 VBGLR3DECL(int) VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey,
                                      char *pszValue, uint32_t cbValue, uint32_t *pcbActual)
@@ -161,6 +163,8 @@ VBGLR3DECL(int) VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey,
             rc = VINF_BUFFER_OVERFLOW;
         else
             rc = Msg.hdr.result;
+        if ((cbValue > 0) && (0 == cbActual))  /* No such property */
+            pszValue[0] = 0;
     }
     return rc;
 }
