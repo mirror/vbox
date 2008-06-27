@@ -183,8 +183,6 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
     int rc = VINF_SUCCESS;
 
     /* Validate the format of the key. */
-    if (cbKey < sizeof(VBOX_SHARED_INFO_KEY_PREFIX))
-        rc = VERR_INVALID_PARAMETER;
     /* Only accept names in printable ASCII without spaces */
     for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
         if ((pszKey[count] < 33) || (pszKey[count] > 126))
