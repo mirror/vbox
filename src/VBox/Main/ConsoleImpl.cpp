@@ -2536,22 +2536,25 @@ STDMETHODIMP Console::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 
     VBOXHGCMSVCPARM parm[2];
     Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value = aValue;
+    int rc = VINF_SUCCESS;
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
     parm[0].u.pointer.addr = Utf8Key.mutableRaw();
     /* The + 1 is the null terminator */
     parm[0].u.pointer.size = Utf8Key.length() + 1;
-    parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-    /* To save doing a const cast, we use the mutableRaw() member. */
-    parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-    if (parm[1].u.pointer.addr != NULL)
+    if (aValue != NULL)
+    {
+        Utf8Str Utf8Value = aValue;
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        /* To save doing a const cast, we use the mutableRaw() member. */
+        parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = Utf8Value.length() + 1;
+        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST, 2, &parm[0]);
+    }
     else
-        parm[1].u.pointer.size = 0;
-    int rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST, 2, &parm[0]);
+        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST, 1, &parm[0]);
     if (RT_SUCCESS(rc))
         hrc = S_OK;
     else
