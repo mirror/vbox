@@ -569,14 +569,11 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
 
     /*
-     * Sysenter MSRs
+     * Sysenter MSRs (unconditional)
      */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SYSENTER_MSR)
-    {
-        pVMCB->guest.u64SysEnterCS  = pCtx->SysEnter.cs;
-        pVMCB->guest.u64SysEnterEIP = pCtx->SysEnter.eip;
-        pVMCB->guest.u64SysEnterESP = pCtx->SysEnter.esp;
-    }
+    pVMCB->guest.u64SysEnterCS  = pCtx->SysEnter.cs;
+    pVMCB->guest.u64SysEnterEIP = pCtx->SysEnter.eip;
+    pVMCB->guest.u64SysEnterESP = pCtx->SysEnter.esp;
 
     /* Control registers */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
