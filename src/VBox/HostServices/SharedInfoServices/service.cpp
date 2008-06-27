@@ -22,10 +22,11 @@
 
 /**
  * An HGCM service for passing requests which do not need any persistant state
- * to handle.  We currently only support two types of request - set guest
- * configuration key (SET_CONFIG_KEY and SET_CONFIG_KEY_HOST) and get
- * configuration key (GET_CONFIG_KEY and GET_CONFIG_KEY_HOST).  These may be
- * used to read and to write configuration information which is available to
+ * to handle.  We currently only support three types of request - set guest
+ * property (SET_CONFIG_KEY and SET_CONFIG_KEY_HOST), get guest property
+ * (GET_CONFIG_KEY and GET_CONFIG_KEY_HOST) and remove guest property
+ * (DEL_CONFIG_KEY and DEL_CONFIG_KEY_HOST).  These may be used to read, to
+ * write and to remove configuration information which is available to
  * both guest and host.  This configuration information is stored in a CFGM
  * node using the CFGM APIs.  It is the responsibility of whoever creates the
  * service to create this node and to tell the service about it using the
@@ -156,6 +157,7 @@ private:
     int validateValue(char *pszValue, uint32_t cbValue);
     int getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                void *pvClient, uint32_t eFunction, uint32_t cParms,
                VBOXHGCMSVCPARM paParms[]);
@@ -335,6 +337,37 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 
 
 /**
+ * Remove a value in the guest registry by key, checking the validity
+ * of the arguments passed.
+ *
+ * @returns iprt status value
+ * @param   cParms  the number of HGCM parameters supplied
+ * @param   paParms the array of HGCM parameters
+ * @thread  HGCM
+ */
+int Service::delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    int rc = VINF_SUCCESS;
+    char *pszKey, *pszValue;
+    uint32_t cbKey, cbValue;
+
+    LogFlowThisFunc(("\n"));
+    if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
+        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* key */
+       )
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cbKey);
+    if (RT_SUCCESS(rc))
+        rc = validateKey(pszKey, cbKey);
+    if (RT_SUCCESS(rc))
+        CFGMR3RemoveValue(mpNode, pszKey);
+    LogFlowThisFunc(("rc = %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
  * Handle an HGCM service call.
  * @copydoc VBOXHGCMSVCFNTABLE::pfnCall
  * @note    All functions which do not involve an unreasonable delay will be
@@ -366,6 +399,13 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             LogFlowFunc(("SET_CONFIG_KEY\n"));
             if (RT_SUCCESS(rc))
                 rc = setKey(cParms, paParms);
+            break;
+
+        /* The guest wishes to remove a configuration value */
+        case DEL_CONFIG_KEY:
+            LogFlowFunc(("DEL_CONFIG_KEY\n"));
+            if (RT_SUCCESS(rc))
+                rc = delKey(cParms, paParms);
             break;
 
         default:
@@ -429,6 +469,13 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
             LogFlowFunc(("SET_CONFIG_KEY_HOST\n"));
             if (RT_SUCCESS(rc))
                 rc = setKey(cParms, paParms);
+            break;
+
+        /* The host wishes to remove a configuration value */
+        case DEL_CONFIG_KEY_HOST:
+            LogFlowFunc(("DEL_CONFIG_KEY_HOST\n"));
+            if (RT_SUCCESS(rc))
+                rc = delKey(cParms, paParms);
             break;
 
         default:
