@@ -19,7 +19,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -2528,10 +2527,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_CLTS,Clts);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
-#ifdef VBOX_WITH_MSR_EMULATION
         INTERPRET_CASE(OP_RDMSR, Rdmsr);
         INTERPRET_CASE(OP_WRMSR, Wrmsr);
-#endif
         INTERPRET_CASE_EX_PARAM3(OP_ADD,Add, AddSub, EMEmulateAdd);
         INTERPRET_CASE_EX_PARAM3(OP_SUB,Sub, AddSub, EMEmulateSub);
         INTERPRET_CASE(OP_ADC,Adc);
