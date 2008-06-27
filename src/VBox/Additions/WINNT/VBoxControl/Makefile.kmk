@@ -33,7 +33,7 @@ VBoxControl_SOURCES  = \
 	VBoxControl.rc
 
 # VBoxControl.cpp uses VBOX_SVN_REV.
-VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_HGCM
 VBoxControl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 include	$(KBUILD_PATH)/subfooter.kmk
