@@ -407,6 +407,7 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE)
  */
 PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
+    Assert(!HWACCMIsNestedPagingActive(pVM));
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -510,6 +511,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 {
     LogFlow(("UnmapCR3\n"));
+    Assert(!HWACCMIsNestedPagingActive(pVM));
 
     int rc = VINF_SUCCESS;
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -560,6 +562,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
     Assert(!pVM->pgm.s.fMappingsFixed);
+    Assert(!HWACCMIsNestedPagingActive(pVM));
     int rc = VINF_SUCCESS;
 
     /*
@@ -662,6 +665,8 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
 {
     int rc = VINF_SUCCESS;
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
 
     /*
      * Deregister the access handlers.
