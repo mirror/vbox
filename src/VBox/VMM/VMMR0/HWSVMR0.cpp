@@ -709,6 +709,9 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     }
     else
     {
+        /* Filter out the MSR_K6_LME bit or else AMD-V expects amd64 shadow paging. */
+        pVMCB->guest.u64EFER &= ~MSR_K6_EFER_LME;
+
         pVM->hwaccm.s.svm.pfnVMRun = SVMVMRun;
     }
 
