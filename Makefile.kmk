@@ -261,10 +261,12 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/Main/linux \
 	src/VBox/Main/os2 \
 	src/VBox/Main/solaris \
-	src/VBox/Main/win32 \
+	src/VBox/Main/win \
+	src/VBox/Main/xpcom \
 	src/VBox/HostServices/ \
 	src/VBox/HostServices/SharedClipboard \
 	src/VBox/HostServices/SharedFolders \
+	src/VBox/HostServices/SharedInfoServices \
 	src/VBox/HostServices/SharedOpenGL \
 	src/VBox/HostDrivers/Support \
 	src/VBox/HostDrivers/Support/darwin \
@@ -274,12 +276,27 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/HostDrivers/Support/os2 \
 	src/VBox/HostDrivers/Support/solaris \
 	src/VBox/HostDrivers/Support/win \
+	src/VBox/HostDrivers/VBoxNetFlt/ \
+	src/VBox/HostDrivers/VBoxNetFlt/darwin \
+	src/VBox/HostDrivers/VBoxNetFlt/linux \
+	src/VBox/HostDrivers/VBoxNetFlt/solaris \
+	src/VBox/HostDrivers/VBoxNetFlt/win \
+	src/VBox/HostDrivers/VBoxNetNat/ \
+	src/VBox/HostDrivers/VBoxNetNat/darwin \
+	src/VBox/HostDrivers/VBoxNetNat/linux \
+	src/VBox/HostDrivers/VBoxNetNat/solaris \
+	src/VBox/HostDrivers/VBoxNetNat/win \
+	src/VBox/HostDrivers/VBoxNetTap/ \
+	src/VBox/HostDrivers/VBoxNetTap/darwin \
+	src/VBox/HostDrivers/VBoxNetTap/linux \
+	src/VBox/HostDrivers/VBoxNetTap/solaris \
+	src/VBox/HostDrivers/VBoxNetTap/win \
 	src/VBox/HostDrivers/VBoxTAP/ \
 	src/VBox/HostDrivers/VBoxTAP/win \
-	src/VBox/HostDrivers/VBoxTAP/darwin \
 	src/VBox/HostDrivers/VBoxUSB/ \
 	src/VBox/HostDrivers/VBoxUSB/darwin \
 	src/VBox/HostDrivers/VBoxUSB/os2 \
+	src/VBox/HostDrivers/VBoxUSB/solaris \
 	src/VBox/HostDrivers/VBoxUSB/win \
 	src/VBox/HostDrivers/VBoxUSB/win/Device \
 	src/VBox/HostDrivers/VBoxUSB/win/Device/amd64 \
