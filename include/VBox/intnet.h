@@ -373,7 +373,7 @@ typedef struct INTNETTRUNKSWPORT
      *
      * @remarks Will grab the network semaphore.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
