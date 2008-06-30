@@ -2966,6 +2966,9 @@ const char *pgmr3GuestModeString(PGMMODE enmGuestMode)
         case PGMMODE_AMD64_NX:
             return "AMD64 + NX";
 
+        case PGMMODE_NESTED:
+            return "Nested";
+
         default:
             return "Unknown";
     }
