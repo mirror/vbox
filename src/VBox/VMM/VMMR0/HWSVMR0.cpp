@@ -348,7 +348,7 @@ inline void SVMR0InjectEvent(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT*
 {
 #ifdef VBOX_STRICT
     if (pEvent->n.u8Vector == 0xE)
-        Log(("SVM: Inject int %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", pEvent->n.u8Vector, pCtx->rip, pEvent->n.u32ErrorCode, pCtx->cr2, pEvent->au64[0]));
+        Log(("SVM: Inject int %d at %VGv error code=%02x CR2=%VGv intInfo=%08x\n", pEvent->n.u8Vector, pCtx->rip, pEvent->n.u32ErrorCode, pCtx->cr2, pEvent->au64[0]));
     else
     if (pEvent->n.u8Vector < 0x20)
         Log(("SVM: Inject int %d at %VGv error code=%08x\n", pEvent->n.u8Vector, pCtx->rip, pEvent->n.u32ErrorCode));
