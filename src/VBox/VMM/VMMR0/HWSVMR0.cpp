@@ -1867,9 +1867,9 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     {
     case PARMTYPE_IMMEDIATE:
     case PARMTYPE_ADDRESS:
-        if(!(param1.flags & PARAM_VAL32))
+        if(!(param1.flags & (PARAM_VAL32|PARAM_VAL64)))
             return VERR_EM_INTERPRETER;
-        addr = (RTGCPTR)param1.val.val32;
+        addr = param1.val.val64;
         break;
 
     default:
@@ -1907,11 +1907,11 @@ static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
  */
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
     /*
-     * Only allow 32-bit code.
+     * Only allow 32 & 64 bits code.
      */
-    if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_32BIT)
+    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid);
+    if (enmMode != CPUMODE_16BIT)
     {
         RTGCPTR pbCode;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
@@ -1920,7 +1920,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
             uint32_t    cbOp;
             DISCPUSTATE Cpu;
 
-            Cpu.mode = CPUMODE_32BIT;
+            Cpu.mode = enmMode;
             rc = EMInterpretDisasOneEx(pVM, pbCode, pRegFrame, &Cpu, &cbOp);
             Assert(VBOX_FAILURE(rc) || Cpu.pCurInstr->opcode == OP_INVLPG);
             if (VBOX_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
@@ -1984,8 +1984,6 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 
-    Assert(!CPUMIsGuestInLongMode(pVM));    /** @todo */
-
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
     {
@@ -2004,9 +2002,10 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
         /*
-        * Only allow 32-bit code.
-        */
-        if (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
+         * Only allow 32 & 64 bits code.
+         */
+        DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid);
+        if (enmMode != CPUMODE_16BIT)
         {
             RTGCPTR pbCode;
             int rc = SELMValidateAndConvertCSAddr(pVM, pCtx->eflags, pCtx->ss, pCtx->cs, &pCtx->csHid, (RTGCPTR)pCtx->rip, &pbCode);
@@ -2017,7 +2016,7 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
                 OP_PARAMVAL param1;
                 RTGCPTR     addr;
 
-                Cpu.mode = CPUMODE_32BIT;
+                Cpu.mode = enmMode;
                 rc = EMInterpretDisasOneEx(pVM, pbCode, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                 AssertRCReturn(rc, rc);
                 Assert(cbOp == Cpu.opsize);
@@ -2029,9 +2028,9 @@ HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
                 {
                 case PARMTYPE_IMMEDIATE:
                 case PARMTYPE_ADDRESS:
-                    AssertReturn((param1.flags & PARAM_VAL32), VERR_EM_INTERPRETER);
+                    AssertReturn((param1.flags & (PARAM_VAL32|PARAM_VAL64)), VERR_EM_INTERPRETER);
 
-                    addr = (RTGCPTR)param1.val.val32;
+                    addr = param1.val.val64;
                     break;
 
                 default:
