@@ -81,7 +81,8 @@ typedef struct INTNETIF
     PSUPDRVSESSION          pSession;
     /** The SUPR0 object id. */
     void                   *pvObj;
-} INTNETIF, *PINTNETIF;
+} INTNETIF;
+typedef INTNETIF *PINTNETIF;
 
 
 /**
@@ -107,7 +108,8 @@ typedef struct INTNETNETWORK
     uint8_t                 cchName;
     /** The network name. */
     char                    szName[INTNET_MAX_NETWORK_NAME];
-} INTNETNETWORK, *PINTNETNETWORK;
+} INTNETNETWORK;
+typedef INTNETNETWORK *PINTNETNETWORK;
 
 
 /**
@@ -116,10 +118,11 @@ typedef struct INTNETNETWORK
 typedef union INTNETHTE
 {
     /** Pointer to the object we're a handle for. */
-    PINTNETIF       pIF;
+    PINTNETIF               pIF;
     /** Index to the next free entry. */
-    uintptr_t       iNext;
-} INTNETHTE, *PINTNETHTE;
+    uintptr_t               iNext;
+} INTNETHTE;
+typedef INTNETHTE *PINTNETHTE;
 
 
 /**
@@ -128,16 +131,17 @@ typedef union INTNETHTE
 typedef struct INTNETHT
 {
     /** Pointer to the handle table. */
-    PINTNETHTE          paEntries;
+    PINTNETHTE              paEntries;
     /** The number of allocated handles. */
-    uint32_t            cAllocated;
+    uint32_t                cAllocated;
     /** The index of the first free handle entry.
-     * ~0U means empty list. */
-    uint32_t volatile   iHead;
+     * UINT32_MAX means empty list. */
+    uint32_t volatile       iHead;
     /** The index of the last free handle entry.
-     * ~0U means empty list. */
-    uint32_t volatile   iTail;
-} INTNETHT, *PINTNETHT;
+     * UINT32_MAX means empty list. */
+    uint32_t volatile       iTail;
+} INTNETHT;
+typedef INTNETHT *PINTNETHT;
 
 
 /**
@@ -180,7 +184,7 @@ DECLINLINE(PINTNETIF) INTNETHandle2IFPtr(PINTNET pIntNet, INTNETIFHANDLE hIF)
 
     if (    i < pHT->cAllocated
         &&  pHT->paEntries[i].iNext >= INTNET_HANDLE_MAX
-        &&  pHT->paEntries[i].iNext != ~0U)
+        &&  pHT->paEntries[i].iNext != UINT32_MAX)
         pIF = pHT->paEntries[i].pIF;
 
     RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
@@ -213,11 +217,11 @@ static INTNETIFHANDLE INTNETHandleAllocate(PINTNET pIntNet, PINTNETIF pIF)
          * Check the free list.
          */
         uint32_t i = pHT->iHead;
-        if (i != ~0U)
+        if (i != UINT32_MAX)
         {
             pHT->iHead = pHT->paEntries[i].iNext;
-            if (pHT->iHead == ~0U)
-                pHT->iTail = ~0U;
+            if (pHT->iHead == UINT32_MAX)
+                pHT->iTail = UINT32_MAX;
 
             pHT->paEntries[i].pIF = pIF;
             RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
@@ -252,14 +256,14 @@ static INTNETIFHANDLE INTNETHandleAllocate(PINTNET pIntNet, PINTNETIF pIF)
             /* link the new entries into the free chain. */
             i = pHT->cAllocated;
             uint32_t iTail = pHT->iTail;
-            if (iTail == ~0U)
+            if (iTail == UINT32_MAX)
                 pHT->iHead = iTail = i++;
             while (i < cNew)
             {
                 paNew[iTail].iNext = i;
                 iTail = i++;
             }
-            paNew[iTail].iNext = ~0U;
+            paNew[iTail].iNext = UINT32_MAX;
             pHT->iTail = iTail;
 
             /* update the handle table. */
@@ -296,9 +300,9 @@ static void INTNETHandleFree(PINTNET pIntNet, INTNETIFHANDLE h)
         /*
          * Insert at the end of the free list.
          */
-        pHT->paEntries[i].iNext = ~0U;
+        pHT->paEntries[i].iNext = UINT32_MAX;
         const uint32_t iTail = pHT->iTail;
-        if (iTail != ~0U)
+        if (iTail != UINT32_MAX)
             pHT->paEntries[iTail].iNext = i;
         else
             pHT->iHead = i;
@@ -445,8 +449,9 @@ typedef struct INTNETETHERHDR
 {
     PDMMAC  MacDst;
     PDMMAC  MacSrc;
-} INTNETETHERHDR, *PINTNETETHERHDR;
+} INTNETETHERHDR;
 #pragma pack()
+typedef INTNETETHERHDR *PINTNETETHERHDR;
 
 
 /**
@@ -1557,8 +1562,8 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
         //pIntNet->pNetworks              = NULL;
         //pIntNet->IfHandles.paEntries    = NULL;
         //pIntNet->IfHandles.cAllocated   = 0;
-        pIntNet->IfHandles.iHead        = ~0U;
-        pIntNet->IfHandles.iTail        = ~0U;
+        pIntNet->IfHandles.iHead        = UINT32_MAX;
+        pIntNet->IfHandles.iTail        = UINT32_MAX;
 
         rc = RTSemFastMutexCreate(&pIntNet->FastMutex);
         if (VBOX_SUCCESS(rc))
