@@ -19,7 +19,11 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
+DEPTH     = ../../..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
@@ -335,8 +339,9 @@ $(PATH_TARGET)/vboxaml.hex: PC/vbox.dsl
 # For finding PCIInternal.h from VBox/pci.h.
 Bus/DevPCI.cpp_INCS     = Bus
 
-# for finding vbetables.h
+# For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
 Graphics/DevVGA.cpp_INCS = $(PATH_TARGET)
+Graphics/DevVGA.cpp_DEPS = $(PATH_TARGET)/vbetables.h
 
 
 
