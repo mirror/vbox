@@ -1910,7 +1910,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
     /*
      * Only allow 32 & 64 bits code.
      */
-    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid);
+    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
     if (enmMode != CPUMODE_16BIT)
     {
         RTGCPTR pbCode;
