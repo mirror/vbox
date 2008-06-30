@@ -1116,6 +1116,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+        case PGMPOOLKIND_ROOT_NESTED:
             return false;
 
         default:
@@ -1329,6 +1330,7 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
+                case PGMPOOLKIND_ROOT_NESTED:
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -1378,6 +1380,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
+        case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -1463,6 +1466,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
+        case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -2151,6 +2155,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+        case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
@@ -2198,6 +2203,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
+        case PGMPOOLKIND_ROOT_NESTED:
             /** @todo can we return 0? (nobody is calling this...) */
             AssertFailed();
             return 0;
@@ -2519,6 +2525,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
             /* GCPhys >> PAGE_SHIFT is the index here */
             break;
+        case PGMPOOLKIND_ROOT_NESTED:
+            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            break;
+
         default:
             AssertMsgFailed(("enmKind=%d\n", pUserPage->enmKind));
             break;
@@ -2543,6 +2553,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+        case PGMPOOLKIND_ROOT_NESTED:
             u.pau64[pUser->iUserTable] = 0;
             break;
 
@@ -3258,6 +3269,10 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
 
             case PGMPOOLKIND_ROOT_PDPT:
                 /* Not root of shadowed pages currently, ignore it. */
+                break;
+
+            case PGMPOOLKIND_ROOT_NESTED:
+                ASMMemZero32(u.pau64, PAGE_SIZE);
                 break;
         }
     }
