@@ -1769,11 +1769,23 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     /*
      * Get the shadow PDE, find the shadow page table in the pool.
      */
-    const unsigned iPDDst = GCPtrPage >> SHW_PD_SHIFT;
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
+    const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
     X86PDE          PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
-# else /* PAE */
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
+    const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;                     /* no mask; flat index into the 2048 entry array. */
     X86PDEPAE       PdeDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst];
+# elif PGM_SHW_TYPE == PGM_TYPE_AMD64
+    const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PX86PDPAE       pPDDst;
+    X86PDEPAE       PdeDst;
+    PX86PDPT        pPdptDst;
+
+    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    AssertRCReturn(rc, rc);
+    Assert(pPDDst && pPdptDst);
+    PdeDst = pPDDst->a[iPDDst];
 # endif
     Assert(PdeDst.n.u1Present);
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
@@ -2215,12 +2227,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
     PX86PD          pPDDst   = pVM->pgm.s.CTXMID(p,32BitPD);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;               /* 0 - 2047 */
+    const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;               /* no mask; flat index into the 2048 entry array. */
     const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT);
     PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);
     PX86PDPAE       pPDDst   = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
-    const unsigned  iPml4e   = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
     const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
@@ -2602,11 +2613,28 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
      * Validate input a little bit.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PD          pPDDst = pVM->pgm.s.CTXMID(p,32BitPD);
-# else
-    PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
-# endif
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
+    PX86PD          pPDDst = pVM->pgm.s.CTXMID(p,32BitPD);
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
+    const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;             /* no mask; flat index into the 2048 entry array. */
+    PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
+# elif PGM_SHW_TYPE == PGM_TYPE_AMD64
+    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    PX86PDPAE       pPDDst;
+    PX86PDPT        pPdptDst;
+    rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+        return rc;
+    }
+    Assert(pPDDst);
+
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
+    Assert(pShwPde);
+# endif
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
 
@@ -2629,7 +2657,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 
     /* Virtual address = physical address */
     GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK_32;
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+    rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
+# else
     rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
+# endif
 
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_CACHED_PAGE)

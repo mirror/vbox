@@ -2355,6 +2355,7 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     case MSR_K6_EFER:
     {
         uint64_t uMask = 0;
+        uint64_t oldval = pCtx->msrEFER;
 
         /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
         CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
@@ -2376,6 +2377,11 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         /* There are a few more: e.g. MSR_K6_EFER_FFXSR, MSR_K6_EFER_LMSLE */
         AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
         pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
+
+        /* AMD64 Achitecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
+        if ((oldval & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)) != (pCtx->msrEFER & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)))
+            HWACCMFlushTLB(pVM);
+
         break;
     }
 
