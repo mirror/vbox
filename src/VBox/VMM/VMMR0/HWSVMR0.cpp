@@ -1068,6 +1068,8 @@ ResumeExecution:
     /* eax is saved/restore across the vmrun instruction */
     pCtx->rax        = pVMCB->guest.u64RAX;
 
+    pCtx->msrKERNELGSBASE = pVMCB->guest.u64KernelGSBase;    /* swapgs exchange value */
+
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     SVM_READ_SELREG(SS, ss);
     SVM_READ_SELREG(CS, cs);
