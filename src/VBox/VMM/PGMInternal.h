@@ -2005,6 +2005,13 @@ typedef struct PGM
 
     /** @}*/
 
+    /** @name Nested Shadow Paging
+     * @{ */
+    /** Root table; format depends on the host paging mode (AMD-V) or EPT */
+    R3R0PTRTYPE(void *)         pHCNestedRoot;
+    /** The Physical Address (HC) of the nested paging root. */
+    RTHCPHYS                    HCPhysNestedRoot;
+
     /** @name Function pointers for Shadow paging.
      * @{
      */
