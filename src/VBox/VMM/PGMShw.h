@@ -137,7 +137,7 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_SHW_DECL(int, Enter)(PVM pVM)
 {
-#if PGM_SHW_MODE == PGMMODE_NESTED
+#if PGM_SHW_MODE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
 
     /* In non-nested mode we allocate the PML4 page on-demand; in nested mode we just use our fixed nested paging root. */
@@ -169,7 +169,7 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
-#if PGM_SHW_MODE == PGMMODE_NESTED
+#if PGM_SHW_MODE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pHCPaePML4 = 0;
 #endif
