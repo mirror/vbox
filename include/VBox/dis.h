@@ -641,12 +641,12 @@ DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
 DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize);
 
-DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
-DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
-DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
-DISDECL(int) DISFetchReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t *pVal);
-DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal);
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
+DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
+DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
+DISDECL(int) DISFetchReg32(PCCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
+DISDECL(int) DISFetchReg64(PCCPUMCTXCORE pCtx, unsigned reg64, uint64_t *pVal);
+DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal);
+DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8);
 DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, unsigned reg32, uint16_t val16);
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, unsigned reg32, uint32_t val32);

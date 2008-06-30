@@ -144,7 +144,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
  *                      GDT entires are valid.
  * @param   ppvGC       Where to store the GC flat address.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
+SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
 {
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
@@ -745,7 +745,6 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
  * @param   SelCS   Selector part.
  * @param   Addr    Address part.
  * @param   ppvFlat Where to store the flat address.
- * @param   pcBits  Where to store the segment bitness (16/32/64). Optional.
  */
 DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
@@ -789,6 +788,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                 }
                 return VERR_OUT_OF_SELECTOR_BOUNDS;
             }
+            Log(("Invalid RPL Attr.n.u4Type=%x cpl=%x dpl=%x\n", pHidCS->Attr.n.u4Type, uLevel, pHidCS->Attr.n.u2Dpl));
             return VERR_INVALID_RPL;
         }
         return VERR_NOT_CODE_SELECTOR;
