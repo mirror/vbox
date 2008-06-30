@@ -273,6 +273,13 @@ int pgmR3PoolInit(PVM pVM)
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
 
+    /* The Shadow AMD64 CR3. */
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].Core.Key  = NIL_RTHCPHYS;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].GCPhys    = NIL_RTGCPHYS;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageHC  = pVM->pgm.s.pHCNestedRoot;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind   = PGMPOOLKIND_ROOT_NESTED;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx       = PGMPOOL_IDX_NESTED_ROOT;
+
     /*
      * Set common stuff.
      */

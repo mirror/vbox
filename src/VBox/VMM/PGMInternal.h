@@ -1290,8 +1290,10 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGMPOOL_IDX_PDPT        7
 /** AMD64 CR3 level index.*/
 #define PGMPOOL_IDX_AMD64_CR3   8
+/** Nested paging root.*/
+#define PGMPOOL_IDX_NESTED_ROOT 9
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       9
+#define PGMPOOL_IDX_FIRST       10
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST        0x3fff
 /** @} */
@@ -1386,9 +1388,11 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_ROOT_PAE_PD,
     /** Shw: Root PAE page directory pointer table (legacy, 4 entries). */
     PGMPOOLKIND_ROOT_PDPT,
+    /** Shw: Root Nested paging table. */
+    PGMPOOLKIND_ROOT_NESTED,
 
     /** The last valid entry. */
-    PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_PDPT
+    PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_NESTED
 } PGMPOOLKIND;
 
 

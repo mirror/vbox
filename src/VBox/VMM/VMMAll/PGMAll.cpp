@@ -823,18 +823,22 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     PPGMPOOLPAGE   pShwPage;
     int            rc;
     PGMPOOLKIND    enmPdpt, enmPd;
+    unsigned       idxTopLevel;
 
-    AssertReturn(pVM->pgm.s.pHCPaePML4 && pVM->pgm.s.pHCShwAmd64CR3, VERR_INTERNAL_ERROR);
-
+    AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
     if (HWACCMIsNestedPagingActive(pVM))
     {
-        enmPdpt = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
-        enmPd   = PGMPOOLKIND_64BIT_PD_FOR_PHYS;
+        enmPdpt     = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
+        enmPd       = PGMPOOLKIND_64BIT_PD_FOR_PHYS;
+        idxTopLevel = PGMPOOL_IDX_NESTED_ROOT;
     }
     else
     {
-        enmPdpt = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
-        enmPd   = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
+        AssertReturn(pVM->pgm.s.pHCShwAmd64CR3, VERR_INTERNAL_ERROR);
+
+        enmPdpt     = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
+        enmPd       = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
+        idxTopLevel = pVM->pgm.s.pHCShwAmd64CR3->idx;
     }
 
     Assert(pVM->pgm.s.pHCPaePML4);
@@ -846,7 +850,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
 
         Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
-        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, enmPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
+        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, enmPdpt, idxTopLevel, iPml4e, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
 
