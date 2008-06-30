@@ -51,8 +51,12 @@ typedef struct DRVNETSNIFFER
     PDMINETWORKCONNECTOR    INetworkConnector;
     /** The network interface. */
     PDMINETWORKPORT         INetworkPort;
+    /** The network config interface. */
+    PDMINETWORKCONFIG       INetworkConfig;
     /** The port we're attached to. */
     PPDMINETWORKPORT        pPort;
+    /** The config port interface we're attached to. */
+    PPDMINETWORKCONFIG      pConfig;
     /** The connector that's attached to us. */
     PPDMINETWORKCONNECTOR   pConnector;
     /** The filename. */
@@ -71,6 +75,9 @@ typedef struct DRVNETSNIFFER
 
 /** Converts a pointer to NAT::INetworkPort to a PDRVNETSNIFFER. */
 #define PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface)         ( (PDRVNETSNIFFER)((uintptr_t)pInterface - RT_OFFSETOF(DRVNETSNIFFER, INetworkPort)) )
+
+/** Converts a pointer to NAT::INetworkConfig to a PDRVNETSNIFFER. */
+#define PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface)       ( (PDRVNETSNIFFER)((uintptr_t)pInterface - RT_OFFSETOF(DRVNETSNIFFER, INetworkConfig)) )
 
 
 /* "libpcap" magic */
@@ -239,6 +246,49 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKPORT pInterface, const
     return rc;
 }
 
+
+/**
+ * Gets the current Media Access Control (MAC) address.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   pMac            Where to store the MAC address.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PPDMMAC pMac)
+{
+    PDRVNETSNIFFER pData = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
+    return pData->pConfig->pfnGetMac(pData->pConfig, pMac);
+}
+
+/**
+ * Gets the new link state.
+ *
+ * @returns The current link state.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @thread  EMT
+ */
+static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferGetLinkState(PPDMINETWORKCONFIG pInterface)
+{
+    PDRVNETSNIFFER pData = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
+    return pData->pConfig->pfnGetLinkState(pData->pConfig);
+}
+
+/**
+ * Sets the new link state.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   enmState        The new link state
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) drvNetSnifferSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
+{
+    PDRVNETSNIFFER pData = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
+    return pData->pConfig->pfnSetLinkState(pData->pConfig, enmState);
+}
+
+
 /**
  * Queries an interface to the driver.
  *
@@ -260,6 +310,8 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, PD
             return &pData->INetworkConnector;
         case PDMINTERFACE_NETWORK_PORT:
             return &pData->INetworkPort;
+        case PDMINTERFACE_NETWORK_CONFIG:
+            return &pData->INetworkConfig;
         default:
             return NULL;
     }
@@ -324,6 +376,10 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* INetworkPort */
     pData->INetworkPort.pfnWaitReceiveAvail         = drvNetSnifferWaitReceiveAvail;
     pData->INetworkPort.pfnReceive                  = drvNetSnifferReceive;
+    /* INetworkConfig */
+    pData->INetworkConfig.pfnGetMac                 = drvNetSnifferGetMac;
+    pData->INetworkConfig.pfnGetLinkState           = drvNetSnifferGetLinkState;
+    pData->INetworkConfig.pfnSetLinkState           = drvNetSnifferSetLinkState;
 
     /*
      * Get the filename.
@@ -344,6 +400,16 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     if (!pData->pPort)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
+        return VERR_PDM_MISSING_INTERFACE_ABOVE;
+    }
+
+    /*
+     * Query the network config interface.
+     */
+    pData->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+    if (!pData->pConfig)
+    {
+        AssertMsgFailed(("Configuration error: the above device/driver didn't export the network config interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
 
