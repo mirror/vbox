@@ -19,11 +19,15 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../../../
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../..
+else
 SUB_DEPTH = ../..
+DEPTH    ?= ../../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
-VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
+VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
 # Build program for calculating the PC BIOS checksums.
@@ -65,15 +69,16 @@ $(PATH_TARGET)/PcBiosBin.c: $(PATH_TARGET)/pcbios.bin $(VBOX_BIN2C)
 
 # 1. precompile rombios.c
 $(PATH_TARGET)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c $(PATH_SUB_CURRENT)/apmbios.S \
-		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $(call DIRDEP,$(TARGET_PATH))
+		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_TARGET) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX -DVBOX_PC_BIOS $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -P -o $@ $<
 
-# 2. compile to intermediate asm file - tempfile clashes, make sure it's built alone.
-.NOTPARALLEL: $(PATH_TARGET)/rombios0.s
-$(PATH_TARGET)/rombios0.s: $(PATH_TARGET)/_rombios_.c
+# 2. compile to intermediate asm file.
+# BCC tempfile clashes, order the BCC jobs to make sure they don't interfere with one another.
+$(PATH_TARGET)/rombios0.s: $(PATH_TARGET)/_rombios_.c | $(VBOX_BCC_JOBS)
 	$(call MSG_COMPILE,PcBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
+VBOX_BCC_JOBS += $(PATH_TARGET)/rombios0.s
 
 # 3. post process intermediate asm file.
 $(PATH_TARGET)/rombios1.s: $(PATH_TARGET)/rombios0.s

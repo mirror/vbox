@@ -46,7 +46,7 @@ TESTING += \
 #
 # Globals
 #
-VBOX_PATH_DEVICES_SRC = $(PATH_ROOT)/src/VBox/Devices
+VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
 # The testcase generator.
