@@ -3467,7 +3467,8 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (    pPage->idx == PGMPOOL_IDX_AMD64_CR3
+    if (    (   pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4
+             || pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_PHYS)
         &&  PGMGetHyperCR3(CTXSUFF(pPool->pVM)) == pPage->Core.Key)
     {
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
