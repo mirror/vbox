@@ -153,18 +153,16 @@ VBGLR3DECL(int) VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey,
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     uint32_t cbActual;
-    if (RT_SUCCESS(rc))
-        rc = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) || (VERR_BUFFER_OVERFLOW == rc))
     {
-        if (pcbActual != NULL)
-            *pcbActual = cbActual;
-        if (cbActual > cbValue)
-            rc = VINF_BUFFER_OVERFLOW;
+        int rc2 = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
+        if (RT_SUCCESS(rc2))
+        {
+            if (pcbActual != NULL)
+                *pcbActual = cbActual;
+        }
         else
-            rc = Msg.hdr.result;
-        if ((cbValue > 0) && (0 == cbActual))  /* No such property */
-            pszValue[0] = 0;
+            rc = rc2;
     }
     return rc;
 }
