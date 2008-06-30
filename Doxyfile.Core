@@ -170,7 +170,11 @@ EXCLUDE_SYMBOLS        =
 EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       =
 EXAMPLE_RECURSIVE      = NO
-IMAGE_PATH             = doc
+IMAGE_PATH             = \
+    doc \
+    doc/tg/Networking-diagrams \
+    doc/tg/USB-diagrams \
+    doc/tg/iagrams
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
