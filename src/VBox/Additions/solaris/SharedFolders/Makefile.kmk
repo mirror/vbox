@@ -33,7 +33,8 @@ vboxvfs_SOURCES       = \
 vboxvfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-vboxvfs_LDFLAGS      += -L$(PATH_TARGET)/vboxguest -N drv/vboxguest
+#@todo find out why the additions box freaks out with this...
+#vboxvfs_LDFLAGS      += -N drv/vboxguest
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
