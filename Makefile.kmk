@@ -228,7 +228,7 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/VMM/PATM/VMMAll \
 	src/VBox/VMM/VMMSwitcher \
 	src/VBox/Debugger \
-	src/VBox/Devices/ \
+	src/VBox/Devices \
 	src/VBox/Devices/Audio \
 	src/VBox/Devices/Bus \
 	src/VBox/Devices/Graphics \
@@ -252,7 +252,7 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/Devices/VMMDev \
 	src/VBox/Main/include \
 	src/VBox/Main/include/hgcm \
-	src/VBox/Main/ \
+	src/VBox/Main \
 	src/VBox/Main/glue \
 	src/VBox/Main/hgcm \
 	src/VBox/Main/webservice \
@@ -263,7 +263,7 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/Main/solaris \
 	src/VBox/Main/win \
 	src/VBox/Main/xpcom \
-	src/VBox/HostServices/ \
+	src/VBox/HostServices \
 	src/VBox/HostServices/SharedClipboard \
 	src/VBox/HostServices/SharedFolders \
 	src/VBox/HostServices/SharedInfoServices \
@@ -276,24 +276,24 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/HostDrivers/Support/os2 \
 	src/VBox/HostDrivers/Support/solaris \
 	src/VBox/HostDrivers/Support/win \
-	src/VBox/HostDrivers/VBoxNetFlt/ \
+	src/VBox/HostDrivers/VBoxNetFlt \
 	src/VBox/HostDrivers/VBoxNetFlt/darwin \
 	src/VBox/HostDrivers/VBoxNetFlt/linux \
 	src/VBox/HostDrivers/VBoxNetFlt/solaris \
 	src/VBox/HostDrivers/VBoxNetFlt/win \
-	src/VBox/HostDrivers/VBoxNetNat/ \
+	src/VBox/HostDrivers/VBoxNetNat \
 	src/VBox/HostDrivers/VBoxNetNat/darwin \
 	src/VBox/HostDrivers/VBoxNetNat/linux \
 	src/VBox/HostDrivers/VBoxNetNat/solaris \
 	src/VBox/HostDrivers/VBoxNetNat/win \
-	src/VBox/HostDrivers/VBoxNetTap/ \
+	src/VBox/HostDrivers/VBoxNetTap \
 	src/VBox/HostDrivers/VBoxNetTap/darwin \
 	src/VBox/HostDrivers/VBoxNetTap/linux \
 	src/VBox/HostDrivers/VBoxNetTap/solaris \
 	src/VBox/HostDrivers/VBoxNetTap/win \
-	src/VBox/HostDrivers/VBoxTAP/ \
+	src/VBox/HostDrivers/VBoxTAP \
 	src/VBox/HostDrivers/VBoxTAP/win \
-	src/VBox/HostDrivers/VBoxUSB/ \
+	src/VBox/HostDrivers/VBoxUSB \
 	src/VBox/HostDrivers/VBoxUSB/darwin \
 	src/VBox/HostDrivers/VBoxUSB/os2 \
 	src/VBox/HostDrivers/VBoxUSB/solaris \
@@ -336,7 +336,7 @@ DOXYGEN_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/hwaccm.h \
 	$(PATH_ROOT)/include/VBox/hwacc_svm.h \
 	$(PATH_ROOT)/include/VBox/hwacc_vmx.h \
-	$(PATH_ROOT)/\
+	\
 	$(PATH_ROOT)/src/VBox/VMM/CFGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/CPUMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/DBGFInternal.h \
@@ -356,7 +356,7 @@ DOXYGEN_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/TRPMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/VMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/VMMInternal.h \
-	$(PATH_ROOT)/\
+	\
 	$(PATH_ROOT)/include/VBox/vm.h \
 	\
 	$(PATH_ROOT)/include/VBox/sup.h \
@@ -376,14 +376,14 @@ DOXYGEN_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/hgcmsvc.h \
 	$(PATH_ROOT)/include/VBox/usb.h \
 	$(PATH_ROOT)/include/VBox/vusb.h \
-	$(PATH_ROOT)/\
+	\
 	$(PATH_ROOT)/include/VBox/log.h \
 	$(PATH_ROOT)/include/VBox/param.h \
 	$(PATH_ROOT)/include/VBox/version.h
 
 DOXYGEN_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(DOXYGEN_INPUT_DIRS)))) ) \
-	$(foreach dir, $(DOXYGEN_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/.c $(dir)/.asm))
+	$(foreach dir, $(DOXYGEN_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/.asm))
 DOXYGEN_INPUT := \
 	$(DOXYGEN_INPUT_FIRST) \
 	$(filter-out $(DOXYGEN_INPUT_FIRST), $(DOXYGEN_INPUT))
@@ -426,7 +426,8 @@ $(call DIRDEP, $(DOXYGEN_OUTPUT)):
 
 # Do the actual job.
 $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile $(DOXYGEN_INPUT) | $(call DIRDEP, $(DOXYGEN_OUTPUT))
-	$(RM) -f $(wildcard $(DOXYGEN_OUTPUT)/html/*) $(PATH_TARGET)/docs.Core
+	$(RM) -f $(PATH_TARGET)/docs.Core
+	$(RM) -Rf $(DOXYGEN_OUTPUT)/html/
 	doxygen $(PATH_TARGET)/Doxyfile
 	$(APPEND) $(PATH_TARGET)/docs.Core
 
