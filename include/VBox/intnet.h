@@ -443,12 +443,16 @@ typedef struct INTNETTRUNKIFPORT
      * semaphore. So, after the final suspend a pfnWaitForIdle is always called to make sure
      * the interface is idle before pfnDisconnectAndRelease is called.
      *
+     * A typical operation to performed by this method is to enable/disable promiscuous
+     * mode on the host network interface. (This is the reason we cannot call this when
+     * owning any semaphores.)
+     *
      * @returns The previous state.
      *
      * @param   pIfPort     Pointer to this structure.
      * @param   fActive     True if the new state is 'active', false if the new state is 'suspended'.
      *
-     * @remarks Called while owning the network semaphore.
+     * @remarks Called while *not* owning any semaphores. Will not grab anything.
      */
     DECLR0CALLBACKMEMBER(bool, pfnSetActive,(PINTNETTRUNKIFPORT pIfPort, bool fActive));
 
