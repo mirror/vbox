@@ -361,6 +361,20 @@ typedef struct INTNETTRUNKSWPORT
      */
     DECLR0CALLBACKMEMBER(bool, pfnRecvWire,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
 
+    /**
+     * This is called by the pfnSendToHost and pfnSendToWire code when they are
+     * done with a SG.
+     *
+     * It may be called after they return if the frame was pushed in an
+     * async manner.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pSG         Pointer to the (scatter /) gather structure.
+     *
+     * @remarks Will grab the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
 } INTNETTRUNKSWPORT;
@@ -388,17 +402,21 @@ typedef struct INTNETTRUNKIFPORT
      * It will normally be called while owning the internal network semaphore.
      *
      * @param   pIfPort     Pointer to this structure.
+     *
+     * @remarks The caller may own any locks.
      */
     DECLR0CALLBACKMEMBER(void, pfnRetain,(PINTNETTRUNKIFPORT pIfPort));
 
     /**
      * Releases the object.
      *
-     * This must be called for every pfnRetain call. Where possible, it
-     * should be executed without holding any locks unless the caller
-     * is certain it is not going to trigger the destructor.
+     * This must be called for every pfnRetain call.
+     *
      *
      * @param   pIfPort     Pointer to this structure.
+     *
+     * @remarks Where possible, it should be executed without holding any locks
+     *          unless the caller is certain it is not going to trigger the destructor.
      */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -409,6 +427,8 @@ typedef struct INTNETTRUNKIFPORT
      * INTNETTRUNKNETFLTFACTORY::pfnCreateAndConnect method.
      *
      * @param   pIfPort     Pointer to this structure.
+     *
+     * @remarks Called without holding any locks.
      */
     DECLR0CALLBACKMEMBER(void, pfnDisconnectAndRelease,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -420,7 +440,8 @@ typedef struct INTNETTRUNKIFPORT
      * for various reasons. It will finally be suspended again before disconnecting
      * the interface from the internal network, however, this might be done immediately
      * before disconnecting and may leave an incoming frame waiting on the internal network
-     * semaphore.
+     * semaphore. So, after the final suspend a pfnWaitForIdle is always called to make sure
+     * the interface is idle before pfnDisconnectAndRelease is called.
      *
      * @returns The previous state.
      *
@@ -443,7 +464,7 @@ typedef struct INTNETTRUNKIFPORT
      *                      no waiting at all. Use RT_INDEFINITE_WAIT for
      *                      an indefinite wait.
      *
-     * @remarks Will not grab any semaphores.
+     * @remarks Called while *not* owning any semaphores. Will not grab anything.
      */
     DECLR0CALLBACKMEMBER(bool, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
 
@@ -466,9 +487,9 @@ typedef struct INTNETTRUNKIFPORT
     /**
      * Tests whether the host is operating the interface is promiscuous mode.
      *
-     * The default behavior of internal networking 'switch' is to 'autodetect'
-     * promiscuous mode on the trunk port, which is where this method is used.
-     * For security reasons this default my of course be overridden so that the
+     * The default behavior of the internal networking 'switch' is to 'autodetect'
+     * promiscuous mode on the trunk port, which is when this method is used.
+     * For security reasons this default may of course be overridden so that the
      * host cannot sniff at what's going on.
      *
      * Note that this differs from operating the trunk port on the switch in
@@ -497,7 +518,8 @@ typedef struct INTNETTRUNKIFPORT
      *                      do this asynchronously to save unnecessary buffer
      *                      allocating and copying.
      *
-     * @remarks Called while owning the network semaphore?
+     * @remarks Called while owning the network semaphore.
+     *          (Works on darwin, but may have to be relaxed later on other hosts.)
      *
      * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
      */
@@ -518,25 +540,12 @@ typedef struct INTNETTRUNKIFPORT
      *                      do this asynchronously to save unnecessary buffer
      *                      allocating and copying.
      *
-     * @remarks Called while owning the network semaphore?
+     * @remarks Called while owning the network semaphore.
+     *          (Works on darwin, but may have to be relaxed later on other hosts.)
      *
      * @remarks TAP and NAT will call pfnSGRelease and return successfully.
      */
     DECLR0CALLBACKMEMBER(int, pfnSendToWire,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
-
-    /**
-     * This is called by the pfnSendToHost and pfnSendToWire code when they are
-     * done with a SG.
-     *
-     * It may be called after they return if the frame was pushed in an
-     * async manner.
-     *
-     * @param   pIfPort     Pointer to this structure.
-     * @param   pSG         Pointer to the (scatter /) gather structure.
-     *
-     * @remarks Will grab the network semaphore.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
 
     /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
     uint32_t u32VersionEnd;
