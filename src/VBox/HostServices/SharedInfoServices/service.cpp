@@ -237,7 +237,10 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
 
 /**
  * Retrieve a value from the guest registry by key, checking the validity
- * of the arguments passed.
+ * of the arguments passed.  If the guest has not allocated enough buffer
+ * space for the value then we return VERR_OVERFLOW and set the size of the
+ * buffer needed in the "size" HGCM parameter.  If the key was not found at
+ * all, we return VERR_NOT_FOUND.
  *
  * @returns iprt status value
  * @param   cParms  the number of HGCM parameters supplied
@@ -268,16 +271,13 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         VBoxHGCMParmUInt32Set(&paParms[2], cbValueActual);
     if (RT_SUCCESS(rc) && (cbValueActual > cbValue))
-        rc = VINF_BUFFER_OVERFLOW;
+        rc = VERR_BUFFER_OVERFLOW;
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
         rc = CFGMR3QueryString(mpNode, pszKey, pszValue, cbValue);
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
         Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pszValue));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
-    {
-        VBoxHGCMParmUInt32Set(&paParms[2], 0);
-        rc = VINF_SUCCESS;
-    }
+        rc = VERR_NOT_FOUND;
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
@@ -395,15 +395,13 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         /* The guest wishes to set a configuration value */
         case SET_CONFIG_KEY:
             LogFlowFunc(("SET_CONFIG_KEY\n"));
-            if (RT_SUCCESS(rc))
-                rc = setKey(cParms, paParms);
+            rc = setKey(cParms, paParms);
             break;
 
         /* The guest wishes to remove a configuration value */
         case DEL_CONFIG_KEY:
             LogFlowFunc(("DEL_CONFIG_KEY\n"));
-            if (RT_SUCCESS(rc))
-                rc = delKey(cParms, paParms);
+            rc = delKey(cParms, paParms);
             break;
 
         default:
@@ -465,15 +463,13 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         /* The host wishes to set a configuration value */
         case SET_CONFIG_KEY_HOST:
             LogFlowFunc(("SET_CONFIG_KEY_HOST\n"));
-            if (RT_SUCCESS(rc))
-                rc = setKey(cParms, paParms);
+            rc = setKey(cParms, paParms);
             break;
 
         /* The host wishes to remove a configuration value */
         case DEL_CONFIG_KEY_HOST:
             LogFlowFunc(("DEL_CONFIG_KEY_HOST\n"));
-            if (RT_SUCCESS(rc))
-                rc = delKey(cParms, paParms);
+            rc = delKey(cParms, paParms);
             break;
 
         default:
