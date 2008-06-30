@@ -19,8 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../..
+else
 SUB_DEPTH = ..
+DEPTH    ?= ../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -42,7 +46,7 @@ TESTING += \
 #
 # Globals
 #
-VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
+VBOX_PATH_DEVICES_SRC = $(PATH_ROOT)/src/VBox/Devices
 
 #
 # The testcase generator.
