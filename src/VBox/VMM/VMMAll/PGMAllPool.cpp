@@ -1053,6 +1053,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
          */
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             return true;
 
         /*
@@ -1073,6 +1076,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1096,6 +1102,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1317,6 +1326,9 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -1363,6 +1375,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -1445,6 +1460,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -2133,6 +2151,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             return 8;
 
         default:
@@ -2174,7 +2195,11 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
 
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             /** @todo can we return 0? (nobody is calling this...) */
+            AssertFailed();
             return 0;
 
         default:
@@ -3163,14 +3188,17 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
             pgmPoolTrackDerefPDPae(pPool, pPage, (PX86PDPAE)pvShw);
             break;
 
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             pgmPoolTrackDerefPDPT64Bit(pPool, pPage, (PX86PDPT)pvShw);
             break;
 
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             pgmPoolTrackDerefPML464Bit(pPool, pPage, (PX86PML4)pvShw);
             break;
 

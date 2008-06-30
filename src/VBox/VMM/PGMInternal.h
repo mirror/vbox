@@ -1368,11 +1368,17 @@ typedef enum PGMPOOLKIND
 
     /** Shw: 64-bit page directory pointer table;   Gst: 64-bit page directory pointer table. */
     PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT,
+    /** Shw: 64-bit page directory pointer table; Gst: no paging  */
+    PGMPOOLKIND_64BIT_PDPT_FOR_PHYS,
     /** Shw: 64-bit page directory table;   Gst: 64-bit page directory table. */
     PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD,
+    /** Shw: 64-bit page directory table; Gst: no paging  */
+    PGMPOOLKIND_64BIT_PD_FOR_PHYS,
 
     /** Shw: 64-bit PML4;   Gst: 64-bit PML4. */
     PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4,
+    /** Shw: 64-bit PML4; Gst: no paging  */
+    PGMPOOLKIND_64BIT_PML4_FOR_PHYS,
 
     /** Shw: Root 32-bit page directory. */
     PGMPOOLKIND_ROOT_32BIT_PD,
