@@ -24,9 +24,14 @@
 #include <sys/sunddi.h>
 #include "vboxvfs.h"
 
+#if defined(DEBUG_ramshankar) && !defined(LOG_ENABLED)
+# define LOG_ENABLED
+# define LOG_TO_BACKDOOR
+#endif
 #include <VBox/log.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/err.h>
 
 
 /*******************************************************************************
@@ -35,7 +40,7 @@
 /** The module name. */
 #define DEVICE_NAME              "vboxvfs"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox Shared Filesystem"
+#define DEVICE_DESC              "filesystem for VirtualBox Shared Folders"
 
 /** Mount Options */
 #define MNTOPT_VBOXVFS_UID       "uid"
@@ -148,6 +153,7 @@ static int g_VBoxVFSType;
 int _init(void)
 {
     LogFlow((DEVICE_NAME ":_init\n"));
+
     int rc = ddi_soft_state_init(&g_pVBoxVFSState, sizeof(vboxvfs_state_t), 1);
     if (!rc)
     {
@@ -162,6 +168,7 @@ int _init(void)
 int _fini(void)
 {
     LogFlow((DEVICE_NAME ":_fini\n"));
+
     int rc = mod_remove(&g_VBoxVFSModLinkage);
     if (!rc)
         ddi_soft_state_fini(&g_pVBoxVFSState);
@@ -172,6 +179,7 @@ int _fini(void)
 int _info(struct modinfo *pModInfo)
 {
     LogFlow((DEVICE_NAME ":_info\n"));
+
     return mod_info(&g_VBoxVFSModLinkage, pModInfo);
 }
 
@@ -217,6 +225,8 @@ static int VBoxVFS_Init(int fType, char *pszName)
                         LogFlow((DEVICE_NAME ":Successfully loaded vboxvfs.\n"));
                         return 0;
                     }
+                    else
+                        LogRel((DEVICE_NAME ":vn_make_ops failed. rc=%d\n", rc));
                 }
                 else
                     LogRel((DEVICE_NAME ":vfs_setfsops failed. rc=%d\n", rc));
@@ -245,18 +255,18 @@ static int VBoxVFS_Init(int fType, char *pszName)
 
 static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cred_t *pCred)
 {
-    int rc;
+    int rc = 0;
     int Uid = 0;
     int Gid = 0;
-    char *pszShare;
-    size_t cbShare;
+    char *pszShare = NULL;
+    size_t cbShare = NULL;
     pathname_t PathName;
-    vnode_t *pVNodeSpec;
-    vnode_t *pVNodeDev;
-    dev_t Dev;
+    vnode_t *pVNodeSpec = NULL;
+    vnode_t *pVNodeDev = NULL;
+    dev_t Dev = 0;
     SHFLSTRING *pShflShareName = NULL;
-    size_t cbShflShareName;
-    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo;
+    size_t cbShflShareName = 0;
+    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = NULL;
     int AddrSpace = (pMount->flags & MS_SYSSPACE) ? UIO_SYSSPACE : UIO_USERSPACE;
 #if 0
     caddr_t pData;
@@ -362,7 +372,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
             if (!rc)
             {
                 Dev = pVNodeSpec->v_rdev;
-                pszShare = RTStrDup(PathName.pn_path);
+                memcpy(pszShare, PathName.pn_path, strlen(PathName.pn_path));
                 cbShare = strlen(pszShare);
             }
             else

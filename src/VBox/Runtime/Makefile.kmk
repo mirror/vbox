@@ -1169,6 +1169,7 @@ RuntimeGuestR0_EXTENDS                 = RuntimeR0Drv
 # HACK: no vbi for the solaris guest additions - yet.
 RuntimeGuestR0_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
