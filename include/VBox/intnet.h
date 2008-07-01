@@ -390,6 +390,11 @@ typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
  * side which the internal network is connected to.
  *
  * This is only used for the in-kernel trunk connections.
+ *
+ * @remarks The internal network side is responsible for serializing all calls
+ *          to this interface. This is (assumed) to be implemented using a lock
+ *          that is only ever taken before a call to this interface. The lock
+ *          is referred to as the out-bound trunk port lock.
  */
 typedef struct INTNETTRUNKIFPORT
 {
@@ -403,7 +408,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks The caller may own any locks.
+     * @remarks The caller may own any locks or none at all, we don't care.
      */
     DECLR0CALLBACKMEMBER(void, pfnRetain,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -415,8 +420,8 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Where possible, it should be executed without holding any locks
-     *          unless the caller is certain it is not going to trigger the destructor.
+     * @remarks Only the out-bound trunk port lock, unless the caller is certain the
+     *          call is not going to cause destruction (wont happen).
      */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -428,7 +433,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Called without holding any locks.
+     * @remarks Called holding the out-bound trunk port lock.
      */
     DECLR0CALLBACKMEMBER(void, pfnDisconnectAndRelease,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -452,7 +457,7 @@ typedef struct INTNETTRUNKIFPORT
      * @param   pIfPort     Pointer to this structure.
      * @param   fActive     True if the new state is 'active', false if the new state is 'suspended'.
      *
-     * @remarks Called while *not* owning any semaphores. Will not grab anything.
+     * @remarks Called holding the out-bound trunk port lock.
      */
     DECLR0CALLBACKMEMBER(bool, pfnSetActive,(PINTNETTRUNKIFPORT pIfPort, bool fActive));
 
@@ -468,7 +473,7 @@ typedef struct INTNETTRUNKIFPORT
      *                      no waiting at all. Use RT_INDEFINITE_WAIT for
      *                      an indefinite wait.
      *
-     * @remarks Called while *not* owning any semaphores. Will not grab anything.
+     * @remarks Called holding the out-bound trunk port lock.
      */
     DECLR0CALLBACKMEMBER(bool, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
 
@@ -481,7 +486,7 @@ typedef struct INTNETTRUNKIFPORT
      * @param   pIfPort     Pointer to this structure.
      * @param   pMac        Pointer to the mac address.
      *
-     * @remarks Called while owning the network semaphore.
+     * @remarks Called while owning the network and the out-bound trunk port semaphores.
      *
      * @remarks TAP and NAT will compare with their own MAC address and let all their
      *          traffic go over the pfnSendToHost method.
@@ -503,7 +508,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Called while owning the network semaphore.
+     * @remarks Called while owning the network and the out-bound trunk port semaphores.
      */
     DECLR0CALLBACKMEMBER(bool, pfnIsPromiscuous,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -522,8 +527,7 @@ typedef struct INTNETTRUNKIFPORT
      *                      do this asynchronously to save unnecessary buffer
      *                      allocating and copying.
      *
-     * @remarks Called while owning the network semaphore.
-     *          (Works on darwin, but may have to be relaxed later on other hosts.)
+     * @remarks Called holding the out-bound trunk port lock.
      *
      * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
      */
@@ -544,8 +548,7 @@ typedef struct INTNETTRUNKIFPORT
      *                      do this asynchronously to save unnecessary buffer
      *                      allocating and copying.
      *
-     * @remarks Called while owning the network semaphore.
-     *          (Works on darwin, but may have to be relaxed later on other hosts.)
+     * @remarks Called holding the out-bound trunk port lock.
      *
      * @remarks TAP and NAT will call pfnSGRelease and return successfully.
      */
@@ -566,7 +569,8 @@ typedef struct INTNETTRUNKIFPORT
 typedef struct INTNETTRUNKNETFLTFACTORY
 {
     /**
-     * Create an instance for the specfied host interface.
+     * Create an instance for the specfied host interface and connects it
+     * to the internal network trunk port.
      *
      * The initial interface active state is false (suspended).
      *
@@ -584,10 +588,10 @@ typedef struct INTNETTRUNKNETFLTFACTORY
      * @param   ppIfPort            Where to store the pointer to the interface port
      *                              on success.
      *
-     * @remarks Called while owning the network semaphore.
+     * @remarks Called while owning the network and the out-bound trunk semaphores.
      */
-    DECLR0CALLBACKMEMBER(int, pfnCreate,(struct INTNETTRUNKNETFLTFACTORY *pIfFactory, const char *pszName,
-                                         PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
+    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(struct INTNETTRUNKNETFLTFACTORY *pIfFactory, const char *pszName,
+                                                   PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
 } INTNETTRUNKNETFLTFACTORY;
 /** Pointer to the trunk factory. */
 typedef INTNETTRUNKNETFLTFACTORY *PINTNETTRUNKNETFLTFACTORY;
