@@ -19,8 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../..
+else
 SUB_DEPTH = ..
+DEPTH    ?= ../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -76,7 +80,7 @@ OTHER_CLEAN += \
 #
 # Globals
 #
-VBOX_PATH_VMM_SRC = $(PATH_SUB_ROOT)
+VBOX_PATH_VMM_SRC = $(PATH_ROOT)/src/VBox/VMM
 
 #
 # Targets
@@ -201,11 +205,6 @@ endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
-
-ifndef USE_MULTI_TARGET
-# temporary hack.
-.NOTPARALLEL: $(TARGET_tstMicroGC) $(LIB_VMMGC)
-endif
 
 
 #

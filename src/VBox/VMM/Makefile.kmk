@@ -19,7 +19,11 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
+DEPTH     = ../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 ## @todo get rid of these.
@@ -50,8 +54,8 @@ ifdef VBOX_WITH_PREALLOC_RAM_BY_DEFAULT
 VMMR3_DEFS     += VBOX_WITH_PREALLOC_RAM_BY_DEFAULT
 endif
 VMMR3_INCS     := \
-	PATM \
-	$(PATH_SUB_CURRENT)
+	$(PATH_SUB_CURRENT) \
+	PATM
 
 VMMR3_SOURCES   = \
 	CFGM.cpp \
@@ -270,9 +274,9 @@ endif # R0: pe + lx
 SYSMODS += VMMGC
 VMMGC_TEMPLATE  = VBOXGC
 VMMGC_INCS     := \
-	 $(PATH_SUB_CURRENT) \
-	 VMMGC \
-     PATM
+	$(PATH_SUB_CURRENT) \
+	VMMGC \
+	PATM
 VMMGC_DEFS      = IN_VMM_GC IN_PDM_GC IN_CFGM_GC IN_IOM_GC IN_MM_GC IN_RT_GC IN_TRPM_GC IN_SELM_GC IN_VM_GC IN_IOM_GC IN_DIS_GC DIS_CORE_ONLY IN_PGM_GC IN_CPUM_GC IN_EM_GC IN_TM_GC IN_PATM_GC IN_CSAM_GC IN_REM_GC IN_DBGF_GC
 ifdef VBOX_WITH_IDT_PATCHING
 VMMGC_DEFS     += VBOX_WITH_IDT_PATCHING
