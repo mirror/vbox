@@ -41,8 +41,8 @@ ifdef VBOX_WITH_INTEL_PXE
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
 else
  # Subdir with complex makefile.
- SUBDIRS_LIBRARIES = PC/Etherboot-src
- SUBDIRS_CLEAN     = PC/Etherboot-src
+ SUBDIRS_LIBRARIES += PC/Etherboot-src
+ SUBDIRS_CLEAN     += PC/Etherboot-src
 endif
 
 #
