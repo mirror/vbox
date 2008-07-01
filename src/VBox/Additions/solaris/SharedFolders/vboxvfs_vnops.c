@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox File System Driver for Solaris Guests.
+ * VirtualBox File System Driver for Solaris Guests, VNode Operations.
  */
 
 /*
