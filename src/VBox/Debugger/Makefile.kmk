@@ -19,8 +19,13 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # The targets.
@@ -90,10 +95,10 @@ VBoxDbg_INCS = \
 VBoxDbg_QT_UISRCS =
 
 # Headers containing definitions of classes that use the Q_OBJECT macro
-VBoxDbg_QT_MOCHDRS = \
-	VBoxDbgConsole.h \
-	VBoxDbgStats.h \
-	VBoxDbgGui.h
+VBoxDbg_QT_MOCHDRS := \
+	$(PATH_SUB_CURRENT)/VBoxDbgConsole.h \
+	$(PATH_SUB_CURRENT)/VBoxDbgStats.h \
+	$(PATH_SUB_CURRENT)/VBoxDbgGui.h
 
 # UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
 VBoxDbg_QT_MOCUIHDRS =
@@ -107,7 +112,7 @@ VBoxDbg_GENHDRS = \
 	$(foreach moc,$(basename $(VBoxDbg_QT_MOCSRCS)), $(PATH_VBoxDbg)/moc/$(moc).moc) \
 	$(foreach ui,$(basename $(VBoxDbg_QT_UISRCS)), $(PATH_VBoxDbg)/$(ui).h)
 
-VBoxDbg_SOURCES    = \
+VBoxDbg_SOURCES = \
 	$(VBoxDbg_GENSRCS) \
 	VBoxDbg.cpp \
 	VBoxDbgGui.cpp \
@@ -151,7 +156,7 @@ dbghelp_SOURCES.x86 = win32/dbghelp.dll
 dbghelp_SOURCES.amd64 = win64/dbghelp.dll
 
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 #
