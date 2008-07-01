@@ -43,7 +43,7 @@ ifdef VBOX_WITH_TESTCASES
 endif # VBOX_WITH_TESTCASES
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-PROGRAMS += tstPDMAsyncCompletion
+ PROGRAMS  += tstPDMAsyncCompletion
 endif
 
 
