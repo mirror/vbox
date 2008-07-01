@@ -37,7 +37,8 @@
  * When we're in kernel territory it starts getting a bit more
  * interesting of course...
  */
-#if defined(IN_RING0) && defined(RT_OS_LINUX)
+#if defined(IN_RING0) \
+ && (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX))
 /* ASSUMES GNU C */
 # define alloca(cb) __builtin_alloca(cb)
 #else
