@@ -54,8 +54,9 @@ SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 
 #
-# Enable the pdm lock (experimental).
+# Enable the pdm lock.
 #
+## @todo eliminate this!
 ifdef VBOX_WITH_PDM_LOCK
  DEFS += VBOX_WITH_PDM_LOCK
 endif
@@ -328,7 +329,7 @@ DevicesR3_CLEAN        += $(PATH_TARGET)/vboxaml.hex $(PATH_TARGET)/vboxaml.aml
 PC/DevACPI.cpp_DEPS     = $(PATH_TARGET)/vboxaml.hex
 PC/DevACPI.cpp_INCS     = $(PATH_TARGET)
 
-$(PATH_TARGET)/vboxaml.hex: PC/vbox.dsl
+$(PATH_TARGET)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 
