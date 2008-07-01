@@ -822,35 +822,29 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     PX86PML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
     int            rc;
-    PGMPOOLKIND    enmPdpt, enmPd;
-    unsigned       idxTopLevel;
-
-    AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
-    if (HWACCMIsNestedPagingActive(pVM))
-    {
-        enmPdpt     = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
-        enmPd       = PGMPOOLKIND_64BIT_PD_FOR_PHYS;
-        idxTopLevel = PGMPOOL_IDX_NESTED_ROOT;
-    }
-    else
-    {
-        AssertReturn(pVM->pgm.s.pHCShwAmd64CR3, VERR_INTERNAL_ERROR);
-
-        enmPdpt     = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
-        enmPd       = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
-        idxTopLevel = pVM->pgm.s.pHCShwAmd64CR3->idx;
-    }
+    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
 
     Assert(pVM->pgm.s.pHCPaePML4);
+
     /* Allocate page directory pointer table if not present. */
     pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & X86_PML4E_PG_MASK))
     {
-        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
-
         Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
-        rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, enmPdpt, idxTopLevel, iPml4e, &pShwPage);
+
+        if (!fNestedPaging)
+        {
+            Assert(pVM->pgm.s.pHCShwAmd64CR3);
+            Assert(pPGM->pGstPaePML4HC);
+
+            PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
+
+            rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
+        }
+        else
+            rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
+
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
 
@@ -873,14 +867,22 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-        PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
-        PX86PDPT  pPdptGst;
-        rc = PGM_GCPHYS_2_PTR(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, &pPdptGst);
-        AssertRCReturn(rc, rc);
+        if (!fNestedPaging)
+        {
+            Assert(pPGM->pGstPaePML4HC);
 
-        Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-        /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, enmPd, pShwPage->idx, iPdPt, &pShwPage);
+            PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
+            PX86PDPT  pPdptGst;
+            rc = PGM_GCPHYS_2_PTR(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, &pPdptGst);
+            AssertRCReturn(rc, rc);
+
+            Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
+            /* Create a reference back to the PDPT by using the index in its shadow page. */
+            rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, pShwPage->idx, iPdPt, &pShwPage);
+        }
+        else
+            rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
+
         if (rc == VERR_PGM_POOL_FLUSHED)
             return VINF_PGM_SYNC_CR3;
 
