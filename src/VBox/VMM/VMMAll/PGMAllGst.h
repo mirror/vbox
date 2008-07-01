@@ -468,25 +468,26 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
             PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
 
-            Assert(!HWACCMIsNestedPagingActive(pVM));
-
             pVM->pgm.s.pGstPaePML4HC = (R3R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
 
-            if (pVM->pgm.s.pHCShwAmd64CR3)
+            if (!HWACCMIsNestedPagingActive(pVM))
             {
-                pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
-                pVM->pgm.s.pHCShwAmd64CR3 = 0;
-            }
+                if (pVM->pgm.s.pHCShwAmd64CR3)
+                {
+                    pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
+                    pVM->pgm.s.pHCShwAmd64CR3 = 0;
+                }
 
-            Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-            rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.pHCShwAmd64CR3);
-            if (rc == VERR_PGM_POOL_FLUSHED)
-            {
-                AssertFailed(); /* check if we handle this properly!! */
-                return VINF_PGM_SYNC_CR3;
+                Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
+                rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.pHCShwAmd64CR3);
+                if (rc == VERR_PGM_POOL_FLUSHED)
+                {
+                    AssertFailed(); /* check if we handle this properly!! */
+                    return VINF_PGM_SYNC_CR3;
+                }
+                pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
+                pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pHCShwAmd64CR3->Core.Key;
             }
-            pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
-            pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pHCShwAmd64CR3->Core.Key;
 # endif
         }
         else
@@ -514,6 +515,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     LogFlow(("UnmapCR3\n"));
 
     int rc = VINF_SUCCESS;
+
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     pVM->pgm.s.pGuestPDHC = 0;
     pVM->pgm.s.pGuestPDGC = 0;
@@ -529,14 +531,16 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    Assert(!HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pGstPaePML4HC = 0;
-    pVM->pgm.s.pHCPaePML4    = 0;
-    if (pVM->pgm.s.pHCShwAmd64CR3)
+    if (!HWACCMIsNestedPagingActive(pVM))
     {
-        PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
-        pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
-        pVM->pgm.s.pHCShwAmd64CR3 = NULL;
+        pVM->pgm.s.pHCPaePML4    = 0;
+        if (pVM->pgm.s.pHCShwAmd64CR3)
+        {
+            PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
+            pVM->pgm.s.pHCShwAmd64CR3 = NULL;
+        }
     }
 
 #else /* prot/real mode stub */
