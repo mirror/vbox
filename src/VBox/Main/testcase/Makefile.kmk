@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox API testcases.
+# Sub-Makefile for the VBox API testcases.
 #
 
 #
@@ -19,8 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../..
+else
+DEPTH    ?= ../../../..
 SUB_DEPTH = ..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
