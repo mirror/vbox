@@ -441,9 +441,9 @@
 #define VERR_SSM_INTEGRITY                  (-1810)
 /** The saved state file magic was not recognized. */
 #define VERR_SSM_INTEGRITY_MAGIC            (-1811)
-/** The saved state file magic was not recognized. */
+/** The saved state file version is not supported. */
 #define VERR_SSM_INTEGRITY_VERSION          (-1812)
-/** The saved state file magic was not recognized. */
+/** The saved state file size didn't match the one in the header. */
 #define VERR_SSM_INTEGRITY_SIZE             (-1813)
 /** The CRC of the saved state file did match. */
 #define VERR_SSM_INTEGRITY_CRC              (-1814)
