@@ -58,8 +58,13 @@ ifeq ($(VBOX_PATH_QT4),)
     VBOX_PATH_QT4_FRAMEWORKS ?= /Library/Frameworks
    endif
   endif
- else ifeq ($(KBUILD_TARGET),win)
+ else if1of ($(KBUILD_TARGET),win)
   VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
+ else if1of ($(KBUILD_TARGET),solaris)
+  VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
+  ifneq ($(VBOX_PATH_QT4),)
+   VBOX_WITH_QT4_SUN = 1
+  endif 
  endif
 endif
 ifeq ($(VBOX_PATH_QT4),)
@@ -114,6 +119,8 @@ else
   # Qt4 compiled by Sun with altered library names
   VBOX_LIBS_QT4      = $(patsubst %, VBox%, $(VBOX_MODULE_QT4))
   VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/libVBox%.so.4, $(VBOX_MODULE_QT4))
+  # Export the ld library path
+  export LD_LIBRARY_PATH := $(VBOX_PATH_QT4_LIB):$(LD_LIBRARY_PATH)
  else
   VBOX_LIBS_QT4      = $(VBOX_MODULE_QT4)
   VBOX_QT4_RUNTIME   =
@@ -147,10 +154,12 @@ ifeq ($(KBUILD_TARGET),win)
  else
   VBOX_MOC4    += -DWIN32
  endif
-else ifeq ($(KBUILD_TARGET),linux)
- # when nothing special is defined, Q_OS_UNIX/Q_WS_X11 will be set
 else ifeq ($(KBUILD_TARGET),darwin)
   VBOX_MOC4    += -D__APPLE__ -D__GNUC__
+else ifeq ($(KBUILD_TARGET),solaris)
+  VBOX_MOC4    += -D__sun
+else ifeq ($(KBUILD_TARGET),linux)
+ # when nothing special is defined, Q_OS_UNIX/Q_WS_X11 will be set
 else
  $(error Port me!)
 endif
@@ -290,6 +299,10 @@ else # the gcc guys:
 	/usr/include \
 	/usr/X11R6/include \
 	/usr/local/include
+  endif
+  ifeq ($(KBUILD_TARGET),solaris)
+   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
+        rt socket nsl
   endif
  endif
 
