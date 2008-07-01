@@ -78,7 +78,8 @@ ifeq ($(KBUILD_TARGET),win)
  	$(PATH_VBoxCOM)/VirtualBox.h \
  	$(PATH_VBoxCOM)/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.tlb
-else
+ VBOX_MAIN_PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
+else # xpcom
  INSTALLS       += xpcom-components
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
  ifeq ($(KBUILD_TARGET),linux)
@@ -93,7 +94,8 @@ else
     $(IDLHEADER) \
     $(IDLTYPELIB)
 
-endif
+ VBOX_MAIN_PREREQS = $(IDLTYPELIB) $(IDLHEADER)
+endif # xpcom
 
 
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
@@ -192,6 +194,8 @@ VBoxSVC_LIBS.solaris = \
 	adm \
 	devinfo
 
+VBoxSVC_INTERMEDIATES = $(VBOX_MAIN_PREREQS)
+
 VBoxSVC_SOURCES = \
 	Global.cpp \
 	Logging.cpp \
@@ -288,6 +292,7 @@ VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \
 	.
+VBoxSVCM_INTERMEDIATES  = $(VBOX_MAIN_PREREQS)
 VBoxSVCM_SOURCES        = \
 	xpcom/server_module.cpp
 ifdef VBOX_WITH_ORIGIN
@@ -303,6 +308,7 @@ $(PATH_TARGET)/VBoxSVCM.def:
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
 endif
+VBoxSVCM_INTERMEDIATES = $(IDLHEADER)
 
 endif # VBOX_WITH_XPCOM
 
@@ -372,6 +378,8 @@ endif
 VBoxC_LIBS += \
 	$(LIB_VMM) \
 	$(LIB_REM)
+
+VBoxC_INTERMEDIATES = $(VBOX_MAIN_PREREQS)
 
 VBoxC_SOURCES = \
 	Global.cpp \
@@ -456,6 +464,7 @@ VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/$(notdir $(LIB_SETT
 # VBoxCOM - COM Abstraction Layer library
 #
 VBoxCOM_TEMPLATE        = VBOXMAINLIB
+VBoxCOM_INTERMEDIATES   = $(VBOX_MAIN_PREREQS)
 VBoxCOM_SOURCES         = \
 	glue/com.cpp \
 	glue/initterm.cpp \
@@ -476,29 +485,8 @@ endif
 
 
 #
-# Generate _DEPS on all sources which depends on generated headers.
-#
-ifeq ($(KBUILD_TARGET),win)
-PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
-else
-PREREQS = $(IDLTYPELIB) $(IDLHEADER)
-endif
-
-# brute force way to ensure the prereqs are generated before anything is compiled.
-define def_src_deps
-$(src)_ORDERDEPS += $(PREREQS)
-endef
-$(foreach src,\
-	$(VBoxC_SOURCES)   $(VBoxC_SOURCES.$(KBUILD_TARGET)) \
-	$(VBoxSVC_SOURCES) $(VBoxSVC_SOURCES.$(KBUILD_TARGET)) \
-	$(VBoxCOM_SOURCES) \
-	,$(eval $(value def_src_deps)))
-
-
-#
 # Embed XML Schema files to VBoxSVC
 #
-
 VBOX_XML_SCHEMA_H               = $(PATH_TARGET)/xml_VirtualBox_settings_xsd.h
 VBOX_XML_SCHEMA_COMMON_H        = $(PATH_TARGET)/xml_VirtualBox_settings_common_xsd.h
 VBOX_XML_CONVERTER_TEMPLATE_H   = $(PATH_TARGET)/xml_SettingsConverter_xsl.h
@@ -665,10 +653,6 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/lib
 
 endif
-
-# bird: anyone still using this? If not it's a gonner.
-## Hack to work around wine's trouble with midl.exe and rc.exe (seems to be msvcrt.dll related)
-#gen: $(PREREQS)
 
 
 #
