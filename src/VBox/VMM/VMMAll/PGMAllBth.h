@@ -155,8 +155,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PX86PML4E    pPml4eSrc = &Pml4eSrc;
 
     /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
-    Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
-    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
+    Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A;
+    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A;
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
