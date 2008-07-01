@@ -34,6 +34,9 @@ endif
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/Storage/VBoxHDDFormats/Makefile.kmk
+endif
 
 # Subdirs with complex makefiles.
 ifdef VBOX_WITH_INTEL_PXE
@@ -42,11 +45,6 @@ SUBDIRS_CLEAN     = PC/PXE
 else
 SUBDIRS_LIBRARIES = PC/Etherboot-src
 SUBDIRS_CLEAN     = PC/Etherboot-src
-endif
-
-ifndef VBOX_OSE
-SUBDIRS_LIBRARIES += Storage/VBoxHDDFormats
-SUBDIRS_CLEAN     += Storage/VBoxHDDFormats
 endif
 
 #
