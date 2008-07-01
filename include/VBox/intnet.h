@@ -468,6 +468,7 @@ typedef struct INTNETTRUNKIFPORT
      * object in order to prevent racing incoming/outgoing packets and
      * device enabling/disabling.
      *
+     * @returns IPRT status code (see RTSemEventWait).
      * @param   pIfPort     Pointer to this structure.
      * @param   cMillies    The number of milliseconds to wait. 0 means
      *                      no waiting at all. Use RT_INDEFINITE_WAIT for
@@ -475,7 +476,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @remarks Called holding the out-bound trunk port lock.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
+    DECLR0CALLBACKMEMBER(int, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
 
     /**
      * Tests if the mac address belongs to any of the host NICs
