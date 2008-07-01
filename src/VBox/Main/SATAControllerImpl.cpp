@@ -56,7 +56,7 @@ void SATAController::FinalRelease()
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the USB controller object.
+ * Initializes the SATA controller object.
  *
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
