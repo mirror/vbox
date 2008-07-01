@@ -19,7 +19,11 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
+DEPTH     = ../../..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.

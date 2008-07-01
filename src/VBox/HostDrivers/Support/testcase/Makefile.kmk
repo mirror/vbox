@@ -28,8 +28,12 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../..
+else
 SUB_DEPTH = ../..
+DEPTH    ?= ../../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += \
@@ -83,5 +87,5 @@ tstGIP-2_SOURCES      = tstGIP-2.cpp
 tstGetPagingMode_TEMPLATE = VBOXR3TSTEXE
 tstGetPagingMode_SOURCES = tstGetPagingMode.cpp
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
