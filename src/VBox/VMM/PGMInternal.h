@@ -1379,8 +1379,6 @@ typedef enum PGMPOOLKIND
 
     /** Shw: 64-bit PML4;   Gst: 64-bit PML4. */
     PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4,
-    /** Shw: 64-bit PML4; Gst: no paging  */
-    PGMPOOLKIND_64BIT_PML4_FOR_PHYS,
 
     /** Shw: Root 32-bit page directory. */
     PGMPOOLKIND_ROOT_32BIT_PD,
@@ -3359,6 +3357,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX
 {
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
     if ((*ppPml4e)->n.u1Present)
     {
@@ -3389,6 +3388,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
 {
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
     if ((*ppPml4e)->n.u1Present)
     {
@@ -3431,6 +3431,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
 {
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     if (pPGM->pGstPaePML4HC->a[iPml4e].n.u1Present)
     {
         PX86PDPT pPdptTemp;
@@ -3471,6 +3472,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
 {
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     if (pPGM->pGstPaePML4HC->a[iPml4e].n.u1Present)
     {
         PX86PDPT pPdptTemp;
@@ -3515,6 +3517,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
 {
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
     if ((*ppPml4e)->n.u1Present)
     {
@@ -3560,6 +3563,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
     PX86PDPE pPdpe;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
+    Assert(pPGM->pGstPaePML4HC);
     pPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
     if (pPml4e->n.u1Present)
     {

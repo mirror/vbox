@@ -1055,7 +1055,6 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             return true;
 
         /*
@@ -1078,7 +1077,6 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1104,7 +1102,6 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1329,7 +1326,6 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-                case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
                 case PGMPOOLKIND_ROOT_NESTED:
                     break;
                 default:
@@ -1379,7 +1375,6 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
@@ -1465,7 +1460,6 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
@@ -2158,7 +2152,6 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             return 8;
 
         default:
@@ -2202,7 +2195,6 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /** @todo can we return 0? (nobody is calling this...) */
             AssertFailed();
@@ -3209,7 +3201,6 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
 
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
-        case PGMPOOLKIND_64BIT_PML4_FOR_PHYS:
             pgmPoolTrackDerefPML464Bit(pPool, pPage, (PX86PML4)pvShw);
             break;
 
@@ -3482,8 +3473,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (    (   pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4
-             || pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_PHYS)
+    if (    pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4
         &&  PGMGetHyperCR3(CTXSUFF(pPool->pVM)) == pPage->Core.Key)
     {
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
