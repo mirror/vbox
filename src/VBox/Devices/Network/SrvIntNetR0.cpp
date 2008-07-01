@@ -96,7 +96,7 @@ typedef struct INTNETNETWORK
     /** The network mutex.
      * It protects everything dealing with this network. */
     RTSEMFASTMUTEX          FastMutex;
-    /** List of interfaces attached to the network. */
+    /** List of interfaces connected to the network. */
     PINTNETIF               pIFs;
     /** Pointer to the instance data. */
     struct INTNET          *pIntNet;
@@ -1436,7 +1436,7 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
 
 
 /**
- * Opens a network interface and attaches it to the specified network.
+ * Opens a network interface and connects it to the specified network.
  *
  * @returns VBox status code.
  * @param   pIntNet         The internal network instance.

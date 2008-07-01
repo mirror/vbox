@@ -743,7 +743,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet);
 INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet);
 
 /**
- * Opens a network interface and attaches it to the specified network.
+ * Opens a network interface and connects it to the specified network.
  *
  * @returns VBox status code.
  * @param   pIntNet         The internal network instance.
