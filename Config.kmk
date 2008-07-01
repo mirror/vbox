@@ -1998,10 +1998,10 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
 endif
 
 #
-# Template for building static R3 executables and any static 
+# Template for building static R3 executables and any static
 # libraries they link with.
 #
-TEMPLATE_VBOXR3STATIC           = VBox Static Ring 3 EXE 
+TEMPLATE_VBOXR3STATIC           = VBox Static Ring 3 EXE
 TEMPLATE_VBOXR3STATIC_EXTENDS   = VBOXR3EXE
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3STATIC_CFLAGS   = $(filter-out -MD, $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT
@@ -2471,15 +2471,20 @@ else # the gcc guys:
 endif # !win
 
 # Add COM/XPCOM stuff
-TEMPLATE_VBOXQTGUIEXE_LIBS            += \
+TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def
- TEMPLATE_VBOXQTGUIEXE_DEFS            += VBOX_WITH_XPCOM
- TEMPLATE_VBOXQTGUIEXE_INCS            += \
+ TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
+ TEMPLATE_VBOXQTGUIEXE_INCS += \
 	$(VBOX_XPCOM_INCS)
- TEMPLATE_VBOXQTGUIEXE_LIBS            += \
+ TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	$(LIB_XPCOM)
+ TEMPLATE_VBOXQTGUIEXE_DEPS += \
+	$(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+else
+ TEMPLATE_VBOXQTGUIEXE_DEPS += \
+	$(VBOX_PATH_SDK)/include/VirtualBox.h
 endif
 
 #
