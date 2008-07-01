@@ -19,7 +19,11 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
+DEPTH     = ../../..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s) first if we're doing parallel building.
@@ -91,6 +95,8 @@ else
 
 endif
 
+
+VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 
 #
 # The Main API documentation
@@ -168,7 +174,7 @@ VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
-	$(PATH_CURRENT)
+	.
 VBoxSVC_INCS.win = \
 	$(PATH_VBoxCOM)
 ifdef VBOX_WITH_USB
@@ -281,7 +287,7 @@ VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
 VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \
-	$(PATH_CURRENT)
+	.
 VBoxSVCM_SOURCES        = \
 	xpcom/server_module.cpp
 ifdef VBOX_WITH_ORIGIN
@@ -351,7 +357,7 @@ VBoxC_INCS          = \
 	$(PATH_VBoxC)
 VBoxC_INCS.win      = \
 	$(PATH_VBoxCOM) \
-	$(PATH_SUB_CURRENT)
+	.
 
 ifdef VBOX_WITH_ORIGIN
 VBoxC_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
@@ -497,15 +503,15 @@ VBOX_XML_SCHEMA_H               = $(PATH_TARGET)/xml_VirtualBox_settings_xsd.h
 VBOX_XML_SCHEMA_COMMON_H        = $(PATH_TARGET)/xml_VirtualBox_settings_common_xsd.h
 VBOX_XML_CONVERTER_TEMPLATE_H   = $(PATH_TARGET)/xml_SettingsConverter_xsl.h
 
-VBOX_XML_SCHEMA_COMMON  = xml/VirtualBox-settings-common.xsd
-VBOX_XML_SCHEMA.darwin  = xml/VirtualBox-settings-macosx.xsd
-VBOX_XML_SCHEMA.linux   = xml/VirtualBox-settings-linux.xsd
-VBOX_XML_SCHEMA.freebsd = xml/VirtualBox-settings-freebsd.xsd
-VBOX_XML_SCHEMA.win     = xml/VirtualBox-settings-windows.xsd
-VBOX_XML_SCHEMA.os2     = xml/VirtualBox-settings-os2.xsd
-VBOX_XML_SCHEMA.solaris = xml/VirtualBox-settings-solaris.xsd
+VBOX_XML_SCHEMA_COMMON  = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-common.xsd
+VBOX_XML_SCHEMA.darwin  = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-macosx.xsd
+VBOX_XML_SCHEMA.linux   = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-linux.xsd
+VBOX_XML_SCHEMA.freebsd = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-freebsd.xsd
+VBOX_XML_SCHEMA.win     = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-windows.xsd
+VBOX_XML_SCHEMA.os2     = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-os2.xsd
+VBOX_XML_SCHEMA.solaris = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-solaris.xsd
 
-VBOX_XML_CONVERTER_TEMPLATE = xml/SettingsConverter.xsl
+VBOX_XML_CONVERTER_TEMPLATE = $(VBOX_PATH_MAIN_SRC)/xml/SettingsConverter.xsl
 
 VirtualBoxImplExtra.cpp_DEPS = \
 	$(VBOX_XML_SCHEMA_H) $(VBOX_XML_SCHEMA_COMMON_H) $(VBOX_XML_CONVERTER_TEMPLATE_H)
@@ -531,7 +537,7 @@ OTHER_CLEAN += \
 #
 VBOX_XML_SCHEMADEFS_H   = $(PATH_TARGET)/SchemaDefs.h
 VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/SchemaDefs.cpp
-VBOX_XML_SCHEMADEFS_XSL = xml/SchemaDefs.xsl
+VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
 
 VBoxC_DEPS      += $(VBOX_XML_SCHEMADEFS_H)
 VBoxC_INCS      += $(PATH_TARGET)
@@ -592,13 +598,14 @@ include $(KBUILD_PATH)/subfooter.kmk
 # Additions rules.
 #
 
-XIDLFILE = idl/VirtualBox.xidl
+XIDLFILE = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
 
 ifneq ($(KBUILD_TARGET),win)
 
+## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
 xpcom/helpers.cpp: $(IDLTYPELIB)
 
-$(IDLFILE): idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
+$(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
@@ -623,15 +630,15 @@ ifdef VBOX_WITH_VRDP
  IDL_DEFS += /D VBOX_VRDP
 endif
 
-$(IDLFILE): idl/midl.xsl $(XIDLFILE)
+$(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(XIDLFILE)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(PATH_TARGET)/VBoxSVC.rgs: win/VirtualBox_rgs.xsl $(XIDLFILE)
+$(PATH_TARGET)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(XIDLFILE)
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $^
 
-$(PATH_TARGET)/VBoxC.rgs: win/VirtualBox_rgs.xsl $(XIDLFILE)
+$(PATH_TARGET)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(XIDLFILE)
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $^
 
 ## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
