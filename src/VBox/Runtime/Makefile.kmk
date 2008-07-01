@@ -28,18 +28,21 @@
 # additional information or have any questions.
 #
 
-
-DEPTH ?= ../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../..
+else
 SUB_DEPTH = .
+DEPTH    ?= ../../..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+ LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
- LIBRARIES.win.x86 = RuntimeGuestR0NT4
+ LIBRARIES.win.x86 += RuntimeGuestR0NT4
  ifndef VBOX_WITH_ADDITION_DRIVERS
   if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
    LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
@@ -51,26 +54,26 @@ else
  #
  # Normal build.
  #
- include testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
- BLDPROGS   = uniread
- LIBRARIES  = RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
+ BLDPROGS += uniread
+ LIBRARIES += RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
   LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
-  LIBRARIES.win.x86 = RuntimeGuestR0NT4
+  #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
+  LIBRARIES.win.x86 += RuntimeGuestR0NT4
   ifndef VBOX_WITH_ADDITION_DRIVERS
    if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
    endif
   endif
  endif # VBOX_WITH_ADDITIONS
- LIBRARIES.l4 = RuntimeR3L4 RuntimeLnxHostR3
- DLLS = VBoxRT
- OTHER_CLEAN = \
+ LIBRARIES.l4 += RuntimeR3L4 RuntimeLnxHostR3
+ DLLS += VBoxRT
+ OTHER_CLEAN += \
 	$(PATH_TARGET)/errmsgdata.h \
 	$(PATH_TARGET)/errmsgcomdata.h \
 	$(PATH_TARGET)/Doxyfile \
@@ -78,6 +81,12 @@ else
 	$(PATH_TARGET)/docs.iprt
 
 endif
+
+
+#
+# Globals
+#
+VBOX_PATH_RUNTIME_SRC := $(PATH_SUB_CURRENT)
 
 
 #
@@ -1161,10 +1170,10 @@ endif # !VBOX_WITH_SOLARIS_VBI
 #                  is in the backdoor logging and the lack of sup.h (which should be
 #                  made irrelevant even for RuntimeR0Drv).
 #
-RuntimeGuestR0_TEMPLATE                := VBOXGUESTR0LIB
-RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
-RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
-RuntimeGuestR0_EXTENDS                 = RuntimeR0Drv
+RuntimeGuestR0_TEMPLATE  := VBOXGUESTR0LIB
+RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
+RuntimeGuestR0_SOURCES   += VBox/logbackdoor.cpp
+RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 
 # HACK: no vbi for the solaris guest additions - yet.
 RuntimeGuestR0_SOURCES.solaris = \
@@ -1331,13 +1340,18 @@ endif
 #
 # Generate the status code data.
 #
-$(PATH_TARGET)/errmsgdata.h: common/err/errmsg.sed $(DEPTH)/include/iprt/err.h $(DEPTH)/include/VBox/err.h
+$(PATH_TARGET)/errmsgdata.h: \
+		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsg.sed \
+		$(PATH_ROOT)/include/iprt/err.h \
+		$(PATH_ROOT)/include/VBox/err.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
 ## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
-$(PATH_TARGET)/errmsgcomdata.h: common/err/errmsgcom.sed $(PATH_SDK_WINPSDK_INC)/WinError.h
+$(PATH_TARGET)/errmsgcomdata.h: \
+		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
+		$(PATH_SDK_WINPSDK_INC)/WinError.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
@@ -1358,18 +1372,18 @@ DOXYGEN_INPUT_DIRS = \
 	$(PATH_ROOT)/include/iprt/nocrt \
 	$(PATH_ROOT)/include/iprt/nocrt/x86 \
 	$(PATH_ROOT)/include/iprt/nocrt/amd64 \
-	include/internal \
-	common/alloc \
-	common/checksum \
-	common/err \
-	common/ldr \
-	common/log \
-	common/misc \
-	common/string \
-	common/table \
-	common/time \
-	VBox/ \
-	$(foreach dir, . r3 r0drv,\
+	$(VBOX_PATH_RUNTIME_SRC)/include/internal \
+	$(VBOX_PATH_RUNTIME_SRC)/common/alloc \
+	$(VBOX_PATH_RUNTIME_SRC)/common/checksum \
+	$(VBOX_PATH_RUNTIME_SRC)/common/err \
+	$(VBOX_PATH_RUNTIME_SRC)/common/ldr \
+	$(VBOX_PATH_RUNTIME_SRC)/common/log \
+	$(VBOX_PATH_RUNTIME_SRC)/common/misc \
+	$(VBOX_PATH_RUNTIME_SRC)/common/string \
+	$(VBOX_PATH_RUNTIME_SRC)/common/table \
+	$(VBOX_PATH_RUNTIME_SRC)/common/time \
+	$(VBOX_PATH_RUNTIME_SRC)/VBox \
+	$(foreach dir, $(VBOX_PATH_RUNTIME_SRC) $(VBOX_PATH_RUNTIME_SRC)/r3 $(VBOX_PATH_RUNTIME_SRC)/r0drv,\
 		$(dir) \
 		$(dir)/darwin \
 		$(dir)/l4 \
@@ -1404,12 +1418,12 @@ DOXYGEN_OUTPUT = $(PATH_OUT)/docs/iprt
 -include $(PATH_TARGET)/Doxyfile.dep
 
 # Generate the Doxyfile
-$(PATH_TARGET)/Doxyfile: Doxyfile Makefile.kmk \
+$(PATH_TARGET)/Doxyfile: $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $(VBOX_PATH_RUNTIME_SRC)/Makefile.kmk \
 		$(comp-vars DOXYGEN_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
 		$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $(call DIRDEP, $(PATH_TARGET))
 	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.dep
-	$(CP) -f Doxyfile $@.tmp
+	$(CP) -f $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $@.tmp
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(DOXYGEN_OUTPUT)"
 	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"

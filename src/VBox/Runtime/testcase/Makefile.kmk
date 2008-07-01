@@ -28,8 +28,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../..
+else
 SUB_DEPTH = ..
+DEPTH    ?= ../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
@@ -45,7 +49,7 @@ TEMPLATE = VBOXR3TSTEXE
 #
 # Target lists
 #
-PROGRAMS = \
+PROGRAMS += \
 	tstAvl \
 	tstBitOperations \
 	tstCidr \
@@ -83,20 +87,20 @@ PROGRAMS = \
 	tstUtf8 \
 	tstUuid
 # tstSems
-PROGRAMS.win = \
+PROGRAMS.win += \
 	tstRTProcWait \
 	tstCritSectW32 \
 	tstFileAppendWin-1 \
 	ntGetTimerResolution
-PROGRAMS.linux = \
+PROGRAMS.linux += \
 	tstRTProcWait \
 	tstBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3 \
 	tstSemMutex
-PROGRAMS.l4 = \
+PROGRAMS.l4 += \
 	tstIoCtl
-SYSMODS = \
+SYSMODS += \
 	tstLdrObj \
 	tstLdrObjR0
 if1of ($(VBOX_LDR_FMT)), lx pe)
