@@ -1183,7 +1183,7 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
     }
     if (cbFile != pHdr->cbFile)
     {
-        Log(("SSM: File size mistmatch. hdr.cbFile=%lld actual %lld\n", pHdr->cbFile, cbFile));
+        Log(("SSM: File size mismatch. hdr.cbFile=%lld actual %lld\n", pHdr->cbFile, cbFile));
         return VERR_SSM_INTEGRITY_SIZE;
     }
 
