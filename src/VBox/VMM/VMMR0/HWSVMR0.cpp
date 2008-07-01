@@ -622,6 +622,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         if (pVM->hwaccm.s.fNestedPaging)
         {
             pVMCB->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
+            Assert(pVMCB->ctrl.u64NestedPagingCR3);
             pVMCB->guest.u64CR3             = pCtx->cr3;
         }
         else
@@ -1360,7 +1361,6 @@ ResumeExecution:
         RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
         Assert(pVM->hwaccm.s.fNestedPaging);
-
         Log(("Nested page fault at %VGv cr2=%VGp error code %x\n", pCtx->rip, uFaultAddress, errCode));
         /* Exit qualification contains the linear address of the page fault. */
         TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
