@@ -29,7 +29,8 @@ vboxvfs_INCS         := \
        $(PATH_TARGET)
 vboxvfs_SOURCES       = \
 	vboxvfs_vfsops.c \
-	vboxvfs_vnops.c
+	vboxvfs_vnops.c \
+	vboxvfs_utils.c
 vboxvfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)

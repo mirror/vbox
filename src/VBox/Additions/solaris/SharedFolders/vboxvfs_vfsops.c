@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox File System Driver for Solaris Guests.
+ * VirtualBox File System Driver for Solaris Guests. VFS operations.
  */
 
 /*
@@ -37,18 +37,9 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The module name. */
-#define DEVICE_NAME              "vboxvfs"
-/** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "filesystem for VirtualBox Shared Folders"
-
 /** Mount Options */
 #define MNTOPT_VBOXVFS_UID       "uid"
 #define MNTOPT_VBOXVFS_GID       "gid"
-
-/** Helpers */
-#define VFS2VBOXVFS(vfs)         ((vboxvfs_globinfo_t *)((vfs)->vfs_data))
-#define VBOXVFS2VFS(vboxvfs)     ((vboxvfs)->pVFS)
 
 
 /*******************************************************************************
@@ -140,7 +131,7 @@ static void *g_pVBoxVFSState;
 /** GCC C++ hack. */
 unsigned __gxx_personality_v0 = 0xdecea5ed;
 /** Global connection to the client. */
-static VBSFCLIENT g_VBoxVFSClient;
+VBSFCLIENT g_VBoxVFSClient;
 /** Global VFS Operations pointer. */
 vfsops_t *g_pVBoxVFS_vfsops;
 /** The file system type identifier. */
@@ -261,10 +252,12 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     char *pszShare = NULL;
     size_t cbShare = NULL;
     pathname_t PathName;
+    vboxvfs_vnode_t *pVNodeRoot = NULL;
     vnode_t *pVNodeSpec = NULL;
     vnode_t *pVNodeDev = NULL;
     dev_t Dev = 0;
     SHFLSTRING *pShflShareName = NULL;
+    RTFSOBJINFO FSInfo;
     size_t cbShflShareName = 0;
     vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = NULL;
     int AddrSpace = (pMount->flags & MS_SYSSPACE) ? UIO_SYSSPACE : UIO_USERSPACE;
@@ -417,10 +410,10 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     }
 
     /* Allocate the global info. structure. */
-    pVBoxVFSGlobalInfo = RTMemAllocZ(sizeof(*pVBoxVFSGlobalInfo));
+    pVBoxVFSGlobalInfo = RTMemAlloc(sizeof(*pVBoxVFSGlobalInfo));
     if (!pVBoxVFSGlobalInfo)
     {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for global struct.\n", sizeof(*pVBoxVFSGlobalInfo)));
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for global struct.\n", sizeof(*pVBoxVFSGlobalInfo)));
         return ENOMEM;
     }
 
@@ -456,7 +449,41 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     pVFS->vfs_dev = Dev;
     vfs_make_fsid(&pVFS->vfs_fsid, Dev, g_VBoxVFSType);
 
-    /* @todo root vnode */
+    /* Allocate root vboxvfs_vnode_t object */
+    pVNodeRoot = RTMemAlloc(sizeof(*pVNodeRoot));
+    if (!pVNodeRoot)
+    {
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for root node.\n", sizeof(*pVNodeRoot)));
+        return ENOMEM;
+    }
+
+    /* Initialize the mutex */
+    mutex_init(&pVNodeRoot->MtxContents, "VNodeMtx", MUTEX_DEFAULT, NULL);
+
+    /* Allocate root path */
+    pVNodeRoot->pPath = RTMemAllocZ(sizeof(SHFLSTRING) + 1);
+    if (!pVNodeRoot->pPath)
+    {
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for root path.\n", sizeof(SHFLSTRING) + 1));
+        return ENOMEM;
+    }
+
+    /* Initialize root path */
+    pVNodeRoot->pPath->u16Length = 1;
+    pVNodeRoot->pPath->u16Size = 2;
+    pVNodeRoot->pPath->String.utf8[0] = '/';
+    pVNodeRoot->pPath->String.utf8[1] = '\0';
+
+    /* Stat root node info from host */
+    rc = vboxvfs_Stat(__func__, pVBoxVFSGlobalInfo, pVNodeRoot->pPath, &FSInfo, B_FALSE);
+    if (rc)
+    {
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: vboxvfs_Stat failed rc(errno)=%d\n", rc));
+        return rc;
+    }
+
+    /* Initialize the root vboxvfs_node_t object */
+    vboxvfs_InitVNode(pVBoxVFSGlobalInfo, pVNodeRoot, &FSInfo);
 
     return 0;
 }
@@ -481,13 +508,13 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
 
     /* @todo implement ref-counting of active vnodes & check for busy state here. */
     /* @todo mutex protection needed here */
-    pVBoxVFSGlobalInfo = VFS2VBOXVFS(pVFS);
+    pVBoxVFSGlobalInfo = VFS_TO_VBOXVFS(pVFS);
 
     rc = vboxCallUnmapFolder(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map);
     if (VBOX_FAILURE(rc))
         LogRel((DEVICE_NAME ":VBoxVFS_Unmount: failed to unmap shared folder. rc=%d\n", rc));
 
-    VN_RELE(pVBoxVFSGlobalInfo->pVNodeRoot);
+    VN_RELE(VBOXVN_TO_VN(pVBoxVFSGlobalInfo->pVNodeRoot));
 
     RTMemFree(pVBoxVFSGlobalInfo);
     pVFS->vfs_data = NULL;
@@ -497,8 +524,8 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
 
 static int VBoxVFS_Root(vfs_t *pVFS, vnode_t **ppVNode)
 {
-    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = VFS2VBOXVFS(pVFS);
-    *ppVNode = pVBoxVFSGlobalInfo->pVNodeRoot;
+    vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = VFS_TO_VBOXVFS(pVFS);
+    *ppVNode = VBOXVN_TO_VN(pVBoxVFSGlobalInfo->pVNodeRoot);
     VN_HOLD(*ppVNode);
 
     return 0;
@@ -512,7 +539,7 @@ static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat)
     dev32_t             Dev32;
     int                 rc;
 
-    pVBoxVFSGlobalInfo = VFS2VBOXVFS(pVFS);
+    pVBoxVFSGlobalInfo = VFS_TO_VBOXVFS(pVFS);
     cbBuffer = sizeof(VolumeInfo);
     rc = vboxCallFSInfo(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbBuffer,
                     (PSHFLDIRINFO)&VolumeInfo);
