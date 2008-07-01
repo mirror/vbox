@@ -28,8 +28,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../..
+else
 SUB_DEPTH = ..
+DEPTH    ?= ../../../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -51,7 +55,7 @@ OTHERS.linux    += \
         $(if $(VBOX_OSE),,$(PATH_BIN)/src/dkms.conf)
 endif
 
-INSTALLS.linux = vboxmod-bin vboxmod-sh
+INSTALLS.linux  += vboxmod-bin vboxmod-sh
 
 #
 # Include sub-makefile(s).
@@ -308,5 +312,5 @@ vboxdrv_SOURCES       = \
 endif # solaris
 
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
