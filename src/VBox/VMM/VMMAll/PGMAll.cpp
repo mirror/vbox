@@ -1305,7 +1305,7 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
 
 /**
  * Performs and schedules necessary updates following a CR3 load or reload, 
- * without actually the TLB as with PGMFlushTLB.
+ * without actually flushing the TLB as with PGMFlushTLB.
  *
  * This will normally involve mapping the guest PD or nPDPT
  *
