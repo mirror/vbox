@@ -1203,7 +1203,7 @@ ResumeExecution:
             {   /* A genuine pagefault.
                  * Forward the trap to the guest by injecting the exception and resuming execution.
                  */
-                Log(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->rip, uFaultAddress, errCode));
+                Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%RX64\n", pCtx->rip, uFaultAddress, errCode, pCtx->rsp));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
 
                 /* Now we must update CR2. */
