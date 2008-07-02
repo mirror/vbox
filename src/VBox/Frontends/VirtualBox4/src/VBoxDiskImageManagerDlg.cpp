@@ -910,7 +910,7 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
         default:
             break;
     }
-    return QMainWindow::eventFilter (aObject, aEvent);
+    return QIMainDialog::eventFilter (aObject, aEvent);
 }
 
 /* @todo: Currently not used (Ported from Qt3): */
