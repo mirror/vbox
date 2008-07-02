@@ -3641,6 +3641,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 
 #else
 
+    NOREF (aSwitchDesktop);
     AssertFailed();
     result = false;
 

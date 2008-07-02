@@ -108,7 +108,7 @@ void QIHelpButton::leaveEvent (QEvent * aEvent)
     update();
 }
 
-void QIHelpButton::paintEvent (QPaintEvent *aEvent)
+void QIHelpButton::paintEvent (QPaintEvent * /* aEvent */)
 {
     QPainter painter (this);
     painter.drawPixmap (PushButtonLeftOffset, PushButtonTopOffset, mButtonPressed ? *mPressedPixmap: *mNormalPixmap);
