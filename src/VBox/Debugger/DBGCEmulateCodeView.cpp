@@ -1777,7 +1777,9 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 unsigned cParams = pDesc->au8[0] & 0x1f;
                 const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off =  X86DESC64_BASE(*pDesc);
+                uint64_t off =    pDesc->au16[0]
+                                | ((uint64_t)pDesc->au16[3] << 16)
+                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
@@ -1790,7 +1792,9 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             {
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off = X86DESC64_BASE(*pDesc);
+                uint64_t off =    pDesc->au16[0]
+                                | ((uint64_t)pDesc->au16[3] << 16)
+                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
