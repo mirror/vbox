@@ -40,7 +40,7 @@ public:
 
     CHardDisk hardDisk() { return mChd; }
     void setRecommendedFileName (const QString &aName);
-    void setRecommendedSize (Q_UINT64 aSize);
+    void setRecommendedSize (quint64 aSize);
 
 protected:
 
@@ -60,16 +60,16 @@ private slots:
 private:
 
     QString imageFileName();
-    Q_UINT64 imageSize();
+    quint64 imageSize();
     bool isDynamicImage();
-    void updateSizeToolTip (Q_UINT64 aSizeB);
+    void updateSizeToolTip (quint64 aSizeB);
     bool createHardDisk();
 
     QIWidgetValidator *mWvalNameAndSize;
     CHardDisk          mChd;
     int                mSliderScale;
-    Q_UINT64           mMaxVDISize;
-    Q_UINT64           mCurrentSize;
+    quint64            mMaxVDISize;
+    quint64            mCurrentSize;
 };
 
 #endif // __VBoxNewHDWzd_h__

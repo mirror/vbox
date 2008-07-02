@@ -535,8 +535,8 @@ public:
     static QChar decimalSep();
     static QString sizeRegexp();
 
-    static Q_UINT64 parseSize (const QString &);
-    static QString formatSize (Q_UINT64, int aMode = 0);
+    static quint64 parseSize (const QString &);
+    static QString formatSize (quint64, int aMode = 0);
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
 

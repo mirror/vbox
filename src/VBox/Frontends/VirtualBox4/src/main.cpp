@@ -186,14 +186,14 @@ int main (int argc, char **argv)
          * causing tool-buttons and dropped menu displayed in
          * different annoying color, so fixing palette button's color */
 //#warning "port me: any longer required?"
-        QPalette pal = a.palette();
-        pal.setColor (QPalette::Disabled, QColorGroup::Button,
-                      pal.color (QPalette::Disabled, QColorGroup::Background));
-        pal.setColor (QPalette::Active, QColorGroup::Button,
-                      pal.color (QPalette::Active, QColorGroup::Background));
-        pal.setColor (QPalette::Inactive, QColorGroup::Button,
-                      pal.color (QPalette::Inactive, QColorGroup::Background));
-        a.setPalette (pal);
+//        QPalette pal = a.palette();
+//        pal.setColor (QPalette::Disabled, QColorGroup::Button,
+//                      pal.color (QPalette::Disabled, QColorGroup::Background));
+//        pal.setColor (QPalette::Active, QColorGroup::Button,
+//                      pal.color (QPalette::Active, QColorGroup::Background));
+//        pal.setColor (QPalette::Inactive, QColorGroup::Button,
+//                      pal.color (QPalette::Inactive, QColorGroup::Background));
+//        a.setPalette (pal);
 #else /* !Q_WS_MAC */
         ::darwinDisableIconsInMenus();
 #endif /* Q_WS_MAC */

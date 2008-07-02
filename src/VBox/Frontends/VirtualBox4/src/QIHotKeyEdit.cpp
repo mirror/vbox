@@ -22,6 +22,8 @@
 
 #include "QIHotKeyEdit.h"
 #include "VBoxDefs.h"
+
+/* Qt includes */
 #include <QApplication>
 #include <QStyleOption>
 #include <QStylePainter>
@@ -122,10 +124,10 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
     setAutoFillBackground (true);
 
     QPalette p = palette();
-    p.setColor (QPalette::Active, QColorGroup::Foreground,
-                p.color (QPalette::Active, QColorGroup::Text));
-    p.setColor (QPalette::Active, QColorGroup::Background,
-                p.color (QPalette::Active, QColorGroup::Base));
+    p.setColor (QPalette::Active, QPalette::Foreground,
+                p.color (QPalette::Active, QPalette::Text));
+    p.setColor (QPalette::Active, QPalette::Background,
+                p.color (QPalette::Active, QPalette::Base));
     setPalette (p);
 
 #ifdef Q_WS_MAC
@@ -196,7 +198,7 @@ QSize QIHotKeyEdit::sizeHint() const
 {
     ensurePolished();
     QFontMetrics fm (font());
-    int h = QMAX (fm.lineSpacing(), 14) + 2;
+    int h = qMax (fm.lineSpacing(), 14) + 2;
     int w = fm.width ('x') * 17; // "some"
     int m = frameWidth() * 2;
     QStyleOption option;
@@ -214,7 +216,7 @@ QSize QIHotKeyEdit::minimumSizeHint() const
 {
     ensurePolished();
     QFontMetrics fm = fontMetrics();
-    int h = fm.height() + QMAX (2, fm.leading());
+    int h = fm.height() + qMax (2, fm.leading());
     int w = fm.maxWidth();
     int m = frameWidth() * 2;
     return QSize (w + m, h + m);
@@ -712,10 +714,10 @@ void QIHotKeyEdit::focusInEvent (QFocusEvent *aEvent)
     QLabel::focusInEvent (aEvent);
 
     QPalette p = palette();
-    p.setColor (QPalette::Active, QColorGroup::Foreground,
-                p.color (QPalette::Active, QColorGroup::HighlightedText));
-    p.setColor (QPalette::Active, QColorGroup::Background,
-                p.color (QPalette::Active, QColorGroup::Highlight));
+    p.setColor (QPalette::Active, QPalette::Foreground,
+                p.color (QPalette::Active, QPalette::HighlightedText));
+    p.setColor (QPalette::Active, QPalette::Background,
+                p.color (QPalette::Active, QPalette::Highlight));
     setPalette (p);
 }
 
@@ -724,10 +726,10 @@ void QIHotKeyEdit::focusOutEvent (QFocusEvent *aEvent)
     QLabel::focusOutEvent (aEvent);
 
     QPalette p = palette();
-    p.setColor (QPalette::Active, QColorGroup::Foreground,
-                p.color (QPalette::Active, QColorGroup::Text));
-    p.setColor (QPalette::Active, QColorGroup::Background,
-                p.color (QPalette::Active, QColorGroup::Base));
+    p.setColor (QPalette::Active, QPalette::Foreground,
+                p.color (QPalette::Active, QPalette::Text));
+    p.setColor (QPalette::Active, QPalette::Background,
+                p.color (QPalette::Active, QPalette::Base));
     setPalette (p);
 }
 

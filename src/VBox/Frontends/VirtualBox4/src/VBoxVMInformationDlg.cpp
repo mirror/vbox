@@ -37,7 +37,8 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     {
         /* Creating new information dialog if there is no one existing */
         mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (
-            aConsole, aSession, Qt::WType_TopLevel | Qt::WDestructiveClose);
+            aConsole, aSession, Qt::Window);
+        mSelfArray [machine.GetName()]->setAttribute (Qt::WA_DeleteOnClose);
     }
 
     VBoxVMInformationDlg *info = mSelfArray [machine.GetName()];

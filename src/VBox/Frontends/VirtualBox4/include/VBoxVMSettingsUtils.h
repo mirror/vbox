@@ -84,7 +84,7 @@ private slots:
 
     void keyPressEvent (QKeyEvent *aEvent)
     {
-        if (aEvent->QInputEvent::modifiers () == Qt::ControlButton)
+        if (aEvent->QInputEvent::modifiers () == Qt::ControlModifier)
         {
             switch (aEvent->key())
             {

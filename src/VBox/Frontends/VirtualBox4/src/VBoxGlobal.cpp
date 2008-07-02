@@ -226,7 +226,7 @@ public:
                     {
                         if (sVal.isEmpty() ||
                             sVal == QString ("%1")
-                                .arg ((Q_ULLONG) vboxGlobal().mainWindow()->winId()))
+                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
                             *allowChange = TRUE;
                         else
                             *allowChange = FALSE;
@@ -277,7 +277,7 @@ public:
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
                     }
                     else if (sVal == QString ("%1")
-                                .arg ((Q_ULLONG) vboxGlobal().mainWindow()->winId()))
+                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
                     {
                         mIsRegDlgOwner = true;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
@@ -2892,8 +2892,8 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         framew = current->frameGeometry().width() - current->width();
         frameh = current->frameGeometry().height() - current->height();
 
-        extraw = QMAX (extraw, framew);
-        extrah = QMAX (extrah, frameh);
+        extraw = qMax (extraw, framew);
+        extrah = qMax (extrah, frameh);
     }
 
     /// @todo (r=dmik) not sure if we really need this
@@ -2963,7 +2963,7 @@ QString VBoxGlobal::sizeRegexp()
  *  in bytes. Zero is returned on error.
  */
 /* static */
-Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
+quint64 VBoxGlobal::parseSize (const QString &aText)
 {
     QRegExp regexp (sizeRegexp());
     int pos = regexp.indexIn (aText);
@@ -2979,7 +2979,7 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
             suff = regexp.cap (5);
         }
 
-        Q_UINT64 denom = 0;
+        quint64 denom = 0;
         if (suff.isEmpty() || suff == "B")
             denom = 1;
         else if (suff == "KB")
@@ -2993,11 +2993,11 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
         else if (suff == "PB")
             denom = _1P;
 
-        Q_UINT64 intg = intgS.toULongLong();
+        quint64 intg = intgS.toULongLong();
         if (denom == 1)
             return intg;
 
-        Q_UINT64 hund = hundS.leftJustified (2, '0').toULongLong();
+        quint64 hund = hundS.leftJustified (2, '0').toULongLong();
         hund = hund * denom / 100;
         intg = intg * denom + hund;
         return intg;
@@ -3033,11 +3033,11 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
  *  @return         human-readable size string
  */
 /* static */
-QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
+QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
 {
     static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL };
 
-    Q_UINT64 denom = 0;
+    quint64 denom = 0;
     int suffix = 0;
 
     if (aSize < _1K)
@@ -3071,8 +3071,8 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
         suffix = 5;
     }
 
-    Q_UINT64 intg = aSize / denom;
-    Q_UINT64 hund = aSize % denom;
+    quint64 intg = aSize / denom;
+    quint64 hund = aSize % denom;
 
     QString number;
     if (denom > 1)
@@ -3853,13 +3853,14 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
          * that attempts to set it will win, the rest will get a failure from
          * the SetExtraData() call. */
         mVBox.SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-                            QString ("%1").arg ((Q_ULLONG) mMainWindow->winId()));
+                            QString ("%1").arg ((qulonglong) mMainWindow->winId()));
 
         if (mVBox.isOk())
         {
             /* We've got the "mutex", create a new registration dialog */
             VBoxRegistrationDlg *dlg =
-                new VBoxRegistrationDlg (&mRegDlg, 0, Qt::WDestructiveClose);
+                new VBoxRegistrationDlg (&mRegDlg, 0);
+            dlg->setAttribute (Qt::WA_DeleteOnClose);
             Assert (dlg == mRegDlg);
             mRegDlg->show();
         }

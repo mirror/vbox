@@ -29,10 +29,10 @@
 #include <QToolTip>
 
 /** Minimum VDI size in MB */
-static const Q_UINT64 MinVDISize = 4;
+static const quint64 MinVDISize = 4;
 
 /** Initial VDI size in MB */
-static const Q_UINT64 InitialVDISize = 2 * _1K;
+static const quint64 InitialVDISize = 2 * _1K;
 
 /**
  *  Composes a file name from the given relative or full file name
@@ -59,9 +59,9 @@ static QString composeFullFileName (const QString file)
     return QDir::convertSeparators (fi.absoluteFilePath());
 }
 
-static inline int log2i (Q_UINT64 val)
+static inline int log2i (quint64 val)
 {
-    Q_UINT64 n = val;
+    quint64 n = val;
     int pow = -1;
     while (n)
     {
@@ -71,21 +71,21 @@ static inline int log2i (Q_UINT64 val)
     return pow;
 }
 
-static inline int sizeMBToSlider (Q_UINT64 val, int aSliderScale)
+static inline int sizeMBToSlider (quint64 val, int aSliderScale)
 {
     int pow = log2i (val);
-    Q_UINT64 tickMB = Q_UINT64 (1) << pow;
-    Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
+    quint64 tickMB = quint64 (1) << pow;
+    quint64 tickMBNext = quint64 (1) << (pow + 1);
     int step = (val - tickMB) * aSliderScale / (tickMBNext - tickMB);
     return pow * aSliderScale + step;
 }
 
-static inline Q_UINT64 sliderToSizeMB (int val, int aSliderScale)
+static inline quint64 sliderToSizeMB (int val, int aSliderScale)
 {
     int pow = val / aSliderScale;
     int step = val % aSliderScale;
-    Q_UINT64 tickMB = Q_UINT64 (1) << pow;
-    Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
+    quint64 tickMB = quint64 (1) << pow;
+    quint64 tickMBNext = quint64 (1) << (pow + 1);
     return tickMB + (tickMBNext - tickMB) * step / aSliderScale;
 }
 
@@ -109,15 +109,15 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     mSliderScale = 0;
     {
         int pow = log2i (mMaxVDISize);
-        Q_UINT64 tickMB = Q_UINT64 (1) << pow;
+        quint64 tickMB = quint64 (1) << pow;
         if (tickMB < mMaxVDISize)
         {
-            Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
-            Q_UINT64 gap = tickMBNext - mMaxVDISize;
+            quint64 tickMBNext = quint64 (1) << (pow + 1);
+            quint64 gap = tickMBNext - mMaxVDISize;
             mSliderScale = (int) ((tickMBNext - tickMB) / gap);
         }
     }
-    mSliderScale = QMAX (mSliderScale, 8);
+    mSliderScale = qMax (mSliderScale, 8);
     mLeName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
     mLeSize->setValidator (new QRegExpValidator (QRegExp(vboxGlobal().sizeRegexp()), this));
     mLeSize->setAlignment (Qt::AlignRight);
@@ -169,7 +169,7 @@ void VBoxNewHDWzd::setRecommendedFileName (const QString &aName)
     mLeName->setText (aName);
 }
 
-void VBoxNewHDWzd::setRecommendedSize (Q_UINT64 aSize)
+void VBoxNewHDWzd::setRecommendedSize (quint64 aSize)
 {
     AssertReturnVoid (aSize >= MinVDISize && aSize <= mMaxVDISize);
     mCurrentSize = aSize;
@@ -191,7 +191,7 @@ void VBoxNewHDWzd::retranslateUi()
                                                    : mRbFixedType->text();
         type = VBoxGlobal::removeAccelMark (type);
 
-        Q_UINT64 sizeB = imageSize() * _1M;
+        quint64 sizeB = imageSize() * _1M;
 
         /* compose summary */
         QString summary = QString (tr (
@@ -351,7 +351,7 @@ QString VBoxNewHDWzd::imageFileName()
     return name;
 }
 
-Q_UINT64 VBoxNewHDWzd::imageSize()
+quint64 VBoxNewHDWzd::imageSize()
 {
     return mCurrentSize;
 }
@@ -361,7 +361,7 @@ bool VBoxNewHDWzd::isDynamicImage()
     return mRbDynamicType->isChecked();
 }
 
-void VBoxNewHDWzd::updateSizeToolTip (Q_UINT64 aSizeB)
+void VBoxNewHDWzd::updateSizeToolTip (quint64 aSizeB)
 {
     QString tip = tr ("<nobr>%1 Bytes</nobr>").arg (aSizeB);
     mSlSize->setToolTip (tip);
@@ -371,7 +371,7 @@ void VBoxNewHDWzd::updateSizeToolTip (Q_UINT64 aSizeB)
 bool VBoxNewHDWzd::createHardDisk()
 {
     QString src = imageFileName();
-    Q_UINT64 size = imageSize();
+    quint64 size = imageSize();
 
     AssertReturn (!src.isEmpty(), false);
     AssertReturn (size > 0, false);

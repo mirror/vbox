@@ -166,7 +166,6 @@ private:
     bool keyEvent (int aKey, uint8_t aScan, int aFlags,
                    wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
-                     Qt::ButtonState aButton,
                      Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
                      int aWheelDelta, Qt::Orientation aWheelDir);
 
