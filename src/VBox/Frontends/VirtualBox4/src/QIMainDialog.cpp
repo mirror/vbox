@@ -50,7 +50,7 @@ QDialog::DialogCode QIMainDialog::exec()
     /* Reset the result code */
     setResult (QDialog::Rejected);
     bool deleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
-    setAttribute(Qt::WA_DeleteOnClose, false);
+    setAttributeq (Qt::WA_DeleteOnClose, false);
     bool wasShowModal = testAttribute (Qt::WA_ShowModal);
     setAttribute (Qt::WA_ShowModal, true);
 
@@ -69,7 +69,7 @@ QDialog::DialogCode QIMainDialog::exec()
         return QDialog::Rejected;
     QDialog::DialogCode res = result();
     /* Set the old show modal attribute */
-    setAttribute(Qt::WA_ShowModal, wasShowModal);
+    setAttribute (Qt::WA_ShowModal, wasShowModal);
     /* Delete us in the case we should do so on close */
     if (deleteOnClose)
         delete this;
