@@ -298,7 +298,11 @@ typedef struct SELMSELINFO
     /** The limit (-1). */
     RTGCUINTPTR     cbLimit;
     /** The raw descriptor. */
-    VBOXDESC        Raw;
+    union
+    {
+        X86DESC     Raw;
+        X86DESC64   Raw64;
+    };
     /** The selector. */
     RTSEL           Sel;
     /** Set if the selector is used by the hypervisor. */
@@ -488,7 +492,7 @@ SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM);
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-SELMR3DECL(void) SELMR3DumpDescriptor(VBOXDESC  Desc, RTSEL Sel, const char *pszMsg);
+SELMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
 
 /**
  * Dumps the hypervisor GDT.

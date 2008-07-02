@@ -1391,8 +1391,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     "%sdr0=%016RX64 %sdr1=%016RX64 %sdr2=%016RX64 %sdr3=%016RX64\n"
                     "%sdr4=%016RX64 %sdr5=%016RX64 %sdr6=%016RX64 %sdr7=%016RX64\n"
                     "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
-                    "%sldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
-                    "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                    "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                    "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
                     "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                     ,
                     pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
@@ -1702,10 +1702,8 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
         const char *pszAccessed = pDesc->Gen.u4Type & RT_BIT(0) ? "A " : "NA";
         const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
         const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
-        uint32_t u32Base = pDesc->Gen.u16BaseLow
-                         | ((uint32_t)pDesc->Gen.u8BaseHigh1 << 16)
-                         | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
-        uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        uint32_t u32Base = X86DESC_BASE(*pDesc);
+        uint32_t cbLimit = X86DESC_LIMIT(*pDesc);
         if (pDesc->Gen.u1Granularity)
             cbLimit <<= PAGE_SHIFT;
 
@@ -1761,11 +1759,8 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 const char *pszBig         = pDesc->Gen.u1DefBig ? "BIG" : "   ";
                 const char *pszLong        = pDesc->Gen.u1Long ? "LONG" : "   ";
 
-                uint64_t u32Base = pDesc->Gen.u16BaseLow
-                                 | ((uint64_t)pDesc->Gen.u8BaseHigh1 << 16)
-                                 | ((uint64_t)pDesc->Gen.u8BaseHigh2 << 24)
-                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
-                uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+                uint64_t u32Base = X86DESC64_BASE(*pDesc);
+                uint32_t cbLimit = X86DESC_LIMIT(*pDesc);
 
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%016RX64 Lim=%08x DPL=%d %s %s %s %sAVL=%d R=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
@@ -1782,9 +1777,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 unsigned cParams = pDesc->au8[0] & 0x1f;
                 const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off =    pDesc->au16[0]
-                                | ((uint64_t)pDesc->au16[3] << 16)
-                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
+                uint64_t off =  X86DESC64_BASE(*pDesc);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
@@ -1797,9 +1790,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             {
                 RTSEL sel = pDesc->au16[1];
-                uint64_t off =    pDesc->au16[0]
-                                | ((uint64_t)pDesc->au16[3] << 16)
-                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
+                uint64_t off = X86DESC64_BASE(*pDesc);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);

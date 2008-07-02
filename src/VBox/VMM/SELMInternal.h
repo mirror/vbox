@@ -88,11 +88,11 @@ typedef struct SELM
 
     /** Pointer to the GCs - HC Ptr.
      * This size is governed by SELM_GDT_ELEMENTS. */
-    R3R0PTRTYPE(PVBOXDESC)  paGdtHC;
+    R3R0PTRTYPE(PX86DESC)   paGdtHC;
     /** Pointer to the GCs - GC Ptr.
      * This is not initialized until the first relocation because it's used to
      * check if the shadow GDT virtual handler requires deregistration. */
-    RCPTRTYPE(PVBOXDESC)    paGdtGC;
+    RCPTRTYPE(PX86DESC)     paGdtGC;
     /** Current (last) Guest's GDTR. */
     VBOXGDTR                GuestGdtr;
     /** The current (last) effective Guest GDT size. */

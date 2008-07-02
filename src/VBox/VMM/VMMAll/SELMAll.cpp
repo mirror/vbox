@@ -55,16 +55,16 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
     Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
 
     /** @todo check the limit. */
-    VBOXDESC    Desc;
+    X86DESC    Desc;
     if (!(Sel & X86_SEL_LDT))
         Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT pages not present! */
 #ifdef IN_GC
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
 #else
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
 #endif
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
@@ -288,7 +288,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
 #endif /* !IN_GC */
 #ifndef IN_RING0
     {
-        VBOXDESC Desc;
+        X86DESC Desc;
 
         if (!(Sel & X86_SEL_LDT))
         {
@@ -304,9 +304,9 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
 
             /** @todo handle LDT page(s) not present! */
 #ifdef IN_GC
-            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
 #else
-            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
 #endif
             Desc = paLDT[Sel >> X86_SEL_SHIFT];
         }
@@ -489,7 +489,7 @@ SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Ad
     }
     else
     {
-        VBOXDESC Desc;
+        X86DESC Desc;
 
         if (!(Sel & X86_SEL_LDT))
         {
@@ -505,9 +505,9 @@ SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Ad
 
             /** @todo handle LDT page(s) not present! */
 #ifdef IN_GC
-            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
 #else
-            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
 #endif
             Desc = paLDT[Sel >> X86_SEL_SHIFT];
         }
@@ -677,16 +677,16 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
     Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
     /** @todo validate limit! */
-    VBOXDESC    Desc;
+    X86DESC    Desc;
     if (!(SelCS & X86_SEL_LDT))
         Desc = pVM->selm.s.CTXSUFF(paGdt)[SelCS >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT page(s) not present! */
 #ifdef IN_GC
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
 #else
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
 #endif
         Desc = paLDT[SelCS >> X86_SEL_SHIFT];
     }
@@ -864,13 +864,13 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
     Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
     /** @todo validate limit! */
-    VBOXDESC Desc;
+    X86DESC Desc;
     if (!(Sel & X86_SEL_LDT))
         Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT page(s) not present! */
-        PVBOXDESC   paLDT = (PVBOXDESC)((char *)pVM->selm.s.CTXMID(,PtrLdt) + pVM->selm.s.offLdtHyper);
+        PX86DESC   paLDT = (PX86DESC)((char *)pVM->selm.s.CTXMID(,PtrLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
     return (Desc.Gen.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
