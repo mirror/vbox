@@ -23,7 +23,7 @@
 include VBoxUI.pro
 
 # Import QDesigner UI sources
-VirtualBox_QT_UISRCS3 := $(FORMS)
+VirtualBox_QT_UISRCS := $(FORMS)
 # Import translation sources
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS)
 
@@ -138,7 +138,6 @@ VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
 # Some default defs
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
-VBOX_UIC3      ?= $(VBOX_PATH_QT4_BIN)/uic3
 VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic
 VBOX_MOC4      ?= $(VBOX_PATH_QT4_BIN)/moc
 VBOX_RCC4      ?= $(VBOX_PATH_QT4_BIN)/rcc
@@ -347,93 +346,8 @@ endif
 # exclude inappropriate UI content
 #
 ifndef VBOX_WITH_REGISTRATION
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
 endif
-
-
-#
-# filter ported UI content
-#
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxCloseVMDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxCloseVMDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxNewVMWzd.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxNewVMWzd.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxNewHDWzd.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxNewHDWzd.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMFirstRunWzd.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMFirstRunWzd.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxRegistrationDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSnapshotDetailsDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotDetailsDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMInformationDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMInformationDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxTakeSnapshotDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxTakeSnapshotDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSnapshotsWgt.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotsWgt.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMLogViewer.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMLogViewer.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxDiskImageManagerDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxDiskImageManagerDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsGeneral.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsHD.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsHD.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsCD.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsCD.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsFD.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsFD.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsAudio.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsAudio.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsNetwork.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsNetwork.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsSerial.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSerial.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsParallel.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsParallel.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsUSB.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsUSB.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsSF.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsSF.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsVRDP.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsVRDP.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxVMSettingsDlg.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsGeneral.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsGeneral.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsInput.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsInput.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsLanguage.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsLanguage.ui
-
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxGlobalSettingsDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxGlobalSettingsDlg.ui
 
 #
 # The targets.
@@ -444,31 +358,6 @@ DLLS = VBoxKeyboard4
 OTHERS = $(PATH_BIN)/vboxkeyboard4.tar.gz
 endif
 INSTALLS = VirtualBox.nls bin
-
-ifeq ($(KBUILD_TARGET),os2)
- DLLS += VBoxHlp
- ifneq ($(strip $(VBOX_DLL_QT)),)
-  INSTALLS += qt.dll
-  qt.dll_INST = $(INST_BIN)
-  qt.dll_SOURCES += \
-	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
- endif
-endif
-
-
-#
-# VBoxHlp - helper DLL for OS/2.
-#
-VBoxHlp_ASTOOL      = NASM
-VBoxHlp_ASFLAGS     = -f obj
-VBoxHlp_DEFS        = IN_RING3 IN_VBOXHLP
-VBoxHlp_CXXFLAGS    = -fno-exceptions
-VBoxHlp_LDFLAGS     = -nostdlib -los2
-VBoxHlp_LDFLAGS    += -Zlinker option -Zlinker manyautodata
-VBoxHlp_SOURCES     = \
-	src/os2/VBoxHlp.asm \
-	src/os2/VBoxHlp.cpp
-
 
 #
 # VBoxKeyboard - keyboard library for X11.
@@ -611,26 +500,18 @@ endif
 # All generated sources. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
 VirtualBox_GENSRCS = \
-	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp)
+	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp)
 
 # All generated headers. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
 VirtualBox_GENHDRS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCSRCS))), $(PATH_VirtualBox)/moc/$(moc).moc) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).h) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS4))), $(PATH_VirtualBox)/ui/$(ui).gen.h)
-
-# All existing .ui.h files for known .ui sources
-VirtualBox_QT_UIHDRS = \
-	$(wildcard $(addsuffix .h,$(VirtualBox_QT_UISRCS3)))
+	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS))), $(PATH_VirtualBox)/ui/$(ui).gen.h)
 
 # All header files
 VirtualBox_HEADERS = \
 	$(wildcard include/*.h) \
-	$(VirtualBox_GENHDRS) \
-	$(VirtualBox_QT_UIHDRS)
-
+	$(VirtualBox_GENHDRS)
 
 VirtualBox_SOURCES = \
 	$(VirtualBox_GENSRCS) \
@@ -740,7 +621,6 @@ VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_SDL
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.os2       = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL QT_DLL
 VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
 VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
 VirtualBox_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
@@ -794,7 +674,6 @@ else
   VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
-VirtualBox_LDFLAGS.os2    = -Zlinker /PM:PM -Zno-fork
 VirtualBox_LDFLAGS.darwin = -framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -lz
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
@@ -803,7 +682,6 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
-VirtualBox_LIBS.os2      += $(PATH_DLL)/VBoxHlp$(VBOX_SUFF_DLL)
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VirtualBox_LIBS          += $(PATH_DLL)/VBoxKeyboard4$(VBOX_SUFF_DLL)
 endif
@@ -926,7 +804,7 @@ VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
 
 # OSE version is always necessary for lupdate/lrelease
-VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
+VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
@@ -1007,44 +885,10 @@ $(mocuiinc): $(mocuihdr)
 
 endef
 
-##  Generate a rule to create a header and source files from an UI3
+##  Generate a rule to create a header file from an UI
 #   definition source (.ui).
 #   @param  $uifile       UI definintion source file
-define def_qt_gen_src_ui3
-
-$(eval uisrc  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).cpp)
-$(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).h)
-$(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(uifile))).cpp)
-
-
-$(target)_GENSRCS_REAL += $(uisrc) $(mocsrc)
-$(target)_GENHDRS_REAL += $(uihdr)
-$(target)_INTERMEDIATES += $(uihdr)
-## @todo The source should be added to GEN_SOURCES: $ (target)_GEN_SOURCES += $ (uisrc) $ (mocsrc)
-
-$(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
-	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
-	$$(QUIET)$$(VBOX_UIC3) $(uifile) -o $$@
-
-$(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
-	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
-	$$(QUIET)$$(VBOX_UIC3) -impl $(uihdr) $(uifile) -o $$@
-
-#$$(QUIET)$$(VBOX_UIC3) $(uifile) -i $(uihdr) -o $$@
-
-$(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
-	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
-	$$(QUIET)$$(VBOX_MOC4) \
-		$(addprefix -D,$($(target)_DEFS)) \
-		$(addprefix -I,$($(target)_INCS)) \
-		$(uihdr) -o $$@
-
-endef
-
-##  Generate a rule to create a header file from an UI4
-#   definition source (.ui).
-#   @param  $uifile       UI definintion source file
-define def_qt_gen_src_ui4
+define def_qt_gen_src_ui
 
 $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).gen.h)
 
@@ -1093,10 +937,8 @@ $(foreach mochdr,$($(target)_QT_MOCHDRS),$(eval $(def_qt_gen_src_moc)))
 $(foreach mocsrc,$($(target)_QT_MOCSRCS),$(eval $(def_qt_gen_inc_moc)))
 # moc includes from UI headers with Q_OBJECT
 $(foreach mocuihdr,$($(target)_QT_MOCUIHDRS),$(eval $(def_qt_gen_inc_mocuihdr)))
-# UI3 sources
-$(foreach uifile,$($(target)_QT_UISRCS3),$(eval $(def_qt_gen_src_ui3)))
-# UI4 sources
-$(foreach uifile,$($(target)_QT_UISRCS4),$(eval $(def_qt_gen_src_ui4)))
+# UI sources
+$(foreach uifile,$($(target)_QT_UISRCS),$(eval $(def_qt_gen_src_ui)))
 # NLS files
 $(foreach tsfile,$($(target)_QT_TRANSLATIONS),$(eval $(def_qt_gen_nls)))
 $(foreach tsfile,$($(target)_QT_TRANSLATIONS_QT),$(eval $(def_qt_gen_nls)))
@@ -1147,7 +989,7 @@ $(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp: VirtualBox_NonOSE.qrc $(Virtu
 # may include them).  This is safer than indifidual dependencies above but
 # currently disabled, because will cause all UI sources to be rebuilt one a
 # single one changes.
-#$(patsubst %,$(PATH_VirtualBox)/ui/%.cpp,$(notdir $(basename $(VirtualBox_QT_UISRCS3)))) : $(VirtualBox_GENHDRS)
+#$(patsubst %,$(PATH_VirtualBox)/ui/%.cpp,$(notdir $(basename $(VirtualBox_QT_UISRCS)))) : $(VirtualBox_GENHDRS)
 
 
 #
