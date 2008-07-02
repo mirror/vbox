@@ -183,7 +183,7 @@ typedef DECLCALLBACK(int) FNHANDLER(int argc, char *argv[]);
 typedef FNHANDLER *PFNHANDLER;
 
 /** The table of all registered command handlers. */
-struct
+struct COMMANDHANDLER
 {
     const char *command;
     PFNHANDLER handler;
