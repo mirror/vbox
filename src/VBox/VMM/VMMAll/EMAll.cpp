@@ -2194,6 +2194,42 @@ static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     return VINF_EM_HALT;
 }
 
+#ifdef LOG_ENABLED
+static const char *emMSRtoString(unsigned uMsr)
+{
+    switch(uMsr)
+    {
+    case MSR_IA32_APICBASE:
+        return "MSR_IA32_APICBASE";
+    case MSR_IA32_CR_PAT:
+        return "MSR_IA32_CR_PAT";
+    case MSR_IA32_SYSENTER_CS:
+        return "MSR_IA32_SYSENTER_CS";
+    case MSR_IA32_SYSENTER_EIP:
+        return "MSR_IA32_SYSENTER_EIP";
+    case MSR_IA32_SYSENTER_ESP:
+        return "MSR_IA32_SYSENTER_ESP";
+    case MSR_K6_EFER:
+        return "MSR_K6_EFER";
+    case MSR_K8_SF_MASK:
+        return "MSR_K8_SF_MASK";
+    case MSR_K6_STAR:
+        return "MSR_K6_STAR";
+    case MSR_K8_LSTAR:
+        return "MSR_K8_LSTAR";
+    case MSR_K8_CSTAR:
+        return "MSR_K8_CSTAR";
+    case MSR_K8_FS_BASE:
+        return "MSR_K8_FS_BASE";
+    case MSR_K8_GS_BASE:
+        return "MSR_K8_GS_BASE";
+    case MSR_K8_KERNEL_GS_BASE:
+        return "MSR_K8_KERNEL_GS_BASE";
+    }
+    return "Unknown MSR";
+}
+#endif
+
 /**
  * Interpret RDMSR
  *
@@ -2283,7 +2319,7 @@ EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         val = 0;
         break;
     }
-    Log(("EMInterpretRdmsr %x -> val=%VX64\n", pRegFrame->ecx, val));
+    Log(("EMInterpretRdmsr %s (%x) -> val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     pRegFrame->eax = (uint32_t) val;
     pRegFrame->edx = (uint32_t) (val >> 32ULL);
     return VINF_SUCCESS;
@@ -2328,7 +2364,7 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         return VERR_EM_INTERPRETER; /* not supported */
 
     val = (uint64_t)pRegFrame->eax | ((uint64_t)pRegFrame->edx << 32ULL);
-    Log(("EMInterpretWrmsr %x val=%VX64\n", pRegFrame->ecx, val));
+    Log(("EMInterpretWrmsr %s (%x) val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     switch (pRegFrame->ecx)
     {
     case MSR_IA32_APICBASE:
