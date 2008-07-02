@@ -126,7 +126,7 @@ VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *
 /**
  * Retrieve a key value.
  *
- * @returns VBox status code.  If the value is not found, returns VERR_NOT_FOUND
+ * @returns VBox status code.
  * @retval  VINF_SUCCESS on success, pszValue and pcbActual containing valid data.
  * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small, pcbActual will contain
  *          the require buffer size. Note race condition here when retrying wrt
