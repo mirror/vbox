@@ -524,9 +524,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to the toolbar */
 
-//#warning port me
-//    setUsesTextLabel (true);
-//    setUsesBigPixmaps (true);
     vmTools->setIconSize (QSize (32, 32));
     vmTools->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
@@ -638,9 +635,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
         mVMListView->selectItemById (QUuid (prevVMId));
     }
-
-//#warning port me
-//    clearWState (WState_Polished);
 
     /* signals and slots connections */
     connect (fileDiskMgrAction, SIGNAL (activated()), this, SLOT(fileDiskMgr()));
