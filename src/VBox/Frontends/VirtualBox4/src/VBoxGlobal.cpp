@@ -87,6 +87,7 @@
 #endif
 
 //#warning "port me: check this"
+/// @todo bird: Use (U)INT_PTR, (U)LONG_PTR, DWORD_PTR, or (u)intptr_t.
 #if defined(Q_OS_WIN64)
 typedef __int64 Q_LONG;             /* word up to 64 bit signed */
 typedef unsigned __int64 Q_ULONG;   /* word up to 64 bit unsigned */
