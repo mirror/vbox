@@ -64,7 +64,7 @@ ifeq ($(VBOX_PATH_QT4),)
   VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
   ifneq ($(VBOX_PATH_QT4),)
    VBOX_WITH_QT4_SUN = 1
-  endif 
+  endif
  endif
 endif
 ifeq ($(VBOX_PATH_QT4),)
@@ -106,7 +106,12 @@ else
 	$(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt) \
 	$(VBOX_PATH_QT4_INCLUDE)
  ifeq ($(KBUILD_TARGET),win)
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+   ## @todo This is the correct one here: VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc2005
    VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc.net
+  else
+   VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc.net
+  endif
  else ifeq ($(KBUILD_TARGET),linux)
   VBOX_INCS_QT4     += $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++
  endif
@@ -305,7 +310,7 @@ else # the gcc guys:
         rt socket nsl
   endif
   ifdef VBOX_WITH_ORIGIN
-    # Qt4 on Solaris in the same as it is on other platforms (i.e. no special qtgcc/lib folders) 
+    # Qt4 on Solaris in the same as it is on other platforms (i.e. no special qtgcc/lib folders)
     TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
   endif
  endif
