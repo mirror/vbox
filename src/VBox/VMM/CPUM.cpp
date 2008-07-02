@@ -282,6 +282,12 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
                                        //| X86_CPUID_FEATURE_ECX_TM2   - no thermal monitor 2.
                                        //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
+                                       /** ECX Bit 13 - CX16 - CMPXCHG16B. */
+                                       //| X86_CPUID_FEATURE_ECX_CX16
+                                       /** ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
+                                       //| X86_CPUID_FEATURE_ECX_TPRUPDATE
+                                       /** ECX Bit 23 - POPCOUNT instruction. */
+                                       //| X86_CPUID_FEATURE_ECX_POPCOUNT
                                        | 0;
 
     /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
@@ -304,14 +310,29 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_PAT
                                        //| X86_CPUID_AMD_FEATURE_EDX_PSE36  - not virtualized.
                                        //| X86_CPUID_AMD_FEATURE_EDX_NX     - not virtualized, requires PAE.
+                                       //| X86_CPUID_AMD_FEATURE_EDX_AXMMX
                                        | X86_CPUID_AMD_FEATURE_EDX_MMX
                                        | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                        | X86_CPUID_AMD_FEATURE_EDX_FFXSR
+                                       //| X86_CPUID_AMD_FEATURE_EDX_PAGE1GB
+                                       //| X86_CPUID_AMD_FEATURE_EDX_RDTSCP
                                        //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - not yet.
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                        | 0;
-    pCPUM->aGuestCpuIdExt[1].ecx      &= 0//X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
+    pCPUM->aGuestCpuIdExt[1].ecx      &= 0
+                                       //| X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF
+                                       //| X86_CPUID_AMD_FEATURE_ECX_CMPL
+                                       //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
+                                       //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
+                                       //| X86_CPUID_AMD_FEATURE_ECX_CR8L
+                                       //| X86_CPUID_AMD_FEATURE_ECX_ABM
+                                       //| X86_CPUID_AMD_FEATURE_ECX_SSE4A
+                                       //| X86_CPUID_AMD_FEATURE_ECX_MISALNSSE
+                                       //| X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF
+                                       //| X86_CPUID_AMD_FEATURE_ECX_OSVW
+                                       //| X86_CPUID_AMD_FEATURE_ECX_SKINIT
+                                       //| X86_CPUID_AMD_FEATURE_ECX_WDT
                                        | 0;
 
     /*
