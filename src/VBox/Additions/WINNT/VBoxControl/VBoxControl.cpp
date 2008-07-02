@@ -782,6 +782,7 @@ printf("found mode at index %d\n", i);
 }
 
 
+#ifdef VBOX_WITH_INFO_SVC
 /**
  * Open the VirtualBox guest device.
  * @returns IPRT status value
@@ -918,19 +919,16 @@ static int hgcmInfoSvcGetProp(HANDLE hDevice, uint32_t u32ClientID,
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     uint32_t cbActual;
-    if (RT_SUCCESS(rc))
-        rc = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) || (VERR_BUFFER_OVERFLOW == rc))
     {
-        if (pcbActual != NULL)
-            *pcbActual = cbActual;
-        if (cbActual > cbValue)
-            rc = VINF_BUFFER_OVERFLOW;
+        int rc2 = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
+        if (RT_SUCCESS(rc2))
+        {
+            if (pcbActual != NULL)
+                *pcbActual = cbActual;
+        }
         else
-            rc = Msg.hdr.result;
-        if ((cbValue > 0) && (0 == cbActual))  /* No such property */
-            pszValue[0] = 0;
-            
+            rc = rc2;
     }
     return rc;
 }
@@ -1036,12 +1034,12 @@ static int handleGetGuestProperty(int argc, char *argv[])
     {
         rc = hgcmInfoSvcGetProp(hDevice, u32ClientID, argv[0], szValue,
                                 sizeof(szValue), NULL);
-        if (!RT_SUCCESS(rc))
+        if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
             printf("Failed to retrieve the property value, RT error %d\n", rc);
     }
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) || (VERR_NOT_FOUND == rc))
     {
-        if (strlen(szValue) > 0)
+        if (RT_SUCCESS(rc))
             printf("Value: %s\n", szValue);
         else
             printf("No value set!\n");
@@ -1096,6 +1094,7 @@ static int handleSetGuestProperty(int argc, char *argv[])
         CloseHandle(hDevice);
     return rc;
 }
+#endif  /* VBOX_WITH_INFO_SVC */
 
 
 /**
@@ -1143,6 +1142,7 @@ int main(int argc, char *argv[])
     {
         handleSetVideoMode(argc - 2, &argv[2]);
     }
+#ifdef VBOX_WITH_INFO_SVC
     else if (stricmp(argv[1], "getguestproperty") == 0)
     {
         int rc = handleGetGuestProperty(argc - 2, &argv[2]);
@@ -1152,6 +1152,7 @@ int main(int argc, char *argv[])
     {
         handleSetGuestProperty(argc - 2, &argv[2]);
     }
+#endif  /* VBOX_WITH_INFO_SVC */
     else
     {
         printHelp();
