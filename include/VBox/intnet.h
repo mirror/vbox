@@ -243,6 +243,8 @@ typedef INTNETSEG const *PCINTNETSEG;
  */
 typedef struct INTNETSG
 {
+    /** Owner data, don't touch! */
+    void           *pvOwnerData;
     /** The total length of the scatter gather list. */
     uint32_t        cbTotal;
     /** The number of users (references).
@@ -280,7 +282,7 @@ typedef INTNETSG const *PCINTNETSG;
  *
  * @returns Pointer to the start of the frame.
  * @param   pSG         Pointer to the scatter / gather structure.
- *                      (The fFlags, cUsers, and cSegsAlloc members are left untouched.)
+ *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
  * @param   pHdr        Pointer to the packet header.
  * @param   pBuf        The buffer the header is within. Only used in strict builds.
  * @remarks Perhaps move this...
