@@ -86,6 +86,15 @@
 #include <iprt/mem.h>
 #endif
 
+//#warning "port me: check this"
+#if defined(Q_OS_WIN64)
+typedef __int64 Q_LONG;             /* word up to 64 bit signed */
+typedef unsigned __int64 Q_ULONG;   /* word up to 64 bit unsigned */
+#else
+typedef long Q_LONG;                /* word up to 64 bit signed */
+typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
+#endif
+
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
 #endif
@@ -390,7 +399,7 @@ static QString extractFilter (const QString &aRawFilter)
 
     QString result = aRawFilter;
     QRegExp r (QString::fromLatin1 (qt_file_dialog_filter_reg_exp));
-    int index = r.search (result);
+    int index = r.indexIn (result);
     if (index >= 0)
         result = r.cap (2);
     return result.replace (QChar (' '), QChar (';'));
@@ -405,18 +414,18 @@ static QString winFilter (const QString &aFilter)
 
     if (!aFilter.isEmpty())
     {
-        int i = aFilter.find (";;", 0);
+        int i = aFilter.indexOf (";;", 0);
         QString sep (";;");
         if (i == -1)
         {
-            if (aFilter.find ("\n", 0) != -1)
+            if (aFilter.indexOf ("\n", 0) != -1)
             {
                 sep = "\n";
-                i = aFilter.find (sep, 0);
+                i = aFilter.indexOf (sep, 0);
             }
         }
 
-        filterLst = QStringList::split (sep, aFilter);
+        filterLst = aFilter.split (sep);
     }
 
     QStringList::Iterator it = filterLst.begin();
