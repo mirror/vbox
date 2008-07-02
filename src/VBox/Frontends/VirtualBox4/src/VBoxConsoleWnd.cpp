@@ -111,7 +111,7 @@ class Q3HttpResponseHeader;
  */
 VBoxConsoleWnd::
 VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
-                Qt::WFlags aFlags)
+                Qt::WindowFlags aFlags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI

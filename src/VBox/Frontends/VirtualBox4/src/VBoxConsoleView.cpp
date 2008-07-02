@@ -1515,7 +1515,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QMouseEvent *me = (QMouseEvent *) e;
                 if (mouseEvent (me->type(), me->pos(), me->globalPos(),
-                                me->button(), me->buttons(), me->modifiers(),
+                                me->buttons(), me->modifiers(),
                                 0, Qt::Horizontal))
                     return true; /* stop further event handling */
                 break;
@@ -1524,7 +1524,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QWheelEvent *we = (QWheelEvent *) e;
                 if (mouseEvent (we->type(), we->pos(), we->globalPos(),
-                                Qt::NoButton, we->buttons(), we->modifiers(),
+                                we->buttons(), we->modifiers(),
                                 we->delta(), we->orientation()))
                     return true; /* stop further event handling */
                 break;
@@ -2650,8 +2650,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
  *
  *  @return     true to consume the event and false to pass it to Qt
  */
-bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
-                                  const QPoint &aGlobalPos, Qt::ButtonState aButton,
+bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
                                   Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
                                   int aWheelDelta, Qt::Orientation aWheelDir)
 {
@@ -2660,11 +2659,10 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
     sprintf (buf,
              "MOUSE: type=%03d x=%03d y=%03d btn=%03d btns=%08X mod=%08X "
              "wdelta=%03d wdir=%03d",
-             aType, aPos.x(), aPos.y(), aButton, aButtons, aModifiers,
+             aType, aPos.x(), aPos.y(), aButtons, aModifiers,
              aWheelDelta, aWheelDir);
     mMainWnd->statusBar()->message (buf);
 #else
-    Q_UNUSED (aButton);
     Q_UNUSED (aModifiers);
 #endif
 

@@ -270,7 +270,7 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
                << QString::number (ConsoleType) /* key */;
         new SFTreeViewItem (mTreeView, fields, SFTreeViewItem::EllipsisEnd);
     }
-    mTreeView->sortItems (0, Qt::Ascending);
+    mTreeView->sortItems (0, Qt::AscendingOrder);
 
     retranslateUi();
 }
@@ -397,7 +397,7 @@ void VBoxVMSettingsSF::addTriggered()
            << "edited" /* mark item as edited */;
     SFTreeViewItem *item = new SFTreeViewItem (root, fields,
                                                SFTreeViewItem::EllipsisFile);
-    mTreeView->sortItems (0, Qt::Ascending);
+    mTreeView->sortItems (0, Qt::AscendingOrder);
     mTreeView->scrollToItem (item);
     mTreeView->setCurrentItem (item);
     processCurrentChanged (item);
@@ -443,7 +443,7 @@ void VBoxVMSettingsSF::edtTriggered()
            << (dlg.getWritable() ? mTrFull : mTrReadOnly /* writable? */)
            << "edited" /* mark item as edited */;
     item->updateText (fields);
-    mTreeView->sortItems (0, Qt::Ascending);
+    mTreeView->sortItems (0, Qt::AscendingOrder);
     if (item->parent() != root)
     {
         /* Move the selected item into new location */
@@ -639,7 +639,7 @@ void VBoxVMSettingsSF::getFrom (const CSharedFolderEnumerator &aEn,
         new SFTreeViewItem (aRoot, fields, SFTreeViewItem::EllipsisFile);
     }
     aRoot->setExpanded (true);
-    mTreeView->sortItems (0, Qt::Ascending);
+    mTreeView->sortItems (0, Qt::AscendingOrder);
     mTreeView->setCurrentItem (aRoot->childCount() ? aRoot->child (0) : aRoot);
     processCurrentChanged (aRoot->childCount() ? aRoot->child (0) : aRoot);
 }

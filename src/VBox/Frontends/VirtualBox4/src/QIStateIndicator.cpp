@@ -125,7 +125,7 @@ void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
      * which would be some kind of overstated. */
     if (aEv->button() == Qt::LeftButton)
     {
-        QContextMenuEvent qme (QContextMenuEvent::Mouse, aEv->pos(), aEv->globalPos(), 0);
+        QContextMenuEvent qme (QContextMenuEvent::Mouse, aEv->pos(), aEv->globalPos());
         emit contextMenuRequested (this, &qme);
         if (qme.isAccepted())
             aEv->accept();

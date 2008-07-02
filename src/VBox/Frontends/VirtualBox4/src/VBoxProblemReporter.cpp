@@ -70,7 +70,7 @@ public:
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
                         int aMinDuration = 2000, QWidget *aCreator = 0)
         : QProgressDialog (aCreator,
-                           Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title)
+                           Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
         , mProgress (aProgress)
         , mCalcelEnabled (true)
         , mOpCount (mProgress.GetOperationCount())

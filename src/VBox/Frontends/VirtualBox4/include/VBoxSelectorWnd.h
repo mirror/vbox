@@ -52,7 +52,7 @@ public:
 
     VBoxSelectorWnd (VBoxSelectorWnd **aSelf,
                      QWidget* aParent = 0,
-                     Qt::WFlags aFlags = Qt::WType_TopLevel);
+                     Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxSelectorWnd();
 
     bool startMachine (const QUuid &id);

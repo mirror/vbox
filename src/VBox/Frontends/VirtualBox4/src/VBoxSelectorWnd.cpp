@@ -386,7 +386,7 @@ void VBoxVMDescriptionPage::goToSettings()
  */
 VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
-                 Qt::WFlags aFlags)
+                 Qt::WindowFlags aFlags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , doneInaccessibleWarningOnce (false)
 {

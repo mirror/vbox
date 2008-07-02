@@ -62,7 +62,7 @@ public:
 
     VBoxConsoleWnd (VBoxConsoleWnd **aSelf,
                      QWidget* aParent = 0,
-                     Qt::WFlags aFlags = Qt::WType_TopLevel);
+                     Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxConsoleWnd();
 
     bool openView (const CSession &session);
