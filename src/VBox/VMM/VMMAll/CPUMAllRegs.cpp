@@ -1818,12 +1818,12 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
     uint32_t cpl;
 
     if (CPUMAreHiddenSelRegsValid(pVM))
-        cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
+        cpl = pCtxCore->csHid.Attr.n.u2Dpl;
     else if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
         if (RT_LIKELY(!pCtxCore->eflags.Bits.u1VM))
         {
-            cpl = (pCtxCore->ss & X86_SEL_RPL);
+            cpl = (pCtxCore->cs & X86_SEL_RPL);
 #ifndef IN_RING0
             if (cpl == 1)
                 cpl = 0;
