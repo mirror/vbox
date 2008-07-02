@@ -33,17 +33,17 @@ PROGRAMS += tstShOpenGL tstOGLSample tstOGLSphere
 tstShOpenGL_TEMPLATE = VBOXGUESTR3EXE
 tstShOpenGL_DEFS     = VBOX_HGCM
 tstShOpenGL_SOURCES  = tstShOpenGL.cpp
-tstShOpenGL_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+tstShOpenGL_LIBS     = $(PATH_SDK_WINPSDK_LIB)/OpenGL32.Lib
 
 tstOGLSample_TEMPLATE = VBOXGUESTR3EXE
 tstOGLSample_DEFS     =
 tstOGLSample_SOURCES  = tstOGLSample.cpp
-tstOGLSample_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+tstOGLSample_LIBS     = $(PATH_SDK_WINPSDK_LIB)/OpenGL32.Lib
 
 tstOGLSphere_TEMPLATE = VBOXGUESTR3EXE
 tstOGLSphere_DEFS     =
 tstOGLSphere_SOURCES  = tstOGLSphere.c
-tstOGLSphere_LIBS     = $(PATH_SDK_WINPSDK_LIB)/opengl32.lib
+tstOGLSphere_LIBS     = $(PATH_SDK_WINPSDK_LIB)/OpenGL32.Lib
 
 endif # VBOX_WITH_TESTCASES
 
