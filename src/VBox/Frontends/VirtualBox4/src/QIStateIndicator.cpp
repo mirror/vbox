@@ -109,58 +109,7 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
 {
     Icon *icon = mStateIcons [mState];
     if (icon)
-    {
-//#warning port me
-        /* I didn't see any benefits of caching the icon
-         * background drawing in Qt4. This is already done
-         * by Qt itself. Also there is no "NoAutoErase"
-         * anymore. Disable this for now. */
-//        if (testAttribute (Qt::WNoAutoErase))
-//        {
-//            QColor bgColor = paletteBackgroundColor();
-//            const QPixmap *bgPixmap = paletteBackgroundPixmap();
-//            QPoint bgOff = backgroundOffset();
-//
-//            bool bgOffChanged = icon->bgOff != bgOff;
-//            bool bgPixmapChanged = icon->bgPixmap != bgPixmap ||
-//                (icon->bgPixmap != NULL &&
-//                 icon->bgPixmap->serialNumber() != bgPixmap->serialNumber());
-//            bool bgColorChanged = icon->bgColor != bgColor;
-//
-//            /* re-precompose the pixmap if any of these have changed */
-//            if (icon->cached.isNull() ||
-//                bgOffChanged || bgPixmapChanged || bgColorChanged)
-//            {
-//                int w = icon->pixmap.width();
-//                int h = icon->pixmap.height();
-//                if (icon->cached.isNull())
-//                    icon->cached = QPixmap (w, h);
-//
-//                if (bgPixmap || bgOffChanged || bgPixmapChanged)
-//                {
-//                    QPainter p (&icon->cached);
-//                    p.drawTiledPixmap (QRect (0, 0, w, h), *bgPixmap, bgOff);
-//                }
-//                else
-//                {
-//                    icon->cached.fill (bgColor);
-//                }
-//                /* paint the icon on top of the widget background sample */
-//                bitBlt (&icon->cached, 0, 0, &icon->pixmap,
-//                        0, 0, w, h, CopyROP, false);
-//                /* store the new values */
-//                icon->bgColor = bgColor;
-//                icon->bgPixmap = bgPixmap;
-//                icon->bgOff = bgOff;
-//            }
-//            /* draw the precomposed pixmap */
-//            aPainter->drawPixmap (contentsRect(), icon->cached);
-//        }
-//        else
-//        {
-            aPainter->drawPixmap (contentsRect(), icon->pixmap);
-//        }
-    }
+        aPainter->drawPixmap (contentsRect(), icon->pixmap);
 }
 
 #ifdef Q_WS_MAC

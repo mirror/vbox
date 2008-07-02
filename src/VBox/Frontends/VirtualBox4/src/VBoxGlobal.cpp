@@ -2478,7 +2478,6 @@ void VBoxGlobal::retranslateUi()
     /* As PM and X11 do not (to my knowledge) have functionality for providing
      * human readable key names, we keep a table of them, which must be
      * updated when the language is changed. */
-//#warning port me
     QIHotKeyEdit::retranslateUi();
 #endif
 }
