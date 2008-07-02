@@ -57,6 +57,7 @@ $(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 		$(PATH_BIN)/additions/vboxguest.ko \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(PATH_BIN)/additions/VBoxService \
+		$(PATH_BIN)/additions/VBoxControl \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
@@ -76,6 +77,7 @@ $(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(FREEBSDINSTDIR)/vboxguest.ko,)
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                                                $(FREEBSDINSTDIR)/VBoxClient
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxService                                               $(FREEBSDINSTDIR)/VBoxService
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxControl                                               $(FREEBSDINSTDIR)/VBoxControl
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_70.so

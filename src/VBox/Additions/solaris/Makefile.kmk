@@ -70,6 +70,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(PATH_BIN)/additions/VBoxService \
+		$(PATH_BIN)/additions/VBoxControl \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
@@ -110,6 +111,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxguest,)
 	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxClient                                      $(SOLARIS_INST_DIR)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxService                                     $(SOLARIS_INST_DIR)/VBoxService
+	$(QUIET)$(INSTALL) -s -m 0755 $(PATH_BIN)/additions/VBoxControl                                     $(SOLARIS_INST_DIR)/VBoxControl
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(SOLARIS_INST_DIR)/vboxvideo_drv_70.so

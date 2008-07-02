@@ -28,6 +28,7 @@ $vboxadditions_path/vboxguest.sh restart silentunload
 # suid permissions for timesync
 chmod 04755 $vboxadditions_path/VBoxService
 chmod a+x $vboxadditions_path/VBoxClient
+chmod a+x $vboxadditions_path/VBoxControl
 chmod a+x $vboxadditions_path/VBoxRandR.sh
 
 # create links
@@ -35,6 +36,7 @@ echo "Creating links..."
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
+/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxControl=$vboxadditions_path/VBoxControl s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
 
 # Install Xorg components to the required places

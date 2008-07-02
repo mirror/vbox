@@ -62,6 +62,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(INSTARGET_vboxmod-bin) \
 		$(PATH_BIN)/additions/vboxadd-timesync \
 		$(PATH_BIN)/additions/VBoxClient \
+		$(PATH_BIN)/additions/VBoxControl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
@@ -101,6 +102,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(PATH_TARGET)/install/module/test/
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(PATH_TARGET)/install/vboxadd-timesync
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(PATH_TARGET)/install/VBoxClient
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(PATH_TARGET)/install/VBoxControl
 	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION_STRING);g" $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
 		| $(SED) "s;_BUILD_;$(shell date);g" \
 		| $(SED) "s;_OSE_;$(VBOX_OSE);g" \
