@@ -386,7 +386,7 @@ QString QIHotKeyEdit::keyName (int aKeyVal)
         TCHAR *str = new TCHAR[256];
         if (::GetKeyNameText (scan, str, 256))
         {
-            name = QString::fromUcs2 (str);
+            name = QString::fromUtf16 (str);
         }
         else
         {
@@ -566,7 +566,7 @@ bool QIHotKeyEdit::winEvent (MSG *msg)
         TCHAR *str = new TCHAR [256];
         if (::GetKeyNameText (msg->lParam, str, 256))
         {
-            mSymbName = QString::fromUcs2 (str);
+            mSymbName = QString::fromUtf16 (str);
         }
         else
         {

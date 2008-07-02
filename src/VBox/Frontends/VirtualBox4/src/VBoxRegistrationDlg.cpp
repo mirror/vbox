@@ -506,7 +506,7 @@ QString VBoxRegistrationDlg::getPlatform()
     int major = versionInfo.dwMajorVersion;
     int minor = versionInfo.dwMinorVersion;
     int build = versionInfo.dwBuildNumber;
-    QString sp = QString::fromUcs2 ((ushort*)versionInfo.szCSDVersion);
+    QString sp = QString::fromUtf16 ((ushort*)versionInfo.szCSDVersion);
 
     QString distrib;
     if (major == 6)
