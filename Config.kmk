@@ -1524,7 +1524,7 @@ else
  TEMPLATE_VBOXGC_CXXFLAGS           = -Zi -Zl -GR- -GX- -GF- -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
 endif
 TEMPLATE_VBOXGC_CFLAGS              = $(TEMPLATE_VBOXGC_CXXFLAGS)
-TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:32 -MapInfo:Lines -MapInfo:Exports -NoD
+TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
 ifdef VBOX_USE_VCC80
  include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
  TEMPLATE_VBOXGC_LIBS                = \
@@ -1627,7 +1627,7 @@ else
  TEMPLATE_VBOXR0_CXXFLAGS           = -Zi -Zl -GR- -GX- -GF- -W3 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
 endif
 TEMPLATE_VBOXR0_CFLAGS              = $(TEMPLATE_VBOXR0_CXXFLAGS)
-TEMPLATE_VBOXR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:32 -MapInfo:Exports -NoD
+TEMPLATE_VBOXR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD
 ifdef VBOX_USE_VCC80
  TEMPLATE_VBOXR0_LIBS.x86           = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
@@ -1705,9 +1705,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXR0DRV_CXXFLAGS          = -Zi -Zl -GR- -GX- -GF- -Gz -W3 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
  endif
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
- TEMPLATE_VBOXR0DRV_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -MapInfo:Exports -NoD -Debug
- TEMPLATE_VBOXR0DRV_LDFLAGS.x86        = -Align:32
- TEMPLATE_VBOXR0DRV_LDFLAGS.amd64      = -Align:64
+ TEMPLATE_VBOXR0DRV_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD -Debug
  TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
 
