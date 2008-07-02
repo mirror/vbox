@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,77 +25,7 @@
 
 /* Qt includes */
 #include <QMouseEvent>
-#include <Q3ListView>
-
-/**
- *  Simple ListView filter to disable unselecting all items by clicking in the
- *  unused area of the list (which is actually very annoying for the Single
- *  selection mode).
- */
-class QIListViewSelectionPreserver : protected QObject
-{
-public:
-
-    QIListViewSelectionPreserver (QObject *parent, Q3ListView *alv)
-        : QObject (parent), lv (alv)
-    {
-        lv->viewport()->installEventFilter (this);
-    }
-
-protected:
-
-    bool eventFilter (QObject * /* o */, QEvent *e)
-    {
-        if (e->type() == QEvent::MouseButtonPress ||
-            e->type() == QEvent::MouseButtonRelease ||
-            e->type() == QEvent::MouseButtonDblClick)
-        {
-            QMouseEvent *me = static_cast<QMouseEvent *> (e);
-            if (!lv->itemAt (me->pos()))
-                return true;
-        }
-
-        return false;
-    }
-
-private:
-
-    Q3ListView *lv;
-};
-
-/**
- *  Simple class that filters out presses and releases of the given key
- *  directed to a widget (the widget acts like if it would never handle
- *  this key).
- */
-class QIKeyFilter : protected QObject
-{
-public:
-
-    QIKeyFilter (QObject *aParent, Qt::Key aKey) : QObject (aParent), mKey (aKey) {}
-
-    void watchOn (QObject *o) { o->installEventFilter (this); }
-
-protected:
-
-    bool eventFilter (QObject * /*o*/, QEvent *e)
-    {
-        if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease)
-        {
-            QKeyEvent *ke = static_cast<QKeyEvent *> (e);
-            if (ke->key() == mKey ||
-                (mKey == Qt::Key_Enter && ke->key() == Qt::Key_Return))
-            {
-                ke->ignore();
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    Qt::Key mKey;
-};
+#include <QWidget>
 
 /**
  *  Simple class that filters out all key presses and releases
@@ -107,18 +37,18 @@ class QIAltKeyFilter : protected QObject
 {
 public:
 
-    QIAltKeyFilter (QObject *aParent) : QObject (aParent) {}
+    QIAltKeyFilter (QObject *aParent) :QObject (aParent) {}
 
-    void watchOn (QObject *o) { o->installEventFilter (this); }
+    void watchOn (QObject *aObject) { aObject->installEventFilter (this); }
 
 protected:
 
-    bool eventFilter (QObject * /*o*/, QEvent *e)
+    bool eventFilter (QObject * /* aObject */, QEvent *aEvent)
     {
-        if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease)
+        if (aEvent->type() == QEvent::KeyPress || aEvent->type() == QEvent::KeyRelease)
         {
-            QKeyEvent *ke = static_cast<QKeyEvent *> (e);
-            if (ke->modifiers() & Qt::AltModifier)
+            QKeyEvent *event = static_cast<QKeyEvent *> (aEvent);
+            if (event->modifiers() & Qt::AltModifier)
                 return true;
         }
         return false;
@@ -126,49 +56,8 @@ protected:
 };
 
 /**
- *  Watches the given widget and makes sure the minimum widget size set by the layout
- *  manager does never get smaller than the previous minimum size set by the
- *  layout manager. This way, widgets with dynamic contents (i.e. text on some
- *  toggle buttons) will be able only to grow, never shrink, to avoid flicker
- *  during alternate contents updates (Pause -> Resume -> Pause -> ...).
- *
- *  @todo not finished
- */
-class QIConstraintKeeper : public QObject
-{
-    Q_OBJECT
-
-public:
-
-    QIConstraintKeeper (QWidget *aParent) : QObject (aParent)
-    {
-        aParent->setMinimumSize (aParent->size());
-        aParent->installEventFilter (this);
-    }
-
-private:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent)
-    {
-        if (aObject == parent() && aEvent->type() == QEvent::Resize)
-        {
-            QResizeEvent *ev = static_cast<QResizeEvent *> (aEvent);
-            QSize oldSize = ev->oldSize();
-            QSize newSize = ev->size();
-            int maxWidth = newSize.width() > oldSize.width() ?
-                newSize.width() : oldSize.width();
-            int maxHeight = newSize.height() > oldSize.height() ?
-                newSize.height() : oldSize.height();
-            if (maxWidth > oldSize.width() || maxHeight > oldSize.height())
-                qobject_cast<QWidget *> (parent())->setMinimumSize (maxWidth, maxHeight);
-        }
-        return QObject::eventFilter (aObject, aEvent);
-    }
-};
-
-/**
  *  Simple class which simulates focus-proxy rule redirecting widget
- *  assigned shortcur to desired widget.
+ *  assigned shortcut to desired widget.
  */
 class QIFocusProxy : protected QObject
 {
