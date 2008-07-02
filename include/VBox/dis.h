@@ -290,6 +290,7 @@ typedef enum
 #define USE_REG_CR2                     2
 #define USE_REG_CR3                     3
 #define USE_REG_CR4                     4
+#define USE_REG_CR8                     8
 
 #define USE_REG_DR0                     0
 #define USE_REG_DR1                     1

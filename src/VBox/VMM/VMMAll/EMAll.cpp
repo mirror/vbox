@@ -1928,6 +1928,9 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 # endif
             return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
 
+        case USE_REG_CR8:
+            return PDMApicSetTPR(pVM, val);
+
         default:
             AssertFailed();
         case USE_REG_CR1: /* illegal op */
