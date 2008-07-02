@@ -244,11 +244,11 @@ void VBoxVMSettingsNetwork::naTypeChanged (const QString &aString)
 {
     bool enableIntNet = vboxGlobal().toNetworkAttachmentType (aString) ==
                         KNetworkAttachmentType_Internal;
-    bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
-                        KNetworkAttachmentType_HostInterface;
     mLbNetwork->setEnabled (enableIntNet);
     mCbNetwork->setEnabled (enableIntNet);
 #ifdef Q_WS_X11
+    bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
+                        KNetworkAttachmentType_HostInterface;
     mGbTAP->setEnabled (enableHostIf);
 #endif
     if (mValidator)

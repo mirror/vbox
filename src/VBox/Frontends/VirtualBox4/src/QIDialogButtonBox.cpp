@@ -100,7 +100,7 @@ int QIDialogButtonBox::findEmptySpace (QBoxLayout *aLayout) const
   for (; i < aLayout->count(); ++i)
   {
       QLayoutItem *item = aLayout->itemAt(i);
-      if (QSpacerItem *sitem = item->spacerItem())
+      if (item->spacerItem())
           break;
   }
   return i;
