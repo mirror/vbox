@@ -289,6 +289,27 @@ RTDECL(int) RTStrUniLenEx(const char *psz, size_t cch, size_t *pcCps)
 }
 
 
+RTDECL(int) RTStrValidateEncoding(const char *psz)
+{
+    return RTStrValidateEncodingEx(psz, RTSTR_MAX, 0);
+}
+
+
+RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, unsigned fFlags)
+{
+    NOREF(fFlags);
+    size_t cCpsIgnored;
+    return RTStrUniLenEx(psz, cch, &cCpsIgnored);
+}
+
+
+RTDECL(bool) RTStrIsValidEncoding(const char *psz)
+{
+    int rc = RTStrValidateEncodingEx(psz, RTSTR_MAX, 0);
+    return RT_SUCCESS(rc);
+}
+
+
 RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
 {
     /*
