@@ -139,6 +139,32 @@ RTDECL(char *) RTStrDup(const char *pszString);
 RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString);
 
 /**
+ * Validates the UTF-8 encoding of the string.
+ *
+ * @returns iprt status code.
+ * @param   psz         The string.
+ */
+RTDECL(int) RTStrValidateEncoding(const char *psz);
+
+/**
+ * Validates the UTF-8 encoding of the string.
+ *
+ * @returns iprt status code.
+ * @param   psz         The string.
+ * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   fFlags      Teserved for future. Pass 0.
+ */
+RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, unsigned fFlags);
+
+/**
+ * Checks if the UTF-8 encoding is valid.
+ *
+ * @returns true / false.
+ * @param   psz         The string.
+ */
+RTDECL(bool) RTStrIsValidEncoding(const char *psz);
+
+/**
  * Gets the number of code points the string is made up of, excluding
  * the terminator.
  *
