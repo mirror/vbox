@@ -50,7 +50,7 @@ QDialog::DialogCode QIMainDialog::exec()
     /* Reset the result code */
     setResult (QDialog::Rejected);
     bool deleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
-    setAttributeq (Qt::WA_DeleteOnClose, false);
+    setAttribute (Qt::WA_DeleteOnClose, false);
     bool wasShowModal = testAttribute (Qt::WA_ShowModal);
     setAttribute (Qt::WA_ShowModal, true);
 
