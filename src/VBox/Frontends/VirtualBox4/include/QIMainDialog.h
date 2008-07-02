@@ -56,7 +56,7 @@ protected:
 
     virtual bool event (QEvent *aEvent);
     virtual void resizeEvent (QResizeEvent *aEvent);
-    virtual void keyPressEvent (QKeyEvent *aEvent);
+    virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
 protected slots:
 

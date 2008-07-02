@@ -40,6 +40,7 @@ QIMainDialog::QIMainDialog (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlag
     : QMainWindow (aParent, aFlags) 
     , mRescode (QDialog::Rejected)
 {
+    qApp->installEventFilter (this);
 }
 
 QDialog::DialogCode QIMainDialog::exec()
@@ -48,8 +49,11 @@ QDialog::DialogCode QIMainDialog::exec()
 
     /* Reset the result code */
     setResult (QDialog::Rejected);
-    bool deleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    bool deleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_DeleteOnClose, false);
+    bool wasShowModal = testAttribute (Qt::WA_ShowModal);
+    setAttribute (Qt::WA_ShowModal, true);
+
     /* Create a local event loop */
     mEventLoop = new QEventLoop();
     /* Show the window */
@@ -64,6 +68,9 @@ QDialog::DialogCode QIMainDialog::exec()
     if (guard.isNull())
         return QDialog::Rejected;
     QDialog::DialogCode res = result();
+    /* Set the old show modal attribute */
+    setAttribute(Qt::WA_ShowModal, wasShowModal);
+    /* Delete us in the case we should do so on close */
     if (deleteOnClose)
         delete this;
     /* Return the final result */
@@ -200,44 +207,55 @@ void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
     }
 }
 
-void QIMainDialog::keyPressEvent (QKeyEvent *aEvent)
+bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 {
-#ifdef Q_WS_MAC
-    if (aEvent->modifiers() == Qt::ControlModifier && 
-        aEvent->key() == Qt::Key_Period) 
-        reject();
-    else
-#endif
-    if (aEvent->modifiers() == Qt::NoModifier ||
-        (aEvent->modifiers() & Qt::KeypadModifier && aEvent->key() == Qt::Key_Enter))
+    if (!isActiveWindow())
+        return QMainWindow::eventFilter (aObject, aEvent);
+
+    switch (aEvent->type())
     {
-        switch (aEvent->key())
-        {
-            case Qt::Key_Enter:
-            case Qt::Key_Return:
-                {
-                    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
-                    for (int i=0; i < list.size(); ++i)
+        case QEvent::KeyPress:
+            {
+                QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
+#ifdef Q_WS_MAC
+                if (event->modifiers() == Qt::ControlModifier && 
+                    event->key() == Qt::Key_Period) 
+                    reject();
+                else
+#endif
+                    if (event->modifiers() == Qt::NoModifier ||
+                        (event->modifiers() & Qt::KeypadModifier && event->key() == Qt::Key_Enter))
                     {
-                        QPushButton *pb = list.at (i);
-                        if (pb->isDefault() && pb->isVisible()) 
+                        switch (event->key())
                         {
-                            if (pb->isEnabled())
-                                pb->click();
-                            return;
+                            case Qt::Key_Enter:
+                            case Qt::Key_Return:
+                                {
+                                    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
+                                    for (int i=0; i < list.size(); ++i)
+                                    {
+                                        QPushButton *pb = list.at (i);
+                                        if (pb->isDefault() && pb->isVisible()) 
+                                        {
+                                            if (pb->isEnabled())
+                                                pb->click();
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                            case Qt::Key_Escape:
+                                {
+                                    reject();
+                                    break;
+                                }
                         }
                     }
-                    break;
-                }
-            case Qt::Key_Escape:
-                {
-                    reject();
-                    break;
-                }
-        }
+            }
+        default:
+            break;
     }
-    else
-        aEvent->ignore();
+    return QMainWindow::eventFilter (aObject, aEvent);
 }
 
 void QIMainDialog::accept() 
