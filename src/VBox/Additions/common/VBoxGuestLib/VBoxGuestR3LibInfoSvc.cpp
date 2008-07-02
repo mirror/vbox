@@ -80,11 +80,11 @@ VBGLR3DECL(int) VbglR3InfoSvcDisconnect(uint32_t u32ClientId)
 
 
 /**
- * Write a registry value.
+ * Write a key value.
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
- * @param   pszKey          The registry key to save to.
+ * @param   pszKey          The key to save to.
  * @param   pszValue        The value to store.  If this is NULL then the key
  *                          will be removed.
  */
@@ -124,11 +124,17 @@ VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *
 
 
 /**
- * Retrieve a registry value.
+ * Retrieve a key value.
  *
  * @returns VBox status code.  If the value is not found, returns VERR_NOT_FOUND
+ * @retval  VINF_SUCCESS on success, pszValue and pcbActual containing valid data.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small, pcbActual will contain
+ *          the require buffer size. Note race condition here when retrying wrt
+ *          someone updating it.
+ * @retval  VERR_NOT_FOUND if the key wasn't found.
+ *
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
- * @param   pszKey          The registry key to save to.
+ * @param   pszKey          The key to read.
  * @param   pszValue        Where to store the value retrieved.
  * @param   cbValue         The size of the buffer pszValue points to.
  * @param   pcbActual       Where to store the required buffer size if cbValue
