@@ -55,7 +55,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      */
     VBOXGDTR GdtrGuest;
     CPUMGetGuestGDTR(pVM, &GdtrGuest);
-    unsigned offEntry = iGDTEntry * sizeof(VBOXDESC);
+    unsigned offEntry = iGDTEntry * sizeof(X86DESC);
     if (    iGDTEntry >= SELM_GDT_ELEMENTS
         ||  offEntry > GdtrGuest.cbGdt)
         return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
@@ -63,8 +63,8 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     /*
      * Read the guest descriptor.
      */
-    VBOXDESC Desc;
-    int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)GdtrGuest.pGdt + offEntry, sizeof(VBOXDESC));
+    X86DESC Desc;
+    int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
     if (VBOX_FAILURE(rc))
         return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
 
@@ -99,7 +99,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      * Code and data selectors are generally 1:1, with the
      * 'little' adjustment we do for DPL 0 selectors.
      */
-    PVBOXDESC   pShadowDescr = &pVM->selm.s.paGdtGC[iGDTEntry];
+    PX86DESC   pShadowDescr = &pVM->selm.s.paGdtGC[iGDTEntry];
     if (Desc.Gen.u1DescType)
     {
         /*
@@ -190,7 +190,7 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
      * LDT updates are problemous since an invalid LDT entry will cause trouble during worldswitch.
      */
     int rc;
-    if (CPUMGetGuestLDTR(pVM) / sizeof(VBOXDESC) == offRange / sizeof(VBOXDESC))
+    if (CPUMGetGuestLDTR(pVM) / sizeof(X86DESC) == offRange / sizeof(X86DESC))
     {
         Log(("LDTR selector change -> fall back to HC!!\n"));
         rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
@@ -207,12 +207,12 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
         rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
         if (VBOX_SUCCESS(rc) && cb)
         {
-            unsigned iGDTE1 = offRange / sizeof(VBOXDESC);
+            unsigned iGDTE1 = offRange / sizeof(X86DESC);
             int rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE1);
             if (rc2 == VINF_SUCCESS)
             {
                 Assert(cb);
-                unsigned iGDTE2 = (offRange + cb - 1) / sizeof(VBOXDESC);
+                unsigned iGDTE2 = (offRange + cb - 1) / sizeof(X86DESC);
                 if (iGDTE1 != iGDTE2)
                     rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE2);
                 if (rc2 == VINF_SUCCESS)
