@@ -1492,6 +1492,9 @@ ResumeExecution:
         case 4:
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
             break;
+        case 8:
+            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR8;
+            break;
         default:
             AssertFailed();
         }
