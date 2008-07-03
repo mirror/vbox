@@ -281,7 +281,12 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     PATM patmInfo;
     int  rc;
 
-    if (u32Version != PATM_SSM_VERSION)
+    if (    u32Version != PATM_SSM_VERSION
+#ifdef PATM_WITH_NEW_SSM
+        &&  u32Version != PATM_SSM_VERSION_GETPUTMEM)
+#else
+       )
+#endif
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     pVM->patm.s.savedstate.pSSM = pSSM;
@@ -289,8 +294,108 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Restore PATM structure
      */
-    rc = SSMR3GetMem(pSSM, &patmInfo, sizeof(patmInfo));
-    AssertRCReturn(rc, rc);
+#ifdef PATM_WITH_NEW_SSM
+    if (u32Version == PATM_SSM_VERSION_GETPUTMEM)
+    {
+#endif
+        rc = SSMR3GetMem(pSSM, &patmInfo, sizeof(patmInfo));
+        AssertRCReturn(rc, rc);
+#ifdef PATM_WITH_NEW_SSM
+    }
+    else
+    {
+        memset(&patmInfo, 0, sizeof(patmInfo));
+
+        AssertCompile(sizeof(patmInfo.pGCStateGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pGCStateGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pCPUMCtxGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pCPUMCtxGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pStatsGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pStatsGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnHelperCallGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnHelperCallGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnHelperRetGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnHelperRetGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnHelperJumpGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnHelperJumpGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnHelperIretGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnHelperIretGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pPatchMemGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pPatchMemGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.cbPatchMem) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.cbPatchMem);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.offPatchMem) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.offPatchMem);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.deltaReloc) == sizeof(int32_t));
+        rc = SSMR3GetS32(pSSM, &patmInfo.deltaReloc);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.uCurrentPatchIdx) == sizeof(uint32_t));
+        rc = SSMR3GetS32(pSSM, &patmInfo.uCurrentPatchIdx);
+        AssertRCReturn(rc, rc);
+               
+        AssertCompile(sizeof(patmInfo.pPatchedInstrGCLowest) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pPatchedInstrGCLowest);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pPatchedInstrGCHighest) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pPatchedInstrGCHighest);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnSysEnterGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnSysEnterGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pfnSysEnterPatchGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pfnSysEnterPatchGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.uSysEnterPatchIdx) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.uSysEnterPatchIdx);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.ulCallDepth) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.ulCallDepth);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.pGCStackGC) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &patmInfo.pGCStackGC);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.cPageRecords) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.cPageRecords);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.fOutOfMemory) == sizeof(bool));
+        rc = SSMR3GetBool(pSSM, &patmInfo.fOutOfMemory);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(patmInfo.savedstate.cPatches) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &patmInfo.savedstate.cPatches);
+        AssertRCReturn(rc, rc);
+        
+    }
+#endif
 
     /** @todo this restriction could be removed as we relocate when loading the saved state,.. */
     if (    pVM->patm.s.pGCStateGC != patmInfo.pGCStateGC
@@ -322,6 +427,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     pVM->patm.s.offPatchMem         = patmInfo.offPatchMem;
     pVM->patm.s.deltaReloc          = patmInfo.deltaReloc;
     pVM->patm.s.uCurrentPatchIdx    = patmInfo.uCurrentPatchIdx;
+    pVM->patm.s.fOutOfMemory        = patmInfo.fOutOfMemory;
 
     /* Lowest and highest patched instruction */
     pVM->patm.s.pPatchedInstrGCLowest    = patmInfo.pPatchedInstrGCLowest;
@@ -345,13 +451,85 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Restore GC state memory
      */
-    if (pVM->patm.s.pGCStateGC != patmInfo.pGCStateGC)
+#ifdef PATM_WITH_NEW_SSM
+    if (u32Version == PATM_SSM_VERSION_GETPUTMEM)
     {
-        AssertMsgFailed(("GC patch state ptrs don't match!!!\n"));
-        return VERR_SSM_INVALID_STATE;
+#endif
+        rc = SSMR3GetMem(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
+        AssertRCReturn(rc, rc);
+#ifdef PATM_WITH_NEW_SSM
     }
-    rc = SSMR3GetMem(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
-    AssertRCReturn(rc, rc);
+    else
+    {
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uVMFlags) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uVMFlags);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uPendingAction) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uPendingAction);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uPatchCalls) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uPatchCalls);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uScratch) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uScratch);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uIretEFlags) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uIretEFlags);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uIretCS) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uIretCS);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->uIretEIP) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->uIretEIP);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Psp) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Psp);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->fPIF) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->fPIF);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->GCPtrInhibitInterrupts) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &pVM->patm.s.pGCStateHC->GCPtrInhibitInterrupts);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->GCCallPatchTargetAddr) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &pVM->patm.s.pGCStateHC->GCCallPatchTargetAddr);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->GCCallReturnAddr) == sizeof(RTRCPTR));
+        rc = SSMR3GetRCPtr(pSSM, &pVM->patm.s.pGCStateHC->GCCallReturnAddr);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Restore.uEAX) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Restore.uEAX);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Restore.uECX) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Restore.uECX);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Restore.uEDI) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Restore.uEDI);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Restore.eFlags) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Restore.eFlags);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(pVM->patm.s.pGCStateHC->Restore.uFlags) == sizeof(uint32_t));
+        rc = SSMR3GetU32(pSSM, &pVM->patm.s.pGCStateHC->Restore.uFlags);
+        AssertRCReturn(rc, rc);
+    }
+#endif
 
     /*
      * Restore PATM stack page
