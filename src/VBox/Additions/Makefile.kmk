@@ -144,6 +144,12 @@ ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
  	VBoxSolarisAdditions-x86.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
 endif
 
+# Common Windows files used by 32- and 64-bit architectures.
+ifdef VBOX_WITH_ADDITIONS_ISO
+ GUESTADDITIONS_FILESPEC.win = \
+	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
+	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
+endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  ## @todo 64-bit windows additions:
@@ -172,9 +178,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	32Bit/Windows/3rdParty/AMD_PCnet/netamd.inf=./WINNT/Network/AMD/netamd.inf \
 	32Bit/Windows/3rdParty/AMD_PCnet/pcntpci5.cat=./WINNT/Network/AMD/pcntpci5.cat \
 	32Bit/Windows/3rdParty/AMD_PCnet/PCNTPCI5.sys=./WINNT/Network/AMD/PCNTPCI5.sys \
-	VBoxWindowsAdditions-x86.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions-x86.exe \
-	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
-	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
+	VBoxWindowsAdditions-x86.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions-x86.exe
  ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
   GUESTADDITIONS_FILESPEC.win.x86 += \
 	32Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
@@ -190,6 +194,7 @@ ifndef VBOX_WITHOUT_ADDITIONS_ISO
 $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(filter-out %=deleteme=,\
 			$(subst =,=deleteme= ,\
+				$(GUESTADDITIONS_FILESPEC.win) \
 				$(GUESTADDITIONS_FILESPEC.win.x86) \
 				$(GUESTADDITIONS_FILESPEC.win.amd64) \
 				$(GUESTADDITIONS_FILESPEC.solaris.x86) \
@@ -209,6 +214,7 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 	@# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
 	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 3 \
 		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
+		$(GUESTADDITIONS_FILESPEC.win) \
 		$(GUESTADDITIONS_FILESPEC.win.x86) \
 		$(GUESTADDITIONS_FILESPEC.win.amd64) \
 		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
