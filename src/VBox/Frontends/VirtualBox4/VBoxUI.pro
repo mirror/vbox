@@ -28,9 +28,6 @@ FORMS = \
     ui/VBoxCloseVMDlg.ui \
     ui/VBoxDiskImageManagerDlg.ui \
     ui/VBoxSettingsDialog.ui \
-    ui/VBoxGlobalSettingsGeneral.ui \
-    ui/VBoxGlobalSettingsInput.ui \
-    ui/VBoxGlobalSettingsLanguage.ui \
     ui/VBoxNewHDWzd.ui \
     ui/VBoxNewVMWzd.ui \
     ui/VBoxRegistrationDlg.ui \
@@ -50,7 +47,10 @@ FORMS = \
     ui/VBoxVMSettingsSF.ui \
     ui/VBoxVMSettingsSerial.ui \
     ui/VBoxVMSettingsUSB.ui \
-    ui/VBoxVMSettingsVRDP.ui
+    ui/VBoxVMSettingsVRDP.ui \
+    ui/VBoxGLSettingsGeneral.ui \
+    ui/VBoxGLSettingsInput.ui \
+    ui/VBoxGLSettingsLanguage.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_tr.ts \
