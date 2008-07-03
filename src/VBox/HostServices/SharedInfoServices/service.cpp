@@ -50,6 +50,7 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 #include <VBox/cfgm.h>
@@ -179,17 +180,15 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
 {
     LogFlowFunc(("cbKey=%d\n", cbKey));
 
-    unsigned count;
+    size_t count;
     int rc = VINF_SUCCESS;
 
     /* Validate the format of the key. */
-    /* Only accept names in printable ASCII without spaces */
-    for (count = 0; (count < cbKey) && (pszKey[count] != '\0'); ++count)
-        if ((pszKey[count] < 33) || (pszKey[count] > 126))
-            rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && (count == cbKey))
-        /* This would mean that no null terminator was found */
-        rc = VERR_INVALID_PARAMETER;
+    /* Only accept names in valid Utf8. */
+    rc = RTStrValidateEncodingEx(pszKey, cbKey, 0);
+    if (RT_SUCCESS(rc))
+        /* We want the byte length, not the Utf8 length */
+        count = strlen(pszKey);
     if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
         rc = VERR_INVALID_PARAMETER;
 
@@ -211,22 +210,17 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
 {
     LogFlowFunc(("cbValue=%d\n", cbValue));
 
-    uint32_t count;
+    size_t count;
     int rc = VINF_SUCCESS;
 
-    if (cbValue != 0)
-    {
-        /* Validate the format of the value. */
-        /* Only accept values in printable ASCII without spaces */
-        for (count = 0; (count < cbValue) && (pszValue[count] != '\0'); ++count)
-            if ((pszValue[count] < 33) || (pszValue[count] > 126))
-                rc = VERR_INVALID_PARAMETER;
-        if (RT_SUCCESS(rc) && (count == cbValue))
-            /* This would mean that no null terminator was found */
-            rc = VERR_INVALID_PARAMETER;
-        if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
-            rc = VERR_INVALID_PARAMETER;
-    }
+    /* Validate the format of the value. */
+    /* Only accept values in valid Utf8 */
+    rc = RTStrValidateEncodingEx(pszValue, cbValue, 0);
+    if (RT_SUCCESS(rc))
+        /* We want the byte length, not the Utf8 length */
+        count = strlen(pszValue);
+    if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
+        rc = VERR_INVALID_PARAMETER;
 
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
@@ -346,8 +340,8 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 int Service::delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszKey, *pszValue;
-    uint32_t cbKey, cbValue;
+    char *pszKey;
+    uint32_t cbKey;
 
     LogFlowThisFunc(("\n"));
     if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
