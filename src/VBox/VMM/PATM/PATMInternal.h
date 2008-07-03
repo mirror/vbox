@@ -36,7 +36,13 @@
 #endif
 
 
-#define PATM_SSM_VERSION                    53
+#ifdef PATM_WITH_NEW_SSM
+# define PATM_SSM_VERSION                    54
+/* Last version to use SSMR3Put/GetMem */
+# define PATM_SSM_VERSION_GETPUTMEM          53
+#else
+# define PATM_SSM_VERSION                    53
+#endif
 
 /* Enable for call patching. */
 #define PATM_ENABLE_CALL
@@ -405,33 +411,33 @@ typedef struct PATM
     R3PTRTYPE(PPATMTREES)   PatchLookupTreeHC;
 
     /** Global PATM lookup and call function (used by call patches). */
-    RTRCPTR               pfnHelperCallGC;
+    RTRCPTR                 pfnHelperCallGC;
     /** Global PATM return function (used by ret patches). */
-    RTRCPTR               pfnHelperRetGC;
+    RTRCPTR                 pfnHelperRetGC;
     /** Global PATM jump function (used by indirect jmp patches). */
-    RTRCPTR               pfnHelperJumpGC;
+    RTRCPTR                 pfnHelperJumpGC;
     /** Global PATM return function (used by iret patches). */
-    RTRCPTR               pfnHelperIretGC;
+    RTRCPTR                 pfnHelperIretGC;
 
     /** Fake patch record for global functions. */
     R3PTRTYPE(PPATMPATCHREC) pGlobalPatchRec;
 
     /** Pointer to original sysenter handler */
-    RTRCPTR               pfnSysEnterGC;
+    RTRCPTR                 pfnSysEnterGC;
     /** Pointer to sysenter handler trampoline */
-    RTRCPTR               pfnSysEnterPatchGC;
+    RTRCPTR                 pfnSysEnterPatchGC;
     /** Sysenter patch index (for stats only) */
     uint32_t                uSysEnterPatchIdx;
 
     // GC address of fault in monitored page (set by PATMGCMonitorPage, used by PATMR3HandleMonitoredPage)
-    RTRCPTR               pvFaultMonitor;
+    RTRCPTR                 pvFaultMonitor;
 
     /* Temporary information for pending MMIO patch. Set in GC or R0 context. */
     struct
     {
         RTGCPHYS            GCPhys;
-        RTRCPTR           pCachedData;
-        RTRCPTR           Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+        RTRCPTR             pCachedData;
+        RTRCPTR             Alignment0; /**< Align the structure size on a 8-byte boundrary. */
     } mmio;
 
     /* Temporary storage during load/save state */
