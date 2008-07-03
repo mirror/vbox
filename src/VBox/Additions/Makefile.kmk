@@ -145,11 +145,9 @@ ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
 endif
 
 # Common Windows files used by 32- and 64-bit architectures.
-ifdef VBOX_WITH_ADDITIONS_ISO
- GUESTADDITIONS_FILESPEC.win = \
+GUESTADDITIONS_FILESPEC.win = \
 	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
 	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
-endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  # We MUST fix the .inf / .cat problem mentioned in the todo above.
