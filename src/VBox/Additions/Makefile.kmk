@@ -240,6 +240,11 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_FILESPEC.linux.amd64) \
 		$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
 		$(GUESTADDITIONS_FILESPEC.freebsd.amd64)
+
+# Alias for creating the iso.
+.PHONY: additions-iso
+additions-iso: $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
+
 endif
 
 
