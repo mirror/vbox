@@ -41,7 +41,7 @@
 # endif
 
 /* No alias support here (yet in the ming case). */
-extern char *(strlen)(const char *psz)
+extern size_t (strlen)(const char *psz)
 {
     return RT_NOCRT(strlen)(psz);
 }
