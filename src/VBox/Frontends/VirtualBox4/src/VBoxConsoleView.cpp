@@ -2571,7 +2571,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 ch = 0;
             if (ch)
                 processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-                                                QChar (ch).upper().unicode()),
+                                                QChar (ch).toUpper().unicode()),
                                            mMainWnd->menuBar()->actions());
         }
         delete[] list;
@@ -3088,7 +3088,7 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
 #ifdef Q_WS_WIN32
         viewport()->setCursor (QCursor (Qt::BlankCursor));
         /* move the mouse to the center of the visible area */
-        QCursor::setPos (mapToGlobal (visibleRect().center()));
+        QCursor::setPos (mapToGlobal (visibleRegion().boundingRect().center()));
         mLastPos = QCursor::pos();
 #elif defined (Q_WS_MAC)
         /* move the mouse to the center of the visible area */

@@ -3406,7 +3406,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
                 workDir = mStartWith;
             else
             {
-                workDir = fi.dirPath (true);
+                workDir = fi.absolutePath();
                 initSel = fi.fileName();
             }
 
@@ -3452,7 +3452,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
             if (msg.message == WM_MOUSEMOVE)
                 PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
 
-            result = result.isEmpty() ? result : QFileInfo (result).absFilePath();
+            result = result.isEmpty() ? result : QFileInfo (result).absoluteFilePath();
 
             QApplication::postEvent (mTarget, new GetOpenFileNameEvent (result));
         }

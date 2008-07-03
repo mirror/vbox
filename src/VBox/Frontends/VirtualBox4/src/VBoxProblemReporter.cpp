@@ -2145,7 +2145,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
 #if defined (Q_WS_WIN32)
     QString fullHelpFilePath = qApp->applicationDirPath() + "/VirtualBox.chm";
 
-    HtmlHelp (GetDesktopWindow(), fullHelpFilePath.ucs2(),
+    HtmlHelp (GetDesktopWindow(), fullHelpFilePath.utf16(),
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
     char szDocsPath[RTPATH_MAX];
