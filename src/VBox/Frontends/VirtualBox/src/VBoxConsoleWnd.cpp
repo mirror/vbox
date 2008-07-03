@@ -704,7 +704,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     {
         QString str = cmachine.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
 
-        QRect ar = QApplication::desktop()->availableGeometry (this);
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
         x = str.section (',', 0, 0).toInt (&ok);
@@ -718,6 +717,13 @@ bool VBoxConsoleWnd::openView (const CSession &session)
             max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
         if (ok)
         {
+            QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
+            /* Do some position checks */
+            if (x < ar.left() || x > ar.right())
+                x = ar.left();
+            if (y < ar.top() || y > ar.bottom())
+                y = ar.top();
+
             normal_pos = QPoint (x, y);
             normal_size = QSize (w, h);
 

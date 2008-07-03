@@ -578,7 +578,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         CVirtualBox vbox = vboxGlobal().virtualBox();
         QString winPos = vbox.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
 
-        QRect ar = QApplication::desktop()->availableGeometry (pos());
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
         x = winPos.section (',', 0, 0).toInt (&ok);
@@ -592,6 +591,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
             max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
         if (ok)
         {
+            QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
+            /* Do some position checks */
+            if (x < ar.left() || x > ar.right())
+                x = ar.left();
+            if (y < ar.top() || y > ar.bottom())
+                y = ar.top();
             move (x, y);
             resize (QSize (w, h).expandedTo (minimumSizeHint())
                 .boundedTo (ar.size()));
@@ -601,6 +606,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         }
         else
         {
+            QRect ar = QApplication::desktop()->availableGeometry (this);
             resize (QSize (770, 550).expandedTo (minimumSizeHint())
                 .boundedTo (ar.size()));
         }
