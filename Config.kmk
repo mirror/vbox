@@ -367,7 +367,7 @@ ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_OGL=
 endif
 
-ifeq ($(KBUILD_TARGET),windows)
+ifeq ($(KBUILD_TARGET),win)
  VBOX_WITH_VRDP_RDESKTOP=
 endif
 
