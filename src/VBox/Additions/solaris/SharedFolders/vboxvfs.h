@@ -63,6 +63,7 @@ typedef struct vboxvfs_globinfo
     vfs_t           *pVFS;
     vnode_t         *pVNodeDev;
     vboxvfs_vnode_t *pVNodeRoot;
+    kmutex_t        MtxFS;
 } vboxvfs_globinfo_t;
 
 extern struct vnodeops *g_pVBoxVFS_vnodeops;
