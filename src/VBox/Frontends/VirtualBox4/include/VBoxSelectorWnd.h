@@ -42,7 +42,6 @@ class VBoxVMItem;
 class QTabWidget;
 class QListView;
 class QEvent;
-class QUuid;
 
 class VBoxSelectorWnd: public QIWithRetranslateUI2<QMainWindow>
 {
