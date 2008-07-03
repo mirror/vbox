@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Makefile for the Cross Platform Guest Addition Services.
+# Sub-Makefile for the Guest Additions Command Line Management Interface.
 #
 
 #
-# Copyright (C) 2007 Sun Microsystems, Inc.
+# Copyright (C) 2008 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,24 +19,26 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../..
+else
 SUB_DEPTH = ../..
-include	$(KBUILD_PATH)/subheader.kmk
-
-ifneq ($(KBUILD_TARGET),win)
- PROGRAMS += VBoxControl
+DEPTH    ?= ../../../../..
 endif
+include	$(KBUILD_PATH)/subheader.kmk
 
 #
 # VBoxControl
 #
-VBoxControl_TEMPLATE      = VBOXGUESTR3EXE
-VBoxControl_DEFS         += \
-	$(if $(VBOX_WITH_INFO_SVC),VBOX_HGCM VBOX_WITH_INFO_SVC,)
-VBoxControl_SOURCES       = \
+PROGRAMS += VBoxControl
+VBoxControl_TEMPLATE = VBOXGUESTR3EXE
+ifdef VBOX_WITH_INFO_SVC
+ VBoxControl_DEFS += VBOX_HGCM VBOX_WITH_INFO_SVC
+endif
+VBoxControl_SOURCES = \
 	VBoxControl.cpp \
 	VBoxControlSVN.cpp
-VBoxControl_LIBS          = \
+VBoxControl_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
 
@@ -45,3 +47,4 @@ VBoxControlSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxControlSVN.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 include	$(KBUILD_PATH)/subfooter.kmk
+
