@@ -7496,36 +7496,20 @@ static int handleGetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
-#if 0
-        /* enumeration? */
-        if (strcmp(argv[1], "enumerate") == 0)
-        {
-            Bstr extraDataKey;
-
-            do
-            {
-                Bstr nextExtraDataKey;
-                Bstr nextExtraDataValue;
-                HRESULT rcEnum = machine->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
-                                                              nextExtraDataValue.asOutParam());
-                extraDataKey = nextExtraDataKey;
-
-                if (SUCCEEDED(rcEnum) && extraDataKey)
-                {
-                    RTPrintf("Key: %lS, Value: %lS\n", nextExtraDataKey.raw(), nextExtraDataValue.raw());
-                }
-            } while (extraDataKey);
-        }
-        else
-#endif /* 0 */
+        char *pszKey = NULL;
+        int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
+        if (RT_SUCCESS(rrc))
         {
             Bstr value;
-            CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam()));
+            CHECK_ERROR(machine, GetGuestProperty(Bstr(pszKey), value.asOutParam()));
             if (value)
                 RTPrintf("Value: %lS\n", value.raw());
             else
                 RTPrintf("No value set!\n");
+            RTStrFree(pszKey);
         }
+        else
+            rc = E_INVALIDARG;
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -7549,12 +7533,28 @@ static int handleSetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
-        if (argc < 3)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
-        else if (argc == 3)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
+        char *pszKey = NULL;
+        int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
+        if (RT_SUCCESS(rrc))
+        {
+            if (argc < 3)
+                CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
+            else if (argc == 3)
+            {
+                char *pszValue = NULL;
+                rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
+                if (RT_SUCCESS(rrc))
+                    CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
+                else
+                    rc = E_INVALIDARG;
+                RTStrFree(pszValue);
+            }
+            else
+                return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
+            RTStrFree(pszKey);
+        }
         else
-            return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
+            rc = E_INVALIDARG;
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
