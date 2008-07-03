@@ -152,13 +152,29 @@ ifdef VBOX_WITH_ADDITIONS_ISO
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
- ## @todo 64-bit windows additions:
- # It's going to be most of the files from above, except they must not have the same name on
- # the iso (left hand side).
- # We probably an autorun wrapper which launches the right installer, unless there is
- # some Autorun.inf magic for this or that it can be done from the x86 installer.
- # Also, we MUST fix the .inf / .cat problem mentioned in the todo above.
+ # We MUST fix the .inf / .cat problem mentioned in the todo above.
+ VBOX_PATH_ADDITIONS.win.amd64 = $(PATH_OUT_BASE)/win.amd64/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.win.amd64 = \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.sys \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxTray.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxTray.exe \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxHook.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxHook.dll \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxControl.exe \
+	64Bit/Windows/Drivers/VBoxGuest/VBCoInst.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBCoInst.dll \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMouse.sys \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.inf=./WINNT/MouseFilter/VBoxMouse.inf \
+	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.sys \
+	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.inf=./WINNT/Graphics/Miniport/VBoxVideo.inf \
+	64Bit/Windows/Drivers/VBoxVideo/VBoxDisp.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxDisp.dll \
+	64Bit/Windows/Gina/VBoxGINA.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGINA.dll \
+	VBoxWindowsAdditions-amd64.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxWindowsAdditions-amd64.exe
+ ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
+  GUESTADDITIONS_FILESPEC.win.amd64 += \
+	64Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxSF.sys \
+	64Bit/Windows/Drivers/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMRXNP.dll
+ endif
 endif
+
 ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  ## @todo We're missing the .cat files and using the wrong .inf files here! This is kind of serious...
  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
