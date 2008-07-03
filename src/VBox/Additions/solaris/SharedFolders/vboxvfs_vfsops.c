@@ -111,17 +111,6 @@ static struct modlinkage g_VBoxVFSModLinkage =
     NULL                    /* terminate array of linkage structures */
 };
 
-/**
- * state info. for vboxvfs
- */
-typedef struct
-{
-    /** Device Info handle. */
-    dev_info_t             *pDip;
-    /** Driver Mutex. */
-    kmutex_t                Mtx;
-} vboxvfs_state_t;
-
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -145,14 +134,7 @@ int _init(void)
 {
     LogFlow((DEVICE_NAME ":_init\n"));
 
-    int rc = ddi_soft_state_init(&g_pVBoxVFSState, sizeof(vboxvfs_state_t), 1);
-    if (!rc)
-    {
-        rc = mod_install(&g_VBoxVFSModLinkage);
-        if (rc)
-            ddi_soft_state_fini(&g_pVBoxVFSState);
-    }
-    return rc;
+    return mod_install(&g_VBoxVFSModLinkage);;
 }
 
 
@@ -161,9 +143,12 @@ int _fini(void)
     LogFlow((DEVICE_NAME ":_fini\n"));
 
     int rc = mod_remove(&g_VBoxVFSModLinkage);
-    if (!rc)
-        ddi_soft_state_fini(&g_pVBoxVFSState);
-    return rc;
+    if (rc)
+        return rc;
+
+    /* Blow away the operation vectors*/
+    vfs_freevfsops_by_type(g_VBoxVFSType);
+    vn_freevnodeops(g_pVBoxVFS_vnodeops);
 }
 
 
@@ -180,6 +165,8 @@ static int VBoxVFS_Init(int fType, char *pszName)
     int rc;
 
     LogFlow((DEVICE_NAME ":VBoxVFS_Init\n"));
+
+    g_VBoxVFSType = fType;
 
     /* Initialize the R0 guest library. */
     rc = vboxInit();
@@ -212,7 +199,6 @@ static int VBoxVFS_Init(int fType, char *pszName)
                     rc = vn_make_ops(pszName, g_VBoxVFS_vnodeops_template, &g_pVBoxVFS_vnodeops);
                     if (!rc)
                     {
-                        g_VBoxVFSType = fType;
                         LogFlow((DEVICE_NAME ":Successfully loaded vboxvfs.\n"));
                         return 0;
                     }
@@ -261,11 +247,6 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     size_t cbShflShareName = 0;
     vboxvfs_globinfo_t *pVBoxVFSGlobalInfo = NULL;
     int AddrSpace = (pMount->flags & MS_SYSSPACE) ? UIO_SYSSPACE : UIO_USERSPACE;
-#if 0
-    caddr_t pData;
-    size_t cbData;
-    vboxvfs_mountinfo_t Args;
-#endif
 
     LogFlow((DEVICE_NAME ":VBoxVFS_Mount\n"));
 
@@ -303,37 +284,6 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
         LogRel((DEVICE_NAME ":VBoxVFS_Mount: unparsed options not supported.\n"));
         return EINVAL;
     }
-
-    /* Will be removed eventually... */
-#if 0
-    /* Retreive arguments. */
-    bzero(&Args, sizeof(Args));
-    cbData = pMount->datalen;
-    pData = pMount->data;
-    if (   (pMount->flags & MS_DATA)
-        && pData != NULL
-        && cbData > 0)
-    {
-        if (cbData > sizeof(Args))
-        {
-            LogRel((DEVICE_NAME: "VBoxVFS_Mount: argument length too long. expected=%d. received=%d\n", sizeof(Args), cbData));
-            return EINVAL;
-        }
-
-        /* Copy arguments; they can be in kernel or user space. */
-        rc = ddi_copyin(pData, &Args, cbData, (pMount->flags & MS_SYSSPACE) ? FKIOCTL : 0);
-        if (rc)
-        {
-            LogRel((DEVICE_NAME: "VBoxVFS_Mount: ddi_copyin failed to copy arguments.rc=%d\n", rc));
-            return EFAULT;
-        }
-    }
-    else
-    {
-        cbData = 0;
-        pData = NULL;
-    }
-#endif
 
     /* Get UID argument (optional). */
     rc = vboxvfs_GetIntOpt(pVFS, MNTOPT_VBOXVFS_UID, &Uid);
@@ -411,35 +361,46 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
 
     /* Allocate the global info. structure. */
     pVBoxVFSGlobalInfo = RTMemAlloc(sizeof(*pVBoxVFSGlobalInfo));
-    if (!pVBoxVFSGlobalInfo)
+    if (pVBoxVFSGlobalInfo)
+    {
+        cbShflShareName = offsetof(SHFLSTRING, String.utf8) + cbShare + 1;
+        pShflShareName  = RTMemAllocZ(cbShflShareName);
+        if (pShflShareName)
+        {
+            pShflShareName->u16Length = cbShflShareName;
+            pShflShareName->u16Size   = cbShflShareName + 1;
+            memcpy (pShflShareName->String.utf8, pszShare, cbShare + 1);
+
+            rc = vboxCallMapFolder(&g_VBoxVFSClient, pShflShareName, &pVBoxVFSGlobalInfo->Map);
+            RTMemFree(pShflShareName);
+            if (VBOX_SUCCESS(rc))
+                rc = 0;
+            else
+            {
+                LogRel((DEVICE_NAME ":VBoxVFS_Mount: vboxCallMapFolder failed rc=%d\n", rc));
+                rc = EPROTO;
+            }
+        }
+        else
+        {
+            LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));            
+            rc = ENOMEM;
+        }
+        RTMemFree(pVBoxVFSGlobalInfo);
+    }
+    else
     {
         LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for global struct.\n", sizeof(*pVBoxVFSGlobalInfo)));
-        return ENOMEM;
+        rc = ENOMEM;
     }
 
-    cbShflShareName = offsetof(SHFLSTRING, String.utf8) + cbShare + 1;
-    pShflShareName  = RTMemAllocZ(cbShflShareName);
-    if (!pShflShareName)
-    {
-        RTMemFree(pVBoxVFSGlobalInfo);
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));
-        return ENOMEM;
-    }
+    /* Undo work on failure. */
+    if (rc)
+        goto mntError1;
+    
+    /* Initialize the per-filesystem mutex */
+    mutex_init(&pVBoxVFSGlobalInfo->MtxFS, "VBoxVFS_FSMtx", MUTEX_DEFAULT, NULL);
 
-    pShflShareName->u16Length = cbShflShareName;
-    pShflShareName->u16Size   = cbShflShareName + 1;
-    memcpy (pShflShareName->String.utf8, pszShare, cbShare + 1);
-
-    rc = vboxCallMapFolder(&g_VBoxVFSClient, pShflShareName, &pVBoxVFSGlobalInfo->Map);
-    RTMemFree(pShflShareName);
-    if (VBOX_FAILURE (rc))
-    {
-        RTMemFree(pVBoxVFSGlobalInfo);
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: vboxCallMapFolder failed rc=%d\n", rc));
-        return EPROTO;
-    }
-
-    /* @todo mutex for protecting the structure. */
     pVBoxVFSGlobalInfo->Uid = Uid;
     pVBoxVFSGlobalInfo->Gid = Gid;
     pVBoxVFSGlobalInfo->pVFS = pVFS;
@@ -451,41 +412,56 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
 
     /* Allocate root vboxvfs_vnode_t object */
     pVNodeRoot = RTMemAlloc(sizeof(*pVNodeRoot));
-    if (!pVNodeRoot)
+    if (pVNodeRoot)
     {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAlloc failed to alloc %d bytes for root node.\n", sizeof(*pVNodeRoot)));
-        return ENOMEM;
+        /* Initialize vnode protection mutex */
+        mutex_init(&pVNodeRoot->MtxContents, "VBoxVFS_VNodeMtx", MUTEX_DEFAULT, NULL);
+
+        pVBoxVFSGlobalInfo->pVNodeRoot = pVNodeRoot;
+
+        /* Allocate root path */
+        pVNodeRoot->pPath = RTMemAllocZ(sizeof(SHFLSTRING) + 1);
+        if (pVNodeRoot->pPath)
+        {
+            /* Initialize root path */
+            pVNodeRoot->pPath->u16Length = 1;
+            pVNodeRoot->pPath->u16Size = 2;
+            pVNodeRoot->pPath->String.utf8[0] = '/';
+            pVNodeRoot->pPath->String.utf8[1] = '\0';
+
+            /* Stat root node info from host */
+            rc = vboxvfs_Stat(__func__, pVBoxVFSGlobalInfo, pVNodeRoot->pPath, &FSInfo, B_FALSE);
+            if (!rc)
+            {
+                /* Initialize the root vboxvfs_node_t object */
+                vboxvfs_InitVNode(pVBoxVFSGlobalInfo, pVNodeRoot, &FSInfo);
+
+                /* Success! */
+                return 0;
+            }
+            else
+                LogRel((DEVICE_NAME ":VBoxVFS_Mount: vboxvfs_Stat failed rc(errno)=%d\n", rc));
+            RTMemFree(pVNodeRoot->pPath);
+        }
+        else
+        {
+            LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to alloc memory for root node path.\n"));
+            rc = ENOMEM;
+        }
+        RTMemFree(pVNodeRoot);
+    }
+    else
+    {
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to alloc memory for root node.\n"));
+        rc = ENOMEM;
     }
 
-    /* Initialize the mutex */
-    mutex_init(&pVNodeRoot->MtxContents, "VNodeMtx", MUTEX_DEFAULT, NULL);
-
-    /* Allocate root path */
-    pVNodeRoot->pPath = RTMemAllocZ(sizeof(SHFLSTRING) + 1);
-    if (!pVNodeRoot->pPath)
-    {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for root path.\n", sizeof(SHFLSTRING) + 1));
-        return ENOMEM;
-    }
-
-    /* Initialize root path */
-    pVNodeRoot->pPath->u16Length = 1;
-    pVNodeRoot->pPath->u16Size = 2;
-    pVNodeRoot->pPath->String.utf8[0] = '/';
-    pVNodeRoot->pPath->String.utf8[1] = '\0';
-
-    /* Stat root node info from host */
-    rc = vboxvfs_Stat(__func__, pVBoxVFSGlobalInfo, pVNodeRoot->pPath, &FSInfo, B_FALSE);
-    if (rc)
-    {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: vboxvfs_Stat failed rc(errno)=%d\n", rc));
-        return rc;
-    }
-
-    /* Initialize the root vboxvfs_node_t object */
-    vboxvfs_InitVNode(pVBoxVFSGlobalInfo, pVNodeRoot, &FSInfo);
-
-    return 0;
+    /* Undo work in reverse. */
+mntError1:           
+    /* Just release the mount location. */
+    VOP_CLOSE(pVNodeDev, (pVFS->vfs_flag & VFS_RDONLY) ? FREAD : FREAD | FWRITE, 1, (offset_t)0, pCred, NULL);
+    VN_RELE(pVNodeDev);        
+    return rc;
 }
 
 static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
@@ -503,6 +479,9 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
         return EPERM;
     }
 
+    /* @todo -XXX - Not sure of supporting force unmounts. What this means is that a failed force mount could bring down 
+     * the entire system as hanging about vnode releases would no longer be valid after unloading ourselves...
+     */
     if (fUnmount & MS_FORCE)
         pVFS->vfs_flag |= VFS_UNMOUNTED;
 
@@ -516,7 +495,10 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
 
     VN_RELE(VBOXVN_TO_VN(pVBoxVFSGlobalInfo->pVNodeRoot));
 
+    RTMemFree(pVBoxVFSGlobalInfo->pVNodeRoot->pPath);
+    RTMemFree(pVBoxVFSGlobalInfo->pVNodeRoot);
     RTMemFree(pVBoxVFSGlobalInfo);
+    pVBoxVFSGlobalInfo = NULL;
     pVFS->vfs_data = NULL;
 
     return 0;
