@@ -19,8 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../..
+else
+DEPTH    ?= ../../../../..
 SUB_DEPTH = ../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -201,3 +205,4 @@ vboxvideo_drv_15_SOURCES  = \
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
+
