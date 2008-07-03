@@ -1817,12 +1817,21 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     uint32_t cpl;
 
+    /*
+     * The hidden CS.DPL register is always equal to the CPL, it is
+     * not affected by loading a conforming coding segment.
+     */
     if (CPUMAreHiddenSelRegsValid(pVM))
         cpl = pCtxCore->csHid.Attr.n.u2Dpl;
     else if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
         if (RT_LIKELY(!pCtxCore->eflags.Bits.u1VM))
         {
+            /*
+             * The SS RPL is always equal to the CPL, while the CS RPL
+             * isn't necessarily equal if the segment is conforming.
+             * See section 4.11.1 in the AMD manual.
+             */
             cpl = (pCtxCore->ss & X86_SEL_RPL);
 #ifndef IN_RING0
             if (cpl == 1)
