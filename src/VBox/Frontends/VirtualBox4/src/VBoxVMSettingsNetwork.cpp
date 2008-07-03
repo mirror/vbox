@@ -383,6 +383,7 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     /* Creating List Widget */
     QHBoxLayout *layout = new QHBoxLayout (this);
     mList = new QTreeWidget (this);
+    setFocusProxy (mList);
     mList->setColumnCount (1);
     mList->header()->hide();
     mList->setContextMenuPolicy (Qt::ActionsContextMenu);
@@ -673,7 +674,7 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
     }
 
 #ifdef Q_WS_WIN
-    setTabOrder (lastFocusWidget, mNIList);
+    setTabOrder (lastFocusWidget, mNIList->focusProxy());
     connect (mTwAdapters, SIGNAL (currentChanged (int)),
              this, SLOT (onCurrentPageChanged (int)));
     connect (mNIList, SIGNAL (currentInterfaceChanged (const QString &)),
