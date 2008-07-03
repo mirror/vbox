@@ -284,7 +284,9 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
             }
         }
     }
+# ifndef IN_RING0
     else
+# endif
 #endif /* !IN_GC */
 #ifndef IN_RING0
     {
