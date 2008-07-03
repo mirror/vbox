@@ -23,16 +23,12 @@
 #ifndef __VBoxVMSettingsHD_h__
 #define __VBoxVMSettingsHD_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsHD.gen.h"
 #include "COMDefs.h"
-#include "QIWithRetranslateUI.h"
 #include "VBoxMediaComboBox.h"
 
-/* Qt includes */
 #include <QComboBox>
-
-class VBoxVMSettingsDlg;
-class QIWidgetValidator;
 
 /** Register type to store slot data */
 class HDSltValue
@@ -244,7 +240,8 @@ class HDSlotUniquizer : public QObject
 public:
 
     static HDSlotUniquizer* instance (QWidget *aParent = 0,
-                                      HDItemsModel *aWatched = 0);
+                                      HDItemsModel *aWatched = 0,
+                                      const CMachine &aMachine = CMachine());
 
     QList<HDSltValue> list (const HDSltValue &aIncluding, bool aFilter = true);
 
@@ -255,9 +252,12 @@ public:
         makeSATAList();
     }
 
+    const CMachine& machine() const { return mMachine; }
+
 protected:
 
-    HDSlotUniquizer (QWidget *aParent, HDItemsModel *aWatched);
+    HDSlotUniquizer (QWidget *aParent, HDItemsModel *aWatched,
+                     const CMachine &aMachine);
     virtual ~HDSlotUniquizer();
 
 private:
@@ -271,30 +271,18 @@ private:
     HDItemsModel *mModel;
     QList<HDSltValue> mIDEList;
     QList<HDSltValue> mSATAList;
+    const CMachine &mMachine;
 };
 
 /** QWidget class reimplementation used as hard disks settings */
-class VBoxVMSettingsHD : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsHD : public VBoxSettingsPage,
                          public Ui::VBoxVMSettingsHD
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsHD (QWidget *aParent, VBoxVMSettingsDlg *aDlg,
-                      const QString &aPath);
-   ~VBoxVMSettingsHD();
-
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-    static bool revalidate (QString &aWarning);
-
-    bool eventFilter (QObject *aObj, QEvent *aEvent);
-
-    static CMachine mMachine;
+    VBoxVMSettingsHD();
 
 signals:
 
@@ -302,11 +290,15 @@ signals:
 
 protected:
 
-    void retranslateUi();
-
-    void getFrom();
+    void getFrom (const CMachine &aMachine);
     void putBackTo();
-    bool validate (QString &aWarning);
+
+    void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
+
+    void setOrderAfter (QWidget *aWidget);
+
+    void retranslateUi();
 
 private slots:
 
@@ -320,11 +312,12 @@ private slots:
 
 private:
 
+    bool eventFilter (QObject *aObj, QEvent *aEvent);
+
     int maxNameLength() const;
     void showEvent (QShowEvent *aEvent);
 
-    static VBoxVMSettingsHD *mSettings;
-
+    CMachine mMachine;
     QIWidgetValidator *mValidator;
     HDItemsModel *mModel;
     QAction *mNewAction;

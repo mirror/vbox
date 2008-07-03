@@ -23,11 +23,9 @@
 #ifndef __VBoxVMSettingsParallel_h__
 #define __VBoxVMSettingsParallel_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsParallel.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
-
-class VBoxVMSettingsDlg;
 
 class VBoxVMSettingsParallel : public QIWithRetranslateUI<QWidget>,
                                public Ui::VBoxVMSettingsParallel
@@ -36,16 +34,17 @@ class VBoxVMSettingsParallel : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    VBoxVMSettingsParallel (QWidget *aParent = NULL);
+    VBoxVMSettingsParallel();
 
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
+    void getFromPort (const CParallelPort &aPort);
+    void putBackToPort();
 
-    static void putBackToMachine();
+    void setValidator (QIWidgetValidator *aVal);
 
-    static bool revalidate (QString &aWarning, QString &aTitle);
+    QWidget* setOrderAfter (QWidget *aAfter);
+
+    QString pageTitle() const;
+    bool isUserDefined();
 
 protected:
 
@@ -58,15 +57,32 @@ private slots:
 
 private:
 
-    void getFromPort (const CParallelPort &aPort);
-    void putBackToPort();
-    bool isUserDefined();
-
-    QString pageTitle() const;
-
-    static QTabWidget *mTabWidget;
-
+    QIWidgetValidator *mValidator;
     CParallelPort mPort;
+};
+
+class VBoxVMSettingsParallelPage : public VBoxSettingsPage
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxVMSettingsParallelPage();
+
+protected:
+
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
+
+    void retranslateUi();
+
+private:
+
+    QIWidgetValidator *mValidator;
+    QTabWidget *mTabWidget;
 };
 
 #endif // __VBoxVMSettingsParallel_h__

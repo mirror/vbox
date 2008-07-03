@@ -21,94 +21,24 @@
  */
 
 #include "VBoxVMSettingsUSB.h"
-#include "VBoxGlobalSettingsDlg.h"
-#include "VBoxVMSettingsDlg.h"
-#include "VBoxVMSettingsUtils.h"
+#include "VBoxSettingsUtils.h"
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+
+#include <QHeaderView>
 
 inline static QString emptyToNull (const QString &str)
 {
     return str.isEmpty() ? QString::null : str;
 }
 
-VBoxVMSettingsUSB* VBoxVMSettingsUSB::mSettings = 0;
-
-void VBoxVMSettingsUSB::getFrom (QWidget *aPage,
-                                 VBoxGlobalSettingsDlg *aDlg,
-                                 const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsUSB (aPage, HostType, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-
-    mSettings->getFromHost();
-
-    /* Fixing tab-order */
-    setTabOrder (aDlg->mTwSelector, mSettings->mTwFilters);
-    setTabOrder (mSettings->mTwFilters, mSettings->mLeName);
-    setTabOrder (mSettings->mLeName, mSettings->mLeVendorID);
-    setTabOrder (mSettings->mLeVendorID, mSettings->mLeManufacturer);
-    setTabOrder (mSettings->mLeManufacturer, mSettings->mLeProductID);
-    setTabOrder (mSettings->mLeProductID, mSettings->mLeProduct);
-    setTabOrder (mSettings->mLeProduct, mSettings->mLeRevision);
-    setTabOrder (mSettings->mLeRevision, mSettings->mLeSerialNo);
-    setTabOrder (mSettings->mLeSerialNo, mSettings->mLePort);
-    setTabOrder (mSettings->mLePort, mSettings->mCbAction);
-}
-
-void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine,
-                                 QWidget *aPage,
-                                 VBoxVMSettingsDlg *aDlg,
-                                 const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsUSB (aPage, MachineType, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-
-    mSettings->getFromMachine (aMachine);
-
-    /* Fixing tab-order */
-    setTabOrder (aDlg->mTwSelector, mSettings->mGbUSB);
-    setTabOrder (mSettings->mGbUSB, mSettings->mCbUSB2);
-    setTabOrder (mSettings->mCbUSB2, mSettings->mTwFilters);
-    setTabOrder (mSettings->mTwFilters, mSettings->mLeName);
-    setTabOrder (mSettings->mLeName, mSettings->mLeVendorID);
-    setTabOrder (mSettings->mLeVendorID, mSettings->mLeManufacturer);
-    setTabOrder (mSettings->mLeManufacturer, mSettings->mLeProductID);
-    setTabOrder (mSettings->mLeProductID, mSettings->mLeProduct);
-    setTabOrder (mSettings->mLeProduct, mSettings->mLeRevision);
-    setTabOrder (mSettings->mLeRevision, mSettings->mLeSerialNo);
-    setTabOrder (mSettings->mLeSerialNo, mSettings->mLePort);
-    setTabOrder (mSettings->mLePort, mSettings->mCbRemote);
-}
-
-void VBoxVMSettingsUSB::putBackTo()
-{
-    if (mSettings)
-        mSettings->mType == MachineType ? mSettings->putBackToMachine() :
-                                          mSettings->putBackToHost();
-}
-
-
-VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
-                                      FilterType aType,
-                                      QWidget *aDlg,
-                                      const QString &aPath)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
+    : mValidator (0)
     , mType (aType)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsUSB::setupUi (this);
-
-    /* Setup validation */
-    mValidator = new QIWidgetValidator (aPath, aParent, aDlg);
-    connect (mValidator, SIGNAL (validityChanged (const QIWidgetValidator *)),
-             aDlg, SLOT (enableOk (const QIWidgetValidator *)));
 
     /* Prepare actions */
     mNewAction = new QAction (mTwFilters);
@@ -145,7 +75,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     mMenu->addAction (mMdnAction);
 
     /* Prepare toolbar */
-    VBoxToolBar *toolBar = new VBoxToolBar (mGbUSBFilters);
+    VBoxToolBar *toolBar = new VBoxToolBar (mWtFilterHandler);
     toolBar->setUsesTextLabel (false);
     toolBar->setUsesBigPixmaps (false);
     toolBar->setOrientation (Qt::Vertical);
@@ -155,7 +85,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     toolBar->addAction (mMupAction);
     toolBar->addAction (mMdnAction);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    mGbUSBFilters->layout()->addWidget (toolBar);
+    mWtFilterHandler->layout()->addWidget (toolBar);
 
     /* Setup connections */
     connect (mGbUSB, SIGNAL (toggled (bool)),
@@ -165,7 +95,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     connect (mTwFilters, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
 
-    mUSBDevicesMenu = new VBoxUSBMenu (aParent);
+    mUSBDevicesMenu = new VBoxUSBMenu (this);
     connect (mUSBDevicesMenu, SIGNAL (triggered (QAction*)),
              this, SLOT (addConfirmed (QAction *)));
     connect (mNewAction, SIGNAL (triggered (bool)),
@@ -218,12 +148,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (QWidget *aParent,
     retranslateUi();
 }
 
-VBoxVMSettingsUSB::~VBoxVMSettingsUSB()
-{
-    mSettings = 0;
-}
-
-void VBoxVMSettingsUSB::getFromHost()
+void VBoxVMSettingsUSB::getFrom (const CSystemProperties &, const VBoxGlobalSettings &)
 {
     mGbUSB->setVisible (false);
 
@@ -240,7 +165,7 @@ void VBoxVMSettingsUSB::getFromHost()
     currentChanged (mTwFilters->currentItem());
 }
 
-void VBoxVMSettingsUSB::putBackToHost()
+void VBoxVMSettingsUSB::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
 {
     CHost host = vboxGlobal().virtualBox().GetHost();
 
@@ -265,7 +190,7 @@ void VBoxVMSettingsUSB::putBackToHost()
     mUSBFilterListModified = false;
 }
 
-void VBoxVMSettingsUSB::getFromMachine (const CMachine &aMachine)
+void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
@@ -282,7 +207,7 @@ void VBoxVMSettingsUSB::getFromMachine (const CMachine &aMachine)
     currentChanged (mTwFilters->currentItem());
 }
 
-void VBoxVMSettingsUSB::putBackToMachine()
+void VBoxVMSettingsUSB::putBackTo()
 {
     CUSBController ctl = mMachine.GetUSBController();
 
@@ -308,6 +233,27 @@ void VBoxVMSettingsUSB::putBackToMachine()
     mUSBFilterListModified = false;
 }
 
+void VBoxVMSettingsUSB::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+}
+
+void VBoxVMSettingsUSB::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mGbUSB);
+    setTabOrder (mGbUSB, mCbUSB2);
+    setTabOrder (mCbUSB2, mTwFilters);
+    setTabOrder (mTwFilters, mLeName);
+    setTabOrder (mLeName, mLeVendorID);
+    setTabOrder (mLeVendorID, mLeManufacturer);
+    setTabOrder (mLeManufacturer, mLeProductID);
+    setTabOrder (mLeProductID, mLeProduct);
+    setTabOrder (mLeProduct, mLeRevision);
+    setTabOrder (mLeRevision, mLeSerialNo);
+    setTabOrder (mLeSerialNo, mLePort);
+    setTabOrder (mLePort, mCbRemote);
+    setTabOrder (mCbRemote, mCbAction);
+}
 
 void VBoxVMSettingsUSB::retranslateUi()
 {
@@ -353,7 +299,6 @@ void VBoxVMSettingsUSB::retranslateUi()
 
     mUSBFilterName = tr ("New Filter %1", "usb");
 }
-
 
 void VBoxVMSettingsUSB::usbAdapterToggled (bool aOn)
 {
@@ -442,7 +387,7 @@ void VBoxVMSettingsUSB::setCurrentText (const QString &aText)
     if (sdr == mLeName)
     {
         filter.SetName (aText);
-        item->setText (lvUSBFilters_Name, aText);
+        item->setText (twUSBFilters_Name, aText);
     } else
     if (sdr == mLeVendorID)
     {
@@ -492,7 +437,7 @@ void VBoxVMSettingsUSB::newClicked()
     QTreeWidgetItemIterator iterator (mTwFilters);
     while (*iterator)
     {
-        QString filterName = (*iterator)->text (lvUSBFilters_Name);
+        QString filterName = (*iterator)->text (twUSBFilters_Name);
         int pos = regExp.indexIn (filterName);
         if (pos != -1)
             maxFilterIndex = regExp.cap (1).toInt() > maxFilterIndex ?
@@ -599,8 +544,11 @@ void VBoxVMSettingsUSB::delClicked()
         mLeProductID->setValidator (0);
         mLeRevision->setValidator (0);
         mLePort->setValidator (0);
-        mValidator->rescan();
-        mValidator->revalidate();
+        if (mValidator)
+        {
+            mValidator->rescan();
+            mValidator->revalidate();
+        }
     }
 
     currentChanged (mTwFilters->currentItem());
@@ -656,7 +604,7 @@ void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
         new QTreeWidgetItem (mTwFilters, mTwFilters->topLevelItem (pos)) :
         new QTreeWidgetItem (mTwFilters);
     item->setCheckState (0, aFilter.GetActive() ? Qt::Checked : Qt::Unchecked);
-    item->setText (lvUSBFilters_Name, aFilter.GetName());
+    item->setText (twUSBFilters_Name, aFilter.GetName());
 
     /* Setup validators */
     if (!mLeName->validator())
@@ -666,7 +614,8 @@ void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
         mLeProductID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
         mLeRevision->setValidator (new QRegExpValidator (QRegExp ("[0-9]{0,4}"), this));
         mLePort->setValidator (new QRegExpValidator (QRegExp ("[0-9]*"), this));
-        mValidator->rescan();
+        if (mValidator)
+            mValidator->rescan();
     }
 
     if (isNew)
@@ -675,6 +624,7 @@ void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
         mLeName->setFocus();
     }
 
-    mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 

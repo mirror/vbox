@@ -86,8 +86,8 @@ VBOX_PATH_QT4_LIB64      ?= $(VBOX_PATH_QT4)/lib64
 VBOX_PATH_QT4_FRAMEWORKS ?= $(VBOX_PATH_QT4)/Frameworks
 VBOX_PATH_QT4_SHARE      ?= $(VBOX_PATH_QT4)
 
-VBOX_MODULE_QT4     = QtCore QtGui 
-VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB 
+VBOX_MODULE_QT4     = QtCore QtGui
+VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
  # This is necessary because we didn't include the Qt header in framework
@@ -448,6 +448,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QITreeWidget.h \
 	include/QIMainDialog.h \
 	include/QIHelpButton.h \
+	include/VBoxUtils.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxGlobal.h \
 	include/VBoxVMListView.h \
@@ -470,7 +471,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSnapshotsWgt.h \
 	include/VBoxVMLogViewer.h \
 	include/VBoxDiskImageManagerDlg.h \
-	include/VBoxVMSettingsUtils.h \
+	include/VBoxSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
 	include/VBoxVMSettingsHD.h \
 	include/VBoxVMSettingsCD.h \
@@ -482,11 +483,12 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsUSB.h \
 	include/VBoxVMSettingsSF.h \
 	include/VBoxVMSettingsVRDP.h \
-	include/VBoxVMSettingsDlg.h \
-	include/VBoxGlobalSettingsGeneral.h \
-	include/VBoxGlobalSettingsInput.h \
-	include/VBoxGlobalSettingsLanguage.h \
-	include/VBoxGlobalSettingsDlg.h
+	include/VBoxGLSettingsGeneral.h \
+	include/VBoxGLSettingsInput.h \
+	include/VBoxGLSettingsLanguage.h \
+	include/VBoxSettingsDialog.h \
+	include/VBoxSettingsDialogSpecific.h \
+	include/VBoxSettingsPage.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -564,11 +566,11 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsUSB.cpp \
 	src/VBoxVMSettingsSF.cpp \
 	src/VBoxVMSettingsVRDP.cpp \
-	src/VBoxVMSettingsDlg.cpp \
-	src/VBoxGlobalSettingsGeneral.cpp \
-	src/VBoxGlobalSettingsInput.cpp \
-	src/VBoxGlobalSettingsLanguage.cpp \
-	src/VBoxGlobalSettingsDlg.cpp
+	src/VBoxGLSettingsGeneral.cpp \
+	src/VBoxGLSettingsInput.cpp \
+	src/VBoxGLSettingsLanguage.cpp \
+	src/VBoxSettingsDialog.cpp \
+	src/VBoxSettingsDialogSpecific.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 ifndef VBOX_OSE

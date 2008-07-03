@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMSettingsUtils class declaration
+ * VBoxSettingsUtils class declaration
  */
 
 /*
@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxVMSettingsUtils_h__
-#define __VBoxVMSettingsUtils_h__
+#ifndef __VBoxSettingsUtils_h__
+#define __VBoxSettingsUtils_h__
 
 #include <VBoxGlobal.h>
 
@@ -40,11 +40,12 @@
 enum
 {
     /* mTwSelector column numbers */
-    listView_Category = 0,
-    listView_Id = 1,
-    listView_Link = 2,
+    treeWidget_Category = 0,
+    treeWidget_Id = 1,
+    treeWidget_Link = 2,
+
     /* mTwUSBFilters column numbers */
-    lvUSBFilters_Name = 0,
+    twUSBFilters_Name = 0,
 };
 
 /**
@@ -236,6 +237,7 @@ public:
         VBoxGlobal::setLayoutMargin (layout, 0);
         layout->addWidget (&mIcon);
         layout->addWidget (&mLabel);
+        setVisible (false);
     }
 
     void setWarningPixmap (const QPixmap& aPixmap) { mIcon.setPixmap (aPixmap); }
@@ -247,5 +249,5 @@ private:
     QLabel mLabel;
 };
 
-#endif // __VBoxVMSettingsUtils_h__
+#endif // __VBoxSettingsUtils_h__
 

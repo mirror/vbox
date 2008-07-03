@@ -23,16 +23,13 @@
 #ifndef __VBoxVMSettingsUSB_h__
 #define __VBoxVMSettingsUSB_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsUSB.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxGlobalSettingsDlg;
-class VBoxVMSettingsDlg;
-class QIWidgetValidator;
 class VBoxUSBMenu;
 
-class VBoxVMSettingsUSB : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsUSB : public VBoxSettingsPage,
                           public Ui::VBoxVMSettingsUSB
 {
     Q_OBJECT;
@@ -46,33 +43,23 @@ public:
         MachineType = 2
     };
 
-    static void getFrom (QWidget *aPage,
-                         VBoxGlobalSettingsDlg *aDlg,
-                         const QString &aPath);
-    static void getFrom (const CMachine &aMachine,
-                         QWidget *aPage,
-                         VBoxVMSettingsDlg *aDlg,
-                         const QString &aPath);
-    static void putBackTo();
+    VBoxVMSettingsUSB (FilterType aType);
 
 protected:
 
-    VBoxVMSettingsUSB (QWidget *aParent,
-                       FilterType aType,
-                       QWidget *aDlg,
-                       const QString &aPath);
+    void getFrom (const CSystemProperties &aProps,
+                  const VBoxGlobalSettings &aGs);
+    void putBackTo (CSystemProperties &aProps,
+                    VBoxGlobalSettings &aGs);
 
-   ~VBoxVMSettingsUSB();
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
 
-    void getFromHost();
-    void putBackToHost();
+    void setValidator (QIWidgetValidator *aVal);
 
-    void getFromMachine (const CMachine &aMachine);
-    void putBackToMachine();
+    void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
-
-    FilterType mType;
 
 private slots:
 
@@ -92,10 +79,9 @@ private:
 
     void addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNew);
 
-    static VBoxVMSettingsUSB *mSettings;
-
     CMachine mMachine;
     QIWidgetValidator *mValidator;
+    FilterType mType;
     QAction *mNewAction;
     QAction *mAddAction;
     QAction *mDelAction;

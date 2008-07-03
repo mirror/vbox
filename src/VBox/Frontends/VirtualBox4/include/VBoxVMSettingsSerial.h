@@ -23,29 +23,28 @@
 #ifndef __VBoxVMSettingsSerial_h__
 #define __VBoxVMSettingsSerial_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsSerial.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
-
-class VBoxVMSettingsDlg;
 
 class VBoxVMSettingsSerial : public QIWithRetranslateUI<QWidget>,
                              public Ui::VBoxVMSettingsSerial
 {
     Q_OBJECT;
 
-
 public:
-    VBoxVMSettingsSerial (QWidget* aParent = NULL);
 
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
+    VBoxVMSettingsSerial();
 
-    static void putBackToMachine();
+    void getFromPort (const CSerialPort &aPort);
+    void putBackToPort();
 
-    static bool revalidate (QString &aWarning, QString &aTitle);
+    void setValidator (QIWidgetValidator *aVal);
+
+    QWidget* setOrderAfter (QWidget *aAfter);
+
+    QString pageTitle() const;
+    bool isUserDefined();
 
 protected:
 
@@ -59,15 +58,32 @@ private slots:
 
 private:
 
-    QString pageTitle() const;
-
-    void getFromPort (const CSerialPort &aPort);
-    void putBackToPort();
-    bool isUserDefined();
-
-    static QTabWidget *mTabWidget;
-
+    QIWidgetValidator *mValidator;
     CSerialPort mPort;
+};
+
+class VBoxVMSettingsSerialPage : public VBoxSettingsPage
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxVMSettingsSerialPage();
+
+protected:
+
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
+
+    void retranslateUi();
+
+private:
+
+    QIWidgetValidator *mValidator;
+    QTabWidget *mTabWidget;
 };
 
 #endif // __VBoxVMSettingsSerial_h__

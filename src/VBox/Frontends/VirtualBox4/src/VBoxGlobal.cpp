@@ -1534,10 +1534,6 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
         QString virt = m.GetHWVirtExEnabled() == KTSBool_True ?
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
-                       m.GetHWVirtExEnabled() == KTSBool_False ?
-                       tr ("Disabled", "details report (VT-x/AMD-V)") :
-                       props.GetHWVirtExEnabled() ?
-                       tr ("Enabled", "details report (VT-x/AMD-V)") :
                        tr ("Disabled", "details report (VT-x/AMD-V)");
 
         /* PAE/NX */

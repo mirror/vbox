@@ -21,14 +21,12 @@
  */
 
 #include "VBoxVMSettingsSF.h"
-#include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
 #include "QIDialogButtonBox.h"
 #include "VBoxToolBar.h"
 
-/* Qt includes */
 #include <QLineEdit>
 #include <QToolButton>
 #include <QPushButton>
@@ -173,10 +171,8 @@ private:
 };
 
 
-VBoxVMSettingsSF* VBoxVMSettingsSF::mSettings = 0;
-
-VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
+    : VBoxSettingsPage (aParent)
     , mDialogType (aType)
     , mIsListViewChanged (false)
 {
@@ -276,26 +272,6 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (QWidget *aParent, int aType)
 }
 
 
-void VBoxVMSettingsSF::getFromMachineEx (const CMachine &aMachine,
-                                         QWidget *aPage,
-                                         VBoxVMSettingsDlg *aDlg)
-{
-    mSettings = new VBoxVMSettingsSF (aPage, MachineType);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-    mSettings->getFromMachine (aMachine);
-
-    /* Fixing Tab Order */
-    setTabOrder (aDlg->mTwSelector, mSettings->mTreeView);
-}
-
-void VBoxVMSettingsSF::putBackToMachineEx()
-{
-    mSettings->putBackToMachine();
-}
-
-
 void VBoxVMSettingsSF::getFromGlobal()
 {
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
@@ -365,6 +341,22 @@ void VBoxVMSettingsSF::putBackToConsole()
     putBackTo (en, root);
 }
 
+
+void VBoxVMSettingsSF::getFrom (const CMachine &aMachine)
+{
+    getFromMachine (aMachine);
+}
+
+void VBoxVMSettingsSF::putBackTo()
+{
+    putBackToMachine();
+}
+
+void VBoxVMSettingsSF::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mTreeView);
+}
+
 void VBoxVMSettingsSF::retranslateUi()
 {
     /* Translate uic generated strings */
@@ -373,6 +365,7 @@ void VBoxVMSettingsSF::retranslateUi()
     mTrFull = tr ("Full");
     mTrReadOnly = tr ("Read-only");
 }
+
 
 void VBoxVMSettingsSF::addTriggered()
 {
@@ -486,7 +479,7 @@ void VBoxVMSettingsSF::processCurrentChanged (
 }
 
 void VBoxVMSettingsSF::processDoubleClick (QTreeWidgetItem *aItem,
-                                                    int /* aColumn */)
+                                           int /* aColumn */)
 {
     bool editEnabled = aItem && aItem->parent() &&
         isEditable (aItem->parent()->text (1));
@@ -550,8 +543,8 @@ void VBoxVMSettingsSF::showEvent (QShowEvent *aEvent)
 
 
 void VBoxVMSettingsSF::removeSharedFolder (const QString & aName,
-                                                    const QString & aPath,
-                                                    SFDialogType aType)
+                                           const QString & aPath,
+                                           SFDialogType aType)
 {
     switch (aType)
     {
@@ -587,9 +580,9 @@ void VBoxVMSettingsSF::removeSharedFolder (const QString & aName,
 }
 
 void VBoxVMSettingsSF::createSharedFolder (const QString & aName,
-                                                    const QString & aPath,
-                                                    bool aWritable,
-                                                    SFDialogType aType)
+                                           const QString & aPath,
+                                           bool aWritable,
+                                           SFDialogType aType)
 {
     switch (aType)
     {
@@ -626,7 +619,7 @@ void VBoxVMSettingsSF::createSharedFolder (const QString & aName,
 
 
 void VBoxVMSettingsSF::getFrom (const CSharedFolderEnumerator &aEn,
-                                         SFTreeViewItem *aRoot)
+                                SFTreeViewItem *aRoot)
 {
     while (aEn.HasMore())
     {

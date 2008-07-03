@@ -23,30 +23,12 @@
 #include "VBoxVMSettingsAudio.h"
 #include "VBoxGlobal.h"
 
-VBoxVMSettingsAudio* VBoxVMSettingsAudio::mSettings = 0;
-
-VBoxVMSettingsAudio::VBoxVMSettingsAudio (QWidget *aParent)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsAudio::VBoxVMSettingsAudio()
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsAudio::setupUi (this);
     /* Applying language settings */
     retranslateUi();
-}
-
-void VBoxVMSettingsAudio::getFromMachine (const CMachine &aMachine,
-                                          QWidget *aPage)
-{
-    mSettings = new VBoxVMSettingsAudio (aPage);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-    mSettings->getFrom (aMachine);
-}
-
-void VBoxVMSettingsAudio::putBackToMachine()
-{
-    mSettings->putBackTo();
 }
 
 void VBoxVMSettingsAudio::getFrom (const CMachine &aMachine)
@@ -70,6 +52,12 @@ void VBoxVMSettingsAudio::putBackTo()
     AssertWrapperOk (audio);
 }
 
+void VBoxVMSettingsAudio::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mGbAudio);
+    setTabOrder (mGbAudio, mCbAudioDriver);
+    setTabOrder (mCbAudioDriver, mCbAudioController);
+}
 
 void VBoxVMSettingsAudio::retranslateUi()
 {

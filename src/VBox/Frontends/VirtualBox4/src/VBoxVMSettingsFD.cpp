@@ -21,39 +21,26 @@
  */
 
 #include "VBoxVMSettingsFD.h"
-#include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxDiskImageManagerDlg.h"
 
-/* Qt includes */
 #include <QFileInfo>
 
-VBoxVMSettingsFD* VBoxVMSettingsFD::mSettings = 0;
-
-VBoxVMSettingsFD::VBoxVMSettingsFD (QWidget *aParent,
-                                    VBoxVMSettingsDlg *aDlg,
-                                    const QString &aPath)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsFD::VBoxVMSettingsFD()
+    : mValidator (0)
     , mLastSelected (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsFD::setupUi (this);
 
-    /* Setup validation */
-    mValidator = new QIWidgetValidator (aPath, aParent, this);
-    connect (mValidator, SIGNAL (validityChanged (const QIWidgetValidator*)),
-             aDlg, SLOT (enableOk (const QIWidgetValidator*)));
-    connect (mValidator, SIGNAL (isValidRequested (QIWidgetValidator*)),
-             aDlg, SLOT (revalidate (QIWidgetValidator*)));
-
     /* Setup connections */
-    connect (mGbFD, SIGNAL (toggled (bool)), this, SLOT (onMediaChanged()));
-    connect (mCbIsoFD, SIGNAL (activated (int)), this, SLOT (onMediaChanged()));
+    connect (mGbFD, SIGNAL (toggled (bool)), this, SLOT (onGbChange (bool)));
+    connect (mRbHostFD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
+    connect (mRbIsoFD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
+    connect (mCbIsoFD, SIGNAL (activated (int)), this, SLOT (onCbChange()));
     connect (mTbIsoFD, SIGNAL (clicked()), this, SLOT (showImageManager()));
-    connect (mRbHostFD, SIGNAL (toggled (bool)), mValidator, SLOT (revalidate()));
-    connect (mRbIsoFD, SIGNAL (toggled (bool)), mValidator, SLOT (revalidate()));
 
     /* Setup iconsets */
     mTbIsoFD->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
@@ -65,29 +52,6 @@ VBoxVMSettingsFD::VBoxVMSettingsFD (QWidget *aParent,
     mLastSelected = mRbHostFD;
     /* Applying language settings */
     retranslateUi();
-}
-
-void VBoxVMSettingsFD::getFromMachine (const CMachine &aMachine,
-                                       QWidget *aPage,
-                                       VBoxVMSettingsDlg *aDlg,
-                                       const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsFD (aPage, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-    connect (mSettings, SIGNAL (fdChanged()), aDlg, SLOT (resetFirstRunFlag()));
-    mSettings->getFrom (aMachine);
-}
-
-void VBoxVMSettingsFD::putBackToMachine()
-{
-    mSettings->putBackTo();
-}
-
-bool VBoxVMSettingsFD::revalidate (QString &aWarning)
-{
-    return mSettings->validate (aWarning);
 }
 
 void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
@@ -166,7 +130,8 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
     else
         mCbIsoFD->refresh();
 
-    mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsFD::putBackTo()
@@ -190,16 +155,47 @@ void VBoxVMSettingsFD::putBackTo()
     }
 }
 
-bool VBoxVMSettingsFD::validate (QString &aWarning)
+void VBoxVMSettingsFD::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+}
+
+bool VBoxVMSettingsFD::revalidate (QString &aWarning, QString &)
+{
+    if (mRbHostFD->isChecked() && mCbHostFD->currentText().isNull())
+        aWarning = tr ("Host floppy drive is not selected");
+    else if (mRbIsoFD->isChecked() && mUuidIsoFD.isNull())
+        aWarning = tr ("Floppy image file is not selected");
+
+    return aWarning.isNull();
+}
+
+void VBoxVMSettingsFD::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mGbFD);
+    setTabOrder (mGbFD, mRbHostFD);
+    setTabOrder (mRbHostFD, mCbHostFD);
+    setTabOrder (mCbHostFD, mRbIsoFD);
+    setTabOrder (mRbIsoFD, mCbIsoFD);
+    setTabOrder (mCbIsoFD, mTbIsoFD);
+}
+
+void VBoxVMSettingsFD::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsFD::retranslateUi (this);
+}
+
+void VBoxVMSettingsFD::onGbChange (bool aSwitchedOn)
 {
     /* Toggle auto-exclusiveness on/off to let the buttons be unchecked both in
      * case of group-box is not checked and exclusively checked in case of
      * group-box is checked. */
-    mRbHostFD->setAutoExclusive (mGbFD->isChecked());
-    mRbIsoFD->setAutoExclusive (mGbFD->isChecked());
+    mRbHostFD->setAutoExclusive (aSwitchedOn);
+    mRbIsoFD->setAutoExclusive (aSwitchedOn);
 
     /* Toggle both buttons off when the group box unchecked. */
-    if (!mGbFD->isChecked())
+    if (!aSwitchedOn)
     {
         mLastSelected = mRbIsoFD->isChecked() ? mRbIsoFD : mRbHostFD;
 
@@ -218,6 +214,11 @@ bool VBoxVMSettingsFD::validate (QString &aWarning)
         mLastSelected->blockSignals (false);
     }
 
+    onCbChange();
+}
+
+void VBoxVMSettingsFD::onRbChange()
+{
     /* Check the 'host' group. */
     mCbHostFD->setEnabled (mRbHostFD->isChecked());
 
@@ -225,28 +226,15 @@ bool VBoxVMSettingsFD::validate (QString &aWarning)
     mCbIsoFD->setEnabled (mRbIsoFD->isChecked());
     mTbIsoFD->setEnabled (mRbIsoFD->isChecked());
 
-    /* Compose the error string. */
-    if (mRbHostFD->isChecked() && mCbHostFD->currentText().isNull())
-        aWarning = tr ("Host floppy drive is not selected");
-    else if (mRbIsoFD->isChecked() && mUuidIsoFD.isNull())
-        aWarning = tr ("Floppy image file is not selected");
-
-    return aWarning.isNull();
+    onCbChange();
 }
 
-
-void VBoxVMSettingsFD::retranslateUi()
-{
-    /* Translate uic generated strings */
-    Ui::VBoxVMSettingsFD::retranslateUi (this);
-}
-
-
-void VBoxVMSettingsFD::onMediaChanged()
+void VBoxVMSettingsFD::onCbChange()
 {
     mUuidIsoFD = mGbFD->isChecked() ? mCbIsoFD->getId() : QUuid();
-    mValidator->revalidate();
     emit fdChanged();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsFD::showImageManager()
@@ -267,6 +255,7 @@ void VBoxVMSettingsFD::showImageManager()
     }
 
     mCbIsoFD->setFocus();
-    mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 

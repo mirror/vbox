@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>647</width>
-    <height>548</height>
+    <width>624</width>
+    <height>420</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" >
@@ -37,7 +37,7 @@
     <number>0</number>
    </property>
    <property name="bottomMargin" >
-    <number>0</number>
+    <number>5</number>
    </property>
    <item>
     <widget class="QTabWidget" name="mTabGeneral" >
@@ -934,7 +934,7 @@
   <customwidget>
    <class>BootItemsTable</class>
    <extends>QTreeWidget</extends>
-   <header>VBoxVMSettingsUtils.h</header>
+   <header>VBoxSettingsUtils.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

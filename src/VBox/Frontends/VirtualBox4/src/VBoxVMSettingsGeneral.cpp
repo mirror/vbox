@@ -21,17 +21,12 @@
  */
 
 #include "VBoxVMSettingsGeneral.h"
-#include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "QIWidgetValidator.h"
 
-/* Qt includes */
 #include <QDir>
 
 #define ITEM_TYPE_ROLE Qt::UserRole + 1
-
-VBoxVMSettingsGeneral* VBoxVMSettingsGeneral::mSettings = 0;
 
 /**
  *  Calculates a suitable page step size for the given max value. The returned
@@ -53,28 +48,22 @@ static int calcPageStep (int aMax)
     return (int) p2;
 }
 
-VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
-                                              VBoxVMSettingsDlg *aDlg,
-                                              const QString &aPath)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsGeneral::setupUi (this);
 
-    /* Setup validators */
+    /* Setup constants */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     const uint MinRAM = sys.GetMinGuestRAM();
     const uint MaxRAM = sys.GetMaxGuestRAM();
     const uint MinVRAM = sys.GetMinGuestVRAM();
     const uint MaxVRAM = sys.GetMaxGuestVRAM();
 
-    mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), aDlg));
-    mLeRam->setValidator (new QIntValidator (MinRAM, MaxRAM, aDlg));
-    mLeVideo->setValidator (new QIntValidator (MinVRAM, MaxVRAM, aDlg));
-
-    mValidator = new QIWidgetValidator (aPath, aParent, aDlg);
-    connect (mValidator, SIGNAL (validityChanged (const QIWidgetValidator *)),
-             aDlg, SLOT (enableOk (const QIWidgetValidator *)));
+    /* Setup validators */
+    mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
+    mLeRam->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
+    mLeVideo->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
 
     /* Setup connections */
     connect (mSlRam, SIGNAL (valueChanged (int)),
@@ -151,26 +140,9 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral (QWidget *aParent,
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX4 */
 
     qApp->installEventFilter (this);
+
     /* Applying language settings */
     retranslateUi();
-}
-
-void VBoxVMSettingsGeneral::getFromMachine (const CMachine &aMachine,
-                                            QWidget *aPage,
-                                            VBoxVMSettingsDlg *aDlg,
-                                            const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsGeneral (aPage, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-    connect (mSettings, SIGNAL (tableChanged()), aDlg, SLOT (resetFirstRunFlag()));
-    mSettings->getFrom (aMachine);
-}
-
-void VBoxVMSettingsGeneral::putBackToMachine()
-{
-    mSettings->putBackTo();
 }
 
 void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
@@ -223,7 +195,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
                 uniqueList << name;
             }
         }
-        adjustBootOrderTWSize ();
+        adjustBootOrderTWSize();
     }
 
     /* ACPI */
@@ -233,11 +205,9 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
     /* VT-x/AMD-V */
-    aMachine.GetHWVirtExEnabled() == KTSBool_False ?
-        mCbVirt->setCheckState (Qt::Unchecked) :
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
         mCbVirt->setCheckState (Qt::Checked) :
-        mCbVirt->setCheckState (Qt::PartiallyChecked);
+        mCbVirt->setCheckState (Qt::Unchecked);
 
     /* PAE/NX */
     mCbPae->setChecked (aMachine.GetPAEEnabled());
@@ -310,8 +280,7 @@ void VBoxVMSettingsGeneral::putBackTo()
 
     /* VT-x/AMD-V */
     mMachine.SetHWVirtExEnabled (
-        mCbVirt->checkState() == Qt::Unchecked ? KTSBool_False :
-        mCbVirt->checkState() == Qt::Checked ? KTSBool_True : KTSBool_Default);
+        mCbVirt->checkState() == Qt::Checked ? KTSBool_True : KTSBool_False);
 
     /* PAE/NX */
     mMachine.SetPAEEnabled (mCbPae->isChecked());
@@ -341,6 +310,34 @@ void VBoxVMSettingsGeneral::putBackTo()
                            mCbSaveMounted->isChecked() ? "yes" : "no");
 }
 
+void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
+{
+    /* Setup Tab order */
+    setTabOrder (aWidget, mTabGeneral->focusProxy());
+    setTabOrder (mTabGeneral->focusProxy(), mLeName);
+    setTabOrder (mLeName, mCbOsType);
+    setTabOrder (mCbOsType, mSlRam);
+    setTabOrder (mSlRam, mLeRam);
+    setTabOrder (mLeRam, mSlVideo);
+    setTabOrder (mSlVideo, mLeVideo);
+
+    setTabOrder (mLeVideo, mTwBootOrder);
+    setTabOrder (mTwBootOrder, mTbBootItemUp);
+    setTabOrder (mTbBootItemUp, mTbBootItemDown);
+    setTabOrder (mTbBootItemDown, mCbAcpi);
+    setTabOrder (mCbAcpi, mCbPae);
+    setTabOrder (mCbPae, mCbApic);
+    setTabOrder (mCbApic, mCbVirt);
+    setTabOrder (mCbVirt, mCbClipboard);
+    setTabOrder (mCbClipboard, mCbIDEController);
+    setTabOrder (mCbIDEController, mLeSnapshot);
+    setTabOrder (mLeSnapshot, mTbSelectSnapshot);
+    setTabOrder (mTbSelectSnapshot, mTbResetSnapshot);
+
+    setTabOrder (mTbResetSnapshot, mTeDescription);
+
+    setTabOrder (mTeDescription, mCbSaveMounted);
+}
 
 void VBoxVMSettingsGeneral::retranslateUi()
 {
@@ -366,7 +363,7 @@ void VBoxVMSettingsGeneral::retranslateUi()
         ++it;
     }
     /* Readjust the tree widget size */
-    adjustBootOrderTWSize ();
+    adjustBootOrderTWSize();
 
     /* Shared Clipboard mode */
     mCbClipboard->setItemText (0, vboxGlobal().toString (KClipboardMode_Disabled));
@@ -474,6 +471,23 @@ void VBoxVMSettingsGeneral::resetSnapshotFolder()
     mLeSnapshot->del();
 }
 
+void VBoxVMSettingsGeneral::adjustBootOrderTWSize()
+{
+    /* Calculate the optimal size of the tree widget & set it as fixed
+     * size. */
+    mTwBootOrder->setFixedSize (
+        static_cast<QAbstractItemView*> (mTwBootOrder)
+        ->sizeHintForColumn (0) + 2 * mTwBootOrder->frameWidth(),
+        static_cast<QAbstractItemView*> (mTwBootOrder)
+        ->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() +
+        2 * mTwBootOrder->frameWidth());
+
+    /* Update the layout system */
+    mWBootContainer->layout()->activate();
+    mTabAdvanced->layout()->activate();
+    mTabAdvanced->layout()->update();
+}
+
 bool VBoxVMSettingsGeneral::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     if (!aObject->isWidgetType())
@@ -514,13 +528,9 @@ bool VBoxVMSettingsGeneral::eventFilter (QObject *aObject, QEvent *aEvent)
     return QWidget::eventFilter (aObject, aEvent);
 }
 
-void VBoxVMSettingsGeneral::adjustBootOrderTWSize ()
+void VBoxVMSettingsGeneral::showEvent (QShowEvent *aEvent)
 {
-    if (mTwBootOrder)
-    {
-        /* Calculate the optimal size of the tree widget & set it as fixed
-         * size. */
-        mTwBootOrder->setFixedSize (static_cast<QAbstractItemView*> (mTwBootOrder)->sizeHintForColumn (0) + 2 * mTwBootOrder->frameWidth(),
-                                    static_cast<QAbstractItemView*> (mTwBootOrder)->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + 2 * mTwBootOrder->frameWidth());
-    }
+    QCoreApplication::sendPostedEvents();
+    VBoxSettingsPage::showEvent (aEvent);
 }
+
