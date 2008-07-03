@@ -35,6 +35,8 @@
  */
 class QIAltKeyFilter : protected QObject
 {
+    Q_OBJECT;
+
 public:
 
     QIAltKeyFilter (QObject *aParent) :QObject (aParent) {}
@@ -61,6 +63,8 @@ protected:
  */
 class QIFocusProxy : protected QObject
 {
+    Q_OBJECT;
+
 public:
 
     QIFocusProxy (QWidget *aFrom, QWidget *aTo)
@@ -121,7 +125,7 @@ inline HIViewRef darwinToHIViewRef (QWidget *aWidget)
  */
 inline WindowRef darwinToWindowRef (HIViewRef aViewRef)
 {
-    return reinterpret_cast<WindowRef> (HIViewGetWindow(aViewRef)); 
+    return reinterpret_cast<WindowRef> (HIViewGetWindow(aViewRef));
 }
 
 /**
