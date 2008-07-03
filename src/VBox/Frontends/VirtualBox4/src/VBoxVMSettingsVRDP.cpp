@@ -21,39 +21,17 @@
  */
 
 #include "VBoxVMSettingsVRDP.h"
-#include "VBoxVMSettingsDlg.h"
-#include "VBoxVMSettingsUtils.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 
-VBoxVMSettingsVRDP* VBoxVMSettingsVRDP::mSettings = 0;
-
-VBoxVMSettingsVRDP::VBoxVMSettingsVRDP (QWidget *aParent,
-                                        VBoxVMSettingsDlg *aDlg,
-                                        const QString &aPath)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsVRDP::VBoxVMSettingsVRDP()
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsVRDP::setupUi (this);
 
     /* Setup validation */
-    mLeVRDPPort->setValidator (new QIntValidator (0, 0xFFFF, aDlg));
-    mLeVRDPTimeout->setValidator (new QIntValidator (aDlg));
-
-    mValidator = new QIWidgetValidator (aPath, aParent, aDlg);
-    connect (mValidator, SIGNAL (validityChanged (const QIWidgetValidator*)),
-             aDlg, SLOT (enableOk (const QIWidgetValidator*)));
-    connect (mValidator, SIGNAL (isValidRequested (QIWidgetValidator*)),
-             aDlg, SLOT (revalidate (QIWidgetValidator*)));
-
-    /* Setup connections */
-    connect (mGbVRDP, SIGNAL (toggled (bool)),
-             mValidator, SLOT (revalidate()));
-    connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
-             mValidator, SLOT (revalidate()));
-    connect (mLeVRDPTimeout, SIGNAL (textChanged (const QString&)),
-             mValidator, SLOT (revalidate()));
+    mLeVRDPPort->setValidator (new QIntValidator (0, 0xFFFF, this));
+    mLeVRDPTimeout->setValidator (new QIntValidator (this));
 
     /* Setup dialog */
     mCbVRDPMethod->insertItem (0, ""); /* KVRDPAuthType_Null */
@@ -62,31 +40,6 @@ VBoxVMSettingsVRDP::VBoxVMSettingsVRDP (QWidget *aParent,
 
     /* Applying language settings */
     retranslateUi();
-}
-
-void VBoxVMSettingsVRDP::getFromMachine (const CMachine &aMachine,
-                                         QWidget *aPage,
-                                         VBoxVMSettingsDlg *aDlg,
-                                         const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsVRDP (aPage, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-
-    mSettings->getFrom (aMachine);
-
-    /* Fixing Tab Order */
-    setTabOrder (aDlg->mTwSelector, mSettings->mGbVRDP);
-    setTabOrder (mSettings->mGbVRDP, mSettings->mLeVRDPPort);
-    setTabOrder (mSettings->mLeVRDPPort, mSettings->mCbVRDPMethod);
-    setTabOrder (mSettings->mCbVRDPMethod, mSettings->mLeVRDPTimeout);
-}
-
-void VBoxVMSettingsVRDP::putBackToMachine()
-{
-    if (mSettings)
-        mSettings->putBackTo();
 }
 
 void VBoxVMSettingsVRDP::getFrom (const CMachine &aMachine)
@@ -110,6 +63,24 @@ void VBoxVMSettingsVRDP::putBackTo()
     vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
 }
 
+void VBoxVMSettingsVRDP::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+    connect (mGbVRDP, SIGNAL (toggled (bool)),
+             mValidator, SLOT (revalidate()));
+    connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
+             mValidator, SLOT (revalidate()));
+    connect (mLeVRDPTimeout, SIGNAL (textChanged (const QString&)),
+             mValidator, SLOT (revalidate()));
+}
+
+void VBoxVMSettingsVRDP::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mGbVRDP);
+    setTabOrder (mGbVRDP, mLeVRDPPort);
+    setTabOrder (mLeVRDPPort, mCbVRDPMethod);
+    setTabOrder (mCbVRDPMethod, mLeVRDPTimeout);
+}
 
 void VBoxVMSettingsVRDP::retranslateUi()
 {

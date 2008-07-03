@@ -3517,7 +3517,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     mainLayout->setSpacing (10);
 
     /* Setup settings layout */
-    mSettings = new VBoxVMSettingsSF (this, MachineType | ConsoleType);
+    mSettings = new VBoxVMSettingsSF (MachineType | ConsoleType, this);
     mSettings->getFromConsole (aSession.GetConsole());
     mSettings->getFromMachine (aSession.GetMachine());
     mainLayout->addWidget (mSettings);

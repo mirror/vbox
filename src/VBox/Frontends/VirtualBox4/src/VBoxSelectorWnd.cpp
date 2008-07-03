@@ -29,8 +29,7 @@
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxNewVMWzd.h"
 #include "VBoxDiskImageManagerDlg.h"
-#include "VBoxVMSettingsDlg.h"
-#include "VBoxGlobalSettingsDlg.h"
+#include "VBoxSettingsDialogSpecific.h"
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
 
@@ -741,22 +740,13 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    VBoxGlobalSettingsDlg dlg (this);
-    dlg.getFrom (props, settings);
+    VBoxSettingsDialog *dlg = new VBoxGLSettingsDlg (this);
+    dlg->getFrom();
 
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        VBoxGlobalSettings s = settings;
-        dlg.putBackTo (props, s);
-        if (!props.isOk())
-            vboxProblem().cannotSetSystemProperties (props);
-        else
-        {
-            // see whether the user has changed something or not
-            if (!(settings == s))
-                vboxGlobal().setSettings (s);
-        }
-    }
+    if (dlg->exec() == QDialog::Accepted)
+        dlg->putBackTo();
+
+    delete dlg;
 }
 
 void VBoxSelectorWnd::fileExit()
@@ -784,11 +774,6 @@ void VBoxSelectorWnd::vmNew()
 
 /**
  *  Opens the VM settings dialog.
- *
- *  @param  aCategory   Category to select in the settings dialog. See
- *                      VBoxVMSettingsDlg::setup().
- *  @param  aControl    Widget name to select in the settings dialog. See
- *                      VBoxVMSettingsDlg::setup().
  */
 void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl)
 {
@@ -812,31 +797,28 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     CMachine m = session.GetMachine();
     AssertMsgReturn (!m.isNull(), ("Machine must not be null"), (void) 0);
 
-    VBoxVMSettingsDlg dlg (this, aCategory, aControl);
-    dlg.getFromMachine (m);
+    VBoxSettingsDialog *dlg = new VBoxVMSettingsDlg (this, m, aCategory, aControl);
+    dlg->getFrom();
 
-    if (dlg.exec() == QDialog::Accepted)
+    if (dlg->exec() == QDialog::Accepted)
     {
         QString oldName = m.GetName();
-        COMResult res = dlg.putBackToMachine();
-        if (res.isOk())
+        dlg->putBackTo();
+
+        m.SaveSettings();
+        if (m.isOk())
         {
-            m.SaveSettings();
-            if (m.isOk())
-            {
-                if (oldName.compare (m.GetName()))
-                    mVMModel->sort();
-            }
-            else
-            {
-                vboxProblem().cannotSaveMachineSettings (m);
-            }
+            if (oldName.compare (m.GetName()))
+                mVMModel->sort();
         }
         else
-        {
-            vboxProblem().cannotApplyMachineSettings (m, res);
-        }
+            vboxProblem().cannotSaveMachineSettings (m);
+
+        /* To check use the result in future
+         * vboxProblem().cannotApplyMachineSettings (m, res); */
     }
+
+    delete dlg;
 
     mVMListView->setFocus();
 

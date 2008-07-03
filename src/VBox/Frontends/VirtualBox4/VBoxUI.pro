@@ -27,7 +27,7 @@ LANGUAGE	= C++
 FORMS = \
     ui/VBoxCloseVMDlg.ui \
     ui/VBoxDiskImageManagerDlg.ui \
-    ui/VBoxGlobalSettingsDlg.ui \
+    ui/VBoxSettingsDialog.ui \
     ui/VBoxGlobalSettingsGeneral.ui \
     ui/VBoxGlobalSettingsInput.ui \
     ui/VBoxGlobalSettingsLanguage.ui \
@@ -42,7 +42,6 @@ FORMS = \
     ui/VBoxVMLogViewer.ui \
     ui/VBoxVMSettingsAudio.ui \
     ui/VBoxVMSettingsCD.ui \
-    ui/VBoxVMSettingsDlg.ui \
     ui/VBoxVMSettingsFD.ui \
     ui/VBoxVMSettingsGeneral.ui \
     ui/VBoxVMSettingsHD.ui \

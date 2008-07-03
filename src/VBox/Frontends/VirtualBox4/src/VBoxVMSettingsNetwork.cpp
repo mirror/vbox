@@ -22,12 +22,11 @@
 
 /* Common Includes */
 #include "VBoxVMSettingsNetwork.h"
-#include "VBoxVMSettingsDlg.h"
 #include "QIWidgetValidator.h"
 #include "VBoxGlobal.h"
 #ifdef Q_WS_WIN
 #include "VBoxToolBar.h"
-#include "VBoxVMSettingsUtils.h"
+#include "VBoxSettingsUtils.h"
 #include "VBoxProblemReporter.h"
 #endif
 
@@ -194,6 +193,23 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
 #endif
 
     mValidator->revalidate();
+}
+
+QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
+{
+    setTabOrder (aAfter, mGbAdapter);
+    setTabOrder (mGbAdapter, mCbAType);
+    setTabOrder (mCbAType, mCbNAType);
+    setTabOrder (mCbNAType, mCbNetwork);
+    setTabOrder (mCbNetwork, mLeMAC);
+    setTabOrder (mLeMAC, mPbMAC);
+    setTabOrder (mPbMAC, mCbCable);
+    setTabOrder (mCbCable, mLeInterface_x11);
+    setTabOrder (mLeInterface_x11, mLeSetup_x11);
+    setTabOrder (mLeSetup_x11, mTbSetup_x11);
+    setTabOrder (mTbSetup_x11, mLeTerminate_x11);
+    setTabOrder (mLeTerminate_x11, mTbTerminate_x11);
+    return mTbTerminate_x11;
 }
 
 void VBoxVMSettingsNetwork::setNetworksList (const QStringList &aList)
@@ -599,57 +615,34 @@ void VBoxNIList::populateInterfacesList()
 
 
 /* VBoxVMSettingsNetworkPage Stuff */
-VBoxVMSettingsNetworkPage* VBoxVMSettingsNetworkPage::mSettings = 0;
-
-void VBoxVMSettingsNetworkPage::getFromMachine (const CMachine &aMachine,
-                                                QWidget *aPage,
-                                                VBoxVMSettingsDlg *aDlg,
-                                                const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsNetworkPage (aPage);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 5, 0, 0);
-    layout->addWidget (mSettings);
-    mSettings->getFrom (aMachine, aDlg, aPath);
-}
-
-void VBoxVMSettingsNetworkPage::putBackToMachine()
-{
-    mSettings->putBackTo();
-}
-
-bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
-                                            QString &aTitle)
-{
-    return mSettings->validate (aWarning, aTitle);
-}
-
-VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage (QWidget *aParent)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
+    : mValidator (0)
     , mLockNetworkListUpdate (true)
 {
     QVBoxLayout *layout = new QVBoxLayout (this);
-    layout->setContentsMargins (0, 0, 0, 0);
+    layout->setContentsMargins (0, 5, 0, 5);
 
     /* Creating Tab Widget */
-    mTwAdapters = new QTabWidget (aParent);
+    mTwAdapters = new QTabWidget (this);
     layout->addWidget (mTwAdapters);
     /* Prepare Networks Lists */
     populateNetworksList();
 
 #ifdef Q_WS_WIN
     /* Creating Interfaces List */
-    mNIList = new VBoxNIList (aParent);
+    mNIList = new VBoxNIList (this);
     layout->addWidget (mNIList);
 #else
     layout->addStretch();
 #endif
 }
 
-void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine,
-                                         VBoxVMSettingsDlg *aDlg,
-                                         const QString &aPath)
+void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
 {
+    Assert (mFirstWidget);
+    setTabOrder (mFirstWidget, mTwAdapters->focusProxy());
+    QWidget *lastFocusWidget = mTwAdapters->focusProxy();
+
     /* Creating Tab Pages */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
@@ -669,22 +662,18 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine,
         mTwAdapters->addTab (page, page->pageTitle());
 
         /* Setup validation */
-        QIWidgetValidator *wval =
-            new QIWidgetValidator (QString ("%1: %2").arg (aPath, page->pageTitle()),
-                                   (QWidget*)parent(), aDlg);
-        connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
-                 aDlg, SLOT (enableOk (const QIWidgetValidator*)));
-        connect (wval, SIGNAL (isValidRequested (QIWidgetValidator *)),
-                 aDlg, SLOT (revalidate (QIWidgetValidator*)));
+        page->setValidator (mValidator);
+
+        /* Setup tab order */
+        lastFocusWidget = page->setOrderAfter (lastFocusWidget);
+
+        /* Setup connections */
         connect (page->mCbNetwork, SIGNAL (editTextChanged (const QString&)),
                  this, SLOT (updateNetworksList()));
-#ifdef Q_WS_WIN
-        connect (mNIList, SIGNAL (listChanged()), wval, SLOT (revalidate()));
-#endif
-        page->setValidator (wval);
     }
 
 #ifdef Q_WS_WIN
+    setTabOrder (lastFocusWidget, mNIList);
     connect (mTwAdapters, SIGNAL (currentChanged (int)),
              this, SLOT (onCurrentPageChanged (int)));
     connect (mNIList, SIGNAL (currentInterfaceChanged (const QString &)),
@@ -707,8 +696,16 @@ void VBoxVMSettingsNetworkPage::putBackTo()
     }
 }
 
-bool VBoxVMSettingsNetworkPage::validate (QString &aWarning,
-                                          QString &aTitle)
+void VBoxVMSettingsNetworkPage::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+#ifdef Q_WS_WIN
+    connect (mNIList, SIGNAL (listChanged()), mValidator, SLOT (revalidate()));
+#endif
+}
+
+bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
+                                            QString &aTitle)
 {
     bool valid = true;
 

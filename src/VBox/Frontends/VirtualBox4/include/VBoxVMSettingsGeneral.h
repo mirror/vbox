@@ -23,37 +23,29 @@
 #ifndef __VBoxVMSettingsGeneral_h__
 #define __VBoxVMSettingsGeneral_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsGeneral.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsDlg;
-class QIWidgetValidator;
-
-class VBoxVMSettingsGeneral : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsGeneral : public VBoxSettingsPage,
                               public Ui::VBoxVMSettingsGeneral
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsGeneral (QWidget *aParent, VBoxVMSettingsDlg *aDlg,
-                           const QString &aPath);
-
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    VBoxVMSettingsGeneral();
 
 signals:
 
     void tableChanged();
 
 protected:
+
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
 
@@ -77,11 +69,9 @@ private:
 
     void adjustBootOrderTWSize ();
 
-    static VBoxVMSettingsGeneral *mSettings;
-
     bool eventFilter (QObject *aObject, QEvent *aEvent);
+    void showEvent (QShowEvent *aEvent);
 
-    QIWidgetValidator *mValidator;
     CMachine mMachine;
 };
 

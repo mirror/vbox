@@ -23,33 +23,18 @@
 #ifndef __VBoxVMSettingsCD_h__
 #define __VBoxVMSettingsCD_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsCD.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsDlg;
-class QIWidgetValidator;
-
-class VBoxVMSettingsCD : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsCD : public VBoxSettingsPage,
                          public Ui::VBoxVMSettingsCD
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsCD (QWidget *aParent, VBoxVMSettingsDlg *aDlg,
-                      const QString &aPath);
-
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-    static bool revalidate (QString &aWarning);
-
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
-    bool validate (QString &aWarning);
+    VBoxVMSettingsCD();
 
 signals:
 
@@ -57,16 +42,24 @@ signals:
 
 protected:
 
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
+
+    void setOrderAfter (QWidget *aWidget);
+
     void retranslateUi();
 
 private slots:
 
-    void onMediaChanged();
+    void onGbChange (bool aSwitchedOn);
+    void onRbChange();
+    void onCbChange();
     void showImageManager();
 
 private:
-
-    static VBoxVMSettingsCD *mSettings;
 
     CMachine mMachine;
     QIWidgetValidator *mValidator;

@@ -23,12 +23,10 @@
 #ifndef __VBoxVMSettingsNetwork_h__
 #define __VBoxVMSettingsNetwork_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsNetwork.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class QIWidgetValidator;
-class VBoxVMSettingsDlg;
 #ifdef Q_WS_WIN
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -53,6 +51,9 @@ public:
     QString pageTitle() const;
 
     void setValidator (QIWidgetValidator *aValidator);
+
+    QWidget* setOrderAfter (QWidget *aAfter);
+
     void setNetworksList (const QStringList &aList);
 
 #ifdef Q_WS_WIN
@@ -132,20 +133,25 @@ private:
 /*
  * QWidget sub-class which represents network settings page itself.
  */
-class VBoxVMSettingsNetworkPage : public QIWithRetranslateUI<QWidget>
+class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
 {
     Q_OBJECT;
 
 public:
 
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
-    static bool revalidate (QString &aWarning, QString &aTitle);
+    VBoxVMSettingsNetworkPage();
 
-protected slots:
+protected:
+
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
+
+    void retranslateUi();
+
+private slots:
 
     void updateNetworksList();
 #ifdef Q_WS_WIN
@@ -153,27 +159,18 @@ protected slots:
     void onCurrentInterfaceChanged (const QString &);
 #endif
 
-protected:
-
-    VBoxVMSettingsNetworkPage (QWidget *aParent);
-
-    void getFrom (const CMachine &aMachine,
-                  VBoxVMSettingsDlg *aDlg,
-                  const QString &aPath);
-    void putBackTo();
-    bool validate (QString &aWarning, QString &aTitle);
-
-    void retranslateUi();
+private:
 
     void populateNetworksList();
-
-    static VBoxVMSettingsNetworkPage *mSettings;
 
     /* Widgets */
     QTabWidget *mTwAdapters;
 #ifdef Q_WS_WIN
     VBoxNIList *mNIList;
 #endif
+
+    /* Widget Validator*/
+    QIWidgetValidator *mValidator;
 
     /* Lists */
     QStringList mListNetworks;

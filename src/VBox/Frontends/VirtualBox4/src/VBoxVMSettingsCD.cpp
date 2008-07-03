@@ -21,39 +21,25 @@
  */
 
 #include "VBoxVMSettingsCD.h"
-#include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxDiskImageManagerDlg.h"
 
-/* Qt includes */
 #include <QFileInfo>
 
-VBoxVMSettingsCD* VBoxVMSettingsCD::mSettings = 0;
-
-VBoxVMSettingsCD::VBoxVMSettingsCD (QWidget *aParent,
-                                    VBoxVMSettingsDlg *aDlg,
-                                    const QString &aPath)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxVMSettingsCD::VBoxVMSettingsCD()
+    : mValidator (0)
     , mLastSelected (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsCD::setupUi (this);
 
-    /* Setup validation */
-    mValidator = new QIWidgetValidator (aPath, aParent, this);
-    connect (mValidator, SIGNAL (validityChanged (const QIWidgetValidator*)),
-             aDlg, SLOT (enableOk (const QIWidgetValidator*)));
-    connect (mValidator, SIGNAL (isValidRequested (QIWidgetValidator*)),
-             aDlg, SLOT (revalidate (QIWidgetValidator*)));
-
     /* Setup connections */
-    connect (mGbCD, SIGNAL (toggled (bool)), this, SLOT (onMediaChanged()));
-    connect (mCbIsoCD, SIGNAL (activated (int)), this, SLOT (onMediaChanged()));
+    connect (mGbCD, SIGNAL (toggled (bool)), this, SLOT (onGbChange (bool)));
+    connect (mRbHostCD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
+    connect (mRbIsoCD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
+    connect (mCbIsoCD, SIGNAL (activated (int)), this, SLOT (onCbChange()));
     connect (mTbIsoCD, SIGNAL (clicked()), this, SLOT (showImageManager()));
-    connect (mRbHostCD, SIGNAL (toggled (bool)), mValidator, SLOT (revalidate()));
-    connect (mRbIsoCD, SIGNAL (toggled (bool)), mValidator, SLOT (revalidate()));
 
     /* Setup iconsets */
     mTbIsoCD->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
@@ -61,33 +47,10 @@ VBoxVMSettingsCD::VBoxVMSettingsCD (QWidget *aParent,
 
     /* Setup dialog */
     mCbIsoCD->setType (VBoxDefs::CD);
-
     mLastSelected = mRbHostCD;
+
     /* Applying language settings */
     retranslateUi();
-}
-
-void VBoxVMSettingsCD::getFromMachine (const CMachine &aMachine,
-                                       QWidget *aPage,
-                                       VBoxVMSettingsDlg *aDlg,
-                                       const QString &aPath)
-{
-    mSettings = new VBoxVMSettingsCD (aPage, aDlg, aPath);
-    QVBoxLayout *layout = new QVBoxLayout (aPage);
-    layout->setContentsMargins (0, 0, 0, 0);
-    layout->addWidget (mSettings);
-    connect (mSettings, SIGNAL (cdChanged()), aDlg, SLOT (resetFirstRunFlag()));
-    mSettings->getFrom (aMachine);
-}
-
-void VBoxVMSettingsCD::putBackToMachine()
-{
-    mSettings->putBackTo();
-}
-
-bool VBoxVMSettingsCD::revalidate (QString &aWarning)
-{
-    return mSettings->validate (aWarning);
 }
 
 void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
@@ -166,7 +129,8 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
     else
         mCbIsoCD->refresh();
 
-    mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsCD::putBackTo()
@@ -193,16 +157,48 @@ void VBoxVMSettingsCD::putBackTo()
     }
 }
 
-bool VBoxVMSettingsCD::validate (QString &aWarning)
+void VBoxVMSettingsCD::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+}
+
+bool VBoxVMSettingsCD::revalidate (QString &aWarning, QString &)
+{
+    if (mRbHostCD->isChecked() && mCbHostCD->currentText().isNull())
+        aWarning = tr ("Host CD/DVD drive is not selected");
+    else if (mRbIsoCD->isChecked() && mUuidIsoCD.isNull())
+        aWarning = tr ("CD/DVD image file is not selected");
+
+    return aWarning.isNull();
+}
+
+void VBoxVMSettingsCD::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mGbCD);
+    setTabOrder (mGbCD, mRbHostCD);
+    setTabOrder (mRbHostCD, mCbHostCD);
+    setTabOrder (mCbHostCD, mCbPassthrough);
+    setTabOrder (mCbPassthrough, mRbIsoCD);
+    setTabOrder (mRbIsoCD, mCbIsoCD);
+    setTabOrder (mCbIsoCD, mTbIsoCD);
+}
+
+void VBoxVMSettingsCD::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxVMSettingsCD::retranslateUi (this);
+}
+
+void VBoxVMSettingsCD::onGbChange (bool aSwitchedOn)
 {
     /* Toggle auto-exclusiveness on/off to let the buttons be
      * unchecked both in case of group-box is not checked and
      * exclusively checked in case of group-box is checked. */
-    mRbHostCD->setAutoExclusive (mGbCD->isChecked());
-    mRbIsoCD->setAutoExclusive (mGbCD->isChecked());
+    mRbHostCD->setAutoExclusive (aSwitchedOn);
+    mRbIsoCD->setAutoExclusive (aSwitchedOn);
 
     /* Toggle both buttons off when the group box unchecked. */
-    if (!mGbCD->isChecked())
+    if (!aSwitchedOn)
     {
         mLastSelected = mRbIsoCD->isChecked() ? mRbIsoCD : mRbHostCD;
 
@@ -221,6 +217,11 @@ bool VBoxVMSettingsCD::validate (QString &aWarning)
         mLastSelected->blockSignals (false);
     }
 
+    onCbChange();
+}
+
+void VBoxVMSettingsCD::onRbChange()
+{
     /* Check the 'host' group. */
     mCbHostCD->setEnabled (mRbHostCD->isChecked());
     mCbPassthrough->setEnabled (mRbHostCD->isChecked());
@@ -229,28 +230,15 @@ bool VBoxVMSettingsCD::validate (QString &aWarning)
     mCbIsoCD->setEnabled (mRbIsoCD->isChecked());
     mTbIsoCD->setEnabled (mRbIsoCD->isChecked());
 
-    /* Compose the error string. */
-    if (mRbHostCD->isChecked() && mCbHostCD->currentText().isNull())
-        aWarning = tr ("Host CD/DVD drive is not selected");
-    else if (mRbIsoCD->isChecked() && mUuidIsoCD.isNull())
-        aWarning = tr ("CD/DVD image file is not selected");
-
-    return aWarning.isNull();
+    onCbChange();
 }
 
-
-void VBoxVMSettingsCD::retranslateUi()
-{
-    /* Translate uic generated strings */
-    Ui::VBoxVMSettingsCD::retranslateUi (this);
-}
-
-
-void VBoxVMSettingsCD::onMediaChanged()
+void VBoxVMSettingsCD::onCbChange()
 {
     mUuidIsoCD = mGbCD->isChecked() ? mCbIsoCD->getId() : QUuid();
-    mValidator->revalidate();
     emit cdChanged();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsCD::showImageManager()
@@ -271,6 +259,7 @@ void VBoxVMSettingsCD::showImageManager()
     }
 
     mCbIsoCD->setFocus();
-    mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 

@@ -23,39 +23,31 @@
 #ifndef __VBoxVMSettingsVRDP_h__
 #define __VBoxVMSettingsVRDP_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsVRDP.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsDlg;
-class QIWidgetValidator;
-
-class VBoxVMSettingsVRDP : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsVRDP : public VBoxSettingsPage,
                            public Ui::VBoxVMSettingsVRDP
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsVRDP (QWidget *aParent, VBoxVMSettingsDlg *aDlg,
-                        const QString &aPath);
+    VBoxVMSettingsVRDP();
 
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage,
-                                VBoxVMSettingsDlg *aDlg,
-                                const QString &aPath);
-    static void putBackToMachine();
+protected:
 
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
-protected:
+    void setValidator (QIWidgetValidator *aVal);
+
+    void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
 
 private:
-
-    static VBoxVMSettingsVRDP *mSettings;
 
     CMachine mMachine;
     QIWidgetValidator *mValidator;

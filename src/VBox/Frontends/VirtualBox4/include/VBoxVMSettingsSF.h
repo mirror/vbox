@@ -23,13 +23,11 @@
 #ifndef __VBoxVMSettingsSF_h__
 #define __VBoxVMSettingsSF_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsSF.gen.h"
-#include "QIWithRetranslateUI.h"
 
-/* Qt includes */
 #include <QDialog>
 
-class VBoxVMSettingsDlg;
 class SFTreeViewItem;
 class QIDialogButtonBox;
 
@@ -47,21 +45,14 @@ enum SFDialogType
 typedef QPair<QString, SFDialogType> SFolderName;
 typedef QList<SFolderName> SFoldersNameList;
 
-class VBoxVMSettingsSF : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsSF : public VBoxSettingsPage,
                          public Ui::VBoxVMSettingsSF
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsSF (QWidget *aParent = 0, int aType = WrongType);
-
-    static void getFromMachineEx (const CMachine &aMachine,
-                                  QWidget *aParent,
-                                  VBoxVMSettingsDlg *aDlg);
-    static void putBackToMachineEx();
-
-    int dialogType() { return mDialogType; }
+    VBoxVMSettingsSF (int aType = WrongType, QWidget *aParent = 0);
 
     void getFromGlobal();
     void getFromMachine (const CMachine &aMachine);
@@ -71,7 +62,14 @@ public:
     void putBackToMachine();
     void putBackToConsole();
 
+    int dialogType() { return mDialogType; }
+
 protected:
+
+    void getFrom (const CMachine &aMachine);
+    void putBackTo();
+
+    void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
 
@@ -107,8 +105,6 @@ private:
     bool isEditable (const QString &);
     SFoldersNameList usedList (bool aIncludeSelected);
 
-    static VBoxVMSettingsSF *mSettings;
-
     int       mDialogType;
     QMenu    *mMenu;
     QAction  *mNewAction;
@@ -137,7 +133,7 @@ public:
                      VBoxAddSFDialog::DialogType aType,
                      bool aEnableSelector /* for "permanent" checkbox */,
                      const SFoldersNameList &aUsedNames);
-    ~VBoxAddSFDialog() {}
+   ~VBoxAddSFDialog() {}
 
     QString getPath();
     QString getName();

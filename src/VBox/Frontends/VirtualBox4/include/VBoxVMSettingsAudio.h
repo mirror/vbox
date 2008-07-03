@@ -23,36 +23,31 @@
 #ifndef __VBoxVMSettingsAudio_h__
 #define __VBoxVMSettingsAudio_h__
 
+#include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsAudio.gen.h"
-#include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsAudio : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsAudio : public VBoxSettingsPage,
                             public Ui::VBoxVMSettingsAudio
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsAudio (QWidget *aParent);
+    VBoxVMSettingsAudio();
 
-    static void getFromMachine (const CMachine &aMachine,
-                                QWidget *aPage);
-    static void putBackToMachine();
+protected:
 
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
-protected:
+    void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
 
 private:
 
     void prepareComboboxes();
-
-    /* Private member vars */
-    static VBoxVMSettingsAudio *mSettings;
 
     CMachine mMachine;
 };
