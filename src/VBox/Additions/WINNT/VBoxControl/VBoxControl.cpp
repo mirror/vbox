@@ -22,6 +22,8 @@
 #include <stdarg.h>
 #include <malloc.h>
 
+#include <iprt/string.h>
+#include <iprt/stream.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxInfoSvc.h>
@@ -950,7 +952,8 @@ static int hgcmInfoSvcSetProp(HANDLE hDevice, uint32_t u32ClientID,
 
     if (!VALID_PTR(pszKey))
         return VERR_INVALID_POINTER;
-    if (!VALID_PTR(pszValue) && (pszValue != NULL));
+    if ((pszValue != NULL) && !VALID_PTR(pszValue))
+        return VERR_INVALID_POINTER;
     int rc;
 
     if (pszValue != NULL)
@@ -1013,41 +1016,48 @@ static void hgcmDisconnect(HANDLE hDevice, uint32_t u32ClientID)
  */
 static int handleGetGuestProperty(int argc, char *argv[])
 {
+    HANDLE hDevice = INVALID_HANDLE_VALUE;
+    uint32_t u32ClientID = 0;
+    int rc = VINF_SUCCESS;
+    char *pszKey = NULL;
+    char szValue[svcInfo::KEY_MAX_VALUE_LEN];
+
     if (argc != 1)
     {
         printHelp();
         return 1;
     }
-    char szValue[svcInfo::KEY_MAX_VALUE_LEN];
-    HANDLE hDevice = INVALID_HANDLE_VALUE;
-    uint32_t u32ClientID = 0;
-    int rc = openGuestDevice(&hDevice);
+    rc = RTStrCurrentCPToUtf8(&pszKey, argv[0]);
     if (!RT_SUCCESS(rc))
-        printf("Failed to open the VirtualBox device, RT error %d\n", rc);
+        RTPrintf("Failed to convert the key name to Utf8, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = openGuestDevice(&hDevice);
+        if (!RT_SUCCESS(rc))
+            RTPrintf("Failed to open the VirtualBox device, error %Rrc\n", rc);
+    }
     if (RT_SUCCESS(rc))
     {
         rc = hgcmConnect(hDevice, "VBoxSharedInfoSvc", &u32ClientID);
         if (!RT_SUCCESS(rc))
-            printf("Failed to connect to the host/guest registry service, RT error %d\n", rc);
+            RTPrintf("Failed to connect to the host/guest registry service, error %Rrc\n", rc);
     }
     if (RT_SUCCESS(rc))
     {
-        rc = hgcmInfoSvcGetProp(hDevice, u32ClientID, argv[0], szValue,
+        rc = hgcmInfoSvcGetProp(hDevice, u32ClientID, pszKey, szValue,
                                 sizeof(szValue), NULL);
         if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
-            printf("Failed to retrieve the property value, RT error %d\n", rc);
+            RTPrintf("Failed to retrieve the property value, error %Rrc\n", rc);
     }
-    if (RT_SUCCESS(rc) || (VERR_NOT_FOUND == rc))
-    {
-        if (RT_SUCCESS(rc))
-            printf("Value: %s\n", szValue);
-        else
-            printf("No value set!\n");
-    }
+    if (VERR_NOT_FOUND == rc)
+        RTPrintf("No value set!\n");
+    if (RT_SUCCESS(rc))
+        RTPrintf("Value: %S\n", szValue);
     if (u32ClientID != 0)
         hgcmDisconnect(hDevice, u32ClientID);
     if (hDevice != INVALID_HANDLE_VALUE)
         CloseHandle(hDevice);
+    RTStrFree(pszKey);
     return rc;
 }
 
@@ -1063,35 +1073,50 @@ static int handleGetGuestProperty(int argc, char *argv[])
  */
 static int handleSetGuestProperty(int argc, char *argv[])
 {
+    HANDLE hDevice = INVALID_HANDLE_VALUE;
+    uint32_t u32ClientID = 0;
+    int rc = VINF_SUCCESS;
+    char *pszKey = NULL;
+    char *pszValue = NULL;
+
     if (argc != 1 && argc != 2)
     {
         printHelp();
         return 1;
     }
-    HANDLE hDevice = INVALID_HANDLE_VALUE;
-    char *pszValue = NULL;
-    if (2 == argc)
-        pszValue = argv[1];
-    uint32_t u32ClientID = 0;
-    int rc = openGuestDevice(&hDevice);
+    rc = RTStrCurrentCPToUtf8(&pszKey, argv[0]);
     if (!RT_SUCCESS(rc))
-        printf("Failed to open the VirtualBox device, RT error %d\n", rc);
+        RTPrintf("Failed to convert the key name to Utf8, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc) && (2 == argc))
+    {
+        rc = RTStrCurrentCPToUtf8(&pszValue, argv[1]);
+        if (!RT_SUCCESS(rc))
+            RTPrintf("Failed to convert the key value to Utf8, error %Rrc\n", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = openGuestDevice(&hDevice);
+        if (!RT_SUCCESS(rc))
+            RTPrintf("Failed to open the VirtualBox device, error %Rrc\n", rc);
+    }
     if (RT_SUCCESS(rc))
     {
         rc = hgcmConnect(hDevice, "VBoxSharedInfoSvc", &u32ClientID);
         if (!RT_SUCCESS(rc))
-            printf("Failed to connect to the host/guest registry service, RT error %d\n", rc);
+            RTPrintf("Failed to connect to the host/guest registry service, error %Rrc\n", rc);
     }
     if (RT_SUCCESS(rc))
     {
-        rc = hgcmInfoSvcSetProp(hDevice, u32ClientID, argv[0], pszValue);
+        rc = hgcmInfoSvcSetProp(hDevice, u32ClientID, pszKey, pszValue);
         if (!RT_SUCCESS(rc))
-            printf("Failed to store the property value, RT error %d\n", rc);
+            RTPrintf("Failed to store the property value, error %Rrc\n", rc);
     }
     if (u32ClientID != 0)
         hgcmDisconnect(hDevice, u32ClientID);
     if (hDevice != INVALID_HANDLE_VALUE)
         CloseHandle(hDevice);
+    RTStrFree(pszKey);
+    RTStrFree(pszValue);
     return rc;
 }
 #endif  /* VBOX_WITH_INFO_SVC */
