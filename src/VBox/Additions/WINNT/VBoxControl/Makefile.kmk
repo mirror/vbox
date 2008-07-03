@@ -35,6 +35,8 @@ endif
 VBoxControl_SOURCES  = \
 	VBoxControl.cpp \
 	VBoxControl.rc
+VBoxControl_LIBS    += \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 # VBoxControl.cpp uses VBOX_SVN_REV.
 VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
