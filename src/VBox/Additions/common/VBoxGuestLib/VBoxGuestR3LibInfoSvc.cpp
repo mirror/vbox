@@ -84,9 +84,9 @@ VBGLR3DECL(int) VbglR3InfoSvcDisconnect(uint32_t u32ClientId)
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
- * @param   pszKey          The key to save to.
- * @param   pszValue        The value to store.  If this is NULL then the key
- *                          will be removed.
+ * @param   pszKey          The key to save to.  Utf8
+ * @param   pszValue        The value to store.  Utf8.  If this is NULL then
+ *                          the key will be removed.
  */
 VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *pszValue)
 {
@@ -134,8 +134,8 @@ VBGLR3DECL(int) VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *
  * @retval  VERR_NOT_FOUND if the key wasn't found.
  *
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
- * @param   pszKey          The key to read.
- * @param   pszValue        Where to store the value retrieved.
+ * @param   pszKey          The key to read.  Utf8
+ * @param   pszValue        Where to store the value retrieved.  Utf8.
  * @param   cbValue         The size of the buffer pszValue points to.
  * @param   pcbActual       Where to store the required buffer size if cbValue
  *                          is too small.  On success this contains the
