@@ -406,7 +406,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg)
  */
 DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal)
 {
-    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+    AssertReturn((unsigned)sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
     AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
     *pVal = DIS_READ_REGSEG(pCtx, sel);
@@ -419,7 +419,7 @@ DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal)
  */
 DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
 {
-    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+    AssertReturn((unsigned)sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
     AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
     *pVal = DIS_READ_REGSEG(pCtx, sel);
@@ -481,7 +481,7 @@ DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8)
  */
 DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val)
 {
-    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+    AssertReturn((unsigned)sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
     AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
     DIS_WRITE_REGSEG(pCtx, sel, val);
