@@ -7496,6 +7496,7 @@ static int handleGetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
+        /** @todo r=bird: Why do you do this? argv was converted down in main (around line 7812). */
         char *pszKey = NULL;
         int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
         if (RT_SUCCESS(rrc))
@@ -7533,6 +7534,7 @@ static int handleSetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
+        /** @todo r=bird: Why do you do this? argv was converted down in main (around line 7812). */
         char *pszKey = NULL;
         int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
         if (RT_SUCCESS(rrc))
