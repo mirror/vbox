@@ -86,12 +86,14 @@ VBOX_PATH_QT4_LIB64      ?= $(VBOX_PATH_QT4)/lib64
 VBOX_PATH_QT4_FRAMEWORKS ?= $(VBOX_PATH_QT4)/Frameworks
 VBOX_PATH_QT4_SHARE      ?= $(VBOX_PATH_QT4)
 
-VBOX_MODULE_QT4     = QtCore QtGui QtNetwork
-VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB
+VBOX_MODULE_QT4     = QtCore QtGui 
+#QtNetwork
+VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB 
+#QT_NETWORK_LIB
 # @todo: remove later: this is necessary only as long as Qt3Support is necessary
 # (it links to them)
-VBOX_MODULE_QT4    += Qt3Support QtSql QtXml
-VBOX_DEFS_QT4      += QT_QT3SUPPORT_LIB QT_SQL_LIB QT_XML_LIB
+#VBOX_MODULE_QT4    += Qt3Support QtSql QtXml
+#VBOX_DEFS_QT4      += QT_QT3SUPPORT_LIB QT_SQL_LIB QT_XML_LIB
 
 ifeq ($(KBUILD_TARGET),darwin)
  # This is necessary because we didn't include the Qt header in framework
@@ -141,8 +143,8 @@ endif
 # Disable this if you like to see something on your screen.
 #VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
 # Some default defs
-VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
-#VBOX_DEFS_QT4 += QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
+#VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
+VBOX_DEFS_QT4 += QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
 VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic
 VBOX_MOC4      ?= $(VBOX_PATH_QT4_BIN)/moc
