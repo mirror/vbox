@@ -312,7 +312,28 @@ ifdef VBOX_QUICK
  VBOX_WITH_DOCS =
 endif # VBOX_QUICK
 
-# l4 have to skip a few things.
+ifeq ($(KBUILD_TARGET),darwin)
+ # Internal networking requires testing and possibly proper ring-3/ring0 separation.
+ VBOX_WITH_INTERNAL_NETWORKING=
+ # Don't bother with SDL ttf for now.
+ VBOX_WITH_SECURELABEL=
+ # Later:
+ VBOX_WITH_VRDP_AUTHMOD=
+ VBOX_WITH_VRDP_RDESKTOP=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
+endif
+
+ifeq ($(KBUILD_TARGET),freebsd)
+ VBOX_WITH_INSTALLER=
+ VBOX_WITH_SECURELABEL=
+ VBOX_WITH_VRDP_AUTHMOD=
+ VBOX_WITH_VRDP_RDESKTOP=
+ VBOX_WITH_TESTSUITE=
+ VBOX_WITH_USB=
+ VBOX_WITH_EHCI=
+ VBOX_WITH_DOCS=
+endif
+
 ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_VBOXDRV=
  VBOX_WITH_ADDITION_DRIVERS=
@@ -327,19 +348,6 @@ ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
-# Darwin have to skip a few things at present.
-ifeq ($(KBUILD_TARGET),darwin)
- # Internal networking requires testing and possibly proper ring-3/ring0 separation.
- VBOX_WITH_INTERNAL_NETWORKING=
- # Don't bother with SDL ttf for now.
- VBOX_WITH_SECURELABEL=
- # Later:
- VBOX_WITH_VRDP_AUTHMOD=
- VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_PDM_ASYNC_COMPLETION=
-endif
-
-# Most stuff doesn't build yet on the new targets.
 ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_INSTALLER=
  VBOX_WITH_SECURELABEL=
@@ -359,15 +367,8 @@ ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_OGL=
 endif
 
-ifeq ($(KBUILD_TARGET),freebsd)
- VBOX_WITH_INSTALLER=
- VBOX_WITH_SECURELABEL=
- VBOX_WITH_VRDP_AUTHMOD=
+ifeq ($(KBUILD_TARGET),windows)
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_TESTSUITE=
- VBOX_WITH_USB=
- VBOX_WITH_EHCI=
- VBOX_WITH_DOCS=
 endif
 
 
