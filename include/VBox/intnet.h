@@ -245,6 +245,10 @@ typedef struct INTNETSG
 {
     /** Owner data, don't touch! */
     void           *pvOwnerData;
+    /** User data. */
+    void           *pvUserData;
+    /** User data 2 in case anyone needs it. */
+    void           *pvUserData2;
     /** The total length of the scatter gather list. */
     uint32_t        cbTotal;
     /** The number of users (references).
@@ -296,6 +300,16 @@ DECLINLINE(void) INTNETSgInitFromPkt(PINTNETSG pSG, PCINTNETHDR pPktHdr, PCINTNE
 }
 
 
+/** @name Direction (packet source or destination)
+ * @{ */
+/** To/From the wire. */
+#define INTNETTRUNKDIR_WIRE             RT_BIT_32(1)
+/** To/From the host. */
+#define INTNETTRUNKDIR_HOST             RT_BIT_32(2)
+/** Mask of valid bits. */
+#define INTNETTRUNKDIR_VALID_MASK       UINT32_C(0x3)
+/** @} */
+
 
 /** Pointer to the switch side of a trunk port. */
 typedef struct INTNETTRUNKSWPORT *PINTNETTRUNKSWPORT;
@@ -330,7 +344,7 @@ typedef struct INTNETTRUNKSWPORT
     DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pIfPort, bool fEnable));
 
     /**
-     * Frame from the host that's about to hit the wire.
+     * Incoming frame.
      *
      * @returns true if we've handled it and it should be dropped.
      *          false if it should hit the wire.
@@ -339,36 +353,29 @@ typedef struct INTNETTRUNKSWPORT
      * @param   pSG         The (scatter /) gather structure for the frame.
      *                      This will only be use during the call, so a temporary one can
      *                      be used. The Phys member will not be used.
+     * @param   fSrc        Where this frame comes from. Only one bit should be set!
      *
      * @remarks Will grab the network semaphore.
      *
      * @remark  NAT and TAP will use this interface.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnRecvHost,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG, uint32_t fSrc));
 
     /**
-     * Frame from the wire that's about to hit the network stack.
-     *
-     * @returns true if we've handled it and it should be dropped.
-     *          false if it should hit the network stack.
+     * Retain a SG.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   pSG         The (scatter /) gather structure for the frame.
-     *                      This will only be use during the call, so a temporary one can
-     *                      be used. The Phys member will not be used.
+     * @param   pSG         Pointer to the (scatter /) gather structure.
      *
-     * @remarks Will grab the network semaphore.
-     *
-     * @remark  NAT and TAP will not this interface.
+     * @remarks Will not grab any locks.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnRecvWire,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(void, pfnSGRetain,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
 
     /**
-     * This is called by the pfnSendToHost and pfnSendToWire code when they are
-     * done with a SG.
+     * Release a SG.
      *
-     * It may be called after they return if the frame was pushed in an
-     * async manner.
+     * This is called by the pfnXmit code when done with a SG. This may safe
+     * be done in an asynchronous manner.
      *
      * @param   pIfPort     Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure.
@@ -482,7 +489,7 @@ typedef struct INTNETTRUNKIFPORT
 
     /**
      * Tests if the mac address belongs to any of the host NICs
-     * and should take the pfnSendToHost route.
+     * and should take the host route.
      *
      * @returns true / false.
      *
@@ -492,7 +499,7 @@ typedef struct INTNETTRUNKIFPORT
      * @remarks Called while owning the network and the out-bound trunk port semaphores.
      *
      * @remarks TAP and NAT will compare with their own MAC address and let all their
-     *          traffic go over the pfnSendToHost method.
+     *          traffic take the host direction.
      */
     DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCPDMMAC pMac));
 
@@ -516,12 +523,7 @@ typedef struct INTNETTRUNKIFPORT
     DECLR0CALLBACKMEMBER(bool, pfnIsPromiscuous,(PINTNETTRUNKIFPORT pIfPort));
 
     /**
-     * Send the frame to the host.
-     *
-     * This path is taken if pfnIsHostMac returns true and the trunk port on the
-     * internal network is configured to let traffic thru to the host. It may also
-     * be taken if the host is in promiscuous mode and the internal network is
-     * configured to respect this for internal targets.
+     * Transmit a frame.
      *
      * @return  VBox status code. Error generally means we'll drop the packet.
      * @param   pIfPort     Pointer to this structure.
@@ -529,33 +531,13 @@ typedef struct INTNETTRUNKIFPORT
      *                      This will never be a temporary one, so, it's safe to
      *                      do this asynchronously to save unnecessary buffer
      *                      allocating and copying.
+     * @param   fDst        The destination mask. At least one bit will be set.
      *
      * @remarks Called holding the out-bound trunk port lock.
      *
      * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
      */
-    DECLR0CALLBACKMEMBER(int, pfnSendToHost,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
-
-    /**
-     * Put the frame on the wire.
-     *
-     * This path is taken if pfnIsHostMac returns false and the trunk port on the
-     * internal network is configured to let traffic out on the wire. This may also
-     * be taken for both internal and host traffic if the trunk port is configured
-     * to be in promiscuous mode.
-     *
-     * @return  VBox status code. Error generally means we'll drop the packet.
-     * @param   pIfPort     Pointer to this structure.
-     * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
-     *                      This will never be a temporary one, so, it's safe to
-     *                      do this asynchronously to save unnecessary buffer
-     *                      allocating and copying.
-     *
-     * @remarks Called holding the out-bound trunk port lock.
-     *
-     * @remarks TAP and NAT will call pfnSGRelease and return successfully.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnSendToWire,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(int, pfnXmit,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst));
 
     /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
     uint32_t u32VersionEnd;
