@@ -112,31 +112,36 @@ int getGuestProperty(int argc, char **argv)
 
     uint32_t u32ClientID = 0;
     int rc = VINF_SUCCESS;
-
+    char *pszKey = NULL;
     char szValue[KEY_MAX_VALUE_LEN];
+
     if (argc != 1)
     {
         usage(GET_GUEST_PROP);
         return 1;
     }
-    rc = VbglR3InfoSvcConnect(&u32ClientID);
+    rc = RTStrCurrentCPToUtf8(&pszKey, argv[0]);
     if (!RT_SUCCESS(rc))
-        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+        VBoxControlError("Failed to convert the key name to Utf8, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3InfoSvcConnect(&u32ClientID);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+    }
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3InfoSvcReadKey(u32ClientID, argv[0], szValue, sizeof(szValue), NULL);
         if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
             VBoxControlError("Failed to retrieve the property value, error %Rrc\n", rc);
     }
-    if (RT_SUCCESS(rc) || (VERR_NOT_FOUND == rc))
-    {
-        if (RT_SUCCESS(rc))
-            RTPrintf("Value: %s\n", szValue);
-        else
-            RTPrintf("No value set!\n");
-    }
+    if (VERR_NOT_FOUND == rc)
+        RTPrintf("No value set!\n");
+    if (RT_SUCCESS(rc))
+        RTPrintf("Value: %S\n", szValue);
     if (u32ClientID != 0)
         VbglR3InfoSvcDisconnect(u32ClientID);
+    RTStrFree(pszKey);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 
@@ -152,20 +157,31 @@ int getGuestProperty(int argc, char **argv)
  */
 static int setGuestProperty(int argc, char *argv[])
 {
+    uint32_t u32ClientID = 0;
+    int rc = VINF_SUCCESS;
+    char *pszKey = NULL;
+    char *pszValue = NULL;
+
     if (argc != 1 && argc != 2)
     {
         usage();
         return 1;
     }
-    char *pszValue = NULL;
-    int rc = VINF_SUCCESS;
-    uint32_t u32ClientID = 0;
-
-    if (2 == argc)
-    pszValue = argv[1];
-    rc = VbglR3InfoSvcConnect(&u32ClientID);
+    rc = RTStrCurrentCPToUtf8(&pszKey, argv[0]);
     if (!RT_SUCCESS(rc))
-        VBoxControlError("Failed to connect to the host/guest registry service, error %Rrc\n", rc);
+        VBoxControlError("Failed to convert the key name to Utf8, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc) && (2 == argc))
+    {
+        rc = RTStrCurrentCPToUtf8(&pszValue, argv[1]);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Failed to convert the key value to Utf8, error %Rrc\n", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3InfoSvcConnect(&u32ClientID);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Failed to connect to the host/guest registry service, error %Rrc\n", rc);
+    }
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3InfoSvcWriteKey(u32ClientID, argv[0], pszValue);
@@ -174,6 +190,8 @@ static int setGuestProperty(int argc, char *argv[])
     }
     if (u32ClientID != 0)
         VbglR3InfoSvcDisconnect(u32ClientID);
+    RTStrFree(pszKey);
+    RTStrFree(pszValue);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 #endif
