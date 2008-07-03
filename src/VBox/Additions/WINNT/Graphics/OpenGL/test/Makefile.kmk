@@ -19,8 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../../../..
+else
 SUB_DEPTH = ../../../..
+DEPTH    ?= ../../../../../../..
+endif
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES

@@ -10,8 +10,12 @@
 # All rights reserved
 #
 
-DEPTH ?= ../../../../..
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../../../../..
+else
+DEPTH    ?= ../../../../..
 SUB_DEPTH = ../..
+endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),solaris)
