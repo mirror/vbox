@@ -528,9 +528,8 @@ typedef struct INTNETTRUNKIFPORT
      * @return  VBox status code. Error generally means we'll drop the packet.
      * @param   pIfPort     Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
-     *                      This will never be a temporary one, so, it's safe to
-     *                      do this asynchronously to save unnecessary buffer
-     *                      allocating and copying.
+     *                      This will never be a temporary one, so, it's safe to retain
+     *                      it and do an asynchronous request to avoid copying.
      * @param   fDst        The destination mask. At least one bit will be set.
      *
      * @remarks Called holding the out-bound trunk port lock.
