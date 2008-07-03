@@ -289,7 +289,7 @@ public:
     static void ToSafeIfaceArray (const QVector <CI> &aVec,
                                   com::SafeIfaceArray <I> &aArr)
     {
-        aArr.reset (aVec.size());
+        aArr.reset (static_cast<int> (aVec.size()));
         for (int i = 0; i < aVec.size(); ++i)
         {
             aArr [i] = aVec.at (i);
@@ -302,7 +302,7 @@ public:
     static void FromSafeIfaceArray (const com::SafeIfaceArray <I> &aArr,
                                     QVector <CI> &aVec)
     {
-        aVec.resize (aArr.size());
+        aVec.resize (static_cast<int> (aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
             aVec [i].attach (aArr [i]);
     }
