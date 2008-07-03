@@ -213,9 +213,13 @@ namespace com
 template <typename T>
 struct SafeArrayTraits
 {
+protected:
+
     static void Init (T &aElem) { aElem = 0; }
     static void Uninit (T &aElem) { aElem = 0; }
     static void Copy (const T &aFrom, T &aTo) { aTo = aFrom; }
+
+public:
 
     /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard (that
      * in particular forbid casts of 'char **' to 'const char **'). Then initial
@@ -235,6 +239,8 @@ struct SafeArrayTraits <T *>
 template<>
 struct SafeArrayTraits <PRUnichar *>
 {
+protected:
+
     static void Init (PRUnichar * &aElem) { aElem = NULL; }
     static void Uninit (PRUnichar * &aElem)
     {
@@ -250,6 +256,8 @@ struct SafeArrayTraits <PRUnichar *>
         AssertCompile (sizeof (PRUnichar) == sizeof (OLECHAR));
         aTo = aFrom ? ::SysAllocString ((const OLECHAR *) aFrom) : NULL;
     }
+
+public:
 
     /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard */
     static const PRUnichar **__asInParam_Arr (PRUnichar **aArr)
@@ -275,6 +283,8 @@ struct SafeArrayTraits
 template<>
 struct SafeArrayTraits <LONG>
 {
+protected:
+
     static VARTYPE VarType() { return VT_I4; }
     static void Copy (LONG aFrom, LONG &aTo) { aTo = aFrom; }
 };
@@ -282,6 +292,8 @@ struct SafeArrayTraits <LONG>
 template<>
 struct SafeArrayTraits <ULONG>
 {
+protected:
+
     static VARTYPE VarType() { return VT_UI4; }
     static void Copy (ULONG aFrom, ULONG &aTo) { aTo = aFrom; }
 };
@@ -289,6 +301,8 @@ struct SafeArrayTraits <ULONG>
 template<>
 struct SafeArrayTraits <BSTR>
 {
+protected:
+
     static VARTYPE VarType() { return VT_BSTR; }
 
     static void Copy (BSTR aFrom, BSTR &aTo)
@@ -328,7 +342,7 @@ struct SafeArrayTraits <BSTR>
  * @note This class is not thread-safe.
  */
 template  <typename T, class Traits = SafeArrayTraits <T> >
-class SafeArray : protected Traits
+class SafeArray : public Traits
 {
 public:
 
@@ -780,6 +794,8 @@ protected:
 template <class I>
 struct SafeIfaceArrayTraits
 {
+protected:
+
     static void Init (I * &aElem) { aElem = NULL; }
     static void Uninit (I * &aElem)
     {
@@ -801,6 +817,8 @@ struct SafeIfaceArrayTraits
             aTo = NULL;
     }
 
+public:
+
     /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard. */
     static I **__asInParam_Arr (I **aArr) { return aArr; }
     static I **__asInParam_Arr (const I **aArr) { return const_cast <I **> (aArr); }
@@ -811,6 +829,8 @@ struct SafeIfaceArrayTraits
 template <class I>
 struct SafeIfaceArrayTraits
 {
+protected:
+
     static VARTYPE VarType() { return VT_UNKNOWN; }
 
     static void Copy (I * aFrom, I * &aTo)
