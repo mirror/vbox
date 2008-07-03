@@ -459,8 +459,8 @@ int main (int argc, char **argv)
 #ifdef VBOX_WITH_VRDP
         { "-vrdpport", 'p', RTGETOPT_REQ_UINT32 },
         { "--vrdpport", 'p', RTGETOPT_REQ_UINT32 },
-        { "-vrdaddress", 'a', RTGETOPT_REQ_STRING },
-        { "--vrdaddress", 'a', RTGETOPT_REQ_STRING },
+        { "-vrdpaddress", 'a', RTGETOPT_REQ_STRING },
+        { "--vrdpaddress", 'a', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VRDP defined */
         { "-rawr0", OPT_RAW_R0, 0 },
         { "--rawr0", OPT_RAW_R0, 0 },
