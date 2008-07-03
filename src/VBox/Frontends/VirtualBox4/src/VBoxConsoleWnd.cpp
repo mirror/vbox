@@ -1246,13 +1246,25 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
                 AssertWrapperOk (cmachine);
                 if (lastAction [0] == kPowerOff)
+                {
                     dlg.mRbPowerOff->setChecked (true);
+                    dlg.mRbPowerOff->setFocus();
+                }
                 else if (lastAction [0] == kShutdown)
+                {
                     dlg.mRbShutdown->setChecked (true);
+                    dlg.mRbShutdown->setFocus();
+                }
                 else if (lastAction [0] == kSave)
+                {
                     dlg.mRbSave->setChecked (true);
+                    dlg.mRbSave->setFocus();
+                }
                 else /* the default is ACPI Shutdown */
+                {
                     dlg.mRbShutdown->setChecked (true);
+                    dlg.mRbShutdown->setFocus();
+                }
                 dlg.mCbDiscardCurState->setChecked (
                     lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
             }
