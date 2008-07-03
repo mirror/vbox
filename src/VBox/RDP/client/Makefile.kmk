@@ -89,9 +89,9 @@ rdesktop-vrdp_LIBS = \
 # The keymaps.
 #
 INSTALLS += rdesktop-vrdp-keymaps
-rdesktop-vrdp-keymaps_INST    = $(INST_BIN)rdesktop-vrdp-keymaps
+rdesktop-vrdp-keymaps_INST    = $(INST_BIN)rdesktop-vrdp-keymaps/
 rdesktop-vrdp-keymaps_MODE    = 644
-rdesktop-vrdp-keymaps_SOURCES := $(wildcard keymaps/*)
+rdesktop-vrdp-keymaps_SOURCES = $(wildcard $(rdesktop-vrdp-keymaps_PATH)/keymaps/*)
 
 
 #
