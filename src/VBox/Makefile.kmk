@@ -23,29 +23,29 @@ ifdef VBOX_KBUILD_HACKING
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
 ifdef VBOX_ONLY_ADDITIONS
- ##@todo include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 else
+ ifdef VBOX_WITH_MAIN
+  include $(PATH_SUB_CURRENT)/Main/Makefile.kmk 			# Do this one first because of soap.
+ endif
+ include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostServices/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Debugger/Makefile.kmk
- ifdef VBOX_WITH_MAIN
-  include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
- endif
  include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
  ifdef VBOX_WITH_VRDP
-  ##@todo include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
  ifdef VBOX_WITH_ADDITIONS
-  ##@todo include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
  endif
  ifdef VBOX_WITH_INSTALLER
-  # This must be the last one.
-  ##@todo include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
+  ##@todo include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		# Keep this last.
  endif
 endif
 
