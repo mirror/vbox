@@ -260,7 +260,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_FEATURE_EDX_PGE
                                        //| X86_CPUID_FEATURE_EDX_MCA   - not virtualized.
                                        | X86_CPUID_FEATURE_EDX_CMOV
-                                       //| X86_CPUID_FEATURE_EDX_PAT   - not virtualized.
+                                       | X86_CPUID_FEATURE_EDX_PAT
                                        //| X86_CPUID_FEATURE_EDX_PSE36 - not virtualized.
                                        //| X86_CPUID_FEATURE_EDX_PSN   - no serial number.
                                        | X86_CPUID_FEATURE_EDX_CLFSH
