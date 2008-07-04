@@ -4180,6 +4180,38 @@ HRESULT Console::powerDown()
         if (RT_SUCCESS(vrc))
             pValue = CFGMR3GetNextValue (pValue);
     }
+    /* In a second stage, we remove any extra data keys corresponding to 
+     * properties which aren't in the CFGM node. */
+    Bstr strExtraDataKey;
+    for (;;)
+    {
+        using namespace svcInfo;
+        Bstr strNextExtraDataKey;
+        Bstr strExtraDataValue;
+
+        /* get the next key */
+        int hrc = mMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
+                                                strExtraDataValue.asOutParam());
+
+        /* stop if for some reason there's nothing more to request */
+        if (FAILED(hrc) || !strNextExtraDataKey)
+            break;
+
+        strExtraDataKey = strNextExtraDataKey;
+        Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
+
+        /* we only care about keys starting with VBOX_SHARED_INFO_KEY_PREFIX */
+        if (strncmp(strExtraDataKeyUtf8.raw(), VBOX_SHARED_INFO_KEY_PREFIX, VBOX_SHARED_INFO_PREFIX_LEN) != 0)
+            continue;
+        char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
+
+        /* Now see if a lookup of the name in the CFGM node succeeds. */
+        char szKeyValue[KEY_MAX_VALUE_LEN];
+        vrc = CFGMR3QueryString (pRegistry, pszCFGMValueName, szKeyValue, sizeof(szKeyValue));
+        /* And delete it from the extra data if it failed. */
+        if (VERR_CFGM_VALUE_NOT_FOUND == vrc)
+            mMachine->SetExtraData(strExtraDataKey, NULL);
+    }
 # endif /* VBOX_WITH_INFO_SVC defined */
 #endif /* VBOX_HGCM */
 
