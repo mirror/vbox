@@ -38,7 +38,7 @@
 #include <os2ddk/bsekee.h>
 #undef RT_MAX
 
-#include "SUPDRV.h"
+#include "SUPDrvInternal.h"
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>

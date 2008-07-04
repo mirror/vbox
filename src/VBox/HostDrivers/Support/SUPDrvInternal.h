@@ -28,8 +28,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___SUPDRV_h
-#define ___SUPDRV_h
+#ifndef ___SUPDrvInternal_h
+#define ___SUPDrvInternal_h
 
 
 /*******************************************************************************

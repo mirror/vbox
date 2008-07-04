@@ -43,7 +43,7 @@
 
 #include <IOKit/IOLib.h> /* Assert as function */
 
-#include "SUPDRV.h"
+#include "SUPDrvInternal.h"
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>

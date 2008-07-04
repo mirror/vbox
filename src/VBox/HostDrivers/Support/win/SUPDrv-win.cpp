@@ -33,7 +33,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "SUPDRV.h"
+#include "SUPDrvInternal.h"
 #include <excpt.h>
 #include <iprt/assert.h>
 #include <iprt/process.h>
