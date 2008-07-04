@@ -193,10 +193,12 @@ VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
+ifndef VBOX_SINGLE_MAKEFILE
 # damn, fix this.
 ifeq ($(KBUILD_TARGET),win)
 $(PATH_LIB)/VBoxDD2.lib: $(PATH_BIN)/VBoxDD2.dll
 $(PATH_LIB)/VBoxDDU.lib: $(PATH_BIN)/VBoxDDU.dll
+endif
 endif
 
 
@@ -534,7 +536,7 @@ Drivers_SOURCES    = \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvVD.cpp \
 	Storage/VBoxHDD.cpp \
-	Network/DrvNetSniffer.cpp 
+	Network/DrvNetSniffer.cpp
 ifndef VBOX_USE_NAT
 Drivers_SOURCES += \
 	Network/DrvNAT.cpp \
@@ -555,12 +557,12 @@ Drivers_SOURCES += \
 	Network/slirp/tcp_subr.c \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/tftp.c \
-	Network/slirp/udp.c 
+	Network/slirp/udp.c
 else
 NatAlias_TEMPLATE   = VBOXR3NP
 
 
-Drivers_SOURCES +=	Network/DrvNAT2.cpp 
+Drivers_SOURCES +=	Network/DrvNAT2.cpp
 
 NatAlias_CFLAGS += -include Network/nat/bsd.h
 NatAlias_DEFS += VBOX_NAT_SOURCES
@@ -568,7 +570,7 @@ NatAlias_DEFS += __BSD_VISIBLE
 NatAlias_DEFS += INET
 NatAlias_DEFS += IPFIREWALL_NAT
 NatAlias_DEFS += RWLOCK_NOINLINE
-NatAlias_DEFS += MUTEX_NOINLINE 
+NatAlias_DEFS += MUTEX_NOINLINE
 
 NatAlias_DEFS.linux   += _GNU_SOURCE
 
