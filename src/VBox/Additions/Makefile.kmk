@@ -28,6 +28,11 @@ endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
+# Globals
+#
+VBOX_PATH_ADDITIONS_SRC := $(PATH_SUB_CURRENT)
+
+#
 # Cross building of the additions is generally done by remote building
 # by means of smbfs, cifs, VBOX_ONLY_ADDITIONS=1 and setting KBUILD_TARGET
 # and KBUILD_TARGET_ARCH to the desired target and architecture.
@@ -222,7 +227,7 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 			)\
 		) \
 		$(VBOX_SVN_REV_KMK) \
-		Makefile.kmk
+		$(VBOX_PATH_ADDITIONS_SRC)/Makefile.kmk
 	$(call MSG_TOOL,mkisofs,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	@# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
