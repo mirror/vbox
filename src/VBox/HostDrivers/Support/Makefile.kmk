@@ -132,7 +132,7 @@ VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
  VBoxDrv_NOINST       = true
 endif
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE_FOR_MM USE_NEW_OS_INTERFACE_FOR_GIP
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 ifdef VBOX_WITH_IDT_PATCHING
 VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -184,7 +184,7 @@ endif # win
 #
 ifeq ($(KBUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC USE_NEW_OS_INTERFACE_FOR_MM USE_NEW_OS_INTERFACE_FOR_GIP
+vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -208,7 +208,7 @@ endif # real linux
 #
 ifeq ($(KBUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 ifdef VBOX_WITH_IDT_PATCHING
 VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -251,7 +251,7 @@ endif # darwin
 #
 ifeq ($(KBUILD_TARGET),os2)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 #VBoxDrv_LDFLAGS       = -s -t -v
 VBoxDrv_SOURCES       = \
@@ -267,7 +267,7 @@ VBoxDrv_LIBS          = \
 LIBRARIES += VBoxDrvLib
 VBoxDrvLib_TEMPLATE   = VBOXR0DRV
 VBoxDrvLib_NOINST     = 1
-VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0
 VBoxDrvLib_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	$(PATH_TARGET) \
@@ -283,7 +283,7 @@ endif
 #
 ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -300,7 +300,7 @@ endif # freebsd
 #
 ifeq ($(KBUILD_TARGET),solaris)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
