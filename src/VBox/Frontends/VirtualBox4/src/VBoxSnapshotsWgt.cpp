@@ -276,10 +276,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     ((QVBoxLayout*)layout())->insertWidget (0, toolBar);
 
-#ifdef Q_WS_MAC
-    toolBar->setMacStyle();
-#endif
-
     /* Setup actions */
     mDiscardSnapshotAction->setIcon (VBoxGlobal::iconSetEx (
         ":/discard_snapshot_22px.png", ":/discard_snapshot_16px.png",
