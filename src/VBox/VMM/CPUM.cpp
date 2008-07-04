@@ -342,7 +342,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 
     /*
-     * Determin the default.
+     * Determine the default.
      *
      * Intel returns values of the highest standard function, while AMD
      * returns zeros. VIA on the other hand seems to returning nothing or
@@ -351,6 +351,15 @@ static int cpumR3CpuIdInit(PVM pVM)
     ASMCpuId(pCPUM->aGuestCpuIdStd[0].eax + 10,
              &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
              &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
+
+    /* Cpuid 0x800000005 & 0x800000006 contain information about L1, L2 & L3 cache and TLB identifiers. 
+     * Safe to pass on to the guest.
+     *
+     * Intel: 0x800000005 reserved
+     *        0x800000006 L2 cache information
+     * AMD:   0x800000005 L1 cache information
+     *        0x800000006 L2/L3 cache information
+     */
 
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
@@ -364,8 +373,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < RT_ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
         pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
 
-    if (pCPUM->aGuestCpuIdExt[0].eax > UINT32_C(0x80000004))
-        pCPUM->aGuestCpuIdExt[0].eax = UINT32_C(0x80000004);
+    if (pCPUM->aGuestCpuIdExt[0].eax > UINT32_C(0x80000006))
+        pCPUM->aGuestCpuIdExt[0].eax = UINT32_C(0x80000006);
     for (i = pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000000)
            ? pCPUM->aGuestCpuIdExt[0].eax - UINT32_C(0x80000000) + 1
            : 0;
@@ -375,7 +384,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * Workaround for missing cpuid(0) patches: If we miss to patch a cpuid(0).eax then
      * Linux tries to determine the number of processors from (cpuid(4).eax >> 26) + 1.
-     * We don't support more than 1 processor.
+     * We currently don't support more than 1 processor.
      */
     pCPUM->aGuestCpuIdStd[4].eax = 0;
 
