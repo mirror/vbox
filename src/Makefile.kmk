@@ -19,6 +19,32 @@
 # additional information or have any questions.
 #
 
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
+
+ifdef VBOX_ONLY_ADDITIONS
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+else  # !VBOX_ONLY_ADDITIONS
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ ifneq ($(wildcard apps),)
+  include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_TESTSUITE
+  include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_TESTCASES
+  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ endif
+endif # !VBOX_ONLY_ADDITIONS
+
+include $(KBUILD_PATH)/footer.kmk
+
+
+else  # !VBOX_SINGLE_MAKEFILE
 DEPTH  = ..
 include $(KBUILD_PATH)/header.kmk
 
@@ -48,4 +74,6 @@ else  # !VBOX_ONLY_ADDITIONS
 endif # !VBOX_ONLY_ADDITIONS
 
 include $(KBUILD_PATH)/footer.kmk
+
+endif # !VBOX_SINGLE_MAKEFILE
 
