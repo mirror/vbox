@@ -57,15 +57,6 @@ SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 
 #
-# Enable the pdm lock.
-#
-## @todo eliminate this!
-ifdef VBOX_WITH_PDM_LOCK
- DEFS += VBOX_WITH_PDM_LOCK
-endif
-
-
-#
 # VBoxDDU (shared object)
 #
 VBoxDDU_TEMPLATE         = VBOXR3

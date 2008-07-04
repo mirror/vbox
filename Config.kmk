@@ -769,6 +769,13 @@ endif
 ifdef VBOX_WITH_64_BITS_GUESTS
  DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
+## @todo eliminate these guys.
+ifdef VBOX_WITH_PDM_LOCK
+ DEFS += VBOX_WITH_PDM_LOCK
+endif
+ifdef VBOX_WITH_INTERNAL_NETWORKING
+DEFS += VBOX_WITH_INTERNAL_NETWORKING
+endif
 
 #
 # Compiler optimization flags.
