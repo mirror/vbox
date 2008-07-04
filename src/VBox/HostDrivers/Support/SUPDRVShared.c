@@ -248,14 +248,12 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 #ifdef RT_OS_WINDOWS
 static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
 static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
-#endif
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
+#endif /* RT_OS_WINDOWS */
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
-#endif
 
 
 /**
@@ -280,17 +278,15 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
             rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
             if (!rc)
             {
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
                 rc = supdrvGipCreate(pDevExt);
                 if (RT_SUCCESS(rc))
                 {
                     pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
                     return VINF_SUCCESS;
                 }
-#else
-                pDevExt->u32Cookie = BIRD;
-                return VINF_SUCCESS;
-#endif
+
+                RTSemFastMutexDestroy(pDevExt->mtxGip);
+                pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
             }
             RTSemFastMutexDestroy(pDevExt->mtxLdr);
             pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
@@ -364,10 +360,8 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
         RTMemFree(pvFree);
     }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /* kill the GIP */
     supdrvGipDestroy(pDevExt);
-#endif
 }
 
 
@@ -602,16 +596,9 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
      * Unmap the GIP.
      */
     Log2(("umapping GIP:\n"));
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     if (pSession->GipMapObjR3 != NIL_RTR0MEMOBJ)
-#else
-    if (pSession->pGip)
-#endif
     {
         SUPR0GipUnmap(pSession);
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-        pSession->pGip = NULL;
-#endif
         pSession->fGipReferenced = 0;
     }
     Log2(("umapping GIP - done\n"));
@@ -2096,7 +2083,6 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
          */
         if (ppGipR3)
         {
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
                 rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (RTR3PTR)-1, 0,
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
@@ -2105,12 +2091,6 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 pGip = RTR0MemObjAddressR3(pSession->GipMapObjR3);
                 rc = VINF_SUCCESS; /** @todo remove this and replace the !rc below with RT_SUCCESS(rc). */
             }
-#else /* !USE_NEW_OS_INTERFACE_FOR_GIP */
-            if (!pSession->pGip)
-                rc = supdrvOSGipMap(pSession->pDevExt, &pSession->pGip);
-            if (!rc)
-                pGip = (RTR3PTR)pSession->pGip;
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
         }
 
         /*
@@ -2137,12 +2117,8 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                     ASMAtomicXchgU32(&pGip->aCPUs[i].u32TransactionId, pGip->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
                 ASMAtomicXchgU64(&pGip->u64NanoTSLastUpdateHz, 0);
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
                 rc = RTTimerStart(pDevExt->pGipTimer, 0);
                 AssertRC(rc); rc = VINF_SUCCESS;
-#else
-                supdrvOSGipResume(pDevExt);
-#endif
             }
         }
     }
@@ -2196,7 +2172,6 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
     /*
      * Unmap anything?
      */
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     if (pSession->GipMapObjR3 != NIL_RTR0MEMOBJ)
     {
         rc = RTR0MemObjFree(pSession->GipMapObjR3, false);
@@ -2204,14 +2179,6 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
         if (RT_SUCCESS(rc))
             pSession->GipMapObjR3 = NIL_RTR0MEMOBJ;
     }
-#else
-    if (pSession->pGip)
-    {
-        rc = supdrvOSGipUnmap(pDevExt, pSession->pGip);
-        if (!rc)
-            pSession->pGip = NULL;
-    }
-#endif
 
     /*
      * Dereference global GIP.
@@ -2223,11 +2190,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
             &&  !--pDevExt->cGipUsers)
         {
             LogFlow(("SUPR0GipUnmap: Suspends GIP updating\n"));
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
             rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = 0;
-#else
-            supdrvOSGipSuspend(pDevExt);
-#endif
         }
     }
 
@@ -3696,7 +3659,6 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
 }
 
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 /**
  * Creates the GIP.
  *
@@ -3730,7 +3692,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     pGip = (PSUPGLOBALINFOPAGE)RTR0MemObjAddress(pDevExt->GipMemObj); AssertPtr(pGip);
     HCPhysGip = RTR0MemObjGetPagePhysAddr(pDevExt->GipMemObj, 0); Assert(HCPhysGip != NIL_RTHCPHYS);
 
-#if 0 /** @todo Disabled this as we didn't used to do it before and causes unnecessary stress on laptops. 
+#if 0 /** @todo Disabled this as we didn't used to do it before and causes unnecessary stress on laptops.
        * It only applies to Windows and should probably revisited later, if possible made part of the
        * timer code (return min granularity in RTTimerGetSystemGranularity and set it in RTTimerStart). */
     /*
@@ -3930,8 +3892,6 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
         }
     }
 }
-
-#endif /* USE_NEW_OS_INTERFACE_FOR_GIP */
 
 
 /**

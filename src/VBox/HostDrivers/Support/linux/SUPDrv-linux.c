@@ -200,31 +200,12 @@ extern int nmi_active;
 
 
 /*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-# ifdef VBOX_HRTIMER
-typedef enum hrtimer_restart (*PFNVBOXKTIMER)(struct hrtimer *);
-# else
-typedef void (*PFNVBOXKTIMER)(unsigned long);
-# endif
-#endif
-
-
-/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /**
  * Device extention & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
-
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-/** Timer structure for the GIP update. */
-static VBOXKTIMER           g_GipTimer;
-/** Pointer to the page structure for the GIP. */
-struct page                *g_pGipPage;
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 
 /** Registered devfs device handle. */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
@@ -278,23 +259,6 @@ static long     VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigne
 static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #endif
 static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
-static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
-# ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer);
-# else
-static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
-# endif
-# ifdef CONFIG_SMP
-#  ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer);
-#  else
-static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
-#  endif
-static void     VBoxDrvLinuxGipResumePerCpu(void *pvUser);
-# endif /* CONFIG_SMP */
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 static int      VBoxDrvLinuxErr2LinuxErr(int);
 
 
@@ -326,41 +290,6 @@ static struct miscdevice gMiscDevice =
 #endif
 
 
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-
-static inline void vbox_ktimer_init(PVBOXKTIMER pTimer, PFNVBOXKTIMER pfnFunction, unsigned long ulData)
-{
-#ifdef VBOX_HRTIMER
-    hrtimer_init(pTimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
-    pTimer->function = pfnFunction;
-#else
-    init_timer(pTimer);
-    pTimer->data     = ulData;
-    pTimer->function = pfnFunction;
-    pTimer->expires  = jiffies;
-#endif
-}
-
-static inline void vbox_ktimer_start(PVBOXKTIMER pTimer)
-{
-#ifdef VBOX_HRTIMER
-    hrtimer_start(pTimer, ktime_add_ns(ktime_get(), 1000000), HRTIMER_MODE_ABS);
-#else
-    mod_timer(pTimer, jiffies);
-#endif
-}
-
-static inline void vbox_ktimer_stop(PVBOXKTIMER pTimer)
-{
-#ifdef VBOX_HRTIMER
-    hrtimer_cancel(pTimer);
-#else
-    if (timer_pending(pTimer))
-        del_timer_sync(pTimer);
-#endif
-}
-
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -659,32 +588,21 @@ nmi_activated:
                 rc = supdrvInitDevExt(&g_DevExt);
             if (!rc)
             {
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-                /*
-                 * Create the GIP page.
-                 */
-                rc = VBoxDrvLinuxInitGip(&g_DevExt);
-                if (!rc)
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
-                {
-                    printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+                printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
 #ifdef VBOX_HRTIMER
-                           "'high-res'"
+                       "'high-res'"
 #else
-                           "'normal'"
+                       "'normal'"
 #endif
-                           ".\n",
-                           g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
-                    LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                           VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
-                    return rc;
-                }
-
-                supdrvDeleteDevExt(&g_DevExt);
+                       ".\n",
+                       g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                       VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
+                return rc;
             }
-            else
-                rc = -EINVAL;
+
+            rc = -EINVAL;
             RTR0Term();
         }
         else
@@ -740,9 +658,6 @@ static void __exit VBoxDrvLinuxUnload(void)
     /*
      * Destroy GIP, delete the device extension and terminate IPRT.
      */
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-    VBoxDrvLinuxTermGip(&g_DevExt);
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
     supdrvDeleteDevExt(&g_DevExt);
     RTR0Term();
 }
@@ -960,428 +875,6 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-
-/**
- * Initializes the GIP.
- *
- * @returns negative errno.
- * @param   pDevExt     Instance data. GIP stuff may be updated.
- */
-static int VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt)
-{
-    struct page *pPage;
-    dma_addr_t  HCPhys;
-    PSUPGLOBALINFOPAGE pGip;
-#ifdef CONFIG_SMP
-    unsigned i;
-#endif
-    LogFlow(("VBoxDrvLinuxInitGip:\n"));
-
-    /*
-     * Allocate the page.
-     */
-    pPage = alloc_pages(GFP_USER, 0);
-    if (!pPage)
-    {
-        Log(("VBoxDrvLinuxInitGip: failed to allocate the GIP page\n"));
-        return -ENOMEM;
-    }
-
-    /*
-     * Lock the page.
-     */
-    SetPageReserved(pPage);
-    g_pGipPage = pPage;
-
-    /*
-     * Call common initialization routine.
-     */
-    HCPhys = page_to_phys(pPage);
-    pGip = (PSUPGLOBALINFOPAGE)page_address(pPage);
-    pDevExt->ulLastJiffies  = jiffies;
-    pDevExt->u64LastMonotime = (uint64_t)pDevExt->ulLastJiffies * TICK_NSEC;
-    Log(("VBoxDrvInitGIP: TICK_NSEC=%ld HZ=%d jiffies=%ld now=%lld\n",
-         TICK_NSEC, HZ, pDevExt->ulLastJiffies, pDevExt->u64LastMonotime));
-    supdrvGipInit(pDevExt, pGip, HCPhys, pDevExt->u64LastMonotime,
-                  HZ <= 1000 ? HZ : 1000);
-
-    /*
-     * Initialize the timer.
-     */
-    vbox_ktimer_init(&g_GipTimer, VBoxDrvLinuxGipTimer, (unsigned long)pDevExt);
-#ifdef CONFIG_SMP
-    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
-    {
-        pDevExt->aCPUs[i].u64LastMonotime = pDevExt->u64LastMonotime;
-        pDevExt->aCPUs[i].ulLastJiffies   = pDevExt->ulLastJiffies;
-        pDevExt->aCPUs[i].iSmpProcessorId = -512;
-        vbox_ktimer_init(&pDevExt->aCPUs[i].Timer, VBoxDrvLinuxGipTimerPerCpu, i);
-    }
-#endif
-
-    return 0;
-}
-
-
-/**
- * Terminates the GIP.
- *
- * @returns negative errno.
- * @param   pDevExt     Instance data. GIP stuff may be updated.
- */
-static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
-{
-    struct page *pPage;
-    PSUPGLOBALINFOPAGE pGip;
-#ifdef CONFIG_SMP
-    unsigned i;
-#endif
-    LogFlow(("VBoxDrvLinuxTermGip:\n"));
-
-    /*
-     * Delete the timer if it's pending.
-     */
-    vbox_ktimer_stop(&g_GipTimer);
-#ifdef CONFIG_SMP
-    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
-        vbox_ktimer_stop(&pDevExt->aCPUs[i].Timer);
-#endif
-
-    /*
-     * Uninitialize the content.
-     */
-    pGip = pDevExt->pGip;
-    pDevExt->pGip = NULL;
-    if (pGip)
-        supdrvGipTerm(pGip);
-
-    /*
-     * Free the page.
-     */
-    pPage = g_pGipPage;
-    g_pGipPage = NULL;
-    if (pPage)
-    {
-        ClearPageReserved(pPage);
-        __free_pages(pPage, 0);
-    }
-
-    return 0;
-}
-
-/**
- * Timer callback function.
- *
- * In ASYNC TSC mode this is called on the primary CPU, and we're
- * assuming that the CPU remains online.
- *
- * @param   ulUser  The device extension pointer.
- */
-#ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer)
-#else
-static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
-#endif
-{
-    PSUPDRVDEVEXT       pDevExt;
-    PSUPGLOBALINFOPAGE  pGip;
-    unsigned long       ulNow;
-    unsigned long       ulDiff;
-    uint64_t            u64Monotime;
-    unsigned long       SavedFlags;
-#ifdef VBOX_HRTIMER
-    ktime_t             KtNow;
-#endif
-
-    local_irq_save(SavedFlags);
-
-    ulNow   = jiffies;
-#ifdef VBOX_HRTIMER
-    KtNow   = ktime_get();
-    pDevExt = &g_DevExt;
-#else
-    pDevExt = (PSUPDRVDEVEXT)ulUser;
-#endif
-    pGip    = pDevExt->pGip;
-
-#ifdef CONFIG_SMP
-    if (pGip && pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
-    {
-        uint8_t iCPU = ASMGetApicId();
-        ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
-        pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
-        u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
-        pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
-    }
-    else
-#endif /* CONFIG_SMP */
-    {
-        ulDiff = ulNow - pDevExt->ulLastJiffies;
-        pDevExt->ulLastJiffies = ulNow;
-        u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
-        pDevExt->u64LastMonotime = u64Monotime;
-    }
-    if (RT_LIKELY(pGip))
-        supdrvGipUpdate(pDevExt->pGip, u64Monotime);
-    if (RT_LIKELY(!pDevExt->fGIPSuspended))
-    {
-#ifdef VBOX_HRTIMER
-        hrtimer_forward(&g_GipTimer, KtNow, ktime_set(0, 1000000));
-#else
-        mod_timer(&g_GipTimer, ulNow + ONE_MSEC_IN_JIFFIES);
-#endif
-    }
-
-    local_irq_restore(SavedFlags);
-
-#ifdef VBOX_HRTIMER
-    return pDevExt->fGIPSuspended ? HRTIMER_NORESTART : HRTIMER_RESTART;
-#endif
-}
-
-
-#ifdef CONFIG_SMP
-/**
- * Timer callback function for the other CPUs.
- *
- * @param   iTimerCPU     The APIC ID of this timer.
- */
-#ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer)
-#else
-static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
-#endif
-{
-    PSUPDRVDEVEXT       pDevExt;
-    PSUPGLOBALINFOPAGE  pGip;
-    uint8_t             iCPU;
-    uint64_t            u64Monotime;
-    unsigned long       SavedFlags;
-    unsigned long       ulNow;
-# ifdef VBOX_HRTIMER
-    unsigned long       iTimerCPU;
-    ktime_t             KtNow;
-# endif
-
-    local_irq_save(SavedFlags);
-
-    ulNow   = jiffies;
-    pDevExt = &g_DevExt;
-    pGip    = pDevExt->pGip;
-    iCPU    = ASMGetApicId();
-# ifdef VBOX_HRTIMER
-    iTimerCPU = iCPU; /* XXX hrtimer does not support a 'data' field */
-    KtNow   = ktime_get();
-# endif
-
-    if (RT_LIKELY(iCPU < RT_ELEMENTS(pGip->aCPUs)))
-    {
-        if (RT_LIKELY(iTimerCPU == iCPU))
-        {
-            unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
-            pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
-            u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
-            pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
-            if (RT_LIKELY(pGip))
-                supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
-            if (RT_LIKELY(!pDevExt->fGIPSuspended))
-            {
-# ifdef VBOX_HRTIMER
-                hrtimer_forward(&pDevExt->aCPUs[iCPU].Timer, KtNow, ktime_set(0, 1000000));
-# else
-                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + ONE_MSEC_IN_JIFFIES);
-# endif
-            }
-        }
-        else
-            printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d !=? timer-cpuid=%d)\n",
-                   iCPU, iTimerCPU, smp_processor_id(), pDevExt->aCPUs[iTimerCPU].iSmpProcessorId);
-    }
-    else
-        printk("vboxdrv: error: APIC ID is bogus (GIP CPU update): apicid=%d max=%lu cpuid=%d\n",
-               iCPU, (unsigned long)RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
-
-    local_irq_restore(SavedFlags);
-
-# ifdef VBOX_HRTIMER
-    return pDevExt->fGIPSuspended ? HRTIMER_NORESTART : HRTIMER_RESTART;
-# endif
-}
-#endif  /* CONFIG_SMP */
-
-
-/**
- * Maps the GIP into user space.
- *
- * @returns negative errno.
- * @param   pDevExt     Instance data.
- */
-int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip)
-{
-    int             rc = 0;
-    unsigned long   ulAddr;
-    unsigned long   HCPhys = pDevExt->HCPhysGip;
-    pgprot_t        pgFlags;
-    pgprot_val(pgFlags) = _PAGE_PRESENT | _PAGE_USER;
-    LogFlow(("supdrvOSGipMap: ppGip=%p\n", ppGip));
-
-    /*
-     * Allocate user space mapping and put the physical pages into it.
-     */
-    down_write(&current->mm->mmap_sem);
-    ulAddr = do_mmap(NULL, 0, PAGE_SIZE, PROT_READ, MAP_SHARED | MAP_ANONYMOUS, 0);
-    if (!(ulAddr & ~PAGE_MASK))
-    {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) && !defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
-        int rc2 = remap_page_range(ulAddr, HCPhys, PAGE_SIZE, pgFlags);
-#else
-        int rc2 = 0;
-        struct vm_area_struct *vma = find_vma(current->mm, ulAddr);
-        if (vma)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
-            rc2 = remap_page_range(vma, ulAddr, HCPhys, PAGE_SIZE, pgFlags);
-#else
-            rc2 = remap_pfn_range(vma, ulAddr, HCPhys >> PAGE_SHIFT, PAGE_SIZE, pgFlags);
-#endif
-        else
-        {
-            rc = SUPDRV_ERR_NO_MEMORY;
-            Log(("supdrvOSGipMap: no vma found for ulAddr=%#lx!\n", ulAddr));
-        }
-#endif
-        if (rc2)
-        {
-            rc = SUPDRV_ERR_NO_MEMORY;
-            Log(("supdrvOSGipMap: remap_page_range failed rc2=%d\n", rc2));
-        }
-    }
-    else
-    {
-        Log(("supdrvOSGipMap: do_mmap failed ulAddr=%#lx\n", ulAddr));
-        rc = SUPDRV_ERR_NO_MEMORY;
-    }
-    up_write(&current->mm->mmap_sem);   /* not quite sure when to give this up. */
-
-    /*
-     * Success?
-     */
-    if (!rc)
-    {
-        *ppGip = (PSUPGLOBALINFOPAGE)ulAddr;
-        LogFlow(("supdrvOSGipMap: ppGip=%p\n", *ppGip));
-        return 0;
-    }
-
-    /*
-     * Failure, cleanup and be gone.
-     */
-    if (ulAddr & ~PAGE_MASK)
-    {
-        down_write(&current->mm->mmap_sem);
-        MY_DO_MUNMAP(current->mm, ulAddr, PAGE_SIZE);
-        up_write(&current->mm->mmap_sem);
-    }
-
-    LogFlow(("supdrvOSGipMap: returns %d\n", rc));
-    return rc;
-}
-
-
-/**
- * Maps the GIP into user space.
- *
- * @returns negative errno.
- * @param   pDevExt     Instance data.
- */
-int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
-{
-    LogFlow(("supdrvOSGipUnmap: pGip=%p\n", pGip));
-    if (current->mm)
-    {
-        down_write(&current->mm->mmap_sem);
-        MY_DO_MUNMAP(current->mm, (unsigned long)pGip, PAGE_SIZE);
-        up_write(&current->mm->mmap_sem);
-    }
-    LogFlow(("supdrvOSGipUnmap: returns 0\n"));
-    return 0;
-}
-
-
-/**
- * Resumes the GIP updating.
- *
- * @param   pDevExt     Instance data.
- */
-void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
-{
-    LogFlow(("supdrvOSGipResume:\n"));
-    ASMAtomicXchgU8(&pDevExt->fGIPSuspended, false);
-#ifdef CONFIG_SMP
-    if (pDevExt->pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-    {
-#endif
-        vbox_ktimer_start(&g_GipTimer);
-#ifdef CONFIG_SMP
-    }
-    else
-    {
-        vbox_ktimer_start(&g_GipTimer);
-        smp_call_function(VBoxDrvLinuxGipResumePerCpu, pDevExt, 0 /* retry */, 1 /* wait */);
-    }
-#endif
-}
-
-
-#ifdef CONFIG_SMP
-/**
- * Callback for resuming GIP updating on the other CPUs.
- *
- * This is only used when the GIP is in async tsc mode.
- *
- * @param   pvUser  Pointer to the device instance.
- */
-static void VBoxDrvLinuxGipResumePerCpu(void *pvUser)
-{
-    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
-    uint8_t iCPU = ASMGetApicId();
-
-    if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pDevExt->pGip->aCPUs)))
-    {
-        printk("vboxdrv: error: apicid=%d max=%lu cpuid=%d\n",
-               iCPU, (unsigned long)RT_ELEMENTS(pDevExt->pGip->aCPUs), smp_processor_id());
-        return;
-    }
-
-    pDevExt->aCPUs[iCPU].iSmpProcessorId = smp_processor_id();
-    vbox_ktimer_start(&pDevExt->aCPUs[iCPU].Timer);
-}
-#endif /* CONFIG_SMP */
-
-
-/**
- * Suspends the GIP updating.
- *
- * @param   pDevExt     Instance data.
- */
-void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
-{
-#ifdef CONFIG_SMP
-    unsigned i;
-#endif
-    LogFlow(("supdrvOSGipSuspend:\n"));
-    ASMAtomicXchgU8(&pDevExt->fGIPSuspended, true);
-
-    vbox_ktimer_stop(&g_GipTimer);
-#ifdef CONFIG_SMP
-    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
-        vbox_ktimer_stop(&pDevExt->aCPUs[i].Timer);
-#endif
-}
-
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
-
-
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     return force_async_tsc != 0;
@@ -1437,14 +930,14 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 }
 
 
-/** Runtime assert implementation for Linux Ring-0. */
+/** @todo move to IPRT! */
 RTDECL(bool) RTAssertDoBreakpoint(void)
 {
     return true;
 }
 
 
-/** Runtime assert implementation for Linux Ring-0. */
+/** @todo move to IPRT! */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     printk("!!Assertion Failed!!\n"
@@ -1454,7 +947,7 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
 }
 
 
-/** Runtime assert implementation for Linux Ring-0. */
+/** @todo move to IPRT! */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 {   /* forwarder. */
     va_list ap;
@@ -1468,7 +961,7 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 }
 
 
-/* GCC C++ hack. (shouldn't be necessary...) */
+/* GCC C++ hack. (shouldn't be necessary with the right exception flags...) */
 unsigned __gxx_personality_v0 = 0xcccccccc;
 
 
