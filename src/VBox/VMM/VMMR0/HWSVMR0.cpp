@@ -512,6 +512,8 @@ HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM)
 /**
  * Loads the guest state
  *
+ * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
+ *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
@@ -742,13 +744,6 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(1);
 #endif
 
-    /* TPR caching in CR8 */
-    uint8_t u8TPR;
-    int rc = PDMApicGetTPR(pVM, &u8TPR);
-    AssertRC(rc);
-    pCtx->cr8                    = u8TPR;
-    pVMCB->ctrl.IntCtrl.n.u8VTPR = u8TPR;
-
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
@@ -855,6 +850,19 @@ ResumeExecution:
         goto end;
     }
     fGuestStateSynced = true;
+
+    /* TPR caching using CR8 is only available in 64 bits mode */
+    /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
+    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock). */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    {
+        /* TPR caching in CR8 */
+        uint8_t u8TPR;
+        int rc = PDMApicGetTPR(pVM, &u8TPR);
+        AssertRC(rc);
+        pCtx->cr8                    = u8TPR;
+        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8TPR;
+    }
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
