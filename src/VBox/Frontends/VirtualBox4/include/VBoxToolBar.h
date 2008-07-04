@@ -23,6 +23,11 @@
 #ifndef __VBoxToolBar_h__
 #define __VBoxToolBar_h__
 
+
+#ifdef Q_WS_MAC
+ #include "VBoxUtils.h"
+#endif
+
 /* Qt includes */
 #include <QToolBar>
 #include <QMainWindow>
@@ -64,6 +69,15 @@ public:
             style = qobject_cast<QWindowsStyle*> (QToolBar::style());
         if (style)
             setStyleSheet ("QToolBar { border: 0px none black; }");
+    }
+
+    void setShowToolBarButton (bool aShow)
+    {
+#ifdef Q_WS_MAC
+        ::darwinSetShowToolBarButton (this, aShow);
+#else  /* Q_WS_MAC */
+        NOREF (aShow);
+#endif /* !Q_WS_MAC */
     }
 
 

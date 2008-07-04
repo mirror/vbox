@@ -99,6 +99,7 @@ protected:
 
 class QImage;
 class QPixmap;
+class QToolBar;
 class VBoxFrameBuffer;
 
 /* Converting stuff */
@@ -160,6 +161,8 @@ inline HIRect darwinToHIRect (const QRect &aRect)
 {
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
+
+void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow);
 
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
