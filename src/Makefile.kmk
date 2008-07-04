@@ -41,7 +41,7 @@ else  # !VBOX_ONLY_ADDITIONS
  endif
 endif # !VBOX_ONLY_ADDITIONS
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 else  # !VBOX_SINGLE_MAKEFILE
