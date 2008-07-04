@@ -44,6 +44,7 @@ ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT)),)
 LIBRARIES += SUPR0
 endif
 ifdef VBOX_WITH_VBOXDRV
+LIBRARIES       += SUPR0IdcClient
 SYSMODS.darwin  += VBoxDrv
 SYSMODS.freebsd += vboxdrv
 SYSMODS.linux   += vboxdrv
@@ -90,6 +91,7 @@ $(PATH_BIN)/src/dkms.conf: \
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
+
 #
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
 #
@@ -109,6 +111,7 @@ SUPR3_SOURCES       = \
 	SUPLib.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
 
+
 #
 # SUPR0 - The Ring-0 Import / Thunk library.
 #
@@ -122,6 +125,20 @@ $(PATH_TARGET)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $(call DIRDEP,$(PATH_T
 	$(SED) -e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
 endif
+
+
+#
+# SUPR0IdcClient - The Ring-0 IDC client driver library.
+#
+SUPR0IdcClient_TEMPLATE = VBOXR0DRV
+SUPR0IdcClient_DEFS = IN_RT_R0 IN_SUP_R0
+SUPR0IdcClient_SDKS.win = W2K3DDK WINPSDKINCS
+SUPR0IdcClient_SOURCES.$(KBUILD_TARGET) = \
+	$(KBUILD_TARGET)/SUPR0IdcClient-$(KBUILD_TARGET).c
+SUPR0IdcClient_SOURCES = \
+	SUPR0IdcClient.c \
+	SUPR0IdcClientComponent.c \
+	SUPR0IdcClientStubs.c
 
 
 #
