@@ -19,15 +19,23 @@
 # additional information or have any questions.
 #
 
-DEPTH = .
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = .
+include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_DOCS
  ifndef VBOX_ONLY_ADDITIONS
-  SUBDIRS = doc/manual
+  ifdef VBOX_SINGLE_MAKEFILE
+   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
+  else
+   SUBDIRS = doc/manual
+  endif
  endif
 endif
-SUBDIRS += src
+ifdef VBOX_SINGLE_MAKEFILE
+ include $(PATH_SUB_CURRENT)/src/Makefile.kmk
+else
+ SUBDIRS += src
+endif
 
 ifndef VBOX_ONLY_ADDITIONS
 #
@@ -37,7 +45,7 @@ ifndef VBOX_ONLY_ADDITIONS
 # To avoid dragging in unnecessary tools and sdks here, we don't use the .win
 # and .linux property suffixes.
 #
-INSTALLS = bin
+INSTALLS += bin
 
 bin_INST = $(INST_BIN)
 
@@ -188,7 +196,7 @@ endif
 endif # !VBOX_ONLY_ADDITIONS
 
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 #
