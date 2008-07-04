@@ -199,7 +199,7 @@ void COMBase::ToSafeArray (const QVector <QString> &aVec,
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
                              QVector <QString> &aVec)
 {
-    aVec.resize (aArr.size());
+    aVec.resize (static_cast<int> (aArr.size()));
     for (int i = 0; i < aVec.size(); ++i)
         aVec [i] = QString::fromUtf16 (aArr [i]);
 }

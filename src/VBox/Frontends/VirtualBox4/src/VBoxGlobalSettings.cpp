@@ -228,7 +228,7 @@ bool VBoxGlobalSettings::setPublicProperty (const QString &publicName, const QSt
     return false;
 }
 
-void VBoxGlobalSettings::setPropertyPrivate (int index, const QString &value)
+void VBoxGlobalSettings::setPropertyPrivate (size_t index, const QString &value)
 {
     if (value.isNull())
     {

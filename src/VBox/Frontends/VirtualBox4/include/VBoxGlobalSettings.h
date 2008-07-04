@@ -134,7 +134,7 @@ signals:
 
 private:
 
-    void setPropertyPrivate (int index, const QString &value);
+    void setPropertyPrivate (size_t index, const QString &value);
     void resetError() { last_err = QString::null; }
 
     QString last_err;
