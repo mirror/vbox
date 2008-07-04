@@ -30,7 +30,7 @@ else  # !VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
- ifneq ($(wildcard apps),)
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
  endif
  ifdef VBOX_WITH_TESTSUITE
