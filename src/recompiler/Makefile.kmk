@@ -315,7 +315,7 @@ VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
 #VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
-$(PATH_TARGET)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed Makefile.kmk | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(APPEND) $@.tmp '#ifdef VBOX_HAVE_VISIBILITY_HIDDEN'
@@ -327,7 +327,7 @@ $(PATH_TARGET)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH
 	$(QUIET)$(SED) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $< >> $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
 
-$(VBoxREMImp_SOURCES.os2): $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET))
+$(VBoxREMImp_SOURCES.os2): $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $(call DIRDEP,$(PATH_TARGET))
 	$(SED) \
 		-e 's/^[ \t][ \t]*REMR3/    _REMR3/' \
 		-e 's/\.[Dd][Ll][Ll]//' \
