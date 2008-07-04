@@ -90,7 +90,7 @@ PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     /*
      * Failed.
      */
-    LogFlow(("pcnetLock: locked => HC (%Vrc)\n", rcBusy));
+    LogFlow(("PDMCritSectEnter: locked => HC (%Vrc)\n", rcBusy));
     STAM_COUNTER_INC(&pCritSect->s.StatContentionR0GCLock);
     return rcBusy;
 #endif
