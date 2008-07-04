@@ -869,7 +869,8 @@ void VBoxAddSFDialog::validate()
     SFolderName pair = qMakePair (mLeName->text(), resultType);
 
     mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!mLePath->text().isEmpty() &&
-                                                           !mLeName->text().isEmpty() &&
+                                                           !mLeName->text().trimmed().isEmpty() && 
+                                                           !mLeName->text().contains(" ") &&
                                                            !mUsedNames.contains (pair));
 }
 
