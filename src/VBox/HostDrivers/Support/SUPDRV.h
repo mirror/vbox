@@ -238,6 +238,7 @@ __END_DECLS
 /*
  * Error codes.
  */
+/** @todo retire the SUPDRV_ERR_* stuff, we ship err.h now. */
 /** Invalid parameter. */
 #define SUPDRV_ERR_GENERAL_FAILURE  (-1)
 /** Invalid parameter. */
