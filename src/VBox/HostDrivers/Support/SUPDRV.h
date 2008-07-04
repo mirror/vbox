@@ -608,14 +608,8 @@ typedef struct SUPDRVSESSION
 
     /** Spinlock protecting the bundles and the GIP members. */
     RTSPINLOCK                  Spinlock;
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /** The ring-3 mapping of the GIP (readonly). */
     RTR0MEMOBJ                  GipMapObjR3;
-#else
-    /** The read-only usermode mapping address of the GID.
-     * This is NULL if the GIP hasn't been mapped. */
-    PSUPGLOBALINFOPAGE          pGip;
-#endif
     /** Set if the session is using the GIP. */
     uint32_t                    fGipReferenced;
     /** Bundle of locked memory objects. */
@@ -697,7 +691,6 @@ typedef struct SUPDRVDEVEXT
     /** Number of processes using the GIP.
      * (The updates are suspend while cGipUsers is 0.)*/
     uint32_t volatile       cGipUsers;
-#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /** The ring-0 memory object handle for the GIP page. */
     RTR0MEMOBJ              GipMemObj;
     /** The GIP timer handle. */
@@ -707,44 +700,6 @@ typedef struct SUPDRVDEVEXT
     /** The CPU id of the GIP master.
      * This CPU is responsible for the updating the common GIP data. */
     RTCPUID volatile        idGipMaster;
-#else
-# ifdef RT_OS_WINDOWS
-    /** The GIP timer object. */
-    KTIMER                  GipTimer;
-    /** The GIP DPC object associated with GipTimer. */
-    KDPC                    GipDpc;
-    /** The GIP DPC objects for updating per-cpu data. */
-    KDPC                    aGipCpuDpcs[MAXIMUM_PROCESSORS];
-    /** Pointer to the MDL for the pGip page. */
-    PMDL                    pGipMdl;
-    /** GIP timer interval (ms). */
-    ULONG                   ulGipTimerInterval;
-    /** Current CPU affinity mask. */
-    KAFFINITY               uAffinityMask;
-# endif
-# ifdef RT_OS_LINUX
-    /** The last jiffies. */
-    unsigned long           ulLastJiffies;
-    /** The last mono time stamp. */
-    uint64_t volatile       u64LastMonotime;
-    /** Set when GIP is suspended to prevent the timers from re-registering themselves). */
-    uint8_t volatile        fGIPSuspended;
-#  ifdef CONFIG_SMP
-    /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
-    struct LINUXCPU
-    {
-        /** The last mono time stamp. */
-        uint64_t volatile   u64LastMonotime;
-        /** The last jiffies. */
-        unsigned long       ulLastJiffies;
-        /** The Linux Process ID. */
-        unsigned            iSmpProcessorId;
-        /** The per cpu timer. */
-        VBOXKTIMER          Timer;
-    }                       aCPUs[256];
-#  endif
-# endif /* LINUX */
-#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
 } SUPDRVDEVEXT;
 
 
@@ -765,15 +720,6 @@ void VBOXCALL   supdrvOSLowFreeOne(PSUPDRVMEMREF pMem);
 int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 void VBOXCALL   supdrvOSMemGetPages(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem);
-#endif
-#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
-int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip);
-int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
-void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
-void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
-#endif
-#ifdef RT_OS_WINDOWS /** @todo remove when RTMpGetCount() has been fixed. */
-unsigned VBOXCALL supdrvOSGetCPUCount(PSUPDRVDEVEXT pDevExt);
 #endif
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 
