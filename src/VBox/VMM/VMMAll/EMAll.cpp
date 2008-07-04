@@ -2404,6 +2404,8 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
             uMask |= MSR_K6_EFER_LME;
         if (u32Features & X86_CPUID_AMD_FEATURE_EDX_SEP)
             uMask |= MSR_K6_EFER_SCE;
+        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+            uMask |= MSR_K6_EFER_FFXSR;
 
         /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
         if (    ((pCtx->msrEFER & MSR_K6_EFER_LME) != (val & uMask & MSR_K6_EFER_LME))
@@ -2413,8 +2415,8 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
             return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
         }
 
-        /* There are a few more: e.g. MSR_K6_EFER_FFXSR, MSR_K6_EFER_LMSLE */
-        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE)), ("Unexpected value %RX64\n", val));
+        /* There are a few more: e.g. MSR_K6_EFER_LMSLE */
+        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE|MSR_K6_EFER_FFXSR)), ("Unexpected value %RX64\n", val));
         pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
 
         /* AMD64 Achitecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
