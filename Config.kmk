@@ -944,7 +944,7 @@ else
 endif
 
 # bin2c (convert binary files into C arrays)
-VBOX_BIN2C     ?= $(PATH_OBJ)/src/bldprogs/bin2c/bin2c$(HOSTSUFF_EXE)
+VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
