@@ -1692,17 +1692,17 @@ static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  */
 EMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
+    uint32_t iLeaf = pRegFrame->eax; NOREF(iLeaf);
+
     /* Note: operates the same in 64 and non-64 bits mode. */
     CPUMGetGuestCpuId(pVM, pRegFrame->eax, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
+    Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
     return VINF_SUCCESS;
 }
 
 static int emInterpretCpuId(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    uint32_t iLeaf = pRegFrame->eax; NOREF(iLeaf);
-
     int rc = EMInterpretCpuId(pVM, pRegFrame);
-    Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
     return rc;
 }
 
