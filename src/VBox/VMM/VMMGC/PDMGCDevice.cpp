@@ -90,10 +90,8 @@ static DECLCALLBACK(int)  pdmGCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, R
  */
 static DECLCALLBACK(void) pdmGCPicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmGCPicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmGCPicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmGCPicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 /** @} */
 
 
@@ -103,10 +101,8 @@ static DECLCALLBACK(void) pdmGCPicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmGCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmGCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmGCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmGCApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmGCApicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 /** @} */
 
 
@@ -115,10 +111,8 @@ static DECLCALLBACK(void) pdmGCApicHlp_Unlock(PPDMDEVINS pDevIns);
  */
 static DECLCALLBACK(void) pdmGCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmGCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmGCIoApicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 /** @} */
 
 
@@ -127,10 +121,8 @@ static DECLCALLBACK(void) pdmGCIoApicHlp_Unlock(PPDMDEVINS pDevIns);
  */
 static DECLCALLBACK(void) pdmGCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmGCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmGCPciHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmGCPciHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 /** @} */
 
 
@@ -166,10 +158,8 @@ extern DECLEXPORT(const PDMPICHLPGC) g_pdmGCPicHlp =
     PDM_PICHLPGC_VERSION,
     pdmGCPicHlp_SetInterruptFF,
     pdmGCPicHlp_ClearInterruptFF,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmGCPicHlp_Lock,
     pdmGCPicHlp_Unlock,
-#endif
     PDM_PICHLPGC_VERSION
 };
 
@@ -183,10 +173,8 @@ extern DECLEXPORT(const PDMAPICHLPGC) g_pdmGCApicHlp =
     pdmGCApicHlp_SetInterruptFF,
     pdmGCApicHlp_ClearInterruptFF,
     pdmGCApicHlp_ChangeFeature,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmGCApicHlp_Lock,
     pdmGCApicHlp_Unlock,
-#endif
     PDM_APICHLPGC_VERSION
 };
 
@@ -198,10 +186,8 @@ extern DECLEXPORT(const PDMIOAPICHLPGC) g_pdmGCIoApicHlp =
 {
     PDM_IOAPICHLPGC_VERSION,
     pdmGCIoApicHlp_ApicBusDeliver,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmGCIoApicHlp_Lock,
     pdmGCIoApicHlp_Unlock,
-#endif
     PDM_IOAPICHLPGC_VERSION
 };
 
@@ -214,10 +200,8 @@ extern DECLEXPORT(const PDMPCIHLPGC) g_pdmGCPciHlp =
     PDM_PCIHLPGC_VERSION,
     pdmGCPciHlp_IsaSetIrq,
     pdmGCPciHlp_IoApicSetIrq,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmGCPciHlp_Lock,
     pdmGCPciHlp_Unlock,
-#endif
     PDM_PCIHLPGC_VERSION, /* the end */
 };
 
@@ -387,7 +371,6 @@ static DECLCALLBACK(void) pdmGCPicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMPICHLPGC::pfnLock */
 static DECLCALLBACK(int) pdmGCPicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -402,7 +385,6 @@ static DECLCALLBACK(void) pdmGCPicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMGC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 
@@ -439,7 +421,6 @@ static DECLCALLBACK(void) pdmGCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fE
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMAPICHLPGC::pfnLock */
 static DECLCALLBACK(int) pdmGCApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -454,7 +435,6 @@ static DECLCALLBACK(void) pdmGCApicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMGC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 
@@ -472,7 +452,6 @@ static DECLCALLBACK(void) pdmGCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMIOAPICHLPGC::pfnLock */
 static DECLCALLBACK(int) pdmGCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -487,7 +466,6 @@ static DECLCALLBACK(void) pdmGCIoApicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMGC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 
@@ -510,7 +488,6 @@ static DECLCALLBACK(void) pdmGCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMPCIHLPGC::pfnLock */
 static DECLCALLBACK(int) pdmGCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -525,7 +502,6 @@ static DECLCALLBACK(void) pdmGCPciHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMGC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 

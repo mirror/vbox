@@ -531,7 +531,6 @@ typedef struct PDMPCIHLPGC
      */
     DECLGCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -548,7 +547,7 @@ typedef struct PDMPCIHLPGC
      * @param   pDevIns         The PCI device instance.
      */
     DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
+
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
 } PDMPCIHLPGC;
@@ -589,7 +588,6 @@ typedef struct PDMPCIHLPR0
      */
     DECLR0CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -606,7 +604,6 @@ typedef struct PDMPCIHLPR0
      * @param   pDevIns         The PCI device instance.
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
@@ -681,7 +678,6 @@ typedef struct PDMPCIHLPR3
      */
     DECLR3CALLBACKMEMBER(PCPDMPCIHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -698,7 +694,6 @@ typedef struct PDMPCIHLPR3
      * @param   pDevIns         The PCI device instance.
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
@@ -775,7 +770,6 @@ typedef struct PDMPICHLPGC
      */
     DECLGCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -792,7 +786,7 @@ typedef struct PDMPICHLPGC
      * @param   pDevIns         The PIC device instance.
      */
     DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMPICHLPGC;
@@ -828,7 +822,6 @@ typedef struct PDMPICHLPR0
      */
     DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -845,7 +838,6 @@ typedef struct PDMPICHLPR0
      * @param   pDevIns         The PCI device instance.
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -881,7 +873,6 @@ typedef struct PDMPICHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -898,7 +889,6 @@ typedef struct PDMPICHLPR3
      * @param   pDevIns         The PIC device instance.
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /**
      * Gets the address of the GC PIC helpers.
@@ -1069,7 +1059,6 @@ typedef struct PDMAPICHLPGC
      */
     DECLGCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1086,7 +1075,7 @@ typedef struct PDMAPICHLPGC
      * @param   pDevIns         The APIC device instance.
      */
     DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMAPICHLPGC;
@@ -1129,7 +1118,6 @@ typedef struct PDMAPICHLPR0
      */
     DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1146,7 +1134,6 @@ typedef struct PDMAPICHLPR0
      * @param   pDevIns         The APIC device instance.
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1189,7 +1176,6 @@ typedef struct PDMAPICHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1206,7 +1192,6 @@ typedef struct PDMAPICHLPR3
      * @param   pDevIns         The APIC device instance.
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /**
      * Gets the address of the GC APIC helpers.
@@ -1297,7 +1282,6 @@ typedef struct PDMIOAPICHLPGC
     DECLGCCALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1314,7 +1298,6 @@ typedef struct PDMIOAPICHLPGC
      * @param   pDevIns         The IOAPIC device instance.
      */
     DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1353,7 +1336,6 @@ typedef struct PDMIOAPICHLPR0
     DECLR0CALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1370,7 +1352,6 @@ typedef struct PDMIOAPICHLPR0
      * @param   pDevIns         The IOAPIC device instance.
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1408,7 +1389,6 @@ typedef struct PDMIOAPICHLPR3
     DECLR3CALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-#ifdef VBOX_WITH_PDM_LOCK
     /**
      * Acquires the PDM lock.
      *
@@ -1425,7 +1405,6 @@ typedef struct PDMIOAPICHLPR3
      * @param   pDevIns         The IOAPIC device instance.
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-#endif
 
     /**
      * Gets the address of the GC IOAPIC helpers.

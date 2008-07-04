@@ -82,10 +82,8 @@ PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
         }
     }
 
-#ifndef VBOX_WITH_PDM_LOCK /** @todo Figure out exactly why we can get here without anything being set. (REM) */
-    /* Shouldn't get here! Noone should call us without cause. */
-    Assert(VM_FF_ISPENDING(pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC));
-#endif
+    /** @todo Figure out exactly why we can get here without anything being set. (REM) */
+
     pdmUnlock(pVM);
     return VERR_NO_DATA;
 }
@@ -231,7 +229,6 @@ PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR)
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /**
  * Locks PDM.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
@@ -248,9 +245,9 @@ void pdmLock(PVM pVM)
     {
 # ifdef IN_GC
         rc = VMMGCCallHost(pVM, VMMCALLHOST_PDM_LOCK, 0);
-#else
+# else
         rc = VMMR0CallHost(pVM, VMMCALLHOST_PDM_LOCK, 0);
-#endif
+# endif
     }
 #endif
     AssertRC(rc);
@@ -280,5 +277,4 @@ void pdmUnlock(PVM pVM)
 {
     PDMCritSectLeave(&pVM->pdm.s.CritSect);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 

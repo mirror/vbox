@@ -849,13 +849,10 @@ typedef struct PDM
     PTMTIMERR3                      pTimerPollers;
     /** @} */
 
-#ifdef VBOX_WITH_PDM_LOCK
     /** The PDM lock.
      * This is used to protect everything that deals with interrupts, i.e.
      * the PIC, APIC, IOAPIC and PCI devices pluss some PDM functions. */
     PDMCRITSECT                     CritSect;
-#endif
-
 
     /** Number of times a critical section leave requesed needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
@@ -939,15 +936,9 @@ int         pdmR3AsyncCompletionTerm(PVM pVM);
 
 #endif /* IN_RING3 */
 
-#ifdef VBOX_WITH_PDM_LOCK
 void        pdmLock(PVM pVM);
 int         pdmLockEx(PVM pVM, int rc);
 void        pdmUnlock(PVM pVM);
-#else
-# define pdmLock(pVM)       do {} while (0)
-# define pdmLockEx(pVM, rc) (VINF_SUCCESS)
-# define pdmUnlock(pVM)     do {} while (0)
-#endif
 
 /** @} */
 

@@ -65,19 +65,14 @@
  * Acquires the PDM lock. This is a NOP if locking is disabled. */
 /** @def PCI_UNLOCK
  * Releases the PDM lock. This is a NOP if locking is disabled. */
-#ifdef VBOX_WITH_PDM_LOCK
-# define PCI_LOCK(pDevIns, rc) \
+#define PCI_LOCK(pDevIns, rc) \
     do { \
         int rc2 = PDMINS2DATA(pDevIns, PCIBus *)->CTXALLSUFF(pPciHlp)->pfnLock((pDevIns), rc); \
         if (rc2 != VINF_SUCCESS) \
             return rc2; \
     } while (0)
-# define PCI_UNLOCK(pDevIns) \
+#define PCI_UNLOCK(pDevIns) \
     PDMINS2DATA(pDevIns, PCIBus *)->CTXALLSUFF(pPciHlp)->pfnUnlock(pDevIns)
-#else /* !VBOX_WITH_PDM_LOCK */
-# define PCI_LOCK(pThis, rc)   do { } while (0)
-# define PCI_UNLOCK(pThis)     do { } while (0)
-#endif /* !VBOX_WITH_PDM_LOCK */
 
 
 /*******************************************************************************
