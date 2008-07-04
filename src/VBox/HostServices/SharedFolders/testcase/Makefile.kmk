@@ -57,7 +57,7 @@ endif
 
 include $(KBUILD_PATH)/subfooter.kmk
 
-$(PATH_TARGET)/tstShflSizes.run: $(INSTARGET_tstShflSizes)
+$(PATH_TARGET)/tstShflSizes.run: $$(INSTARGET_tstShflSizes)
 	$(QUIET)$(RM) -f $@
 	$(INSTARGET_tstShflSizes) quiet
 	$(QUIET)$(APPEND) "$@" "done"
