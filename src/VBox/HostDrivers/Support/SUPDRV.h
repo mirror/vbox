@@ -40,18 +40,11 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <VBox/sup.h>
-#ifdef USE_NEW_OS_INTERFACE
-# define USE_NEW_OS_INTERFACE_FOR_MM
-# define USE_NEW_OS_INTERFACE_FOR_GIP
-# undef  USE_NEW_OS_INTERFACE_FOR_LOW
-#endif
-#if defined(USE_NEW_OS_INTERFACE) || defined(USE_NEW_OS_INTERFACE_FOR_LOW) || defined(USE_NEW_OS_INTERFACE_FOR_MM) || defined(USE_NEW_OS_INTERFACE_FOR_GIP)
-# include <iprt/memobj.h>
-# include <iprt/time.h>
-# include <iprt/timer.h>
-# include <iprt/string.h>
-# include <iprt/err.h>
-#endif
+#include <iprt/memobj.h>
+#include <iprt/time.h>
+#include <iprt/timer.h>
+#include <iprt/string.h>
+#include <iprt/err.h>
 
 
 #if defined(RT_OS_WINDOWS)

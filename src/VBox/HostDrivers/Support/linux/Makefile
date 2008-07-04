@@ -74,9 +74,11 @@ OBJS   = \
 	SUPDRVShared.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
+	r0drv/memobj-r0drv.o \
 	r0drv/mpnotification-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
+	r0drv/linux/memobj-r0drv-linux.o \
 	r0drv/linux/mp-r0drv-linux.o \
 	r0drv/linux/mpnotification-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
@@ -87,18 +89,19 @@ OBJS   = \
 	r0drv/linux/thread-r0drv-linux.o \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
-	common/err/RTErrConvertFromErrno.o \
+	common/err/RTErrConvertFromErrno.o
+ifeq ($(BUILD_TARGET_ARCH),x86)
+OBJS += math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
 	math/gcc/udivdi3.o
-ifeq ($(BUILD_TARGET_ARCH),amd64)
-OBJS  += alloc/heapsimple.o
 endif
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+OBJS += alloc/heapsimple.o
+endif
+
 ifeq ($(BUILD_TYPE),debug)
-OBJS  += \
-	math/gcc/divdi3.o \
-	math/gcc/umoddi3.o \
-	common/log/log.o \
+OBJS += common/log/log.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
 	common/string/strformat.o \
@@ -112,7 +115,11 @@ OBJS  += \
 	generic/RTLogWriteUser-generic.o \
 	VBox/log-vbox.o \
 	VBox/strformat-vbox.o
+ifeq ($(BUILD_TARGET_ARCH),x86)
+OBJS += math/gcc/divdi3.o \
+	math/gcc/umoddi3.o
 endif
+endif # debug
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -221,18 +228,6 @@ ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DDEBUG -DDEBUG_$(USER)
  # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
  KFLAGS  += -DIPRT_DEBUG_SEMS
-endif
-
-#
-# Use the RTR0MemObj API - testing.
-# If this makes testboxes crash/burn/leak disable it and add a comment to defect #2116.
-#
-KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM -DUSE_NEW_OS_INTERFACE_FOR_GIP
-OBJS += r0drv/memobj-r0drv.o \
-	r0drv/linux/memobj-r0drv-linux.o
-ifeq ($(BUILD_TARGET_ARCH),x86) # Some gcc versions ends up needing __divdi3.
-OBJS += math/gcc/qdivrem.o \
-	math/gcc/divdi3.o
 endif
 
 ifeq ($(KERN_VERSION), 24)
