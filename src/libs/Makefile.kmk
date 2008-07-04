@@ -40,9 +40,14 @@ ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
  include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
 endif
 
+# The kStuff lib used by IPRT and the debugger.
+ifdef IPRT_WITH_KSTUFF
+ include $(PATH_SUB_CURRENT)/kStuff/Makefile.kmk
+endif
+
 # OpenSSL for VRDP.
 ifdef VBOX_WITH_VRDP
- ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_OBJ)/src/libs/openssl-0.9.8h/include)
+ ifeq ($(SDK_VBOX_OPENSSL_INCS),$(SDK_VBOX_OPENSSL_DEFAULT_INCS))
   include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
  endif
 endif #  VBOX_WITH_VRDP
