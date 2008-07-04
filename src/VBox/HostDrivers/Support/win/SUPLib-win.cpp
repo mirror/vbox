@@ -43,8 +43,8 @@
 #include <iprt/assert.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
-#include "SUPLibInternal.h"
-#include "SUPDRVIOC.h"
+#include "../SUPLibInternal.h"
+#include "../SUPDrvIOC.h"
 
 
 /*******************************************************************************

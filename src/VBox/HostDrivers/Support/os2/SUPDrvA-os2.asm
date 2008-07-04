@@ -162,7 +162,7 @@ segment DATA16
 %define DevHlp_SAVE_MESSAGE     03dh
 %define DevHlp_PhysToVirt       015h
 
-; Fast IOCtl category, also defined in SUPDRVIOC.h
+; Fast IOCtl category, also defined in SUPDrvIOC.h
 %define SUP_CTL_CATEGORY_FAST   0c1h
 
 

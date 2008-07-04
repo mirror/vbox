@@ -45,8 +45,8 @@
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include "SUPLibInternal.h"
-#include "SUPDRVIOC.h"
+#include "../SUPLibInternal.h"
+#include "../SUPDrvIOC.h"
 
 #include <errno.h>
 #include <unistd.h>
