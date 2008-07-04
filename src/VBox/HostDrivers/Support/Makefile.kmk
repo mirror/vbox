@@ -141,7 +141,7 @@ VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_SOURCES       = \
 	win/SUPDrv-win.cpp \
 	win/SUPDrvA-win.asm \
-	SUPDRVShared.c
+	SUPDrv.c
 VBoxDrv_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxDrv_LIBS          = \
@@ -195,7 +195,7 @@ vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDRVShared.c
+	SUPDrv.c
 ifndef VBOX_LINUX_VERSION_2_4
 vboxdrv_SOURCES      += \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
@@ -218,7 +218,7 @@ VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxDrv_LDFLAGS       = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrv_INST          = $(INST_VBOXDRV)Contents/MacOS/
 VBoxDrv_SOURCES       = \
-	SUPDRVShared.c \
+	SUPDrv.c \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).cpp
 
 INSTALLS += VBoxDrv.kext
@@ -274,7 +274,7 @@ VBoxDrvLib_INCS      := \
 	$(PATH_ROOT)/src/VBox/Runtime/include
 VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
-	SUPDRVShared.c
+	SUPDrv.c
 endif
 
 
@@ -291,7 +291,7 @@ vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDRVShared.c
+	SUPDrv.c
 endif # freebsd
 
 
@@ -308,7 +308,7 @@ vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDRVShared.c
+	SUPDrv.c
 endif # solaris
 
 
