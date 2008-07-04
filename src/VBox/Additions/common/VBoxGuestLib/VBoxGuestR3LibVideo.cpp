@@ -244,6 +244,7 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
  */
 VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
 {
+#ifdef VBOX_WITH_INFO_SVC
     using namespace svcInfo;
 
     char szModeName[KEY_MAX_LEN];
@@ -257,6 +258,9 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
     if (u32ClientId != 0)
         VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     return rc;
+#else /* VBOX_WITH_INFO_SVC not defined */
+    return VERR_NOT_IMPLEMENTED;
+#endif /* VBOX_WITH_INFO_SVC not defined */
 }
 
 
@@ -271,6 +275,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
  */
 VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
 {
+#ifdef VBOX_WITH_INFO_SVC
     using namespace svcInfo;
 
     char szModeParms[KEY_MAX_VALUE_LEN];
@@ -314,4 +319,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         *pcBits = cBits;
     }
     return rc;
+#else /* VBOX_WITH_INFO_SVC not defined */
+    return VERR_NOT_IMPLEMENTED;
+#endif /* VBOX_WITH_INFO_SVC not defined */
 }
