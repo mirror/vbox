@@ -209,8 +209,9 @@ struct COMMANDHANDLER
 {
 #ifdef VBOX_WITH_INFO_SVC
     { "getguestproperty", getGuestProperty },
-    { "setguestproperty", setGuestProperty }
+    { "setguestproperty", setGuestProperty },
 #endif
+    { NULL, NULL }  /* terminator */
 };
 
 /** Main function */
@@ -313,7 +314,9 @@ int main(int argc, char **argv)
             bool found = false;
             /** And if so, what is its position in the table? */
             unsigned index = 0;
-            while (index < RT_ELEMENTS(g_commandHandlers) && !found)
+            while (   index < RT_ELEMENTS(g_commandHandlers)
+                   && !found
+                   && (g_commandHandlers[index].command != NULL))
             {
                 if (0 == strcmp(argv[iArg], g_commandHandlers[index].command))
                     found = true;

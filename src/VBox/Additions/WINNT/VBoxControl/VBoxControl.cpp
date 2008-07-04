@@ -26,7 +26,9 @@
 #include <iprt/stream.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
-#include <VBox/HostServices/VBoxInfoSvc.h>
+#ifdef VBOX_WITH_INFO_SVC
+# include <VBox/HostServices/VBoxInfoSvc.h>
+#endif /* VBOX_WITH_INFO_SVC */
 
 void printHelp()
 {
@@ -44,9 +46,12 @@ void printHelp()
            "\n"
            "VBoxControl   setvideomode <width> <height> <bpp> <screen>\n"
            "\n"
+#ifdef VBOX_WITH_INFO_SVC
            "VBoxControl   getguestproperty <key>\n"
            "\n"
-           "VBoxControl   setguestproperty <key> [<value>] (no value to delete)\n");
+           "VBoxControl   setguestproperty <key> [<value>] (no value to delete)\n"
+#endif /* VBOX_WITH_INFO_SVC */
+          );
 }
 
 void printVersion()
