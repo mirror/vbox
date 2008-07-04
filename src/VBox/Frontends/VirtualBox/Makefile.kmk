@@ -574,21 +574,27 @@ define def_qt_gen_src_ui
 
 $(eval uisrc  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).cpp)
 $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).h)
+$(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(uifile))).moc)
 $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(uifile))).cpp)
 
 $(target)_GENSRCS_REAL += $(uisrc) $(mocsrc)
-$(target)_GENHDRS_REAL += $(uihdr)
-$(target)_INTERMEDIATES += $(uihdr)
+$(target)_GENHDRS_REAL += $(uihdr) $(mocinc)
+$(target)_INTERMEDIATES += $(uihdr) $(mocinc)
 
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC) $(uifile) -o $$@
 
-$(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
+$(mocinc): $(uihdr) | $$(call DIRDEP,$(dir $(mocinc)))
+	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
+	$$(QUIET)$$(MKDIR) -p $$(@D)
+	$$(QUIET)$$(VBOX_MOC) -i $(uihdr) -o $$@
+
+$(uisrc): $(uihdr) $(uifile) $(mocinc) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC) $(uifile) -i $(uihdr) -o $$@
 
-$(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
+$(mocsrc): $(uihdr) $(mocinc) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
 	$$(QUIET)$$(VBOX_MOC) $(uihdr) -o $$@
 
