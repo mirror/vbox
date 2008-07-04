@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for XPCOM.
+# Sub-Makefile for XPCOM.
 #
 
 #
@@ -19,8 +19,18 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# Globals.
+#
+VBOX_PATH_XPCOM_SRC := $(PATH_SUB_CURRENT)
 
 
 #
@@ -103,8 +113,8 @@ TEMPLATE_XPCOM_INCS                = $(PATH_TARGET) \
                                      $(VBOX_PATH_SDK)/include/xpcom/string \
                                      $(VBOX_PATH_SDK)/include/xpcom/xpcom \
                                      $(VBOX_PATH_SDK)/include/xpcom/ipcd \
-                                     $(PATH_CURRENT)
-TEMPLATE_XPCOM_INCS.darwin         = /Developer/SDKs/MacOSX10.4u.sdk/Developer/Headers/FlatCarbon
+                                     .
+TEMPLATE_XPCOM_INCS.darwin         = $(VBOX_PATH_MACOSX_SDK)/Developer/Headers/FlatCarbon
 TEMPLATE_XPCOM_INCS.l4             = $(L4_INCDIR) $(VBOX_L4_GCC3_INCS)
 TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
                                      -T$(L4_DIR)/lib/x86_586/main_rel.ld -nostdlib \
@@ -141,7 +151,7 @@ TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
                                      $(VBOX_PATH_SDK)/include/xpcom/string \
                                      $(VBOX_PATH_SDK)/include/xpcom/xpcom \
                                      $(VBOX_PATH_SDK)/include/xpcom/ipcd \
-                                     $(PATH_CURRENT)
+                                     .
 TEMPLATE_XPCOMEXE_LIBS             = \
 	$(TARGET_VBox-xpcom-ipcshared) \
 	$(TARGET_VBoxXPCOM)
@@ -166,7 +176,7 @@ TEMPLATE_XPCOMBLDPROG                   = XPCOM Build programs executables
 TEMPLATE_XPCOMBLDPROG_EXTENDS           = VBOXBLDPROG
 ## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPCOMEXE is expanded when this is being used.)
 
-TEMPLATE_XPCOMBLDPROG_DEFS                      = $(TEMPLATE_BLDPROG_DEFS)                      $(TEMPLATE_XPCOMEXE_DEFS)
+TEMPLATE_XPCOMBLDPROG_DEFS                       = $(TEMPLATE_BLDPROG_DEFS)                      $(TEMPLATE_XPCOMEXE_DEFS)
 TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET))
 TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
@@ -199,7 +209,7 @@ TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS,
 #
 # Header installs.
 #
-INSTALLS = \
+INSTALLS += \
 	NSPRPUB-HEADERS \
 	NSPRPUB-MD-HEADERS \
 	NSPRPUB-OBS-HEADERS \
@@ -211,7 +221,7 @@ INSTALLS = \
 #
 # The IDL compiler and typelib linker.
 #
-BLDPROGS = \
+BLDPROGS += \
 	xpidl \
 	xpt_link
 
@@ -219,7 +229,7 @@ BLDPROGS = \
 # We build several libraries so that any linker command line
 # length restrictions limit will be avoided. (Solaris, Mac?)
 #
-LIBRARIES = \
+LIBRARIES += \
 	VBox-xpcom-nspr \
 	VBox-xpcom-typelib \
 	VBox-xpcom-string \
@@ -239,12 +249,12 @@ LIBRARIES = \
 	VBox-xpcom-ipctransmgr \
 	VBox-xcpom-ipctmgrcom
 
-DLLS = \
+DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC
 
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS = \
+PROGRAMS += \
 	tstnsIFileEnumerator \
 	tstnsIFileTest \
 	tstTestArray \
@@ -279,8 +289,8 @@ ifeq ($(KBUILD_TARGET),linux)
 else
  XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
 endif
-OTHERS = $(XPCOM_TYPELIB)
-OTHER_CLEAN = \
+OTHERS += $(XPCOM_TYPELIB)
+OTHER_CLEAN += \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pr_bld.h \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pl_bld.h \
 	$(XPCOM_TYPELIB)
@@ -294,7 +304,6 @@ OTHER_CLEAN = \
 #      wish to do a `kmk uninstall' first to avoid have
 #      obsoleted files in the $(INST_SDK) directory.
 #
-
 NSPRPUB-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/
 NSPRPUB-HEADERS_IFFLAGS = -m 644
 NSPRPUB-HEADERS_SOURCES = \
@@ -1043,7 +1052,6 @@ VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
 # reason, we link all parts of XPCOM into a single shared XPCOM library below
 # (as opposed to the original XPCOM where e.g. NSPR lives in a separate DLL).
 #
-
 VBoxXPCOMGlue_COMMON_SOURCES = \
 	xpcom/glue/nsCOMPtr.cpp \
 	xpcom/glue/nsComponentManagerUtils.cpp \
@@ -1076,7 +1084,6 @@ VBoxXPCOMGlue_SOURCES += \
 #
 # The VBoxXPCOM Shared Object, assembling all lib files.
 #
-
 VBoxXPCOM_TEMPLATE = XPCOM
 VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
@@ -1311,7 +1318,7 @@ tstXptLink_SOURCES             = xpcom/typelib/xpt/tools/xpt_link.c
 
 
 
-IDLFILES = \
+XPCOM_IDLFILES = \
 	xpcom/base/nsIDebug.idl \
 	xpcom/base/nsIInterfaceRequestor.idl \
 	xpcom/base/nsIMemory.idl \
@@ -1407,14 +1414,14 @@ IDLFILES = \
 
 OTHER_CLEAN += \
 	$(PATH_VBox-xpcom-string)/idl_ts \
-	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(IDLFILES)))) \
-	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.xpt,$(IDLFILES)))) \
-	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(IDLFILES))) \
-	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(IDLFILES))))
+	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(XPCOM_IDLFILES))) \
+	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES))))
 
 
 # generate rules
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 
@@ -1504,7 +1511,7 @@ OTHER_CLEAN += \
 	$(XPTFILES)
 
 # combined typelib library
-$(XPCOM_TYPELIB): $(XPTFILES) | $(TARGET_xp_link)
+$(XPCOM_TYPELIB): $(XPTFILES) | $$(TARGET_xpt_link)
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(TARGET_xpt_link) $@ $^
 
@@ -1524,10 +1531,18 @@ $(PATH_VBox-xpcom-nspr)/_pl_bld.h:
 ##
 # Define for compiling one IDL into a header and a typelib
 # @param idl     The filename with everything.
-XPIDL_INCS = -I xpcom/base/ -I xpcom/ds/ -I xpcom/components/ -I xpcom/io/ -I xpcom/threads/ -I xpcom/reflect/xptinfo/public/
+XPIDL_INCS = \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/base/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/ds/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/components/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/io/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/threads/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptinfo/public/
 define def_IDL
-$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(idl)))) \
-            $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl) | $(TARGET_xpidl)
+$(VBOX_PATH_SDK)/include/$(notdir $(subst .idl,.h,$(idl))) \
++ $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): \
+		$(VBOX_PATH_XPCOM_SRC)/$(idl) \
+		| $$(TARGET_xpidl)
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
 	$$(QUIET)$$(VBOX_XPIDL) -m header $(XPIDL_INCS) -e $$@ $$<
@@ -1535,10 +1550,10 @@ $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(idl)))) \
 	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/idl
 endef
 
-$(foreach idl, $(IDLFILES), $(eval $(def_IDL)))
+$(foreach idl, $(XPCOM_IDLFILES), $(eval $(def_IDL)))
 
 # dummy target.
-$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(IDLFILES))))
+$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(ECHO_EXT) > $@
