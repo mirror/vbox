@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for misc testcases.
+# Sub-Makefile for misc testcases.
 #
 
 #
@@ -19,14 +19,14 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../..
-include	$(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../..
+include	$(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS = tstRunTestcases
+PROGRAMS += tstRunTestcases
 
 tstRunTestcases_TEMPLATE = VBOXR3TSTEXE
 tstRunTestcases_LIBS = $(LIB_RUNTIME)
 tstRunTestcases_SOURCES = tstRunTestcases.cpp
 
-include	$(KBUILD_PATH)/footer.kmk
+include	$(KBUILD_PATH)/subfooter.kmk
 
