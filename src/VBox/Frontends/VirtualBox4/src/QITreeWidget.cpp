@@ -70,6 +70,7 @@ void QITreeWidget::paintEvent (QPaintEvent *aEvent)
         }
         ++ it;
     }
+    painter.end();
 
     QTreeWidget::paintEvent (aEvent);
 }
