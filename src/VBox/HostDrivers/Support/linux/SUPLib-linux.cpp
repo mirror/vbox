@@ -49,8 +49,8 @@
 #include <iprt/assert.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include "SUPLibInternal.h"
-#include "SUPDRVIOC.h"
+#include "../SUPLibInternal.h"
+#include "../SUPDrvIOC.h"
 
 
 /*******************************************************************************
