@@ -1542,11 +1542,11 @@ define def_IDL
 $(VBOX_PATH_SDK)/include/$(notdir $(subst .idl,.h,$(idl))) \
 + $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): \
 		$(VBOX_PATH_XPCOM_SRC)/$(idl) \
-		| $$(TARGET_xpidl)
+		| $$$$(TARGET_xpidl)
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
-	$$(QUIET)$$(VBOX_XPIDL) -m header $(XPIDL_INCS) -e $$@ $$<
-	$$(QUIET)$$(VBOX_XPIDL) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
+	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
+	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
 	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/idl
 endef
 
@@ -1557,6 +1557,9 @@ $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(ECHO_EXT) > $@
+
+# Make sure main doesn't start using xpidl before we're done with the idl files here.
+$(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
 
 # Manual dependency...
 xpcom/string/src/nsAString.cpp: $(PATH_VBox-xpcom-string)/idl_ts
