@@ -699,6 +699,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @name Machine Specific Registers
  * @{
  */
+
+/** Time Stamp Counter. */
+#define MSR_IA32_TSC                        0x10
+
 #ifndef MSR_IA32_APICBASE /* qemu cpu.h klugde */
 #define MSR_IA32_APICBASE                   0x1b
 #endif
@@ -707,6 +711,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
 #define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
+
+/** MTRR Capabilities. */
+#define MSR_IA32_MTRR_CAP                   0xFE
 
 
 #ifndef MSR_IA32_SYSENTER_CS /* qemu cpu.h klugde */
@@ -722,8 +729,18 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_SYSENTER_EIP               0x176
 #endif
 
+/** Machine Check Global Capabilities Register. */
+#define MSR_IA32_MCP_CAP                    0x179
+/** Machine Check Global Status Register. */
+#define MSR_IA32_MCP_STATUS                 0x17A
+/** Machine Check Global Control Register. */
+#define MSR_IA32_MCP_CTRL                   0x17B
+
 /* Page Attribute Table. */
 #define MSR_IA32_CR_PAT                     0x277
+
+/** MTRR Default Range. */
+#define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 
 /** Basic VMX information. */
 #define MSR_IA32_VMX_BASIC_INFO             0x480

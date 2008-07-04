@@ -2228,6 +2228,24 @@ static const char *emMSRtoString(unsigned uMsr)
         return "MSR_K8_GS_BASE";
     case MSR_K8_KERNEL_GS_BASE:
         return "MSR_K8_KERNEL_GS_BASE";
+    case MSR_IA32_TSC:
+        return "Unsupported MSR_IA32_TSC";
+    case MSR_IA32_MCP_CAP:
+        return "Unsupported MSR_IA32_MCP_CAP";
+    case MSR_IA32_MCP_STATUS:
+        return "Unsupported MSR_IA32_MCP_STATUS";
+    case MSR_IA32_MCP_CTRL:
+        return "Unsupported MSR_IA32_MCP_CTRL";
+    case MSR_IA32_MTRR_DEF_TYPE:
+        return "Unsupported MSR_IA32_MTRR_DEF_TYPE";
+    case MSR_K7_EVNTSEL0:
+        return "Unsupported MSR_K7_EVNTSEL0";
+    case MSR_K7_EVNTSEL1:
+        return "Unsupported MSR_K7_EVNTSEL1";
+    case MSR_K7_EVNTSEL2:
+        return "Unsupported MSR_K7_EVNTSEL2";
+    case MSR_K7_EVNTSEL3:
+        return "Unsupported MSR_K7_EVNTSEL3";
     }
     return "Unknown MSR";
 }
