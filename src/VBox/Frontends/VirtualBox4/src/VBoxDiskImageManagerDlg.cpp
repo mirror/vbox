@@ -1496,20 +1496,21 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
 {
     DiskImageItem *item = toDiskImageItem (aItem);
 
-    if (!item)
+    if (!item && aPrevItem)
     {
         DiskImageItem *itemOld = toDiskImageItem (aPrevItem);
         /* We have to make sure that one item is selected always. If the new
          * item is 0, set the old item again. */
         setCurrentItem (currentTreeWidget(), itemOld);
-        return;
     }
 
-    /* Set the file for the proxy icon */
-    setFileForProxyIcon (item->path());
-
-    /* Ensures current item visible every time we are switching page */
-    item->treeWidget()->scrollToItem (item, QAbstractItemView::EnsureVisible);
+    if (item)
+    {
+        /* Set the file for the proxy icon */
+        setFileForProxyIcon (item->path());
+        /* Ensures current item visible every time we are switching page */
+        item->treeWidget()->scrollToItem (item, QAbstractItemView::EnsureVisible);
+    }
 
     bool notInEnum      = !vboxGlobal().isMediaEnumerationStarted();
     bool modifyEnabled  = notInEnum &&
