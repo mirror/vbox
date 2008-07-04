@@ -4019,7 +4019,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="8b029405-b41f-40c2-9d01-b854a39f7d48"
+     uuid="d5a1cbda-f5d7-4824-9afe-d640c94c7dcf"
      wsmap="managed"
      >
     <desc>
@@ -4586,42 +4586,6 @@
       </desc>
       <param name="callback" type="IConsoleCallback" dir="in"/>
     </method>
-
-    <method name="getGuestProperty">
-      <desc>
-        Reads a value from the host/guest property store.
-      </desc>
-      <param name="key" type="wstring" dir="in">
-        <desc>
-          The name of the key to read.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="return">
-        <desc>
-          The value of the key.  If the key does not exist then this will be
-          empty.
-        </desc>
-      </param>
-    </method>
-
-    <method name="setGuestProperty">
-      <desc>
-        Sets, changes or deletes a value in the host/guest property store.
-      </desc>
-      <param name="key" type="wstring" dir="in">
-        <desc>
-          The name of the key to set, change or delete.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="in">
-        <desc>
-          The new value of the key to set, change or delete.  If the key does
-          not yet exist and @a value is non-empty, it will be created.  If
-          @a value is empty, the key will be deleted if it exists.
-        </desc>
-      </param>
-    </method>
-
   </interface>
 
   <!--
@@ -9683,7 +9647,7 @@
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="37838967-2430-4bb1-8acc-1b5b2c383d44"
+     uuid="ee0bec44-ffec-4994-8f15-c3dea54bbbb6"
      internal="yes"
      wsmap="suppress"
      >
@@ -9834,6 +9798,18 @@
       <param name="check" type="boolean" dir="in"/>
       <param name="canShow" type="boolean" dir="out"/>
       <param name="winId" type="unsigned long long" dir="out"/>
+    </method>
+
+    <method name="accessGuestProperty">
+      <desc>
+        Called by <link to="IMachine::getGuestProperty()"/> and by
+        <link to="IMachine::setGuestProperty()"/> in order to read and
+        modify guest properties.
+      </desc>
+      <param name="key" type="wstring" dir="in"/>
+      <param name="value" type="wstring" dir="in"/>
+      <param name="isSetter" type="boolean" dir="in"/>
+      <param name="retValue" type="wstring" dir="return"/>
     </method>
 
   </interface>

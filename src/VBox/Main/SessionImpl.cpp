@@ -653,6 +653,34 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
 }
 
+STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
+                                           BOOL isSetter, BSTR *retValue)
+{
+#ifdef VBOX_WITH_INFO_SVC
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    if (mState != SessionState_Open)
+        return setError (E_FAIL,
+                         tr ("Machine session is not open (session state: %d) - please retry."),
+                         mState);
+    AssertReturn (mType == SessionType_Direct, E_UNEXPECTED);
+    if (!VALID_PTR(aKey))
+        return E_POINTER;
+    if (!isSetter && !VALID_PTR(retValue))
+        return E_POINTER;
+    /* aValue can be NULL for a setter call if the property is to be deleted. */
+    if (isSetter && (aValue != NULL) && !VALID_PTR(aValue))
+        return E_POINTER;
+    if (!isSetter)
+        return mConsole->getGuestProperty(aKey, retValue);
+    else
+        return mConsole->setGuestProperty(aKey, aValue);
+#else
+    return E_NOTIMPL;
+#endif
+}
+
 // private methods
 ///////////////////////////////////////////////////////////////////////////////
 

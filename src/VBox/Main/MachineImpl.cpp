@@ -2679,35 +2679,34 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 
 /**
  * Read a value from the host/guest property store.  If a session is
- * currently open for the guest then query the console object for the value,
+ * currently open for the guest then query the session object for the value,
  * since the current values of the property store will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
- * stored between sessions.
- *
- * @note since the way this method is implemented depends on whether or not
- *       a session is currently open, we grab a write lock on the object, in
- *       order to ensure that the session state does not change during the
- *       call, and to force us to block if it is currently changing (either
- *       way) between open and closed.
+ * stored between sessions.  Returns E_FAIL if we are currently transitioning
+ * between states.
  */
 STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
-    if (!VALID_PTR(aValue))
-        return E_POINTER;
-
 #ifndef VBOX_WITH_INFO_SVC
     HRESULT hrc = E_NOTIMPL;
 #else
-    using namespace svcInfo;
+    if (!VALID_PTR(aKey))
+        return E_POINTER;
+    if (!VALID_PTR(aValue))
+        return E_POINTER;
 
-    if (NULL == aKey)
-        return setError (E_INVALIDARG, tr ("Called with a NULL key argument"));
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    using namespace svcInfo;
     HRESULT hrc = E_FAIL;
-    AutoWriteLock alock (this);
+
     switch (mData->mSession.mState)
     {
         case SessionState_Closed:
         {
+            AutoReadLock alock (this);
+
             /* The "+ 1" in the length is the null terminator. */
             Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
             BSTR strKeyRaw = strKey.mutableRaw();
@@ -2725,26 +2724,26 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
         }
         case SessionState_Open:
         {
-            /*
-             *  Get the console from the direct session (note that we don't leave the
-             *  lock here because GetRemoteConsole must not call us back).
-             */
-            ComPtr <IConsole> console;
-            hrc = mData->mSession.mDirectControl->GetRemoteConsole (console.asOutParam());
-            if (!SUCCEEDED (hrc))
-                /* The failure may w/o any error info (from RPC), so provide one */
-                hrc = setError (hrc, tr ("Failed to get a console object from the direct session"));
-            else
+            ComPtr <IInternalSessionControl> directControl;
             {
-                ComAssertRet (!console.isNull(), E_FAIL);
-                hrc = console->GetGuestProperty (aKey, aValue);
+                AutoReadLock alock (this);
+        
+                if (mData->mSession.mState != SessionState_Open)
+                    return setError (E_FAIL,
+                        tr ("Machine session is not open (session state: %d) - please retry."),
+                        mData->mSession.mState);
+        
+                directControl = mData->mSession.mDirectControl;
             }
+
+            hrc = directControl->AccessGuestProperty (aKey, NULL,
+                                                      false /* isSetter */,
+                                                      aValue);
             break;
         }
         default:
-            /* If we get here then I have misunderstood the semantics.  Quite possible. */
-            AssertLogRel(false);
-            hrc = E_UNEXPECTED;
+            hrc = setError (E_FAIL, tr ("Machine session is currently transitioning (session state: %d) - please retry."),
+                            mData->mSession.mState);
     }
 #endif  /* VBOX_WITH_INFO_SVC not defined */
     return hrc;
@@ -2752,32 +2751,34 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 
 /**
  * Write a value to the host/guest property store.  If a session is
- * currently open for the guest then query the console object for the value,
+ * currently open for the guest then query the session object for the value,
  * since the current values of the property store will be held in RAM in the
  * session.  Otherwise read the value from machine extra data, where it is
- * stored between sessions.
- *
- * @note since the way this method is implemented depends on whether or not
- *       a session is currently open, we grab a write lock on the object, in
- *       order to ensure that the session state does not change during the
- *       call, and to force us to block if it is currently changing (either
- *       way) between open and closed.
+ * stored between sessions.  Returns E_FAIL if we are currently transitioning
+ * between states.
  */
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
 #ifndef VBOX_WITH_INFO_SVC
     HRESULT hrc = E_NOTIMPL;
 #else
-    using namespace svcInfo;
+    if (!VALID_PTR(aKey))
+        return E_POINTER;
+    if ((aValue != NULL) && !VALID_PTR(aValue))
+        return E_POINTER;
 
-    if (NULL == aKey)
-        return setError (E_INVALIDARG, tr ("Called with a NULL key argument"));
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    using namespace svcInfo;
     HRESULT hrc = E_FAIL;
-    AutoWriteLock alock (this);
+
     switch (mData->mSession.mState)
     {
         case SessionState_Closed:
         {
+            AutoWriteLock alock (this);
+
             /* The "+ 1" in the length is the null terminator. */
             Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
             BSTR strKeyRaw = strKey.mutableRaw();
@@ -2795,26 +2796,27 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
         }
         case SessionState_Open:
         {
-            /*
-             *  Get the console from the direct session (note that we don't leave the
-             *  lock here because GetRemoteConsole must not call us back).
-             */
-            ComPtr <IConsole> console;
-            hrc = mData->mSession.mDirectControl->GetRemoteConsole (console.asOutParam());
-            if (!SUCCEEDED (hrc))
-                /* The failure may w/o any error info (from RPC), so provide one */
-                hrc = setError (hrc, tr ("Failed to get a console object from the direct session"));
-            else
+            ComPtr <IInternalSessionControl> directControl;
             {
-                ComAssertRet (!console.isNull(), E_FAIL);
-                hrc = console->SetGuestProperty (aKey, aValue);
+                AutoReadLock alock (this);
+        
+                if (mData->mSession.mState != SessionState_Open)
+                    return setError (E_FAIL,
+                        tr ("Machine session is not open (session state: %d) - please retry."),
+                        mData->mSession.mState);
+        
+                directControl = mData->mSession.mDirectControl;
             }
+
+            BSTR dummy;
+            hrc = directControl->AccessGuestProperty (aKey, aValue,
+                                                      true /* isSetter */,
+                                                      &dummy);
             break;
         }
         default:
-            /* If we get here then I have misunderstood the semantics.  Quite possible. */
-            AssertLogRel(false);
-            hrc = E_UNEXPECTED;
+            hrc = setError (E_FAIL, tr ("Machine session is currently transitioning (session state: %d) - please retry."),
+                            mData->mSession.mState);
     }
 #endif  /* VBOX_WITH_INFO_SVC not defined */
     return hrc;
