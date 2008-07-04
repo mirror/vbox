@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# The Recompiler Makefile.
+# The Recompiler Sub-Makefile.
 #
 # There are a few of complicating factors here, esp. on AMD64 systems:
 #
@@ -33,27 +33,26 @@
 #
 
 
-DEPTH = ../..
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
 
 
-BLDPROGS              = dyngen
+BLDPROGS             += dyngen
 ifneq ($(or $(eq $(KBUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
- SYSMODS              = VBoxREM2
- REM_MOD              = VBoxREM2
+ SYSMODS             += VBoxREM2
+ REM_MOD             += VBoxREM2
 else
- REM_MOD              = VBoxREM
+ REM_MOD             += VBoxREM
 endif
-DLLS                  = VBoxREM
-IMPORT_LIBS           = VBoxREMImp
+DLLS                 += VBoxREM
+IMPORT_LIBS          += VBoxREMImp
 
-OTHER_CLEAN           = \
+OTHER_CLEAN          += \
 	$(PATH_$(REM_MOD))/op.h \
 	$(PATH_$(REM_MOD))/opc.h \
 	$(PATH_$(REM_MOD))/gen-op.h \
 	$(PATH_$(REM_MOD))/opc.h
 
-DEFS += REM_PHYS_ADDR_IN_TLB
 
 #
 # L4 must use the no-crt path because it's lacking math stuff it seems...
@@ -82,15 +81,16 @@ ifeq ($(KBUILD_HOST),win)
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
+dyngen_DEFS          += REM_PHYS_ADDR_IN_TLB
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  dyngen_DEFS         += HOST_X86_64=1
 endif
 dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
-dyngen_INCS          := \
+dyngen_INCS           = \
 	Sun \
 	target-i386 \
 	fpu \
-	$(PATH_SUB_CURRENT)
+	.
 dyngen_SOURCES        = dyngen.c
 
 
@@ -98,6 +98,7 @@ dyngen_SOURCES        = dyngen.c
 # The VBoxREM.[dll|so|..] or VBoxREM2.rel.
 #
 $(REM_MOD)_DEFS             = IN_REM_R3 REM_INCLUDE_CPU_H
+$(REM_MOD)_DEFS            += REM_PHYS_ADDR_IN_TLB
 #$(REM_MOD)_DEFS          += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 
 $(REM_MOD)_INCS             = \
@@ -107,7 +108,7 @@ $(REM_MOD)_INCS             = \
 	fpu \
 	$(PATH_$(REM_MOD)) \
 	$(PATH_ROOT)/src/VBox/VMM \
-	$(PATH_CURRENT)
+	.
 
 $(REM_MOD)_SOURCES          = \
 	VBoxRecompiler.c \
@@ -236,6 +237,14 @@ cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing 
 cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
 
 
+translate-all.c_DEPS = \
+	$(PATH_$(REM_MOD))/op.h \
+	$(PATH_$(REM_MOD))/opc.h \
+	$(PATH_$(REM_MOD))/gen-op.h
+translate-op.c_DEPS = $(translate-all.c_INTERMEDIATES)
+target-i386/translate.c_DEPS = $(translate-all.c_INTERMEDIATES)
+
+
 #
 # The math testcase as a standalone program for testing and debugging purposes.
 #
@@ -323,7 +332,7 @@ $(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET
 
 
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 #
@@ -464,12 +473,6 @@ $(PATH_$(REM_MOD))/opc.h:    $(FILE_OP_OBJ) $(DYNGEN)
 $(PATH_$(REM_MOD))/gen-op.h: $(FILE_OP_OBJ) $(DYNGEN)
 	$(call MSG_TOOL,dyngen,VBoxREM,$<,$@)
 	$(QUIET)$(DYNGEN_EXEC) -g -o $@ $<
-
-# Dyngen dependants (sp?).
-translate-all.c \
-translate-op.c \
-target-i386/translate.c \
-	: $(PATH_$(REM_MOD))/op.h $(PATH_$(REM_MOD))/opc.h $(PATH_$(REM_MOD))/gen-op.h
 
 
 # Some aliases
