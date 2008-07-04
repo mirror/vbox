@@ -47,15 +47,17 @@
  *
  * @returns VBox status code.
  * @param   pDeviceObject   The device object to call.
+ * @param   pFileObject     The file object for the connection.
  * @param   iReq            The request.
  * @param   pReq            The request packet.
  */
-static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
+static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFileObject, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
 {
     int                 rc;
     IO_STATUS_BLOCK     IoStatusBlock;
     KEVENT              Event;
     PIRP                pIrp;
+    NTSTATUS            rcNt;
 
     /*
      * Build the request.
@@ -72,10 +74,12 @@ static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, uint32_t iReq, P
                                          &IoStatusBlock);   /* IoStatusBlock */
     if (pIrp)
     {
+        IoGetNextIrpStackLocation(pIrp)->FileObject = pFileObject;
+
         /*
          * Call the driver, wait for an async request to complete (should never happen).
          */
-        NTSTATUS rcNt = IoCallDriver(pDeviceObject, pIrp);
+        rcNt = IoCallDriver(pDeviceObject, pIrp);
         if (rcNt == STATUS_PENDING)
         {
             rcNt = KeWaitForSingleObject(&Event,            /* Object */
@@ -113,7 +117,7 @@ int VBOXCALL supR0IdcNativeOpen(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQCONNECT p
         /*
          * Make the connection call.
          */
-        rc = supR0IdcNtCallInternal(pDeviceObject, SUPDRV_IDC_REQ_CONNECT, &pReq->Hdr);
+        rc = supR0IdcNtCallInternal(pDeviceObject, pFileObject, SUPDRV_IDC_REQ_CONNECT, &pReq->Hdr);
         if (RT_SUCCESS(rc))
         {
             pHandle->s.pDeviceObject = pDeviceObject;
@@ -135,9 +139,8 @@ int VBOXCALL supR0IdcNativeOpen(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQCONNECT p
 
 int VBOXCALL supR0IdcNativeClose(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQHDR pReq)
 {
-    PDEVICE_OBJECT  pDeviceObject = pHandle->s.pDeviceObject;
-    PFILE_OBJECT    pFileObject   = pHandle->s.pFileObject;
-    int rc = supR0IdcNtCallInternal(pDeviceObject, SUPDRV_IDC_REQ_DISCONNECT, pReq);
+    PFILE_OBJECT pFileObject = pHandle->s.pFileObject;
+    int rc = supR0IdcNtCallInternal(pHandle->s.pDeviceObject, pFileObject, SUPDRV_IDC_REQ_DISCONNECT, pReq);
     if (RT_SUCCESS(rc))
     {
         pHandle->s.pDeviceObject = NULL;
@@ -151,6 +154,6 @@ int VBOXCALL supR0IdcNativeClose(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQHDR pReq
 
 int VBOXCALL supR0IdcNativeCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
 {
-    return supR0IdcNtCallInternal(pHandle->s.pDeviceObject, iReq, pReq);
+    return supR0IdcNtCallInternal(pHandle->s.pDeviceObject, pHandle->s.pFileObject, iReq, pReq);
 }
 
