@@ -96,6 +96,7 @@ else # xpcom
 
  VBOX_MAIN_PREREQS = $(IDLTYPELIB) $(IDLHEADER)
 endif # xpcom
+BLDDIRS += $(VBOX_PATH_SDK)/idl
 
 
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
@@ -597,11 +598,11 @@ $(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(di
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB)))
+$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
-$(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER)))
+$(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
