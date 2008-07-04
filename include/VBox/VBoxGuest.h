@@ -1568,6 +1568,7 @@ VBGLR3DECL(int)     VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32
 VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
 /** @}  */
 
+#ifdef VBOX_WITH_INFO_SVC
 /** @name Information Services
  * @{ */
 VBGLR3DECL(int)     VbglR3InfoSvcConnect(uint32_t *pu32ClientId);
@@ -1575,6 +1576,7 @@ VBGLR3DECL(int)     VbglR3InfoSvcDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3InfoSvcWriteKey(uint32_t u32ClientId, char *pszKey, char *pszValue);
 VBGLR3DECL(int)     VbglR3InfoSvcReadKey(uint32_t u32ClientId, char *pszKey, char *pszValue, uint32_t cbValue, uint32_t *pcbActual);
 /** @}  */
+#endif /* VBOX_WITH_INFO_SVC defined */
 
 
 __END_DECLS
