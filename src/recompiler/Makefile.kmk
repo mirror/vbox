@@ -83,6 +83,8 @@ ifeq ($(KBUILD_HOST),win)
  dyngen_BLD_TRG_ARCH  = x86
  dyngen_BLD_TRG_CPU   = i386
  dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
+ dyngen_TEMPLATE      = DUMMY
+ TEMPLATE_DUMMY       = dummy template (move to kBuild)
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
