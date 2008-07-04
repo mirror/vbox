@@ -57,6 +57,7 @@ OTHER_CLEAN          += \
 # Globals
 #
 VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
+TEMPLATE_DUMMY = dummy template (move to kBuild)
 
 
 #
@@ -84,7 +85,6 @@ ifeq ($(KBUILD_HOST),win)
  dyngen_BLD_TRG_CPU   = i386
  dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
  dyngen_TEMPLATE      = DUMMY
- TEMPLATE_DUMMY       = dummy template (move to kBuild)
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
@@ -183,6 +183,7 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_TOOL.solaris    = GXX3PLAIN
  $(REM_MOD)_TOOL.win.x86    = MINGW32
  $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
+ $(REM_MOD)_TEMPLATE        = DUMMY
  $(REM_MOD)_SDKS.win.x86    = W32API  							## @todo do we really need this now?
  $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp 			## @todo didn't I make this default already?
  $(REM_MOD)_CFLAGS          = -Wall -g
