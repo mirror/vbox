@@ -3052,7 +3052,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
         {
-            Log(("VM_FF_EMULATED_STI at %VGv successor %VGv\n", CPUMGetGuestEIP(pVM), EMGetInhibitInterruptsPC(pVM)));
+            Log(("VM_FF_EMULATED_STI at %VGv successor %VGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
             if (CPUMGetGuestEIP(pVM) != EMGetInhibitInterruptsPC(pVM))
             {
                 /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
