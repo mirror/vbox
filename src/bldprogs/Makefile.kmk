@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for various generic build tools (there is currently only one of them).
+# Sub-Makefile for various generic build tools (there is currently only one of them).
 #
 
 #
@@ -19,12 +19,12 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../..
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
 
-BLDPROGS        = bin2c
-TEMPLATE        = VBOXBLDPROG
-bin2c_SOURCES   = bin2c.c
+BLDPROGS += bin2c
+TEMPLATE = VBOXBLDPROG
+bin2c_SOURCES = bin2c.c
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
