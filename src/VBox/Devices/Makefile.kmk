@@ -49,6 +49,9 @@ endif
 # Main targets.
 #
 LIBRARIES += DevicesR3 Drivers ServicesR0
+ifdef VBOX_USE_NAT
+LIBRARIES += NatAlias
+endif
 DLLS      += VBoxDDU VBoxDD VBoxDD2
 SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
@@ -174,6 +177,11 @@ ifeq ($(KBUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
+
+ifdef VBOX_USE_NAT
+VBoxDD_LIBS           += $(PATH_LIB)/NatAlias$(VBOX_SUFF_LIB)
+endif
+
 ifeq ($(KBUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
  ifdef VBOX_WITH_SUID_WRAPPER
@@ -524,8 +532,21 @@ Drivers_SOURCES    = \
 	Input/DrvKeyboardQueue.cpp \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
+	PC/DrvACPI.cpp \
+	Serial/DrvChar.cpp \
+	Serial/DrvNamedPipe.cpp \
+	Storage/DrvBlock.cpp \
+	Storage/DrvHostBase.cpp \
+	Storage/DrvHostDVD.cpp \
+	Storage/DrvHostFloppy.cpp \
+	Storage/DrvMediaISO.cpp \
+	Storage/DrvRawImage.cpp \
+	Storage/DrvVD.cpp \
+	Storage/VBoxHDD.cpp \
+	Network/DrvNetSniffer.cpp 
+ifndef VBOX_USE_NAT
+Drivers_SOURCES += \
 	Network/DrvNAT.cpp \
-	Network/DrvNetSniffer.cpp \
 	Network/slirp/bootp.c \
 	Network/slirp/cksum.c \
 	Network/slirp/debug.c \
@@ -543,18 +564,45 @@ Drivers_SOURCES    = \
 	Network/slirp/tcp_subr.c \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/tftp.c \
-	Network/slirp/udp.c \
-	PC/DrvACPI.cpp \
-	Serial/DrvChar.cpp \
-	Serial/DrvNamedPipe.cpp \
-	Storage/DrvBlock.cpp \
-	Storage/DrvHostBase.cpp \
-	Storage/DrvHostDVD.cpp \
-	Storage/DrvHostFloppy.cpp \
-	Storage/DrvMediaISO.cpp \
-	Storage/DrvRawImage.cpp \
-	Storage/DrvVD.cpp \
-	Storage/VBoxHDD.cpp
+	Network/slirp/udp.c 
+else
+NatAlias_TEMPLATE   = VBOXR3NP
+
+
+Drivers_SOURCES +=	Network/DrvNAT2.cpp 
+
+NatAlias_CFLAGS += -include Network/nat/bsd.h
+NatAlias_DEFS += VBOX_NAT_SOURCES
+NatAlias_DEFS += __BSD_VISIBLE
+NatAlias_DEFS += INET
+NatAlias_DEFS += IPFIREWALL_NAT
+NatAlias_DEFS += RWLOCK_NOINLINE
+NatAlias_DEFS += MUTEX_NOINLINE 
+
+NatAlias_DEFS.linux   += _GNU_SOURCE
+
+NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw_nat.c
+NatAlias_SOURCES +=	Network/nat/src/sys/kern/subr_eventhandler.c
+#NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw2.c
+NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias.c
+#NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_cuseeme.c
+NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_db.c
+NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_dummy.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_ftp.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_irc.c
+NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_mod.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_nbt.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_pptp.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_proxy.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_skinny.c
+#NatAlias_SOURCES += Network/nat/src/sys/libalias/alias_smedia.c
+NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_util.c
+NatAlias_SOURCES += Network/nat/src/common/lib/libc/gen/bswap16.c
+NatAlias_SOURCES += Network/nat/src/common/lib/libc/gen/bswap32.c
+NatAlias_SOURCES += Network/nat/src/common/lib/libc/gen/bswap64.c
+
+NatAlias_INCS += Network/nat/src/sys
+endif
 
 # -- OS specific --
 
