@@ -453,7 +453,7 @@ PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, uint8_t val)
 PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
 {
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
-    LogFlow(("apicGetTPR: returns %#x\n", s->tpr >> 4));
+    Log2(("apicGetTPR: returns %#x\n", s->tpr >> 4));
     return s->tpr >> 4;
 }
 
