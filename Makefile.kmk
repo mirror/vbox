@@ -218,10 +218,10 @@ docs.Core: $(PATH_TARGET)/docs.Core
 # and GCFGM lists.
 #
 OTHER_CLEAN += \
-	$(PATH_TARGET)/Doxyfile \
-	$(PATH_TARGET)/Doxyfile.dep
+	$(PATH_TARGET)/Doxyfile.Core \
+	$(PATH_TARGET)/Doxyfile.Core.dep
 
-DOXYGEN_INPUT_DIRS = \
+VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	include/iprt \
 	include/VBox \
 	include/VBox/com \
@@ -317,7 +317,7 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxUSB/win/usbd \
 
 # These must come first in order to make things look nice.
-DOXYGEN_INPUT_FIRST =\
+VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/doc/VBox-doc.c \
 	$(PATH_ROOT)/doc/VBox-CodingGuidelines.cpp \
 	$(PATH_ROOT)/src/VBox/VMM/VMMCodingGuidelines.cpp \
@@ -389,54 +389,54 @@ DOXYGEN_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/param.h \
 	$(PATH_ROOT)/include/VBox/version.h
 
-DOXYGEN_INPUT := \
-	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(DOXYGEN_INPUT_DIRS)))) ) \
-	$(foreach dir, $(DOXYGEN_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/.asm))
-DOXYGEN_INPUT := \
-	$(DOXYGEN_INPUT_FIRST) \
-	$(filter-out $(DOXYGEN_INPUT_FIRST), $(DOXYGEN_INPUT))
+VBOX_CORE_DOXYFILE_INPUT := \
+	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
+	$(foreach dir, $(VBOX_CORE_DOXYFILE_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/.asm))
+VBOX_CORE_DOXYFILE_INPUT := \
+	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
+	$(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT))
 
 # And some some additional stuff.
-DOXYGEN_INPUT += \
+VBOX_CORE_DOXYFILE_INPUT += \
 	$(PATH_ROOT)/src/recompiler/VBoxRecompiler.c \
 	$(PATH_ROOT)/src/recompiler/VBoxREMWrapper.cpp
 
 
-DOXYGEN_OUTPUT = $(PATH_OUT)/docs/Core
+VBOX_CORE_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/Core
 
--include $(PATH_TARGET)/Doxyfile.dep
+-include $(PATH_TARGET)/Doxyfile.Core.dep
 
 # Generate the Doxyfile
-$(PATH_TARGET)/Doxyfile: Doxyfile.Core \
-		$(comp-vars DOXYGEN_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
-		$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
+$(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
+		$(comp-vars VBOX_CORE_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
+		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $(call DIRDEP, $(PATH_TARGET))
-	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.dep
+	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.Core.dep
 	$(CP) -f Doxyfile.Core $@.tmp
 	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(DOXYGEN_OUTPUT)"
-	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"
+	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(VBOX_CORE_DOXYFILE_OUTPUT)"
+	$(APPEND) $@.tmp "WARN_LOGFILE = $(VBOX_CORE_DOXYFILE_OUTPUT)/errors"
 	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include $(PATH_ROOT)/src/VBox/VMM $(PATH_ROOT)/src/VBox/Main/include "
 	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
 	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
+	$(APPEND) $@.tmp "INPUT = $(VBOX_CORE_DOXYFILE_INPUT)"
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(KBUILD_TARGET)) $(DEFS.$(KBUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
 	$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
 	$(APPEND) $@.tmp
 	$(MV) -f $@.tmp $@
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_OUTPUT_PREV = $(DOXYGEN_OUTPUT)"
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_INPUT_PREV = $(DOXYGEN_INPUT)"
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
 # Create the output directory.
-$(call DIRDEP, $(DOXYGEN_OUTPUT)):
+$(call DIRDEP, $(VBOX_CORE_DOXYFILE_OUTPUT)):
 	$(MKDIR) -p $@
 
 # Do the actual job.
-$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile $(DOXYGEN_INPUT) | $(call DIRDEP, $(DOXYGEN_OUTPUT))
+$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $(VBOX_CORE_DOXYFILE_INPUT) | $(call DIRDEP, $(VBOX_CORE_DOXYFILE_OUTPUT))
 	$(RM) -f $(PATH_TARGET)/docs.Core
-	$(RM) -Rf $(DOXYGEN_OUTPUT)/html/
-	doxygen $(PATH_TARGET)/Doxyfile
+	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
+	doxygen $(PATH_TARGET)/Doxyfile.Core
 	$(APPEND) $(PATH_TARGET)/docs.Core
 
 
