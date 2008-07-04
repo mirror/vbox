@@ -269,15 +269,6 @@ __END_DECLS
 /** Pointer to the device extension. */
 typedef struct SUPDRVDEVEXT *PSUPDRVDEVEXT;
 
-#ifdef RT_OS_LINUX
-# ifdef VBOX_HRTIMER
-typedef struct hrtimer    VBOXKTIMER;
-# else
-typedef struct timer_list VBOXKTIMER;
-# endif
-typedef VBOXKTIMER       *PVBOXKTIMER;
-#endif
-
 #ifdef VBOX_WITH_IDT_PATCHING
 
 /**
