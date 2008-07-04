@@ -423,7 +423,7 @@ OTHER_CLEAN        += \
 # On Windows we'll have to generate/edit the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-$(PATH_TARGET)/VirtualBox.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VirtualBox.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 	$(CAT) $@

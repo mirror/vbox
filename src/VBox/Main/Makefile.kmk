@@ -273,7 +273,7 @@ win/VBoxSVC.rc_INCS   = $(PATH_TARGET)
 win/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs $(PATH_TARGET)/VBoxSVC-icon.rc
 win/VBoxSVC.rc_CLEAN  = $(PATH_TARGET)/VBoxSVC-icon.rc
 
-$(PATH_TARGET)/VBoxSVC-icon.rc: Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
 	$(RM) -f $@
 	$(APPEND) $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
