@@ -751,6 +751,17 @@ void VBoxSelectorWnd::fileSettings()
 
 void VBoxSelectorWnd::fileExit()
 {
+    /* We have to check if there are any open windows beside this mainwindow
+     * (e.g. VDM) and if so close them. Note that the default behavior is
+     * different to Qt3 where a *mainWidget* exists & if this going to close
+     * all other windows are closed automatically. We do the same below. */
+    foreach (QWidget *widget, QApplication::topLevelWidgets()) 
+    {
+        if (widget->isVisible() && 
+            widget != this)
+            widget->close();
+    }
+    /* We close this widget last. */
     close();
 }
 
