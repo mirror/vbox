@@ -147,8 +147,6 @@ public:
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
     STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
-    STDMETHOD(GetGuestProperty)(INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetGuestProperty)(INPTR BSTR aKey, INPTR BSTR aValue);
 
     // public methods for internal purposes only
 
@@ -183,6 +181,8 @@ public:
     HRESULT onSharedFolderChange (BOOL aGlobal);
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
+    HRESULT getGuestProperty (INPTR BSTR aKey, BSTR *aValue);
+    HRESULT setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue);
 
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer () { return mAudioSniffer; }

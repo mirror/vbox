@@ -2486,84 +2486,6 @@ STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
     return S_OK;
 }
 
-STDMETHODIMP Console::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
-{
-    if (!VALID_PTR(aValue))
-        return E_POINTER;
-
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
-#else
-    HRESULT hrc = E_FAIL;
-    using namespace svcInfo;
-
-    VBOXHGCMSVCPARM parm[3];
-    Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value(KEY_MAX_VALUE_LEN);
-
-    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    /* To save doing a const cast, we use the mutableRaw() member. */
-    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
-    /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Key.length() + 1;
-    parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-    parm[1].u.pointer.size = KEY_MAX_VALUE_LEN;
-    int rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST, 3, &parm[0]);
-    /* The returned string should never be able to be greater than our buffer */
-    AssertLogRel(rc != VINF_BUFFER_OVERFLOW);
-    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
-    {
-        hrc = S_OK;
-        if (parm[2].u.uint32 != 0)
-            Utf8Value.cloneTo(aValue);
-        else
-            aValue = NULL;
-    }
-    else
-        hrc = setError (E_FAIL, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
-#endif
-    return hrc;
-}
-
-STDMETHODIMP Console::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
-{
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
-#else
-    HRESULT hrc = E_FAIL;
-    using namespace svcInfo;
-
-    VBOXHGCMSVCPARM parm[2];
-    Utf8Str Utf8Key = aKey;
-    int rc = VINF_SUCCESS;
-
-    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    /* To save doing a const cast, we use the mutableRaw() member. */
-    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
-    /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Key.length() + 1;
-    if (aValue != NULL)
-    {
-        Utf8Str Utf8Value = aValue;
-        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        /* To save doing a const cast, we use the mutableRaw() member. */
-        parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-        /* The + 1 is the null terminator */
-        parm[1].u.pointer.size = Utf8Value.length() + 1;
-        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST, 2, &parm[0]);
-    }
-    else
-        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST, 1, &parm[0]);
-    if (RT_SUCCESS(rc))
-        hrc = S_OK;
-    else
-        hrc = setError (E_FAIL, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
-#endif
-    return hrc;
-}
-
-
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3608,6 +3530,104 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 #else   /* !VBOX_WITH_USB */
     return E_FAIL;
 #endif  /* !VBOX_WITH_USB */
+}
+
+HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
+{
+#ifndef VBOX_WITH_INFO_SVC
+    HRESULT hrc = E_NOTIMPL;
+#else
+    if (!VALID_PTR(aKey))
+        return E_POINTER;
+    if (!VALID_PTR(aValue))
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerWeak autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    HRESULT hrc = E_UNEXPECTED;
+    using namespace svcInfo;
+
+    VBOXHGCMSVCPARM parm[3];
+    Utf8Str Utf8Key = aKey;
+    Utf8Str Utf8Value(KEY_MAX_VALUE_LEN);
+
+    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    /* To save doing a const cast, we use the mutableRaw() member. */
+    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
+    /* The + 1 is the null terminator */
+    parm[0].u.pointer.size = Utf8Key.length() + 1;
+    parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+    parm[1].u.pointer.addr = Utf8Value.mutableRaw();
+    parm[1].u.pointer.size = KEY_MAX_VALUE_LEN;
+    int rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST, 3, &parm[0]);
+    /* The returned string should never be able to be greater than our buffer */
+    AssertLogRel(rc != VINF_BUFFER_OVERFLOW);
+    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+    {
+        hrc = S_OK;
+        if (parm[2].u.uint32 != 0)
+            Utf8Value.cloneTo(aValue);
+        else
+            aValue = NULL;
+    }
+    else
+        hrc = setError (E_UNEXPECTED, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
+#endif
+    return hrc;
+}
+
+HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
+{
+#ifndef VBOX_WITH_INFO_SVC
+    HRESULT hrc = E_NOTIMPL;
+#else
+    if (!VALID_PTR(aKey))
+        return E_POINTER;
+    if ((aValue != NULL) && !VALID_PTR(aValue))
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerWeak autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    HRESULT hrc = E_UNEXPECTED;
+    using namespace svcInfo;
+
+    VBOXHGCMSVCPARM parm[2];
+    Utf8Str Utf8Key = aKey;
+    int rc = VINF_SUCCESS;
+
+    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    /* To save doing a const cast, we use the mutableRaw() member. */
+    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
+    /* The + 1 is the null terminator */
+    parm[0].u.pointer.size = Utf8Key.length() + 1;
+    if (aValue != NULL)
+    {
+        Utf8Str Utf8Value = aValue;
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        /* To save doing a const cast, we use the mutableRaw() member. */
+        parm[1].u.pointer.addr = Utf8Value.mutableRaw();
+        /* The + 1 is the null terminator */
+        parm[1].u.pointer.size = Utf8Value.length() + 1;
+        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST, 2, &parm[0]);
+    }
+    else
+        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST, 1, &parm[0]);
+    if (RT_SUCCESS(rc))
+        hrc = S_OK;
+    else
+        hrc = setError (E_UNEXPECTED, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
+#endif
+    return hrc;
 }
 
 /**

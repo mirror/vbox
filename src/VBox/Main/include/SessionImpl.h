@@ -105,6 +105,7 @@ public:
     STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     STDMETHOD(OnUSBDeviceDetach) (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
     STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
+    STDMETHOD(AccessGuestProperty) (INPTR BSTR aKey, INPTR BSTR aValue, BOOL isSetter, BSTR *retValue);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Session"; }
