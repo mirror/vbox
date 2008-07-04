@@ -60,6 +60,7 @@ if [ -z "$2" ]; then
     # To use a specific physical NIC, replace $phys_nic with the name of the NIC.
     vnic_name=`/usr/lib/vna $phys_nic $mac`
     if [ $? != 0 ]; then
+        echo "vna failed to bind VNIC."
         exit 1
     fi
 
