@@ -67,10 +67,9 @@ endif
 #PROGRAMS        += tstCFGLdr
 
 ifeq ($(KBUILD_TARGET),win)
- OTHERS         += $(PATH_BIN)/comregister.cmd
+ INSTALLS       += VBoxMain-com-inst
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
  OTHER_CLEAN    += \
- 	$(PATH_BIN)/comregister.cmd \
  	$(VBOX_PATH_SDK)/include/VirtualBox.h \
  	$(IDLFILE) \
  	$(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
@@ -564,6 +563,14 @@ endif
 
 
 #
+# Installs com related thing(s) to bin.
+#
+VBoxMain-com-inst_INST = $(INST_BIN)
+VBoxMain-com-inst_SOURCES = \
+	win/comregister.cmd
+
+
+#
 # Include sub-makefile(s) last if we're not doing parallel building.
 #
 # We do this here so that the webservices ends up last in the target
@@ -578,8 +585,14 @@ ifeq ($(KMK_OPTS_JOBS),1)
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
+
+
+
 # generate rules
 include $(KBUILD_PATH)/subfooter.kmk
+
+
+
 
 
 #
@@ -689,9 +702,6 @@ testidl: $(IDLFILE) $(PATH_VBoxCOM)/VirtualBox_i.c
 endif
 
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
-
-$(PATH_BIN)/comregister.cmd: win/comregister.cmd
-	$(CP) $< $@
 
 
 # Hot fix when dependencies goes bad again...
