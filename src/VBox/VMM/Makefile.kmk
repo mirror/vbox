@@ -26,15 +26,6 @@ DEPTH     = ../../..
 endif
 include	$(KBUILD_PATH)/subheader.kmk
 
-## @todo get rid of these.
-# Enable the PDM lock.
-ifdef VBOX_WITH_PDM_LOCK
-DEFS += VBOX_WITH_PDM_LOCK
-endif
-ifdef VBOX_WITH_INTERNAL_NETWORKING
-DEFS += VBOX_WITH_INTERNAL_NETWORKING
-endif
-
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
