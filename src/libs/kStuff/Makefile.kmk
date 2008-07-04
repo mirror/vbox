@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for kStuff, for statically linking into VBoxRT.
+# Sub-Makefile for kStuff, for statically linking into VBoxRT.
 #
 
 #
@@ -19,23 +19,28 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH    ?= ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # The library.
 #
-LIBRARIES = VBox-kStuff
+LIBRARIES += VBox-kStuff
 VBox-kStuff_TEMPLATE = VBOXR3
 VBox-kStuff_DEFS = IN_RT_R3
-VBox-kStuff_INCS = $(PATH_CURRENT)/kStuff/include
+VBox-kStuff_INCS = kStuff/include
 VBox-kStuff_SOURCES = \
 	kStuff/kLdr/kLdrMod.c \
 	kStuff/kLdr/kLdrModLX.c \
 	kStuff/kLdr/kLdrModMachO.c \
 	kStuff/kLdr/kLdrModPE.c \
 	\
-    kStuff/kRdr/kRdr.cpp \
+	kStuff/kRdr/kRdr.cpp \
 	kStuff/kRdr/kRdrBuffered.cpp \
 	\
 	kStuff/kCpu/kCpuCompare.c \
@@ -55,7 +60,7 @@ VBox-kStuff_SOURCES = \
 	kStuff/kHlp/Generic/kHlpStrPCopy.c \
 	kStuff/kHlp/Generic/kHlpStrNLen.c \
 	kStuff/kHlp/Generic/kHlpInt2Ascii.c \
-    kStuff/kHlp/Generic/kHlpGetEnvUZ.c \
+	kStuff/kHlp/Generic/kHlpGetEnvUZ.c \
 	kStuff/kHlp/Generic/kHlpGetExt.c \
 	kStuff/kHlp/Generic/kHlpGetFilename.c \
 	kStuff/kHlp/Generic/kHlpIsFilenameOnly.c \
@@ -64,9 +69,9 @@ VBox-kStuff_SOURCES = \
 	iprt/kHlpAlloc-iprt.cpp \
 	iprt/kHlpEnv-iprt.cpp \
 	iprt/kHlpString-iprt.cpp \
-    iprt/kRdrFile-iprt.cpp
+	iprt/kRdrFile-iprt.cpp
 
 #	kStuff/kErr/kErrName.c
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
