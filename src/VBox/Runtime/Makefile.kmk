@@ -76,8 +76,8 @@ else
  OTHER_CLEAN += \
 	$(PATH_TARGET)/errmsgdata.h \
 	$(PATH_TARGET)/errmsgcomdata.h \
-	$(PATH_TARGET)/Doxyfile \
-	$(PATH_TARGET)/Doxyfile.dep \
+	$(PATH_TARGET)/Doxyfile.iprt \
+	$(PATH_TARGET)/Doxyfile.iprt.dep \
 	$(PATH_TARGET)/docs.iprt
 
 endif
@@ -1368,7 +1368,7 @@ ldrELFRelocatable.cpp.obj: ldrELF.obj
 #
 # Doxygen documentation.
 #
-DOXYGEN_INPUT_DIRS = \
+IPRT_DOXYFILE_INPUT_DIRS = \
 	$(PATH_ROOT)/include/iprt \
 	$(PATH_ROOT)/include/iprt/nocrt \
 	$(PATH_ROOT)/include/iprt/nocrt/x86 \
@@ -1398,7 +1398,7 @@ DOXYGEN_INPUT_DIRS = \
 		)
 
 # These must come first in order to make things look nice.
-DOXYGEN_INPUT_FIRST =\
+IPRT_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/iprt/cdefs.h \
 	$(PATH_ROOT)/include/iprt/types.h \
 	$(PATH_ROOT)/include/iprt/runtime.h \
@@ -1406,54 +1406,56 @@ DOXYGEN_INPUT_FIRST =\
 	$(PATH_ROOT)/include/iprt/assert.h \
 	$(PATH_ROOT)/include/iprt/asm.h \
 
-DOXYGEN_INPUT := \
-	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(DOXYGEN_INPUT_DIRS)))) ) \
-	$(foreach dir, $(DOXYGEN_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/.c $(dir)/.asm))
-DOXYGEN_INPUT := \
-	$(DOXYGEN_INPUT_FIRST) \
-	$(filter-out $(DOXYGEN_INPUT_FIRST), $(DOXYGEN_INPUT))
+IPRT_DOXYFILE_INPUT := \
+	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(IPRT_DOXYFILE_INPUT_DIRS)))) ) \
+	$(foreach dir, $(IPRT_DOXYFILE_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/.c $(dir)/.asm))
+IPRT_DOXYFILE_INPUT := \
+	$(IPRT_DOXYFILE_INPUT_FIRST) \
+	$(filter-out $(IPRT_DOXYFILE_INPUT_FIRST), $(IPRT_DOXYFILE_INPUT))
 
 
-DOXYGEN_OUTPUT = $(PATH_OUT)/docs/iprt
+IPRT_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/iprt
 
--include $(PATH_TARGET)/Doxyfile.dep
+-include $(PATH_TARGET)/Doxyfile.iprt.dep
 
 # Generate the Doxyfile
-$(PATH_TARGET)/Doxyfile: $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $(VBOX_PATH_RUNTIME_SRC)/Makefile.kmk \
-		$(comp-vars DOXYGEN_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
-		$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
+$(PATH_TARGET)/Doxyfile.iprt: \
+		$(VBOX_PATH_RUNTIME_SRC)/Doxyfile \
+		$(VBOX_PATH_RUNTIME_SRC)/Makefile.kmk \
+		$(comp-vars IPRT_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
+		$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $(call DIRDEP, $(PATH_TARGET))
-	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.dep
+	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.iprt.dep
 	$(CP) -f $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $@.tmp
 	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(DOXYGEN_OUTPUT)"
-	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"
+	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(IPRT_DOXYFILE_OUTPUT)"
+	$(APPEND) $@.tmp "WARN_LOGFILE = $(IPRT_DOXYFILE_OUTPUT)/errors"
 	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
 	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
 	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
 	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
+	$(APPEND) $@.tmp "INPUT = $(IPRT_DOXYFILE_INPUT)"
 	$(APPEND) $@.tmp
 	$(MV) -f $@.tmp $@
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_OUTPUT_PREV = $(DOXYGEN_OUTPUT)"
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_INPUT_PREV = $(DOXYGEN_INPUT)"
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.iprt.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.iprt.dep "DOXYGEN_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
 
 # Create the output directory.
-$(call DIRDEP, $(DOXYGEN_OUTPUT)):
+$(call DIRDEP, $(IPRT_DOXYFILE_OUTPUT)):
 	$(MKDIR) -p $@
 
 # Do the actual job.
-$(PATH_TARGET)/docs.iprt: $(PATH_TARGET)/Doxyfile $(DOXYGEN_INPUT) | $(call DIRDEP, $(DOXYGEN_OUTPUT))
-	$(RM) -f $(wildcard $(DOXYGEN_OUTPUT)/html/*) $(PATH_TARGET)/docs.iprt
-	doxygen $(PATH_TARGET)/Doxyfile
+$(PATH_TARGET)/docs.iprt: $(PATH_TARGET)/Doxyfile.iprt $(IPRT_DOXYFILE_INPUT) | $(call DIRDEP, $(IPRT_DOXYFILE_OUTPUT))
+	$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(PATH_TARGET)/docs.iprt
+	doxygen $(PATH_TARGET)/Doxyfile.iprt
 	$(APPEND) $(PATH_TARGET)/docs.iprt
 
 # alias
 docs: $(PATH_TARGET)/docs.iprt
 
 test:
-	@echo test-$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE)
-	@echo $(DOXYGEN_OUTPUT)
+	@echo test-$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE)
+	@echo $(IPRT_DOXYFILE_OUTPUT)
 	@echo $(DOXYGEN_OUTPUT_PREV)
-	@echo $(DOXYGEN_INPUT)
+	@echo $(IPRT_DOXYFILE_INPUT)
 
