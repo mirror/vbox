@@ -404,79 +404,12 @@ typedef enum
  */
 typedef struct SUPDRVMEMREF
 {
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /** The memory object handle. */
     RTR0MEMOBJ          MemObj;
     /** The ring-3 mapping memory object handle. */
     RTR0MEMOBJ          MapObjR3;
     /** Type of memory. */
     SUPDRVMEMREFTYPE    eType;
-
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-    /** Pointer to the R0 mapping of the memory.
-     * Set to NULL if N/A. */
-    void               *pvR0;
-    /** Pointer to the R3 mapping of the memory.
-     * Set to NULL if N/A. */
-    RTR3PTR             pvR3;
-    /** Size of the locked memory. */
-    unsigned            cb;
-    /** Type of memory. */
-    SUPDRVMEMREFTYPE    eType;
-
-    /** memory type specific information. */
-    union
-    {
-        struct
-        {
-#if defined(RT_OS_WINDOWS)
-            /** Pointer to memory descriptor list (MDL). */
-            PMDL               *papMdl;
-            unsigned            cMdls;
-#elif defined(RT_OS_LINUX)
-            struct page       **papPages;
-	    unsigned            cPages;
-#else
-# error "Either no target was defined or we haven't ported the driver to the target yet."
-#endif
-        } locked;
-        struct
-        {
-#if defined(RT_OS_WINDOWS)
-            /** Pointer to memory descriptor list (MDL). */
-            PMDL                pMdl;
-#elif defined(RT_OS_LINUX)
-            struct page        *paPages;
-	    unsigned            cPages;
-#else
-# error "Either no target was defined or we haven't ported the driver to the target yet."
-#endif
-        } cont;
-        struct
-        {
-#if defined(RT_OS_WINDOWS)
-            /** Pointer to memory descriptor list (MDL). */
-            PMDL                pMdl;
-#elif defined(RT_OS_LINUX)
-            /** Pointer to the array of page pointers. */
-            struct page       **papPages;
-            /** Number of pages in papPages. */
-	    unsigned            cPages;
-#else
-# error "Either no target was defined or we haven't ported the driver to the target yet."
-#endif
-        } mem;
-#if defined(USE_NEW_OS_INTERFACE_FOR_LOW)
-        struct
-        {
-            /** The memory object handle. */
-            RTR0MEMOBJ          MemObj;
-            /** The ring-3 mapping memory object handle. */
-            RTR0MEMOBJ          MapObjR3;
-        } iprt;
-#endif
-    } u;
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 } SUPDRVMEMREF, *PSUPDRVMEMREF;
 
 
@@ -710,17 +643,6 @@ __BEGIN_DECLS
 *******************************************************************************/
 void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession);
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);
-#ifndef USE_NEW_OS_INTERFACE_FOR_MM
-int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
-void VBOXCALL   supdrvOSUnlockMemOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
-void VBOXCALL   supdrvOSContFreeOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages);
-void VBOXCALL   supdrvOSLowFreeOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
-void VBOXCALL   supdrvOSMemGetPages(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
-void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem);
-#endif
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 
 
