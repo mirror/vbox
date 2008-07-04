@@ -29,7 +29,7 @@
  * additional information or have any questions.
  */
 
-#include "SUPDRV.h" /* for KBUILD_STR */
+#include "SUPDrvInternal.h" /* for KBUILD_STR */
 #include "the-linux-kernel.h"
 #include <linux/vermagic.h>
 

@@ -33,7 +33,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "SUPDRV.h"
+#include "SUPDrvInternal.h"
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 

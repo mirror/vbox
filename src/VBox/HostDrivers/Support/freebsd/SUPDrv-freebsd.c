@@ -44,7 +44,7 @@
 #include <sys/conf.h>
 #include <sys/uio.h>
 
-#include "SUPDRV.h"
+#include "SUPDrvInternal.h"
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
