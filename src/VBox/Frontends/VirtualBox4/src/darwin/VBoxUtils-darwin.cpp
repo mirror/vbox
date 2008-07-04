@@ -107,8 +107,8 @@ void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow)
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
     {
-        int attr[] = { kHIWindowBitToolbarButton, 0 };
-        int err = HIWindowChangeAttributes (::darwinToWindowRef (parent), aShow ? attr:NULL, aShow ? NULL:attr);
+        int err = ChangeWindowAttributes (::darwinToWindowRef (parent), aShow ? kWindowToolbarButtonAttribute:kWindowNoAttributes, 
+                                                                        aShow ? kWindowNoAttributes:kWindowToolbarButtonAttribute);
         AssertCarbonOSStatus (err);
     }
 }
