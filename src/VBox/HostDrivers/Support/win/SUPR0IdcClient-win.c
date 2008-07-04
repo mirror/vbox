@@ -42,6 +42,14 @@
 #define DEVICE_NAME_NT   L"\\Device\\VBoxDrv"
 
 
+/**
+ * Internal I/O Control call worker.
+ *
+ * @returns VBox status code.
+ * @param   pDeviceObject   The device object to call.
+ * @param   iReq            The request.
+ * @param   pReq            The request packet.
+ */
 static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
 {
     int                 rc;
