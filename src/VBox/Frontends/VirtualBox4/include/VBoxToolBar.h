@@ -26,9 +26,10 @@
 /* Qt includes */
 #include <QToolBar>
 #include <QMainWindow>
-#ifdef Q_WS_MAC
-//# include "VBoxAquaStyle.h"
-#endif
+
+/* Note: This styles are available on _all_ platforms. */
+#include <QCleanlooksStyle>
+#include <QWindowsStyle>
 
 /**
  *  The VBoxToolBar class is a simple QToolBar reimplementation to disable
@@ -47,11 +48,24 @@ public:
         setMovable (false);
         if (layout())
             layout()->setContentsMargins (0, 0, 0, 0);;
-#ifdef Q_WS_WIN
+        
+        setContextMenuPolicy (Qt::NoContextMenu);
+
         /* Remove that ugly frame panel around the toolbar. */
-        setStyleSheet ("QToolBar { border: 0px none black; }");
-#endif // Q_WS_WIN
+        /* I'm not sure if we should do this generally on linux for that mass
+         * of KDE styles. But maybe some of them are based on CleanLooks so
+         * they are looking ok also. */
+        QStyle *style = NULL;
+        if (!style)
+            /* Check for cleanlooks style */
+            style = qobject_cast<QCleanlooksStyle*> (QToolBar::style());
+        if (!style)
+            /* Check for windows style */
+            style = qobject_cast<QWindowsStyle*> (QToolBar::style());
+        if (style)
+            setStyleSheet ("QToolBar { border: 0px none black; }");
     }
+
 
     /**
      *  Substitutes for QMainWindow::setUsesBigPixmaps() when QMainWindow is
@@ -80,33 +94,6 @@ public:
         else
             setToolButtonStyle (tbs);
     }
-
-#ifdef Q_WS_MAC
-    /**
-     * This is a temporary hack, we'll set the style globally later.
-     */
-//#warning port me
-    void setMacStyle()
-    {
-        /* self */
-//        QStyle *qs = &VBoxAquaStyle::instance();
-//        setStyle(qs);
-//
-//        /* the buttons */
-//        QObjectList *list = queryList ("QToolButton");
-//        QObjectListIt it (*list);
-//        QObject *obj;
-//        while ((obj = it.current()) != 0)
-//        {
-//            QToolButton *btn = ::qt_cast <QToolButton *> (obj);
-//            btn->setStyle (&VBoxAquaStyle::instance());
-//            ++ it;
-//        }
-//        delete list;
-
-        /** @todo the separator */
-    }
-#endif
 
 private:
 
