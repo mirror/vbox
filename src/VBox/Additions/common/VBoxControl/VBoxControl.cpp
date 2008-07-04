@@ -75,10 +75,12 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
     RTPrintf("%s [-v|--version]    print version number and exit\n", g_pszProgName);
     RTPrintf("%s --nologo ...      suppress the logo\n\n", g_pszProgName);
 
+#ifdef VBOX_WITH_INFO_SVC
     if ((GET_GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
         doUsage("<key>\n", g_pszProgName, "getguestproperty");
     if ((SET_GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
         doUsage("<key> [<value>] (no value deletes key)\n", g_pszProgName, "setguestproperty");
+#endif
 }
 /** @} */
 
