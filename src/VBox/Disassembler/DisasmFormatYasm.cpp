@@ -740,6 +740,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 off = pParam->disp32;
                             else if (pParam->flags & USE_DISPLACEMENT64)
                                 off = pParam->disp64;
+                            else
+                            {
+                                AssertFailed();
+                                off = 0;
+                            }
 
                             if (fBase || (pParam->flags & USE_INDEX))
                             {
@@ -927,7 +932,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         PUT_FAR();
                         PUT_SIZE_OVERRIDE();
                         PUT_SEGMENT_OVERRIDE();
-                        int rc;
+                        int rc = VERR_SYMBOL_NOT_FOUND;
                         switch (pParam->flags & (USE_IMMEDIATE_ADDR_16_16 | USE_IMMEDIATE_ADDR_16_32 | USE_DISPLACEMENT64 | USE_DISPLACEMENT32 | USE_DISPLACEMENT16))
                         {
                             case USE_IMMEDIATE_ADDR_16_16:
@@ -964,7 +969,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
                         }
 
-                        if (pfnGetSymbol && RT_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             PUT_SZ(" [");
                             PUT_PSZ(szSymbol);
@@ -991,7 +996,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         PUT_SIZE_OVERRIDE();
                         PUT_C('[');
                         PUT_SEGMENT_OVERRIDE();
-                        int rc;
+                        int rc = VERR_SYMBOL_NOT_FOUND;
                         switch (pParam->flags & (USE_IMMEDIATE_ADDR_16_16 | USE_IMMEDIATE_ADDR_16_32 | USE_DISPLACEMENT64 | USE_DISPLACEMENT32 | USE_DISPLACEMENT16))
                         {
                             case USE_IMMEDIATE_ADDR_16_16:
@@ -1029,7 +1034,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         }
                         PUT_C(']');
 
-                        if (pfnGetSymbol && RT_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             PUT_SZ(" (");
                             PUT_PSZ(szSymbol);
