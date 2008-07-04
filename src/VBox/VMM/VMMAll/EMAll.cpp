@@ -2230,6 +2230,8 @@ static const char *emMSRtoString(unsigned uMsr)
         return "MSR_K8_KERNEL_GS_BASE";
     case MSR_IA32_TSC:
         return "Unsupported MSR_IA32_TSC";
+    case MSR_IA32_MTRR_CAP:
+        return "MSR_IA32_MTRR_CAP";
     case MSR_IA32_MCP_CAP:
         return "Unsupported MSR_IA32_MCP_CAP";
     case MSR_IA32_MCP_STATUS:
