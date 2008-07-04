@@ -19,6 +19,58 @@
 # additional information or have any questions.
 #
 
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# Note! A number of the libs may be detected on the host system by the configure script.
+#       The usual way for testing for this is to see whether the Config.kmk default
+#       include path specific to the lib has been changed.
+#
+
+# Compression libs used by IPRT and <what was it again?>.
+include $(PATH_SUB_CURRENT)/liblzf-1.51/Makefile.kmk
+ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
+ include $(PATH_SUB_CURRENT)/zlib-1.2.1/Makefile.kmk
+endif
+
+# PNG support (for screenshots).
+ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
+ include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
+endif
+
+# OpenSSL for VRDP.
+ifdef VBOX_WITH_VRDP
+ ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_OBJ)/src/libs/openssl-0.9.8h/include)
+  include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
+ endif
+endif #  VBOX_WITH_VRDP
+
+# Main related things - XML and XSLT, XPCOM.
+ifdef VBOX_WITH_MAIN
+ ifdef VBOX_WITH_XPCOM
+  include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
+ endif
+ ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
+  include $(PATH_SUB_CURRENT)/libxml2-2.6.30/Makefile.kmk
+ endif
+ ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
+  include $(PATH_SUB_CURRENT)/libxslt-1.1.22/Makefile.kmk
+ endif
+
+ # FFmpeg for test videos.
+ ifdef VBOX_WITH_FFMPEG
+  if1of ($(KBUILD_TARGET), darwin)
+   include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
+  endif
+ endif
+endif
+
+include $(KBUILD_PATH)/subfooter.kmk
+
+
+else # !VBOX_SINGLE_MAKEFILE
 DEPTH = ../..
 include $(KBUILD_PATH)/header.kmk
 
@@ -78,3 +130,5 @@ SUBDIRS_CLEAN          = $(subdirs)
 SUBDIRS_NOTHING        = $(subdirs)
 
 include $(KBUILD_PATH)/footer.kmk
+endif # !VBOX_SINGLE_MAKEFILE
+

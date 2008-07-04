@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for ffmpeg.
+# Sub-Makefile for ffmpeg.
 #
 
 #
@@ -19,11 +19,15 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
-DLLS                       = VBoxFFmpeg
-
+DLLS += VBoxFFmpeg
 ifeq ($(KBUILD_TARGET),win)
 VBoxFFmpeg_TOOL.win.x86    = MINGW32
 #VBoxFFmpeg_TOOL.win.amd64  = MINGW64...
@@ -58,8 +62,6 @@ VBoxFFmpeg_LDFLAGS.darwin  = \
 
 VBoxFFmpeg_LIBS.darwin     = z
 #VBoxFFmpeg_LIBS.linux      = z?
-
-libavcodec/i386/fft_sse.c_CFLAGS = -msse
 
 VBoxFFmpeg_SOURCES         = \
 	libavutil/mathematics.c \
@@ -296,6 +298,7 @@ VBoxFFmpeg_SOURCES.darwin   += \
 VBoxFFmpeg_SOURCES.win     += VBoxFFmpeg.def
 
 libavcodec/i386/fft_3dn2_CFLAGS.amd64 = -march=k8
+libavcodec/i386/fft_sse.c_CFLAGS = -msse
 
 
 #
@@ -309,5 +312,5 @@ VBoxFFmpegImp_SOURCES = VBoxFFmpeg.def
 endif
 
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

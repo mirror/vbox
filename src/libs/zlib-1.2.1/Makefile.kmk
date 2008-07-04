@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for zlib
+# Sub-Makefile for zlib.
 #
 
 #
@@ -19,8 +19,15 @@
 # additional information or have any questions.
 #
 
-LIBRARIES = VBox-zlib
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
+LIBRARIES += VBox-zlib
 VBox-zlib_TEMPLATE = VBOXR3
 VBox-zlib_DEFS = verbose=-1
 VBox-zlib_SOURCES = \
@@ -37,6 +44,5 @@ VBox-zlib_SOURCES = \
 	inftrees.c \
 	inffast.c
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/rules.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

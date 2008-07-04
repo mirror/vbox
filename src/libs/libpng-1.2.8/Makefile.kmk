@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for libpng.
+# Sub-Makefile for libpng.
 #
 
 #
@@ -19,8 +19,15 @@
 # additional information or have any questions.
 #
 
-LIBRARIES = VBox-libpng
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
+LIBRARIES += VBox-libpng
 VBox-libpng_TEMPLATE = VBOXR3
 VBox-libpng_INCS = ../zlib-1.2.1
 VBox-libpng_SOURCES = \
@@ -40,6 +47,5 @@ VBox-libpng_SOURCES = \
 	pngerror.c \
 	pngpread.c
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/rules.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

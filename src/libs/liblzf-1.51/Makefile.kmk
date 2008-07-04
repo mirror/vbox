@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for liblzf.
+# Sub-Makefile for liblzf.
 #
 
 #
@@ -20,15 +20,21 @@
 #
 
 
-LIBRARIES = VBox-liblzf
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
+LIBRARIES += VBox-liblzf
 VBox-liblzf_TEMPLATE = VBOXR3
 VBox-liblzf_DEFS = ULTRA_FAST #HLOG=14
 VBox-liblzf_DEFS.win.amd64 = USE_UINTPTR_T=1
-VBox-liblzf_SOURCES= \
+VBox-liblzf_SOURCES = \
 	lzf_c.c \
 	lzf_d.c
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/rules.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 

@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the libxslt library.
+# Sub-Makefile for the libxslt library.
 #
 
 #
@@ -19,11 +19,15 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_SINGLE_MAKEFILE
+SUB_DEPTH = ../../..
+else
+SUB_DEPTH = .
+DEPTH     = ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
-LIBRARIES = VBox-libxslt
-
+LIBRARIES += VBox-libxslt
 VBox-libxslt_TEMPLATE       = VBOXR3
 VBox-libxslt_SDKS           = VBOX_LIBXML2 VBOX_ZLIB
 VBox-libxslt_DEFS           = LIBXML_STATIC
@@ -54,5 +58,5 @@ VBox-libxslt_SOURCES        = \
 # VBox-libxslt_LDFLAGS.win    = /VERSION:$(LIBXSLT_MAJOR_VERSION).$(LIBXSLT_MINOR_VERSION)
 # VBox-libxslt_SDKS.win      += WINPSDK
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
