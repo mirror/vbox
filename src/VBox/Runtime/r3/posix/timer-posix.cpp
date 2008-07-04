@@ -56,8 +56,6 @@
 # include <pthread.h>
 #endif
 
-#define RT_TIMER_SIGNAL SIGUSR1
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -298,10 +296,16 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
     return VINF_SUCCESS;
 }
 #else /* !IPRT_WITH_POSIX_TIMERS */
-void rtSignalCallback(int sig, siginfo_t *sip, void *ucp)
+void rttimerCallback(union sigval SigVal)
 {
-    PRTTIMER pTimer = (PRTTIMER)sip->_sifields._timer.si_sigval.sival_ptr;
-    pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
+    PRTTIMER pTimer = (PRTTIMER)SigVal.sival_ptr;
+    /* Is the timer being destoyed/suspended at this very moment? */
+    if (RT_LIKELY(pTimer->u32Magic == RTTIMER_MAGIC
+                  && !pTimer->fSuspended
+                  && !pTimer->fDestroyed))
+    {
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
+    }
 }
 #endif /* !IPRT_WITH_POSIX_TIMERS */
 
@@ -442,12 +446,11 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Create a new timer.
      */
-    int rc, result;
+    int rc;
     PRTTIMER pTimer = (PRTTIMER)RTMemAlloc(sizeof(*pTimer));
     if (pTimer)
     {
         struct sigevent  evt;
-        struct sigaction action, old;
 
         /* Initialize timer structure. */
         pTimer->u32Magic        = RTTIMER_MAGIC;
@@ -458,26 +461,17 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->u64NanoInterval = u64NanoInterval;
         pTimer->iTick           = 0;
 
-        /* Set up the signal handler. */
-        sigemptyset(&action.sa_mask);
-        action.sa_sigaction = rtSignalCallback;
-        action.sa_flags     = SA_SIGINFO | SA_RESTART;
-        rc = RTErrConvertFromErrno(sigaction(RT_TIMER_SIGNAL, &action, &old));
+        /* Ask to call rttimerCallback in a separate thread context upon timer expiration. */
+        memset(&evt, 0, sizeof(evt));
+        evt.sigev_notify = SIGEV_THREAD;
+        evt.sigev_value.sival_ptr = pTimer;
+        evt.sigev_notify_function = rttimerCallback;
+
+        rc = RTErrConvertFromErrno(timer_create(CLOCK_REALTIME, &evt, &pTimer->timer));
         if (RT_SUCCESS(rc))
         {
-
-            /* Ask to deliver RT_TIMER_SIGNAL upon timer expiration. */
-            evt.sigev_notify = SIGEV_SIGNAL;
-            evt.sigev_signo  = RT_TIMER_SIGNAL;
-            evt.sigev_value.sival_ptr = pTimer; /* sigev_value gets copied to siginfo. */
-
-            rc = RTErrConvertFromErrno(timer_create(CLOCK_REALTIME, &evt, &pTimer->timer));
-            if (RT_SUCCESS(rc))
-            {
-                *ppTimer = pTimer;
-                return VINF_SUCCESS;
-            }
-            sigaction(RT_TIMER_SIGNAL, &old, NULL);
+            *ppTimer = pTimer;
+            return VINF_SUCCESS;
         }
         RTMemFree(pTimer);
     }
