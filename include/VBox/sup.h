@@ -664,6 +664,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 
+
 /**
  * Support driver component factory.
  *
@@ -695,6 +696,8 @@ typedef struct SUPDRVFACTORY
 } SUPDRVFACTORY;
 /** Pointer to a support driver factory. */
 typedef SUPDRVFACTORY *PSUPDRVFACTORY;
+/** Pointer to a const support driver factory. */
+typedef SUPDRVFACTORY const *PCSUPDRVFACTORY;
 
 /**
  * Register a component factory with the support driver.
@@ -742,78 +745,30 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 /** The current SUPDRV IDC version.
  * This follows the usual high word / low word rules, i.e. high word is the
  * major number and it signifies incompatible interface changes. */
-#define SUPDRV_IDC_VERSION                  0x00010000
+#define SUPDRV_IDC_VERSION      UINT32_C(0x00010000)
 
 /**
- * The SUPDRV IDC entry point.
- *
- * (IDC = Inter-Driver Communication)
- *
- * @returns VBox status code.
- *
- * @param   pSession    The session. (This is NULL for SUPDRV_IDC_REQ_CONNECT.)
- * @param   iReq        The request number.
- * @param   pvReq       Pointer to the request packet. Optional for some requests.
- * @param   cbReq       The size of the request packet.
+ * Inter-Driver Communcation Handle.
  */
-typedef DECLCALLBACK(int) FNSUPDRVIDCENTRY(PSUPDRVSESSION pSession, uint32_t iReq, void *pvReq, uint32_t cbReq);
-/** Pointer to the SUPDRV IDC entry point. */
-typedef FNSUPDRVIDCENTRY *PFNSUPDRVIDCENTRY;
-
-
-/**
- * SUPDRV IDC: Connect request.
- * This request takes a SUPDRVIDCREQCONNECT packet.
- */
-#define SUPDRV_IDC_REQ_CONNECT                          UINT32_C(0xc0ffee01)
-/** A SUPDRV IDC connect request packet. */
-typedef union SUPDRVIDCREQCONNECT
+typedef union SUPDRVIDCHANDLE
 {
-    /** The input. */
-    struct SUPDRVIDCREQCONNECTIN
-    {
-        /** The magic cookie (SUPDRVIDCREQ_CONNECT_MAGIC). */
-        uint32_t        u32MagicCookie;
-        /** The desired version of the IDC interface. */
-        uint32_t        iReqVersion;
-        /** The minimum version of the IDC interface. */
-        uint32_t        iMinVersion;
-    } In;
+    /** Padding for opaque usage.
+     * Must be greater or equal in size than the private struct. */
+    void *apvPadding[4];
+#ifdef SUPDRVIDCHANDLEPRIVATE_DECLARED
+    /** The private view. */
+    struct SUPDRVIDCHANDLEPRIVATE s;
+#endif
+} SUPDRVIDCHANDLE;
+/** Pointer to a handle. */
+typedef SUPDRVIDCHANDLE *PSUPDRVIDCHANDLE;
 
-    /** The output. */
-    struct SUPDRVIDCREQCONNECTOUT
-    {
-        /** The support driver session. (An opaque.) */
-        PSUPDRVSESSION  pSession;
-        /** The version of the IDC interface for this session. */
-        uint32_t        iVersion;
-    } Out;
-} SUPDRVIDCREQCONNECT;
-/** Pointer to a SUPDRV IDC connect request. */
-typedef SUPDRVIDCREQCONNECT *PSUPDRVIDCREQCONNECT;
-/** Magic cookie value (SUPDRVIDCREQCONNECT::In.u32MagicCookie). ('tori') */
-#define SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE               UINT32_C(0x69726f74)
-
-
-/**
- * SUPDRV IDC: Disconnect request.
- * This request does not take request packet.
- */
-#define SUPDRV_IDC_REQ_DISCONNECT                       UINT32_C(0xc0ffee02)
-
-
-/**
- * SUPDRV IDC: Disconnect request.
- * This request takes a SUPDRVFACTORY packet.
- */
-#define SUPDRV_IDC_REQ_COMPONENT_REGISTER_FACTORY       UINT32_C(0xc0ffee03)
-
-
-/**
- * SUPDRV IDC: Dergister a component factory.
- * This request takes a SUPDRVFACTORY packet.
- */
-#define SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY     UINT32_C(0xc0ffee04)
+SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion, uint32_t *puVersion);
+SUPR0DECL(int) SUPR0IdcCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, void *pvReq, uint32_t cbReq);
+SUPR0DECL(int) SUPR0IdcClose(PSUPDRVIDCHANDLE pHandle);
+SUPR0DECL(PSUPDRVSESSION) SUPR0IdcGetSession(PSUPDRVIDCHANDLE pHandle);
+SUPR0DECL(int) SUPR0IdcComponentRegisterFactory(PSUPDRVIDCHANDLE pHandle, PCSUPDRVFACTORY pFactory);
+SUPR0DECL(int) SUPR0IdcComponentDeregisterFactory(PSUPDRVIDCHANDLE pHandle, PCSUPDRVFACTORY pFactory);
 
 /** @} */
 
