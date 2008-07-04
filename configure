@@ -1247,7 +1247,7 @@ check_qt4()
       foundqt4=1
       INCQT4="$PATH_SDK_QT4/Headers"
       LIBQT4=
-      FLDQT4="-framework QtCore"
+      FLGQT4="-framework QtCore"
     else
       log_failure "Qt4 framework not found"
       fail
@@ -1278,7 +1278,7 @@ check_qt4()
         LIBQT4="-L$q/lib -lQtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
-        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLDQT4" qt4 qt4 nofatal; then
+        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
           foundqt4=1
           break;
         fi
@@ -1301,13 +1301,13 @@ extern "C" int main(void)
 }
 EOF
     [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
-    if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLDQT4" qt4 qt4 nofatal; then
+    if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
       if test_execute; then
-#        cnf_append "SDK_VBOX_LIBQT4_INCS" "$INCQT4"
-#        cnf_append "SDK_VBOX_LIBQT4_LIBS" "`strip_l "$LIBQT4"`"
-        if [ "$OS" = "darwin" ]; then
-          cnf_append "VBOX_WITH_QT4GUI" "1"
-        else
+        if [ "$OS" != "darwin" ]; then
+          # strip .../QtCore as we add components ourself
+          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|[^ ]*/QtCore||g; s| ||g'`
+          cnf_append "VBOX_PATH_QT4_INCLUDE" "$INCQT4"
+          cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
