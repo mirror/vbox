@@ -305,9 +305,7 @@ int main()
     GEN_CHECK_OFF(PDM, apfnPollers);
     GEN_CHECK_OFF(PDM, aDrvInsPollers);
     GEN_CHECK_OFF(PDM, pTimerPollers);
-#ifdef VBOX_WITH_PDM_LOCK
     GEN_CHECK_OFF(PDM, CritSect);
-#endif
     GEN_CHECK_OFF(PDM, StatQueuedCritSectLeaves);
     GEN_CHECK_SIZE(PDMDEVINSINT);
     GEN_CHECK_OFF(PDMDEVINSINT, pNextHC);

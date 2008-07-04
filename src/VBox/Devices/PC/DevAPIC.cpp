@@ -61,28 +61,21 @@
  * Acquires the PDM lock. This is a NOP if locking is disabled. */
 /** @def IOAPIC_UNLOCK
  * Releases the PDM lock. This is a NOP if locking is disabled. */
-#ifdef VBOX_WITH_PDM_LOCK
-# define APIC_LOCK(pThis, rc) \
+#define APIC_LOCK(pThis, rc) \
     do { \
         int rc2 = (pThis)->CTXALLSUFF(pApicHlp)->pfnLock((pThis)->CTXSUFF(pDevIns), rc); \
         if (rc2 != VINF_SUCCESS) \
             return rc2; \
     } while (0)
-# define APIC_UNLOCK(pThis) \
+#define APIC_UNLOCK(pThis) \
     (pThis)->CTXALLSUFF(pApicHlp)->pfnUnlock((pThis)->CTXSUFF(pDevIns))
-# define IOAPIC_LOCK(pThis, rc) \
+#define IOAPIC_LOCK(pThis, rc) \
     do { \
         int rc2 = (pThis)->CTXALLSUFF(pIoApicHlp)->pfnLock((pThis)->CTXSUFF(pDevIns), rc); \
         if (rc2 != VINF_SUCCESS) \
             return rc2; \
     } while (0)
-# define IOAPIC_UNLOCK(pThis) (pThis)->CTXALLSUFF(pIoApicHlp)->pfnUnlock((pThis)->CTXSUFF(pDevIns))
-#else /* !VBOX_WITH_PDM_LOCK */
-# define APIC_LOCK(pThis, rc)   do { } while (0)
-# define APIC_UNLOCK(pThis)     do { } while (0)
-# define IOAPIC_LOCK(pThis, rc) do { } while (0)
-# define IOAPIC_UNLOCK(pThis)   do { } while (0)
-#endif /* !VBOX_WITH_PDM_LOCK */
+#define IOAPIC_UNLOCK(pThis) (pThis)->CTXALLSUFF(pIoApicHlp)->pfnUnlock((pThis)->CTXSUFF(pDevIns))
 
 
 #endif /* VBOX */
@@ -827,9 +820,7 @@ static void apic_timer(void *opaque)
 static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
-# ifdef VBOX_WITH_PDM_LOCK
     s->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
-# endif
 #endif /* VBOX */
 
     if (!(s->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
@@ -1609,9 +1600,7 @@ static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
 static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 {
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
-#ifdef VBOX_WITH_PDM_LOCK
     s->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
-#endif
     apic_reset(s);
     /* Clear any pending APIC interrupt action flag. */
     s->pApicHlpR3->pfnClearInterruptFF(pDevIns);
@@ -1955,9 +1944,7 @@ static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandl
 static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
 {
     IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
-#ifdef VBOX_WITH_PDM_LOCK
     s->pIoApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
-#endif
     ioapic_reset(s);
     IOAPIC_UNLOCK(s);
 }

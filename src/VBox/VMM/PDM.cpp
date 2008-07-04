@@ -193,10 +193,8 @@ PDMR3DECL(int) PDMR3Init(PVM pVM)
     rc = pdmR3CritSectInit(pVM);
     if (VBOX_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_PDM_LOCK
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
         if (VBOX_SUCCESS(rc))
-#endif
             rc = pdmR3LdrInitU(pVM->pUVM);
         if (VBOX_SUCCESS(rc))
         {
@@ -452,12 +450,10 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
      */
     pdmR3LdrTermU(pVM->pUVM);
 
-#ifdef VBOX_WITH_PDM_LOCK
     /*
      * Destroy the PDM lock.
      */
     PDMR3CritSectDelete(&pVM->pdm.s.CritSect);
-#endif
 
     LogFlow(("PDMR3Term: returns %Vrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -1188,10 +1184,6 @@ static DECLCALLBACK(void) pdmR3PollerTimer(PVM pVM, PTMTIMER pTimer, void *pvUse
  */
 PDMR3DECL(int) PDMR3LockCall(PVM pVM)
 {
-#ifdef VBOX_WITH_PDM_LOCK
     return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
-#else
-    return VINF_SUCCESS;
-#endif
 }
 

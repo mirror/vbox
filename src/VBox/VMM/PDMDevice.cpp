@@ -219,10 +219,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIn
  */
 static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 static DECLCALLBACK(PCPDMPICHLPGC) pdmR3PicHlp_GetGCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -234,10 +232,8 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 static DECLCALLBACK(PCPDMAPICHLPGC) pdmR3ApicHlp_GetGCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -248,10 +244,8 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
  */
 static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 static DECLCALLBACK(PCPDMIOAPICHLPGC) pdmR3IoApicHlp_GetGCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -263,10 +257,8 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
 static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys);
-#ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns);
-#endif
 static DECLCALLBACK(PCPDMPCIHLPGC) pdmR3PciHlp_GetGCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -493,10 +485,8 @@ const PDMPICHLPR3 g_pdmR3DevPicHlp =
     PDM_PICHLPR3_VERSION,
     pdmR3PicHlp_SetInterruptFF,
     pdmR3PicHlp_ClearInterruptFF,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3PicHlp_Lock,
     pdmR3PicHlp_Unlock,
-#endif
     pdmR3PicHlp_GetGCHelpers,
     pdmR3PicHlp_GetR0Helpers,
     PDM_PICHLPR3_VERSION /* the end */
@@ -512,10 +502,8 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_SetInterruptFF,
     pdmR3ApicHlp_ClearInterruptFF,
     pdmR3ApicHlp_ChangeFeature,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3ApicHlp_Lock,
     pdmR3ApicHlp_Unlock,
-#endif
     pdmR3ApicHlp_GetGCHelpers,
     pdmR3ApicHlp_GetR0Helpers,
     PDM_APICHLPR3_VERSION /* the end */
@@ -529,10 +517,8 @@ const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp =
 {
     PDM_IOAPICHLPR3_VERSION,
     pdmR3IoApicHlp_ApicBusDeliver,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3IoApicHlp_Lock,
     pdmR3IoApicHlp_Unlock,
-#endif
     pdmR3IoApicHlp_GetGCHelpers,
     pdmR3IoApicHlp_GetR0Helpers,
     PDM_IOAPICHLPR3_VERSION /* the end */
@@ -550,10 +536,8 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     pdmR3PciHlp_IsMMIO2Base,
     pdmR3PciHlp_GetGCHelpers,
     pdmR3PciHlp_GetR0Helpers,
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3PciHlp_Lock,
     pdmR3PciHlp_Unlock,
-#endif
     PDM_PCIHLPR3_VERSION, /* the end */
 };
 
@@ -1808,31 +1792,10 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
     {
         PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusHC; /** @todo the bus should be associated with the PCI device not the PDM device. */
         Assert(pBus);
-#ifdef VBOX_WITH_PDM_LOCK
         PVM pVM = pDevIns->Internal.s.pVMHC;
         pdmLock(pVM);
         pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, iIrq, iLevel);
         pdmUnlock(pVM);
-
-#else /* !VBOX_WITH_PDM_LOCK */
-        /*
-         * For the convenience of the device we put no thread restriction on this interface.
-         * That means we'll have to check which thread we're in and choose our path.
-         */
-        if (VM_IS_EMT(pDevIns->Internal.s.pVMHC) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMHC))
-            pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, iIrq, iLevel);
-        else
-        {
-            Log(("pdmR3DevHlp_PCISetIrq: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-            PVMREQ pReq;
-            int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMHC, &pReq, RT_INDEFINITE_WAIT,
-                                     (PFNRT)pBus->pfnSetIrqR3, 4, pBus->pDevInsR3, pPciDev, iIrq, iLevel);
-            while (rc == VERR_TIMEOUT)
-                rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
-            VMR3ReqFree(pReq);
-        }
-#endif /* !VBOX_WITH_PDM_LOCK */
     }
     else
         AssertReleaseMsgFailed(("No PCI device registered!\n"));
@@ -1844,45 +1807,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
 /** @copydoc PDMDEVHLP::pfnPCISetIrqNoWait */
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3DevHlp_PCISetIrq(pDevIns, iIrq, iLevel);
-#else /* !VBOX_WITH_PDM_LOCK */
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_PCISetIrqNoWait: caller='%s'/%d: iIrq=%d iLevel=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iIrq, iLevel));
-
-    /*
-     * Validate input.
-     */
-    /** @todo iIrq and iLevel checks. */
-
-    /*
-     * Must have a PCI device registered!
-     */
-    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceHC;
-    if (pPciDev)
-    {
-        PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusHC;
-        Assert(pBus);
-
-        /*
-         * For the convenience of the device we put no thread restriction on this interface.
-         * That means we'll have to check which thread we're in and choose our path.
-         */
-        if (VM_IS_EMT(pDevIns->Internal.s.pVMHC) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMHC))
-            pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, iIrq, iLevel);
-        else
-        {
-            Log(("pdmR3DevHlp_PCISetIrqNoWait: caller='%s'/%d: Queueing call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-            int rc = VMR3ReqCallEx(pDevIns->Internal.s.pVMHC, NULL, RT_INDEFINITE_WAIT, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
-                                     (PFNRT)pBus->pfnSetIrqR3, 4, pBus->pDevInsR3, pPciDev, iIrq, iLevel);
-            AssertReleaseRC(rc);
-        }
-    }
-    else
-        AssertReleaseMsgFailed(("No PCI device registered!\n"));
-
-    LogFlow(("pdmR3DevHlp_PCISetIrqNoWait: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-#endif /* !VBOX_WITH_PDM_LOCK */
 }
 
 
@@ -1898,23 +1823,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
     /** @todo iIrq and iLevel checks. */
 
     PVM pVM = pDevIns->Internal.s.pVMHC;
-#ifdef VBOX_WITH_PDM_LOCK
     PDMIsaSetIrq(pVM, iIrq, iLevel);    /* (The API takes the lock.) */
-#else /* !VBOX_WITH_PDM_LOCK */
-    if (VM_IS_EMT(pDevIns->Internal.s.pVMHC) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMHC))
-        PDMIsaSetIrq(pVM, iIrq, iLevel);
-    else
-    {
-        Log(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        PVMREQ pReq;
-        int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMHC, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)PDMIsaSetIrq, 3, pVM, iIrq, iLevel);
-        while (rc == VERR_TIMEOUT)
-            rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-        VMR3ReqFree(pReq);
-    }
-#endif /* !VBOX_WITH_PDM_LOCK */
 
     LogFlow(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
 }
@@ -1923,34 +1832,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 /** @copydoc PDMDEVHLP::pfnISASetIrqNoWait */
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-#ifdef VBOX_WITH_PDM_LOCK
     pdmR3DevHlp_ISASetIrq(pDevIns, iIrq, iLevel);
-#else /* !VBOX_WITH_PDM_LOCK */
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_ISASetIrqNoWait: caller='%s'/%d: iIrq=%d iLevel=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iIrq, iLevel));
-
-    /*
-     * Validate input.
-     */
-    /** @todo iIrq and iLevel checks. */
-
-    PVM pVM = pDevIns->Internal.s.pVMHC;
-    /*
-     * For the convenience of the device we put no thread restriction on this interface.
-     * That means we'll have to check which thread we're in and choose our path.
-     */
-    if (VM_IS_EMT(pDevIns->Internal.s.pVMHC) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMHC))
-        PDMIsaSetIrq(pVM, iIrq, iLevel);
-    else
-    {
-        Log(("pdmR3DevHlp_ISASetIrqNoWait: caller='%s'/%d: Queueing call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        int rc = VMR3ReqCallEx(pDevIns->Internal.s.pVMHC, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
-                               (PFNRT)PDMIsaSetIrq, 3, pVM, iIrq, iLevel);
-        AssertReleaseRC(rc);
-    }
-
-    LogFlow(("pdmR3DevHlp_ISASetIrqNoWait: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-#endif /* !VBOX_WITH_PDM_LOCK */
 }
 
 
@@ -4103,9 +3985,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC)));
     VM_FF_SET(pVM, VM_FF_INTERRUPT_PIC);
     REMR3NotifyInterruptSet(pVM);
-#ifdef VBOX_WITH_PDM_LOCK
     VMR3NotifyFF(pVM, true);
-#endif
 }
 
 
@@ -4120,7 +4000,6 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMPICHLPR3::pfnLock */
 static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -4135,7 +4014,6 @@ static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMHC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 /** @copydoc PDMPICHLPR3::pfnGetGCHelpers */
@@ -4177,9 +4055,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC)));
     VM_FF_SET(pVM, VM_FF_INTERRUPT_APIC);
     REMR3NotifyInterruptSet(pVM);
-#ifdef VBOX_WITH_PDM_LOCK
     VMR3NotifyFF(pVM, true);
-#endif
 }
 
 
@@ -4206,7 +4082,6 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fE
         CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMHC, CPUMCPUIDFEATURE_APIC);
 }
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMAPICHLPR3::pfnLock */
 static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -4221,7 +4096,6 @@ static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMHC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 /** @copydoc PDMAPICHLPR3::pfnGetGCHelpers */
@@ -4260,9 +4134,6 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMHC;
-#ifndef VBOX_WITH_PDM_LOCK
-    VM_ASSERT_EMT(pVM);
-#endif
     LogFlow(("pdmR3IoApicHlp_ApicBusDeliver: caller='%s'/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 iVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     if (pVM->pdm.s.Apic.pfnBusDeliverR3)
@@ -4270,7 +4141,6 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMIOAPICHLPR3::pfnLock */
 static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -4285,7 +4155,6 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMHC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 /** @copydoc PDMIOAPICHLPR3::pfnGetGCHelpers */
@@ -4322,9 +4191,6 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
 static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-#ifndef VBOX_WITH_PDM_LOCK
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
-#endif
     Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     PDMIsaSetIrq(pDevIns->Internal.s.pVMHC, iIrq, iLevel);
 }
@@ -4334,9 +4200,6 @@ static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-#ifndef VBOX_WITH_PDM_LOCK
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
-#endif
     Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     PDMIoApicSetIrq(pDevIns->Internal.s.pVMHC, iIrq, iLevel);
 }
@@ -4353,7 +4216,6 @@ static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS
 }
 
 
-#ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMPCIHLPR3::pfnLock */
 static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -4368,7 +4230,6 @@ static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMHC);
 }
-#endif /* VBOX_WITH_PDM_LOCK */
 
 
 /** @copydoc PDMPCIHLPR3::pfnGetGCHelpers */
