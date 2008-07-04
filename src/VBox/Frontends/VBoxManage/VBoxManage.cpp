@@ -648,6 +648,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
+#ifdef VBOX_WITH_INFO_SVC
     if (u64Cmd & USAGE_GETGUESTPROPERTY)
     {
         RTPrintf("VBoxManage getguestproperty <vmname>|<uuid> <key>\n"
@@ -660,6 +661,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [<value>] (no value deletes key)\n"
                  "\n");
     }
+#endif /* VBOX_WITH_INFO_SVC defined */
 
 }
 
@@ -7477,6 +7479,7 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+#ifdef VBOX_WITH_INFO_SVC
 static int handleGetGuestProperty(int argc, char *argv[],
                                   ComPtr<IVirtualBox> virtualBox,
                                   ComPtr<ISession> session)
@@ -7496,21 +7499,12 @@ static int handleGetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
-        /** @todo r=bird: Why do you do this? argv was converted down in main (around line 7812). */
-        char *pszKey = NULL;
-        int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
-        if (RT_SUCCESS(rrc))
-        {
-            Bstr value;
-            CHECK_ERROR(machine, GetGuestProperty(Bstr(pszKey), value.asOutParam()));
-            if (value)
-                RTPrintf("Value: %lS\n", value.raw());
-            else
-                RTPrintf("No value set!\n");
-            RTStrFree(pszKey);
-        }
+        Bstr value;
+        CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam()));
+        if (value)
+            RTPrintf("Value: %lS\n", value.raw());
         else
-            rc = E_INVALIDARG;
+            RTPrintf("No value set!\n");
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -7534,32 +7528,16 @@ static int handleSetGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
-        /** @todo r=bird: Why do you do this? argv was converted down in main (around line 7812). */
-        char *pszKey = NULL;
-        int rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
-        if (RT_SUCCESS(rrc))
-        {
-            if (argc < 3)
-                CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
-            else if (argc == 3)
-            {
-                char *pszValue = NULL;
-                rrc = RTStrCurrentCPToUtf8(&pszKey, argv[1]);
-                if (RT_SUCCESS(rrc))
-                    CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
-                else
-                    rc = E_INVALIDARG;
-                RTStrFree(pszValue);
-            }
-            else
-                return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
-            RTStrFree(pszKey);
-        }
+        if (argc < 3)
+            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
+        else if (argc == 3)
+            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
         else
-            rc = E_INVALIDARG;
+            return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
+#endif /* VBOX_WITH_INFO_SVC defined */
 
 enum ConvertSettings
 {
@@ -7895,8 +7873,10 @@ int main(int argc, char *argv[])
         { "usbfilter",        handleUSBFilter },
         { "sharedfolder",     handleSharedFolder },
         { "vmstatistics",     handleVMStatistics },
+#ifdef VBOX_WITH_INFO_SVC
         { "getguestproperty", handleGetGuestProperty },
         { "setguestproperty", handleSetGuestProperty },
+#endif /* VBOX_WITH_INFO_SVC defined */
         { NULL,               NULL }
     };
 
