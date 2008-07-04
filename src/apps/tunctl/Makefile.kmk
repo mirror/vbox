@@ -1,7 +1,8 @@
 # $Id: Makefile.kmk 31342 2008-05-28 08:44:35Z frank $
 ## @file
-# Makefile for VBoxTunctl, which is identical to tunctl from Usermode Linux
-# except for the name.
+# Sub-Makefile for VBoxTunctl
+#
+# VBoxTunctl is identical to tunctl from Usermode Linux	except for the name.
 #
 
 #
@@ -20,16 +21,12 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
 
-ifneq ($(KBUILD_HOST),linux)
-$(error "VBoxTunctl can only be built on Linux!")
-endif
-
-PROGRAMS       = VBoxTunctl
-
+PROGRAMS.linux += VBoxTunctl
 VBoxTunctl_TEMPLATE = VBOXR3EXE
 VBoxTunctl_SOURCES  = tunctl.c
 
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
+

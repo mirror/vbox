@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Top-level makefile for the external apps.
+# Sub-Makefile for the external apps.
 #
 
 #
@@ -10,17 +10,19 @@
 # All rights reserved
 #
 
-DEPTH = ../..
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_KCHMVIEWER
-ifneq ($(wildcard kchmviewer-2.6),)
-SUBDIRS.linux = kchmviewer-2.6
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-2.6),)
+  include $(PATH_SUB_CURRENT)/kchmviewer-2.6/Makefile.kmk
+ endif
 endif
-endif
-ifneq ($(wildcard tunctl),)
-SUBDIRS.linux += tunctl
+ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
+ ifeq ($(KBUILD_TARGET),linux)
+  include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
+ endif
 endif
 
-include $(KBUILD_PATH)/rules.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
