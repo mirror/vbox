@@ -655,6 +655,8 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 /**
  * Loads the guest state
  *
+ * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
+ *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
