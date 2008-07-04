@@ -3566,11 +3566,11 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     parm[1].u.pointer.size = KEY_MAX_VALUE_LEN;
     int rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST, 3, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
-    AssertLogRel(rc != VINF_BUFFER_OVERFLOW);
-    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+    AssertLogRel(rc != VERR_BUFFER_OVERFLOW);
+    if (RT_SUCCESS(rc) || (VERR_NOT_FOUND == rc))
     {
         hrc = S_OK;
-        if (parm[2].u.uint32 != 0)
+        if (rc != VERR_NOT_FOUND)
             Utf8Value.cloneTo(aValue);
         else
             aValue = NULL;
