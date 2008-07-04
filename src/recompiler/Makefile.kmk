@@ -371,16 +371,16 @@ endif
 
 
 # The command sans -o op.S.tmp.
-COMPILE_OP_CMDS = $(VBOX_RECOMPILER_OP_GCC) \
+COMPILE_OP_CMDS_3 = $(VBOX_RECOMPILER_OP_GCC) \
 	-S -s \
 	$(filter-out -g -O0, \
 		$($(REM_MOD)_CFLAGS) $($(REM_MOD)_CFLAGS.$(KBUILD_TYPE)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 		$(target-i386/op.c_CFLAGS) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET_ARCH)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 		) \
-	$(addprefix -I, \
+	$(addprefix -I, $(abspathex \
 		$($(REM_MOD)_CINCS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CINCS.$(KBUILD_TARGET)) $($(REM_MOD)_CINCS) $(CINCS) \
 		$($(REM_MOD)_INCS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_INCS.$(KBUILD_TARGET))  $($(REM_MOD)_INCS) $(INCS) \
-		) \
+		, $($(REM_MOD)_PATH))) \
 	$(addprefix -D, \
 		$($(REM_MOD)_CDEFS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CDEFS.$(KBUILD_TARGET)) $($(REM_MOD)_CDEFS) $(CDEFS.$(KBUILD_TARGET)) $(CDEFS.$(KBUILD_TARGET_ARCH)) $(CDEFS.$(KBUILD_TYPE)) $(CDEFS) \
 		$($(REM_MOD)_DEFS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_DEFS.$(KBUILD_TARGET))  $($(REM_MOD)_DEFS)  $(DEFS.$(KBUILD_TARGET))  $(DEFS.$(KBUILD_TARGET_ARCH))  $(DEFS.$(KBUILD_TYPE))  $(DEFS) \
@@ -388,17 +388,19 @@ COMPILE_OP_CMDS = $(VBOX_RECOMPILER_OP_GCC) \
 	-Wp,-MD,$(PATH_$(REM_MOD))/op.S.dep \
         -Wp,-MT,$(PATH_$(REM_MOD))/op.S \
         -Wp,-MP \
-	target-i386/op.c
+	$(VBOX_PATH_RECOMPILER_SRC)/target-i386/op.c
 
 # Use the right GCC includes.
 ifdef VBOX_RECOMPILER_OP_GCC_INCS
-COMPILE_OP_CMDS := $(subst $(VBOX_PATH_GCC_INCS),$(VBOX_RECOMPILER_OP_GCC_INCS),$(COMPILE_OP_CMDS))
+COMPILE_OP_CMDS_2 = $(subst $(VBOX_PATH_GCC_INCS),$(VBOX_RECOMPILER_OP_GCC_INCS),$(COMPILE_OP_CMDS_3))
+else
+COMPILE_OP_CMDS_2 = $(COMPILE_OP_CMDS_3)
 endif
 
 # Drop incompatible options when using the cross-compiler on darwin.
 ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
-  COMPILE_OP_CMDS := $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS))
+  COMPILE_OP_CMDS = $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS_2))
  endif
 else if1of ($(KBUILD_TARGET),linux)
  ifneq ($(TOOL_$(VBOX_GCC_TOOL)_CC),$(VBOX_RECOMPILER_OP_GCC))
@@ -406,11 +408,12 @@ else if1of ($(KBUILD_TARGET),linux)
     if $(VBOX_RECOMPILER_OP_GCC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
     then echo "$(1)"; \
     else echo "$(2)"; fi; )
-  COMPILE_OP_CMDS := \
-    $(filter-out -fno-stack-protector, $(COMPILE_OP_CMDS)) \
+  COMPILE_OP_CMDS = \
+    $(filter-out -fno-stack-protector, $(COMPILE_OP_CMDS_2)) \
     $(call VBOX_RECOMPILER_OP_CHECK_CC_GCC,-fno-stack-protector)
  endif
 endif
+COMPILE_OP_CMDS ?= $(COMPILE_OP_CMDS_2)
 
 # include the dependencies
 -include $(PATH_$(REM_MOD))/op.S.dep
@@ -423,7 +426,7 @@ $(PATH_$(REM_MOD))/op.S: \
 		$(VBOX_PATH_RECOMPILER_SRC)/Sun/op-darwin.sed \
 		$(VBOX_PATH_RECOMPILER_SRC)/Sun/op-undefined.lst \
 		$(VBOX_PATH_RECOMPILER_SRC)/Makefile.kmk \
-		$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
+		$$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
 	$(RM) -f $@ $@.tmp $@.tmp2 $@.dep
 ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),yes)
