@@ -33,7 +33,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "SUPDrvInternal.h"
+#include "../SUPDrvInternal.h"
 #include <excpt.h>
 #include <iprt/assert.h>
 #include <iprt/process.h>
@@ -76,6 +76,7 @@ static NTSTATUS _stdcall   VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static int                 VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
+static NTSTATUS _stdcall   VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS            VBoxDrvNtErr2NtStatus(int rc);
 
@@ -131,12 +132,15 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     /*
                      * Setup the driver entry points in pDrvObj.
                      */
-                    pDrvObj->DriverUnload                           = VBoxDrvNtUnload;
-                    pDrvObj->MajorFunction[IRP_MJ_CREATE]           = VBoxDrvNtCreate;
-                    pDrvObj->MajorFunction[IRP_MJ_CLOSE]            = VBoxDrvNtClose;
-                    pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]   = VBoxDrvNtDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_READ]             = VBoxDrvNtNotSupportedStub;
-                    pDrvObj->MajorFunction[IRP_MJ_WRITE]            = VBoxDrvNtNotSupportedStub;
+                    pDrvObj->DriverUnload                                   = VBoxDrvNtUnload;
+                    pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
+                    pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
+                    pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
+#if 0 /** @todo test IDC on windows. */
+                    pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
+#endif
+                    pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtNotSupportedStub;
+                    pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
                     /* more? */
                     dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
                     return STATUS_SUCCESS;
@@ -292,7 +296,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         KIRQL oldIrql;
         int   rc;
 
-	 	/* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
+        /* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
         KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
         rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
@@ -396,6 +400,76 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
         rcNt = STATUS_NOT_SUPPORTED;
     }
 #endif
+
+    /* complete the request. */
+    pIrp->IoStatus.Status = rcNt;
+    pIrp->IoStatus.Information = cbOut;
+    IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+    return rcNt;
+}
+
+
+/**
+ * Internal Device I/O Control entry point, used for IDC.
+ *
+ * @param   pDevObj     Device object.
+ * @param   pIrp        Request packet.
+ */
+NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
+    PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
+    PFILE_OBJECT        pFileObj = pStack ? pStack->FileObject : NULL;
+    PSUPDRVSESSION      pSession = pFileObj ? (PSUPDRVSESSION)pFileObj->FsContext : NULL;
+    NTSTATUS            rcNt;
+    unsigned            cbOut = 0;
+    int                 rc = 0;
+    dprintf2(("VBoxDrvNtInternalDeviceControl(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
+             pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
+             pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
+             pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
+
+    if (pSession)
+    {
+        /* Verify that it's a buffered CTL. */
+        if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
+        {
+            /* Verify that the size in the request header is correct. */
+            PSUPDRVIDCREQHDR pHdr = (PSUPDRVIDCREQHDR)pIrp->AssociatedIrp.SystemBuffer;
+            if (    pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr)
+                &&  pStack->Parameters.DeviceIoControl.InputBufferLength  == pHdr->cb
+                &&  pStack->Parameters.DeviceIoControl.OutputBufferLength == pHdr->cb)
+            {
+                /*
+                 * Do the job.
+                 */
+                rc = supdrvIDC(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr);
+                if (!rc)
+                {
+                    rcNt = STATUS_SUCCESS;
+                    cbOut = pHdr->cb;
+                }
+                else
+                    rcNt = STATUS_INVALID_PARAMETER;
+                dprintf2(("VBoxDrvNtInternalDeviceControl: returns %#x/rc=%#x\n", rcNt, rc));
+            }
+            else
+            {
+                dprintf(("VBoxDrvNtInternalDeviceControl: Mismatching sizes (%#x) - Hdr=%#lx Irp=%#lx/%#lx!\n",
+                         pStack->Parameters.DeviceIoControl.IoControlCode,
+                         pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cb : 0,
+                         pStack->Parameters.DeviceIoControl.InputBufferLength,
+                         pStack->Parameters.DeviceIoControl.OutputBufferLength));
+                rcNt = STATUS_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            dprintf(("VBoxDrvNtInternalDeviceControl: not buffered request (%#x) - not supported\n",
+                     pStack->Parameters.DeviceIoControl.IoControlCode));
+            rcNt = STATUS_NOT_SUPPORTED;
+        }
+    }
 
     /* complete the request. */
     pIrp->IoStatus.Status = rcNt;
