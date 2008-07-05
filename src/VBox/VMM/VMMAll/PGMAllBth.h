@@ -66,6 +66,11 @@ __END_DECLS
 # define PGM_WITHOUT_MAPPINGS
 #endif
 
+/* There's no need for tracking physical pages when there's no guest paging involved. */
+#if !PGM_WITH_PAGING(PGM_GST_TYPE)
+#undef PGMPOOL_WITH_USER_TRACKING
+#endif
+
 /**
  * #PF Handler for raw-mode guest execution.
  *
