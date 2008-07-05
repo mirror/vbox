@@ -47,9 +47,28 @@
 #undef GST_PDPT_MASK
 #undef GST_PDPE_PG_MASK
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_REAL \
+#if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
+# define GSTPT                      SHWPT
+# define PGSTPT                     PSHWPT
+# define GSTPTE                     SHWPTE
+# define PGSTPTE                    PSHWPTE
+# define GSTPD                      SHWPD
+# define PGSTPD                     PSHWPD
+# define GSTPDE                     SHWPDE
+# define PGSTPDE                    PSHWPDE
+# define GST_BIG_PAGE_SIZE          SHW_BIG_PAGE_SIZE
+# define GST_BIG_PAGE_OFFSET_MASK   SHW_BIG_PAGE_OFFSET_MASK
+# define GST_PDE_PG_MASK            SHW_PDE_PG_MASK
+# define GST_PDE_BIG_PG_MASK        SHW_PDE_BIG_PG_MASK
+# define GST_PD_SHIFT               SHW_PD_SHIFT
+# define GST_PD_MASK                SHW_PD_MASK
+# define GST_TOTAL_PD_ENTRIES       SHW_PG_ENTRIES
+# define GST_PTE_PG_MASK            SHW_PTE_PG_MASK
+# define GST_PT_SHIFT               SHW_PT_SHIFT
+# define GST_PT_MASK                SHW_PT_MASK
+# define GST_CR3_PAGE_MASK          SHW_CR3_PAGE_MASK
+#elif PGM_GST_TYPE == PGM_TYPE_32BIT
 # define GSTPT                      X86PT
 # define PGSTPT                     PX86PT
 # define GSTPTE                     X86PTE
