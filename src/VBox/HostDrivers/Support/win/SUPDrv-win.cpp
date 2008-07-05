@@ -429,10 +429,16 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
              pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
              pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
-    if (pSession)
+/** @todo IDC on NT: figure when to create the session and that stuff... */
+
+    /* Verify that it's a buffered CTL. */
+    if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
     {
-        /* Verify that it's a buffered CTL. */
-        if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
+        /* Verify the pDevExt in the session. */
+        if (    (   !pSession
+                 && pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_CONNECT)
+            ||  (   VALID_PTR(pSession)
+                 && pSession->pDevExt == pDevExt))
         {
             /* Verify that the size in the request header is correct. */
             PSUPDRVIDCREQHDR pHdr = (PSUPDRVIDCREQHDR)pIrp->AssociatedIrp.SystemBuffer;
@@ -464,11 +470,13 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
             }
         }
         else
-        {
-            dprintf(("VBoxDrvNtInternalDeviceControl: not buffered request (%#x) - not supported\n",
-                     pStack->Parameters.DeviceIoControl.IoControlCode));
             rcNt = STATUS_NOT_SUPPORTED;
-        }
+    }
+    else
+    {
+        dprintf(("VBoxDrvNtInternalDeviceControl: not buffered request (%#x) - not supported\n",
+                 pStack->Parameters.DeviceIoControl.IoControlCode));
+        rcNt = STATUS_NOT_SUPPORTED;
     }
 
     /* complete the request. */
