@@ -1135,6 +1135,18 @@ ResumeExecution:
         &&  pVMCB->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT /* we don't care about 'int xx' as the instruction will be restarted. */)
     {
         Log(("Pending inject %VX64 at %VGv exit=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitCode));
+
+#ifdef LOG_ENABLED
+        SVM_EVENT Event;
+        Event.au64[0] = pVM->hwaccm.s.Event.intInfo;
+
+        if (    exitCode == SVM_EXIT_EXCEPTION_E
+            &&  Event.n.u8Vector == 0xE)
+        {
+            Log(("Double fault!\n"));
+        }
+#endif
+
         pVM->hwaccm.s.Event.fPending = true;
         /* Error code present? (redundant) */
         if (pVMCB->ctrl.ExitIntInfo.n.u1ErrorCodeValid)
@@ -1226,7 +1238,7 @@ ResumeExecution:
             {   /* A genuine pagefault.
                  * Forward the trap to the guest by injecting the exception and resuming execution.
                  */
-                Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%RX64\n", pCtx->rip, uFaultAddress, errCode, pCtx->rsp));
+                Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%VGv\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode, (RTGCPTR)pCtx->rsp));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
 
                 /* Now we must update CR2. */
@@ -1441,7 +1453,7 @@ ResumeExecution:
 
     case SVM_EXIT_CPUID:                /* Guest software attempted to execute CPUID. */
     {
-        Log2(("SVM: Cpuid %x\n", pCtx->eax));
+        Log2(("SVM: Cpuid at %VGv for %x\n", pCtx->rip, pCtx->eax));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCpuid);
         rc = EMInterpretCpuId(pVM, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
