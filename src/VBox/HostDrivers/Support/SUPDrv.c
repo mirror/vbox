@@ -1161,8 +1161,11 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 /**
  * Inter-Driver Communcation (IDC) worker.
  *
- * @returns 0 on success.
- * @returns VERR_INVALID_PARAMETER if the request is invalid.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_SUPPORTED if the request isn't supported.
+ * @retval  VERR_NOT_IMPLEMENTED if during development.
+ * @retval  VERR_INVALID_PARAMETER if the request is invalid.
  *
  * @param   uReq        The request (function) code.
  * @param   pDevExt     Device extention.
@@ -1171,7 +1174,78 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
  */
 int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQHDR pReqHdr)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * The OS specific code has already validated the pSession
+     * pointer, and the request size being greater or equal to
+     * size of the header.
+     *
+     * So, just check that pSession is a kernel context session.
+     */
+    if (RT_UNLIKELY(    pSession
+                    &&  pSession->R0Process != NIL_RTR0PROCESS))
+        return VERR_INVALID_PARAMETER;
+
+/*
+ * Validation macro.
+ */
+#define REQ_CHECK_IDC_SIZE(Name, cbExpect) \
+    do { \
+        if (RT_UNLIKELY(pReqHdr->cb != (cbExpect))) \
+        { \
+            OSDBGPRINT(( #Name ": Invalid input/output sizes. cb=%ld expected %ld.\n", \
+                        (long)pReqHdr->cb, (long)(cbExpect))); \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+    switch (uReq)
+    {
+        case SUPDRV_IDC_REQ_CONNECT:
+        {
+            PSUPDRVIDCREQCONNECT pReq = (PSUPDRVIDCREQCONNECT)pReqHdr;
+            REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_CONNECT, sizeof(*pReq));
+
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        case SUPDRV_IDC_REQ_DISCONNECT:
+        {
+            REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_DISCONNECT, sizeof(*pReqHdr));
+
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        case SUPDRV_IDC_REQ_GET_SYMBOL:
+        {
+            PSUPDRVIDCREQGETSYM pReq;
+            REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_GET_SYMBOL, sizeof(*pReq));
+
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        case SUPDRV_IDC_REQ_COMPONENT_REGISTER_FACTORY:
+        {
+            PSUPDRVIDCREQCOMPREGFACTORY pReq;
+            REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_COMPONENT_REGISTER_FACTORY, sizeof(*pReq));
+
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        case SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY:
+        {
+            PSUPDRVIDCREQCOMPDEREGFACTORY pReq;
+            REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY, sizeof(*pReq));
+
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        default:
+            Log(("Unknown IDC %#lx\n", (long)uReq));
+            break;
+    }
+
+#undef REQ_CHECK_IDC_SIZE
+    return VERR_NOT_SUPPORTED;
 }
 
 

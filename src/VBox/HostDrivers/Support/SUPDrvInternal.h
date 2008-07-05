@@ -540,7 +540,8 @@ typedef struct SUPDRVSESSION
     RTGID                       Gid;
     /** The process (id) of the session. (Set by the OS part.) */
     RTPROCESS                   Process;
-    /** Which process this session is associated with. */
+    /** Which process this session is associated with.
+     * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                 R0Process;
 #if defined(RT_OS_OS2)
     /** The system file number of this session. */
