@@ -1791,13 +1791,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
     PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
 
-# if PGM_SHW_TYPE == PGM_TYPE_PAE
-    /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-    const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
-# else
-    const unsigned  offPTSrc  = 0;
-# endif
-
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (cPages > 1 && !(uErr & X86_TRAP_PF_P))
     {
@@ -1820,7 +1813,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
             {
                 GSTPTE PteSrc;
 
-                RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
+                RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
 
                 /* Fake the page table entry */
                 PteSrc.u = GCPtrCurPage;
@@ -1841,7 +1834,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                       pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             }
             else
-                Log4(("%VGv iPTDst=%x pPTDst->a[iPTDst] %RX64\n", ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT), iPTDst, pPTDst->a[iPTDst].u));
+                Log4(("%VGv iPTDst=%x pPTDst->a[iPTDst] %RX64\n", ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT), iPTDst, pPTDst->a[iPTDst].u));
         }
     }
     else
@@ -1849,7 +1842,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     {
         GSTPTE PteSrc;
         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
+        RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
 
         /* Fake the page table entry */
         PteSrc.u = GCPtrCurPage;
@@ -2656,11 +2649,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     RTGCPHYS        GCPhys;
 
     /* Virtual address = physical address */
-    GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK;
+    GCPhys = GCPtrPage & SHW_PD_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
-    rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
+    rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
 # else
-    rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
+    rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
 # endif
 
     if (    rc == VINF_SUCCESS
