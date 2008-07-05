@@ -3435,6 +3435,17 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                            | (vga_mem_readb(pData, GCPhysAddr + 3) << 24);
             break;
 
+        case 8:
+            *(uint64_t *)pv = (uint64_t)vga_mem_readb(pData, GCPhysAddr)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 1) <<  8)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 2) << 16)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 3) << 24)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 4) << 32)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 5) << 40)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 6) << 48)
+                           | ((uint64_t)vga_mem_readb(pData, GCPhysAddr + 7) << 56);
+            break;
+
         default:
         {
             uint8_t *pu8Data = (uint8_t *)pv;
@@ -3483,12 +3494,32 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = vga_mem_writeb(pData, GCPhysAddr + 3, pu8[3]);
             break;
+        case 8:
+            rc = vga_mem_writeb(pData, GCPhysAddr + 0, pu8[0]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 1, pu8[1]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 2, pu8[2]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 3, pu8[3]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 4, pu8[4]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 5, pu8[5]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 6, pu8[6]);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = vga_mem_writeb(pData, GCPhysAddr + 7, pu8[7]);
+            break;
 #else
         case 2:
             rc = vgaMMIOFill(pDevIns, GCPhysAddr, *(uint16_t *)pv, 2, 1);
             break;
         case 4:
             rc = vgaMMIOFill(pDevIns, GCPhysAddr, *(uint32_t *)pv, 4, 1);
+            break;
+        case 8:
+            rc = vgaMMIOFill(pDevIns, GCPhysAddr, *(uint64_t *)pv, 8, 1);
             break;
 #endif
         default:
