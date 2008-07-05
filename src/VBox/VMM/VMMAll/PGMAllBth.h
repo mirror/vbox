@@ -66,13 +66,6 @@ __END_DECLS
 # define PGM_WITHOUT_MAPPINGS
 #endif
 
-/* There's no need for tracking physical pages when there's no guest paging involved. */
-#ifdef PGMPOOL_WITH_USER_TRACKING
-# if PGM_WITH_PAGING(PGM_GST_TYPE)
-# define PGMPOOL_WITH_USER_TRACKING_ACTIVE
-# endif
-#endif
-
 /**
  * #PF Handler for raw-mode guest execution.
  *
@@ -1140,7 +1133,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                 PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
                 if (pPT->a[iPTEDst].n.u1Present)
                 {
-#  ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+#  ifdef PGMPOOL_WITH_USER_TRACKING
                     /* This is very unlikely with caching/monitoring enabled. */
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPT->a[iPTEDst].u & SHW_PTE_PG_MASK);
 #  endif
@@ -1249,7 +1242,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 }
 
 
-#ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+#ifdef PGMPOOL_WITH_USER_TRACKING
 /**
  * Update the tracking of shadowed pages.
  *
@@ -1339,7 +1332,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
     if (pShwPage->iFirstPresent > iPTDst)
         pShwPage->iFirstPresent = iPTDst;
 }
-#endif /* PGMPOOL_WITH_USER_TRACKING_ACTIVE */
+#endif /* PGMPOOL_WITH_USER_TRACKING */
 
 
 /**
@@ -1421,7 +1414,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 }
             }
 
-#ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+#ifdef PGMPOOL_WITH_USER_TRACKING
             /*
              * Keep user track up to date.
              */
@@ -1441,7 +1434,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", (uint64_t)pPteDst->u));
                 PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
             }
-#endif /* PGMPOOL_WITH_USER_TRACKING_ACTIVE */
+#endif /* PGMPOOL_WITH_USER_TRACKING */
 
             /*
              * Update statistics and commit the entry.
@@ -1459,14 +1452,14 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
          * Page not-present.
          */
         LogFlow(("SyncPageWorker: page not present in Pte\n"));
-#ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+#ifdef PGMPOOL_WITH_USER_TRACKING
         /* Keep user track up to date. */
         if (pPteDst->n.u1Present)
         {
             Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", (uint64_t)pPteDst->u));
             PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
         }
-#endif /* PGMPOOL_WITH_USER_TRACKING_ACTIVE */
+#endif /* PGMPOOL_WITH_USER_TRACKING */
         pPteDst->u = 0;
         /** @todo count these. */
     }
@@ -1694,7 +1687,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                             PteDst.u = 0;
                     }
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-# ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+# ifdef PGMPOOL_WITH_USER_TRACKING
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
                         PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
 # endif
@@ -2564,7 +2557,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 # endif
                         else
                             PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
-# ifdef PGMPOOL_WITH_USER_TRACKING_ACTIVE
+# ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
                             PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, pPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst); /** @todo PAGE FLAGS */
 # endif
