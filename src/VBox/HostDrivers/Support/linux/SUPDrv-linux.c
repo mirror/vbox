@@ -33,7 +33,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "SUPDrvInternal.h"
+#include "../SUPDrvInternal.h"
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 
@@ -842,6 +842,43 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
     Log6(("VBoxDrvLinuxIOCtl: returns %d (pid=%d/%d)\n", rc, RTProcSelf(), current->pid));
     return rc;
 }
+
+
+/**
+ * The SUPDRV IDC entry point.
+ *
+ * @returns VBox status code, see supdrvIDC.
+ * @param   iReq        The request code.
+ * @param   pReq        The request.
+ */
+int VBOXCALL SUPDrvLinuxIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
+{
+    PSUPDRVSESSION  pSession;
+
+    /*
+     * Some quick validations.
+     */
+    if (RT_UNLIKELY(!VALID_PTR(pReq)))
+        return VERR_INVALID_POINTER;
+
+    pSession = pReq->pSession;
+    if (pSession)
+    {
+        if (RT_UNLIKELY(!VALID_PTR(pSession)))
+            return VERR_INVALID_PARAMETER;
+        if (RT_UNLIKELY(pSession->pDevExt != &g_DevExt))
+            return VERR_INVALID_PARAMETER;
+    }
+    else if (RT_UNLIKELY(uReq != SUPDRV_IDC_REQ_CONNECT))
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Do the job.
+     */
+    return supdrvIDC(uReq, &g_DevExt, pSession, pReq);
+}
+
+EXPORT_SYMBOL(SUPDrvLinuxIDC);
 
 
 /**

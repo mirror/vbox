@@ -48,10 +48,10 @@
  * @returns VBox status code.
  * @param   pDeviceObject   The device object to call.
  * @param   pFileObject     The file object for the connection.
- * @param   iReq            The request.
+ * @param   uReq            The request.
  * @param   pReq            The request packet.
  */
-static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFileObject, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
+static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFileObject, uint32_t uReq, PSUPDRVIDCREQHDR pReq)
 {
     int                 rc;
     IO_STATUS_BLOCK     IoStatusBlock;
@@ -63,7 +63,7 @@ static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFi
      * Build the request.
      */
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
-    pIrp = IoBuildDeviceIoControlRequest(iReq,              /* IoControlCode */
+    pIrp = IoBuildDeviceIoControlRequest(uReq,              /* IoControlCode */
                                          pDeviceObject,
                                          pReq,              /* InputBuffer */
                                          pReq->cb,          /* InputBufferLength */
@@ -98,6 +98,7 @@ static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFi
         rc = VERR_NO_MEMORY;
     return rc;
 }
+
 
 int VBOXCALL supR0IdcNativeOpen(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQCONNECT pReq)
 {
@@ -152,8 +153,8 @@ int VBOXCALL supR0IdcNativeClose(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQHDR pReq
 }
 
 
-int VBOXCALL supR0IdcNativeCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, PSUPDRVIDCREQHDR pReq)
+int VBOXCALL supR0IdcNativeCall(PSUPDRVIDCHANDLE pHandle, uint32_t uReq, PSUPDRVIDCREQHDR pReq)
 {
-    return supR0IdcNtCallInternal(pHandle->s.pDeviceObject, pHandle->s.pFileObject, iReq, pReq);
+    return supR0IdcNtCallInternal(pHandle->s.pDeviceObject, pHandle->s.pFileObject, uReq, pReq);
 }
 
