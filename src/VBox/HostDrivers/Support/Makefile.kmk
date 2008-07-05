@@ -205,7 +205,7 @@ vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBU
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
-ifndef VBOX_LINUX_VERSION_2_4
+ifdef VBOX_LINUX_VERSION_2_4
 vboxdrv_DEFS         += EXPORT_SYMTAB
 endif
 vboxdrv_INCS         := \
