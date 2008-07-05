@@ -230,11 +230,12 @@ ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
+## @todo why is there a space before 24 here?
 ifeq ($(KERN_VERSION), 24)
 # 2.4
 TOPDIR         = $(KERN_DIR)
 MODULE_EXT    := o
-EXTRA_CFLAGS  := -DVBOX_LINUX_2_4
+EXTRA_CFLAGS  := -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB
 $(MODULE)-objs = $(OBJS)
 else
 # 2.6 and later

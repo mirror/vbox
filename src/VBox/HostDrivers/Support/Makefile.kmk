@@ -205,6 +205,9 @@ vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBU
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
+ifndef VBOX_LINUX_VERSION_2_4
+vboxdrv_DEFS         += EXPORT_SYMTAB
+endif
 vboxdrv_INCS         := \
 	$(PATH_SUB_CURRENT) \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
