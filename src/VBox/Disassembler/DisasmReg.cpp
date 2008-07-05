@@ -699,12 +699,12 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             Assert(pParamVal->size == pParam->size || ((pParam->size == 1) && (pParam->flags & USE_IMMEDIATE32_SX8)) );
         }
         else
-        if (pParam->flags & (USE_IMMEDIATE64 | USE_IMMEDIATE64_REL))
+        if (pParam->flags & (USE_IMMEDIATE64 | USE_IMMEDIATE64_REL | USE_IMMEDIATE64_SX8))
         {
             pParamVal->flags |= PARAM_VAL64;
             pParamVal->size   = sizeof(uint64_t);
             pParamVal->val.val64 = pParam->parval;
-            Assert(pParamVal->size == pParam->size);
+            Assert(pParamVal->size == pParam->size || ((pParam->size == 1) && (pParam->flags & USE_IMMEDIATE64_SX8)) );
         }
         else
         if (pParam->flags & (USE_IMMEDIATE_ADDR_16_16))
