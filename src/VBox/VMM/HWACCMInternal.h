@@ -34,9 +34,11 @@
 #include <iprt/mp.h>
 
 /* Uncomment to enable experimental nested paging. */
-//#define VBOX_WITH_NESTED_PAGING
-/* Uncomment to enable 64 bits guest support. */
-//#define VBOX_ENABLE_64_BITS_GUESTS
+/////#define VBOX_WITH_NESTED_PAGING
+#if HC_ARCH_BITS == 64
+/* Enable 64 bits guest support. */
+# define VBOX_ENABLE_64_BITS_GUESTS
+#endif
 
 __BEGIN_DECLS
 
