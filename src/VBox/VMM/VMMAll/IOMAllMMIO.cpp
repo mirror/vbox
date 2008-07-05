@@ -178,10 +178,10 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
      * and call the handler function to get the data.
      */
     unsigned cb = DISGetParamSize(pCpu, &pCpu->param2);
-    AssertMsg(cb > 0 && cb <= sizeof(uint32_t), ("cb=%d\n", cb));
+    AssertMsg(cb > 0 && cb <= sizeof(uint64_t), ("cb=%d\n", cb));
 
-    uint32_t u32Data = 0;
-    int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &u32Data, cb);
+    uint64_t u64Data = 0;
+    int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &u64Data, cb);
     if (rc == VINF_SUCCESS)
     {
         /*
@@ -193,21 +193,21 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
             if (cb == 1)
             {
                 /* DWORD <- BYTE */
-                int32_t iData = (int8_t)u32Data;
-                u32Data = (uint32_t)iData;
+                int64_t iData = (int8_t)u64Data;
+                u64Data = (uint64_t)iData;
             }
             else
             {
                 /* DWORD <- WORD */
-                int32_t iData = (int16_t)u32Data;
-                u32Data = (uint32_t)iData;
+                int64_t iData = (int16_t)u64Data;
+                u64Data = (uint64_t)iData;
             }
         }
 
         /*
          * Store the result to register (parameter 1).
          */
-        bool fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, u32Data);
+        bool fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, u64Data);
         AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
     }
 
@@ -318,7 +318,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
      * Get data size.
      */
     unsigned cb = DISGetParamSize(pCpu, &pCpu->param1);
-    Assert(cb);
+    AssertMsg(cb > 0 && cb <= sizeof(uint32_t), ("cb=%d\n", cb));
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
 #ifdef VBOX_WITH_STATISTICS
@@ -556,7 +556,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      * Get data size.
      */
     unsigned cb = DISGetParamSize(pCpu, &pCpu->param1);
-    Assert(cb);
+    AssertMsg(cb > 0 && cb <= sizeof(uint32_t), ("cb=%d\n", cb));
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
 #ifdef VBOX_WITH_STATISTICS
@@ -662,7 +662,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      * Get data size.
      */
     unsigned cb = DISGetParamSize(pCpu, &pCpu->param2);
-    Assert(cb);
+    AssertMsg(cb > 0 && cb <= sizeof(uint32_t), ("cb=%d\n", cb));
     int     offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
     /*
