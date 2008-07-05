@@ -779,7 +779,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     case 'I': /* Immediate data (ParseImmByte, ParseImmByteSX, ParseImmV, ParseImmUshort, ParseImmZ). */
                         Assert(*pszFmt == 'b' || *pszFmt == 'v' || *pszFmt == 'w' || *pszFmt == 'z'); pszFmt++;
                         switch (pParam->flags & (  USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE64
-                                                 | USE_IMMEDIATE16_SX8 | USE_IMMEDIATE32_SX8))
+                                                 | USE_IMMEDIATE16_SX8 | USE_IMMEDIATE32_SX8 | USE_IMMEDIATE64_SX8))
                         {
                             case USE_IMMEDIATE8:
                                 if (    (fFlags & DIS_FMT_FLAGS_STRICT)
@@ -832,6 +832,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             case USE_IMMEDIATE32_SX8:
                                 PUT_SZ_STRICT("strict byte ", "byte ");
                                 PUT_NUM_32(pParam->parval);
+                                break;
+
+                            case USE_IMMEDIATE64_SX8:
+                                PUT_SZ_STRICT("strict byte ", "byte ");
+                                PUT_NUM_64(pParam->parval);
                                 break;
 
                             case USE_IMMEDIATE64:

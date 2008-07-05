@@ -1178,12 +1178,20 @@ unsigned ParseImmByte_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
 //*****************************************************************************
 unsigned ParseImmByteSX(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if (pCpu->opmode == CPUMODE_32BIT) /** @todo In AMD64 mode we're ending up with 16-bit parvals now, see the disassembler _output_ for tstAsmSignExtend-1.asm. */
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         pParam->parval = (uint32_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_SX8;
         pParam->size   = sizeof(uint32_t);
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
+    }
+    else
+    if (pCpu->opmode == CPUMODE_64BIT)
+    {
+        pParam->parval = (uint64_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE64_SX8;
+        pParam->size   = sizeof(uint64_t);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%016RX64h", pParam->parval);
     }
     else
     {
