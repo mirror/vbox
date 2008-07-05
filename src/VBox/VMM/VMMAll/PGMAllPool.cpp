@@ -1776,8 +1776,6 @@ void pgmPoolClearAll(PVM pVM)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
-                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
-                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
@@ -2234,7 +2232,6 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
-        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         {
             const uint32_t  u32 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PX86PT          pPT = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2264,7 +2261,6 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
-        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         {
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PX86PTPAE       pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2289,6 +2285,10 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
             AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             break;
         }
+
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+            break;  /* nothing to do */
 
         default:
             AssertFatalMsgFailed(("enmKind=%d iShw=%d\n", pPage->enmKind, iShw));
@@ -2408,7 +2408,6 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
                  */
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
-                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 {
                     unsigned    cPresent = pPage->cPresent;
                     PX86PT      pPT = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2430,7 +2429,6 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
-                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
                     unsigned  cPresent = pPage->cPresent;
                     PX86PTPAE pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
