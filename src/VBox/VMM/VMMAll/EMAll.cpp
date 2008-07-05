@@ -770,8 +770,12 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
                 return VERR_EM_INTERPRETER;
             }
 
+            LogFlow(("emInterpretOrXorAnd %s %VGv %RX64 - %RX64 size %d (%d)\n", pszInstr, pParam1, valpar1, valpar2, param2.size, param1.size));
+
             /* Data read, emulate instruction. */
             uint32_t eflags = pfnEmulate(&valpar1, valpar2, param2.size);
+
+            LogFlow(("emInterpretOrXorAnd %s result %RX64\n", pszInstr, valpar1));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
