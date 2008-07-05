@@ -26,15 +26,11 @@ DEPTH     = ../../..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
-# Include sub-makefile(s) first if we're doing parallel building.
-# This is primarily a hack to try avoid idling all but one cpu when
-# building the gigant soap sources.
-ifneq ($(KMK_OPTS_JOBS),1)
- ifdef VBOX_WITH_WEBSERVICES
-  include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
- endif
- include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+# Include sub-makefile(s).
+ifdef VBOX_WITH_WEBSERVICES
+include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
 endif
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 # targets++
 LIBRARIES       += VBoxCOM
@@ -568,22 +564,6 @@ endif
 VBoxMain-com-inst_INST = $(INST_BIN)
 VBoxMain-com-inst_SOURCES = \
 	win/comregister.cmd
-
-
-#
-# Include sub-makefile(s) last if we're not doing parallel building.
-#
-# We do this here so that the webservices ends up last in the target
-# lists. For 100% correctness we must do this after all the main
-# targets has been fully fleshed out as subheader/footer.kmk will
-# process new targets.
-#
-ifeq ($(KMK_OPTS_JOBS),1)
- ifdef VBOX_WITH_WEBSERVICES
-  include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
- endif
- include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-endif
 
 
 
