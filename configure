@@ -142,17 +142,17 @@ cnf_append()
 
 strip_l()
 {
-  echo "$1"|$KBUILD_SED 's|-l\([^ ]\+\)|\1|g; s|-[^l]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-l\([^ ]\+\)|\1|g; s|^-[^l][^ ]*||g; s| -[^l][^ ]*||g; s|^ ||; s| *$||g'
 }
 
 strip_L()
 {
-  echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|-[^L]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|^-[^L][^ ]*||g; s| -[^L][^ ]*||g; s|^ ||; s| *$||g'
 }
 
 strip_I()
 {
-  echo "$1"|$KBUILD_SED 's|-I\([^ ]\+\)|\1|g; s|-[^I]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-I\([^ ]\+\)|\1|g; s|^-[^I][^ ]*||g; s| -[^I][^ ]*||g; s|^ ||; s| *$||g'
 }
 
 prefix_I()
@@ -235,6 +235,22 @@ test_execute()
   cat .test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
     fail $1
+    return 1
+  fi
+  echo >> $LOG
+  echo >> $LOG
+  return 0
+}
+
+# Execute a compiled test binary
+test_execute_path()
+{
+  echo "executing the binary (LD_LIBRARY_PATH=$1)" >> $LOG
+  LD_LIBRARY_PATH=$1 ./.tmp_out > .test_execute.log
+  rc=$?
+  cat .test_execute.log | tee -a $LOG
+  if [ $rc -ne 0 ]; then
+    fail
     return 1
   fi
   echo >> $LOG
@@ -1275,9 +1291,14 @@ check_qt4()
       # do it the old way (e.g. user has specified QT4DIR)
       for q in $QT4DIR; do
         INCQT4="$q/include $q/include/QtCore"
-        LIBQT4="-L$q/lib -lQtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
+        LIBQT4="-L$q/lib -lVBoxQtCore"
+        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
+          foundqt4=2
+          break;
+        fi
+        LIBQT4="-L$q/lib -lQtCore"
         if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
           foundqt4=1
           break;
@@ -1302,12 +1323,15 @@ extern "C" int main(void)
 EOF
     [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
     if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
-      if test_execute; then
+      if test_execute_path "`strip_L "$LIBQT4"`"; then
         if [ "$OS" != "darwin" ]; then
           # strip .../QtCore as we add components ourself
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|[^ ]*/QtCore||g; s| ||g'`
           cnf_append "VBOX_PATH_QT4_INCLUDE" "$INCQT4"
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
+	  if [ "$foundqt4" = "2" ]; then
+	    cnf_append "VBOX_WITH_QT4_SUN" "1"
+	  fi
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
