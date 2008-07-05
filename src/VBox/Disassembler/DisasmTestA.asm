@@ -72,6 +72,7 @@ align 16
 BEGINPROC TestProc64
       ;incorrectly assembled by yasm; REX.W should not be added!
       ;test rax, dword 0cc90cc90h
+      and   [r15], rax
       movzx rcx, sil
       and   sil, 3
       movzx ecx, ah

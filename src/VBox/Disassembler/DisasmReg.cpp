@@ -220,7 +220,23 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
     int subtype = OP_PARM_VSUBTYPE(pParam->param);
 
     if (subtype == OP_PARM_v)
-        subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
+    {
+        switch(pCpu->opmode)
+        {
+        case CPUMODE_32BIT:
+            subtype = OP_PARM_d;
+            break;
+        case CPUMODE_64BIT:
+            subtype = OP_PARM_q;
+            break;
+        case CPUMODE_16BIT:
+            subtype = OP_PARM_w;
+            break;
+        default:
+            /* make gcc happy */
+            break;
+        }
+    }
 
     switch(subtype)
     {
