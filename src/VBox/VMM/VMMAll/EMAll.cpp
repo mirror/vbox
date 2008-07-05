@@ -2537,7 +2537,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     }
 
     int rc;
-#if defined(IN_GC) && (defined(VBOX_STRICT) || defined(LOG_ENABLED))
+#if (defined(VBOX_STRICT) || defined(LOG_ENABLED))
     LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pCpu)));
 #endif
     switch (pCpu->pCurInstr->opcode)
