@@ -230,8 +230,7 @@ ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
-## @todo why is there a space before 24 here?
-ifeq ($(KERN_VERSION), 24)
+ifeq ($(KERN_VERSION),24)
 # 2.4
 TOPDIR         = $(KERN_DIR)
 MODULE_EXT    := o
@@ -253,7 +252,7 @@ obj-m += $(MODULE).o
 $(MODULE):
 	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
-ifeq ($(KERN_VERSION), 24)
+ifeq ($(KERN_VERSION),26)
 #
 # 2.4 Module linking
 #
