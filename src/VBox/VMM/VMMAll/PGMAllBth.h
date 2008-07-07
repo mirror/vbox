@@ -162,7 +162,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+        AssertRC(rc);
         return rc;
     }
     Assert(pPDDst);
@@ -2232,7 +2232,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+        AssertRC(rc);
         return rc;
     }
     Assert(pPDDst);
@@ -2352,7 +2352,10 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             return VINF_SUCCESS;
         }
         else if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
             return VINF_PGM_SYNC_CR3;
+        }
         else
             AssertMsgFailedReturn(("rc=%Vrc\n", rc), VERR_INTERNAL_ERROR);
         PdeDst.u &= X86_PDE_AVL_MASK;
@@ -2619,7 +2622,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+        AssertRC(rc);
         return rc;
     }
     Assert(pPDDst);
@@ -2757,7 +2760,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         int rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
-            AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+            AssertRC(rc);
             return rc;
         }
         Assert(pPDDst);
@@ -2876,7 +2879,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        AssertMsg(rc == VINF_PGM_SYNC_CR3, ("Unexpected rc=%Vrc\n", rc));
+        AssertRC(rc);
         return rc;
     }
     Assert(pPDDst);
