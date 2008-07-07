@@ -252,7 +252,7 @@ obj-m += $(MODULE).o
 $(MODULE):
 	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
-ifeq ($(KERN_VERSION),26)
+ifeq ($(KERN_VERSION),24)
 #
 # 2.4 Module linking
 #
