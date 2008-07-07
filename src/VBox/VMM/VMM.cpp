@@ -2408,8 +2408,12 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
     /*
      * Check if we need write to stderr.
      */
+#ifdef DEBUG_sandervl
+    pHlp->fStdErr = false; /* takes too long to display here */
+#else
     pHlp->fStdErr = (!pHlp->pRelLogger || !(pHlp->pRelLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)))
                  && (!pHlp->pLogger || !(pHlp->pLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
+#endif
 }
 
 
