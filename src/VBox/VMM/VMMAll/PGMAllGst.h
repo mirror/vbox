@@ -488,6 +488,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 {
                     pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
                     pVM->pgm.s.pHCShwAmd64CR3 = 0;
+                    pVM->pgm.s.pHCPaePML4     = 0;
+                    pVM->pgm.s.HCPhysPaePML4  = 0;
                 }
 
                 Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
