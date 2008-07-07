@@ -1464,6 +1464,10 @@ PGMDECL(int) PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer)
      */
     if (pVM->pgm.s.enmGuestMode == enmGuestMode)
         return VINF_SUCCESS;
+
+    /* Flush the TLB */
+    PGM_INVL_GUEST_TLBS();
+
 #ifdef IN_RING3
     return PGMR3ChangeMode(pVM, enmGuestMode);
 #else
