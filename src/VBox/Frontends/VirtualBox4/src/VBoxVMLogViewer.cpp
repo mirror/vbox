@@ -96,12 +96,15 @@ VBoxVMLogViewer::VBoxVMLogViewer (QWidget *aParent,
     mBtnClose = mButtonBox->button (QDialogButtonBox::Close);
 
     /* Fix the tab order to ensure the dialog keys are always the last */
-    setTabOrder (mSearchPanel->focusProxy(), mBtnHelp);
-    setTabOrder (mBtnHelp, mBtnFind);
-    setTabOrder (mBtnFind, mBtnSave);
-    setTabOrder (mBtnSave, mBtnRefresh);
-    setTabOrder (mBtnRefresh, mBtnClose);
-    setTabOrder (mBtnClose, mLogList);
+    /* @todo: Not sure if this is necessary any longer. On Linux this looks
+     * good in the default order. Keep in mind that with the QDialogButtonBox
+     * the order isn't fixed any more. */
+//    setTabOrder (mSearchPanel->focusProxy(), mBtnHelp);
+//    setTabOrder (mBtnHelp, mBtnFind);
+//    setTabOrder (mBtnFind, mBtnSave);
+//    setTabOrder (mBtnSave, mBtnRefresh);
+//    setTabOrder (mBtnRefresh, mBtnClose);
+//    setTabOrder (mBtnClose, mLogList);
 
     /* Setup connections */
     connect (mButtonBox, SIGNAL (helpRequested()),
