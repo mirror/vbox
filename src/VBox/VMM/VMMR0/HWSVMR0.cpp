@@ -1546,7 +1546,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
 
             /* Must be set by PGMSyncCR3 */
-            Assert(pVM->hwaccm.s.svm.fForceTLBFlush);
+            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PROTECTED || pVM->hwaccm.s.svm.fForceTLBFlush);
         }
         if (rc == VINF_SUCCESS)
         {
