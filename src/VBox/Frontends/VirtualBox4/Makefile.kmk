@@ -25,6 +25,12 @@ VBOX_WITH_REGISTRATION_REQUEST := 1
 DEPTH = ../../../..
 include $(KBUILD_PATH)/header.kmk
 
+#
+# Globals.
+#
+VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
+
+
 # Disable the debugger for now, this is another story.
 VBOX_WITH_DEBUGGER_GUI :=
 DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
@@ -342,11 +348,13 @@ endif
 #
 PROGRAMS += VirtualBox4
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
-DLLS += VBoxKeyboard4
-## @todo convert to install target.
-OTHERS += $(PATH_BIN)/vboxkeyboard4.tar.gz
+ DLLS += VBoxKeyboard4
+ ## @todo convert to install target.
+ OTHERS += $(PATH_BIN)/vboxkeyboard4.tar.gz
+ CLEAN += $(PATH_BIN)/vboxkeyboard4.tar.gz
 endif
 INSTALLS += VirtualBox4.nls qt4-bin
+
 
 #
 # VBoxKeyboard - keyboard library for X11.
@@ -354,15 +362,6 @@ INSTALLS += VirtualBox4.nls qt4-bin
 VBoxKeyboard4_TEMPLATE = VBOXR3
 VBoxKeyboard4_SOURCES  = \
 	src/linux/keyboard-new.c
-VBoxKeyboard4_TARSOURCES = \
-	$(VBoxKeyboard4_SOURCES) \
-	src/linux/COPYING.LIB \
-	src/linux/keyboard.h \
-	src/linux/keyboard-layouts.h \
-	src/linux/keyboard-list.h \
-	src/linux/keyboard-tables.h \
-	src/linux/keyboard-types.h \
-	src/linux/Makefile
 VBoxKeyboard4_LIBS     = X11
 VBoxKeyboard4_LIBPATH  = $(VBOX_LIBPATH_X11)
 
@@ -371,16 +370,28 @@ VBoxKeyboard4_LIBPATH  = $(VBOX_LIBPATH_X11)
 # vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
 # redistributed with usable sources.
 #
-SOURCE_DIRECTORY = vboxkeyboard4
-DIRECTORY_PREFIX = src/linux/
-
-$(PATH_TARGET)/$(SOURCE_DIRECTORY):
-	$(MKDIR) -p $(@D)
-	$(LN_SYMLINK) $(abspath $(PATH_CURRENT))/$(DIRECTORY_PREFIX) $@
-
-$(PATH_BIN)/vboxkeyboard4.tar.gz: $(VBoxKeyboard4_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+# This rule will link create a temporary symlink to src/linux/ and tar
+# up the selected files into a tarball that is installed into the
+# bin directory (probably belongs in /usr/shared/somewhere really,
+# but wtf, it's not like we're even trying to be FHS compliant).
+#
+## @todo this should be tar'ed down into the output directory and installed using an install target.
+$(PATH_BIN)/vboxkeyboard4.tar.gz: \
+		$(VBoxKeyboard4_SOURCES) \
+		src/linux/COPYING.LIB \
+		src/linux/keyboard.h \
+		src/linux/keyboard-layouts.h \
+		src/linux/keyboard-list.h \
+		src/linux/keyboard-tables.h \
+		src/linux/keyboard-types.h \
+		src/linux/Makefile
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard4_TARSOURCES))) | gzip - > $@
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard4 $@
+	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard4
+	$(QUIET)cd $(PATH_TARGET) \
+		&& tar -chvf - $(addprefix vboxkeyboard4/,$(notdir $^)) \
+		   | gzip - > $@
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard4
 
 
 #
@@ -1093,4 +1104,3 @@ endif # USE_KBUILD_QT_UNIT
 # alias for generating the COM Wrappers file.
 testwrappers:: $(WRAPPERSFILE)
 
-$(warning VirtualBox4_BLDDIRS=$(VirtualBox4_BLDDIRS))
