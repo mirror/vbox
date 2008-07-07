@@ -2996,12 +2996,6 @@ DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32
  */
 PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
-    /** @todo check if this is really necessary */
-    HWACCMFlushTLB(pVM);
-    return VINF_SUCCESS;
-
-#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
     if (VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
         fGlobal = true; /* Change this CR3 reload to be a global one. */
 
@@ -3018,7 +3012,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3Handlers), h);
 
-# ifdef PGMPOOL_WITH_MONITORING
+#ifdef PGMPOOL_WITH_MONITORING
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
      * Occationally we will have to clear all the shadow page tables because we wanted
@@ -3029,15 +3023,22 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-#  ifdef IN_RING3
+# ifdef IN_RING3
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
-#  else
+# else
         LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         return VINF_PGM_SYNC_CR3;
-#  endif
-    }
 # endif
+    }
+#endif
+
+#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+    /** @todo check if this is really necessary */
+    HWACCMFlushTLB(pVM);
+    return VINF_SUCCESS;
+
+#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 
     Assert(fGlobal || (cr4 & X86_CR4_PGE));
     MY_STAM_COUNTER_INC(fGlobal ? &pVM->pgm.s.CTXMID(Stat,SyncCR3Global) : &pVM->pgm.s.CTXMID(Stat,SyncCR3NotGlobal));
