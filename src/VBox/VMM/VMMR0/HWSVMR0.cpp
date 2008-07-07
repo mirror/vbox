@@ -882,6 +882,8 @@ ResumeExecution:
         }
         pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
     }
+    else
+        Assert(pVM->hwaccm.s.svm.idLastCpu == pCpu->idCpu);
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
@@ -1543,8 +1545,8 @@ ResumeExecution:
 
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
 
-            /** @note Force a TLB flush. SVM requires us to do it manually. */
-            pVM->hwaccm.s.svm.fForceTLBFlush = true;
+            /* Must be set by PGMSyncCR3 */
+            Assert(pVM->hwaccm.s.svm.fForceTLBFlush);
         }
         if (rc == VINF_SUCCESS)
         {
