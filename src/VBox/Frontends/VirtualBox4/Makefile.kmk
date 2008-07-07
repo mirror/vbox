@@ -190,7 +190,7 @@ ifdef USE_KBUILD_QT_UNIT
  TEMPLATE_VBOXQT4GUIEXE_MOCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_UITOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_RCCTOOL = QT4
- TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
+# TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
 endif # USE_KBUILD_QT_UNIT
 TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
 TEMPLATE_VBOXQT4GUIEXE_INCS = \
@@ -811,10 +811,10 @@ $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(ca
 #
 # Translation installation
 #
-VirtualBox.nls_INST = $(INST_BIN)nls4/
-VirtualBox.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS)))
-VirtualBox.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS_QT)))
-VirtualBox.nls_MODE = 644
+VirtualBox4.nls_INST = $(INST_BIN)nls4/
+VirtualBox4.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS)))
+VirtualBox4.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS_QT)))
+VirtualBox4.nls_MODE = 644
 
 
 #
@@ -1088,11 +1088,4 @@ endif # USE_KBUILD_QT_UNIT
 # alias for generating the COM Wrappers file.
 testwrappers:: $(WRAPPERSFILE)
 
-
-ifdef USE_KBUILD_QT_UNIT
-
- include $(KBUILD_PATH)/units/qt.kmk
- $(foreach target,VirtualBox4,$(evalval def_unit_qt_target_pre))
-
-endif # USE_KBUILD_QT_UNIT
-
+$(warning VirtualBox4_BLDDIRS=$(VirtualBox4_BLDDIRS))
