@@ -323,7 +323,17 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     && (off & 7)
                     && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
                 {
-                    AssertFailed();
+                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
+                    AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPTPae->a));
+
+#  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+                    PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
+                    Log4(("pgmPoolMonitorChainChanging pae_32: deref %VHp GCPhys %VGp\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                    pgmPoolTracDerefGCPhysHint(pPool, pPage,
+                                               uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
+                                               pGstPte->u & X86_PTE_PAE_PG_MASK);
+#  endif
+                    uShw.pPTPae->a[iShw].u = 0;
                 }
 
                 break;
@@ -341,7 +351,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 else if (   pCpu
                          && (off & 3)
-                         && (off & 3) + pgmPoolDisasWriteSize(pCpu) > 4)
+                         && (off & 3) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTE))
                 {
                     const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTE);
                     if (    iShw2 != iShw
@@ -673,17 +683,18 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pCpu, unsi
 
 
 /**
- * Determin whether the page is likely to have been reused.
+ * Determine whether the page is likely to have been reused.
  *
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
  * @param   pPage       The page in question.
+ * @param   pRegFrame   Trap register frame.
  * @param   pCpu        The disassembly info for the faulting insturction.
  * @param   pvFault     The fault address.
  *
  * @remark  The REP prefix check is left to the caller because of STOSD/W.
  */
-DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PDISCPUSTATE pCpu, RTGCPTR pvFault)
+DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR pvFault)
 {
     switch (pCpu->pCurInstr->opcode)
     {
@@ -705,6 +716,17 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PDISCPUSTATE pCpu, R
         case OP_MOVNTDQ:    /* solaris - hwblkclr & hwblkpagecopy */
             Log4(("pgmPoolMonitorIsReused: MOVNTDQ\n"));
             return true;
+        case OP_STOSWD:
+            if (    pRegFrame
+                &&  pCpu->prefix == PREFIX_REP
+                &&  pRegFrame->rcx == 0x200
+                &&  pCpu->mode == CPUMODE_64BIT
+               )
+            {
+                Log4(("pgmPoolMonitorIsReused: OP_STOSQ\n"));
+                return true;
+            }
+            return false;
     }
     if (    (pCpu->param1.flags & USE_REG_GEN32)
         &&  (pCpu->param1.base.reg_gen == USE_REG_ESP))
@@ -926,7 +948,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pPage->fCR3Mix)
-        &&  !(fReused = pgmPoolMonitorIsReused(pPage, &Cpu, pvFault))
+        &&  !(fReused = pgmPoolMonitorIsReused(pPage, pRegFrame, &Cpu, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, &Cpu, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
