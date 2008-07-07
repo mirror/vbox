@@ -60,6 +60,7 @@
 #include <VBox/VBoxHDD.h>
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/version.h>
+#include <package-generated.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
@@ -95,6 +96,9 @@ static const char gDefaultGlobalConfig [] =
 
 // static
 Bstr VirtualBox::sVersion;
+
+// static
+Bstr VirtualBox::sPackageType;
 
 // static
 Bstr VirtualBox::sSettingsFormatVersion;
@@ -146,7 +150,9 @@ HRESULT VirtualBox::init()
 
     if (sVersion.isNull())
         sVersion = VBOX_VERSION_STRING;
-    LogFlowThisFunc (("Version: %ls\n", sVersion.raw()));
+    if (sPackageType.isNull())
+        sPackageType = VBOX_PACKAGE_STRING;
+    LogFlowThisFunc (("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
 
     if (sSettingsFormatVersion.isNull())
         sSettingsFormatVersion = VBOX_XML_VERSION_FULL;
@@ -471,6 +477,18 @@ STDMETHODIMP VirtualBox::COMGETTER(Version) (BSTR *aVersion)
     CheckComRCReturnRC (autoCaller.rc());
 
     sVersion.cloneTo (aVersion);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::COMGETTER(PackageType) (BSTR *aPackageType)
+{
+    if (!aPackageType)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    sVersion.cloneTo (aPackageType);
     return S_OK;
 }
 
