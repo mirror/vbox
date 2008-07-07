@@ -429,6 +429,9 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     /* Default is invisible */
     mProgressBar->setVisible (false);
 
+    /* Set the default button */
+    mButtonBox->button (QDialogButtonBox::Ok)->setDefault (true);
+
     /* Connects for the button box */
     connect (mButtonBox, SIGNAL (accepted()),
              this, SLOT (accept()));
