@@ -755,9 +755,8 @@ PGMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, P
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            pgmPoolSyncCR3(pVM);
+            rc = pgmPoolSyncCR3(pVM);
         }
-
         AssertRCReturn(rc, rc);
     }
     else
@@ -851,7 +850,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            pgmPoolSyncCR3(pVM);
+            rc = pgmPoolSyncCR3(pVM);
         }
         AssertRCReturn(rc, rc);
     }
@@ -891,7 +890,7 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            pgmPoolSyncCR3(pVM);
+            rc = pgmPoolSyncCR3(pVM);
         }
         AssertRCReturn(rc, rc);
     }
