@@ -3660,6 +3660,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
                 STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
                 return rc;
             }
+            Log(("pgmPoolMakeMoreFreePages failed with %Vrc -> return VERR_PGM_POOL_FLUSHED\n", rc));
             rc = VERR_PGM_POOL_FLUSHED;
         }
         iNew = pPool->iFreeHead;
@@ -3708,6 +3709,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
             Log(("pgmPoolAlloc: returns %Vrc (Insert)\n", rc3));
             return rc3;
         }
+        Log(("pgmPoolTrackInsert failed with %Vrc -> return VERR_PGM_POOL_FLUSHED\n", rc3));
         rc = VERR_PGM_POOL_FLUSHED;
     }
 #endif /* PGMPOOL_WITH_USER_TRACKING */
