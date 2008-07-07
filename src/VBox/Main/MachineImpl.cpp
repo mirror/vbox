@@ -2677,76 +2677,71 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
 
-/**
- * Read a value from the host/guest property store.  If a session is
- * currently open for the guest then query the session object for the value,
- * since the current values of the property store will be held in RAM in the
- * session.  Otherwise read the value from machine extra data, where it is
- * stored between sessions.  Returns E_FAIL if we are currently transitioning
- * between states.
- */
 STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
+#if !defined (VBOX_WITH_INFO_SVC)
+    return E_NOTIMPL;
 #else
-    if (!VALID_PTR(aKey))
-        return E_POINTER;
-    if (!VALID_PTR(aValue))
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if (!VALID_PTR (aValue))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    AutoReadLock alock (this);
+
     using namespace svcInfo;
-    HRESULT hrc = E_FAIL;
+    HRESULT rc = E_FAIL;
 
     switch (mData->mSession.mState)
     {
         case SessionState_Closed:
         {
-            AutoReadLock alock (this);
-
             /* The "+ 1" in the length is the null terminator. */
-            Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
+            Bstr strKey (Bstr (aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
             BSTR strKeyRaw = strKey.mutableRaw();
 
             /* String manipulation in Main is pretty painful, especially given
              * how often it is needed. */
             for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
                 /* I take it this is legal, at least g++ accepts it. */
-                strKeyRaw[i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
+                strKeyRaw [i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
             /* The "+ 1" in the length is the null terminator. */
-            for (unsigned i = 0, len = Bstr(aKey).length() + 1; i < len; ++i)
-                strKeyRaw[i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey[i];
-            hrc = GetExtraData(strKey, aValue);
+            for (unsigned i = 0, len = Bstr (aKey).length() + 1; i < len; ++i)
+                strKeyRaw [i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey [i];
+            rc = GetExtraData (strKey, aValue);
             break;
         }
         case SessionState_Open:
         {
-            ComPtr <IInternalSessionControl> directControl;
+            if (mData->mSession.mState != SessionState_Open)
             {
-                AutoReadLock alock (this);
-        
-                if (mData->mSession.mState != SessionState_Open)
-                    return setError (E_FAIL,
-                        tr ("Machine session is not open (session state: %d) - please retry."),
-                        mData->mSession.mState);
-        
-                directControl = mData->mSession.mDirectControl;
+                rc = setError (E_FAIL,
+                    tr ("Session is not open (session state: %d)"),
+                    mData->mSession.mState);
+                break;
             }
 
-            hrc = directControl->AccessGuestProperty (aKey, NULL,
-                                                      false /* isSetter */,
-                                                      aValue);
+            ComPtr <IInternalSessionControl> directControl =
+                mData->mSession.mDirectControl;
+
+            /* just be on the safe side when calling another process */
+            alock.unlock();
+
+            rc = directControl->AccessGuestProperty (aKey, NULL,
+                                                     false /* isSetter */,
+                                                     aValue);
             break;
         }
         default:
-            hrc = setError (E_FAIL, tr ("Machine session is currently transitioning (session state: %d) - please retry."),
-                            mData->mSession.mState);
+            rc = setError (E_FAIL,
+                tr ("Session is currently transitioning (session state: %d)"),
+                mData->mSession.mState);
     }
-#endif  /* VBOX_WITH_INFO_SVC not defined */
-    return hrc;
+    return rc;
+#endif /* else !defined (VBOX_WITH_INFO_SVC) */
 }
 
 /**
@@ -2759,67 +2754,71 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
  */
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
+#if !defined (VBOX_WITH_INFO_SVC)
+    return E_NOTIMPL;
 #else
-    if (!VALID_PTR(aKey))
-        return E_POINTER;
-    if ((aValue != NULL) && !VALID_PTR(aValue))
-        return E_POINTER;
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if ((aValue != NULL) && !VALID_PTR (aValue))
+        return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* SetExtraData() needs a write lock */
+    AutoWriteLock alock (this);
+
     using namespace svcInfo;
-    HRESULT hrc = E_FAIL;
+    HRESULT rc = E_FAIL;
 
     switch (mData->mSession.mState)
     {
         case SessionState_Closed:
         {
-            AutoWriteLock alock (this);
-
             /* The "+ 1" in the length is the null terminator. */
-            Bstr strKey(Bstr(aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
+            Bstr strKey (Bstr (aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
             BSTR strKeyRaw = strKey.mutableRaw();
 
             /* String manipulation in Main is pretty painful, especially given
              * how often it is needed. */
             for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
                 /* I take it this is legal, at least g++ accepts it. */
-                strKeyRaw[i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
+                strKeyRaw [i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
             /* The "+ 1" in the length is the null terminator. */
-            for (unsigned i = 0, len = Bstr(aKey).length() + 1; i < len; ++i)
-                strKeyRaw[i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey[i];
-            hrc = SetExtraData(strKey, aValue);
+            for (unsigned i = 0, len = Bstr (aKey).length() + 1; i < len; ++i)
+                strKeyRaw [i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey [i];
+            rc = SetExtraData (strKey, aValue);
             break;
         }
         case SessionState_Open:
         {
-            ComPtr <IInternalSessionControl> directControl;
+            if (mData->mSession.mState != SessionState_Open)
             {
-                AutoReadLock alock (this);
-        
-                if (mData->mSession.mState != SessionState_Open)
-                    return setError (E_FAIL,
-                        tr ("Machine session is not open (session state: %d) - please retry."),
-                        mData->mSession.mState);
-        
-                directControl = mData->mSession.mDirectControl;
+                rc = setError (E_FAIL,
+                    tr ("Session is not open (session state: %d)"),
+                    mData->mSession.mState);
+                break;
             }
 
-            BSTR dummy;
-            hrc = directControl->AccessGuestProperty (aKey, aValue,
-                                                      true /* isSetter */,
-                                                      &dummy);
+            ComPtr <IInternalSessionControl> directControl =
+                mData->mSession.mDirectControl;
+
+            /* just be on the safe side when calling another process */
+            alock.leave();
+
+            BSTR dummy = NULL;
+            rc = directControl->AccessGuestProperty (aKey, aValue,
+                                                     true /* isSetter */,
+                                                     &dummy);
             break;
         }
         default:
-            hrc = setError (E_FAIL, tr ("Machine session is currently transitioning (session state: %d) - please retry."),
-                            mData->mSession.mState);
+            rc = setError (E_FAIL,
+                tr ("Session is currently transitioning (session state: %d)"),
+                mData->mSession.mState);
     }
-#endif  /* VBOX_WITH_INFO_SVC not defined */
-    return hrc;
+    return rc;
+#endif /* else !defined (VBOX_WITH_INFO_SVC) */
 }
 
 STDMETHODIMP Machine::GetProcessorUsage (ULONG *aUser, ULONG *aSystem)
