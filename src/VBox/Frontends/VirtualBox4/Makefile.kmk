@@ -421,6 +421,91 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
 endif # darwin
 
+VirtualBox4_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
+VirtualBox4_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
+VirtualBox4_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
+VirtualBox4_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.linux     = VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
+VirtualBox4_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
+#ifndef VBOX_OSE
+## @todo VBOX_WITH_HACKED_QT doesn't apply to Qt4, so why is this still here?
+ VirtualBox4_DEFS.darwin  += VBOX_WITH_HACKED_QT
+#endif
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBox4_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
+endif
+ifneq ($(KBUILD_TYPE),release)
+ # non-release builds has some extra features.
+ VirtualBox4_DEFS.win     += VBOX_GUI_USE_DDRAW
+ VirtualBox4_DEFS.linux   += VBOX_GUI_USE_QIMAGE
+endif
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION
+endif
+ifdef VBOX_WITH_REGISTRATION_REQUEST
+ VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION_REQUEST
+endif
+ifdef VBOX_WITH_ALSA
+ VirtualBox4_DEFS         += VBOX_WITH_ALSA
+endif
+ifdef VBOX_WITH_PULSE
+ VirtualBox4_DEFS         += VBOX_WITH_PULSE
+endif
+ifdef VBOX_WITH_E1000
+ VirtualBox4_DEFS         += VBOX_WITH_E1000
+endif
+ifdef VBOX_OSE
+ VirtualBox4_DEFS         += VBOX_OSE
+endif
+ifdef VBOX_WITH_DEBUGGER_GUI
+ VirtualBox4_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
+endif
+
+VirtualBox4_INCS           = \
+	./include \
+	$(PATH_VirtualBox4)/include
+ifndef USE_KBUILD_QT_UNIT
+ VirtualBox4_INCS         += \
+ 	$(PATH_VirtualBox4)/ui \
+ 	$(PATH_VirtualBox4)/moc
+endif
+
+
+ifeq ($(KBUILD_TYPE),release)
+ VirtualBox4_LDFLAGS.win  += /SUBSYSTEM:windows
+else
+ VirtualBox4_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
+ ifeq ($(USERNAME),dmik)
+  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:windows
+ else
+  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:console
+ endif
+endif
+VirtualBox4_LDFLAGS.darwin = -framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -lz
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBox4_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
+endif
+VirtualBox4_LIBS.win       = \
+	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
+	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
+	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
+ VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard4$(VBOX_SUFF_DLL)
+endif
+
+ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
+ ifeq ($(KBUILD_TARGET),win)
+  VirtualBox4_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
+ else
+  VirtualBox4_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
+ endif
+endif
+
+
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox4_QT_MOCHDRS = \
 	include/QIWidgetValidator.h \
@@ -478,9 +563,11 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxSettingsPage.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
-VirtualBox4_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
+VirtualBox4_QT_MOCSRCS = \
+	src/VBoxSelectorWnd.cpp
 ifdef VBOX_WITH_XPCOM
- VirtualBox4_QT_MOCSRCS += src/COMDefs.cpp
+ VirtualBox4_QT_MOCSRCS += \
+	src/COMDefs.cpp
 endif
 
 VirtualBox4_SOURCES = \
@@ -562,93 +649,11 @@ VirtualBox4_SOURCES.darwin = \
 	src/darwin/DarwinCursor.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
 	src/VBoxFBQuartz2D.cpp
-#	src/darwin/VBoxAquaStyle.cpp \
+#	src/darwin/VBoxAquaStyle.cpp
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox4_SOURCES.darwin += \
 	 src/darwin/VBoxIChatTheaterWrapper.m
-endif
-
-VirtualBox4_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
-VirtualBox4_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox4_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
-VirtualBox4_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.linux     = VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
-VirtualBox4_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
-#ifndef VBOX_OSE
-## @todo VBOX_WITH_HACKED_QT doesn't apply to Qt4, so why is this still here?
- VirtualBox4_DEFS.darwin  += VBOX_WITH_HACKED_QT
-#endif
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox4_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
-endif
-ifneq ($(KBUILD_TYPE),release)
- # non-release builds has some extra features.
- VirtualBox4_DEFS.win     += VBOX_GUI_USE_DDRAW
- VirtualBox4_DEFS.linux   += VBOX_GUI_USE_QIMAGE
-endif
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION
-endif
-ifdef VBOX_WITH_REGISTRATION_REQUEST
- VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION_REQUEST
-endif
-ifdef VBOX_WITH_ALSA
- VirtualBox4_DEFS         += VBOX_WITH_ALSA
-endif
-ifdef VBOX_WITH_PULSE
- VirtualBox4_DEFS         += VBOX_WITH_PULSE
-endif
-ifdef VBOX_WITH_E1000
- VirtualBox4_DEFS         += VBOX_WITH_E1000
-endif
-ifdef VBOX_OSE
- VirtualBox4_DEFS         += VBOX_OSE
-endif
-ifdef VBOX_WITH_DEBUGGER_GUI
- VirtualBox4_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
-endif
-
-VirtualBox4_INCS           = \
-	./include \
-	$(PATH_VirtualBox4)/ui \
-	$(PATH_VirtualBox4)/moc \
-	$(PATH_VirtualBox4)/include \
-
-
-ifeq ($(KBUILD_TYPE),release)
- VirtualBox4_LDFLAGS.win  += /SUBSYSTEM:windows
-else
- VirtualBox4_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
- ifeq ($(USERNAME),dmik)
-  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:windows
- else
-  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:console
- endif
-endif
-VirtualBox4_LDFLAGS.darwin = -framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -lz
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox4_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
-endif
-VirtualBox4_LIBS.win       = \
-	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
-	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
-	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
- VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard4$(VBOX_SUFF_DLL)
-endif
-
-
-ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
- ifeq ($(KBUILD_TARGET),win)
-  VirtualBox4_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
- else
-  VirtualBox4_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
- endif
 endif
 
 ifdef USE_KBUILD_QT_UNIT
@@ -762,29 +767,28 @@ endif
 $(PATH_TARGET)/VirtualBox4.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
-	$(CAT) $@
 
-OTHER_CLEAN.win += $(PATH_TARGET)/VirtualBox4.rc
+VirtualBox4_CLEAN.win += $(PATH_TARGET)/VirtualBox4.rc
 
 
 #
 # Other stuff.
 #
-WRAPPERSFILE        = $(PATH_VirtualBox4)/include/COMWrappers.h
+VBOX_WRAPPERS_FILE4 = $(PATH_VirtualBox4)/include/COMWrappers.h
 VirtualBox4_BLDDIRS += $(PATH_VirtualBox4)/include/
-VirtualBox4_INTERMEDIATES = $(WRAPPERSFILE)
+VirtualBox4_INTERMEDIATES = $(VBOX_WRAPPERS_FILE4)
 
-WRAPPERSINCFILE     = include/COMDefs.h
-WRAPPERSTEMPLATE    = include/COMWrappers.xsl
-XIDLFILE            = ../../Main/idl/VirtualBox.xidl
+VBOX_WRAPPERS_INC_FILE4 = include/COMDefs.h
+VBOX_WRAPPERS_TEMPLATE4 = include/COMWrappers.xsl
+VBOX_WRAPPERS_XIDLFILE4 = ../../Main/idl/VirtualBox.xidl
 
 
 
 # generated files we need to clean manually
-OTHER_CLEAN           = \
+OTHER_CLEAN = \
 	$(VirtualBox4_GENSRCS) \
 	$(VirtualBox4_GENHDRS) \
-	$(WRAPPERSFILE) \
+	$(VBOX_WRAPPERS_FILE4) \
 	$(PATH_BIN)/vboxkeyboard.tar.gz
 
 
@@ -1054,11 +1058,11 @@ endif # !USE_KBUILD_QT_UNIT
 #
 # Generate the COM wrappers.
 #
-$(WRAPPERSINCFILE): $(WRAPPERSFILE)
+$(VBOX_WRAPPERS_INC_FILE4): $(VBOX_WRAPPERS_FILE4)
 
-$(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualBox4)/include/)
+$(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | $(call DIRDEP,$(PATH_VirtualBox4)/include/)
 	$(call MSG_TOOL,xsltproc,VirtualBox4,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(WRAPPERSTEMPLATE) $<
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
 
 
 #
@@ -1102,5 +1106,5 @@ test3:
 endif # USE_KBUILD_QT_UNIT
 
 # alias for generating the COM Wrappers file.
-testwrappers:: $(WRAPPERSFILE)
+testwrappers:: $(VBOX_WRAPPERS_FILE4)
 
