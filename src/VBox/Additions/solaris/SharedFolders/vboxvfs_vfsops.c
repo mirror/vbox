@@ -32,7 +32,12 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/err.h>
-
+#if defined(DEBUG_ramshankar)
+# undef LogFlow
+# define LogFlow        LogRel
+# undef Log
+# define Log            LogRel
+#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -66,8 +71,8 @@ static int vboxvfs_GetIntOpt(vfs_t *pVFS, char *pszOpt, int *pValue);
 static mntopt_t g_VBoxVFSMountOptions[] =
 {
     /* Option Name           Cancel Opt.     Default Arg       Flags           Data */
-    { MNTOPT_VBOXVFS_UID,    NULL,           NULL,             MO_HASVALUE,    NULL },
-    { MNTOPT_VBOXVFS_GID,    NULL,           NULL,             MO_HASVALUE,    NULL }
+    { MNTOPT_VBOXVFS_UID,    NULL,           "0",             MO_DEFAULT | MO_HASVALUE,    NULL },
+    { MNTOPT_VBOXVFS_GID,    NULL,           "0",             MO_DEFAULT | MO_HASVALUE,    NULL }
 };
 
 /**
@@ -383,7 +388,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
         }
         else
         {
-            LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));            
+            LogRel((DEVICE_NAME ":VBoxVFS_Mount: RTMemAllocZ failed to alloc %d bytes for ShFlShareName.\n", cbShflShareName));
             rc = ENOMEM;
         }
         RTMemFree(pVBoxVFSGlobalInfo);
@@ -397,7 +402,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     /* Undo work on failure. */
     if (rc)
         goto mntError1;
-    
+
     /* Initialize the per-filesystem mutex */
     mutex_init(&pVBoxVFSGlobalInfo->MtxFS, "VBoxVFS_FSMtx", MUTEX_DEFAULT, NULL);
 
@@ -457,10 +462,10 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     }
 
     /* Undo work in reverse. */
-mntError1:           
+mntError1:
     /* Just release the mount location. */
     VOP_CLOSE(pVNodeDev, (pVFS->vfs_flag & VFS_RDONLY) ? FREAD : FREAD | FWRITE, 1, (offset_t)0, pCred, NULL);
-    VN_RELE(pVNodeDev);        
+    VN_RELE(pVNodeDev);
     return rc;
 }
 
@@ -479,7 +484,7 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
         return EPERM;
     }
 
-    /* @todo -XXX - Not sure of supporting force unmounts. What this means is that a failed force mount could bring down 
+    /* @todo -XXX - Not sure of supporting force unmounts. What this means is that a failed force mount could bring down
      * the entire system as hanging about vnode releases would no longer be valid after unloading ourselves...
      */
     if (fUnmount & MS_FORCE)
