@@ -208,53 +208,49 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* Creating settings pages */
     VBoxSettingsPage *page = 0;
 
-    page = attachPage ((VBoxSettingsPage*) new VBoxVMSettingsGeneral());
+    page = attachPage (new VBoxVMSettingsGeneral());
     connect (page, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
 
-    page = attachPage ((VBoxSettingsPage*) new VBoxVMSettingsHD());
+    page = attachPage (new VBoxVMSettingsHD());
     connect (page, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
 
-    page = attachPage ((VBoxSettingsPage*) new VBoxVMSettingsCD());
+    page = attachPage (new VBoxVMSettingsCD());
     connect (page, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
 
-    page = attachPage ((VBoxSettingsPage*) new VBoxVMSettingsFD());
+    page = attachPage (new VBoxVMSettingsFD());
     connect (page, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsAudio());
+    attachPage (new VBoxVMSettingsAudio());
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsNetworkPage());
+    attachPage (new VBoxVMSettingsNetworkPage());
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsSerialPage());
+    attachPage (new VBoxVMSettingsSerialPage());
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsParallelPage());
+    attachPage (new VBoxVMSettingsParallelPage());
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType));
+    attachPage (new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType));
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsSF (MachineType));
+    attachPage (new VBoxVMSettingsSF (MachineType));
 
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsVRDP());
+    attachPage (new VBoxVMSettingsVRDP());
 
     /* Setup Settings Dialog */
     if (!aCategory.isNull())
     {
         /* Search for a list view item corresponding to the category */
-        QTreeWidgetItem *item = findItem (mTwSelector, aCategory, treeWidget_Link);
-        if (item)
+        if (QTreeWidgetItem *item = findItem (mTwSelector, aCategory, treeWidget_Link))
         {
             mTwSelector->setCurrentItem (item);
-
             /* Search for a widget with the given name */
             if (!aControl.isNull())
             {
-                QObject *obj = mStack->currentWidget()->findChild<QWidget*> (aControl);
-                if (obj && obj->isWidgetType())
+                if (QWidget *w = mStack->currentWidget()->findChild<QWidget*> (aControl))
                 {
-                    QWidget *w = static_cast<QWidget*> (obj);
                     QList<QWidget*> parents;
                     QWidget *p = w;
                     while ((p = p->parentWidget()) != NULL)
                     {
-                        if (p->inherits ("QTabWidget"))
+                        if (QTabWidget *tb = qobject_cast<QTabWidget*> (p))
                         {
                             /* The tab contents widget is two steps down
                              * (QTabWidget -> QStackedWidget -> QWidget) */
@@ -262,7 +258,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                             if (c)
                                 c = parents [parents.count() - 2];
                             if (c)
-                                static_cast<QTabWidget*> (p)->setCurrentWidget (c);
+                                tb->setCurrentWidget (c);
                         }
                         parents.append (p);
                     }
