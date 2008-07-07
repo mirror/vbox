@@ -60,15 +60,6 @@ static const char main_key_us[MAIN_LEN][2] =
 "zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","<>","\x0\x0","\x0\x0"
 };
 
-/* U.S. English, no 102nd key */
-static const char main_key_us_101[MAIN_LEN][2] =
-{
-"`~","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","-_","=+",
-"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","[{","]}",
-"aA","sS","dD","fF","gG","hH","jJ","kK","lL",";:","'\"","\\|",
-"zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","\x0\x0","\x0\x0","\x0\x0"
-};
-
 /* U.S. English, International (with dead keys) */
 static const char main_key_us_intl[MAIN_LEN][2] =
 {
@@ -1005,6 +996,60 @@ static const char main_key_de_neo[MAIN_LEN][2] =
 "\xf6\xd6","\xfc\xdc","\xe4\xc4","pP","zZ","bB","mM",",;",".:","xX","<>","\x0\x0","\x0\x0"
 };
 
+/* Germany, paragraph */
+static const char main_key_de_para[MAIN_LEN][2] =
+{
+"R\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","\xdf?","QP",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
+/* Germany, Dead acute, paragraph */
+static const char main_key_de_deadacute_para[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","\xdf?","Q`",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
+/* Germany, Dead grave acute, paragraph */
+static const char main_key_de_deadgraveacute_para[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","\xdf?","QP",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
+/* Germany, Eliminate dead keys, paragraph */
+static const char main_key_de_nodeadkeys_para[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","\xdf?","\xb4`",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
+/* Germany, Eliminate dead keys, acute replaced by apostrophe, paragraph */
+static const char main_key_de_nodeadkeys_noacute_para[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","\xdf?","\x27`",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
+/* Germany, Dvorak, paragraph */
+static const char main_key_de_dvorak_para[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xb6","4$","5%","6&","7/","8(","9)","0=","+*","<>",
+"\xfc\xdc",",;",".:","pP","yY","fF","gG","cC","tT","zZ","?\xdf","/\\",
+"aA","oO","eE","iI","uU","hH","dD","rR","nN","sS","lL","-_",
+"\xf6\xd6","qQ","jJ","kK","xX","bB","mM","wW","vV","#'","\xe4\xc4","\x0\x0","\x0\x0"
+};
+
 /* Greece */
 static const char main_key_gr[MAIN_LEN][2] =
 {
@@ -1152,19 +1197,10 @@ static const char main_key_it_mac[MAIN_LEN][2] =
 /* Japan */
 static const char main_key_jp[MAIN_LEN][2] =
 {
-"*!","1!","2\"","3#","4$","5%","6&","7'","8(","9)","0~","-=","^~",
+"\x0\x0","1!","2\"","3#","4$","5%","6&","7'","8(","9)","0~","-=","^~",
 "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","@`","[{",
 "aA","sS","dD","fF","gG","hH","jJ","kK","lL",";+",":*","]}",
 "zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","<>","\\_","\\|"
-};
-
-/* Japan no 102nd key */
-static const char main_key_jp_no_102[MAIN_LEN][2] =
-{
-"*!","1!","2\"","3#","4$","5%","6&","7'","8(","9)","0~","-=","^~",
-"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","@`","[{",
-"aA","sS","dD","fF","gG","hH","jJ","kK","lL",";+",":*","]}",
-"zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?","\x0\x0","\\_","\\|"
 };
 
 /* Kyrgyzstan */
