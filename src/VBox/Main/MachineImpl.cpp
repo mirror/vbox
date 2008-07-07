@@ -2744,14 +2744,6 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 #endif /* else !defined (VBOX_WITH_INFO_SVC) */
 }
 
-/**
- * Write a value to the host/guest property store.  If a session is
- * currently open for the guest then query the session object for the value,
- * since the current values of the property store will be held in RAM in the
- * session.  Otherwise read the value from machine extra data, where it is
- * stored between sessions.  Returns E_FAIL if we are currently transitioning
- * between states.
- */
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
 #if !defined (VBOX_WITH_INFO_SVC)

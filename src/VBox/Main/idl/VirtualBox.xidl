@@ -3471,8 +3471,6 @@
       <desc>
         Reads a value from the machine's host/guest property store.
 
-        Reads a value from the machine's host/guest property store.
-
         If a session for this virtual machine is currently open then queries the
         session object for the value, since the current values of the property
         store will be held in RAM in the session. Otherwise reads the value from
