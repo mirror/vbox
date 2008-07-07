@@ -48,6 +48,9 @@ public:
     void setSizeGripEnabled (bool aEnabled);
     bool isSizeGripEnabled () const;
 
+    void setDefaultButton (QPushButton* aButton);
+    QPushButton* defaultButton () const;
+
 public slots:
 
     virtual void setVisible (bool aVisible);
@@ -79,8 +82,7 @@ private:
     QString mFileForProxyIcon;
 
     QPointer<QSizeGrip> mSizeGrip;
-
-    QPushButton* mDefaultButton;
+    QPointer<QPushButton> mDefaultButton;
 };
 
 #endif /* __QIMainDialog_h__ */

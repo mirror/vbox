@@ -40,7 +40,6 @@
 QIMainDialog::QIMainDialog (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QMainWindow (aParent, aFlags) 
     , mRescode (QDialog::Rejected)
-    , mDefaultButton (NULL)
 {
     qApp->installEventFilter (this);
 }
@@ -110,6 +109,17 @@ bool QIMainDialog::isSizeGripEnabled () const
 {
     return mSizeGrip;
 }
+
+void QIMainDialog::setDefaultButton (QPushButton* aButton)
+{
+    mDefaultButton = aButton;
+}
+
+QPushButton* QIMainDialog::defaultButton() const
+{
+    return mDefaultButton;
+}
+
 
 void QIMainDialog::setVisible (bool aVisible)
 {
@@ -276,7 +286,7 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                                     {
                                         /* We handle this, so return true after
                                          * that. */
-                                        currentDefault->click();
+                                        currentDefault->animateClick();
                                         return true;
                                     }
                                     break;
