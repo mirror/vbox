@@ -3152,7 +3152,10 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             }
             break;
 
-        //case PGMMODE_PAE_NX:
+        case PGMMODE_PAE_NX:    /* VT-x/AMD-V only */
+            Assert(HWACCMIsEnabled(pVM));
+            /* no break */
+
         case PGMMODE_PAE:
         {
             uint32_t u32Dummy, u32Features;
