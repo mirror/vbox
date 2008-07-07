@@ -110,16 +110,18 @@ VBoxVMLogViewer::VBoxVMLogViewer (QWidget *aParent,
     connect (mBtnSave, SIGNAL (clicked()), this, SLOT (save()));
     connect (mBtnRefresh, SIGNAL (clicked()), this, SLOT (refresh()));
 
-    /* Save is default */
-    mBtnSave->setDefault (true);
-    /* Make the [Save] button focused by default */
-    mBtnSave->setFocus();
-
     /* Reading log files */
     refresh();
-
+    /* Set the focus to the initial default button */
+    defaultButton()->setDefault (true);
+    defaultButton()->setFocus();
+#ifdef Q_WS_MAC
+    /* We have to force this to get the default button L&F on the mac. */
+    defaultButton()->setEnabled (true);
+#endif /* Q_WS_MAC */
     /* Loading language constants */
     retranslateUi();
+
 }
 
 VBoxVMLogViewer::~VBoxVMLogViewer()
@@ -200,6 +202,10 @@ void VBoxVMLogViewer::refresh()
     mBtnFind->setEnabled (isAnyLogPresent);
     mBtnSave->setEnabled (isAnyLogPresent);
     mLogList->setEnabled (isAnyLogPresent);
+    /* Default to the save button if there are any log files otherwise to the
+     * close button. The initial automatic of the main dialog has to be
+     * overwritten */
+    setDefaultButton (isAnyLogPresent ? mBtnSave:mBtnClose);
 }
 
 void VBoxVMLogViewer::save()
