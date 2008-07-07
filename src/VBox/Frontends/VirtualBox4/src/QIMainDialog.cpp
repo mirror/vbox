@@ -262,14 +262,17 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
             }
         case QEvent::KeyPress:
             {
+                /* Make sure that we only proceed if no
+                 * popup or other modal widgets are open. */
+                if (aObject != this ||
+                    qApp->activePopupWidget() != NULL ||
+                    !(qApp->activeModalWidget() == this || 
+                      qApp->activeModalWidget() == NULL))
+                    break;
                 QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
 #ifdef Q_WS_MAC
                 if (event->modifiers() == Qt::ControlModifier && 
-                    event->key() == Qt::Key_Period &&
-                    aObject == this &&
-                    qApp->activePopupWidget() == NULL &&
-                    (qApp->activeModalWidget() == this || 
-                     qApp->activeModalWidget() == NULL))
+                    event->key() == Qt::Key_Period)
                     reject();
                 else
 #endif
@@ -293,16 +296,8 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                                 }
                             case Qt::Key_Escape:
                                 {
-                                    /* Make sure that we only reject if no
-                                     * popup or other modal widgets are open. */
-                                    if (aObject == this &&
-                                        qApp->activePopupWidget() == NULL &&
-                                        (qApp->activeModalWidget() == this || 
-                                         qApp->activeModalWidget() == NULL))
-                                    {
-                                        reject();
-                                        return true;
-                                    }
+                                    reject();
+                                    return true;
                                     break;
                                 }
                         }
