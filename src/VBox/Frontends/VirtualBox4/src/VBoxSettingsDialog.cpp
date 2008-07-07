@@ -90,6 +90,9 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent)
         mWarnIconLabel->setWarningPixmap (icon.pixmap (16, 16));
     mButtonBox->addExtraWidget (mWarnIconLabel);
 
+    /* Set the default button */
+    mButtonBox->button (QDialogButtonBox::Ok)->setDefault (true);
+
     /* Setup connections */
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
