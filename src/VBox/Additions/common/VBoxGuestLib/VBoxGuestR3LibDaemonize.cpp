@@ -130,10 +130,16 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
     /*
      * Fork the child process and quit the parent.
      *
-     * On Linux we'll fork once more at the end of it all just to be sure that
-     * we're not leaving any zombies behind. The SIGHUP stuff is ignored because
-     * the parent may throw us one before we get to the setsid stuff one some
-     * systems (BSD).
+     * This means:
+     * - fork once and become session leader (using setsid(2)) in
+     * order to detach from the controlling tty and make ourselves safe
+     * from Ctrl-C.  The fork is required because the call to setsid will
+     * fail if we were already session leader.
+     * - On Linux, fork again in order to become a non-leader member of the
+     * session, as the leader will attach to any tty it opens, accidentally
+     * or otherwise (Sys V sematics).
+     * - The SIGHUP stuff is ignored because the parent may throw us one
+     * before we get to the setsid stuff one some systems (BSD).
      */
     struct sigaction OldSigAct;
     struct sigaction SigAct;
@@ -190,7 +196,8 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
 
 # ifdef RT_OS_LINUX
     /*
-     * And fork again to avoid zomibies and stuff (non-standard daemon() behaviour).
+     * And fork again to lose session leader status (non-standard daemon()
+     * behaviour).
      */
     pid = fork();
     if (pid == -1)
