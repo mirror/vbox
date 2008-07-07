@@ -1,0 +1,166 @@
+/* $Id$ */
+/** @file
+ * VirtualBox File System Mount Helper, Solaris host.
+ * Userspace mount wrapper that parses mount (or user-specified) options
+ * and passes it to mount(2) syscall
+ */
+
+/*
+ * Copyright (C) 2008 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <sys/vfs.h>
+#include <sys/mount.h>
+
+#include "vboxvfs.h"
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static char g_achOptBuf[MAX_MNTOPT_STR] = { '\0', };
+static int g_cbOptBuf = 0;
+static const int g_RetErr = 33;
+static const int g_RetMagic = 2;
+static const int g_RetOK = 0;
+
+static void Usage(char *pszName)
+{
+    fprintf(stderr, "Usage: %s [OPTIONS] NAME MOUNTPOINT\n"
+           "Mount the VirtualBox shared folder NAME from the host system to MOUNTPOINT.\n"
+           "\n"
+           "  -w                    mount the shared folder writably (the default)\n"
+           "  -r                    mount the shared folder read-only\n"
+           "  -o OPTION[,OPTION...] use the mount options specified\n"
+           "\n", pszName);
+    fprintf(stderr, "Available mount options are:\n"
+           "\n"
+           "     rw                 mount writably (the default)\n"
+           "     ro                 mount read only\n"
+           "     uid=UID            set the default file owner user id to UID\n"
+           "     gid=GID            set the default file owner group id to GID\n"
+           "     ttl=TTL            set the \"time to live\" to TID for the dentry\n"
+           "     iocharset CHARSET  use the character set CHARSET for i/o operations (default utf8)\n"
+           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n");
+    fprintf(stderr, "Less common used options:\n"
+           "     noexec,exec,nodev,dev,nosuid,suid\n");
+    exit(1);
+}
+
+int main(int argc, char **argv)
+{
+    char *pszName      = NULL;
+    char *pszSpecial   = NULL;
+    char *pszMount     = NULL;
+    char *pszOptBufCpy = NULL;
+    char  achType[MAXFIDSZ];
+    int   c = '?';
+    int   rc = -1;
+    int   parseError = 0;
+    int   mntFlags = 0;
+    int   quietFlag = 0;
+
+    pszName = strrchr(argv[0], '/');
+    pszName = pszName ? pszName + 1 : argv[0];
+    snprintf(achType, sizeof(achType), "%s_%s", DEVICE_NAME, pszName);
+
+    while ((c = getopt(argc, argv, "o:rmoQ")) != EOF)
+    {
+        switch (c)
+        {
+            case '?':
+            {
+                parseError = 1;
+                break;
+            }
+
+            case 'q':
+            {
+                quietFlag = 1;
+                break;
+            }
+
+            case 'r':
+            {
+                mntFlags |= MS_RDONLY;
+                break;
+            }
+
+            case 'O':
+            {
+                mntFlags |= MS_OVERLAY;
+                break;
+            }
+
+            case 'm':
+            {
+                mntFlags |= MS_NOMNTTAB;
+                break;
+            }
+
+            case 'o':
+            {
+                if (strlcpy(g_achOptBuf, optarg, sizeof(g_achOptBuf)) >= sizeof(g_achOptBuf))
+                {
+                    fprintf(stderr, "%s: invalid argument: %s\n", pszName, optarg);
+                    return g_RetMagic;
+                }
+                g_cbOptBuf = strlen(g_achOptBuf);
+                break;
+            }
+
+            default:
+            {
+                Usage(pszName);
+                break;
+            }
+        }
+    }
+
+    if (   argc - optind != 2
+        || parseError)
+    {
+        Usage(pszName);
+    }
+
+    pszSpecial = argv[argc - 2];
+    pszMount = argv[argc - 1];
+
+#if 0
+    pszOptBufCpy = strdup(g_achOptBuf);
+    if (!pszOptBufCpy)
+    {
+        fprintf(stderr, "%s: out of memory.\n", pszName);
+        return g_RetMagic;
+    }
+#endif
+
+    rc = mount(pszSpecial, pszMount, mntFlags | MS_OPTIONSTR, DEVICE_NAME, NULL, 0, g_achOptBuf, MAX_MNTOPT_STR);
+    if (rc)
+    {
+        fprintf(stderr, "mount:");
+        perror(pszSpecial);
+        free(pszOptBufCpy);
+        return g_RetErr;
+    }
+
+    return g_RetOK;
+}
+

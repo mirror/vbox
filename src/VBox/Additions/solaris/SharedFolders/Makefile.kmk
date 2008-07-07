@@ -41,5 +41,12 @@ vboxvfs_LIBS          = \
 #@todo find out why the additions box freaks out with this...
 #vboxvfs_LDFLAGS      += -N drv/vboxguest
 
+#
+# mount - Userland mount wrapper for vboxvfs
+#
+PROGRAMS                += vboxvfsmount
+vboxvfsmount_TEMPLATE    = VBOXGUESTR3EXE
+vboxvfsmount_SOURCES     = vboxvfs_mount.c
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
