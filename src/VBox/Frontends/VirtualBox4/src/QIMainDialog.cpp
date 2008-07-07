@@ -257,7 +257,6 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (event->modifiers() == Qt::ControlModifier && 
                     event->key() == Qt::Key_Period &&
                     aObject == this &&
-                    qApp->activePopupWidget() == NULL  &&
                     qApp->activePopupWidget() == NULL &&
                     (qApp->activeModalWidget() == this || 
                      qApp->activeModalWidget() == NULL))
