@@ -1861,8 +1861,40 @@ void pgmPoolClearAll(PVM pVM)
     pPool->cPresent = 0;
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
 }
-#endif /* PGMPOOL_WITH_MONITORING */
 
+/**
+ * Handle SyncCR3 pool tasks
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if successfully added.
+ * @retval  VINF_PGM_SYNC_CR3 is it needs to be deferred to ring 3 (GC only)
+ * @param   pVM     The VM handle.
+ * @remark  Should only be used when monitoring is available, thus placed in
+ *          the PGMPOOL_WITH_MONITORING #ifdef.
+ */
+int pgmPoolSyncCR3(PVM pVM)
+{
+    /*
+     * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
+     * Occasionally we will have to clear all the shadow page tables because we wanted
+     * to monitor a page which was mapped by too many shadowed page tables. This operation
+     * sometimes refered to as a 'lightweight flush'.
+     */
+    if (!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL))
+        pgmPoolMonitorModifiedClearAll(pVM);
+    else
+    {
+# ifndef IN_GC
+        pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
+        pgmPoolClearAll(pVM);
+# else
+        LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
+        return VINF_PGM_SYNC_CR3;
+# endif
+    }
+    return VINF_SUCCESS;
+}
+#endif /* PGMPOOL_WITH_MONITORING */
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
 /**

@@ -3015,24 +3015,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #endif 
 
 #ifdef PGMPOOL_WITH_MONITORING
-    /*
-     * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
-     * Occationally we will have to clear all the shadow page tables because we wanted
-     * to monitor a page which was mapped by too many shadowed page tables. This operation
-     * sometimes refered to as a 'lightweight flush'.
-     */
-    if (!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL))
-        pgmPoolMonitorModifiedClearAll(pVM);
-    else
-    {
-# ifndef IN_GC
-        pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
-        pgmPoolClearAll(pVM);
-# else
-        LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
-        return VINF_PGM_SYNC_CR3;
-# endif
-    }
+    int rc = pgmPoolSyncCR3(pVM);
+    if (rc != VINF_SUCCESS)
+        return rc;
 #endif
 
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
