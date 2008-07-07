@@ -137,7 +137,7 @@ else ifeq ($(KBUILD_TARGET),linux)
   VBOX_PACKAGE_OS = LINUX
 else ifeq ($(KBUILD_TARGET),darwin)
   VBOX_PACKAGE_OS = DARWIN
-else ifeq ($(KBUILD_TARGET),solaris
+else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_PACKAGE_OS = SOLARIS
 else if1of ($(KBUILD_TARGET), dragonfly freebsd netbsd openbsd)
   VBOX_PACKAGE_OS = BSD
