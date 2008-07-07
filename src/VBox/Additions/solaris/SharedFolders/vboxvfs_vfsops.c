@@ -71,8 +71,8 @@ static int vboxvfs_GetIntOpt(vfs_t *pVFS, char *pszOpt, int *pValue);
 static mntopt_t g_VBoxVFSMountOptions[] =
 {
     /* Option Name           Cancel Opt.     Default Arg       Flags           Data */
-    { MNTOPT_VBOXVFS_UID,    NULL,           "0",              MO_HASVALUE,    NULL },
-    { MNTOPT_VBOXVFS_GID,    NULL,           "0",              MO_HASVALUE,    NULL }
+    { MNTOPT_VBOXVFS_UID,    NULL,           NULL,             MO_HASVALUE,    NULL },
+    { MNTOPT_VBOXVFS_GID,    NULL,           NULL,             MO_HASVALUE,    NULL }
 };
 
 /**
@@ -274,7 +274,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     mutex_enter(&pVNode->v_lock);
     if (   !(pMount->flags & MS_REMOUNT)
         && !(pMount->flags & MS_OVERLAY)
-        && (pVNode->v_count != -1 || (pVNode->v_flag & VROOT)))
+        && (pVNode->v_count > 1 || (pVNode->v_flag & VROOT)))
     {
         LogRel((DEVICE_NAME ":VBoxVFS_Mount: device busy.\n"));
         mutex_exit(&pVNode->v_lock);
@@ -338,7 +338,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     }
     pn_free(&PathName);
 
-    if (!rc)
+    if (rc)
         return rc;
 
     /* Get VNode of the special file being mounted. */
