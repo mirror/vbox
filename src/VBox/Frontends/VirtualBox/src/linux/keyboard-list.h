@@ -35,7 +35,6 @@
    layout. */
 
  {"U.S. English", &main_key_us},
- {"U.S. English, no 102nd key", &main_key_us_101},
  {"U.S. English, International (with dead keys)", &main_key_us_intl},
  {"U.S. English, Dvorak", &main_key_us_dvorak},
  {"U.S. English, Left handed Dvorak", &main_key_us_dvorak_l},
@@ -140,6 +139,12 @@
  {"Germany, Eliminate dead keys, acute replaced by apostrophe", &main_key_de_nodeadkeys_noacute},
  {"Germany, Dvorak", &main_key_de_dvorak},
  {"Germany, Neostyle", &main_key_de_neo},
+ {"Germany, paragraph", &main_key_de_para},
+ {"Germany, Dead acute, paragraph", &main_key_de_deadacute_para},
+ {"Germany, Dead grave acute, paragraph", &main_key_de_deadgraveacute_para},
+ {"Germany, Eliminate dead keys, paragraph", &main_key_de_nodeadkeys_para},
+ {"Germany, Eliminate dead keys, acute replaced by apostrophe, paragraph", &main_key_de_nodeadkeys_noacute_para},
+ {"Germany, Dvorak, paragraph", &main_key_de_dvorak_para},
  {"Greece", &main_key_gr},
  {"Greece, Eliminate dead keys", &main_key_gr_nodeadkeys},
  {"Greece, Polytonic", &main_key_gr_polytonic},
@@ -157,7 +162,6 @@
  {"Italy", &main_key_it},
  {"Italy, Macintosh", &main_key_it_mac},
  {"Japan", &main_key_jp},
- {"Japan, no 102nd key", &main_key_jp_no_102},
  {"Kyrgyzstan", &main_key_kg},
  {"Cambodia", &main_key_kh},
  {"Kazakhstan", &main_key_kz},

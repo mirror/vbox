@@ -363,10 +363,14 @@ X11DRV_InitKeyboardByLayout(Display *display)
         }
     }
     LOG_KB_1(("Finished mapping keyboard, matches=%d, entries=%d\n", matches, entries));
+#if 0 /* This can happen in a few situations, like a 101-key keyboard matched
+       * with a 102-key map.  Usually harmless, and if it isn't we will have
+       * to investigate in more detail than a layout dump will bring anyway. */
     if (matches != entries)
     {
         return 0;
     }
+#endif
     return 1;
 }
 
