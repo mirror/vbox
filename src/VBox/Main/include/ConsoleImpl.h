@@ -280,18 +280,24 @@ private:
      *      VMR3ReqCall (mpVM, ...
      *  </code>
      *
+     *  @note Temporarily locks the argument for writing.
+     *
      *  @sa SafeVMPtr, SafeVMPtrQuiet
      */
     typedef AutoVMCallerBase <false, false> AutoVMCaller;
 
     /**
      *  Same as AutoVMCaller but doesn't set extended error info on failure.
+     *
+     *  @note Temporarily locks the argument for writing.
      */
     typedef AutoVMCallerBase <true, false> AutoVMCallerQuiet;
 
     /**
      *  Same as AutoVMCaller but allows a null VM pointer (to trigger an error
      *  instead of assertion).
+     *
+     *  @note Temporarily locks the argument for writing.
      */
     typedef AutoVMCallerBase <false, true> AutoVMCallerWeak;
 
@@ -299,6 +305,8 @@ private:
      *  Same as AutoVMCaller but doesn't set extended error info on failure
      *  and allows a null VM pointer (to trigger an error instead of
      *  assertion).
+     *
+     *  @note Temporarily locks the argument for writing.
      */
     typedef AutoVMCallerBase <true, true> AutoVMCallerQuietWeak;
 
@@ -340,6 +348,8 @@ public:
      *      printf ("%p\n", pVM.raw());
      *  </code>
      *
+     *  @note Temporarily locks the argument for writing.
+     *
      *  @sa SafeVMPtrQuiet, AutoVMCaller
      */
     typedef SafeVMPtrBase <false> SafeVMPtr;
@@ -354,6 +364,8 @@ public:
      *          VMR3ReqCall (pVM, ...
      *      return S_OK;
      *  </code>
+     *
+     *  @note Temporarily locks the argument for writing.
      *
      *  @sa SafeVMPtr, AutoVMCaller
      */
