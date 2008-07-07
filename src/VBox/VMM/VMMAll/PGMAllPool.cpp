@@ -1889,6 +1889,7 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolClearAll(pVM);
 # else
         LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
 # endif
     }
