@@ -186,11 +186,12 @@ endif
 
 TEMPLATE_VBOXQT4GUIEXE = VBox Qt4 GUI Executable
 ifdef USE_KBUILD_QT_UNIT
- TEMPLATE_VBOXQT4GUIEXE_USES = qt
+ USES += qt4
+ TEMPLATE_VBOXQT4GUIEXE_USES = qt4
  TEMPLATE_VBOXQT4GUIEXE_MOCTOOL = QT4
- TEMPLATE_VBOXQT4GUIEXE_UITOOL = QT4
+ TEMPLATE_VBOXQT4GUIEXE_UICTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_RCCTOOL = QT4
-# TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
+ TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
 endif # USE_KBUILD_QT_UNIT
 TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
 TEMPLATE_VBOXQT4GUIEXE_INCS = \
@@ -382,8 +383,10 @@ $(PATH_BIN)/vboxkeyboard4.tar.gz: $(VBoxKeyboard4_TARSOURCES) $(PATH_TARGET)/$(S
 	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard4_TARSOURCES))) | gzip - > $@
 
 
+#
 # Include Qt project file, we'll use FORMS and TRANSLATIONS in
 # the VirtualBox4 setup below.
+#
 SAVED_TEMPLATE := $(TEMPLATE)
 include $(PATH_SUB_CURRENT)/VBoxUI.pro
 
@@ -648,10 +651,10 @@ ifdef USE_KBUILD_QT_UNIT
  VirtualBox4_SOURCES := \
 	$(VirtualBox4_SOURCES) \
 	$(FORMS) \
-	ui/VBoxAboutDlg.ui \
-	$(TRANSLATIONS)
+	ui/VBoxAboutDlg.ui
 
  # Resource files with some OSE differences.
+ VirtualBox4_SOURCES += VirtualBox.qrc
  ifdef VBOX_OSE
   VirtualBox4_SOURCES += VirtualBox_OSE.qrc
  else
@@ -659,6 +662,13 @@ ifdef USE_KBUILD_QT_UNIT
   VirtualBox4_SOURCES += src/VBoxAboutNonOSEDlg.cpp
   VirtualBox4_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
  endif
+ VirtualBox_OSE.qrc_RCCFLAGS = -name OSE
+ VirtualBox_NonOSE.qrc_RCCFLAGS = -name NonOSE
+
+ # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts.
+ ## @todo figure out how/if to do the translations in the qt4 unit, it doesn't quite fit it really. :-/
+ VirtualBox4_QT_TRANSLATIONS := $(TRANSLATIONS) \
+ 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
 
 else # !USE_KBUILD_QT_UNIT
 
@@ -749,13 +759,14 @@ OTHER_CLEAN.win += $(PATH_TARGET)/VirtualBox4.rc
 #
 # Other stuff.
 #
-
 WRAPPERSFILE        = $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_BLDDIRS += $(PATH_VirtualBox4)/include/
+VirtualBox4_INTERMEDIATES = $(WRAPPERSFILE)
+
 WRAPPERSINCFILE     = include/COMDefs.h
 WRAPPERSTEMPLATE    = include/COMWrappers.xsl
 XIDLFILE            = ../../Main/idl/VirtualBox.xidl
 
-VirtualBox4_INTERMEDIATES = $(WRAPPERSFILE)
 
 
 # generated files we need to clean manually
@@ -811,10 +822,12 @@ $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(ca
 #
 # Translation installation
 #
+ifndef USE_KBUILD_QT_UNIT ## @todo later
 VirtualBox4.nls_INST = $(INST_BIN)nls4/
 VirtualBox4.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS)))
 VirtualBox4.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS_QT)))
 VirtualBox4.nls_MODE = 644
+endif # !USE_KBUILD_QT_UNIT
 
 
 #
@@ -864,6 +877,7 @@ IMAGES :=
 # (note: before custom rules that make usage of generated variables!).
 include $(KBUILD_PATH)/footer.kmk
 
+ifndef USE_KBUILD_QT_UNIT
 
 #
 # Qt source file generation rules
@@ -1006,22 +1020,8 @@ $$(call DIRDEP,$(PATH_$(target))/nls/):
 endef
 
 
-ifndef USE_KBUILD_QT_UNIT
 # Generate Qt source rules.
 $(foreach target,VirtualBox4,$(eval $(def_qt_gen_src)))
-endif
-
-
-# Generate COM Wrappers
-$(WRAPPERSINCFILE): $(WRAPPERSFILE)
-
-$(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualBox4)/include/)
-	$(call MSG_TOOL,xsltproc,VirtualBox4,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(WRAPPERSTEMPLATE) $<
-
-$(call DIRDEP,$(PATH_VirtualBox4)/include/):
-	$(call MSG_MKDIR,$@)
-	$(QUIET)$(MKDIR) -p $@
 
 # rules for resources file creation
 $(PATH_VirtualBox4)/ui/qrc_application.cpp: VirtualBox.qrc $(VirtualBox4_QT_RC)
@@ -1036,17 +1036,18 @@ $(PATH_VirtualBox4)/ui/qrc_application_non_ose.cpp: VirtualBox_NonOSE.qrc $(Virt
 	$(call MSG_TOOL,rcc,VirtualBox4,$<,$@)
 	$(QUIET)$(VBOX_RCC4) -name "NonOSE" -o $@  $<
 
-#
-# Hand made dependencies go here.
-# Basically, here are dependencies for generated UI source files that
-# include generated headers in turn.
-#
 
-# Make all generated UI sources dependent on all generated headers (since they
-# may include them).  This is safer than indifidual dependencies above but
-# currently disabled, because will cause all UI sources to be rebuilt one a
-# single one changes.
-#$(patsubst %,$(PATH_VirtualBox4)/ui/%.cpp,$(notdir $(basename $(VirtualBox4_QT_UISRCS)))) : $(VirtualBox4_GENHDRS)
+endif # !USE_KBUILD_QT_UNIT
+
+
+#
+# Generate the COM wrappers.
+#
+$(WRAPPERSINCFILE): $(WRAPPERSFILE)
+
+$(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualBox4)/include/)
+	$(call MSG_TOOL,xsltproc,VirtualBox4,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(WRAPPERSTEMPLATE) $<
 
 
 #
@@ -1057,6 +1058,10 @@ $(PATH_VirtualBox4)/ui/qrc_application_non_ose.cpp: VirtualBox_NonOSE.qrc $(Virt
 # NOTE: This target is intened to be run only by the GUI maintainer shortly
 # before a new product release. VirtualBox_xx_YY.ts is a template for new
 # languages and should never be actually translated or installed.
+## @todo Dmitry, why aren't the .ui files here? I guess this is why the .gen.h files are included.
+# But I completely fail to see what purpose the .moc files has in this list... From what I can tell
+# lupdate doesn't require anything to be built to run, at least not the trolltech examples, it will
+# eat the .ui files directly unless I'm much mistaken.
 updatenls:: $(VirtualBox4_SOURCES) $(VirtualBox4_HEADERS)
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(VBOX_LUPDATE4) $^ -ts $(VirtualBox4_QT_TRANSLATIONS) nls/VirtualBox_xx_YY.ts
