@@ -3470,6 +3470,16 @@
     <method name="getGuestProperty">
       <desc>
         Reads a value from the machine's host/guest property store.
+
+        Reads a value from the machine's host/guest property store.
+
+        If a session for this virtual machine is currently open then queries the
+        session object for the value, since the current values of the property
+        store will be held in RAM in the session. Otherwise reads the value from
+        machine extra data, where it is stored between sessions.
+
+        This method will fail if we are currently transitioning between session
+        states.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>
@@ -3488,6 +3498,14 @@
       <desc>
         Sets, changes or deletes a value in the machine's host/guest
         property store.
+
+        If a session for this virtual machine is currently open then changes the
+        value on the session object, since the current values of the property
+        store will be held in RAM in the session. Otherwise changes the value
+        in machine extra data, where it is stored between sessions.
+
+        This method will fail if we are currently transitioning between session
+        states.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>

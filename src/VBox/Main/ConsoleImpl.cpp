@@ -3532,29 +3532,35 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 #endif  /* !VBOX_WITH_USB */
 }
 
+/**
+ * @note Temporarily locks this object for writing.
+ */
 HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
+#if !defined (VBOX_WITH_INFO_SVC)
+    return E_NOTIMPL;
 #else
-    if (!VALID_PTR(aKey))
-        return E_POINTER;
-    if (!VALID_PTR(aValue))
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if (!VALID_PTR (aValue))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    HRESULT hrc = E_UNEXPECTED;
+    /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
+     * autoVMCaller, so there is no need to hold a lock of this */
+
+    HRESULT rc = E_UNEXPECTED;
     using namespace svcInfo;
 
     VBOXHGCMSVCPARM parm[3];
     Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value(KEY_MAX_VALUE_LEN);
+    Utf8Str Utf8Value (KEY_MAX_VALUE_LEN);
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
@@ -3564,46 +3570,54 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[1].u.pointer.addr = Utf8Value.mutableRaw();
     parm[1].u.pointer.size = KEY_MAX_VALUE_LEN;
-    int rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST, 3, &parm[0]);
+    int vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST,
+                                     3, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
-    AssertLogRel(rc != VERR_BUFFER_OVERFLOW);
-    if (RT_SUCCESS(rc) || (VERR_NOT_FOUND == rc))
+    AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
+    if (RT_SUCCESS (vrc) || (VERR_NOT_FOUND == vrc))
     {
-        hrc = S_OK;
-        if (rc != VERR_NOT_FOUND)
-            Utf8Value.cloneTo(aValue);
+        rc = S_OK;
+        if (vrc != VERR_NOT_FOUND)
+            Utf8Value.cloneTo (aValue);
         else
             aValue = NULL;
     }
     else
-        hrc = setError (E_UNEXPECTED, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
-#endif
-    return hrc;
+        rc = setError (E_UNEXPECTED,
+            tr ("Failed to call the VBoxSharedInfoSvc service (%Rrc)"), vrc);
+    return rc;
+#endif /* else !defined (VBOX_WITH_INFO_SVC) */
 }
 
+/**
+ * @note Temporarily locks this object for writing.
+ */
 HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-#ifndef VBOX_WITH_INFO_SVC
-    HRESULT hrc = E_NOTIMPL;
+#if !defined (VBOX_WITH_INFO_SVC)
+    return E_NOTIMPL;
 #else
-    if (!VALID_PTR(aKey))
-        return E_POINTER;
-    if ((aValue != NULL) && !VALID_PTR(aValue))
-        return E_POINTER;
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if ((aValue != NULL) && !VALID_PTR (aValue))
+        return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    HRESULT hrc = E_UNEXPECTED;
+    /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
+     * autoVMCaller, so there is no need to hold a lock of this */
+
+    HRESULT rc = E_UNEXPECTED;
     using namespace svcInfo;
 
     VBOXHGCMSVCPARM parm[2];
     Utf8Str Utf8Key = aKey;
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
@@ -3618,16 +3632,19 @@ HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
         parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = Utf8Value.length() + 1;
-        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST, 2, &parm[0]);
+        vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST,
+                                     2, &parm[0]);
     }
     else
-        rc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST, 1, &parm[0]);
-    if (RT_SUCCESS(rc))
-        hrc = S_OK;
+        vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST,
+                                     1, &parm[0]);
+    if (RT_SUCCESS (vrc))
+        rc = S_OK;
     else
-        hrc = setError (E_UNEXPECTED, tr ("hgcmHostCall to VBoxSharedInfoSvc failed: %Rrc"), rc);
-#endif
-    return hrc;
+        rc = setError (E_UNEXPECTED,
+            tr ("Failed to call the VBoxSharedInfoSvc service (%Rrc)"), vrc);
+    return rc;
+#endif /* else !defined (VBOX_WITH_INFO_SVC) */
 }
 
 /**
@@ -4180,7 +4197,7 @@ HRESULT Console::powerDown()
         if (RT_SUCCESS(vrc))
             pValue = CFGMR3GetNextValue (pValue);
     }
-    /* In a second stage, we remove any extra data keys corresponding to 
+    /* In a second stage, we remove any extra data keys corresponding to
      * properties which aren't in the CFGM node. */
     Bstr strExtraDataKey;
     for (;;)
