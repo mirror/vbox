@@ -3025,7 +3025,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifdef IN_RING3
+# ifndef IN_GC
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else
