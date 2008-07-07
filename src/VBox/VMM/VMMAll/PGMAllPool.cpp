@@ -409,7 +409,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
-            case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             {
                 const unsigned iShw = off / sizeof(X86PDEPAE);
@@ -422,6 +421,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
                 /* causes trouble when the guest uses a PDE to refer to the whole page table level structure. (invalidate here; faults later on when it tries
                  * to change the page table entries
+                 * -> recheck; probably only applies to the GC case
                  */
                 else
                 {
@@ -503,12 +503,64 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+#ifdef IN_RING0
+            case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
+            {
+                Assert(pPage->enmKind == PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD);
+
+                const unsigned iShw = off / sizeof(X86PDEPAE);
+                if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
+                {
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                }
+                else
+                {
+                    if (uShw.pPDPae->a[iShw].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+                        pgmPoolFree(pPool->CTXSUFF(pVM), 
+                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, 
+                                    pPage->idx, 
+                                    iShw);
+                        uShw.pPDPae->a[iShw].u = 0;
+                    }
+                }
+                /* paranoia / a bit assumptive. */
+                if (   pCpu
+                    && (off & 7)
+                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDEPAE))
+                {
+                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDEPAE);
+                    AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPDPae->a));
+
+                    if (    iShw2 != iShw
+                        &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
+                    {
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                    }
+                    else
+                    if (uShw.pPDPae->a[iShw2].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
+                        pgmPoolFree(pPool->CTXSUFF(pVM), 
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, 
+                                    pPage->idx, 
+                                    iShw2);
+                        uShw.pPDPae->a[iShw2].u = 0;
+                    }
+                }
+                break;
+            }
+
             case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             {
                 /* Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-#ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
                 if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     const unsigned iShw = off / sizeof(X86PDPE);
@@ -532,7 +584,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         }
                     }
                 }
-#endif
                 break;
             }
 
@@ -541,7 +592,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-#ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
                 if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     const unsigned iShw = off / sizeof(X86PDPE);
@@ -565,9 +615,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         }
                     }
                 }
-#endif
                 break;
             }
+#endif /* IN_RING0 */
 
             default:
                 AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
