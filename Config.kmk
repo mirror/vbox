@@ -129,6 +129,34 @@ endif
 
 
 #
+# The VirtualBox package type.
+#
+ifeq ($(KBUILD_TARGET),win)
+  VBOX_PACKAGE_OS = WINDOWS
+else ifeq ($(KBUILD_TARGET),linux)
+  VBOX_PACKAGE_OS = LINUX
+else ifeq ($(KBUILD_TARGET),darwin)
+  VBOX_PACKAGE_OS = DARWIN
+else ifeq ($(KBUILD_TARGET),solaris
+  VBOX_PACKAGE_OS = SOLARIS
+else if1of ($(KBUILD_TARGET), dragonfly freebsd netbsd openbsd)
+  VBOX_PACKAGE_OS = BSD
+else
+  $(error Cannot determine VBOX_PACKAGE_OS)
+endif
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBOX_PACKAGE_ARCH = 32BITS
+else
+  VBOX_PACKAGE_ARCH = 64BITS
+endif
+# distribution, mostly for Linux/Solaris where we support different distributions
+# this strip will be overridden by the Linux packaging scripts
+VBOX_PACKAGE_DIST ?= GENERIC
+# Full string
+VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIST)
+
+
+#
 # The VirtualBox Configuration Defaults.
 #
 # We try to document all the build configuration options here, thing which
@@ -2851,6 +2879,21 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#endif'
 	$(QUIET)$(MV) -f $@.tmp $@
 
+
+VBOX_PACKAGE_HEADER = $(PATH_OUT)/package-generated.h
+
+$(VBOX_PACKAGE_HEADER):
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(APPEND) $@.tmp '#ifndef ___package_generated_h___'
+	$(QUIET)$(APPEND) $@.tmp '#define ___package_generated_h___'
+	$(QUIET)$(APPEND) $@.tmp ''
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PACKAGE_STRING "$(VBOX_PACKAGE_STRING)"'
+	$(QUIET)$(APPEND) $@.tmp ''
+	$(QUIET)$(APPEND) $@.tmp '#endif'
+	$(QUIET)$(MV) -f $@.tmp $@
+
 #
 # Used for external makefiles which cannot include Config.kmk
 #
@@ -2882,9 +2925,9 @@ endif
 # Force building of the version header file as the first thing anywhere in
 # the tree. This eliminates the need for manual dependencies on it.
 ## @todo there gotta be a better way of doing this.
-Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
-Makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
-makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
+Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
+Makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
+makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
 
 
 #

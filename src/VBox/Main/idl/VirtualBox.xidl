@@ -910,6 +910,16 @@
       </desc>
     </attribute>
 
+    <attribute name="packageType" type="wstring" readonly="yes">
+      <desc>
+        A string representing the package type of this product. The
+        format is OS_ARCH_DIST where OS is either WINDOWS, LINUX,
+        SOLARIS, DARWIN. ARCH is either 32BITS or 64BITS. DIST
+        is either GENERIC, UBUNTU_606, UBUNTU_710, or something like
+        this.
+      </desc>
+    </attribute>
+
     <attribute name="homeFolder" type="wstring" readonly="yes">
       <desc>
         Full path to the directory where the global settings file,
