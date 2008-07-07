@@ -582,7 +582,6 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         val = pCtx->cr0;
         if (!CPUMIsGuestFPUStateActive(pVM))
         {
-            Assert(!pVM->hwaccm.s.svm.fResumeVM);
             /* Always use #NM exceptions to load the FPU/XMM state on demand. */
             val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
         }
