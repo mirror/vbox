@@ -2353,7 +2353,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         }
         else if (rc == VERR_PGM_POOL_FLUSHED)
         {
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
             return VINF_PGM_SYNC_CR3;
         }
         else
