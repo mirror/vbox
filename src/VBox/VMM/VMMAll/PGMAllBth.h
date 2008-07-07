@@ -3028,7 +3028,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     HWACCMFlushTLB(pVM);
     return VINF_SUCCESS;
 
-#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
+#elif PGM_SHW_TYPE == PGM_TYPE_AMD64
+    /* No need to check all paging levels; we zero out the shadow parts when the guest modifies its tables. */
+    return VINF_SUCCESS;
+#else
 
     Assert(fGlobal || (cr4 & X86_CR4_PGE));
     MY_STAM_COUNTER_INC(fGlobal ? &pVM->pgm.s.CTXMID(Stat,SyncCR3Global) : &pVM->pgm.s.CTXMID(Stat,SyncCR3NotGlobal));
