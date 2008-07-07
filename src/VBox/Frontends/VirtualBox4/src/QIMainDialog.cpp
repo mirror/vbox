@@ -35,10 +35,12 @@
 #include <QMenu>
 #include <QSizeGrip>
 #include <QPushButton>
+#include <QDialogButtonBox>
 
 QIMainDialog::QIMainDialog (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QMainWindow (aParent, aFlags) 
     , mRescode (QDialog::Rejected)
+    , mDefaultButton (NULL)
 {
     qApp->installEventFilter (this);
 }
@@ -120,9 +122,9 @@ void QIMainDialog::setVisible (bool aVisible)
 
 bool QIMainDialog::event (QEvent *aEvent)
 {
-#ifdef Q_WS_MAC
      switch (aEvent->type()) 
      {
+#ifdef Q_WS_MAC
           case QEvent::IconDrag: 
               {
                   Qt::KeyboardModifiers currentModifiers = qApp->keyboardModifiers();
@@ -185,10 +187,16 @@ bool QIMainDialog::event (QEvent *aEvent)
                   }
                   break;
               }
+#endif /* Q_WS_MAC */
+          case QEvent::Polish: 
+              {
+                  /* Initially search for the default button. */
+                  mDefaultButton = searchDefaultButton();
+                  break;
+              }
           default: 
               break;
      }
-#endif /* Q_WS_MAC */
      return QMainWindow::event (aEvent);
 }
 
@@ -214,12 +222,45 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 
     switch (aEvent->type())
     {
+        /* Auto-default button focus-in processor used to move the "default"
+         * button property into the currently focused button. */
+        case QEvent::FocusIn:
+            {
+                if (qobject_cast<QPushButton*> (aObject) &&
+                    (aObject->parent() == centralWidget() ||
+                     qobject_cast<QDialogButtonBox*> (aObject->parent()) != NULL))
+                {
+                    qobject_cast<QPushButton*> (aObject)->setDefault (aObject != mDefaultButton);
+                    if (mDefaultButton)
+                        mDefaultButton->setDefault (aObject == mDefaultButton);
+                }                                    
+                break;
+            }
+        /* Auto-default button focus-out processor used to remove the "default"
+         * button property from the previously focused button. */
+        case QEvent::FocusOut:
+            {
+                if (qobject_cast<QPushButton*> (aObject) && 
+                    (aObject->parent() == centralWidget() ||
+                     qobject_cast<QDialogButtonBox*> (aObject->parent()) != NULL))
+                {
+                    if (mDefaultButton)
+                        mDefaultButton->setDefault (aObject != mDefaultButton);
+                    qobject_cast<QPushButton*> (aObject)->setDefault (aObject == mDefaultButton);
+                }                     
+                break;
+            }
         case QEvent::KeyPress:
             {
                 QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
 #ifdef Q_WS_MAC
                 if (event->modifiers() == Qt::ControlModifier && 
-                    event->key() == Qt::Key_Period) 
+                    event->key() == Qt::Key_Period &&
+                    aObject == this &&
+                    qApp->activePopupWidget() == NULL  &&
+                    qApp->activePopupWidget() == NULL &&
+                    (qApp->activeModalWidget() == this || 
+                     qApp->activeModalWidget() == NULL))
                     reject();
                 else
 #endif
@@ -231,22 +272,28 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                             case Qt::Key_Enter:
                             case Qt::Key_Return:
                                 {
-                                    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
-                                    for (int i=0; i < list.size(); ++i)
+                                    QPushButton *currentDefault = searchDefaultButton();
+                                    if (currentDefault)
                                     {
-                                        QPushButton *pb = list.at (i);
-                                        if (pb->isDefault() && pb->isVisible()) 
-                                        {
-                                            if (pb->isEnabled())
-                                                pb->click();
-                                            break;
-                                        }
+                                        /* We handle this, so return true after
+                                         * that. */
+                                        currentDefault->click();
+                                        return true;
                                     }
                                     break;
                                 }
                             case Qt::Key_Escape:
                                 {
-                                    reject();
+                                    /* Make sure that we only reject if no
+                                     * popup or other modal widgets are open. */
+                                    if (aObject == this &&
+                                        qApp->activePopupWidget() == NULL &&
+                                        (qApp->activeModalWidget() == this || 
+                                         qApp->activeModalWidget() == NULL))
+                                    {
+                                        reject();
+                                        return true;
+                                    }
                                     break;
                                 }
                         }
@@ -257,6 +304,20 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
     }
     return QMainWindow::eventFilter (aObject, aEvent);
 }
+
+QPushButton* QIMainDialog::searchDefaultButton() const
+{
+    /* Search for the first default button in the dialog. */
+    QPushButton *button = NULL;
+    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
+    foreach (button, list)
+        if(button->isDefault() &&
+           (button->parent() == centralWidget() ||
+            qobject_cast<QDialogButtonBox*> (button->parent()) != NULL))
+            break;
+    return button;
+}
+
 
 void QIMainDialog::accept() 
 { 

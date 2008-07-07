@@ -58,6 +58,8 @@ protected:
     virtual void resizeEvent (QResizeEvent *aEvent);
     virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
+    QPushButton* searchDefaultButton() const;
+
 protected slots:
 
     void accept();
@@ -77,6 +79,8 @@ private:
     QString mFileForProxyIcon;
 
     QPointer<QSizeGrip> mSizeGrip;
+
+    QPushButton* mDefaultButton;
 };
 
 #endif /* __QIMainDialog_h__ */
