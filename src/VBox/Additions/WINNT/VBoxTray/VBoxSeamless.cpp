@@ -323,7 +323,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
             {
-                dprintf(("VBoxService: going to get seamless change information.\n"));
+                dprintf(("VBoxTray: going to get seamless change information.\n"));
 
                 /* We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
@@ -394,7 +394,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxTray: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
