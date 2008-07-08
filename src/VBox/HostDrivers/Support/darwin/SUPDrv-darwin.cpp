@@ -51,6 +51,8 @@
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 #include <iprt/alloc.h>
+#include <iprt/uuid.h>
+#include <iprt/err.h>
 
 #include <mach/kmod.h>
 #include <miscfs/devfs/devfs.h>
@@ -147,14 +149,11 @@ OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient)
 __BEGIN_DECLS
 extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
-__private_extern__ kmod_start_func_t *_realmain;
-__private_extern__ kmod_stop_func_t  *_antimain;
-__private_extern__ int                _kext_apple_cc;
 
 KMOD_EXPLICIT_DECL(VBoxDrv, VBOX_VERSION_STRING, _start, _stop)
-kmod_start_func_t *_realmain = VBoxDrvDarwinStart;
-kmod_stop_func_t  *_antimain = VBoxDrvDarwinStop;
-int                _kext_apple_cc = __APPLE_CC__;
+DECLHIDDEN(kmod_start_func_t *) _realmain = VBoxDrvDarwinStart;
+DECLHIDDEN(kmod_stop_func_t *)  _antimain = VBoxDrvDarwinStop;
+DECLHIDDEN(int)                 _kext_apple_cc = __APPLE_CC__;
 __END_DECLS
 
 
@@ -196,6 +195,18 @@ static RTSPINLOCK       g_Spinlock = NIL_RTSPINLOCK;
 static PSUPDRVSESSION   g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(pid)     ((pid) % RT_ELEMENTS(g_apSessionHashTab))
+
+
+/*
+ * Drag in the rest of IRPT since we share it with the
+ * rest of the kernel modules on darwin.
+ */
+extern PFNRT g_apfnVBoxDrvIPRTDeps[] =
+{
+    (PFNRT)RTUuidCompare,
+    (PFNRT)RTErrConvertFromErrno,
+    NULL
+};
 
 
 /**
