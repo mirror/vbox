@@ -419,9 +419,12 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_DevExt, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
+        pSession->Uid = crgetuid(pCred);
+        pSession->Gid = crgetgid(pCred);
+
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
         dprintf(("VBoxDrvSolarisOpen: returns pDev=%#x pSession=%p pState=%p\n", *pDev, pSession, pState));
@@ -439,16 +442,14 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
      * Sessions in Solaris driver are mostly useless. It's however needed
      * in VBoxDrvSolarisIOCtlSlow() while calling supdrvIOCtl()
      */
-    rc = supdrvCreateSession(&g_DevExt, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
         unsigned        iHash;
 
-        pSession->Uid       = crgetuid(pCred);
-        pSession->Gid       = crgetgid(pCred);
-        pSession->Process   = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
+        pSession->Uid = crgetuid(pCred);
+        pSession->Gid = crgetgid(pCred);
 
         /*
          * Insert it into the hash table.

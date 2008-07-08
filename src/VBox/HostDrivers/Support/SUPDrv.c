@@ -44,6 +44,8 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/log.h>
+#include <iprt/uuid.h>
+#include <VBox/err.h>
 /* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
 # define X86_CPUID_VENDOR_AMD_EBX       0x68747541
@@ -105,6 +107,12 @@
 #define SUP_IS_SESSION_VALID(pSession)  \
     (   VALID_PTR(pSession) \
      && pSession->u32Cookie == BIRD_INV)
+
+/** @def VBOX_SVN_REV
+ * The makefile should define this if it can. */
+#ifndef VBOX_SVN_REV
+# define VBOX_SVN_REV 0
+#endif
 
 
 /*******************************************************************************
@@ -239,9 +247,10 @@ static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
 static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
 static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
+static int      supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
 static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
 static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
-static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
+static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
@@ -275,18 +284,24 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
         rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
         if (!rc)
         {
-            rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
+            rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
             if (!rc)
             {
-                rc = supdrvGipCreate(pDevExt);
-                if (RT_SUCCESS(rc))
+                rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
+                if (!rc)
                 {
-                    pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
-                    return VINF_SUCCESS;
-                }
+                    rc = supdrvGipCreate(pDevExt);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
+                        return VINF_SUCCESS;
+                    }
 
-                RTSemFastMutexDestroy(pDevExt->mtxGip);
-                pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+                    RTSemFastMutexDestroy(pDevExt->mtxGip);
+                    pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+                }
+                RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
+                pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
             }
             RTSemFastMutexDestroy(pDevExt->mtxLdr);
             pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
@@ -370,9 +385,10 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
  *
  * @returns IPRT status code.
  * @param   pDevExt     Device extension.
+ * @param   fUser       Flag indicating whether this is a user or kernel session.
  * @param   ppSession   Where to store the pointer to the session data.
  */
-int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSession)
+int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSION *ppSession)
 {
     /*
      * Allocate memory for the session data.
@@ -390,10 +406,23 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSessio
             pSession->u32Cookie         = BIRD_INV;
             /*pSession->pLdrUsage         = NULL;
             pSession->pPatchUsage       = NULL;
+            pSession->pVM               = NULL;
             pSession->pUsage            = NULL;
             pSession->pGip              = NULL;
             pSession->fGipReferenced    = false;
-            pSession->Bundle.cUsed      = 0 */
+            pSession->Bundle.cUsed      = 0; */
+            pSession->Uid               = NIL_RTUID;
+            pSession->Gid               = NIL_RTGID;
+            if (fUser)
+            {
+                pSession->Process       = RTProcSelf();
+                pSession->R0Process     = RTR0ProcHandleSelf();
+            }
+            else
+            {
+                pSession->Process       = NIL_RTPROCESS;
+                pSession->R0Process     = NIL_RTR0PROCESS;
+            }
 
             LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
             return VINF_SUCCESS;
@@ -566,6 +595,46 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             RTMemFree(pToFree);
     }
     Log2(("freeing memory - done\n"));
+
+    /*
+     * Deregister component factories.
+     */
+    RTSemFastMutexRequest(pDevExt->mtxComponentFactory);
+    Log2(("deregistering component factories:\n"));
+    if (pDevExt->pComponentFactoryHead)
+    {
+        PSUPDRVFACTORYREG pPrev = NULL;
+        PSUPDRVFACTORYREG pCur = pDevExt->pComponentFactoryHead;
+        while (pCur)
+        {
+            if (pCur->pSession == pSession)
+            {
+                /* unlink it */
+                PSUPDRVFACTORYREG pNext = pCur->pNext;
+                if (pPrev)
+                    pPrev->pNext = pNext;
+                else
+                    pDevExt->pComponentFactoryHead = pNext;
+
+                /* free it */
+                pCur->pNext = NULL;
+                pCur->pSession = NULL;
+                pCur->pFactory = NULL;
+                RTMemFree(pCur);
+
+                /* next */
+                pCur = pNext;
+            }
+            else
+            {
+                /* next */
+                pPrev = pCur;
+                pCur = pCur->pNext;
+            }
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxComponentFactory);
+    Log2(("deregistering component factories - done\n"));
 
     /*
      * Loaded images needs to be dereferenced and possibly freed up.
@@ -1163,9 +1232,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_NOT_SUPPORTED if the request isn't supported.
- * @retval  VERR_NOT_IMPLEMENTED if during development.
  * @retval  VERR_INVALID_PARAMETER if the request is invalid.
+ * @retval  VERR_NOT_SUPPORTED if the request isn't supported.
  *
  * @param   uReq        The request (function) code.
  * @param   pDevExt     Device extention.
@@ -1205,38 +1273,110 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             PSUPDRVIDCREQCONNECT pReq = (PSUPDRVIDCREQCONNECT)pReqHdr;
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_CONNECT, sizeof(*pReq));
 
-            return VERR_NOT_IMPLEMENTED;
+            /*
+             * Validate the cookie and other input.
+             */
+            if (pReq->Hdr.pSession != NULL)
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: pSession=%p expected NULL!\n", pReq->Hdr.pSession));
+                return pReqHdr->rc = VERR_INVALID_PARAMETER;
+            }
+            if (pReq->u.In.u32MagicCookie != SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE)
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: u32MagicCookie=%#x expected %#x!\n",
+                            pReq->u.In.u32MagicCookie, SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE));
+                return pReqHdr->rc = VERR_INVALID_PARAMETER;
+            }
+            if (    pReq->u.In.uMinVersion > pReq->u.In.uReqVersion
+                ||  (pReq->u.In.uMinVersion & UINT32_C(0xffff0000)) != (pReq->u.In.uReqVersion & UINT32_C(0xffff0000)))
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: uMinVersion=%#x uMaxVersion=%#x doesn't match!\n",
+                            pReq->u.In.uMinVersion, pReq->u.In.uReqVersion));
+                return pReqHdr->rc = VERR_INVALID_PARAMETER;
+            }
+
+            /*
+             * Match the version.
+             * The current logic is very simple, match the major interface version.
+             */
+            if (    pReq->u.In.uMinVersion > SUPDRV_IDC_VERSION
+                ||  (pReq->u.In.uMinVersion & 0xffff0000) != (SUPDRV_IDC_VERSION & 0xffff0000))
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
+                            pReq->u.In.uReqVersion, pReq->u.In.uMinVersion, SUPDRV_IDC_VERSION));
+                pReq->u.Out.pSession        = NULL;
+                pReq->u.Out.uSessionVersion = 0xffffffff;
+                pReq->u.Out.uDriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
+                pReq->Hdr.rc = VERR_VERSION_MISMATCH;
+                return VINF_SUCCESS;
+            }
+
+            pReq->u.Out.pSession        = NULL;
+            pReq->u.Out.uSessionVersion = SUPDRVIOC_VERSION;
+            pReq->u.Out.uDriverVersion  = SUPDRVIOC_VERSION;
+            pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
+
+            /*
+             * On NT we will already have a session associated with the
+             * client, just like with the SUP_IOCTL_COOKIE request, while
+             * the other doesn't.
+             */
+#ifdef RT_OS_WINDOWS
+            pReq->Hdr.rc = VINF_SUCCESS;
+#else
+            AssertReturn(!pSession, VERR_INTERNAL_ERROR);
+            pReq->Hdr.rc = supdrvCreateSession(pDevExt, false /* fUser */, &pSession);
+            if (RT_FAILURE(pReq->Hdr.rc))
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: failed to create session, rc=%d\n", pReq->Hdr.rc));
+                return VINF_SUCCESS;
+            }
+#endif
+
+            pReq->u.Out.pSession = pSession;
+            pReq->Hdr.pSession = pSession;
+
+            return VINF_SUCCESS;
         }
 
         case SUPDRV_IDC_REQ_DISCONNECT:
         {
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_DISCONNECT, sizeof(*pReqHdr));
 
-            return VERR_NOT_IMPLEMENTED;
+#ifdef RT_OS_WINDOWS
+            /* Windows will destroy the session when the file object is destroyed. */
+#else
+            supdrvCloseSession(pDevExt, pSession);
+#endif
+            return pReqHdr->rc = VINF_SUCCESS;
         }
 
         case SUPDRV_IDC_REQ_GET_SYMBOL:
         {
-            PSUPDRVIDCREQGETSYM pReq;
+            PSUPDRVIDCREQGETSYM pReq = (PSUPDRVIDCREQGETSYM)pReqHdr;
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_GET_SYMBOL, sizeof(*pReq));
 
-            return VERR_NOT_IMPLEMENTED;
+            pReq->Hdr.rc = supdrvIDC_LdrGetSymbol(pDevExt, pSession, pReq);
+            return VINF_SUCCESS;
         }
 
         case SUPDRV_IDC_REQ_COMPONENT_REGISTER_FACTORY:
         {
-            PSUPDRVIDCREQCOMPREGFACTORY pReq;
+            PSUPDRVIDCREQCOMPREGFACTORY pReq = (PSUPDRVIDCREQCOMPREGFACTORY)pReqHdr;
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_COMPONENT_REGISTER_FACTORY, sizeof(*pReq));
 
-            return VERR_NOT_IMPLEMENTED;
+            pReq->Hdr.rc = SUPR0ComponentRegisterFactory(pSession, pReq->u.In.pFactory);
+            return VINF_SUCCESS;
         }
 
         case SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY:
         {
-            PSUPDRVIDCREQCOMPDEREGFACTORY pReq;
+            PSUPDRVIDCREQCOMPDEREGFACTORY pReq = (PSUPDRVIDCREQCOMPDEREGFACTORY)pReqHdr;
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY, sizeof(*pReq));
 
-            return VERR_NOT_IMPLEMENTED;
+            pReq->Hdr.rc = SUPR0ComponentDeregisterFactory(pSession, pReq->u.In.pFactory);
+            return VINF_SUCCESS;
         }
 
         default:
@@ -2287,6 +2427,220 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 
     RTSemFastMutexRelease(pDevExt->mtxGip);
 
+    return rc;
+}
+
+
+/**
+ * Register a component factory with the support driver.
+ *
+ * This is currently restricted to kernel sessions only.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NO_MEMORY if we're out of memory.
+ * @retval  VERR_ALREADY_EXISTS if the factory has already been registered.
+ * @retval  VERR_ACCESS_DENIED if it isn't a kernel session.
+ * @retval  VERR_INVALID_PARAMETER on invalid parameter.
+ * @retval  VERR_INVALID_POINTER on invalid pointer parameter.
+ *
+ * @param   pSession        The SUPDRV session (must be a ring-0 session).
+ * @param   pFactory        Pointer to the component factory registration structure.
+ *
+ * @remarks This interface is also available via SUPR0IdcComponentRegisterFactory.
+ */
+SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory)
+{
+    PSUPDRVFACTORYREG pNewReg;
+    const char *psz;
+    int rc;
+
+    /*
+     * Validate parameters.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_ACCESS_DENIED);
+    AssertPtrReturn(pFactory, VERR_INVALID_POINTER);
+    AssertPtrReturn(pFactory->pfnQueryFactoryInterface, VERR_INVALID_POINTER);
+    psz = (const char *)memchr(pFactory->szName, '\0', sizeof(pFactory->szName));
+    AssertReturn(psz, VERR_INVALID_PARAMETER);
+
+    /*
+     * Allocate and initialize a new registration structure.
+     */
+    pNewReg = (PSUPDRVFACTORYREG)RTMemAlloc(sizeof(SUPDRVFACTORYREG));
+    if (pNewReg)
+    {
+        pNewReg->pNext = NULL;
+        pNewReg->pFactory = pFactory;
+        pNewReg->pSession = pSession;
+        pNewReg->cchName = psz - &pFactory->szName[0];
+
+        /*
+         * Add it to the tail of the list after checking for prior registration.
+         */
+        rc = RTSemFastMutexRequest(pSession->pDevExt->mtxComponentFactory);
+        if (RT_SUCCESS(rc))
+        {
+            PSUPDRVFACTORYREG pPrev = NULL;
+            PSUPDRVFACTORYREG pCur = pSession->pDevExt->pComponentFactoryHead;
+            while (pCur && pCur->pFactory != pFactory)
+            {
+                pPrev = pCur;
+                pCur = pCur->pNext;
+            }
+            if (!pCur)
+            {
+                if (pPrev)
+                    pPrev->pNext = pNewReg;
+                else
+                    pSession->pDevExt->pComponentFactoryHead = pNewReg;
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_ALREADY_EXISTS;
+
+            RTSemFastMutexRelease(pSession->pDevExt->mtxComponentFactory);
+        }
+
+        if (RT_FAILURE(rc))
+            RTMemFree(pNewReg);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
+/**
+ * Deregister a component factory.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if the factory wasn't registered.
+ * @retval  VERR_ACCESS_DENIED if it isn't a kernel session.
+ * @retval  VERR_INVALID_PARAMETER on invalid parameter.
+ * @retval  VERR_INVALID_POINTER on invalid pointer parameter.
+ *
+ * @param   pSession        The SUPDRV session (must be a ring-0 session).
+ * @param   pFactory        Pointer to the component factory registration structure
+ *                          previously passed SUPR0ComponentRegisterFactory().
+ *
+ * @remarks This interface is also available via SUPR0IdcComponentDeregisterFactory.
+ */
+SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory)
+{
+    int rc;
+
+    /*
+     * Validate parameters.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_ACCESS_DENIED);
+    AssertPtrReturn(pFactory, VERR_INVALID_POINTER);
+
+    /*
+     * Take the lock and look for the registration record.
+     */
+    rc = RTSemFastMutexRequest(pSession->pDevExt->mtxComponentFactory);
+    if (RT_SUCCESS(rc))
+    {
+        PSUPDRVFACTORYREG pPrev = NULL;
+        PSUPDRVFACTORYREG pCur = pSession->pDevExt->pComponentFactoryHead;
+        while (pCur && pCur->pFactory != pFactory)
+        {
+            pPrev = pCur;
+            pCur = pCur->pNext;
+        }
+        if (pCur)
+        {
+            if (!pPrev)
+                pSession->pDevExt->pComponentFactoryHead = pCur->pNext;
+            else
+                pPrev->pNext = pCur->pNext;
+
+            pCur->pNext = NULL;
+            pCur->pFactory = NULL;
+            pCur->pSession = NULL;
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        RTSemFastMutexRelease(pSession->pDevExt->mtxComponentFactory);
+
+        RTMemFree(pCur);
+    }
+    return rc;
+}
+
+
+/**
+ * Queries a component factory.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_PARAMETER on invalid parameter.
+ * @retval  VERR_INVALID_POINTER on invalid pointer parameter.
+ * @retval  VERR_SUPDRV_COMPONENT_NOT_FOUND if the component factory wasn't found.
+ * @retval  VERR_SUPDRV_INTERFACE_NOT_SUPPORTED if the interface wasn't supported.
+ *
+ * @param   pSession            The SUPDRV session.
+ * @param   pszName             The name of the component factory.
+ * @param   pszInterfaceUuid    The UUID of the factory interface (stringified).
+ * @param   ppvFactoryIf        Where to store the factory interface.
+ */
+SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf)
+{
+    const char *pszEnd;
+    size_t cchName;
+    int rc;
+
+    /*
+     * Validate parameters.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    pszEnd = memchr(pszName, '\0', RT_SIZEOFMEMB(SUPDRVFACTORY, szName));
+    AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
+    cchName = pszEnd - pszName;
+
+    AssertPtrReturn(pszInterfaceUuid, VERR_INVALID_POINTER);
+    pszEnd = memchr(pszInterfaceUuid, '\0', RTUUID_STR_LENGTH);
+    AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(ppvFactoryIf, VERR_INVALID_POINTER);
+    *ppvFactoryIf = NULL;
+
+    /*
+     * Take the lock and try all factories by this name.
+     */
+    rc = RTSemFastMutexRequest(pSession->pDevExt->mtxComponentFactory);
+    if (RT_SUCCESS(rc))
+    {
+        PSUPDRVFACTORYREG pCur = pSession->pDevExt->pComponentFactoryHead;
+        rc = VERR_SUPDRV_COMPONENT_NOT_FOUND;
+        while (pCur)
+        {
+            if (    pCur->cchName == cchName
+                &&  !memcmp(pCur->pFactory->szName, pszName, cchName))
+            {
+                void *pvFactory = pCur->pFactory->pfnQueryFactoryInterface(pCur->pFactory, pSession, pszInterfaceUuid);
+                if (pvFactory)
+                {
+                    *ppvFactoryIf = pvFactory;
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+                rc = VERR_SUPDRV_INTERFACE_NOT_SUPPORTED;
+            }
+
+            /* next */
+            pCur = pCur->pNext;
+        }
+
+        RTSemFastMutexRelease(pSession->pDevExt->mtxComponentFactory);
+    }
     return rc;
 }
 
@@ -3445,7 +3799,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     }
 
     /*
-     * Search the symbol string.
+     * Search the symbol strings.
      */
     pchStrings = (const char *)((uint8_t *)pImage->pvImage + pImage->offStrTab);
     paSyms     =   (PSUPLDRSYM)((uint8_t *)pImage->pvImage + pImage->offSymbols);
@@ -3462,6 +3816,97 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     }
     RTSemFastMutexRelease(pDevExt->mtxLdr);
     pReq->u.Out.pvSymbol = pvSymbol;
+    return rc;
+}
+
+
+/**
+ * Gets the address of a symbol in an open image or the support driver.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns
+ * @param   pDevExt     Device globals.
+ * @param   pSession    Session data.
+ * @param   pReq        The request buffer.
+ */
+static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq)
+{
+    int             rc = VINF_SUCCESS;
+    const char     *pszSymbol = pReq->u.In.pszSymbol;
+    const char     *pszModule = pReq->u.In.pszModule;
+    size_t          cbSymbol;
+    char const     *pszEnd;
+    uint32_t        i;
+
+    /*
+     * Input validation.
+     */
+    AssertPtrReturn(pszSymbol, VERR_INVALID_POINTER);
+    pszEnd = (char *)memchr(pszSymbol, '\0', 512);
+    AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
+    cbSymbol = pszEnd - pszSymbol + 1;
+
+    if (pszModule)
+    {
+        AssertPtrReturn(pszModule, VERR_INVALID_POINTER);
+        pszEnd = (char *)memchr(pszModule, '\0', 64);
+        AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
+    }
+    Log3(("supdrvIDC_LdrGetSymbol: pszModule=%p:{%s} pszSymbol=%p:{%s}\n", pszModule, pszModule, pszSymbol, pszSymbol));
+
+
+    if (    !pszModule
+        ||  !strcmp(pszModule, "SupDrv"))
+    {
+        /*
+         * Search the support driver export table.
+         */
+        for (i = 0; i < RT_ELEMENTS(g_aFunctions); i++)
+            if (!strcmp(g_aFunctions[i].szName, pszSymbol))
+            {
+                pReq->u.Out.pfnSymbol = g_aFunctions[i].pfn;
+                break;
+            }
+    }
+    else
+    {
+        /*
+         * Find the loader image.
+         */
+        PSUPDRVLDRIMAGE pImage;
+
+        RTSemFastMutexRequest(pDevExt->mtxLdr);
+
+        for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
+            if (!strcmp(pImage->szName, pszModule))
+                break;
+        if (pImage && pImage->uState == SUP_IOCTL_LDR_LOAD)
+        {
+            /*
+             * Search the symbol strings.
+             */
+            const char *pchStrings = (const char *)((uint8_t *)pImage->pvImage + pImage->offStrTab);
+            PCSUPLDRSYM paSyms     =  (PCSUPLDRSYM)((uint8_t *)pImage->pvImage + pImage->offSymbols);
+            for (i = 0; i < pImage->cSymbols; i++)
+            {
+                if (    paSyms[i].offSymbol < pImage->cbImage /* paranoia */
+                    &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
+                    &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
+                {
+                    /*
+                     * Found it! Calc the symbol address and add a reference to the module.
+                     */
+                    pReq->u.Out.pfnSymbol = (PFNRT)((uint8_t *)pImage->pvImage + paSyms[i].offSymbol);
+                    rc = supdrvLdrAddUsage(pSession, pImage);
+                    break;
+                }
+            }
+        }
+        else
+            rc = pImage ? VERR_WRONG_ORDER : VERR_MODULE_NOT_FOUND;
+
+        RTSemFastMutexRelease(pDevExt->mtxLdr);
+    }
     return rc;
 }
 
@@ -3565,10 +4010,13 @@ static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
 /**
  * Adds a usage reference in the specified session of an image.
  *
+ * Called while owning the loader semaphore.
+ *
+ * @returns VINF_SUCCESS on success and VERR_NO_MEMORY on failure.
  * @param   pSession    Session in question.
  * @param   pImage      Image which the session is using.
  */
-static void supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage)
+static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage)
 {
     PSUPDRVLDRUSAGE pUsage;
     LogFlow(("supdrvLdrAddUsage: pImage=%p\n", pImage));
@@ -3582,7 +4030,7 @@ static void supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage)
         if (pUsage->pImage == pImage)
         {
             pUsage->cUsage++;
-            return;
+            return VINF_SUCCESS;
         }
         pUsage = pUsage->pNext;
     }
@@ -3591,15 +4039,12 @@ static void supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage)
      * Allocate new usage record.
      */
     pUsage = (PSUPDRVLDRUSAGE)RTMemAlloc(sizeof(*pUsage));
-    Assert(pUsage);
-    if (pUsage)
-    {
-        pUsage->cUsage = 1;
-        pUsage->pImage = pImage;
-        pUsage->pNext  = pSession->pLdrUsage;
-        pSession->pLdrUsage = pUsage;
-    }
-    /* ignore errors... */
+    AssertReturn(pUsage, VERR_NO_MEMORY);
+    pUsage->cUsage = 1;
+    pUsage->pImage = pImage;
+    pUsage->pNext  = pSession->pLdrUsage;
+    pSession->pLdrUsage = pUsage;
+    return VINF_SUCCESS;
 }
 
 
@@ -4088,7 +4533,7 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
     int         iCpu;
     int         cLoops = 8;
     bool        fAsync = false;
-    int         rc;
+    int         rc = VINF_SUCCESS;
     uint64_t    offMax = 0;
     uint64_t    offMin = ~(uint64_t)0;
     uint64_t    PrevTsc = ASMReadTSC();

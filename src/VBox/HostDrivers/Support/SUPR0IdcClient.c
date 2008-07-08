@@ -48,12 +48,15 @@ static PSUPDRVIDCHANDLE volatile g_pMainHandle = NULL;
  * minmum requirements aren't met.
  *
  * @returns VBox status code.
- * @param   pHandle         The handle structure (output).
- * @param   uReqVersion     The requested version. Pass 0 for default.
- * @param   uMinVersion     The minimum required version. Pass 0 for default.
- * @param   puVersion       Where to store the version of the IDC interface. Optional.
+ * @param   pHandle             The handle structure (output).
+ * @param   uReqVersion         The requested version. Pass 0 for default.
+ * @param   uMinVersion         The minimum required version. Pass 0 for default.
+ * @param   puSessionVersion    Where to store the session version. Optional.
+ * @param   puDriverVersion     Where to store the session version. Optional.
+ * @param   puDriverRevision    Where to store the SVN revision of the driver. Optional.
  */
-SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion, uint32_t *puVersion)
+SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion,
+                            uint32_t *puSessionVersion, uint32_t *puDriverVersion, uint32_t *puDriverRevision)
 {
     unsigned uDefaultMinVersion;
     SUPDRVIDCREQCONNECT Req;
@@ -64,9 +67,19 @@ SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint
      */
     AssertPtrReturn(pHandle, VERR_INVALID_POINTER);
     pHandle->s.pSession = NULL;
-    AssertPtrNullReturn(puVersion, VERR_INVALID_POINTER);
-    if (puVersion)
-        *puVersion = 0;
+
+    AssertPtrNullReturn(puSessionVersion, VERR_INVALID_POINTER);
+    if (puSessionVersion)
+        *puSessionVersion = 0;
+
+    AssertPtrNullReturn(puDriverVersion, VERR_INVALID_POINTER);
+    if (puDriverVersion)
+        *puDriverVersion = 0;
+
+    AssertPtrNullReturn(puDriverRevision, VERR_INVALID_POINTER);
+    if (puDriverRevision)
+        *puDriverRevision = 0;
+
     AssertReturn(!uMinVersion || (uMinVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)), VERR_INVALID_PARAMETER);
     AssertReturn(!uReqVersion || (uReqVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)), VERR_INVALID_PARAMETER);
 
@@ -99,22 +112,26 @@ SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint
     if (RT_SUCCESS(rc))
     {
         pHandle->s.pSession = Req.u.Out.pSession;
-        if (puVersion)
-            *puVersion = Req.u.Out.uVersion;
+        if (puSessionVersion)
+            *puSessionVersion = Req.u.Out.uSessionVersion;
+        if (puDriverVersion)
+            *puDriverVersion = Req.u.Out.uDriverVersion;
+        if (puDriverRevision)
+            *puDriverRevision = Req.u.Out.uDriverRevision;
 
         /*
          * We don't really trust anyone, make sure the returned
          * session and version values actually makes sense.
          */
         if (    VALID_PTR(Req.u.Out.pSession)
-            &&  Req.u.Out.uVersion >= uMinVersion
-            &&  (Req.u.Out.uVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)))
+            &&  Req.u.Out.uSessionVersion >= uMinVersion
+            &&  (Req.u.Out.uSessionVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)))
         {
             ASMAtomicCmpXchgPtr((void * volatile *)&g_pMainHandle, pHandle, NULL);
             return rc;
         }
 
-        AssertMsgFailed(("pSession=%p uVersion=0x%x\n", Req.u.Out.pSession, Req.u.Out.uVersion));
+        AssertMsgFailed(("pSession=%p uSessionVersion=0x%x (r%u)\n", Req.u.Out.pSession, Req.u.Out.uSessionVersion, Req.u.Out.uDriverRevision));
         rc = VERR_VERSION_MISMATCH;
         SUPR0IdcClose(pHandle);
     }

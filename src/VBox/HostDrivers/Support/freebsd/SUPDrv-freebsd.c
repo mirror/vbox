@@ -300,13 +300,12 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, &pSession);
+    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
-        pSession->Uid = 0;
-        pSession->Gid = 0;
-        pSession->Process = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
+        /** @todo get (e)uid and (e)gid.
+        pSession->Uid = stuff;
+        pSession->Gid = stuff; */
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))
             return 0;
 
