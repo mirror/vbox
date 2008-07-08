@@ -150,12 +150,6 @@
         </item>
         <item>
          <widget class="VBoxMediaComboBox" name="mCbIsoFD" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="whatsThis" >
            <string>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</string>
           </property>

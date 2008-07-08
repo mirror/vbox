@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>397</width>
-    <height>222</height>
+    <width>376</width>
+    <height>292</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" >
@@ -186,12 +186,6 @@
         </item>
         <item>
          <widget class="VBoxMediaComboBox" name="mCbIsoCD" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="whatsThis" >
            <string>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</string>
           </property>
