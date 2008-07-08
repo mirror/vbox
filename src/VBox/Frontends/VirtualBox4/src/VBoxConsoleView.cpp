@@ -679,6 +679,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_cube_42px.png");
 #endif
 
+    /* No frame around the view */
+    setFrameStyle (QFrame::NoFrame);
+
     VBoxViewport *pViewport = new VBoxViewport (this);
     setViewport (pViewport);
 
