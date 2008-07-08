@@ -199,6 +199,13 @@ typedef struct HWACCM
         /** Virtual address of the TSS page used for real mode emulation. */
         R0PTRTYPE(PVBOXTSS)         pRealModeTSS;
 
+        /** R0 memory object for the virtual APIC mmio cache. */
+        RTR0MEMOBJ                  pMemObjAPIC;
+        /** Physical address of the virtual APIC mmio cache. */
+        RTHCPHYS                    pAPICPhys;
+        /** Virtual address of the virtual APIC mmio cache. */
+        R0PTRTYPE(uint8_t *)        pAPIC;
+
         /** Ring 0 handlers for VT-x. */
         DECLR0CALLBACKMEMBER(int, pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
 

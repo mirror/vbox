@@ -767,6 +767,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     SVM_VMCB   *pVMCB;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
+    uint8_t     u8LastVTPR;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -856,11 +857,9 @@ ResumeExecution:
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
         /* TPR caching in CR8 */
-        uint8_t u8TPR;
-        int rc = PDMApicGetTPR(pVM, &u8TPR);
+        int rc = PDMApicGetTPR(pVM, &u8LastVTPR);
         AssertRC(rc);
-        pCtx->cr8                    = u8TPR;
-        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8TPR;
+        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastVTPR;
     }
 
     /* All done! Let's start VM execution. */
@@ -1122,13 +1121,13 @@ ResumeExecution:
     pCtx->dr7 = pVMCB->guest.u64DR7;
 
     /* Update the APIC if the cached TPR value has changed. */
-    if (pVMCB->ctrl.IntCtrl.n.u8VTPR != pCtx->cr8)
+    if (    (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        &&  pVMCB->ctrl.IntCtrl.n.u8VTPR != u8LastVTPR)
     {
         rc = PDMApicSetTPR(pVM, pVMCB->ctrl.IntCtrl.n.u8VTPR);
         AssertRC(rc);
-        pCtx->cr8 = pVMCB->ctrl.IntCtrl.n.u8VTPR;
+        u8LastVTPR = pVMCB->ctrl.IntCtrl.n.u8VTPR;
     }
-    pVMCB->ctrl.IntCtrl.n.u8VTPR = pCtx->cr8;
 
     /* Check if an injected event was interrupted prematurely. */
     pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
@@ -1527,10 +1526,6 @@ ResumeExecution:
             break;
         case 4:
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
-            break;
-        case 8:
-            AssertFailed(); /* shouldn't come here anymore */
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR8;
             break;
         default:
             AssertFailed();
