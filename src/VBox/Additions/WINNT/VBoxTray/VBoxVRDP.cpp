@@ -409,7 +409,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                 }
                 else
                 {
-                    dprintf(("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
+                    dprintf(("VBoxTray: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
 
                     /* sleep a bit to not eat too much CPU in case the above call always fails */
                     if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -422,7 +422,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxTray: error from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)

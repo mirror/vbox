@@ -149,7 +149,7 @@ static VBOXSERVICEINFO vboxServiceTable[] =
 
 static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
-    dprintf(("VBoxService: Starting services...\n"));
+    dprintf(("VBoxTray: Starting services...\n"));
 
     pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -262,7 +262,7 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
 void WINAPI VBoxServiceStart(void)
 {
-    dprintf(("VBoxService: Start\n"));
+    dprintf(("VBoxTray: Start\n"));
 
     VBOXSERVICEENV svcEnv;
 
@@ -278,11 +278,11 @@ void WINAPI VBoxServiceStart(void)
                              NULL);
     if (gVBoxDriver == INVALID_HANDLE_VALUE)
     {
-        dprintf(("VBoxService: could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
+        dprintf(("VBoxTray: could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
         status = ERROR_GEN_FAILURE;
     }
 
-    dprintf(("VBoxService: Driver h %p, st %p\n", gVBoxDriver, status));
+    dprintf(("VBoxTray: Driver h %p, st %p\n", gVBoxDriver, status));
 
     if (status == NO_ERROR)
     {
@@ -297,7 +297,7 @@ void WINAPI VBoxServiceStart(void)
             status = GetLastError();
     }
 
-    dprintf(("VBoxService: Class st %p\n", status));
+    dprintf(("VBoxTray: Class st %p\n", status));
 
     if (status == NO_ERROR)
     {
@@ -324,14 +324,14 @@ void WINAPI VBoxServiceStart(void)
         }
     }
 
-    dprintf(("VBoxService: Window h %p, st %p\n", gToolWindow, status));
+    dprintf(("VBoxTray: Window h %p, st %p\n", gToolWindow, status));
 
     if (status == NO_ERROR)
     {
         gStopSem = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (gStopSem == NULL)
         {
-            dprintf(("VBoxService: CreateEvent for Stopping failed: rc = %d\n", GetLastError()));
+            dprintf(("VBoxTray: CreateEvent for Stopping failed: rc = %d\n", GetLastError()));
             return;
         }
 
@@ -353,7 +353,7 @@ void WINAPI VBoxServiceStart(void)
         info.dwOSVersionInfoSize = sizeof(info);
         if (GetVersionEx(&info))
         {
-            dprintf(("VBoxService: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
+            dprintf(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
             dwMajorVersion = info.dwMajorVersion;
         }
 
@@ -398,7 +398,7 @@ void WINAPI VBoxServiceStart(void)
             ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
             if (ghSeamlessNotifyEvent == NULL)
             {
-                dprintf(("VBoxService: CreateEvent for Seamless failed: rc = %d\n", GetLastError()));
+                dprintf(("VBoxTray: CreateEvent for Seamless failed: rc = %d\n", GetLastError()));
                 return;
             }
         }
@@ -440,7 +440,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     sprintf(ndata.szTip, "Sun xVM VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
-    dprintf(("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
+    dprintf(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
@@ -456,24 +456,24 @@ void WINAPI VBoxServiceStart(void)
     if (0 == ghSeamlessNotifyEvent)         /* If seamless mode is not active / supported, reduce event array count */
         dwEventCount = 1;                       
 
-    dprintf(("VBoxService: Number of events to wait in main loop: %ld\n", dwEventCount));
+    dprintf(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
 
     while(true)
     {
         DWORD waitResult = MsgWaitForMultipleObjectsEx(dwEventCount, hWaitEvent, 500, QS_ALLINPUT, 0);
         waitResult = waitResult - WAIT_OBJECT_0;
 
-        dprintf(("VBoxService: Wait result  = %ld.\n", waitResult));
+        dprintf(("VBoxTray: Wait result  = %ld.\n", waitResult));
 
         if (waitResult == 0)
         {
-            dprintf(("VBoxService: Event 'Exit' triggered.\n"));
+            dprintf(("VBoxTray: Event 'Exit' triggered.\n"));
             /* exit */
             break;
         }
         else if ((waitResult == 1) && (ghSeamlessNotifyEvent!=0))       /* Only jump in, if seamless is active! */
         {
-            dprintf(("VBoxService: Event 'Seamless' triggered.\n"));
+            dprintf(("VBoxTray: Event 'Seamless' triggered.\n"));
 
             /* seamless window notification */
             VBoxSeamlessCheckWindows();
@@ -484,10 +484,10 @@ void WINAPI VBoxServiceStart(void)
             MSG msg;
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
-                dprintf(("VBoxService: msg %p\n", msg.message));
+                dprintf(("VBoxTray: msg %p\n", msg.message));
                 if (msg.message == WM_QUIT)
                 {
-                    dprintf(("VBoxService: WM_QUIT!\n"));
+                    dprintf(("VBoxTray: WM_QUIT!\n"));
                     SetEvent(gStopSem);
                     continue;
                 }
@@ -498,21 +498,21 @@ void WINAPI VBoxServiceStart(void)
             if (!fTrayIconCreated)
             {
                 fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-                dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
+                dprintf(("VBoxTray: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
             }
         }
     }
 
-    dprintf(("VBoxService: returned from main loop, exiting...\n"));
+    dprintf(("VBoxTray: returned from main loop, exiting...\n"));
 
     /* remove the system tray icon */
     Shell_NotifyIcon(NIM_DELETE, &ndata);
 
-    dprintf(("VBoxService: waiting for display change thread...\n"));
+    dprintf(("VBoxTray: waiting for display change thread...\n"));
 
     vboxStopServices (&svcEnv, vboxServiceTable);
 
-    dprintf(("VBoxService: destroying tool window...\n"));
+    dprintf(("VBoxTray: destroying tool window...\n"));
 
     /* destroy the tool window */
     DestroyWindow(gToolWindow);
@@ -523,7 +523,7 @@ void WINAPI VBoxServiceStart(void)
     CloseHandle(gStopSem);
     CloseHandle(ghSeamlessNotifyEvent);
 
-    dprintf(("VBoxService: leaving service main function\n"));
+    dprintf(("VBoxTray: leaving service main function\n"));
 
     return;
 }
@@ -545,12 +545,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
       return 0;
    }
 
-    dprintf(("VBoxService: Started.\n"));
+    dprintf(("VBoxTray: Started.\n"));
 
     gInstance = hInstance;
     VBoxServiceStart();
 
-    dprintf(("VBoxService: Ended.\n"));
+    dprintf(("VBoxTray: Ended.\n"));
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL) {

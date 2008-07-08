@@ -56,16 +56,16 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
     if (NULL == hUser)
     {
-        dprintf(("VBoxService: Could not get module handle of USER32.DLL!\n"));
+        dprintf(("VBoxTray: Could not get module handle of USER32.DLL!\n"));
         return VERR_NOT_IMPLEMENTED; 
     }
     else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up! */
     {
         *(uintptr_t *)&gCtx.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA"); 
-        dprintf(("VBoxService: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+        dprintf(("VBoxTray: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
 
         *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA"); 
-        dprintf(("VBoxService: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
+        dprintf(("VBoxTray: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
     }
     else if (OSinfo.dwMajorVersion <= 4)            /* Windows NT 4.0 */
     {
@@ -73,11 +73,11 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     }
     else                                /* Unsupported platform */
     {
-        dprintf(("VBoxService: Warning, display for platform not handled yet!\n"));
+        dprintf(("VBoxTray: Warning, display for platform not handled yet!\n"));
         return VERR_NOT_IMPLEMENTED; 
     }
 
-    dprintf(("VBoxService: Display init successful.\n"));
+    dprintf(("VBoxTray: Display init successful.\n"));
 
     *pfStartThread = true;
     *ppInstance = (void *)&gCtx;
