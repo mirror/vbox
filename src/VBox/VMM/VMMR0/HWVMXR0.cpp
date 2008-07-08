@@ -806,7 +806,6 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         }
         else
         {
-            Assert(pVM->hwaccm.s.vmx.fResumeVM == true);
             /** @todo check if we support the old style mess correctly. */
             if (!(val & X86_CR0_NE))
             {
