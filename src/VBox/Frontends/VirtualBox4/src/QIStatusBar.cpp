@@ -40,9 +40,8 @@ QIStatusBar::QIStatusBar (QWidget *parent) :
         this, SIGNAL( messageChanged (const QString &) ),
         this, SLOT( rememberLastMessage (const QString &) )
     );
-#ifdef Q_WS_MAC
-     setStyleSheet ("QStatusBar::item { border: 0px none black; }");
-#endif /* Q_WS_MAC */
+    /* Remove that ugly border around the statusbar items on every platform */
+    setStyleSheet ("QStatusBar::item { border: 0px none black; }");
 }
 
 /**
