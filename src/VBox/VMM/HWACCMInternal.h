@@ -78,13 +78,11 @@ __BEGIN_DECLS
 #define HWACCM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
 #define HWACCM_CHANGED_GUEST_DEBUG              RT_BIT(10)
 #define HWACCM_CHANGED_HOST_CONTEXT             RT_BIT(11)
-#define HWACCM_CHANGED_GUEST_CR8                RT_BIT(12)
 
 #define HWACCM_CHANGED_ALL                  (   HWACCM_CHANGED_GUEST_SEGMENT_REGS \
                                             |   HWACCM_CHANGED_GUEST_CR0          \
                                             |   HWACCM_CHANGED_GUEST_CR3          \
                                             |   HWACCM_CHANGED_GUEST_CR4          \
-                                            |   HWACCM_CHANGED_GUEST_CR8          \
                                             |   HWACCM_CHANGED_GUEST_GDTR         \
                                             |   HWACCM_CHANGED_GUEST_IDTR         \
                                             |   HWACCM_CHANGED_GUEST_LDTR         \
@@ -98,7 +96,6 @@ __BEGIN_DECLS
                                             |   HWACCM_CHANGED_GUEST_CR0          \
                                             |   HWACCM_CHANGED_GUEST_CR3          \
                                             |   HWACCM_CHANGED_GUEST_CR4          \
-                                            |   HWACCM_CHANGED_GUEST_CR8          \
                                             |   HWACCM_CHANGED_GUEST_GDTR         \
                                             |   HWACCM_CHANGED_GUEST_IDTR         \
                                             |   HWACCM_CHANGED_GUEST_LDTR         \
