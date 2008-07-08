@@ -458,6 +458,27 @@ typedef struct SUPDRVLDRUSAGE
 
 
 /**
+ * Component factory registration record.
+ */
+typedef struct SUPDRVFACTORYREG
+{
+    /** Pointer to the next registration. */
+    struct SUPDRVFACTORYREG    *pNext;
+    /** Pointer to the registered factory. */
+    PCSUPDRVFACTORY             pFactory;
+    /** The session owning the factory.
+     * Used for deregistration and session cleanup. */
+    PSUPDRVSESSION              pSession;
+    /** Length of the name. */
+    size_t                      cchName;
+} SUPDRVFACTORYREG;
+/** Pointer to a component factory registration record. */
+typedef SUPDRVFACTORYREG *PSUPDRVFACTORYREG;
+/** Pointer to a const component factory registration record. */
+typedef SUPDRVFACTORYREG const *PCSUPDRVFACTORYREG;
+
+
+/**
  * Registered object.
  * This takes care of reference counting and tracking data for access checks.
  */
@@ -538,7 +559,7 @@ typedef struct SUPDRVSESSION
     RTUID                       Uid;
     /** The group id of the session. (Set by the OS part.) */
     RTGID                       Gid;
-    /** The process (id) of the session. (Set by the OS part.) */
+    /** The process (id) of the session. */
     RTPROCESS                   Process;
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
@@ -620,6 +641,12 @@ typedef struct SUPDRVDEVEXT
     /** The CPU id of the GIP master.
      * This CPU is responsible for the updating the common GIP data. */
     RTCPUID volatile        idGipMaster;
+
+    /** Component factory mutex.
+     * This protects pComponentFactoryHead and component factory querying. */
+    RTSEMFASTMUTEX          mtxComponentFactory;
+    /** The head of the list of registered component factories. */
+    PSUPDRVFACTORYREG       pComponentFactoryHead;
 } SUPDRVDEVEXT;
 
 
@@ -641,7 +668,7 @@ int  VBOXCALL   supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRV
 int  VBOXCALL   supdrvIDC(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQHDR pReqHdr);
 int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
-int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSession);
+int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSION *ppSession);
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 int  VBOXCALL   supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);

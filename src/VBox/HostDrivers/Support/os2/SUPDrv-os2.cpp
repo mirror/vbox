@@ -150,11 +150,9 @@ DECLASM(int) VBoxDrvOpen(uint16_t sfn)
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_DevExt, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
-        pSession->Process = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
         pSession->sfn = sfn;
 
         /*

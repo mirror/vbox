@@ -321,7 +321,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_DevExt, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -332,8 +332,6 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
             pSession->Uid = pCred->cr_uid;
             pSession->Gid = pCred->cr_gid;
         }
-        pSession->Process = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
 
         /*
          * Insert it into the hash table.

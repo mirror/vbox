@@ -231,15 +231,14 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
      */
     pFileObj->FsContext = NULL;
     PSUPDRVSESSION pSession;
-    int rc = supdrvCreateSession(pDevExt, &pSession);
+#if 0 /** @todo check if this works, consider OBJ_KERNEL_HANDLE too. */
+    bool fUser = pIrp->RequestorMode != KernelMode;
+#else
+    bool fUser = true;
+#endif
+    int rc = supdrvCreateSession(pDevExt, fUser, &pSession);
     if (!rc)
-    {
-        pSession->Uid       = NIL_RTUID;
-        pSession->Gid       = NIL_RTGID;
-        pSession->Process   = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
         pFileObj->FsContext = pSession;
-    }
 
     NTSTATUS    rcNt = pIrp->IoStatus.Status = VBoxDrvNtErr2NtStatus(rc);
     pIrp->IoStatus.Information  = 0;

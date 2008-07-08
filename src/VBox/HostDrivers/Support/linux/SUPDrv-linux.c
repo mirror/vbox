@@ -678,13 +678,11 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     /*
      * Call common code for the rest.
      */
-    rc = supdrvCreateSession(&g_DevExt, (PSUPDRVSESSION *)&pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, (PSUPDRVSESSION *)&pSession);
     if (!rc)
     {
-        pSession->Uid       = current->euid;
-        pSession->Gid       = current->egid;
-        pSession->Process   = RTProcSelf();
-        pSession->R0Process = RTR0ProcHandleSelf();
+        pSession->Uid = current->euid;
+        pSession->Gid = current->egid;
     }
 
     pFilp->private_data = pSession;

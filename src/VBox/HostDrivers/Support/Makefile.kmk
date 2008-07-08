@@ -334,5 +334,11 @@ vboxdrv_SOURCES       = \
 endif # solaris
 
 
+#
+# SUPDrv.c needs the VBOX_SVN_REV.
+#
+SUPDrv.c_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+
 include $(KBUILD_PATH)/subfooter.kmk
 

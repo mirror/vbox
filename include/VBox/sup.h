@@ -688,53 +688,20 @@ typedef struct SUPDRVFACTORY
      *
      * @returns Pointer to the factory interfaces on success, NULL on failure.
      *
-     * @param   pSession            The SUPDRV session making the query.
      * @param   pSupDrvFactory      Pointer to this structure.
+     * @param   pSession            The SUPDRV session making the query.
      * @param   pszInterfaceUuid    The UUID of the factory interface.
      */
-    DECLR0CALLBACKMEMBER(void *, pfnQueryFactoryInterface,(PSUPDRVSESSION pSession, struct SUPDRVFACTORY *pSupDrvFactory, const char *pszInterfaceUuid));
+    DECLR0CALLBACKMEMBER(void *, pfnQueryFactoryInterface,(struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid));
 } SUPDRVFACTORY;
 /** Pointer to a support driver factory. */
 typedef SUPDRVFACTORY *PSUPDRVFACTORY;
 /** Pointer to a const support driver factory. */
 typedef SUPDRVFACTORY const *PCSUPDRVFACTORY;
 
-/**
- * Register a component factory with the support driver.
- *
- * @returns VBox status code.
- * @param   pSession        The SUPDRV session (must be a ring-0 session).
- * @param   pFactory        Pointer to the component factory registration structure.
- *
- * @remarks This interface is also available thru the IDC interfaces.
- */
-SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PSUPDRVFACTORY pFactory);
-
-/**
- * Deregister a component factory.
- *
- * @returns VBox status code.
- * @param   pSession        The SUPDRV session (must be a ring-0 session).
- * @param   pFactory        Pointer to the component factory registration structure
- *                          previously passed SUPR0ComponentRegisterFactory().
- *
- * @remarks This interface is also available thru the IDC interfaces.
- */
-SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PSUPDRVFACTORY pFactory);
-
-/**
- * Queries a component factory.
- *
- * @returns VBox status code.
- * @retval  VBOX_SUPDRV_COMPONENT_NOT_FOUND if the component factory wasn't found.
- * @retval  VBOX_SUPDRV_INTERFACE_NOT_SUPPORTED if the interface wasn't supported.
- *
- * @param   pSession        The SUPDRV session.
- * @param   pszName         The name of the component factory.
- * @param   pInterfaceUuid  The UUID of the factory interface.
- * @param   ppvFactoryIf    Where to store the factory interface.
- */
-SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, PCRTUUID pInterfaceUuid, void **ppvFactoryIf);
+SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
+SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
+SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
 
 
 /** @defgroup   grp_sup_r0_idc  The IDC Interface
@@ -763,7 +730,8 @@ typedef union SUPDRVIDCHANDLE
 /** Pointer to a handle. */
 typedef SUPDRVIDCHANDLE *PSUPDRVIDCHANDLE;
 
-SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion, uint32_t *puVersion);
+SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion,
+                            uint32_t *puSessionVersion, uint32_t *puDriverVersion, uint32_t *puDriverRevision);
 SUPR0DECL(int) SUPR0IdcCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, void *pvReq, uint32_t cbReq);
 SUPR0DECL(int) SUPR0IdcClose(PSUPDRVIDCHANDLE pHandle);
 SUPR0DECL(PSUPDRVSESSION) SUPR0IdcGetSession(PSUPDRVIDCHANDLE pHandle);
