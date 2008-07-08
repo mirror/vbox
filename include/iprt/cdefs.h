@@ -80,6 +80,7 @@
 #define IN_RT_GC
 #define IN_RT_R0
 #define IN_RT_R3
+#define IN_RT_STATIC
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
@@ -586,6 +587,13 @@
 #endif
 
 
+/** @def IN_RT_STATIC
+ * Used to inidicate whether we're linking against a static IPRT
+ * or not. The IPRT symbols will be declared as hidden (if
+ * supported). Note that this define has no effect without setting
+ * IN_RT_R0, IN_RT_R3 or IN_RT_GC indicators are set first.
+ */
+
 /** @def IN_RT_R0
  * Used to indicate whether we're inside the same link module as
  * the HC Ring-0 Runtime Library.
@@ -595,7 +603,11 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_RT_R0
-# define RTR0DECL(type)     DECLEXPORT(type) RTCALL
+# ifdef IN_RT_STATIC
+#  define RTR0DECL(type)    DECLHIDDEN(type) RTCALL
+# else
+#  define RTR0DECL(type)    DECLEXPORT(type) RTCALL
+# endif
 #else
 # define RTR0DECL(type)     DECLIMPORT(type) RTCALL
 #endif
@@ -609,7 +621,11 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_RT_R3
-# define RTR3DECL(type)     DECLEXPORT(type) RTCALL
+# ifdef IN_RT_STATIC
+#  define RTR3DECL(type)    DECLHIDDEN(type) RTCALL
+# else
+#  define RTR3DECL(type)    DECLEXPORT(type) RTCALL
+# endif
 #else
 # define RTR3DECL(type)     DECLIMPORT(type) RTCALL
 #endif
@@ -623,7 +639,11 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_RT_GC
-# define RTGCDECL(type)     DECLEXPORT(type) RTCALL
+# ifdef IN_RT_STATIC
+#  define RTGCDECL(type)    DECLHIDDEN(type) RTCALL
+# else
+#  define RTGCDECL(type)    DECLEXPORT(type) RTCALL
+# endif
 #else
 # define RTGCDECL(type)     DECLIMPORT(type) RTCALL
 #endif
@@ -634,7 +654,11 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
-# define RTDECL(type)       DECLEXPORT(type) RTCALL
+# ifdef IN_RT_STATIC
+#  define RTDECL(type)      DECLHIDDEN(type) RTCALL
+# else
+#  define RTDECL(type)      DECLEXPORT(type) RTCALL
+# endif
 #else
 # define RTDECL(type)       DECLIMPORT(type) RTCALL
 #endif
@@ -645,7 +669,11 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
-# define RTDATADECL(type)   DECLEXPORT(type)
+# ifdef IN_RT_STATIC
+#  define RTDATADECL(type)  DECLHIDDEN(type)
+# else
+#  define RTDATADECL(type)  DECLEXPORT(type)
+# endif
 #else
 # define RTDATADECL(type)   DECLIMPORT(type)
 #endif
