@@ -51,10 +51,15 @@ REMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
          * We sync them back in REMR3State.
          */
         pVM->rem.s.aGCPtrInvalidatedPages[pVM->rem.s.cInvalidatedPages++] = GCPtrPage;
-        return VINF_SUCCESS;
     }
-    /* Note: another option is to signal a TLB flush for the recompiler */
-    return VERR_REM_FLUSHED_PAGES_OVERFLOW;
+    else
+    {
+        /* Tell the recompiler to flush its TLB. */
+        CPUMSetChangedFlags(pVM, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+        pVM->rem.s.cInvalidatedPages = 0;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
