@@ -553,7 +553,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
                 pParamVal->flags |= PARAM_VAL64;
                 if (VBOX_FAILURE(DISFetchReg64(pCtx, pParam->base.reg_gen, &pParamVal->val.val64))) return VERR_INVALID_PARAMETER;
             }
-            else {
+            else 
+            {
                 AssertFailed();
                 return VERR_INVALID_PARAMETER;
             }
@@ -561,8 +562,6 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         // Note that scale implies index (SIB byte)
         if (pParam->flags & USE_INDEX)
         {
-            uint64_t val64;
-
             if (pParam->flags & USE_REG_GEN32)
             {
                 uint32_t val32;
@@ -570,19 +569,24 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
                 pParamVal->flags |= PARAM_VAL32;
                 if (VBOX_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
 
-                val64 = val32;
+                if (pParam->flags & USE_SCALE)
+                    val32 *= pParam->scale;
+
+                pParamVal->val.val32 += val32;
             }
             else
             if (pParam->flags & USE_REG_GEN64)
             {
+                uint64_t val64;
+
                 pParamVal->flags |= PARAM_VAL64;
                 if (VBOX_FAILURE(DISFetchReg64(pCtx, pParam->index.reg_gen, &val64))) return VERR_INVALID_PARAMETER;
+
+                if (pParam->flags & USE_SCALE)
+                    val64 *= pParam->scale;
+
+                pParamVal->val.val64 += val64;
             }
-
-            if (pParam->flags & USE_SCALE)
-                val64 *= pParam->scale;
-
-            pParamVal->val.val64 += val64;
         }
 
         if (pParam->flags & USE_DISPLACEMENT8)
