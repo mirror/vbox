@@ -844,8 +844,8 @@ void org_virtualbox_SupDrv::stop(IOService *pProvider)
 bool org_virtualbox_SupDrv::terminate(IOOptionBits fOptions)
 {
     bool fRc;
-    dprintf(("org_virtualbox_SupDrv::terminate: reference_count=%d g_cSessions=%d\n",
-             KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions)));
+    dprintf(("org_virtualbox_SupDrv::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
+             KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions));
     if (    KMOD_INFO_NAME.reference_count != 0
         ||  ASMAtomicUoReadS32(&g_cSessions))
         fRc = false;
