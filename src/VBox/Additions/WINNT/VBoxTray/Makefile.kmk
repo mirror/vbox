@@ -40,9 +40,9 @@ VBoxTray_SOURCES  = \
 	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
 	VBoxVRDP.cpp \
-        VBoxRestore.cpp \
-        VBoxStatistics.cpp \
-        VBoxMemBalloon.cpp \
+	VBoxRestore.cpp \
+	VBoxStatistics.cpp \
+	VBoxMemBalloon.cpp \
 	helpers.cpp \
 	VBoxTray.rc
 VBoxTray_LIBS     = \
@@ -56,7 +56,6 @@ VBoxTray.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 VBoxTray.rc_INCS = $(PATH_VBoxTray)
 VBoxTray.rc_DEPS = $(PATH_VBoxTray)/VBoxTray-icon.rc
 VBoxTray.rc_CLEAN = $(PATH_VBoxTray)/VBoxTray-icon.rc
-
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
