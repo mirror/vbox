@@ -41,8 +41,11 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
     : QComboBox (aParent)
     , mType (aType), mUseEmptyItem (aUseEmptyItem)
 {
+    /* Setup the elide mode */
+    view()->setTextElideMode (Qt::ElideRight);
     /* Setup default size policy */
-    setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+    QSizePolicy sp (QSizePolicy::Ignored, QSizePolicy::Fixed, QSizePolicy::ComboBox);
+    setSizePolicy (sp);
 
     /* Setup enumeration handlers */
     connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),

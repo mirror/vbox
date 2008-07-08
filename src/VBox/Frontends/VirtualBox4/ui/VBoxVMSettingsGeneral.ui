@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>624</width>
-    <height>420</height>
+    <width>662</width>
+    <height>655</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" >
@@ -419,292 +419,268 @@
       </attribute>
       <layout class="QVBoxLayout" >
        <item>
-        <layout class="QHBoxLayout" >
-         <item>
-          <widget class="QGroupBox" name="mGbBootOrder" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title" >
-            <string>Boo&amp;t Order</string>
-           </property>
-           <layout class="QVBoxLayout" >
-            <property name="topMargin" >
-             <number>5</number>
+        <widget class="QWidget" native="1" name="widget" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Maximum" hsizetype="Preferred" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QHBoxLayout" >
+          <property name="leftMargin" >
+           <number>0</number>
+          </property>
+          <property name="topMargin" >
+           <number>0</number>
+          </property>
+          <property name="rightMargin" >
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QGroupBox" name="mGbBootOrder" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Preferred" hsizetype="Maximum" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
-            <item>
-             <widget class="QWidget" native="1" name="mWBootContainer" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Fixed" hsizetype="Minimum" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <layout class="QHBoxLayout" >
-               <property name="leftMargin" >
-                <number>0</number>
-               </property>
-               <property name="topMargin" >
-                <number>0</number>
-               </property>
-               <property name="rightMargin" >
-                <number>0</number>
-               </property>
-               <property name="bottomMargin" >
-                <number>0</number>
-               </property>
-               <item>
-                <layout class="QVBoxLayout" >
-                 <property name="spacing" >
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="BootItemsTable" name="mTwBootOrder" >
-                   <property name="sizePolicy" >
-                    <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="whatsThis" >
-                    <string>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
-                   </property>
-                   <property name="verticalScrollBarPolicy" >
-                    <enum>Qt::ScrollBarAlwaysOff</enum>
-                   </property>
-                   <property name="horizontalScrollBarPolicy" >
-                    <enum>Qt::ScrollBarAlwaysOff</enum>
-                   </property>
-                   <property name="alternatingRowColors" >
-                    <bool>true</bool>
-                   </property>
-                   <property name="rootIsDecorated" >
-                    <bool>false</bool>
-                   </property>
-                   <property name="uniformRowHeights" >
-                    <bool>true</bool>
-                   </property>
-                   <column>
-                    <property name="text" >
-                     <string>[device]</string>
+            <property name="title" >
+             <string>Boo&amp;t Order</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="topMargin" >
+              <number>5</number>
+             </property>
+             <item>
+              <widget class="QWidget" native="1" name="mWBootContainer" >
+               <layout class="QHBoxLayout" >
+                <property name="leftMargin" >
+                 <number>0</number>
+                </property>
+                <property name="topMargin" >
+                 <number>0</number>
+                </property>
+                <property name="rightMargin" >
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin" >
+                 <number>0</number>
+                </property>
+                <item>
+                 <layout class="QVBoxLayout" >
+                  <property name="spacing" >
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="BootItemsTable" name="mTwBootOrder" >
+                    <property name="whatsThis" >
+                     <string>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
                     </property>
-                   </column>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer>
-                   <property name="orientation" >
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" >
-                    <size>
-                     <width>20</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" >
-                 <property name="spacing" >
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="QToolButton" name="mTbBootItemUp" >
-                   <property name="enabled" >
-                    <bool>false</bool>
-                   </property>
-                   <property name="focusPolicy" >
-                    <enum>Qt::StrongFocus</enum>
-                   </property>
-                   <property name="toolTip" >
-                    <string>Move Up (Ctrl-Up)</string>
-                   </property>
-                   <property name="whatsThis" >
-                    <string>Moves the selected boot device up.</string>
-                   </property>
-                   <property name="text" >
-                    <string/>
-                   </property>
-                   <property name="autoRaise" >
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="mTbBootItemDown" >
-                   <property name="enabled" >
-                    <bool>false</bool>
-                   </property>
-                   <property name="focusPolicy" >
-                    <enum>Qt::StrongFocus</enum>
-                   </property>
-                   <property name="toolTip" >
-                    <string>Move Down (Ctrl-Down)</string>
-                   </property>
-                   <property name="whatsThis" >
-                    <string>Moves the selected boot device down.</string>
-                   </property>
-                   <property name="text" >
-                    <string/>
-                   </property>
-                   <property name="autoRaise" >
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer>
-                   <property name="orientation" >
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeType" >
-                    <enum>QSizePolicy::Expanding</enum>
-                   </property>
-                   <property name="sizeHint" >
-                    <size>
-                     <width>4</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="mGbAdvanced" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="MinimumExpanding" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title" >
-            <string>Extended Features</string>
-           </property>
-           <layout class="QVBoxLayout" >
-            <property name="topMargin" >
-             <number>5</number>
+                    <property name="verticalScrollBarPolicy" >
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
+                    </property>
+                    <property name="horizontalScrollBarPolicy" >
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
+                    </property>
+                    <property name="alternatingRowColors" >
+                     <bool>true</bool>
+                    </property>
+                    <property name="rootIsDecorated" >
+                     <bool>false</bool>
+                    </property>
+                    <property name="uniformRowHeights" >
+                     <bool>true</bool>
+                    </property>
+                    <column>
+                     <property name="text" >
+                      <string>[device]</string>
+                     </property>
+                    </column>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QVBoxLayout" >
+                  <property name="spacing" >
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QToolButton" name="mTbBootItemUp" >
+                    <property name="enabled" >
+                     <bool>false</bool>
+                    </property>
+                    <property name="focusPolicy" >
+                     <enum>Qt::StrongFocus</enum>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Move Up (Ctrl-Up)</string>
+                    </property>
+                    <property name="whatsThis" >
+                     <string>Moves the selected boot device up.</string>
+                    </property>
+                    <property name="text" >
+                     <string/>
+                    </property>
+                    <property name="autoRaise" >
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="mTbBootItemDown" >
+                    <property name="enabled" >
+                     <bool>false</bool>
+                    </property>
+                    <property name="focusPolicy" >
+                     <enum>Qt::StrongFocus</enum>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Move Down (Ctrl-Down)</string>
+                    </property>
+                    <property name="whatsThis" >
+                     <string>Moves the selected boot device down.</string>
+                    </property>
+                    <property name="text" >
+                     <string/>
+                    </property>
+                    <property name="autoRaise" >
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeType" >
+                     <enum>QSizePolicy::Expanding</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>4</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="mGbAdvanced" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Maximum" hsizetype="MinimumExpanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
-            <item>
-             <widget class="QWidget" native="1" name="mWAdvContainer" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <layout class="QGridLayout" >
-               <property name="leftMargin" >
-                <number>0</number>
-               </property>
-               <property name="topMargin" >
-                <number>0</number>
-               </property>
-               <property name="rightMargin" >
-                <number>0</number>
-               </property>
-               <property name="bottomMargin" >
-                <number>0</number>
-               </property>
-               <item row="0" column="0" >
-                <widget class="QCheckBox" name="mCbAcpi" >
-                 <property name="sizePolicy" >
-                  <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="whatsThis" >
-                  <string>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</string>
-                 </property>
-                 <property name="text" >
-                  <string>Enable A&amp;CPI</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1" >
-                <widget class="QCheckBox" name="mCbPae" >
-                 <property name="sizePolicy" >
-                  <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="whatsThis" >
-                  <string>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</string>
-                 </property>
-                 <property name="text" >
-                  <string>Enable PA&amp;E/NX</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0" >
-                <widget class="QCheckBox" name="mCbApic" >
-                 <property name="sizePolicy" >
-                  <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="whatsThis" >
-                  <string>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</string>
-                 </property>
-                 <property name="text" >
-                  <string>Enable IO A&amp;PIC</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0" >
-                <widget class="QCheckBox" name="mCbVirt" >
-                 <property name="sizePolicy" >
-                  <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="whatsThis" >
-                  <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</string>
-                 </property>
-                 <property name="text" >
-                  <string>Enable &amp;VT-x/AMD-V</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="0" colspan="2" >
-                <spacer>
-                 <property name="orientation" >
-                  <enum>Qt::Vertical</enum>
-                 </property>
-                 <property name="sizeType" >
-                  <enum>QSizePolicy::Expanding</enum>
-                 </property>
-                 <property name="sizeHint" >
-                  <size>
-                   <width>20</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
+            <property name="title" >
+             <string>Extended Features</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="topMargin" >
+              <number>5</number>
+             </property>
+             <item>
+              <widget class="QWidget" native="1" name="mWAdvContainer" >
+               <layout class="QGridLayout" >
+                <property name="leftMargin" >
+                 <number>0</number>
+                </property>
+                <property name="topMargin" >
+                 <number>0</number>
+                </property>
+                <property name="rightMargin" >
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin" >
+                 <number>0</number>
+                </property>
+                <item row="0" column="0" >
+                 <widget class="QCheckBox" name="mCbAcpi" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="whatsThis" >
+                   <string>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</string>
+                  </property>
+                  <property name="text" >
+                   <string>Enable A&amp;CPI</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QCheckBox" name="mCbPae" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="whatsThis" >
+                   <string>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</string>
+                  </property>
+                  <property name="text" >
+                   <string>Enable PA&amp;E/NX</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QCheckBox" name="mCbApic" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="whatsThis" >
+                   <string>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</string>
+                  </property>
+                  <property name="text" >
+                   <string>Enable IO A&amp;PIC</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" >
+                 <widget class="QCheckBox" name="mCbVirt" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="whatsThis" >
+                   <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</string>
+                  </property>
+                  <property name="text" >
+                   <string>Enable &amp;VT-x/AMD-V</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" >
@@ -851,7 +827,7 @@
          <property name="sizeHint" >
           <size>
            <width>20</width>
-           <height>31</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
