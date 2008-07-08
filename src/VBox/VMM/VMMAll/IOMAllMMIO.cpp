@@ -347,7 +347,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
         /* Convert source address ds:esi. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->esi,
+        rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (PRTGCPTR)&pu8Virt);
         if (VBOX_SUCCESS(rc))
@@ -379,8 +379,8 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
                 pu8Virt        += offIncrement;
                 Phys           += offIncrement;
-                pRegFrame->esi += offIncrement;
-                pRegFrame->edi += offIncrement;
+                pRegFrame->rsi += offIncrement;
+                pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
 #ifdef IN_GC
@@ -406,7 +406,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
         /* Convert destination address. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->edi,
+        rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (RTGCPTR *)&pu8Virt);
         if (VBOX_FAILURE(rc))
@@ -446,8 +446,8 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
                 Phys           += offIncrement;
                 PhysDst        += offIncrement;
-                pRegFrame->esi += offIncrement;
-                pRegFrame->edi += offIncrement;
+                pRegFrame->rsi += offIncrement;
+                pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
             STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsMMIO, d);
@@ -488,8 +488,8 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
                 pu8Virt        += offIncrement;
                 Phys           += offIncrement;
-                pRegFrame->esi += offIncrement;
-                pRegFrame->edi += offIncrement;
+                pRegFrame->rsi += offIncrement;
+                pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
 #ifdef IN_GC
@@ -581,7 +581,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->edi += cTransfers << SIZE_2_SHIFT(cb);
+                pRegFrame->rdi += cTransfers << SIZE_2_SHIFT(cb);
                 if (pCpu->prefix & PREFIX_REP)
                     pRegFrame->ecx = 0;
             }
@@ -593,7 +593,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->edi -= cTransfers << SIZE_2_SHIFT(cb);
+                pRegFrame->rdi -= cTransfers << SIZE_2_SHIFT(cb);
                 if (pCpu->prefix & PREFIX_REP)
                     pRegFrame->ecx = 0;
             }
@@ -614,7 +614,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 break;
 
             Phys           += offIncrement;
-            pRegFrame->edi += offIncrement;
+            pRegFrame->rdi += offIncrement;
             cTransfers--;
         } while (cTransfers);
 
@@ -670,7 +670,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      */
     int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &pRegFrame->eax, cb);
     if (rc == VINF_SUCCESS)
-        pRegFrame->esi += offIncrement;
+        pRegFrame->rsi += offIncrement;
 
     /*
      * Work statistics and return.
@@ -1331,7 +1331,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->edi,
+    int rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrDst);
     if (VBOX_FAILURE(rc))
@@ -1359,7 +1359,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
         AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->edi += (cTransfersOrg - cTransfers) * cbTransfer;
+        pRegFrame->rdi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
 #ifdef IN_GC
@@ -1375,7 +1375,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         int rc2 = iomRamWrite(pVM, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
         GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbTransfer);
-        pRegFrame->edi += cbTransfer;
+        pRegFrame->rdi += cbTransfer;
         cTransfers--;
     }
 #ifdef IN_GC
@@ -1486,7 +1486,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->esi,
+    int rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrSrc);
     if (VBOX_FAILURE(rc))
@@ -1515,7 +1515,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
         AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->esi += (cTransfersOrg - cTransfers) * cbTransfer;
+        pRegFrame->rsi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
 #ifdef IN_GC
@@ -1532,7 +1532,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         if (!IOM_SUCCESS(rc))
             break;
         GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
-        pRegFrame->esi += cbTransfer;
+        pRegFrame->rsi += cbTransfer;
         cTransfers--;
     }
 
