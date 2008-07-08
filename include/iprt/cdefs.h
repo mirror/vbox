@@ -443,7 +443,7 @@
  */
 #if defined(_MSC_VER) || defined(RT_OS_OS2)
 # define DECLEXPORT(type)       __declspec(dllexport) type
-#elif defined(VBOX_HAVE_VISIBILITY_HIDDEN)
+#elif defined(RT_USE_VISIBILITY_DEFAULT)
 # define DECLEXPORT(type)      __attribute__((visibility("default"))) type
 #else
 # define DECLEXPORT(type)      type
@@ -463,7 +463,7 @@
  * How to declare a non-exported function or variable.
  * @param   type    The return type of the function or the data type of the variable.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || !defined(VBOX_HAVE_VISIBILITY_HIDDEN)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || !defined(RT_USE_VISIBILITY_HIDDEN)
 # define DECLHIDDEN(type)       type
 #else
 # define DECLHIDDEN(type)       __attribute__((visibility("hidden"))) type
@@ -1296,7 +1296,7 @@
  */
 #if defined(_MSC_VER) || defined(RT_OS_OS2)
 # define DECLEXPORT_CLASS       __declspec(dllexport)
-#elif defined(VBOX_HAVE_VISIBILITY_HIDDEN)
+#elif defined(RT_USE_VISIBILITY_DEFAULT)
 # define DECLEXPORT_CLASS       __attribute__((visibility("default")))
 #else
 # define DECLEXPORT_CLASS
@@ -1312,7 +1312,7 @@
  */
 #if defined(_MSC_VER) || (defined(RT_OS_OS2) && !defined(__IBMC__) && !defined(__IBMCPP__))
 # define DECLIMPORT_CLASS       __declspec(dllimport)
-#elif defined(VBOX_HAVE_VISIBILITY_HIDDEN)
+#elif defined(RT_USE_VISIBILITY_DEFAULT)
 # define DECLIMPORT_CLASS       __attribute__((visibility("default")))
 #else
 # define DECLIMPORT_CLASS
