@@ -51,6 +51,8 @@ public:
 
     void setSupportedDropActions (Qt::DropActions aAction);
 
+    void addTopBottomMarginToItems (int aMargin);
+
 protected:
 
     virtual Qt::DropActions supportedDropActions () const;
