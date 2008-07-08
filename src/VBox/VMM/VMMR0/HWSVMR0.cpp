@@ -626,7 +626,10 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             pVMCB->guest.u64CR3             = pCtx->cr3;
         }
         else
+        {
             pVMCB->guest.u64CR3             = PGMGetHyperCR3(pVM);
+            Assert(pVMCB->guest.u64CR3);
+        }
     }
 
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
