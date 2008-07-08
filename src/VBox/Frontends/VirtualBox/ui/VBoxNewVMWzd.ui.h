@@ -328,12 +328,13 @@ bool VBoxNewVMWzd::constructMachine()
     /* OS type */
     CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    cmachine.SetOSTypeId (type.GetId());
+    QString typeId = type.GetId();
+    cmachine.SetOSTypeId (typeId);
 
-    if (type.GetId() == "os2warp3"  ||
-        type.GetId() == "os2warp4"  ||
-        type.GetId() == "os2warp45" ||
-        type.GetId() == "ecs")
+    if (typeId == "os2warp3"  ||
+        typeId == "os2warp4"  ||
+        typeId == "os2warp45" ||
+        typeId == "ecs")
         cmachine.SetHWVirtExEnabled (KTSBool_True);
 
     /* RAM size */
@@ -344,8 +345,8 @@ bool VBoxNewVMWzd::constructMachine()
         CNetworkAdapter cadapter = cmachine.GetNetworkAdapter (0);
 #ifdef VBOX_WITH_E1000
         /* Default to e1k on solaris */
-        if (type.GetId() == "solaris" ||
-            type.GetId() == "opensolaris")
+        if (typeId == "solaris" ||
+            typeId == "opensolaris")
             cadapter.SetAdapterType (KNetworkAdapterType_I82540EM);
 #endif /* VBOX_WITH_E1000 */
         cadapter.SetEnabled (true);
