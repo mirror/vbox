@@ -26,6 +26,10 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 
+#ifdef Q_WS_MAC
+# include "VBoxUtils.h"
+#endif /* Q_WS_MAC */
+
 /* Qt includes */
 #include <QTimer>
 #include <QPushButton>
@@ -58,6 +62,13 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent)
 {
     /* Apply UI decorations */
     Ui::VBoxSettingsDialog::setupUi (this);
+
+#ifdef Q_WS_MAC
+//    VBoxGlobal::setLayoutMargin (centralWidget()->layout(), 0);
+    /* No status bar on the mac */
+    setSizeGripEnabled (false);
+    setStatusBar (NULL);
+#endif
 
     /* Page title font is derived from the system font */
     QFont f = font();
@@ -205,8 +216,33 @@ void VBoxSettingsDialog::settingsGroupChanged (QTreeWidgetItem *aItem,
     {
         int id = aItem->text (treeWidget_Id).toInt();
         Assert (id >= 0);
+
+#ifndef Q_WS_MAC
         mLbTitle->setText (::path (aItem));
         mStack->setCurrentIndex (id);
+#else /* Q_WS_MAC */
+        /* We will update at once later */
+        setUpdatesEnabled (false);
+        /* Set all tab size policies to ignored */
+        for (int i = 0; i < mStack->count(); ++i)
+            mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+        /* Set the size policy of the current tab to preferred */
+        if (mStack->widget (id))
+            mStack->widget (id)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+        /* Set the new current tab */
+        mLbTitle->setText (::path (aItem));
+        mStack->setCurrentIndex (id);
+        /* Activate the new layout */
+        layout()->activate();
+        setUpdatesEnabled (true);
+//        mAllWidget->hide();
+        /* Play the resize animation */
+        ::darwinWindowAnimateResize (this, QRect (x(), y(), 
+                                                  minimumSizeHint().width(), minimumSizeHint().height()));
+//        mAllWidget->show();
+        /* Set the new size to Qt also */
+        setFixedSize (minimumSizeHint());
+#endif /* !Q_WS_MAC */
     }
 }
 

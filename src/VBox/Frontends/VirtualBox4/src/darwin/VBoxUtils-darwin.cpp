@@ -113,6 +113,12 @@ void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow)
     }
 }
 
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
+{
+    HIRect r = ::darwinToHIRect (aTarget);
+    TransitionWindowWithOptions (::darwinToWindowRef (aWidget), kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
+}
+
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
 {
