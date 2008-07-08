@@ -107,6 +107,7 @@ public:
     virtual bool start(IOService *pProvider);
     virtual void stop(IOService *pProvider);
     virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
+    virtual bool terminate(IOOptionBits fOptions);
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService)
@@ -195,13 +196,15 @@ static RTSPINLOCK       g_Spinlock = NIL_RTSPINLOCK;
 static PSUPDRVSESSION   g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(pid)     ((pid) % RT_ELEMENTS(g_apSessionHashTab))
+/** The number of open sessions. */
+static int32_t volatile g_cSessions = 0;
 
 
 /*
  * Drag in the rest of IRPT since we share it with the
  * rest of the kernel modules on darwin.
  */
-extern PFNRT g_apfnVBoxDrvIPRTDeps[] =
+PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
     (PFNRT)RTUuidCompare,
     (PFNRT)RTErrConvertFromErrno,
@@ -351,6 +354,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
         pSession->pNextHash = g_apSessionHashTab[iHash];
         g_apSessionHashTab[iHash] = pSession;
+        ASMAtomicIncS32(&g_cSessions);
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     }
 
@@ -386,6 +390,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
         {
             g_apSessionHashTab[iHash] = pSession->pNextHash;
             pSession->pNextHash = NULL;
+            ASMAtomicIncS32(&g_cSessions);
         }
         else
         {
@@ -397,6 +402,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
                 {
                     pPrev->pNextHash = pSession->pNextHash;
                     pSession->pNextHash = NULL;
+                    ASMAtomicIncS32(&g_cSessions);
                     break;
                 }
 
@@ -826,6 +832,27 @@ void org_virtualbox_SupDrv::stop(IOService *pProvider)
 {
     dprintf(("org_virtualbox_SupDrv::stop([%p], %p)\n", this, pProvider));
     IOService::stop(pProvider);
+}
+
+
+/**
+ * Termination request.
+ *
+ * @return  true if we're ok with shutting down now, false if we're not.
+ * @param   fOptions        Flags.
+ */
+bool org_virtualbox_SupDrv::terminate(IOOptionBits fOptions)
+{
+    bool fRc;
+    dprintf(("org_virtualbox_SupDrv::terminate: reference_count=%d g_cSessions=%d\n",
+             KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions)));
+    if (    KMOD_INFO_NAME.reference_count != 0
+        ||  ASMAtomicUoReadS32(&g_cSessions))
+        fRc = false;
+    else
+        fRc = IOService::terminate(fOptions);
+    dprintf(("org_virtualbox_SupDrv::terminate: returns %d\n", fRc));
+    return fRc;
 }
 
 
