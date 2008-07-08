@@ -20,6 +20,8 @@
 #include <sys/modctl.h>
 #include <sys/mount.h>
 #include <sys/policy.h>
+#include <sys/atomic.h>
+#include <sys/sysmacros.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include "vboxvfs.h"
@@ -120,8 +122,6 @@ static struct modlinkage g_VBoxVFSModLinkage =
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Opaque pointer to list of states. */
-static void *g_pVBoxVFSState;
 /** GCC C++ hack. */
 unsigned __gxx_personality_v0 = 0xdecea5ed;
 /** Global connection to the client. */
@@ -130,6 +130,12 @@ VBSFCLIENT g_VBoxVFSClient;
 vfsops_t *g_pVBoxVFS_vfsops;
 /** The file system type identifier. */
 static int g_VBoxVFSType;
+/** Major number of this module */
+static major_t g_VBoxVFSMajor;
+/** Minor instance number */
+static minor_t g_VBoxVFSMinor;
+/** Minor lock mutex protection */
+static kmutex_t g_VBoxVFSMinorMtx;
 
 
 /**
@@ -204,8 +210,20 @@ static int VBoxVFS_Init(int fType, char *pszName)
                     rc = vn_make_ops(pszName, g_VBoxVFS_vnodeops_template, &g_pVBoxVFS_vnodeops);
                     if (!rc)
                     {
-                        LogFlow((DEVICE_NAME ":Successfully loaded vboxvfs.\n"));
-                        return 0;
+                        /* Get a free major number. */
+                        g_VBoxVFSMajor = getudev();
+                        if (g_VBoxVFSMajor != (major_t)-1)
+                        {
+                            /* Initialize minor mutex here. */
+                            mutex_init(&g_VBoxVFSMinorMtx, "VBoxVFSMinorMtx", MUTEX_DEFAULT, NULL);
+                            LogFlow((DEVICE_NAME ":Successfully loaded vboxvfs.\n"));
+                            return 0;
+                        }
+                        else
+                        {
+                            LogRel((DEVICE_NAME ":getudev failed.\n"));
+                            rc = EMFILE;
+                        }
                     }
                     else
                         LogRel((DEVICE_NAME ":vn_make_ops failed. rc=%d\n", rc));
@@ -272,9 +290,8 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
         return ENOTSUP;
 
     mutex_enter(&pVNode->v_lock);
-    if (   !(pMount->flags & MS_REMOUNT)
-        && !(pMount->flags & MS_OVERLAY)
-        && (pVNode->v_count > 1 || (pVNode->v_flag & VROOT)))
+    if (   !(pMount->flags & MS_OVERLAY)
+        &&  (pVNode->v_count > 1 || (pVNode->v_flag & VROOT)))
     {
         LogRel((DEVICE_NAME ":VBoxVFS_Mount: device busy.\n"));
         mutex_exit(&pVNode->v_lock);
@@ -310,57 +327,36 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     rc = pn_get(pMount->spec, AddrSpace, &PathName);
     if (!rc)
     {
-        /* Get the vnode for the special file for storing the device identifier and path. */
-        rc = lookupname(PathName.pn_path, AddrSpace, FOLLOW, NULLVPP, &pVNodeSpec);
-        if (!rc)
+        /* Get an available minor instance number for this mount. */
+        mutex_enter(&g_VBoxVFSMinorMtx);
+        do
         {
-            /* Check if user has permission to use the special file for mounting. */
-            rc = vboxvfs_CheckMountPerm(pVFS, pMount, pVNodeSpec, pCred);
-            VN_RELE(pVNodeSpec);
-            if (!rc)
-            {
-                Dev = pVNodeSpec->v_rdev;
-                memcpy(pszShare, PathName.pn_path, strlen(PathName.pn_path));
-                cbShare = strlen(pszShare);
-            }
-            else
-                LogRel((DEVICE_NAME ":VBoxVFS_Mount: invalid permissions to mount %s.rc=%d\n", pszShare, rc));
-            rc = EPERM;
-        }
+            atomic_add_32_nv(&g_VBoxVFSMinor, 1) & L_MAXMIN32;
+            Dev = makedevice(g_VBoxVFSMajor, g_VBoxVFSMinor);
+        } while (vfs_devismounted(Dev));
+        mutex_exit(&g_VBoxVFSMinorMtx);
+
+        cbShare = strlen(PathName.pn_path);
+        pszShare = RTMemAlloc(cbShare);
+        if (pszShare)
+            memcpy(pszShare, PathName.pn_path, cbShare);
         else
-            LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to lookup sharename.rc=%d\n", rc));
-        rc = EINVAL;
+        {
+            LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to alloc %d bytes for sharename.\n", cbShare));
+            rc = ENOMEM;
+        }
     }
     else
     {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to get special file path.rc=%d\n", rc));
+        LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to get sharename.rc=%d\n", rc));
         rc = EINVAL;
     }
     pn_free(&PathName);
 
     if (rc)
-        return rc;
-
-    /* Get VNode of the special file being mounted. */
-    pVNodeDev = makespecvp(Dev, VBLK);
-    if (!IS_SWAPVP(pVNodeDev))
     {
-        /* Open the vnode for mounting. */
-        rc = VOP_OPEN(&pVNodeDev, (pVFS->vfs_flag & VFS_RDONLY) ? FREAD : FREAD | FWRITE, pCred, NULL);
-        if (rc)
-        {
-            LogRel((DEVICE_NAME ":VBoxVFS_Mount: failed to mount.\n"));
-            rc = EINVAL;
-        }
-    }
-    else
-    {
-        LogRel((DEVICE_NAME ":VBoxVFS_Mount: cannot mount from swap.\n"));
-        rc = EINVAL;
-    }
-    if (!rc)
-    {
-        VN_RELE(pVNodeDev);
+        if (pszShare)
+            RTMemFree(pszShare);
         return rc;
     }
 
@@ -409,7 +405,6 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
     pVBoxVFSGlobalInfo->Uid = Uid;
     pVBoxVFSGlobalInfo->Gid = Gid;
     pVBoxVFSGlobalInfo->pVFS = pVFS;
-    pVBoxVFSGlobalInfo->pVNodeDev = pVNodeDev;
     pVFS->vfs_data = pVBoxVFSGlobalInfo;
     pVFS->vfs_fstype = g_VBoxVFSType;
     pVFS->vfs_dev = Dev;
@@ -463,9 +458,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
 
     /* Undo work in reverse. */
 mntError1:
-    /* Just release the mount location. */
-    VOP_CLOSE(pVNodeDev, (pVFS->vfs_flag & VFS_RDONLY) ? FREAD : FREAD | FWRITE, 1, (offset_t)0, pCred, NULL);
-    VN_RELE(pVNodeDev);
+    RTMemFree(pszShare);
     return rc;
 }
 
