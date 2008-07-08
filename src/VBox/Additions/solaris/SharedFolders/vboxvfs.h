@@ -61,7 +61,6 @@ typedef struct vboxvfs_globinfo
     int             Uid;
     int             Gid;
     vfs_t           *pVFS;
-    vnode_t         *pVNodeDev;
     vboxvfs_vnode_t *pVNodeRoot;
     kmutex_t        MtxFS;
 } vboxvfs_globinfo_t;
