@@ -1306,15 +1306,15 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
                             pReq->u.In.uReqVersion, pReq->u.In.uMinVersion, SUPDRV_IDC_VERSION));
                 pReq->u.Out.pSession        = NULL;
                 pReq->u.Out.uSessionVersion = 0xffffffff;
-                pReq->u.Out.uDriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.uDriverVersion  = SUPDRV_IDC_VERSION;
                 pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
                 pReq->Hdr.rc = VERR_VERSION_MISMATCH;
                 return VINF_SUCCESS;
             }
 
             pReq->u.Out.pSession        = NULL;
-            pReq->u.Out.uSessionVersion = SUPDRVIOC_VERSION;
-            pReq->u.Out.uDriverVersion  = SUPDRVIOC_VERSION;
+            pReq->u.Out.uSessionVersion = SUPDRV_IDC_VERSION;
+            pReq->u.Out.uDriverVersion  = SUPDRV_IDC_VERSION;
             pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
 
             /*
