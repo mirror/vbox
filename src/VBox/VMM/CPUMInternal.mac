@@ -233,7 +233,6 @@ struc CPUM
     .Hyper.cr2            resq    1
     .Hyper.cr3            resq    1
     .Hyper.cr4            resq    1
-    .Hyper.cr8            resq    1
 
     .Hyper.dr0            resq    1
     .Hyper.dr1            resq    1
@@ -274,7 +273,7 @@ struc CPUM
     .Hyper.trHid.Attr         resd    1
 
     ; padding
-    .Hyper.padding            resd    6
+;;;;    .Hyper.padding            resd    6
 
 
 
@@ -345,7 +344,6 @@ struc CPUM
     .Guest.cr2            resq    1
     .Guest.cr3            resq    1
     .Guest.cr4            resq    1
-    .Guest.cr8            resq    1
 
     .Guest.dr0            resq    1
     .Guest.dr1            resq    1
@@ -386,7 +384,7 @@ struc CPUM
     .Guest.trHid.Attr         resd    1
 
     ; padding
-    .Guest.padding            resd    6
+;;;;    .Guest.padding            resd    6
 
 
 
@@ -427,7 +425,7 @@ struc CPUM
     .GuestCpuIdDef        resb    16
 
     ; CPUMCTX debug stuff...
-    .GuestEntry           resb   1056
+    .GuestEntry           resb   1024
 
 endstruc
 

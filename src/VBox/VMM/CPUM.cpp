@@ -39,6 +39,7 @@
 #include <VBox/cpum.h>
 #include <VBox/cpumdis.h>
 #include <VBox/pgm.h>
+#include <VBox/pdm.h>
 #include <VBox/mm.h>
 #include <VBox/selm.h>
 #include <VBox/dbgf.h>
@@ -1160,7 +1161,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             "iopl=%d  %31s\n"
             "cs=%04x  ds=%04x  es=%04x  fs=%04x  gs=%04x                   eflags=%08RX64\n"
             "cr0=%016RX64 cr2=xxxxxxxxxxxxxxxx cr3=%016RX64\n"
-            "cr4=%016RX64 cr8=%016RX64 ldtr=%04x tr=%04x\n"
+            "cr4=%016RX64 ldtr=%04x tr=%04x\n"
             "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64\n"
             "dr3=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
             "gdtr=%016RX64:%04x  idtr=%016RX64:%04x\n"
@@ -1176,7 +1177,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             X86_EFL_GET_IOPL(efl), szEFlags,
             (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
             pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3,
-            pCtx->cr4, pCtx->cr8, pCtx->ldtr, pCtx->tr,
+            pCtx->cr4, pCtx->ldtr, pCtx->tr,
             pCtx->dr0, pCtx->dr1, pCtx->dr2,
             pCtx->dr3, pCtx->dr6, pCtx->dr7,
             pCtx->gdtr.uAddr, pCtx->gdtr.cb, pCtx->idtr.uAddr, pCtx->idtr.cb,

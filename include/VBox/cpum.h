@@ -284,7 +284,6 @@ typedef struct CPUMCTX
     uint64_t        cr2;
     uint64_t        cr3;
     uint64_t        cr4;
-    uint64_t        cr8;
     /** @} */
 
     /** Debug registers.
@@ -337,7 +336,7 @@ typedef struct CPUMCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-    uint32_t        padding[6];
+////    uint32_t        padding[6];
 } CPUMCTX;
 #pragma pack()
 

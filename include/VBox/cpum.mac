@@ -162,7 +162,6 @@ struc CPUMCTX
     .cr2            resq    1
     .cr3            resq    1
     .cr4            resq    1
-    .cr8            resq    1
 
     .dr0            resq    1
     .dr1            resq    1
@@ -203,7 +202,7 @@ struc CPUMCTX
     .trHid.Attr         resd    1
 
     ; padding
-    .padding            resd    6
+;;;    .padding            resd    6
 endstruc
 
 %endif

@@ -165,6 +165,19 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
     /* Bit set to 0 means redirection enabled. */
     memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
 
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    {
+        /* Allocate one page for the virtual APIC mmio cache. */
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVM->hwaccm.s.vmx.pAPIC     = (uint8_t *)RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjAPIC);
+        pVM->hwaccm.s.vmx.pAPICPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjAPIC, 0);
+        ASMMemZero32(pVM->hwaccm.s.vmx.pAPIC, PAGE_SIZE);
+    }
+
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
 #endif
@@ -192,6 +205,13 @@ HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
         pVM->hwaccm.s.vmx.pMemObjRealModeTSS = 0;
         pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
         pVM->hwaccm.s.vmx.pRealModeTSSPhys   = 0;
+    }
+    if (pVM->hwaccm.s.vmx.pMemObjAPIC)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjAPIC, false);
+        pVM->hwaccm.s.vmx.pMemObjAPIC = 0;
+        pVM->hwaccm.s.vmx.pAPIC       = 0;
+        pVM->hwaccm.s.vmx.pAPICPhys   = 0;
     }
     return VINF_SUCCESS;
 }
@@ -249,14 +269,14 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     /** @note VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
-    /*
-     if AMD64 guest mode
-         val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
-     */
 #if HC_ARCH_BITS == 64
-     val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT
-            | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
+    /* Always exit on CR8 writes. */
+    /* @todo investigate TRP treshold option */
+    val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
+
+    /* Exit on CR8 reads as well in case the TPR shadow feature isn't present. */
+    if (!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW))
+        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
@@ -350,11 +370,12 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
+        Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
         /* Optional */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_TRESHOLD, 0);
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, 0);
+        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
 #if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH, 0);
+        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH, pVM->hwaccm.s.vmx.pAPICPhys >> 32);
 #endif
         AssertRC(rc);
     }
@@ -1154,6 +1175,19 @@ ResumeExecution:
     }
     fGuestStateSynced = true;
 
+    /* TPR caching using CR8 is only available in 64 bits mode */
+    /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
+    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock). */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    {
+        /* TPR caching in CR8 */
+        uint8_t u8TPR;
+        int rc = PDMApicGetTPR(pVM, &u8TPR);
+        AssertRC(rc);
+        /* The TPR can be found at offset 0x80 in the APIC mmio page. */
+        pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR;
+    }
+
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
     rc = VMXWriteVMCS(VMX_VMCS_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
@@ -1747,10 +1781,12 @@ ResumeExecution:
                 pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
                 break;
             case 8:
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR8;
+                /* CR8 contains the APIC TPR */
                 break;
+
             default:
                 AssertFailed();
+                break;
             }
             /* Check if a sync operation is pending. */
             if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
@@ -1764,6 +1800,10 @@ ResumeExecution:
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:
             Log2(("VMX: mov x, crx\n"));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
+
+            /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
+            Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
+
             rc = EMInterpretCRxRead(pVM, CPUMCTX2CORE(pCtx),
                                     VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification),
                                     VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification));
@@ -1928,6 +1968,11 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
+        /* RIP is already set to the next instruction */
+        AssertFailed(); /* currently not used */
+        break;
+
     default:
         /* The rest is handled after syncing the entire CPU state. */
         break;
@@ -2014,6 +2059,7 @@ ResumeExecution:
                   ("rc = %d\n", rc));
         break;
 
+    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */       
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
         /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
@@ -2065,10 +2111,6 @@ ResumeExecution:
         rc = VERR_EM_INTERNAL_ERROR;
         break;
     }
-
-    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
-        AssertMsgFailed(("Todo!!\n"));
-        break;
 
     case VMX_EXIT_ERR_MSR_LOAD:         /* 34 VM-entry failure due to MSR loading. */
     case VMX_EXIT_ERR_MACHINE_CHECK:    /* 41 VM-entry failure due to machine-check. */
