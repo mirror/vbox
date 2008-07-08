@@ -366,6 +366,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     addToolBar (mActionsToolBar);
     /* No spacing/margin on the mac */
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
+    mainLayout->insertSpacing (0, 10);
     VBoxGlobal::setLayoutMargin (mainLayout, 0);
 #else /* MAC_LEOPARD_STYLE */
     /* Add the toolbar */
