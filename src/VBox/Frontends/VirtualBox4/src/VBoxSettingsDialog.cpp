@@ -217,7 +217,8 @@ void VBoxSettingsDialog::settingsGroupChanged (QTreeWidgetItem *aItem,
         int id = aItem->text (treeWidget_Id).toInt();
         Assert (id >= 0);
 
-#ifndef Q_WS_MAC
+//#ifndef Q_WS_MAC
+#if 1
         mLbTitle->setText (::path (aItem));
         mStack->setCurrentIndex (id);
 #else /* Q_WS_MAC */
