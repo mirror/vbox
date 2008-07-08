@@ -164,6 +164,8 @@ inline HIRect darwinToHIRect (const QRect &aRect)
 
 void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow);
 
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
+
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 
