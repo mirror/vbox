@@ -67,7 +67,7 @@ LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
 QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
-QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr"
+QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr"
 QT4DIR_PKGCONFIG=1
 QT4UIC3DIR="/usr/bin"
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
@@ -1313,10 +1313,10 @@ check_qt4()
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040200
+#if QT_VERSION >= 0x040300
   printf(", OK.\n");
   return 0;
-  printf(", expected version 4.2.0 or higher\n");
+  printf(", expected version 4.3.0 or higher\n");
   return 1;
 #endif
 }
@@ -1326,12 +1326,15 @@ EOF
       if test_execute_path "`strip_L "$LIBQT4"`"; then
         if [ "$OS" != "darwin" ]; then
           # strip .../QtCore as we add components ourself
-          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|[^ ]*/QtCore||g; s| ||g'`
+          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\)/QtCore|\1|g; s| $||g'`
+          # store only the first path, remove all other pathes
+          # most likely pkg-config gave us -I/usr/include/qt4 -I/usr/include/qt4/QtCore
+          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
           cnf_append "VBOX_PATH_QT4_INCLUDE" "$INCQT4"
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
-	  if [ "$foundqt4" = "2" ]; then
-	    cnf_append "VBOX_WITH_QT4_SUN" "1"
-	  fi
+          if [ "$foundqt4" = "2" ]; then
+            cnf_append "VBOX_WITH_QT4_SUN" "1"
+          fi
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
@@ -1341,6 +1344,7 @@ EOF
                 fail
               else
                 log_success "found version $moc_ver"
+                cnf_append "VBOX_PATH_QT4_BIN" "$q/bin"
                 cnf_append "VBOX_PATH_QT4" "$q"
                 return
               fi
