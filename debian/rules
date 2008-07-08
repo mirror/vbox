@@ -62,7 +62,10 @@ debrel   := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell ls
 endif
 endif
 
-debdocs := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/virtualbox\""
+gccver   := $(subst ., ,$(shell gcc -dumpversion))
+gccvmaj  := $(word 1,$(gccver))
+gccvmin  := $(word 2,$(gccver))
+debdocs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/virtualbox\""
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 configure: debian/configure-stamp
@@ -71,6 +74,7 @@ debian/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
+	    $(shell test $(gccvmaj) -eq 4 -a $(gccvmin) -gt 2 -o $(gccvmaj) -gt 4 && echo "yes"),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
 	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
 	touch debian/configure-stamp
@@ -83,8 +87,7 @@ debian/build-stamp $(verfile):
 	    $(NOPARALLEL),-j1,-j2) $(if \
 	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
 	    $(NODOCS),VBOX_WITH_DOCS=,)\
-	    $(if $(STAGEDISO),\
-	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
+	    $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
@@ -98,12 +101,12 @@ debian/build-stamp $(verfile):
 	. debian/env.sh && kmk -C $(vboxroot) $(if \
 	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
 	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
-	    $(STAGEDISO),\
-	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
+	    $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
 	    $(debdocs) \
 	    packing
 	touch debian/build-stamp
@@ -115,10 +118,12 @@ debian/modules-stamp: debian/build-stamp
 	mkdir $(moddir)
 	make -C $(builddir)/bin/src clean
 	for d in $(wildcard /lib/modules/*); do \
-	    make -C $(builddir)/bin/src KERN_DIR=$$d/build MODULE_DIR=$$d clean all && \
-	    install -D -m 0644 -g 0 -o 0 \
-	        $(builddir)/bin/src/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
-	    done
+	    if [ -L $$d/build ]; then \
+	        make -C $(builddir)/bin/src KERN_DIR=$$d/build MODULE_DIR=$$d clean all && \
+	        install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
+	    fi; \
+	done
 	make -C $(builddir)/bin/src clean
 	touch debian/modules-stamp
 
@@ -162,15 +167,18 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib
+	mv $(archdir)/*.so.4 $(prefix)/usr/lib || true
+	mv $(archdir)/sdk/bin/xpidl $(prefix)/usr/lib/$(package)
+	rmdir $(archdir)/sdk/bin
 	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
-	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
+	$(if $(HEADLESS),,mv $(archdir)/nls $(archdir)/nls4 $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
+	    $(if $(HEADLESS),,VirtualBox VirtualBox4) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
@@ -192,6 +200,7 @@ endif
 	rmdir $(prefix)/opt
 	dh_link \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox) \
+	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox4) \
 	    usr/bin/VBox usr/bin/VBoxManage \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox usr/bin/VBoxVRDP) \
@@ -213,7 +222,7 @@ endif
 	dh_installdebconf
 	dh_installchangelogs
 	dh_link
-	dh_strip --keep-debug
+	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4
 	# manually strip our R0/GC modules, dh_strip cannot handle them
 	for f in \
 	  $(prefix)/usr/lib/$(package)/*.r0 $(prefix)/usr/lib/$(package)/*.gc; do \
@@ -234,7 +243,8 @@ endif
 	dh_gencontrol -- \
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
-	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0)
+	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
+	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy,$(debrel)),dkms,)
 	dh_md5sums
 	dh_builddeb
 endif
