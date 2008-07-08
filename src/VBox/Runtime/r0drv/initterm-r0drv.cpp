@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/initterm.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #ifndef IN_GUEST /* play safe for now */
@@ -41,6 +42,16 @@
 
 #include "internal/initterm.h"
 #include "internal/thread.h"
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Count of current IPRT users.
+ * In ring-0 several drivers / kmods / kexts / wossnames may share the
+ * same runtime code. So, we need to keep count in order not to terminate
+ * it prematurely. */
+static int32_t volatile g_crtR0Users = 0;
 
 
 /**
@@ -53,6 +64,15 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
 {
     int rc;
     Assert(fReserved == 0);
+
+    /*
+     * The first user initializes it.
+     * We rely on the module loader to ensure that there are no
+     * initialization races should two modules share the IPRT.
+     */
+    if (ASMAtomicIncS32(&g_crtR0Users) != 1)
+        return VINF_SUCCESS;
+
     rc = rtR0InitNative();
     if (RT_SUCCESS(rc))
     {
@@ -79,6 +99,14 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
  */
 RTR0DECL(void) RTR0Term(void)
 {
+    /*
+     * Last user does the cleanup.
+     */
+    int32_t cNewUsers = ASMAtomicDecS32(&g_crtR0Users);
+    Assert(cNewUsers >= 0);
+    if (cNewUsers != 0)
+        return;
+
 #if !defined(RT_OS_LINUX) && !defined(RT_OS_WINDOWS)
     rtThreadTerm();
 #endif
