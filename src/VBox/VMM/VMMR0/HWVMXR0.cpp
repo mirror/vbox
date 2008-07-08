@@ -177,6 +177,12 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVM->hwaccm.s.vmx.pAPICPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjAPIC, 0);
         ASMMemZero32(pVM->hwaccm.s.vmx.pAPIC, PAGE_SIZE);
     }
+    else
+    {
+        pVM->hwaccm.s.vmx.pMemObjAPIC = 0;
+        pVM->hwaccm.s.vmx.pAPIC       = 0;
+        pVM->hwaccm.s.vmx.pAPICPhys   = 0;
+    }
 
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
@@ -274,8 +280,13 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* @todo investigate TRP treshold option */
     val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
 
-    /* Exit on CR8 reads as well in case the TPR shadow feature isn't present. */
-    if (!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW))
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    {
+        /* CR8 reads from the APIC shadow page */
+        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+    }
+    else
+        /* Exit on CR8 reads as well in case the TPR shadow feature isn't present. */
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
     /* Mask away the bits that the CPU doesn't support */
