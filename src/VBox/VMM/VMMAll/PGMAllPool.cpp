@@ -327,14 +327,17 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTEPAE);
                     AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPTPae->a));
 
+                    if (uShw.pPTPae->a[iShw2].n.u1Present)
+                    {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                    PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                    Log4(("pgmPoolMonitorChainChanging pae: deref %VHp GCPhys %VGp\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
-                    pgmPoolTracDerefGCPhysHint(pPool, pPage,
-                                               uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
-                                               pGstPte->u & X86_PTE_PAE_PG_MASK);
+                        PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
+                        Log4(("pgmPoolMonitorChainChanging pae: deref %VHp GCPhys %VGp\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                        pgmPoolTracDerefGCPhysHint(pPool, pPage,
+                                                uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
+                                                pGstPte->u & X86_PTE_PAE_PG_MASK);
 #  endif
-                    uShw.pPTPae->a[iShw2].u = 0;
+                        uShw.pPTPae->a[iShw2].u = 0;
+                    }
                 }
 
                 break;
