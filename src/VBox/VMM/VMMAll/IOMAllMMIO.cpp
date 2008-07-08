@@ -303,6 +303,12 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     uint32_t cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
     {
+#ifndef IN_GC
+        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+            &&  pRegFrame->rcx >= _4G)
+            return VINF_EM_RAW_EMULATE_INSTR;
+#endif
+
         cTransfers = pRegFrame->ecx;
         if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
             cTransfers &= 0xffff;
@@ -544,6 +550,12 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     uint32_t cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
     {
+#ifndef IN_GC
+        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+            &&  pRegFrame->rcx >= _4G)
+            return VINF_EM_RAW_EMULATE_INSTR;
+#endif
+
         cTransfers = pRegFrame->ecx;
         if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
             cTransfers &= 0xffff;
@@ -1320,6 +1332,11 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
+#ifndef IN_GC
+        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+            &&  pRegFrame->rcx >= _4G)
+            return VINF_EM_RAW_EMULATE_INSTR;
+#endif
         cTransfers = pRegFrame->ecx;
 
         if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
@@ -1476,6 +1493,11 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
+#ifndef IN_GC
+        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+            &&  pRegFrame->rcx >= _4G)
+            return VINF_EM_RAW_EMULATE_INSTR;
+#endif
         cTransfers = pRegFrame->ecx;
         if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
             cTransfers &= 0xffff;
