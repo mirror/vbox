@@ -141,6 +141,9 @@ void VBoxSettingsDialog::retranslateUi()
     foreach (QIWidgetValidator *wval, vlist)
         if (!wval->isValid())
             revalidate (wval);
+
+    /* Add some margin to every item in the tree */
+    mTwSelector->addTopBottomMarginToItems (12);
 }
 
 /**
