@@ -66,6 +66,7 @@
 #define SYSI_INDEX      0x00004048
 #define SYSI_DATA       0x0000404c
 #define ACPI_RESET_BLK  0x00004050
+#define FDC_STATUS      0x00004054
 
 /* PM1x status register bits */
 #define TMR_STS         RT_BIT(0)
@@ -184,6 +185,7 @@ struct ACPIState
      *  acpiBatIndexWrite() for handling this. */
     uint8_t             u8IndexShift;
     uint8_t             u8UseIOApic;
+    uint8_t             u8UseFdc;
     bool                fPowerButtonHandled;
 
     /** ACPI port base interface. */
@@ -423,6 +425,7 @@ IO_WRITE_PROTO (acpiPM1aCtlWrite);
 IO_WRITE_PROTO (acpiSmiWrite);
 IO_WRITE_PROTO (acpiBatIndexWrite);
 IO_READ_PROTO  (acpiBatDataRead);
+IO_READ_PROTO  (acpiFdcStatusRead);
 IO_READ_PROTO  (acpiSysInfoDataRead);
 IO_WRITE_PROTO (acpiSysInfoDataWrite);
 IO_READ_PROTO  (acpiGpe0EnRead);
@@ -1080,6 +1083,26 @@ IO_READ_PROTO (acpiBatDataRead)
     return VINF_SUCCESS;
 }
 
+IO_READ_PROTO (acpiFdcStatusRead)
+{
+    ACPIState *s = (ACPIState *)pvUser;
+
+    switch (cb)
+    {
+        case 4:
+            *pu32 = s->u8UseFdc 
+                ?   STA_DEVICE_PRESENT_MASK                 /* present */
+                  | STA_DEVICE_ENABLED_MASK                 /* enabled and decodes its resources */
+                  | STA_DEVICE_SHOW_IN_UI_MASK              /* should be shown in UI */
+                  | STA_DEVICE_FUNCTIONING_PROPERLY_MASK    /* functioning properly */
+                : 0;                                        /* device not present */
+            break;
+        default:
+            return VERR_IOM_IOPORT_UNUSED;
+    }
+    return VINF_SUCCESS;
+}
+
 IO_WRITE_PROTO (acpiSysInfoIndexWrite)
 {
     ACPIState *s = (ACPIState *)pvUser;
@@ -1550,7 +1573,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     bool fR0Enabled;
 
     /* Validate and read the configuration. */
-    if (!CFGMR3AreValuesValid (pCfgHandle, "RamSize\0IOAPIC\0GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid (pCfgHandle, "RamSize\0IOAPIC\0GCEnabled\0R0Enabled\0FdcEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
 
@@ -1563,6 +1586,14 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (VBOX_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
+
+    /* query whether we are supposed to present an FDC controller */
+    rc = CFGMR3QueryU8 (pCfgHandle, "FdcEnabled", &s->u8UseFdc);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        s->u8UseFdc = 1;
+    else if (VBOX_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"FdcEnabled\""));
 
     rc = CFGMR3QueryBool (pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1614,6 +1645,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     R (BAT_DATA,       1, NULL,                  acpiBatDataRead,     "ACPI Battery status data");
     R (SYSI_INDEX,     1, acpiSysInfoIndexWrite, NULL,                "ACPI system info index");
     R (SYSI_DATA,      1, acpiSysInfoDataWrite,  acpiSysInfoDataRead, "ACPI system info data");
+    R (FDC_STATUS,     1, NULL,                  acpiFdcStatusRead,   "ACPI FDC status index");
     R (GPE0_BLK + L,   L, acpiGpe0EnWrite,       acpiGpe0EnRead,      "ACPI GPE0 Enable");
     R (GPE0_BLK,       L, acpiGpe0StsWrite,      acpiGpe0StsRead,     "ACPI GPE0 Status");
     R (ACPI_RESET_BLK, 1, acpiResetWrite,        NULL,                "ACPI Reset");

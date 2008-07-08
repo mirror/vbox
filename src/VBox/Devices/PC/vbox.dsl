@@ -377,6 +377,17 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 {
                     Name (_HID, EisaId ("PNP0700"))
 
+                    OperationRegion (CFDC, SystemIO, 0x4054, 0x08)
+                    Field (CFDC, DwordAcc, NoLock, Preserve)
+                    {
+                        FSTA, 32,
+                    }
+
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        Return (FSTA)
+                    }
+
                     // Current resource settings
                     Name (_CRS, ResourceTemplate ()
                     {

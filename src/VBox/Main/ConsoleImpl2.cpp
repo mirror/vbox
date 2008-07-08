@@ -318,29 +318,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pTMNode, "UTCOffset", timeOffset * 1000000);           RC_CHECK();
 
     /*
-     * ACPI
-     */
-    BOOL fACPI;
-    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
-    if (fACPI)
-    {
-        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cRamMBs * _1M);         RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
-        Assert(!afPciDeviceNo[7]);
-        afPciDeviceNo[7] = true;
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
-
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-    }
-
-    /*
      * DMA
      */
     rc = CFGMR3InsertNode(pDevices, "8237A", &pDev);                                RC_CHECK();
@@ -391,9 +368,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     ComPtr<IFloppyDrive> floppyDrive;
     hrc = pMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());               H();
-    BOOL fFloppyEnabled;
-    hrc = floppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);                         H();
-    if (fFloppyEnabled)
+    BOOL fFdcEnabled;
+    hrc = floppyDrive->COMGETTER(Enabled)(&fFdcEnabled);                            H();
+    if (fFdcEnabled)
     {
         rc = CFGMR3InsertNode(pDevices, "i82078",    &pDev);                        RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0",         &pInst);                       RC_CHECK();
@@ -455,6 +432,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg,  "Mountable", 1);             RC_CHECK();
             }
         }
+    }
+
+    /*
+     * ACPI
+     */
+    BOOL fACPI;
+    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
+    if (fACPI)
+    {
+        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cRamMBs * _1M);         RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
+        Assert(!afPciDeviceNo[7]);
+        afPciDeviceNo[7] = true;
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
+
+        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
     }
 
     /*
