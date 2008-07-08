@@ -34,6 +34,9 @@ endif
 ifdef VBOX_WITH_USB
  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
 endif
+if1of ($(KBUILD_TARGET), darwin)
+ include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+endif
 
 # Let kBuild generate the rules.
 include $(KBUILD_PATH)/subfooter.kmk
