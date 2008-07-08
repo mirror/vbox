@@ -101,6 +101,7 @@ if [ "$SHUTDOWN" = "true" ]; then
 fi
 
 APP=`which $0`
+APP=`basename $APP`
 APP=${APP##/*/}
 case "$APP" in
   VirtualBox)
