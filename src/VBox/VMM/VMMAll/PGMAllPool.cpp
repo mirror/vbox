@@ -247,9 +247,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 #endif
 {
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
-    const unsigned off = GCPhysFault & PAGE_OFFSET_MASK;
+    const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
+    const unsigned cbWrite = pgmPoolDisasWriteSize(pCpu);
 
-    LogFlow(("pgmPoolMonitorChainChanging: %VGv phys=%VGp kind=%d\n", pvAddress, GCPhysFault, pPage->enmKind));
+    LogFlow(("pgmPoolMonitorChainChanging: %VGv phys=%VGp kind=%d cbWrite=%d\n", pvAddress, GCPhysFault, pPage->enmKind, cbWrite));
 
     for (;;)
     {
@@ -321,9 +322,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 if (   pCpu
                     && (off & 7)
-                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
+                    && (off & 7) + cbWrite > sizeof(X86PTEPAE))
                 {
-                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTEPAE);
                     AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPTPae->a));
 
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
@@ -351,9 +352,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 else if (   pCpu
                          && (off & 3)
-                         && (off & 3) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTE))
+                         && (off & 3) + cbWrite > sizeof(X86PTE))
                 {
-                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTE);
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTE);
                     if (    iShw2 != iShw
                         &&  iShw2 < ELEMENTS(uShw.pPD->a)
                         &&  uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
@@ -392,7 +393,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     /* paranoia / a bit assumptive. */
                     else if (   pCpu
                              && (off & 3)
-                             && (off & 3) + pgmPoolDisasWriteSize(pCpu) > 4)
+                             && (off & 3) + cbWrite > 4)
                     {
                         const unsigned iShw2 = iShw + 2;
                         if (    iShw2 < ELEMENTS(uShw.pPDPae->a)
@@ -450,9 +451,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 if (   pCpu
                     && (off & 7)
-                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDEPAE))
+                    && (off & 7) + cbWrite > sizeof(X86PDEPAE))
                 {
-                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDEPAE);
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPDPae->a));
 
                     if (    iShw2 != iShw
@@ -497,9 +498,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     /* paranoia / a bit assumptive. */
                     else if (   pCpu
                             && (off & 7)
-                            && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                            && (off & 7) + cbWrite > sizeof(X86PDPE))
                     {
-                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDPE);
+                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
                         if (    iShw2 != iShw
                             &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES
                             &&  uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
@@ -540,9 +541,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 if (   pCpu
                     && (off & 7)
-                    && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDEPAE))
+                    && (off & 7) + cbWrite > sizeof(X86PDEPAE))
                 {
-                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDEPAE);
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertReturnVoid(iShw2 < ELEMENTS(uShw.pPDPae->a));
 
                     if (    iShw2 != iShw
@@ -583,9 +584,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     /* paranoia / a bit assumptive. */
                     if (   pCpu
                         && (off & 7)
-                        && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                        && (off & 7) + cbWrite > sizeof(X86PDPE))
                     {
-                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDPE);
+                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
                         if (uShw.pPDPT->a[iShw2].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
@@ -614,9 +615,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     /* paranoia / a bit assumptive. */
                     if (   pCpu
                         && (off & 7)
-                        && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                        && (off & 7) + cbWrite > sizeof(X86PDPE))
                     {
-                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PML4E);
+                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PML4E);
                         if (uShw.pPML4->a[iShw2].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
