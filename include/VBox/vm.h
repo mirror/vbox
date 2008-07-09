@@ -106,6 +106,9 @@
 /** Force return to Ring-3. */
 #define VM_FF_TO_R3                     RT_BIT_32(28)
 
+/** REM needs to be informed about handler changes. */
+#define VM_FF_REM_HANDLER_NOTIFY        RT_BIT_32(29)
+
 /** Suspend the VM - debug only. */
 #define VM_FF_DEBUG_SUSPEND             RT_BIT_32(31)
 
@@ -124,7 +127,7 @@
 /** Normal priority post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE)
 /** Normal priority actions. */
-#define VM_FF_NORMAL_PRIORITY_MASK      (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA)
+#define VM_FF_NORMAL_PRIORITY_MASK      (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)
 /** Flags to check before resuming guest execution. */
 #define VM_FF_RESUME_GUEST_MASK         (VM_FF_TO_R3)
 /** All the forced flags. */
