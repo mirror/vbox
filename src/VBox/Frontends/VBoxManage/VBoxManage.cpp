@@ -344,6 +344,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-biospxedebug on|off]\n"
                  "                            [-boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [-hd<a|b|d> none|<uuid>|<filename>]\n"
+                 "                            [-idecontroller PIIX3|PIIX4]\n"
 #ifdef VBOX_WITH_AHCI
                  "                            [-sata on|off]\n"
                  "                            [-sataportcount <1-30>]\n"
@@ -3709,6 +3710,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *hdds[34] = {0};
     char *dvd = NULL;
     char *dvdpassthrough = NULL;
+    char *idecontroller = NULL;
     char *floppy = NULL;
     char *audio = NULL;
     char *audiocontroller = NULL;
@@ -3950,6 +3952,13 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             dvdpassthrough = argv[i];
+        }
+        else if (strcmp(argv[i], "-idecontroller") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            idecontroller = argv[i];
         }
         else if (strcmp(argv[i], "-floppy") == 0)
         {
@@ -4759,6 +4768,23 @@ static int handleModifyVM(int argc, char *argv[],
             ASSERT(dvdDrive);
 
             CHECK_ERROR(dvdDrive, COMSETTER(Passthrough)(strcmp(dvdpassthrough, "on") == 0));
+        }
+        if (idecontroller)
+        {
+            if (RTStrICmp(idecontroller, "PIIX3") == 0)
+            {
+                CHECK_ERROR(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX3));
+            }
+            else if (RTStrICmp(idecontroller, "PIIX4") == 0)
+            {
+                CHECK_ERROR(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX4));
+            }
+            else
+            {
+                errorArgument("Invalid -idecontroller argument '%s'", idecontroller);
+                rc = E_FAIL;
+                break;
+            }
         }
         if (floppy)
         {
