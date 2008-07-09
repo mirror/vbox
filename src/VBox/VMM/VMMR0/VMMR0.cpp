@@ -53,7 +53,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int VMMR0Init(PVM pVM, unsigned uVersion);
+static int VMMR0Init(PVM pVM, uint32_t uSvnRev);
 static int VMMR0Term(PVM pVM);
 __BEGIN_DECLS
 VMMR0DECL(int) ModuleInit(void);
@@ -156,17 +156,15 @@ VMMR0DECL(void) ModuleTerm(void)
  * @returns VBox status code.
  *
  * @param   pVM         The VM instance in question.
- * @param   uVersion    The minimum module version required.
+ * @param   uSvnRev     The SVN revision of the ring-3 part.
  * @thread  EMT.
  */
-static int VMMR0Init(PVM pVM, unsigned uVersion)
+static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
 {
     /*
-     * Check if compatible version.
+     * Match the SVN revisions.
      */
-    if (    uVersion != VBOX_VERSION
-        &&  (   VBOX_GET_VERSION_MAJOR(uVersion) != VBOX_VERSION_MAJOR
-             || VBOX_GET_VERSION_MINOR(uVersion) < VBOX_VERSION_MINOR))
+    if (uSvnRev != VMMGetSvnRev())
         return VERR_VERSION_MISMATCH;
     if (    !VALID_PTR(pVM)
         ||  pVM->pVMR0 != pVM)
@@ -736,7 +734,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-            return VMMR0Init(pVM, (unsigned)u64Arg);
+            return VMMR0Init(pVM, (uint32_t)u64Arg);
 
         /*
          * Terminate the R0 part of a VM instance.

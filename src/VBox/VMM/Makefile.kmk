@@ -407,6 +407,7 @@ VMMR0_SOURCES   = \
 	VMMAll/TMAllVirtual.cpp \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
+	VMMAll/VMMAll.cpp \
 
 
 ifeq ($(VBOX_LDR_FMT),pe)
@@ -424,6 +425,11 @@ ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
 VMMR0_LIBS += \
 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
+
+#
+# For vmmGetSvnRev.
+#
+VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV
 
 
 include	$(KBUILD_PATH)/subfooter.kmk

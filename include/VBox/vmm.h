@@ -130,6 +130,8 @@ RTGCPTR VMMGetStackGC(PVM pVM);
 RTHCPTR VMMGetHCStack(PVM pVM);
 
 
+VMMDECL(uint32_t) VMMGetSvnRev(void);
+
 
 #ifdef IN_RING3
 /** @defgroup grp_vmm_r3    The VMM Host Context Ring 3 API

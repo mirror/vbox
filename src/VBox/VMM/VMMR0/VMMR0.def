@@ -46,6 +46,7 @@ EXPORTS
     TMTimerSetMicro
     TMTimerSetNano
     TMTimerStop
+    VMMGetSvnRev
     vmmR0LoggerFlush
     vmmR0LoggerWrapper
     VMSetError
