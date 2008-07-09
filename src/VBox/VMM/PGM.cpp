@@ -2287,7 +2287,21 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
     /*
      * Change the paging mode.
      */
-    return PGMR3ChangeMode(pVM, pPGM->enmGuestMode);
+    rc = PGMR3ChangeMode(pVM, pPGM->enmGuestMode);
+
+    /* Restore pVM->pgm.s.GCPhysCR3. */
+    Assert(pVM->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+    RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVM);
+    if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
+        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+        GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
+    else
+        GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
+    pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+
+    return rc;
 }
 
 
