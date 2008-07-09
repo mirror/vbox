@@ -1107,6 +1107,11 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* emit a signal about guest was resized */
                 emit resizeHintDone();
 
+                /* We also recalculate the desktop geometry if this is determined
+                 * automatically.  In fact, we only need this on the first resize,
+                 * but it is done every time to keep the code simpler. */
+                calculateDesktopGeometry();
+
                 return true;
             }
 
@@ -3569,12 +3574,8 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         {
             LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-            /* Increase the maximum allowed size to the new size if needed.
-             * We also recalculate the desktop geometry if this is determined
-             * automatically.  In fact, we only need this on the first resize,
-             * but it is done every time to keep the code simpler. */
+            /* Increase the maximum allowed size to the new size if needed. */
             setDesktopGeoHint (sz.width(), sz.height());
-            calculateDesktopGeometry();
 
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
         }
