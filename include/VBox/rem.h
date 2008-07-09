@@ -92,9 +92,7 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM);
 REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM);
 REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM);
 REMR3DECL(void) REMR3NotifyFF(PVM pVM);
-#ifdef VBOX_STRICT
 REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys);
-#endif
 /** @} */
 #endif /* IN_RING3 */
 
