@@ -576,7 +576,7 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 
     if (ppszSIBIndexReg[index])
     {
-         pParam->flags |= USE_INDEX;
+         pParam->flags |= USE_INDEX | regtype;
          pParam->index.reg_gen = index;
 
          if (scale != 0)
