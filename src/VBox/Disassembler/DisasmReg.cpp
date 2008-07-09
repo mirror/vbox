@@ -562,6 +562,18 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         // Note that scale implies index (SIB byte)
         if (pParam->flags & USE_INDEX)
         {
+            if (pParam->flags & USE_REG_GEN16)
+            {
+                uint16_t val16;
+
+                pParamVal->flags |= PARAM_VAL16;
+                if (VBOX_FAILURE(DISFetchReg16(pCtx, pParam->index.reg_gen, &val16))) return VERR_INVALID_PARAMETER;
+                
+                Assert(!(pParam->flags & USE_SCALE));   /* shouldn't be possible in 16 bits mode */
+                
+                pParamVal->val.val16 += val16;
+            }
+            else
             if (pParam->flags & USE_REG_GEN32)
             {
                 uint32_t val32;
