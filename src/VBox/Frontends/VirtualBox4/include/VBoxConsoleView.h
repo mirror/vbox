@@ -218,11 +218,12 @@ private:
     enum DesktopGeo
     {
         DesktopGeo_Invalid = 0, DesktopGeo_Fixed,
-        DesktopGeo_Automatic, DesktopGeo_Any, DesktopGeo_Unchanged
+        DesktopGeo_Automatic, DesktopGeo_Any
     };
 
     void setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeight);
     void setDesktopGeoHint (int aWidth, int aHeight);
+    void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
 
     VBoxConsoleWnd *mMainWnd;
