@@ -687,7 +687,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG cpuId, ULONG *speed)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo after implementing the Mp runtime on all platforms replace with
-     * *speed = RTMpGetOnlineCpuMaxSpeed(cpuId); */
+     * *speed = RTMpGetCpuMaxSpeed(aCpuId); */
     *speed = 0;
     return S_OK;
 }
