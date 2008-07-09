@@ -84,7 +84,8 @@ int main()
             RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
             if (RTCpuSetIsMemberByIndex(&Set, iCpu))
             {
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz\n", iCpu, idCpu, RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
+                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuOnline(idCpu) ? "online" : "offline");
                 if (!RTMpIsCpuPossible(idCpu))
                 {
                     RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
@@ -158,7 +159,8 @@ int main()
             if (RTCpuSetIsMemberByIndex(&SetOnline, iCpu))
             {
                 RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz\n", iCpu, idCpu, RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
+                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuOnline(idCpu) ? "online" : "offline");
                 if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
                 {
                     RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
