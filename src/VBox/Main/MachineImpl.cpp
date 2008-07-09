@@ -3423,9 +3423,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     if (type == "gui" || type == "GUI/Qt3")
     {
 #ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM3";
 #else
-        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+        const char VirtualBox_exe[] = "VirtualBox3" HOSTSUFF_EXE;
 #endif
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
@@ -3443,9 +3443,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     if (type == "GUI/Qt4")
     {
 #ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM4";
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
 #else
-        const char VirtualBox_exe[] = "VirtualBox4" HOSTSUFF_EXE;
+        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
 #endif
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);

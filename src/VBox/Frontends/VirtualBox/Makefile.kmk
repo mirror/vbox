@@ -85,8 +85,8 @@ endif
 #
 PROGRAMS = VirtualBox
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
-DLLS = VBoxKeyboard
-OTHERS = $(PATH_BIN)/vboxkeyboard.tar.gz
+DLLS = VBoxKeyboard3
+OTHERS = $(PATH_BIN)/vboxkeyboard3.tar.gz
 endif
 INSTALLS = VirtualBox.nls
 
@@ -118,11 +118,11 @@ VBoxHlp_SOURCES     = \
 #
 # VBoxKeyboard - keyboard library for X11.
 #
-VBoxKeyboard_TEMPLATE = VBOXR3
-VBoxKeyboard_SOURCES  = \
+VBoxKeyboard3_TEMPLATE = VBOXR3
+VBoxKeyboard3_SOURCES  = \
 	src/linux/keyboard-new.c
-VBoxKeyboard_TARSOURCES = \
-	$(VBoxKeyboard_SOURCES) \
+VBoxKeyboard3_TARSOURCES = \
+	$(VBoxKeyboard3_SOURCES) \
 	src/linux/COPYING.LIB \
 	src/linux/keyboard.h \
 	src/linux/keyboard-layouts.h \
@@ -130,30 +130,31 @@ VBoxKeyboard_TARSOURCES = \
 	src/linux/keyboard-tables.h \
 	src/linux/keyboard-types.h \
 	src/linux/Makefile
-VBoxKeyboard_LIBS     = X11
-VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
+VBoxKeyboard3_LIBS     = X11
+VBoxKeyboard3_LIBPATH  = $(VBOX_LIBPATH_X11)
 
 
 #
-# vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
+# vboxkeyboard3.tar.gz - the LGPLed keyboard library must always be
 # redistributed with usable sources.
 #
-SOURCE_DIRECTORY = vboxkeyboard
+SOURCE_DIRECTORY = vboxkeyboard3
 DIRECTORY_PREFIX = src/linux/
 
 $(PATH_TARGET)/$(SOURCE_DIRECTORY):
 	$(MKDIR) -p $(@D)
 	$(LN_SYMLINK) $(abspath $(PATH_CURRENT))/$(DIRECTORY_PREFIX) $@
 
-$(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+$(PATH_BIN)/vboxkeyboard3.tar.gz: $(VBoxKeyboard3_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard_TARSOURCES))) | gzip - > $@
+	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard3_TARSOURCES))) | gzip - > $@
 
 
 #
 # VirtualBox - The GUI program.
 #
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
+VirtualBox_NAME     = VirtualBox3
 VirtualBox_SDKS.win = WINPSDK DXSDK
 #ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(KBUILD_TARGET)),) - later
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2
@@ -162,7 +163,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
-VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+VirtualBox_INST = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
 
  # For testing iChat Theater stuff change
  # the sdk path
@@ -391,7 +392,7 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 VirtualBox_LIBS.os2      += $(PATH_DLL)/VBoxHlp$(VBOX_SUFF_DLL)
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
-VirtualBox_LIBS          += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+VirtualBox_LIBS          += $(PATH_DLL)/VBoxKeyboard3$(VBOX_SUFF_DLL)
 endif
 
 
@@ -416,7 +417,7 @@ OTHER_CLEAN        += \
 	$(VirtualBox_GENSRCS) \
 	$(VirtualBox_GENHDRS) \
 	$(WRAPPERSFILE) \
-	$(PATH_BIN)/vboxkeyboard.tar.gz
+	$(PATH_BIN)/vboxkeyboard3.tar.gz
 
 
 #
@@ -475,7 +476,7 @@ $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(ca
 #
 # Translation installation
 #
-VirtualBox.nls_INST = $(INST_BIN)nls/
+VirtualBox.nls_INST = $(INST_BIN)nls3/
 VirtualBox.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS)))
 VirtualBox.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS_QT)))
 VirtualBox.nls_MODE = 644
@@ -487,6 +488,7 @@ VirtualBox.nls_MODE = 644
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS.darwin += tstDarwinKeyboard
 tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
+tstDarwinKeyboard_NAME = tstDarwinKeyboard3
 tstDarwinKeyboard_INCS = include
 tstDarwinKeyboard_SOURCES = \
 	src/darwin/tstDarwinKeyboard.cpp \
