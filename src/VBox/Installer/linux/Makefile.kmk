@@ -101,25 +101,21 @@ LINUXNOSTRIP = \
 	VBox.sh \
 	VBox.png \
 	VBoxAddIF.sh \
-	$(if $(VBOX_WITH_QTGUI)$(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
-	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
-	  $(shell $(CAT_EXT) \
-	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
-	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),) \
+	$(if $(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
 	src \
 	sdk
 
 # Qt4 GUI
 ifdef VBOX_WITH_QT4GUI
   LINUXSTRIPBIN += \
-	VBoxKeyboard4.so \
-	VirtualBox4
+	VBoxKeyboard.so \
+	VirtualBox
   LINUXNOSTRIP += \
 	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
 	$(foreach f,\
 	  $(shell $(CAT_EXT) \
 	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt),\
-	  nls4/VirtualBox_$(f).qm nls4/qt_$(f).qm)
+	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 
 # Guest Additions
