@@ -284,10 +284,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_LIST)
     {
         RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n");
+        RTPrintf("                            ");
         if (fWin)
             RTPrintf(                         "hostifs|");
-        RTPrintf("                            hdds|dvds|floppies|usbhost|usbfilters|\n"
-                 "                            systemproperties\n"
+        RTPrintf(                             "hostinfo|hdds|dvds|floppies|\n"
+                 "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }
 
@@ -1025,7 +1026,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     RTTIMESPEC timeSpec;
     RTTimeSpecSetMilli(&timeSpec, stateSince);
     char pszTime[30] = {0};
-    RTTimeSpecToString(&timeSpec, pszTime, 30);
+    RTTimeSpecToString(&timeSpec, pszTime, sizeof(pszTime));
     if (details == VMINFO_MACHINEREADABLE)
     {
         RTPrintf("VMState=\"%s\"\n", pszState);
@@ -2693,6 +2694,58 @@ static int handleList(int argc, char *argv[],
         }
     }
 #endif /* RT_OS_WINDOWS */
+    else
+    if (strcmp(argv[0], "hostinfo") == 0)
+    {
+        ComPtr<IHost> Host;
+        CHECK_ERROR (virtualBox, COMGETTER(Host)(Host.asOutParam()));
+
+        RTPrintf("Host Information:\n\n");
+
+        LONG64 uTCTime = 0;
+        CHECK_ERROR (Host, COMGETTER(UTCTime)(&uTCTime));
+        RTTIMESPEC timeSpec;
+        RTTimeSpecSetMilli(&timeSpec, uTCTime);
+        char pszTime[30] = {0};
+        RTTimeSpecToString(&timeSpec, pszTime, sizeof(pszTime));
+        RTPrintf("Host time: %s\n", pszTime);
+
+        ULONG processorCount = 0;
+        CHECK_ERROR (Host, COMGETTER(ProcessorCount)(&processorCount));
+        RTPrintf("Processor count: %lu\n", processorCount);
+        ULONG processorSpeed = 0;
+        Bstr processorDescription;
+        for (ULONG i = 0; i < processorCount; i++)
+        {
+            CHECK_ERROR (Host, COMGETTER(ProcessorSpeed)(i, &processorSpeed));
+            if (processorSpeed)
+                RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
+            else
+                RTPrintf("Processor#%u speed: unknown\n", i, processorSpeed);
+    #if 0 /* not yet implemented in Main */
+            CHECK_ERROR (Host, COMGETTER(ProcessorDescription)(i, processorDescription.asOutParam()));
+            RTPrintf("Processor#%u description: %lS\n", i, processorDescription.raw());
+    #endif
+        }
+
+    #if 0 /* not yet implemented in Main */
+        ULONG memorySize = 0;
+        CHECK_ERROR (Host, COMGETTER(MemorySize)(&memorySize));
+        RTPrintf("Memory size: %lu MByte\n", memorySize);
+
+        ULONG memoryAvailable = 0;
+        CHECK_ERROR (Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
+        RTPrintf("Memory available: %lu MByte\n", memoryAvailable);
+
+        Bstr operatingSystem;
+        CHECK_ERROR (Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
+        RTPrintf("Operating system: %lS\n", operatingSystem.raw());
+
+        Bstr oSVersion;
+        CHECK_ERROR (Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
+        RTPrintf("Operating system version: %lS\n", oSVersion.raw());
+    #endif
+    }
     else
     if (strcmp(argv[0], "hdds") == 0)
     {
