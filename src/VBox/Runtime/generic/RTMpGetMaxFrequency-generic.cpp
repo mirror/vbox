@@ -28,17 +28,16 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
-#include <iprt/cpuset.h>
 
 
-RTDECL(RTCPUID) RTMpGetMaxFrequency(void)
+RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
-    /** @note this is a generic stub which returns "unknown". */
+    NOREF(idCpu);
+    /* this is a generic stub which returns "unknown". */
     return 0;
 }
 
