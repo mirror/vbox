@@ -81,18 +81,29 @@ int main()
         RTPrintf("tstMp-1: Possible CPU mask:\n");
         for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
         {
+            RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
             if (RTCpuSetIsMemberByIndex(&Set, iCpu))
             {
-                RTPrintf("tstMp-1: %2d - id %d\n", iCpu, RTMpCpuIdFromSetIndex(iCpu));
-                if (!RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(iCpu)))
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz\n", iCpu, idCpu, RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
+                if (!RTMpIsCpuPossible(idCpu))
                 {
                     RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
                     g_cErrors++;
                 }
             }
-            else if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(iCpu)))
+            else if (RTMpIsCpuPossible(idCpu))
             {
                 RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTMpIsCpuPossible but not RTCpuSet!\n", iCpu);
+                g_cErrors++;
+            }
+            else if (RTMpGetCurFrequency(idCpu) != 0)
+            {
+                RTPrintf("tstMp-1: FAILURE: RTMpGetCurFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
+                g_cErrors++;
+            }
+            else if (RTMpGetMaxFrequency(idCpu) != 0)
+            {
+                RTPrintf("tstMp-1: FAILURE: RTMpGetCurFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
                 g_cErrors++;
             }
         }
@@ -146,7 +157,8 @@ int main()
         for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
             if (RTCpuSetIsMemberByIndex(&SetOnline, iCpu))
             {
-                RTPrintf("tstMp-1: %2d - id %d\n", iCpu, RTMpCpuIdFromSetIndex(iCpu));
+                RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz\n", iCpu, idCpu, RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
                 if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
                 {
                     RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
