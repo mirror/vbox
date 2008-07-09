@@ -2501,8 +2501,8 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
 
 
 /**
- * Replays the invalidated recorded pages.
- * Called in response to VERR_REM_FLUSHED_PAGES_OVERFLOW from the RAW execution loop.
+ * Replays the handler notification changes
+ * Called in response to VM_FF_REM_HANDLER_NOTIFY from the RAW execution loop.
  *
  * @param   pVM         VM handle.
  */
@@ -2554,6 +2554,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                 break;
         }
     }
+    VM_FF_CLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY);
 }
 
 
