@@ -88,8 +88,8 @@ public:
     STDMETHOD(COMGETTER(NetworkInterfaces))(IHostNetworkInterfaceCollection **networkInterfaces);
 #endif
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
-    STDMETHOD(COMGETTER(ProcessorSpeed))(ULONG *speed);
-    STDMETHOD(COMGETTER(ProcessorDescription))(BSTR *description);
+    STDMETHOD(COMGETTER(ProcessorSpeed))(ULONG cpuId, ULONG *speed);
+    STDMETHOD(COMGETTER(ProcessorDescription))(ULONG cpuId, BSTR *description);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *size);
     STDMETHOD(COMGETTER(MemoryAvailable))(ULONG *available);
     STDMETHOD(COMGETTER(OperatingSystem))(BSTR *os);

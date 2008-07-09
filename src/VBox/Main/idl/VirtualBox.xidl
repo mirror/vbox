@@ -4804,7 +4804,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="a42a480f-d554-4be0-b11c-6c2e54dd1274"
+     uuid="3d864057-ae6b-4d05-9cf7-c341139b6062"
      wsmap="managed"
      >
     <desc>
@@ -4878,13 +4878,35 @@
       <desc>Number of (logical) CPUs installed in the host system.</desc>
     </attribute>
 
-    <attribute name="processorSpeed" type="unsigned long" readonly="yes">
-      <desc>(Approximate) speed of the host CPU in Megahertz.</desc>
-    </attribute>
+    <method name="getProcessorSpeed">
+      <desc>Query the (approximate) maximum speed of a specified host CPU in Megahertz.</desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>
+          Identifier of the CPU.
+        </desc>
+      </param>
+      <param name="speed" type="unsigned long" dir="return">
+        <desc>
+          Speed value. 0 is returned if value is not known or @a cpuId is
+          invalid.
+        </desc>
+      </param>
+    </method>
 
-    <attribute name="processorDescription" type="wstring" readonly="yes">
-      <desc>Description string of the host CPU.</desc>
-    </attribute>
+    <method name="getProcessorDescription">
+      <desc>Query the model string of a specified host CPU.</desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>
+          Identifier of the CPU.
+        </desc>
+      </param>
+      <param name="description" type="wstring" dir="return">
+        <desc>
+          Model string. A NULL string is returned if value is not known or
+          @a cpuId is invalid.
+        </desc>
+      </param>
+    </method>
 
     <attribute name="memorySize" type="unsigned long" readonly="yes">
       <desc>Amount of system memory in megabytes installed in the host system.</desc>
