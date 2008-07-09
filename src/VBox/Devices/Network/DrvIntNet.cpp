@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox network devices:
- * Internal network transport driver
+ * DrvIntNet - Internal network transport driver.
  */
 
 /*
@@ -705,12 +704,53 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
 
+    /** @cfgm{Network, string}
+     * The name of the internal network to connect to.
+     */
     rc = CFGMR3QueryString(pCfgHandle, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"Network\" value"));
     strcpy(pThis->szNetwork, OpenReq.szNetwork);
 
+    /** @cfgm{TrunkType, uint32_t, kIntNetTrunkType_None}
+     * The trunk connection type see INTNETTRUNKTYPE.
+     */
+    uint32_t u32TrunkType;
+    rc = CFGMR3QueryU32(pCfgHandle, "TrunkType", &u32TrunkType);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        u32TrunkType = kIntNetTrunkType_None;
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"TrunkType\" value"));
+    OpenReq.enmTrunkType = (INTNETTRUNKTYPE)u32TrunkType;
+
+    /** @cfgm{Trunk, string, ""}
+     * The name of the trunk connection.
+     */
+    rc = CFGMR3QueryString(pCfgHandle, "Trunk", OpenReq.szTrunk, sizeof(OpenReq.szTrunk));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        OpenReq.szTrunk[0] = '\0';
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"Trunk\" value"));
+
+    /** @cfgm{RestrictAccess, boolean, true}
+     * Whether to restrict the access to the network or if it should be public. Everyone on
+     * the computer can connect to a public network. Don't change this.
+     */
+    bool fRestrictAccess;
+    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &fRestrictAccess);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fRestrictAccess = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
+    OpenReq.fFlags = fRestrictAccess ? 0 : INTNET_OPEN_FLAGS_PUBLIC;
+
+    /** @cfgm{ReceiveBufferSize, uint32_t, 256 KB}
+     * The size of the receive buffer.
+     */
     rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbRecv = _256K;
@@ -718,6 +758,9 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
+    /** @cfgm{SendBufferSize, uint32_t, 4 KB}
+     * The size of the send (transmit) buffer.
+     */
     rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbSend = _4K;
@@ -730,19 +773,20 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     if (OpenReq.cbSend < 1536*2 + 4)
         LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 4));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &OpenReq.fRestrictAccess);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.fRestrictAccess = true;
-    else if (VBOX_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
-
+    /** @cfgm{IsService, boolean, true}
+     * This alterns the way the thread is suspended and resumed. When it's being used by
+     * a service such as LWIP/iSCSI it shouldn't suspend immediately like for a NIC.
+     */
     rc = CFGMR3QueryBool(pCfgHandle, "IsService", &pThis->fActivateEarlyDeactivateLate);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fActivateEarlyDeactivateLate = false;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IsService\" value"));
+
+    LogRel(("IntNet#%u: szNetwork={%s} enmTrunkType=%d szTrunk={%s} fFlags=%#x cbRecv=%u cbSend=%u\n",
+            pDrvIns->iInstance, OpenReq.szNetwork, OpenReq.enmTrunkType, OpenReq.szTrunk, OpenReq.fFlags,
+            OpenReq.cbRecv, OpenReq.cbSend));
 
     /*
      * Create the event semaphores
@@ -780,6 +824,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
 
     /*
      * Create the async I/O thread.
+     * Note! Using a PDM thread here doesn't fit with the IsService=true operation.
      */
     rc = RTThreadCreate(&pThis->Thread, drvIntNetAsyncIoThread, pThis, _128K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET");
     if (VBOX_FAILURE(rc))
@@ -819,8 +864,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
     }
-
-    LogRel(("IntNet#%u: cbRecv=%u cbSend=%u fRestrictAccess=%d\n", pDrvIns->iInstance, OpenReq.cbRecv, OpenReq.cbSend, OpenReq.fRestrictAccess));
 
     return rc;
 }

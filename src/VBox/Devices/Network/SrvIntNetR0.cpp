@@ -612,8 +612,8 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void
     if (pvFrame && cbFrame)
     {
         AssertReturn(cbFrame < 0x8000, VERR_INVALID_PARAMETER);
-        AssertReturn(VALID_PTR(pvFrame), VERR_INVALID_PARAMETER);
-        AssertReturn(VALID_PTR((uint8_t *)pvFrame + cbFrame - 1), VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pvFrame, VERR_INVALID_PARAMETER);
+        AssertPtrReturn((uint8_t *)pvFrame + cbFrame - 1, VERR_INVALID_PARAMETER);
 
         /* This is the better place to crash, probe the buffer. */
         ASMProbeReadBuffer(pvFrame, cbFrame);
@@ -686,7 +686,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     PINTNETIF pIf = INTNETHandle2IFPtr(pIntNet, hIf);
     if (!pIf)
         return VERR_INVALID_HANDLE;
-    AssertReturn(VALID_PTR(ppRing3Buf), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
 
     /*
      * ASSUMES that only the process that created an interface can use it.
@@ -739,7 +739,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     PINTNETIF pIf = INTNETHandle2IFPtr(pIntNet, hIf);
     if (!pIf)
         return VERR_INVALID_HANDLE;
-    AssertReturn(VALID_PTR(ppRing0Buf), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppRing0Buf, VERR_INVALID_PARAMETER);
 
     /*
      * Assuming that we're in Ring-0, this should be rather simple :-)
@@ -775,8 +775,8 @@ INTNETR0DECL(int) INTNETR0IfGetPhysBuffer(PINTNET pIntNet, INTNETIFHANDLE hIf, P
     PINTNETIF pIf = INTNETHandle2IFPtr(pIntNet, hIf);
     if (!pIf)
         return VERR_INVALID_HANDLE;
-    AssertReturn(VALID_PTR(paPages), VERR_INVALID_PARAMETER);
-    AssertReturn(VALID_PTR((uint8_t *)&paPages[cPages] - 1), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    AssertPtrReturn((uint8_t *)&paPages[cPages] - 1, VERR_INVALID_PARAMETER);
 
     /*
      * Assuming that we're in Ring-0, this should be rather simple :-)
@@ -932,7 +932,7 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf)
     /*
      * Get and validate essential handles.
      */
-    AssertReturn(VALID_PTR(pIntNet), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
     PINTNETIF pIf = INTNETHandle2IFPtr(pIntNet, hIf);
     if (!pIf)
         return VERR_INVALID_HANDLE;
@@ -1093,8 +1093,8 @@ static int INTNETNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
     /*
      * Assert input.
      */
-    Assert(VALID_PTR(pNetwork));
-    Assert(VALID_PTR(phIf));
+    AssertPtr(pNetwork);
+    AssertPtr(phIf);
 
     /*
      * Allocate and initialize the interface structure.
@@ -1192,8 +1192,8 @@ static int INTNETNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
 static int INTNETNetworkClose(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession)
 {
     LogFlow(("INTNETNetworkClose: pNetwork=%p pSession=%p\n", pNetwork, pSession));
-    AssertReturn(VALID_PTR(pSession), VERR_INVALID_PARAMETER);
-    AssertReturn(VALID_PTR(pNetwork), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pSession, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pNetwork, VERR_INVALID_PARAMETER);
     PINTNET         pIntNet = pNetwork->pIntNet;
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
 
@@ -1281,10 +1281,10 @@ static int INTNETOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
     LogFlow(("INTNETOpenNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
              pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
 
-    Assert(VALID_PTR(pIntNet));
-    Assert(VALID_PTR(pSession));
-    Assert(VALID_PTR(pszNetwork));
-    Assert(VALID_PTR(ppNetwork));
+    AssertPtr(pIntNet);
+    AssertPtr(pSession);
+    AssertPtr(pszNetwork);
+    AssertPtr(ppNetwork);
     *ppNetwork = NULL;
 
     /*
@@ -1353,10 +1353,10 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     LogFlow(("INTNETCreateNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
              pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
 
-    Assert(VALID_PTR(pIntNet));
-    Assert(VALID_PTR(pSession));
-    Assert(VALID_PTR(pszNetwork));
-    Assert(VALID_PTR(ppNetwork));
+    AssertPtr(pIntNet);
+    AssertPtr(pSession);
+    AssertPtr(pszNetwork);
+    AssertPtr(ppNetwork);
     *ppNetwork = NULL;
 
     /*
@@ -1442,26 +1442,59 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * @param   pIntNet         The internal network instance.
  * @param   pSession        The session handle.
  * @param   pszNetwork      The network name.
+ * @param   enmTrunkType    The trunk type.
+ * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
+ * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
  * @param   cbSend          The send buffer size.
  * @param   cbRecv          The receive buffer size.
- * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
  * @param   phIf            Where to store the handle to the network interface.
  */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf)
+INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork,
+                               INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
+                               unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf)
 {
-    LogFlow(("INTNETR0Open: pIntNet=%p pSession=%p pszNetwork=%p:{%s} cbSend=%u cbRecv=%u phIf=%p\n",
-             pIntNet, pSession, pszNetwork, pszNetwork, cbSend, cbRecv, phIf));
+    LogFlow(("INTNETR0Open: pIntNet=%p pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x cbSend=%u cbRecv=%u phIf=%p\n",
+             pIntNet, pSession, pszNetwork, pszNetwork, pszTrunk, pszTrunk, enmTrunkType, fFlags, cbSend, cbRecv, phIf));
 
     /*
      * Validate input.
      */
-    AssertReturn(VALID_PTR(pIntNet), VERR_INVALID_PARAMETER);
-    AssertReturn(VALID_PTR(pszNetwork), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(pszNetwork, VERR_INVALID_PARAMETER);
     const char *pszNetworkEnd = (const char *)memchr(pszNetwork, '\0', INTNET_MAX_NETWORK_NAME);
     AssertReturn(pszNetworkEnd, VERR_INVALID_PARAMETER);
     size_t cchNetwork = pszNetworkEnd - pszNetwork;
     AssertReturn(cchNetwork, VERR_INVALID_PARAMETER);
-    AssertReturn(VALID_PTR(phIf), VERR_INVALID_PARAMETER);
+
+    if (pszTrunk)
+    {
+        AssertPtrReturn(pszTrunk, VERR_INVALID_PARAMETER);
+        const char *pszTrunkEnd = (const char *)memchr(pszTrunk, '\0', INTNET_MAX_TRUNK_NAME);
+        AssertReturn(pszTrunkEnd, VERR_INVALID_PARAMETER);
+        if (pszTrunkEnd == pszTrunk)
+            pszTrunk = NULL;
+    }
+    AssertMsgReturn(enmTrunkType > kIntNetTrunkType_Invalid && enmTrunkType < kIntNetTrunkType_End,
+                    ("%d\n", enmTrunkType), VERR_INVALID_PARAMETER);
+    switch (enmTrunkType)
+    {
+        case kIntNetTrunkType_None:
+        case kIntNetTrunkType_WhateverNone:
+            AssertReturn(!pszTrunk, VERR_INVALID_PARAMETER);
+            break;
+
+        case kIntNetTrunkType_NetFlt:
+            AssertReturn(pszTrunk, VERR_INVALID_PARAMETER);
+            break;
+
+        default:
+            return VERR_NOT_IMPLEMENTED;
+    }
+
+    AssertMsgReturn(fFlags & ~(INTNET_OPEN_FLAGS_PUBLIC), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phIf, VERR_INVALID_PARAMETER);
 
     /*
      * Acquire the mutex to serialize open/create.
@@ -1476,7 +1509,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     PINTNETNETWORK pNetwork;
     rc = INTNETOpenNetwork(pIntNet, pSession, pszNetwork, &pNetwork);
     if (rc == VERR_FILE_NOT_FOUND)
-        rc = INTNETCreateNetwork(pIntNet, pSession, pszNetwork, fRestrictAccess, &pNetwork);
+        rc = INTNETCreateNetwork(pIntNet, pSession, pszNetwork, !(fFlags & INTNET_OPEN_FLAGS_PUBLIC), &pNetwork);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1508,7 +1541,8 @@ INTNETR0DECL(int) INTNETR0OpenReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINT
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0Open(pIntNet, pSession, &pReq->szNetwork[0], pReq->cbSend, pReq->cbRecv, pReq->fRestrictAccess, &pReq->hIf);
+    return INTNETR0Open(pIntNet, pSession, &pReq->szNetwork[0], pReq->enmTrunkType, pReq->szTrunk,
+                        pReq->fFlags, pReq->cbSend, pReq->cbRecv, &pReq->hIf);
 }
 
 
