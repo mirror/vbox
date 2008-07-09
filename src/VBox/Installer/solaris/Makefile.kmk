@@ -84,7 +84,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_INFO_SVC),VBoxSharedInfoSvc.so,) \
-	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard.so,) \
+	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard3.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	VBoxSettings.so \
@@ -132,8 +132,8 @@ SOLARIS_EXTRAS = \
 SOLARIS_NLS = \
 	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
 	  $(shell $(CAT_EXT) \
-		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
-	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
+		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls3/ApprovedLanguages.txt),\
+	  nls3/VirtualBox_$(f).qm nls3/qt_$(f).qm),)
 
 SOLARIS_SDK = \
 	$(foreach f, $(shell $(CAT_EXT) $(if $(VBOX_OSE),sdkfiles.ose,sdkfiles)), $(f))
@@ -215,7 +215,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls3,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/sdk,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/qtgcc/lib,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/qtgcc/bin,)
@@ -237,8 +237,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_INFO_SVC),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedInfoSvc.so                  $(SOLARIS_INST_DIR)/VBoxSharedInfoSvc.so,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSDL                                $(SOLARIS_INST_DIR)/VBoxSDL,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARIS_INST_DIR)/VBoxRT.so
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard.so                          $(SOLARIS_INST_DIR)/VBoxKeyboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                               $(SOLARIS_INST_DIR)/VirtualBox,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard3.so                         $(SOLARIS_INST_DIR)/VBoxKeyboard3.so,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox3                              $(SOLARIS_INST_DIR)/VirtualBox3,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/lib/libqt-mt.so.3     $(SOLARIS_INST_DIR)/qtgcc/lib/libqt-mt.so.3,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v3.3.8/bin/qtconfig          $(SOLARIS_INST_DIR)/qtgcc/bin/qtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARIS_INST_DIR)/VBoxDbg.so,)
@@ -263,8 +263,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSVC,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXSDL),strip $(SOLARIS_INST_DIR)/VBoxSDL,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxRT.so,)
-	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/VBoxKeyboard.so,),)
-	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/VirtualBox,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/VBoxKeyboard3.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/VirtualBox3,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/qtgcc/lib/libqt-mt.so.3,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QTGUI),strip $(SOLARIS_INST_DIR)/qtgcc/bin/qtconfig,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg.so,),)
@@ -295,7 +295,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARIS_INST_DIR)/License-$(VBOX_LICENSE_VER).html,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARIS_INST_DIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARIS_INST_DIR)/components/VirtualBox_XPCOM.xpt
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls3,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARIS_INST_DIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh
@@ -374,8 +374,8 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedFolders.so              $(SOLARIS_DBG_DIR)/VBoxSharedFolders.so,)
 	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedClipboard.so          $(SOLARIS_DBG_DIR)/VBoxSharedClipboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_INFO_SVC),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedInfoSvc.so                    $(SOLARIS_DBG_DIR)/VBoxSharedInfoSvc.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxKeyboard.so                            $(SOLARIS_DBG_DIR)/VBoxKeyboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox                                 $(SOLARIS_DBG_DIR)/VirtualBox,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxKeyboard3.so                           $(SOLARIS_DBG_DIR)/VBoxKeyboard3.so,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox3                                $(SOLARIS_DBG_DIR)/VirtualBox3,)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARIS_DBG_DIR)/components/VBoxC.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxSVCM.so                                             $(SOLARIS_DBG_DIR)/components/VBoxSVCM.so
