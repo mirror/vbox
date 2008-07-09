@@ -127,6 +127,7 @@ private:
     QAction *helpContentsAction;
     QAction *helpWebAction;
     QAction *helpRegisterAction;
+    QAction *helpUpdateAction;
     QAction *helpAboutAction;
     QAction *helpResetMessagesAction;
 

@@ -448,7 +448,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     helpWebAction->setIcon (VBoxGlobal::iconSet (":/site_16px.png"));
     helpRegisterAction = new QAction (this);
     helpRegisterAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
-                                                         ":/register_disabled_16px.png"));
+                                                      ":/register_disabled_16px.png"));
+    helpUpdateAction = new QAction (this);
+    helpUpdateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
+                                                    ":/refresh_disabled_16px.png"));
     helpAboutAction = new QAction (this);
     helpAboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
     helpResetMessagesAction = new QAction (this);
@@ -582,6 +585,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
         GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
+    mHelpMenu->addAction (helpUpdateAction);
+    helpUpdateAction->setEnabled (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_UpdateDlgWinID).isEmpty());
     mHelpMenu->addAction (helpAboutAction);
     mHelpMenu->addSeparator();
     mHelpMenu->addAction (helpResetMessagesAction);
@@ -658,8 +664,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (triggered()),
              &vboxGlobal(), SLOT (showRegistrationDialog()));
+    connect (helpUpdateAction, SIGNAL (activated()),
+             &vboxGlobal(), SLOT (showUpdateDialog()));
     connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
              helpRegisterAction, SLOT (setEnabled (bool)));
+    connect (&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
+             helpUpdateAction, SLOT (setEnabled (bool)));
     connect (helpAboutAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (triggered()),
@@ -753,9 +763,9 @@ void VBoxSelectorWnd::fileExit()
      * (e.g. VDM) and if so close them. Note that the default behavior is
      * different to Qt3 where a *mainWidget* exists & if this going to close
      * all other windows are closed automatically. We do the same below. */
-    foreach (QWidget *widget, QApplication::topLevelWidgets()) 
+    foreach (QWidget *widget, QApplication::topLevelWidgets())
     {
-        if (widget->isVisible() && 
+        if (widget->isVisible() &&
             widget != this)
             widget->close();
     }
@@ -1207,6 +1217,10 @@ void VBoxSelectorWnd::retranslateUi()
     helpRegisterAction->setText (tr ("R&egister VirtualBox..."));
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
+
+    helpUpdateAction->setText (tr ("&Update VirtualBox..."));
+    helpUpdateAction->setStatusTip (
+        tr ("Open VirtualBox New Version Notifier"));
 
     helpAboutAction->setText (tr ("&About VirtualBox..."));
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));

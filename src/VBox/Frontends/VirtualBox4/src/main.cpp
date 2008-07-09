@@ -273,6 +273,7 @@ int main (int argc, char **argv)
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
                 vboxGlobal().showRegistrationDialog (false /* aForce */);
 #endif
+                vboxGlobal().showUpdateDialog (false /* aForce */);
                 vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();
             }
