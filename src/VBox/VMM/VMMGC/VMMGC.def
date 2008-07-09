@@ -52,6 +52,7 @@ EXPORTS
     TRPMGCHandlerTrap12
     MMGCRamWriteNoTrapHandler
     MMGCRamReadNoTrapHandler
+    VMMGetSvnRev
     vmmGCLoggerFlush
     vmmGCLoggerWrapper
     vmmGCRelLoggerWrapper

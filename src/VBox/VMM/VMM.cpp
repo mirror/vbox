@@ -637,7 +637,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_INIT, VBOX_VERSION, NULL);
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_INIT, VMMGetSvnRev(), NULL);
 #endif
         if (    pVM->vmm.s.pR0Logger
             &&  pVM->vmm.s.pR0Logger->Logger.offScratch > 0)
@@ -691,7 +691,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
 #else /* 64-bit GC */
         CPUMPushHyper(pVM, u64TS);                      /* Param 3: The program startup TS. */
 #endif
-        CPUMPushHyper(pVM, VBOX_VERSION);               /* Param 2: Version argument. */
+        CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
         CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));        /* trampoline param: stacksize.  */
@@ -754,7 +754,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_TERM, VBOX_VERSION, NULL);
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_TERM, 0, NULL);
 #endif
         if (    pVM->vmm.s.pR0Logger
             &&  pVM->vmm.s.pR0Logger->Logger.offScratch > 0)
