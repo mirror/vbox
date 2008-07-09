@@ -2717,13 +2717,13 @@ static int handleList(int argc, char *argv[],
         Bstr processorDescription;
         for (ULONG i = 0; i < processorCount; i++)
         {
-            CHECK_ERROR (Host, COMGETTER(ProcessorSpeed)(i, &processorSpeed));
+            CHECK_ERROR (Host, GetProcessorSpeed(i, &processorSpeed));
             if (processorSpeed)
                 RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
             else
                 RTPrintf("Processor#%u speed: unknown\n", i, processorSpeed);
     #if 0 /* not yet implemented in Main */
-            CHECK_ERROR (Host, COMGETTER(ProcessorDescription)(i, processorDescription.asOutParam()));
+            CHECK_ERROR (Host, GetProcessorDescription(i, processorDescription.asOutParam()));
             RTPrintf("Processor#%u description: %lS\n", i, processorDescription.raw());
     #endif
         }
