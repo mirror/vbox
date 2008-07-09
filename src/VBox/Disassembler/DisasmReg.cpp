@@ -599,6 +599,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
 
                 pParamVal->val.val64 += val64;
             }
+            else
+                AssertFailed();
         }
 
         if (pParam->flags & USE_DISPLACEMENT8)
