@@ -307,15 +307,15 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     connect (mTreeWidget, SIGNAL (itemChanged (QTreeWidgetItem*, int)),
              this, SLOT (onItemChanged (QTreeWidgetItem*, int)));
 
-    connect (mDiscardSnapshotAction, SIGNAL (activated()),
+    connect (mDiscardSnapshotAction, SIGNAL (triggered()),
              this, SLOT (discardSnapshot()));
-    connect (mTakeSnapshotAction, SIGNAL (activated()),
+    connect (mTakeSnapshotAction, SIGNAL (triggered()),
              this, SLOT (takeSnapshot()));
-    connect (mRevertToCurSnapAction, SIGNAL (activated()),
+    connect (mRevertToCurSnapAction, SIGNAL (triggered()),
              this, SLOT (discardCurState()));
-    connect (mDiscardCurSnapAndStateAction, SIGNAL (activated()),
+    connect (mDiscardCurSnapAndStateAction, SIGNAL (triggered()),
              this, SLOT (discardCurSnapAndState()));
-    connect (mShowSnapshotDetailsAction, SIGNAL (activated()),
+    connect (mShowSnapshotDetailsAction, SIGNAL (triggered()),
              this, SLOT (showSnapshotDetails()));
 
     connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent&)),

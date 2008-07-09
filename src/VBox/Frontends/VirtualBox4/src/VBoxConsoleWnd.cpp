@@ -494,30 +494,30 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
              this, SLOT (vmSeamless (bool)));
     connect (vmAutoresizeGuestAction, SIGNAL (toggled (bool)),
              this, SLOT (vmAutoresizeGuest (bool)));
-    connect (vmAdjustWindowAction, SIGNAL (activated()),
+    connect (vmAdjustWindowAction, SIGNAL (triggered()),
              this, SLOT (vmAdjustWindow()));
 
-    connect (vmTypeCADAction, SIGNAL(activated()), this, SLOT(vmTypeCAD()));
+    connect (vmTypeCADAction, SIGNAL(triggered()), this, SLOT(vmTypeCAD()));
 #if defined(Q_WS_X11)
-    connect (vmTypeCABSAction, SIGNAL(activated()), this, SLOT(vmTypeCABS()));
+    connect (vmTypeCABSAction, SIGNAL(triggered()), this, SLOT(vmTypeCABS()));
 #endif
-    connect (vmResetAction, SIGNAL(activated()), this, SLOT (vmReset()));
+    connect (vmResetAction, SIGNAL(triggered()), this, SLOT (vmReset()));
     connect (vmPauseAction, SIGNAL(toggled (bool)), this, SLOT (vmPause (bool)));
-    connect (vmACPIShutdownAction, SIGNAL (activated()), this, SLOT (vmACPIShutdown()));
-    connect (vmCloseAction, SIGNAL(activated()), this, SLOT (vmClose()));
+    connect (vmACPIShutdownAction, SIGNAL (triggered()), this, SLOT (vmACPIShutdown()));
+    connect (vmCloseAction, SIGNAL(triggered()), this, SLOT (vmClose()));
 
-    connect (vmTakeSnapshotAction, SIGNAL(activated()), this, SLOT(vmTakeSnapshot()));
-    connect (vmShowInformationDlgAction, SIGNAL(activated()), this, SLOT (vmShowInfoDialog()));
+    connect (vmTakeSnapshotAction, SIGNAL(triggered()), this, SLOT(vmTakeSnapshot()));
+    connect (vmShowInformationDlgAction, SIGNAL(triggered()), this, SLOT (vmShowInfoDialog()));
 
     connect (vmDisableMouseIntegrAction, SIGNAL(toggled (bool)), this, SLOT(vmDisableMouseIntegr (bool)));
 
-    connect (devicesMountFloppyImageAction, SIGNAL(activated()), this, SLOT(devicesMountFloppyImage()));
-    connect (devicesUnmountFloppyAction, SIGNAL(activated()), this, SLOT(devicesUnmountFloppy()));
-    connect (devicesMountDVDImageAction, SIGNAL(activated()), this, SLOT(devicesMountDVDImage()));
-    connect (devicesUnmountDVDAction, SIGNAL(activated()), this, SLOT(devicesUnmountDVD()));
+    connect (devicesMountFloppyImageAction, SIGNAL(triggered()), this, SLOT(devicesMountFloppyImage()));
+    connect (devicesUnmountFloppyAction, SIGNAL(triggered()), this, SLOT(devicesUnmountFloppy()));
+    connect (devicesMountDVDImageAction, SIGNAL(triggered()), this, SLOT(devicesMountDVDImage()));
+    connect (devicesUnmountDVDAction, SIGNAL(triggered()), this, SLOT(devicesUnmountDVD()));
     connect (devicesSwitchVrdpAction, SIGNAL(toggled (bool)), this, SLOT(devicesSwitchVrdp (bool)));
-    connect (devicesSFDialogAction, SIGNAL(activated()), this, SLOT(devicesOpenSFDialog()));
-    connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
+    connect (devicesSFDialogAction, SIGNAL(triggered()), this, SLOT(devicesOpenSFDialog()));
+    connect (devicesInstallGuestToolsAction, SIGNAL(triggered()), this, SLOT(devicesInstallGuestAdditions()));
 
 
     connect (mDevicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
@@ -549,17 +549,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (mDevicesNetworkMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
 
-    connect (helpContentsAction, SIGNAL (activated()),
+    connect (helpContentsAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (helpWebAction, SIGNAL (activated()),
+    connect (helpWebAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
-    connect (helpRegisterAction, SIGNAL (activated()),
+    connect (helpRegisterAction, SIGNAL (triggered()),
              &vboxGlobal(), SLOT (showRegistrationDialog()));
     connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
              helpRegisterAction, SLOT (setEnabled (bool)));
-    connect (helpAboutAction, SIGNAL (activated()),
+    connect (helpAboutAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
-    connect (helpResetMessagesAction, SIGNAL (activated()),
+    connect (helpResetMessagesAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (resetSuppressedMessages()));
 
     connect (fd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
@@ -588,10 +588,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (dbgStatisticsAction)
-        connect (dbgStatisticsAction, SIGNAL (activated()),
+        connect (dbgStatisticsAction, SIGNAL (triggered()),
                  this, SLOT (dbgShowStatistics()));
     if (dbgCommandLineAction)
-        connect (dbgCommandLineAction, SIGNAL (activated()),
+        connect (dbgCommandLineAction, SIGNAL (triggered()),
                  this, SLOT (dbgShowCommandLine()));
 #endif
 

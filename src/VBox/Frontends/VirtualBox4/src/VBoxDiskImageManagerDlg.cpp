@@ -315,17 +315,17 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     mReleaseAction = new QAction (this);
     mRefreshAction = new QAction (this);
 
-    connect (mNewAction, SIGNAL (activated()),
+    connect (mNewAction, SIGNAL (triggered()),
              this, SLOT (newImage()));
-    connect (mAddAction, SIGNAL (activated()),
+    connect (mAddAction, SIGNAL (triggered()),
              this, SLOT (addImage()));
-    // connect (mEditAction, SIGNAL (activated()),
+    // connect (mEditAction, SIGNAL (triggered()),
     //          this, SLOT (editImage()));
-    connect (mRemoveAction, SIGNAL (activated()),
+    connect (mRemoveAction, SIGNAL (triggered()),
              this, SLOT (removeImage()));
-    connect (mReleaseAction, SIGNAL (activated()),
+    connect (mReleaseAction, SIGNAL (triggered()),
              this, SLOT (releaseImage()));
-    connect (mRefreshAction, SIGNAL (activated()),
+    connect (mRefreshAction, SIGNAL (triggered()),
              this, SLOT (refreshAll()));
 
     mNewAction->setIcon (VBoxGlobal::iconSetEx (
