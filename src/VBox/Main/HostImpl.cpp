@@ -100,8 +100,6 @@ extern "C" char *getfullrawname(char *);
 #include <VBox/usb.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
-/** @todo the following line becomes obsolete after switching to Mp runtime functions */
-#include <iprt/system.h>
 #include <iprt/mp.h>
 #include <iprt/time.h>
 #include <iprt/param.h>
@@ -667,9 +665,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    *count = RTSystemProcessorGetCount();
-    /** @todo after implementing the Mp runtime on all platforms replace with
-     * *count = RTMpGetOnlineCount(); */
+    *count = RTMpGetOnlineCount();
     return S_OK;
 }
 
@@ -680,15 +676,13 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
  * @param   cpu id to get info for.
  * @param   speed address of result variable, speed is 0 if unknown or cpuId is invalid.
  */
-STDMETHODIMP Host::GetProcessorSpeed(ULONG cpuId, ULONG *speed)
+STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *speed)
 {
     if (!speed)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo after implementing the Mp runtime on all platforms replace with
-     * *speed = RTMpGetMaxFrequency(aCpuId); */
-    *speed = 0;
+    *speed = RTMpGetMaxFrequency(aCpuId);
     return S_OK;
 }
 /**
