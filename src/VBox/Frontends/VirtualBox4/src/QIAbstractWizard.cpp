@@ -230,7 +230,7 @@ int QIAbstractWizard::backButtonIndex (QPushButton *aBackButton)
 }
 
 QPushButton* QIAbstractWizard::getButton (QWidget *aOfPage,
-                                                  const QString &aRegExp)
+                                          const QString &aRegExp)
 {
     Assert (aOfPage && !aRegExp.isNull());
     QList<QPushButton*> buttonsList =
