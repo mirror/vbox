@@ -55,7 +55,7 @@ RTDECL(RTCPUID) RTMpCpuId(void);
 /**
  * Converts a CPU identifier to a CPU set index.
  *
- * This may or may not validate the precense of the CPU.
+ * This may or may not validate the presence of the CPU.
  *
  * @returns The CPU set index on success, -1 on failure.
  * @param   idCpu       The identifier of the CPU.
@@ -65,7 +65,7 @@ RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
 /**
  * Converts a CPU set index to a a CPU identifier.
  *
- * This may or may not validate the precense of the CPU, so, use
+ * This may or may not validate the presence of the CPU, so, use
  * RTMpIsCpuPossible for that.
  *
  * @returns The corresponding CPU identifier, NIL_RTCPUID on failure.
@@ -130,6 +130,21 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void);
  * @param   idCpu       The identifier of the CPU.
  */
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
+
+/**
+ * Get the current CPU speed (in Mhz) of a CPU which is currently online.
+ *
+ * @returns CPU speed if CPU id is valid, 0 otherwise.
+ */
+RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu);
+
+
+/**
+ * Get the maximum CPU speed (in Mhz) of a CPU which is currently online.
+ *
+ * @returns CPU speed if CPU id is valid, 0 otherwise.
+ */
+RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu);
 
 
 #ifdef IN_RING0
