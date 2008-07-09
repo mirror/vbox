@@ -218,11 +218,25 @@ static int64_t rtLinuxSysFsReadIntFile(unsigned uBase, const char *pszFormat, ..
  *
  * @returns Max cpus.
  */
-DECLINLINE(RTCPUID) rtMpLinuxMaxCpus(void)
+static RTCPUID rtMpLinuxMaxCpus(void)
 {
+#if 0 /* this doesn't do the right thing :-/ */
     int cMax = sysconf(_SC_NPROCESSORS_CONF);
     Assert(cMax >= 1);
     return cMax;
+#else
+    static uint32_t s_cMax = 0;
+    if (!s_cMax)
+    {
+        int cMax = 1;
+        for (unsigned iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+            if (rtLinuxSysFsExists("devices/system/cpu/cpu%d", iCpu))
+                cMax = iCpu + 1;
+        ASMAtomicUoWriteU32((uint32_t volatile *)&s_cMax, cMax);
+        return cMax;
+    }
+    return s_cMax;
+#endif
 }
 
 
