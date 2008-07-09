@@ -277,6 +277,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/alloc-win.cpp \
@@ -316,6 +318,8 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTUuidCreate-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/linux/sched-linux.cpp \
 	r3/linux/time-linux.cpp \
 	r3/posix/alloc-posix.cpp \
@@ -367,6 +371,8 @@ RuntimeR3_SOURCES.os2   = \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
@@ -404,6 +410,8 @@ RuntimeR3_SOURCES.darwin = \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/darwin/alloc-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
@@ -439,6 +447,8 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -475,6 +485,8 @@ RuntimeR3_SOURCES.solaris = \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTMpGetCurFrequency-generic.cpp \
+	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
