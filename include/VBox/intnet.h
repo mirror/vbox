@@ -586,8 +586,44 @@ typedef INTNETTRUNKNETFLTFACTORY *PINTNETTRUNKNETFLTFACTORY;
 
 
 
+/**
+ * The trunk connection type.
+ *
+ * Used by INTNETR0Open and assoicated interfaces.
+ */
+typedef enum INTNETTRUNKTYPE
+{
+    /** Invalid trunk type. */
+    kIntNetTrunkType_Invalid = 0,
+    /** No trunk connection. */
+    kIntNetTrunkType_None,
+    /** We don't care which kind of trunk connection if the network exists,
+     * if it doesn't exist create it without a connection. */
+    kIntNetTrunkType_WhateverNone,
+    /** VirtualBox host network interface filter driver.
+     * The trunk name is the name of the host network interface. */
+    kIntNetTrunkType_NetFlt,
+    /** VirtualBox TAP host driver. */
+    kIntNetTrunkType_NetTap,
+    /** Nat service (ring-0). */
+    kIntNetTrunkType_SrvNat,
+    /** The end of valid types. */
+    kIntNetTrunkType_End,
+    /** The usual 32-bit hack. */
+    kIntNetTrunkType_32bitHack = 0x7fffffff
+} INTNETTRUNKTYPE;
+
+/** @name INTNETR0Open flags.
+ * @{ */
+/** Whether new participants should be subjected to access check or not. */
+#define INTNET_OPEN_FLAGS_PUBLIC    RT_BIT_32(1)
+/** @} */
+
 /** The maximum length of a network name. */
 #define INTNET_MAX_NETWORK_NAME     128
+
+/** The maximum length of a trunk name. */
+#define INTNET_MAX_TRUNK_NAME       64
 
 
 /**
@@ -600,12 +636,17 @@ typedef struct INTNETOPENREQ
     SUPVMMR0REQHDR  Hdr;
     /** The network name. (input) */
     char            szNetwork[INTNET_MAX_NETWORK_NAME];
+    /** What to connect to the trunk port. (input)
+     * This is specific to the trunk type below. */
+    char            szTrunk[INTNET_MAX_TRUNK_NAME];
+    /** The type of trunk link (NAT, Filter, TAP, etc). (input) */
+    INTNETTRUNKTYPE enmTrunkType;
+    /** Flags, see INTNET_OPEN_FLAGS_*. (input) */
+    uint32_t        fFlags;
     /** The size of the send buffer. (input) */
     uint32_t        cbSend;
     /** The size of the receive buffer. (input) */
     uint32_t        cbRecv;
-    /** Whether new participants should be subjected to access check or not. */
-    bool            fRestrictAccess;
     /** The handle to the network interface. (output) */
     INTNETIFHANDLE  hIf;
 } INTNETOPENREQ;
@@ -733,12 +774,17 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet);
  * @param   pIntNet         The internal network instance.
  * @param   pSession        The session handle.
  * @param   pszNetwork      The network name.
+ * @param   enmTrunkType    The trunk type.
+ * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
+ * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
  * @param   cbSend          The send buffer size.
  * @param   cbRecv          The receive buffer size.
- * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
  * @param   phIf            Where to store the handle to the network interface.
  */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf);
+INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork,
+                               INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
+                               unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf);
 
 /**
  * Close an interface.
