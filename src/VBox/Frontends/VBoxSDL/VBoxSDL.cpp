@@ -162,6 +162,7 @@ static int gHostKeyMod  = KMOD_RCTRL;
 static int gHostKeySym1 = SDLK_RCTRL;
 static int gHostKeySym2 = SDLK_UNKNOWN;
 #endif
+static char *gHostKeyDisabledCombinations;
 static BOOL gfGrabbed = FALSE;
 static BOOL gfGrabOnMouseClick = TRUE;
 static BOOL gfAllowFullscreenToggle = TRUE;
@@ -644,7 +645,8 @@ static void show_usage()
              "  -fixedmode <w> <h> <bpp> Use a fixed SDL video mode with given width, height and bits per pixel\n"
              "  -nofstoggle              Forbid switching to/from fullscreen mode\n"
              "  -noresize                Make the SDL frame non resizable\n"
-             "  -nohostkey               Disable hostkey\n"
+             "  -nohostkey               Disable all hostkey combinations\n"
+             "  -nohostkeys ...          Disable specific hostkey combinations, see below for valid keys\n"
              "  -nograbonclick           Disable mouse/keyboard grabbing on mouse click w/o additions\n"
              "  -detecthostkey           Get the hostkey identifier and modifier state\n"
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
@@ -1290,6 +1292,28 @@ int main(int argc, char *argv[])
         {
             gHostKeyMod  = 0;
             gHostKeySym1 = 0;
+        }
+        else if (strcmp(argv[curArg], "-nohostkeys") == 0)
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing a string of disabled hostkey combinations\n");
+                rc = E_FAIL;
+                break;
+            }
+            gHostKeyDisabledCombinations = argv[curArg];
+            unsigned i, cStr = strlen(gHostKeyDisabledCombinations);
+            for (i=0; i<cStr; i++)
+            {
+                if (!strchr("fhnpqrs", gHostKeyDisabledCombinations[i]))
+                {
+                    RTPrintf("Error: <hostkey> + '%c' is not a valid combination\n",
+                            gHostKeyDisabledCombinations[i]);
+                    rc = E_FAIL;
+                    i = cStr;
+                    break;
+                }
+            }
         }
         else if (strcmp(argv[curArg], "-nograbonclick") == 0)
         {
@@ -4486,27 +4510,28 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_f:
         {
-            if (gfAllowFullscreenToggle)
-            {
-                /*
-                 * We have to pause/resume the machine during this
-                 * process because there might be a short moment
-                 * without a valid framebuffer
-                 */
-                MachineState_T machineState;
-                gMachine->COMGETTER(State)(&machineState);
-                if (machineState == MachineState_Running)
-                    gConsole->Pause();
-                gpFrameBuffer->setFullscreen(!gpFrameBuffer->getFullscreen());
-                if (machineState == MachineState_Running)
-                    gConsole->Resume();
+            if (   strchr(gHostKeyDisabledCombinations, 'f')
+                || !gfAllowFullscreenToggle)
+                return VERR_NOT_SUPPORTED;
 
-                /*
-                 * We have switched from/to fullscreen, so request a full
-                 * screen repaint, just to be sure.
-                 */
-                gDisplay->InvalidateAndUpdate();
-            }
+            /*
+             * We have to pause/resume the machine during this
+             * process because there might be a short moment
+             * without a valid framebuffer
+             */
+            MachineState_T machineState;
+            gMachine->COMGETTER(State)(&machineState);
+            if (machineState == MachineState_Running)
+                gConsole->Pause();
+            gpFrameBuffer->setFullscreen(!gpFrameBuffer->getFullscreen());
+            if (machineState == MachineState_Running)
+                gConsole->Resume();
+
+            /*
+             * We have switched from/to fullscreen, so request a full
+             * screen repaint, just to be sure.
+             */
+            gDisplay->InvalidateAndUpdate();
             break;
         }
 
@@ -4515,6 +4540,9 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_p:
         {
+            if (strchr(gHostKeyDisabledCombinations, 'p'))
+                return VERR_NOT_SUPPORTED;
+
             MachineState_T machineState;
             gMachine->COMGETTER(State)(&machineState);
             if (machineState == MachineState_Running)
@@ -4536,6 +4564,9 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_r:
         {
+            if (strchr(gHostKeyDisabledCombinations, 'r'))
+                return VERR_NOT_SUPPORTED;
+
             ResetVM();
             break;
         }
@@ -4545,8 +4576,10 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_q:
         {
+            if (strchr(gHostKeyDisabledCombinations, 'q'))
+                return VERR_NOT_SUPPORTED;
+
             return VINF_EM_TERMINATE;
-            break;
         }
 
         /*
@@ -4554,12 +4587,18 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_s:
         {
+            if (strchr(gHostKeyDisabledCombinations, 's'))
+                return VERR_NOT_SUPPORTED;
+
             SaveState();
             return VINF_EM_TERMINATE;
         }
 
         case SDLK_h:
         {
+            if (strchr(gHostKeyDisabledCombinations, 'h'))
+                return VERR_NOT_SUPPORTED;
+
             if (gConsole)
                 gConsole->PowerButton();
             break;
@@ -4570,6 +4609,9 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_n:
         {
+            if (strchr(gHostKeyDisabledCombinations, 'n'))
+                return VERR_NOT_SUPPORTED;
+
             RTThreadYield();
             ULONG cSnapshots = 0;
             gMachine->COMGETTER(SnapshotCount)(&cSnapshots);
