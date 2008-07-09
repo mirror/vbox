@@ -1688,6 +1688,10 @@ REMR3DECL(int) REMR3State(PVM pVM)
         pVM->rem.s.cInvalidatedPages = 0;
     }
 
+    /* Replay notification changes? */
+    if (pVM->rem.s.cHandlerNotifications)
+        REMR3ReplayHandlerNotifications(pVM);
+
     /* Update MSRs; before CRx registers! */
     pVM->rem.s.Env.efer         = pCtx->msrEFER;
     pVM->rem.s.Env.star         = pCtx->msrSTAR;
