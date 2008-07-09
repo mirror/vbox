@@ -178,7 +178,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(HEADLESS),,VirtualBox VirtualBox4) $(if $(ose),,VBoxVRDP) \
+	    $(if $(HEADLESS),,VirtualBox3 VirtualBox) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
@@ -200,7 +200,6 @@ endif
 	rmdir $(prefix)/opt
 	dh_link \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox) \
-	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox4) \
 	    usr/bin/VBox usr/bin/VBoxManage \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox usr/bin/VBoxVRDP) \

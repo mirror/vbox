@@ -96,9 +96,6 @@ case "$APP" in
   VirtualBox)
     exec "/usr/lib/virtualbox-ose/VirtualBox" "$@"
     ;;
-  VirtualBox4)
-    exec "/usr/lib/virtualbox-ose/VirtualBox4" "$@"
-    ;;
   VBoxManage)
     exec "/usr/lib/virtualbox-ose/VBoxManage" "$@"
     ;;
