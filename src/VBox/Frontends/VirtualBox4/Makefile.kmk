@@ -348,10 +348,10 @@ endif
 #
 PROGRAMS += VirtualBox4
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
- DLLS += VBoxKeyboard4
+ DLLS += VBoxKeyboard
  ## @todo convert to install target.
- OTHERS += $(PATH_BIN)/vboxkeyboard4.tar.gz
- CLEAN += $(PATH_BIN)/vboxkeyboard4.tar.gz
+ OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
+ CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
 INSTALLS += VirtualBox4.nls qt4-bin
 
@@ -359,11 +359,11 @@ INSTALLS += VirtualBox4.nls qt4-bin
 #
 # VBoxKeyboard - keyboard library for X11.
 #
-VBoxKeyboard4_TEMPLATE = VBOXR3
-VBoxKeyboard4_SOURCES  = \
+VBoxKeyboard_TEMPLATE = VBOXR3
+VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard-new.c
-VBoxKeyboard4_LIBS     = X11
-VBoxKeyboard4_LIBPATH  = $(VBOX_LIBPATH_X11)
+VBoxKeyboard_LIBS     = X11
+VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 
 
 #
@@ -376,8 +376,8 @@ VBoxKeyboard4_LIBPATH  = $(VBOX_LIBPATH_X11)
 # but wtf, it's not like we're even trying to be FHS compliant).
 #
 ## @todo this should be tar'ed down into the output directory and installed using an install target.
-$(PATH_BIN)/vboxkeyboard4.tar.gz: \
-		$(VBoxKeyboard4_SOURCES) \
+$(PATH_BIN)/vboxkeyboard.tar.gz: \
+		$(VBoxKeyboard_SOURCES) \
 		src/linux/COPYING.LIB \
 		src/linux/keyboard.h \
 		src/linux/keyboard-layouts.h \
@@ -386,12 +386,12 @@ $(PATH_BIN)/vboxkeyboard4.tar.gz: \
 		src/linux/keyboard-types.h \
 		src/linux/Makefile
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard4 $@
-	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard4
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard $@
+	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard
 	$(QUIET)cd $(PATH_TARGET) \
-		&& tar -chvf - $(addprefix vboxkeyboard4/,$(notdir $^)) \
+		&& tar -chvf - $(addprefix vboxkeyboard/,$(notdir $^)) \
 		   | gzip - > $@
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard4
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard
 
 
 #
@@ -406,6 +406,7 @@ include $(PATH_SUB_CURRENT)/VBoxUI.pro
 # VirtualBox4 - The GUI program.
 #
 VirtualBox4_TEMPLATE = VBOXQT4GUIEXE
+VirtualBox4_NAME = VirtualBox
 VirtualBox4_SDKS.win = WINPSDK DXSDK
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2 ## @todo solaris
  VirtualBox4_SDKS += LIBSDL
@@ -413,7 +414,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),darwin)
  # For the launch trick we need different inode numbers.
- VirtualBox4_INST = $(INST_BIN)VirtualBox4 $(INST_BIN)VirtualBoxVM4
+ VirtualBox4_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 
  # For testing iChat Theater stuff change the sdk path (HACK ALERT!)
  ifdef VBOX_WITH_ICHAT_THEATER
@@ -494,7 +495,7 @@ VirtualBox4_LIBS.win       = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
- VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard4$(VBOX_SUFF_DLL)
+ VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
 ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
@@ -838,7 +839,7 @@ $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(ca
 # Translation installation
 #
 ifndef USE_KBUILD_QT_UNIT ## @todo later
-VirtualBox4.nls_INST = $(INST_BIN)nls4/
+VirtualBox4.nls_INST = $(INST_BIN)nls/
 VirtualBox4.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS)))
 VirtualBox4.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox4)/nls/%.qm,$(notdir $(VirtualBox4_QT_TRANSLATIONS_QT)))
 VirtualBox4.nls_MODE = 644
@@ -850,6 +851,7 @@ endif # !USE_KBUILD_QT_UNIT
 #
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS.darwin += tstDarwinKeyboard4
+tstDarwinKeyboard4_NAME = tstDarwinKeyboard
 tstDarwinKeyboard4_TEMPLATE = VBOXR3TSTEXE
 tstDarwinKeyboard4_INCS = include
 tstDarwinKeyboard4_SOURCES = \
