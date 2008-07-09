@@ -3569,30 +3569,32 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         {
             LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-            /* Increase the maximum allowed size to the new size if needed */
+            /* Increase the maximum allowed size to the new size if needed.
+             * We also recalculate the desktop geometry if this is determined
+             * automatically.  In fact, we only need this on the first resize,
+             * but it is done every time to keep the code simpler. */
             setDesktopGeoHint (sz.width(), sz.height());
+            calculateDesktopGeometry();
 
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
         }
     }
 }
 
+
+/* If the desktop geometry is set automatically, this will update it. */
 void VBoxConsoleView::doResizeDesktop (int)
 {
-    /* If the desktop geometry is set automatically, this will update it. */
-    setDesktopGeometry (DesktopGeo_Unchanged, 0, 0);
+    calculateDesktopGeometry();
 }
 
 /**
- * Set the maximum size allowed for the guest desktop.  This can either be
- * a fixed maximum size, or a lower bound on the maximum.  In the second case,
- * the maximum will be set to the available desktop area minus 100 pixels each
- * way, or to the specified lower bound, whichever is greater.
+ * Remember a geometry hint sent by the console window.  This is used to
+ * determine the maximum supported guest resolution in the @a desktopGeometry
+ * method.  A hint will always override other restrictions.
  *
- * @param aWidth  The maximum width for the guest screen (fixed geometry) or a
- *                lower bound for the maximum
- * @param aHeight The maximum height for the guest screen (fixed geometry)
- *                or a lower bound for the maximum
+ * @param aWidth  width of the resolution hint
+ * @param aHeight height of the resolution hint
  */
 void VBoxConsoleView::setDesktopGeoHint (int aWidth, int aHeight)
 {
@@ -3600,14 +3602,19 @@ void VBoxConsoleView::setDesktopGeoHint (int aWidth, int aHeight)
     mLastSizeHint = QRect (0, 0, aWidth, aHeight);
 }
 
+
 /**
- * Set initial desktop geometry restrictions on the guest framebuffer.  These
- * determine the maximum size the guest framebuffer can take on.  Note that
- * a hint from the host will always override these restrictions.
+ * Do initial setup of desktop geometry restrictions on the guest framebuffer.
+ * These determine the maximum size the guest framebuffer can take on.
  *
- * @param aGeo    Values: fixed - the guest has a fixed maximum framebuffer
- *                        size automatic - we recalculate the maximum size
- *                        ourselves any - any size is allowed
+ * @note a hint from the host will always override these restrictions.
+ *
+ * @param aGeo    Fixed -     the guest has a fixed maximum framebuffer size
+ *                Automatic - we calculate the maximum size ourselves.  The
+ *                            calculations will not actually be done until
+ *                            @a calculateDesktopGeometry is called, since
+ *                            we don't initially have the information needed.
+ *                Any -       any size is allowed
  * @param aWidth  The maximum width for the guest screen or zero for no change
  *                (only used for fixed geometry)
  * @param aHeight The maximum height for the guest screen or zero for no change
@@ -3618,29 +3625,23 @@ void VBoxConsoleView::setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeig
     LogFlowThisFunc (("aGeo=%s, aWidth=%d, aHeight=%d\n",
                       (aGeo == DesktopGeo_Fixed ? "Fixed" :
                        aGeo == DesktopGeo_Automatic ? "Automatic" :
-                       aGeo == DesktopGeo_Any ? "Any" :
-                       aGeo == DesktopGeo_Unchanged ? "Unchanged" : "Invalid"),
+                       aGeo == DesktopGeo_Any ? "Any" : "Invalid"),
                       aWidth, aHeight));
-    Assert ((aGeo != DesktopGeo_Unchanged) || (mDesktopGeo != DesktopGeo_Invalid));
-    if (DesktopGeo_Unchanged == aGeo)
-        aGeo = mDesktopGeo;
     switch (aGeo)
     {
         case DesktopGeo_Fixed:
             mDesktopGeo = DesktopGeo_Fixed;
             if (aWidth != 0 && aHeight != 0)
                 mDesktopGeometry = QRect (0, 0, aWidth, aHeight);
+            else
+                mDesktopGeometry = QRect (0, 0, 0, 0);
             setDesktopGeoHint (0, 0);
             break;
         case DesktopGeo_Automatic:
-        {
             mDesktopGeo = DesktopGeo_Automatic;
-            QRect desktop = QApplication::desktop()->screenGeometry (this);
-            mDesktopGeometry = QRect (0, 0, desktop.width() - 100, desktop.height() - 100);
-            LogFlowThisFunc (("Setting %d, %d\n", desktop.width() - 100, desktop.height() - 100));
+            mDesktopGeometry = QRect (0, 0, 0, 0);
             setDesktopGeoHint (0, 0);
             break;
-        }
         case DesktopGeo_Any:
             mDesktopGeo = DesktopGeo_Any;
             mDesktopGeometry = QRect (0, 0, 0, 0);
@@ -3648,6 +3649,49 @@ void VBoxConsoleView::setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeig
         default:
             AssertMsgFailed(("Invalid desktop geometry type %d\n", aGeo));
             mDesktopGeo = DesktopGeo_Invalid;
+    }
+}
+
+
+/**
+ * If we are in automatic mode, the geometry restrictions will be recalculated.
+ * This is needed in particular on the first widget resize, as we can't
+ * calculate them correctly before that.
+ *
+ * @note a hint from the host will always override these restrictions.
+ * @note we can't do calculations on the fly when they are needed, because
+ *       they require querying the X server on X11 hosts and this must be done
+ *       from within the GUI thread, due to the single threadedness of Xlib.
+ */
+void VBoxConsoleView::calculateDesktopGeometry()
+{
+    LogFlowThisFunc (("Entering\n"));
+    /* This method should not get called until we have initially set up the */
+    Assert ((mDesktopGeo != DesktopGeo_Invalid));
+    /* If we are not doing automatic geometry calculation then there is
+     * nothing to do. */
+    if (DesktopGeo_Automatic == mDesktopGeo)
+    {
+        /* Available geometry of the desktop.  If the desktop is a single
+         * screen, this will exclude space taken up by desktop taskbars
+         * and things, but this is unfortunately not true for the more
+         * complex case of a desktop spanning multiple screens. */
+        QRect desktop = QApplication::desktop()->availableGeometry (this);
+        /* The area taken up by the console window on the desktop,
+         * including window frame, title and menu bar and whatnot. */
+        QRect frame = mMainWnd->frameGeometry();
+        /* The area taken up by the console window, minus all
+         * decorations. */
+        QRect window = mMainWnd->centralWidget()->geometry();
+        /* To work out how big we can make the console window while still
+         * fitting on the desktop, we calculate desktop - frame + window.
+         * This works because the difference between frame and window
+         * (or at least its width and height) is a constant. */
+        mDesktopGeometry =
+            QRect (0, 0, desktop.width() - frame.width() + window.width(),
+                   desktop.height() - frame.height() + window.height());
+        LogFlowThisFunc (("Setting %d, %d\n", mDesktopGeometry.width(),
+                           mDesktopGeometry.height()));
     }
 }
 
