@@ -162,7 +162,7 @@ static int gHostKeyMod  = KMOD_RCTRL;
 static int gHostKeySym1 = SDLK_RCTRL;
 static int gHostKeySym2 = SDLK_UNKNOWN;
 #endif
-static char *gHostKeyDisabledCombinations;
+static const char *gHostKeyDisabledCombinations = "";
 static BOOL gfGrabbed = FALSE;
 static BOOL gfGrabOnMouseClick = TRUE;
 static BOOL gfAllowFullscreenToggle = TRUE;
@@ -1314,6 +1314,8 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
+            if (rc == E_FAIL)
+                break;
         }
         else if (strcmp(argv[curArg], "-nograbonclick") == 0)
         {
