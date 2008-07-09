@@ -70,7 +70,7 @@ ALIASES                += \
 
 # The following is for per-VM Configuration options.
 ALIASES                += \
-	cfgm{6}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	cfgm{6}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> \1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Unit:</b> \6 <br> \
@@ -79,7 +79,7 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	cfgm{5}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	cfgm{5}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> \1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
@@ -87,27 +87,27 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	cfgm{4}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	cfgm{4}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> \1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
 <b>Max:</b> \4 <br> \
 "
 ALIASES                += \
-	cfgm{3}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	cfgm{3}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> \1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Default:</b> \3 <br> \
 "
 ALIASES                += \
-	cfgm{2}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	cfgm{2}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> \1 <br> \
 <b>Type:</b> \2 <br> \
 "
 
 # The following is for device configuration options.
 ALIASES                += \
-	devcfgm{6}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	devcfgm{6}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Unit:</b> \6 <br> \
@@ -116,7 +116,7 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	devcfgm{5}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	devcfgm{5}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
@@ -124,27 +124,27 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	devcfgm{4}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	devcfgm{4}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
 <b>Max:</b> \4 <br> \
 "
 ALIASES                += \
-	devcfgm{3}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	devcfgm{3}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Default:</b> \3 <br> \
 "
 ALIASES                += \
-	devcfgm{2}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	devcfgm{2}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 "
 
 # The following is for driver configuration options.
 ALIASES                += \
-	drvcfgm{6}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	drvcfgm{6}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Driver Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Unit:</b> \6 <br> \
@@ -153,7 +153,7 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	drvcfgm{5}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	drvcfgm{5}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Driver Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
@@ -161,27 +161,27 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	drvcfgm{4}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	drvcfgm{4}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Driver Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
 <b>Max:</b> \4 <br> \
 "
 ALIASES                += \
-	drvcfgm{3}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	drvcfgm{3}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Driver Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Default:</b> \3 <br> \
 "
 ALIASES                += \
-	drvcfgm{2}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	drvcfgm{2}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [Driver Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 "
 
 # The following is for USB device configuration options.
 ALIASES                += \
-	usbcfgm{6}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	usbcfgm{6}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [USB Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Unit:</b> \6 <br> \
@@ -190,7 +190,7 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	usbcfgm{5}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	usbcfgm{5}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [USB Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
@@ -198,20 +198,20 @@ ALIASES                += \
 <b>Default:</b> \5 <br> \
 "
 ALIASES                += \
-	usbcfgm{4}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	usbcfgm{4}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [USB Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Min:</b> \3 <br> \
 <b>Max:</b> \4 <br> \
 "
 ALIASES                += \
-	usbcfgm{3}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	usbcfgm{3}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [USB Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 <b>Default:</b> \3 <br> \
 "
 ALIASES                += \
-	usbcfgm{2}="\xrefitem lst_cfgm \"GCFGM\" \"VM Configuration Values\" \
+	usbcfgm{2}="\xrefitem lst_cfgm \"CFGM\" \"VM Configuration Values\" \
 <b>Name:</b> [USB Device Instance]/\1 <br> \
 <b>Type:</b> \2 <br> \
 "
