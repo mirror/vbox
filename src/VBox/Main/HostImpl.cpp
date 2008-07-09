@@ -100,7 +100,9 @@ extern "C" char *getfullrawname(char *);
 #include <VBox/usb.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
+/** @todo the following line becomes obsolete after switching to Mp runtime functions */
 #include <iprt/system.h>
+#include <iprt/mp.h>
 #include <iprt/time.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
@@ -666,38 +668,44 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
     AutoWriteLock alock (this);
     CHECK_READY();
     *count = RTSystemProcessorGetCount();
+    /** @todo after implementing the Mp runtime on all platforms replace with
+     * *count = RTMpGetOnlineCount(); */
     return S_OK;
 }
 
 /**
- * Returns the (approximate) speed of the host CPU in MHz
+ * Returns the (approximate) maximum speed of the given host CPU in MHz
  *
  * @returns COM status code
- * @param   speed address of result variable
+ * @param   cpu id to get info for.
+ * @param   speed address of result variable, speed is 0 if unknown or cpuId is invalid.
  */
-STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG *speed)
+STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG cpuId, ULONG *speed)
 {
     if (!speed)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo Add a runtime function for this which uses GIP. */
+    /** @todo after implementing the Mp runtime on all platforms replace with
+     * *speed = RTMpGetOnlineCpuMaxSpeed(cpuId); */
+    *speed = 0;
     return S_OK;
 }
 /**
  * Returns a description string for the host CPU
  *
  * @returns COM status code
- * @param   description address of result variable
+ * @param   cpu id to get info for.
+ * @param   description address of result variable, NULL if known or cpuId is invalid.
  */
-STDMETHODIMP Host::COMGETTER(ProcessorDescription)(BSTR *description)
+STDMETHODIMP Host::COMGETTER(ProcessorDescription)(ULONG cpuId, BSTR *description)
 {
     if (!description)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 
@@ -714,7 +722,7 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 /**
@@ -730,7 +738,7 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 /**
@@ -746,7 +754,7 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *os)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 /**
@@ -762,7 +770,7 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *version)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 /**
