@@ -70,8 +70,6 @@ LINUXSTRIPBIN = \
 	VBoxVMM.so \
 	VBoxXPCOM.so \
 	VBoxXPCOMIPCD \
-	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard.so,) \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	VBoxTunctl \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
@@ -93,7 +91,7 @@ endif
 # Do not strip anything of these files
 LINUXNOSTRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
-	$(if $(VBOX_WITH_QTGUI)$(VBOX_WITH_QT4GUI),\
+	$(if $(VBOX_WITH_QT4GUI),\
 	  $(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html)) \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
@@ -140,7 +138,7 @@ ifdef VBOX_WITH_DOCS
  LINUXNOSTRIP += \
 	UserManual.pdf
  LINUXSTRIPBIN += \
-	$(if $(VBOX_WITH_QTGUI),kchmviewer,)
+	$(if $(VBOX_WITH_QTGUI4),kchmviewer,)
  ifneq ($(wildcard $(PATH_BIN)/VirtualBox.chm),)
   # our 64-bit tinderboxes are not able to generate VirtualBox.chm so far
   # but for building .deb/.rpm packages we use precompiled binaries.
