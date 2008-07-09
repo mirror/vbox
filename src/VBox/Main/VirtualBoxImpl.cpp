@@ -488,7 +488,7 @@ STDMETHODIMP VirtualBox::COMGETTER(PackageType) (BSTR *aPackageType)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    sVersion.cloneTo (aPackageType);
+    sPackageType.cloneTo (aPackageType);
     return S_OK;
 }
 
