@@ -85,7 +85,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_INFO_SVC),VBoxSharedInfoSvc.so,) \
 	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard3.so,) \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
+	$(if $(VBOX_WITH_QTGUI),VirtualBox3,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	VBoxSettings.so \
 	components/VBoxC.so \
