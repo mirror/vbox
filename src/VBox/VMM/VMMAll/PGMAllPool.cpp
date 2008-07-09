@@ -722,14 +722,13 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFra
             return true;
         case OP_MOVSWD:
         case OP_STOSWD:
-            if (    pRegFrame
-                &&  pCpu->prefix == (PREFIX_REP|PREFIX_REX)
-                &&  pRegFrame->rcx == 0x200
+            if (    pCpu->prefix == (PREFIX_REP|PREFIX_REX)
+                &&  pRegFrame->rcx >= 0x40
                )
             {
                 Assert(pCpu->mode == CPUMODE_64BIT);
 
-                Log4(("pgmPoolMonitorIsReused: OP_STOSQ\n"));
+                Log(("pgmPoolMonitorIsReused: OP_STOSQ\n"));
                 return true;
             }
             return false;
