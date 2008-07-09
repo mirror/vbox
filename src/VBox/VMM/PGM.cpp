@@ -1870,7 +1870,10 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
 
-    int rc = PGM_GST_PFN(UnmonitorCR3, pVM)(pVM);
+    /* Exit the guest paging mode before the pgm pool gets reset.
+     * Important to clean up the amd64 case. 
+     */
+    int rc = PGM_GST_PFN(Exit, pVM)(pVM);
     AssertRC(rc);
 #ifdef DEBUG
     DBGFR3InfoLog(pVM, "mappings", NULL);
