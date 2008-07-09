@@ -3695,6 +3695,31 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
     return result;
 }
 
+/* static */
+QString VBoxGlobal::insertKeyToActionText (const QString &aText, const QString &aKey)
+{
+#ifdef Q_WS_MAC
+    QString key ("%1 (Host+%2)");
+#else
+    QString key ("%1 \tHost+%2");
+#endif
+    return key.arg (aText).arg (QKeySequence (aKey).toString (QKeySequence::NativeText));
+}
+
+/* static */
+QString VBoxGlobal::extractKeyFromActionText (const QString &aText)
+{
+    QString key;
+#ifdef Q_WS_MAC
+    QRegExp re (".* \\(Host\\+(.+)\\)");
+#else
+    QRegExp re (".* \\t\\Host\\+(.+)");
+#endif
+    if (re.exactMatch (aText))
+        key = re.cap (1);
+    return key;
+}
+
 /**
  *  Searches for a widget that with @a aName (if it is not NULL) which inherits
  *  @a aClassName (if it is not NULL) and among children of @a aParent. If @a

@@ -1443,6 +1443,7 @@ bool VBoxConsoleWnd::x11Event (XEvent *event)
 }
 #endif
 
+extern void qt_set_sequence_auto_mnemonic ( bool on );
 /**
  *  Sets the strings of the subwidgets using the current
  *  language.
@@ -1460,59 +1461,64 @@ void VBoxConsoleWnd::retranslateUi()
      *  form of "\tHost+<Key>" where <Key> is the shortcut key according
      *  to regular QKeySequence rules. No translation of the "Host" word is
      *  allowed (VBoxConsoleView relies on its spelling). setAccel() must not
-     *  be used.
+     *  be used. Unfortunately on the Mac the "host" string is silently removed
+     *  & the key is created as an global shortcut. So every e.g. F key stroke
+     *  in the vm leads to a menu call of the F entry. Mysteriously the
+     *  associated action isn't started. As a workaround the Host+<key> is
+     *  written in braces after the menu text.
      */
 
     /* VM actions */
 
-    vmFullscreenAction->setText (tr ("&Fullscreen Mode") + "\tHost+F");
+    qt_set_sequence_auto_mnemonic (false);
+    vmFullscreenAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Fullscreen Mode"), "F"));
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
-    vmSeamlessAction->setText (tr ("Seam&less Mode") + "\tHost+L");
+    vmSeamlessAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Seam&less Mode"), "L"));
     vmSeamlessAction->setStatusTip (tr ("Switch to seamless desktop integration mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
                                           "enable/disable..."));
     vmAutoresizeMenu->setToolTip (tr ("Auto-resize Guest Display",
                                       "enable/disable..."));
-    vmAutoresizeGuestAction->setText (tr ("Auto-resize &Guest Display") +
-                                          "\tHost+G");
+    vmAutoresizeGuestAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Auto-resize &Guest Display"), 
+                                                                         "G"));
     vmAutoresizeGuestAction->setStatusTip (
         tr ("Automatically resize the guest display when the window is resized "
             "(requires Guest Additions)"));
 
-    vmAdjustWindowAction->setText (tr ("&Adjust Window Size") + "\tHost+A");
+    vmAdjustWindowAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Adjust Window Size"), "A"));
     vmAdjustWindowAction->setStatusTip (
         tr ("Adjust window size and position to best fit the guest display"));
 
-    vmTypeCADAction->setText (tr ("&Insert Ctrl-Alt-Del") + "\tHost+Del");
+    vmTypeCADAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Insert Ctrl-Alt-Del"), "Del"));
     vmTypeCADAction->setStatusTip (
         tr ("Send the Ctrl-Alt-Del sequence to the virtual machine"));
 
 #if defined(Q_WS_X11)
-    vmTypeCABSAction->setText (tr ("&Insert Ctrl-Alt-Backspace") +
-                                   "\tHost+Backspace");
+    vmTypeCABSAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Insert Ctrl-Alt-Backspace"),
+                                                                  "Backspace"));
     vmTypeCABSAction->setStatusTip (
         tr ("Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
 #endif
 
-    vmResetAction->setText (tr ("&Reset") + "\tHost+R");
+    vmResetAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Reset"), "R"));
     vmResetAction->setStatusTip (tr ("Reset the virtual machine"));
 
     /* vmPauseAction is set up in updateAppearanceOf() */
 
-    vmACPIShutdownAction->setText (tr ("ACPI S&hutdown") + "\tHost+H");
+    vmACPIShutdownAction->setText (VBoxGlobal::insertKeyToActionText (tr ("ACPI S&hutdown"), "H"));
     vmACPIShutdownAction->setStatusTip (
         tr ("Send the ACPI Power Button press event to the virtual machine"));
 
-    vmCloseAction->setText (tr ("&Close..." ) + "\tHost+Q");
+    vmCloseAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Close..." ), "Q"));
     vmCloseAction->setStatusTip (tr ("Close the virtual machine"));
 
-    vmTakeSnapshotAction->setText (tr ("Take &Snapshot..." ) + "\tHost+S");
+    vmTakeSnapshotAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Take &Snapshot..."), "S"));
     vmTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the virtual machine"));
 
-    vmShowInformationDlgAction->setText (tr ("Session I&nformation Dialog") +
-                                             "\tHost+N");
+    vmShowInformationDlgAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Session I&nformation Dialog"),
+                                                                            "N"));
     vmShowInformationDlgAction->setStatusTip (tr ("Show Session Information Dialog"));
 
     /* vmDisableMouseIntegrAction is set up in updateAppearanceOf() */
@@ -1923,13 +1929,13 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     {
         if (!vmPauseAction->isChecked())
         {
-            vmPauseAction->setText (tr ("&Pause") + "\tHost+P");
+            vmPauseAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Pause"), "P"));
             vmPauseAction->setStatusTip (
                 tr ("Suspend the execution of the virtual machine"));
         }
         else
         {
-            vmPauseAction->setText (tr ("R&esume") + "\tHost+P");
+            vmPauseAction->setText (VBoxGlobal::insertKeyToActionText (tr ("R&esume"), "P"));
             vmPauseAction->setStatusTip (
                 tr ("Resume the execution of the virtual machine" ) );
         }
@@ -1939,15 +1945,15 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     {
         if (!vmDisableMouseIntegrAction->isChecked())
         {
-            vmDisableMouseIntegrAction->setText (tr ("Disable &Mouse Integration") +
-                                                     "\tHost+I");
+            vmDisableMouseIntegrAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Disable &Mouse Integration"),
+                                                                                    "I"));
             vmDisableMouseIntegrAction->setStatusTip (
                 tr ("Temporarily disable host mouse pointer integration"));
         }
         else
         {
-            vmDisableMouseIntegrAction->setText (tr ("Enable &Mouse Integration") +
-                                                     "\tHost+I");
+            vmDisableMouseIntegrAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Enable &Mouse Integration"),
+                                                                                    "I"));
             vmDisableMouseIntegrAction->setStatusTip (
                 tr ("Enable temporarily disabled host mouse pointer integration"));
         }
@@ -2015,9 +2021,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (aOn)
     {
         /* Take the toggle hot key from the menu item. */
-        QString hotKey = aSeamless ? vmSeamlessAction->text() :
-                                     vmFullscreenAction->text();
-        hotKey = hotKey.split ('\t')[1];
+        QString hotKey = VBoxGlobal::extractKeyFromActionText (aSeamless ? vmSeamlessAction->text() :
+                                                                           vmFullscreenAction->text());
+
         Assert (!hotKey.isEmpty());
 
         /* Show the info message. */

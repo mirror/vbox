@@ -557,6 +557,9 @@ public:
 
     static QString removeAccelMark (const QString &aText);
 
+    static QString insertKeyToActionText (const QString &aText, const QString &aKey);
+    static QString extractKeyFromActionText (const QString &aText);
+
     static QWidget *findWidget (QWidget *aParent, const char *aName,
                                 const char *aClassName = NULL,
                                 bool aRecursive = false);

@@ -3138,10 +3138,10 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key, const QList<QActio
         if (QMenu *menu = pAction->menu())
             return processHotKey (key, menu->actions());
 
-        QStringList list = pAction->text().split ("\tHost+");
-        if (list.count() == 2)
+        QString hotkey = VBoxGlobal::extractKeyFromActionText (pAction->text());
+        if (!hotkey.isEmpty())
         {
-            if (key.matches (QKeySequence (list[1])) == QKeySequence::ExactMatch)
+            if (key.matches (QKeySequence (hotkey)) == QKeySequence::ExactMatch)
             {
                 /*
                  *  we asynchronously post a special event instead of calling
