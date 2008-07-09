@@ -33,6 +33,7 @@
 #ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
 #endif
+#include "VBoxUpdateDlg.h"
 
 /* Qt includes */
 #include <QLibraryInfo>
@@ -152,7 +153,8 @@ class VBoxCallback : public IVirtualBoxCallback
 public:
 
     VBoxCallback (VBoxGlobal &aGlobal)
-        : mGlobal (aGlobal), mIsRegDlgOwner (false)
+        : mGlobal (aGlobal)
+        , mIsRegDlgOwner (false), mIsUpdDlgOwner (false)
     {
 #if defined (Q_OS_WIN32)
         refcnt = 0;
@@ -246,6 +248,22 @@ public:
                     return S_OK;
                 }
 
+                if (sKey == VBoxDefs::GUI_UpdateDlgWinID)
+                {
+                    if (mIsUpdDlgOwner)
+                    {
+                        if (sVal.isEmpty() ||
+                            sVal == QString ("%1")
+                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
+                            *allowChange = TRUE;
+                        else
+                            *allowChange = FALSE;
+                    }
+                    else
+                        *allowChange = TRUE;
+                    return S_OK;
+                }
+
                 /* try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs (false /* non-null */);
                 if (gs.setPublicProperty (sKey, sVal))
@@ -287,13 +305,29 @@ public:
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
                     }
                     else if (sVal == QString ("%1")
-                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
+                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
                     {
                         mIsRegDlgOwner = true;
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
                     }
                     else
                         QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (false));
+                }
+                if (sKey == VBoxDefs::GUI_UpdateDlgWinID)
+                {
+                    if (sVal.isEmpty())
+                    {
+                        mIsUpdDlgOwner = false;
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (true));
+                    }
+                    else if (sVal == QString ("%1")
+                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
+                    {
+                        mIsUpdDlgOwner = true;
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (true));
+                    }
+                    else
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (false));
                 }
                 if (sKey == "GUI/LanguageID")
                     QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
@@ -373,6 +407,7 @@ private:
     QMutex mMutex;
 
     bool mIsRegDlgOwner;
+    bool mIsUpdDlgOwner;
 
 #if defined (Q_OS_WIN32)
 private:
@@ -3899,6 +3934,49 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
 #endif
 }
 
+void VBoxGlobal::showUpdateDialog (bool aForce)
+{
+    bool isNecessary = VBoxUpdateDlg::isNecessary();
+    bool isAutomatic = VBoxUpdateDlg::isAutomatic();
+
+    if (!aForce && !isNecessary)
+        return;
+
+    if (mUpdDlg)
+    {
+        if (!mUpdDlg->isHidden())
+        {
+            mUpdDlg->setWindowState (mUpdDlg->windowState() & ~Qt::WindowMinimized);
+            mUpdDlg->raise();
+            mUpdDlg->activateWindow();
+        }
+    }
+    else
+    {
+        /* Store the ID of the main window to ensure that only one
+         * update dialog is shown at a time. Due to manipulations with
+         * OnExtraDataCanChange() and OnExtraDataChange() signals, this extra
+         * data item acts like an inter-process mutex, so the first process
+         * that attempts to set it will win, the rest will get a failure from
+         * the SetExtraData() call. */
+        mVBox.SetExtraData (VBoxDefs::GUI_UpdateDlgWinID,
+                            QString ("%1").arg ((qulonglong) mMainWindow->winId()));
+
+        if (mVBox.isOk())
+        {
+            /* We've got the "mutex", create a new update dialog */
+            VBoxUpdateDlg *dlg = new VBoxUpdateDlg (&mUpdDlg, 0);
+            dlg->setAttribute (Qt::WA_DeleteOnClose);
+            Assert (dlg == mUpdDlg);
+
+            if (!aForce && isAutomatic)
+                mUpdDlg->search();
+            else
+                mUpdDlg->show();
+        }
+    }
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -3980,6 +4058,11 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::CanShowRegDlgEventType:
         {
             emit canShowRegDlg (((VBoxCanShowRegDlgEvent *) e)->mCanShow);
+            return true;
+        }
+        case VBoxDefs::CanShowUpdDlgEventType:
+        {
+            emit canShowUpdDlg (((VBoxCanShowUpdDlgEvent *) e)->mCanShow);
             return true;
         }
         case VBoxDefs::ChangeGUILanguageEventType:

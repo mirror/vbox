@@ -266,6 +266,10 @@ public:
     void showRegisterResult (QWidget *aParent,
                              const QString &aResult);
 
+    void showUpdateResult (QWidget *aParent,
+                           const QString &aVersion,
+                           const QString &aLink);
+
     bool confirmInputCapture (bool *aAutoConfirmed = NULL);
     void remindAboutAutoCapture();
     void remindAboutMouseIntegration (bool aSupportsAbsolute);

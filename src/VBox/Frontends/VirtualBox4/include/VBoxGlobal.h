@@ -139,6 +139,17 @@ public:
     const bool mCanShow;
 };
 
+class VBoxCanShowUpdDlgEvent : public QEvent
+{
+public:
+    VBoxCanShowUpdDlgEvent (bool aCanShow)
+        : QEvent ((QEvent::Type) VBoxDefs::CanShowUpdDlgEventType)
+        , mCanShow (aCanShow)
+        {}
+
+    const bool mCanShow;
+};
+
 class VBoxChangeGUILanguageEvent : public QEvent
 {
 public:
@@ -156,6 +167,7 @@ public:
 class VBoxSelectorWnd;
 class VBoxConsoleWnd;
 class VBoxRegistrationDlg;
+class VBoxUpdateDlg;
 
 class VBoxGlobal : public QObject
 {
@@ -617,12 +629,14 @@ signals:
     void snapshotChanged (const VBoxSnapshotEvent &e);
 
     void canShowRegDlg (bool aCanShow);
+    void canShowUpdDlg (bool aCanShow);
 
 public slots:
 
     bool openURL (const QString &aURL);
 
     void showRegistrationDialog (bool aForce = true);
+    void showUpdateDialog (bool aForce = true);
 
 protected:
 
@@ -649,6 +663,7 @@ private:
 #ifdef VBOX_WITH_REGISTRATION
     VBoxRegistrationDlg *mRegDlg;
 #endif
+    VBoxUpdateDlg *mUpdDlg;
 
     QUuid vmUuid;
 

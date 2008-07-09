@@ -1543,6 +1543,19 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
                  .arg (aResult));
 }
 
+void VBoxProblemReporter::showUpdateResult (QWidget *aParent,
+                                            const QString &aVersion,
+                                            const QString &aLink)
+{
+    message (aParent, Info,
+             tr ("<p>VirtualBox New Version Notifier "
+                 "has found VirtualBox %1 version.</p>"
+                 "<p>If you would like to download and install it "
+                 "please proceed to the following link:</p>"
+                 "<p><a href=%2>%3</a></p>")
+                 .arg (aVersion, aLink, aLink));
+}
+
 /**
  *  @return @c true if the user has confirmed input capture (this is always
  *  the case if the dialog was autoconfirmed). @a aAutoConfirmed, when not

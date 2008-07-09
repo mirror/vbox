@@ -31,6 +31,7 @@ FORMS = \
     ui/VBoxNewHDWzd.ui \
     ui/VBoxNewVMWzd.ui \
     ui/VBoxRegistrationDlg.ui \
+    ui/VBoxUpdateDlg.ui \
     ui/VBoxSnapshotDetailsDlg.ui \
     ui/VBoxSnapshotsWgt.ui \
     ui/VBoxTakeSnapshotDlg.ui \
