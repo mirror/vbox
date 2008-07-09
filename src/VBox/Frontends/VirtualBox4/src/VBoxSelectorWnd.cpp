@@ -173,7 +173,7 @@ void VBoxVMDetailsView::createErrPage()
         hLayout->addWidget (mRefreshButton);
 
         connect (mRefreshButton, SIGNAL (clicked()),
-                 mRefreshAction, SIGNAL (activated()));
+                 mRefreshAction, SIGNAL (triggered()));
     }
 
     vLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
@@ -640,29 +640,29 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     }
 
     /* signals and slots connections */
-    connect (fileDiskMgrAction, SIGNAL (activated()), this, SLOT(fileDiskMgr()));
-    connect (fileSettingsAction, SIGNAL (activated()), this, SLOT(fileSettings()));
-    connect (fileExitAction, SIGNAL (activated()), this, SLOT (fileExit()));
-    connect (vmNewAction, SIGNAL (activated()), this, SLOT (vmNew()));
-    connect (vmConfigAction, SIGNAL (activated()), this, SLOT (vmSettings()));
-    connect (vmDeleteAction, SIGNAL (activated()), this, SLOT (vmDelete()));
-    connect (vmStartAction, SIGNAL (activated()), this, SLOT (vmStart()));
-    connect (vmDiscardAction, SIGNAL (activated()), this, SLOT (vmDiscard()));
+    connect (fileDiskMgrAction, SIGNAL (triggered()), this, SLOT(fileDiskMgr()));
+    connect (fileSettingsAction, SIGNAL (triggered()), this, SLOT(fileSettings()));
+    connect (fileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
+    connect (vmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
+    connect (vmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
+    connect (vmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
+    connect (vmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
+    connect (vmDiscardAction, SIGNAL (triggered()), this, SLOT (vmDiscard()));
     connect (vmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
-    connect (vmRefreshAction, SIGNAL (activated()), this, SLOT (vmRefresh()));
-    connect (vmShowLogsAction, SIGNAL (activated()), this, SLOT (vmShowLogs()));
+    connect (vmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
+    connect (vmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
 
-    connect (helpContentsAction, SIGNAL (activated()),
+    connect (helpContentsAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (helpWebAction, SIGNAL (activated()),
+    connect (helpWebAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
-    connect (helpRegisterAction, SIGNAL (activated()),
+    connect (helpRegisterAction, SIGNAL (triggered()),
              &vboxGlobal(), SLOT (showRegistrationDialog()));
     connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
              helpRegisterAction, SLOT (setEnabled (bool)));
-    connect (helpAboutAction, SIGNAL (activated()),
+    connect (helpAboutAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
-    connect (helpResetMessagesAction, SIGNAL (activated()),
+    connect (helpResetMessagesAction, SIGNAL (triggered()),
              &vboxProblem(), SLOT (resetSuppressedMessages()));
 
     connect (mVMListView, SIGNAL (currentChanged()),
