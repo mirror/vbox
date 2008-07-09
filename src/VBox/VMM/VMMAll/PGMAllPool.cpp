@@ -720,6 +720,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFra
         case OP_MOVNTDQ:    /* solaris - hwblkclr & hwblkpagecopy */
             Log4(("pgmPoolMonitorIsReused: MOVNTDQ\n"));
             return true;
+        case OP_MOVSWD:
         case OP_STOSWD:
             if (    pRegFrame
                 &&  pCpu->prefix == PREFIX_REP
