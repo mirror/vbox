@@ -680,7 +680,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
  * @param   cpu id to get info for.
  * @param   speed address of result variable, speed is 0 if unknown or cpuId is invalid.
  */
-STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG cpuId, ULONG *speed)
+STDMETHODIMP Host::GetProcessorSpeed(ULONG cpuId, ULONG *speed)
 {
     if (!speed)
         return E_POINTER;
@@ -698,7 +698,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG cpuId, ULONG *speed)
  * @param   cpu id to get info for.
  * @param   description address of result variable, NULL if known or cpuId is invalid.
  */
-STDMETHODIMP Host::COMGETTER(ProcessorDescription)(ULONG cpuId, BSTR *description)
+STDMETHODIMP Host::GetProcessorDescription(ULONG cpuId, BSTR *description)
 {
     if (!description)
         return E_POINTER;
