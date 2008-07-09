@@ -132,17 +132,25 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void);
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
 
 /**
- * Get the current CPU speed (in Mhz) of a CPU which is currently online.
+ * Get the current frequency of a CPU.
  *
- * @returns CPU speed if CPU id is valid, 0 otherwise.
+ * The CPU must be online.
+ *
+ * @returns The frequency as MHz. 0 if the CPU is offline
+ *          or the information is not available.
+ * @param   idCpu       The identifier of the CPU.
  */
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu);
 
 
 /**
- * Get the maximum CPU speed (in Mhz) of a CPU which is currently online.
+ * Get the maximum frequency of a CPU.
  *
- * @returns CPU speed if CPU id is valid, 0 otherwise.
+ * The CPU must be online.
+ *
+ * @returns The frequency as MHz. 0 if the CPU is offline
+ *          or the information is not available.
+ * @param   idCpu       The identifier of the CPU.
  */
 RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu);
 
