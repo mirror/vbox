@@ -1988,7 +1988,7 @@ Version %1</source>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation>Tube hôte</translation>
+        <translation>Tuyau hôte</translation>
     </message>
     <message>
         <source>Host Device</source>
@@ -2291,7 +2291,7 @@ default virtual machine folder.</source>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation>Touche &amp;Hôte</translation>
+        <translation>Touche &amp;Hôte ("Host")</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
@@ -2418,7 +2418,7 @@ Tous les champs correspondent à la valeur du périphérique raccordé `a l&apos
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Affiche la touche utilisée comme &lt;i&gt;touche hôte&lt;/i&gt; dans la fenêtre de la machine virtuelle. Activer le champs d&apos;entrée et presser une nouvelle &lt;i&gt;touche hôte&lt;/i&gt;. Noter que les touches d&apos;éditions et de mouvement du curseur ainsi que les touches alphanumériques ne peuvent pas être utilisées.</translation>
+        <translation>Affiche la touche utilisée comme touche hôte ("Host") dans la fenêtre de la machine virtuelle. Activer le champs d&apos;entrée et presser une nouvelle touche hôte;. Noter que les touches d&apos;éditions et de mouvement du curseur ainsi que les touches alphanumériques ne peuvent pas être utilisées.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -3345,13 +3345,13 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez cliqué dans l&apos;écran de la machine virtuelle ou bien actionné la &lt;i&gt;touche hôte&lt;/i&gt;. Le pointeur de la souris est &lt;i&gt;capturé&lt;/i&gt; par la machine virtuelle (seulement si les additions du système d&apos;exploitation ne sont pas installées) et de ce fait ne sera pas utilisable par d&apos;autres applications.&lt;/p&gt;
-&lt;p&gt;Vous pouvez actionner la &lt;i&gt;touche hôte&lt;/i&gt; à n&apos;importe quel instant,  ceci libérera le clavier et la souris (s&apos;il sont capturés) et autorisera leur emploi normal. La &lt;i&gt;touche hôte&lt;/i&gt; actuellement paramétrée est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, près de l&apos;icône&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez cliqué dans l&apos;écran de la machine virtuelle ou bien actionné la &lt;b&gt;touche hôte ("Host")&lt;/b&gt;. Le pointeur de la souris est &lt;b&gt;capturé&lt;/b&gt; par la machine virtuelle (seulement si les additions du système d&apos;exploitation ne sont pas installées) et de ce fait ne sera pas utilisable par d&apos;autres applications.&lt;/p&gt;
+&lt;p&gt;Vous pouvez actionner la touche hôte à n&apos;importe quel instant,  ceci libérera le clavier et la souris (s&apos;il sont capturés) et autorisera leur emploi normal. La touche hôte actuellement paramétrée est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, près de l&apos;icône&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;L&apos;option de capture automatique du clavier est activée. Ceci entraine la machine virtuelle à &lt;b&gt;capturer&lt;/b&gt; le clavier dès que la fenêtre de la machine virtuelle est activée et rendra le clavier indisponible pour d&apos;autres applications. Si le clavier est capturé toutes les appuis de touches sont redirigés vers la machine virtuelle (y compris les combinaisons telles que Alt-Tab).&lt;/p&gt;
-&lt;p&gt;Vous pouvez actionner la &lt;i&gt;touche hôte&lt;/i&gt; à n&apos;importe quel instant. Ceci libérera le clavier et la souris (s&apos;il sont capturés) et permettra leur emploi normal. La &lt;i&gt;touche hôte&lt;/i&gt; actuellement paramétrée&amp;nbsp;est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, prés de l&apos;icône &lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
+&lt;p&gt;Vous pouvez actionner la &lt;b&gt;touche hôte ("Host")&lt;/b&gt; à n&apos;importe quel instant. Ceci libérera le clavier et la souris (s&apos;il sont capturés) et permettra leur emploi normal. La touche hôte actuellement paramétrée&amp;nbsp;est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, prés de l&apos;icône &lt;img src=hostkey_16px.png/&gt;. Cet icône, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3362,8 +3362,8 @@ Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le 
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client ne supporte pas &lt;i&gt;l&apos;intégration du pointeur de la souris&lt;/i&gt; pour le mode vidéo actuel.
-Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtuelle ou pressez la &lt;/i&gt;touche hôte&lt;/i&gt;.&lt;/p&gt; </translation>
+        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client ne supporte pas &lt;b&gt;l&apos;intégration du pointeur de la souris&lt;/b&gt; pour le mode vidéo actuel.
+Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtuelle ou pressez la &lt;b&gt;touche hôte ("Host")&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3375,7 +3375,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;i&gt;touche hôte&lt;/i&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;La machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;b&gt;touche hôte ("Host")&lt;/b&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -3496,11 +3496,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder en actionnant &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte ("Host")&lt;/b&gt; est actuellement définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder en actionnant &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;affichage intégré dans le bureau&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode intégré. Vous pouvez y accéder en actionnant &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;affichage intégré dans le bureau&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte ("Host")&lt;/b&gt; est actuellement définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode intégré. Vous pouvez y accéder en actionnant &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
@@ -3624,7 +3624,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;La touche hôte est actuellement &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La &lt;b&gt;touche hôte ("Host")&lt;/b&gt; est actuellement &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -5375,7 +5375,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
-        <translation>&amp;Créer un tube</translation>
+        <translation>&amp;Créer un tuyau</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -5383,7 +5383,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation>Si la case est cochée, le tube spécifié dans le champ  &lt;b&gt;Chemin de l&apos;interface&lt;/b&gt; sera créé lors du lancement de la machine virtuelle, sinon la machine virtuelle tentera d&apos;utiliser le tube existant.</translation>
+        <translation>Si la case est cochée, le tuyau spécifié dans le champ  &lt;b&gt;Chemin de l&apos;interface&lt;/b&gt; sera créé lors du lancement de la machine virtuelle, sinon la machine virtuelle tentera d&apos;utiliser le tuyau existant.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
@@ -5391,7 +5391,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Affiche le chemin sur l&apos;hôte pour les interfaces série quand l&apos;interface fonctionne en mode &lt;b&gt;Tube hôte&lt;/b&gt; ou le nom du fichier de l&apos;interface série de l&apos;hôte pour le mode &lt;b&gt;Interface hôte&lt;/b&gt;. </translation>
+        <translation>Affiche le chemin sur l&apos;hôte pour les interfaces série quand l&apos;interface fonctionne en mode &lt;b&gt;Tuyau Hôte&lt;/b&gt; ou le nom du fichier de l&apos;interface série de l&apos;hôte pour le mode &lt;b&gt;Interface hôte&lt;/b&gt;. </translation>
     </message>
 </context>
 <context>
