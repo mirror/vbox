@@ -132,7 +132,7 @@ SOLARIS_EXTRAS = \
 SOLARIS_NLS = \
 	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
 	  $(shell $(CAT_EXT) \
-		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls3/ApprovedLanguages.txt),\
+		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls3/VirtualBox_$(f).qm nls3/qt_$(f).qm),)
 
 SOLARIS_SDK = \
