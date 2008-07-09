@@ -71,6 +71,7 @@ PROGRAMS += \
 	tstLdrLoad \
 	tstLog \
 	tstMove \
+	tstMp-1 \
 	tstNoCrt-1 \
 	tstPath \
 	tstPrfRT \
@@ -244,6 +245,8 @@ tstLdrLoad_SOURCES = tstLdrLoad.cpp
 tstLog_SOURCES = tstLog.cpp
 
 tstMove_SOURCES = tstMove.cpp
+
+tstMp-1_SOURCES = tstMp-1.cpp
 
 tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
 tstNoCrt-1_SOURCES = \

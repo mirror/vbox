@@ -1,0 +1,175 @@
+/* $Id$ */
+/** @file
+ * IPRT Testcase - RTMp.
+ */
+
+/*
+ * Copyright (C) 2008 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <iprt/mp.h>
+#include <iprt/cpuset.h>
+#include <iprt/err.h>
+#include <iprt/stream.h>
+#include <iprt/initterm.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static unsigned g_cErrors = 0;
+
+
+int main()
+{
+    RTR3Init();
+    RTPrintf("tstMp-1: TESTING...\n");
+
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
+    /*
+     * Present and possible CPUs.
+     */
+    RTCPUID cCpus = RTMpGetCount();
+    if (cCpus > 0)
+        RTPrintf("tstMp-1: RTMpGetCount -> %d\n", (int)cCpus);
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetCount -> %d\n", (int)cCpus);
+        g_cErrors++;
+        cCpus = 1;
+    }
+
+    RTCPUSET Set;
+    PRTCPUSET pSet = RTMpGetSet(&Set);
+    if (pSet == &Set)
+    {
+        if ((RTCPUID)RTCpuSetCount(&Set) != cCpus)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetSet returned a set with a different cpu count; %d, expected %d\n",
+                     RTCpuSetCount(&Set), cCpus);
+            g_cErrors++;
+        }
+        RTPrintf("tstMp-1: Possible CPU mask:\n");
+        for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+        {
+            if (RTCpuSetIsMemberByIndex(&Set, iCpu))
+            {
+                RTPrintf("tstMp-1: %2d - id %d\n", iCpu, RTMpCpuIdFromSetIndex(iCpu));
+                if (!RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(iCpu)))
+                {
+                    RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
+                    g_cErrors++;
+                }
+            }
+            else if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(iCpu)))
+            {
+                RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTMpIsCpuPossible but not RTCpuSet!\n", iCpu);
+                g_cErrors++;
+            }
+        }
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetSet -> %p, expected %p\n", pSet, &Set);
+        g_cErrors++;
+        RTCpuSetEmpty(&Set);
+        RTCpuSetAdd(&Set, RTMpCpuIdFromSetIndex(0));
+    }
+
+    /*
+     * Online CPUs.
+     */
+    RTCPUID cCpusOnline = RTMpGetOnlineCount();
+    if (cCpusOnline > 0)
+    {
+        if (cCpusOnline <= cCpus)
+            RTPrintf("tstMp-1: RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
+        else
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineCount -> %d, expected <= %d\n", (int)cCpusOnline, (int)cCpus);
+            g_cErrors++;
+            cCpusOnline = cCpus;
+        }
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
+        g_cErrors++;
+        cCpusOnline = 1;
+    }
+
+    RTCPUSET SetOnline;
+    pSet = RTMpGetOnlineSet(&SetOnline);
+    if (pSet == &SetOnline)
+    {
+        if (RTCpuSetCount(&SetOnline) <= 0)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet returned an empty set!\n");
+            g_cErrors++;
+        }
+        else if ((RTCPUID)RTCpuSetCount(&SetOnline) > cCpus)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet returned a too high value; %d, expected <= %d\n",
+                     RTCpuSetCount(&SetOnline), cCpus);
+            g_cErrors++;
+        }
+        RTPrintf("tstMp-1: Online CPU mask:\n");
+        for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+            if (RTCpuSetIsMemberByIndex(&SetOnline, iCpu))
+            {
+                RTPrintf("tstMp-1: %2d - id %d\n", iCpu, RTMpCpuIdFromSetIndex(iCpu));
+                if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
+                {
+                    RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
+                    g_cErrors++;
+                }
+            }
+
+        /* There isn't any sane way of testing RTMpIsCpuOnline really... :-/ */
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet -> %p, expected %p\n", pSet, &Set);
+        g_cErrors++;
+    }
+
+#else
+    RTPrintf("tstMp-1: SKIPPED - RTMp is not implemented on this host OS.\n");
+#endif
+
+    if (!g_cErrors)
+        RTPrintf("tstMp-1: SUCCESS\n", g_cErrors);
+    else
+        RTPrintf("tstMp-1: FAILURE - %d errors\n", g_cErrors);
+    return !!g_cErrors;
+}
+
