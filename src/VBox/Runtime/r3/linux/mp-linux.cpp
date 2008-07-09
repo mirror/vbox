@@ -239,6 +239,47 @@ static RTCPUID rtMpLinuxMaxCpus(void)
 #endif
 }
 
+/**
+ * Internal worker that picks the processor speed in MHz from /proc/cpuinfo.
+ *
+ * @returns CPU frequency.
+ */
+static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
+{
+    FILE *f = fopen("/proc/cpuinfo", "r");
+    if (!f)
+        return 0;
+
+    char sz[256];
+    char *psz = NULL;
+    RTCPUID idCpuFound = NIL_RTCPUID;
+    while (fgets(sz, sizeof(sz), f))
+    {
+        if (   !strncmp(sz, "processor", 9)
+            && (sz[10] == ' ' || sz[10] == '\t' || sz[10] == ':')
+            && (psz = strchr(sz, ':')))
+        {
+            psz += 2;
+            int64_t iCpu;
+            int rc = RTStrToInt64Ex(psz, NULL, 0, &iCpu);
+            if (RT_SUCCESS(rc))
+                idCpuFound = iCpu;
+        }
+        else if (   idCpu == idCpuFound
+                 && !strncmp(sz, "cpu MHz", 7)
+                 && (sz[10] == ' ' || sz[10] == '\t' || sz[10] == ':')
+                 && (psz = strchr(sz, ':')))
+        {
+            psz += 2;
+            int64_t v;
+            int rc = RTStrToInt64Ex(psz, &psz, 0, &v);
+            if (RT_SUCCESS(rc))
+                return v;
+        }
+    }
+    return 0;
+}
+
 
 /** @todo RTmpCpuId(). */
 
@@ -320,3 +361,25 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     return RTCpuSetCount(&Set);
 }
 
+
+RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
+{
+    int64_t kHz = rtLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/cpufreq/cpuinfo_cur_freq", (int)idCpu);
+    if (kHz == -1)
+    {
+        if (rtLinuxSysFsExists("devices/system/cpu/cpu%d/cpufreq/cpuinfo_cur_freq", (int)idCpu))
+            kHz = rtMpLinuxGetFrequency(idCpu) * 1000;
+        else
+            kHz = 0;
+    }
+    return (kHz + 999) / 1000;
+}
+
+
+RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
+{
+    int64_t kHz = rtLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", (int)idCpu);
+    if (kHz == -1)
+        kHz = rtMpLinuxGetFrequency(idCpu) * 1000;
+    return (kHz + 999) / 1000;
+}
