@@ -26,6 +26,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
+#include "VBoxSettingsSelector.h"
 
 #include "VBoxGLSettingsGeneral.h"
 #include "VBoxGLSettingsInput.h"
@@ -46,7 +47,6 @@
 /* Qt includes */
 #include <QStackedWidget>
 
-
 VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
     : VBoxSettingsDialog (aParent)
 {
@@ -58,17 +58,17 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
     retranslateUi();
 
     /* Creating settings pages */
-    attachPage ((VBoxSettingsPage*) new VBoxGLSettingsGeneral());
+    attachPage (new VBoxGLSettingsGeneral());
 
-    attachPage ((VBoxSettingsPage*) new VBoxGLSettingsInput());
+    attachPage (new VBoxGLSettingsInput());
 
-    attachPage ((VBoxSettingsPage*) new VBoxGLSettingsLanguage());
+    attachPage (new VBoxGLSettingsLanguage());
 
 #ifdef ENABLE_GLOBAL_USB
-    attachPage ((VBoxSettingsPage*) new VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType));
+    attachPage (new VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType));
 #endif
 
-    /* Update QTreeWidget with available items */
+    /* Update Selector with available items */
     updateAvailability();
 }
 
@@ -109,45 +109,37 @@ void VBoxGLSettingsDlg::retranslateUi()
     setWindowTitle (tr ("VirtualBox Preferences"));
 
     /* Remember old index */
-    int ci = mTwSelector->indexOfTopLevelItem (mTwSelector->currentItem());
-
-    mTwSelector->clear();
-
-    /* Populate selector list */
-    QTreeWidgetItem *item = 0;
+    int cid = mSelector->currentId();
+    /* Remove all items */
+    mSelector->clear();
 
     /* General page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " General "
-                                             << "00" << "#general");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/machine_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+                        tr ("General"), GeneralId, "#general");
 
     /* Input page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Input "
-                                             << "01" << "#input");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/hostkey_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/hostkey_16px.png"),
+                        tr ("Input"), InputId, "#input");
 
     /* Language page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Language "
-                                             << "02" << "#language");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/site_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/site_16px.png"),
+                        tr ("Language"), LanguageId, "#language");
 
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " USB "
-                                             << "03" << "#usb");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/usb_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+                        tr ("USB"), USBId, "#usb");
 #endif
 
+    /* Translate the selector */
+    mSelector->retranslateUi();
+    
     VBoxSettingsDialog::retranslateUi();
 
-    /* Set the old index */
-    mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci == -1 ? 0 : ci));
+    /* Select old remembered category */
+    mSelector->selectById (cid == -1 ? 0 : cid);
 
-    /* Update QTreeWidget with available items */
+    /* Update Selector with available items */
     updateAvailability();
 }
 
@@ -155,7 +147,7 @@ VBoxSettingsPage* VBoxGLSettingsDlg::attachPage (VBoxSettingsPage *aPage)
 {
     mStack->addWidget (aPage);
 
-    aPage->setOrderAfter (mTwSelector);
+    aPage->setOrderAfter (mSelector->widget());
 
     return aPage;
 }
@@ -174,12 +166,10 @@ void VBoxGLSettingsDlg::updateAvailability()
     {
         /* Disable the USB controller category if the USB controller is
          * not available (i.e. in VirtualBox OSE) */
-        QTreeWidgetItem *usbItem = findItem (mTwSelector, "#usb",
-                                             treeWidget_Link);
-        if (usbItem)
+        mSelector->setVisibleById (USBId, false);
+        int index = mSelector->idToIndex (USBId);
+        if (index > -1)
         {
-            usbItem->setHidden (true);
-            int index = mTwSelector->indexOfTopLevelItem (usbItem);
             if (mStack->widget (index))
                 mStack->widget (index)->setEnabled (false);
         }
@@ -237,34 +227,30 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* Setup Settings Dialog */
     if (!aCategory.isNull())
     {
-        /* Search for a list view item corresponding to the category */
-        if (QTreeWidgetItem *item = findItem (mTwSelector, aCategory, treeWidget_Link))
+        mSelector->selectByLink (aCategory);
+        /* Search for a widget with the given name */
+        if (!aControl.isNull())
         {
-            mTwSelector->setCurrentItem (item);
-            /* Search for a widget with the given name */
-            if (!aControl.isNull())
+            if (QWidget *w = mStack->currentWidget()->findChild<QWidget*> (aControl))
             {
-                if (QWidget *w = mStack->currentWidget()->findChild<QWidget*> (aControl))
+                QList<QWidget*> parents;
+                QWidget *p = w;
+                while ((p = p->parentWidget()) != NULL)
                 {
-                    QList<QWidget*> parents;
-                    QWidget *p = w;
-                    while ((p = p->parentWidget()) != NULL)
+                    if (QTabWidget *tb = qobject_cast<QTabWidget*> (p))
                     {
-                        if (QTabWidget *tb = qobject_cast<QTabWidget*> (p))
-                        {
-                            /* The tab contents widget is two steps down
-                             * (QTabWidget -> QStackedWidget -> QWidget) */
-                            QWidget *c = parents [parents.count() - 1];
-                            if (c)
-                                c = parents [parents.count() - 2];
-                            if (c)
-                                tb->setCurrentWidget (c);
-                        }
-                        parents.append (p);
+                        /* The tab contents widget is two steps down
+                         * (QTabWidget -> QStackedWidget -> QWidget) */
+                        QWidget *c = parents [parents.count() - 1];
+                        if (c)
+                            c = parents [parents.count() - 2];
+                        if (c)
+                            tb->setCurrentWidget (c);
                     }
-
-                    w->setFocus();
+                    parents.append (p);
                 }
+
+                w->setFocus();
             }
         }
     }
@@ -277,7 +263,8 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
     bool valid = aWval->isOtherValid();
 
     QString warningText;
-    QString pageTitle = pagePath (pg);
+
+    QString pageTitle = mSelector->itemTextByIndex (mStack->indexOf (pg));
 
     VBoxSettingsPage *page = static_cast<VBoxSettingsPage*> (pg);
     valid = page->revalidate (warningText, pageTitle);
@@ -318,99 +305,82 @@ void VBoxVMSettingsDlg::retranslateUi()
     /* Set dialog's name */
     setWindowTitle (dialogTitle());
 
-    /* Remember old index */
-    int ci = mTwSelector->indexOfTopLevelItem (mTwSelector->currentItem());
-
-    mTwSelector->clear();
-
     /* We have to make sure that the Serial & Network subpages are retranslated
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already. */
     QEvent event (QEvent::LanguageChange);
 
     /* Populate selector list */
-    QTreeWidgetItem *item = 0;
     QWidget *curpage = 0;
 
+    /* Remember old index */
+    int cid = mSelector->currentId();
+    /* Remove all items */
+    mSelector->clear();
+
     /* General page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " General "
-                                             << "00" << "#general");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/machine_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+                        tr ("General"), GeneralId, "#general");
 
     /* HD page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Hard Disks "
-                                             << "01" << "#hdds");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/hd_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
+                        tr ("Hard Disks"), HDId, "#hdds");
 
     /* CD page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " CD/DVD-ROM "
-                                             << "02" << "#dvd");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/cd_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/cd_16px.png"),
+                        tr ("CD/DVD-ROM"), CDId, "#dvd");
 
     /* FD page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Floppy "
-                                             << "03" << "#floppy");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/fd_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/fd_16px.png"),
+                        tr ("Floppy"), FDId, "#floppy");
 
     /* Audio page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Audio "
-                                             << "04" << "#audio");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/sound_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/sound_16px.png"),
+                        tr ("Audio"), AudioId, "#audio");
 
     /* Network page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Network "
-                                             << "05" << "#network");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/nw_16px.png"));
-    curpage = mStack->widget (mTwSelector->indexOfTopLevelItem (item));
+    mSelector->addItem (VBoxGlobal::iconSet (":/nw_16px.png"),
+                        tr ("Network"), NetworkId, "#network");
+
+    curpage = mStack->widget (mSelector->idToIndex (NetworkId));
     if (curpage)
         qApp->sendEvent (curpage, &event);
 
     /* Serial page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Serial Ports "
-                                             << "06" << "#serialPorts");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/serial_port_16px.png"));
-    curpage = mStack->widget (mTwSelector->indexOfTopLevelItem (item));
+    mSelector->addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
+                        tr ("Serial Ports"), SerialId, "#serialPorts");
+
+    curpage = mStack->widget (mSelector->idToIndex (SerialId));
     if (curpage)
         qApp->sendEvent (curpage, &event);
 
     /* Parallel page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Parallel Ports "
-                                             << "07" << "#parallelPorts");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/parallel_port_16px.png"));
-    curpage = mStack->widget (mTwSelector->indexOfTopLevelItem (item));
+    mSelector->addItem (VBoxGlobal::iconSet (":/parallel_port_16px.png"),
+                        tr ("Parallel Ports"), ParallelId, "#parallelPorts");
+
+    curpage = mStack->widget (mSelector->idToIndex (ParallelId));
     if (curpage)
         qApp->sendEvent (curpage, &event);
 
     /* USB page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " USB "
-                                             << "08" << "#usb");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/usb_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+                        tr ("USB"), USBId, "#usb");
 
     /* SFolders page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Shared Folders "
-                                             << "09" << "#sfolders");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/shared_folder_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/shared_folder_16px.png"),
+                        tr ("Shared Folders"), SFId, "#sfolders");
 
     /* VRDP page */
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << " Remote Display "
-                                             << "10" << "#vrdp");
-    item->setIcon (treeWidget_Category,
-                   VBoxGlobal::iconSet (":/vrdp_16px.png"));
+    mSelector->addItem (VBoxGlobal::iconSet (":/vrdp_16px.png"),
+                        tr ("Remote Display"), VRDPId, "#vrdp");
 
+    /* Translate the selector */
+    mSelector->retranslateUi();
+    
     VBoxSettingsDialog::retranslateUi();
 
-    /* Set the old index */
-    mTwSelector->setCurrentItem (mTwSelector->topLevelItem (ci == -1 ? 0 : ci));
+    /* Select old remembered category */
+    mSelector->selectById (cid == -1 ? 0 : cid);
 
     /* Update QTreeWidget with available items */
     updateAvailability();
@@ -437,7 +407,7 @@ VBoxSettingsPage* VBoxVMSettingsDlg::attachPage (VBoxSettingsPage *aPage)
 {
     mStack->addWidget (aPage);
 
-    QIWidgetValidator *wval = new QIWidgetValidator (pagePath (aPage),
+    QIWidgetValidator *wval = new QIWidgetValidator (mSelector->itemTextByIndex (mStack->indexOf (aPage)),
                                                      aPage, this);
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableOk (const QIWidgetValidator*)));
@@ -445,7 +415,7 @@ VBoxSettingsPage* VBoxVMSettingsDlg::attachPage (VBoxSettingsPage *aPage)
              this, SLOT (revalidate (QIWidgetValidator*)));
 
     aPage->setValidator (wval);
-    aPage->setOrderAfter (mTwSelector);
+    aPage->setOrderAfter (mSelector->widget());
 
     return aPage;
 }
@@ -464,13 +434,10 @@ void VBoxVMSettingsDlg::updateAvailability()
         return;
 
     /* Parallel Port Page (currently disabled) */
-    QTreeWidgetItem *parallelItem =
-        findItem (mTwSelector, "#parallelPorts", treeWidget_Link);
-    Assert (parallelItem);
-    if (parallelItem)
+    mSelector->setVisibleById (ParallelId, false);
+    int index = mSelector->idToIndex (ParallelId);
+    if (index > -1)
     {
-        parallelItem->setHidden (true);
-        int index = mTwSelector->indexOfTopLevelItem (parallelItem);
         if (mStack->widget (index))
             mStack->widget (index)->setEnabled (false);
     }
@@ -486,13 +453,10 @@ void VBoxVMSettingsDlg::updateAvailability()
     {
         /* Disable the USB controller category if the USB controller is
          * not available (i.e. in VirtualBox OSE) */
-        QTreeWidgetItem *usbItem =
-            findItem (mTwSelector, "#usb", treeWidget_Link);
-        Assert (usbItem);
-        if (usbItem)
+        mSelector->setVisibleById (USBId, false);
+        int index = mSelector->idToIndex (USBId);
+        if (index > -1)
         {
-            usbItem->setHidden (true);
-            int index = mTwSelector->indexOfTopLevelItem (usbItem);
             if (mStack->widget (index))
                 mStack->widget (index)->setEnabled (false);
         }
@@ -504,13 +468,10 @@ void VBoxVMSettingsDlg::updateAvailability()
     {
         /* Disable the VRDP category if VRDP is
          * not available (i.e. in VirtualBox OSE) */
-        QTreeWidgetItem *vrdpItem =
-            findItem (mTwSelector, "#vrdp", treeWidget_Link);
-        Assert (vrdpItem);
-        if (vrdpItem)
+        mSelector->setVisibleById (VRDPId, false);
+        int index = mSelector->idToIndex (VRDPId);
+        if (index > -1)
         {
-            vrdpItem->setHidden (true);
-            int index = mTwSelector->indexOfTopLevelItem (vrdpItem);
             if (mStack->widget (index))
                 mStack->widget (index)->setEnabled (false);
         }

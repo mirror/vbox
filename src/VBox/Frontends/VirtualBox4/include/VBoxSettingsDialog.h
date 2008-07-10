@@ -29,6 +29,7 @@
 
 class VBoxWarnIconLabel;
 class QIWidgetValidator;
+class VBoxSettingsSelector;
 class QTimer;
 class QStackedWidget;
 
@@ -43,7 +44,7 @@ class VBoxSettingsDialog : public QIWithRetranslateUI<QIMainDialog>,
 
 public:
 
-    VBoxSettingsDialog (QWidget *aParent);
+    VBoxSettingsDialog (QWidget *aParent = NULL);
 
     virtual void getFrom() = 0;
     virtual void putBackTo() = 0;
@@ -51,20 +52,14 @@ public:
 protected slots:
 
     virtual void revalidate (QIWidgetValidator * /* aWval */) {}
-    void settingsGroupChanged (QTreeWidgetItem *aItem,
-                               QTreeWidgetItem *aPrev = 0);
 
 protected:
 
-    static QTreeWidgetItem* findItem (QTreeWidget *aView,
-                                      const QString &aMatch,
-                                      int aColumn);
-
     virtual void retranslateUi();
 
-    QString pagePath (QWidget *aPage);
     void setWarning (const QString &aWarning);
 
+    VBoxSettingsSelector *mSelector;
     QStackedWidget *mStack;
 
 private slots:
@@ -72,6 +67,8 @@ private slots:
     void enableOk (const QIWidgetValidator *aWval);
     void updateWhatsThis (bool aGotFocus = false);
     void whatsThisCandidateDestroyed (QObject *aObj = 0);
+
+    void categoryChanged (int aId);
 
 private:
 

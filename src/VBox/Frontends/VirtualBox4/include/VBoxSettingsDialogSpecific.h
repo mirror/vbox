@@ -39,6 +39,14 @@ class VBoxGLSettingsDlg : public VBoxSettingsDialog
 
 public:
 
+    enum GLSettingsPageIds
+    {
+        GeneralId = 0,
+        InputId,
+        LanguageId,
+        USBId
+    };
+
     VBoxGLSettingsDlg (QWidget *aParent);
 
 protected:
@@ -63,6 +71,21 @@ class VBoxVMSettingsDlg : public VBoxSettingsDialog
     Q_OBJECT;
 
 public:
+
+    enum VMSettingsPageIds
+    {
+        GeneralId = 0,
+        HDId,
+        CDId,
+        FDId,
+        AudioId,
+        NetworkId,
+        SerialId,
+        ParallelId,
+        USBId,
+        SFId,
+        VRDPId
+    };
 
     VBoxVMSettingsDlg (QWidget *aParent, const CMachine &aMachine,
                        const QString &aCategory, const QString &aControl);
