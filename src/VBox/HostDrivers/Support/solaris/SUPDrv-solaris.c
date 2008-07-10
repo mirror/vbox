@@ -189,7 +189,7 @@ int _init(void)
 {
     dprintf(("VBoxDrvSolaris _init"));
 
-    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 1);
+    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
     if (!rc)
     {
         rc = mod_install(&g_VBoxDrvSolarisModLinkage);
