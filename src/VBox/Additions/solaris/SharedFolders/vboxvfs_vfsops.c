@@ -437,6 +437,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
                 vboxvfs_InitVNode(pVBoxVFSGlobalInfo, pVNodeRoot, &FSInfo);
 
                 /* Success! */
+                LogFlow((DEVICE_NAME ":VBoxVFS_Mount: success!\n", rc));
                 return 0;
             }
             else
