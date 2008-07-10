@@ -1099,9 +1099,15 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 
 #if defined(RT_OS_WINDOWS)
+# if 0 /** @todo Andy, enable this locally and make it work (may require changes to WINNT/VBoxGuest and other places that
+        * calls it). Then remove all the #else cases in the #ifdef VBOXGUEST_IOCTL_CODE test below and commit. (see #2993) */
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
+# else
   /* legacy encoding. */
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
+# endif
 
 #elif defined(RT_OS_OS2)
   /* No automatic buffering, size not encoded. */
