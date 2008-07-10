@@ -276,18 +276,14 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /** @note VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
 #if HC_ARCH_BITS == 64
-    /* Always exit on CR8 writes. */
-    /* @todo investigate TPR treshold option */
-    val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
-
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
-        /* CR8 reads from the APIC shadow page */
+        /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
     }
     else
-        /* Exit on CR8 reads as well in case the TPR shadow feature isn't present. */
-        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
+        /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
+        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
@@ -383,7 +379,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     {
         Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
         /* Optional */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_TRESHOLD, 0);
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
 #if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH, pVM->hwaccm.s.vmx.pAPICPhys >> 32);
@@ -1196,7 +1192,11 @@ ResumeExecution:
         int rc = PDMApicGetTPR(pVM, &u8TPR);
         AssertRC(rc);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR << 4; /* bits 7-4 */
+        pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR << 4; /* bits 7-4 contain the task priority */
+
+        /* CR8 updates that lower the TPR value to below the current value should cause an exit. */
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, u8TPR);
+        AssertRC(rc);
     }
 
     /* Non-register state Guest Context */
@@ -1980,9 +1980,9 @@ ResumeExecution:
     }
 
     case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
-        /* RIP is already set to the next instruction */
-        AssertFailed(); /* currently not used */
-        break;
+        LogFlow(("VMX_EXIT_TPR\n"));
+        /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
+        goto ResumeExecution;
 
     default:
         /* The rest is handled after syncing the entire CPU state. */
