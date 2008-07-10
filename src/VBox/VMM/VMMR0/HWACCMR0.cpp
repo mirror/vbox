@@ -86,10 +86,10 @@ static struct
         {
             uint64_t                feature_ctrl;
             uint64_t                vmx_basic_info;
-            uint64_t                vmx_pin_ctls;
-            uint64_t                vmx_proc_ctls;
-            uint64_t                vmx_exit;
-            uint64_t                vmx_entry;
+            VMX_CAPABILITY          vmx_pin_ctls;
+            VMX_CAPABILITY          vmx_proc_ctls;
+            VMX_CAPABILITY          vmx_exit;
+            VMX_CAPABILITY          vmx_entry;
             uint64_t                vmx_misc;
             uint64_t                vmx_cr0_fixed0;
             uint64_t                vmx_cr0_fixed1;
@@ -209,10 +209,10 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         RTHCPHYS   pScatchPagePhys;
 
                         HWACCMR0Globals.vmx.msr.vmx_basic_info  = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-                        HWACCMR0Globals.vmx.msr.vmx_pin_ctls    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-                        HWACCMR0Globals.vmx.msr.vmx_proc_ctls   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                        HWACCMR0Globals.vmx.msr.vmx_exit        = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-                        HWACCMR0Globals.vmx.msr.vmx_entry       = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+                        HWACCMR0Globals.vmx.msr.vmx_pin_ctls.u  = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+                        HWACCMR0Globals.vmx.msr.vmx_proc_ctls.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                        HWACCMR0Globals.vmx.msr.vmx_exit.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+                        HWACCMR0Globals.vmx.msr.vmx_entry.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
                         HWACCMR0Globals.vmx.msr.vmx_misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
                         HWACCMR0Globals.vmx.msr.vmx_cr0_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
                         HWACCMR0Globals.vmx.msr.vmx_cr0_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
