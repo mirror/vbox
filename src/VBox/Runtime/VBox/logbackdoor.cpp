@@ -79,9 +79,7 @@ static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars,
 
 RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
 {
-# ifndef RT_OS_WINDOWS /** @todo VbglR3WriteLog on windows */
     VbglR3WriteLog(pch, cb);
-# endif
 }
 
 #else  /* !IN_GUEST_R3 */
