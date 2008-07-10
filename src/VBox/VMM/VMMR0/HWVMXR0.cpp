@@ -165,7 +165,7 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
     /* Bit set to 0 means redirection enabled. */
     memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
 
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* Allocate one page for the virtual APIC mmio cache. */
         rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -253,10 +253,10 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
-    val  = (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & 0xFFFFFFFF);
+    val  = pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0;
     /* External and non-maskable interrupts cause VM-exits. */
     val  = val | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT;
-    val &= (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls >> 32ULL);
+    val &= pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1;
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, val);
     AssertRC(rc);
@@ -264,7 +264,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
-    val = (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & 0xFFFFFFFF);
+    val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
     /* Program which event cause VM-exits and which features we want to use. */
     val = val | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET
@@ -276,7 +276,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /** @note VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
 #if HC_ARCH_BITS == 64
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
@@ -288,7 +288,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #endif
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
-    val &= (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls >> 32ULL);
+    val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
     pVM->hwaccm.s.vmx.proc_ctls = val;
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, val);
@@ -303,13 +303,13 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* VMX_VMCS_CTRL_EXIT_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
-    val  = (pVM->hwaccm.s.vmx.msr.vmx_exit & 0xFFFFFFFF);
+    val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
 #if HC_ARCH_BITS == 64
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
 #else
     /* else Must be zero when AMD64 is not available. */
 #endif
-    val &= (pVM->hwaccm.s.vmx.msr.vmx_exit >> 32ULL);
+    val &= pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1;
     /* Don't acknowledge external interrupts on VM-exit. */
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, val);
     AssertRC(rc);
@@ -355,7 +355,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     AssertRC(rc);
 
     /* Clear MSR controls. */
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
     {
         /* Optional */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_FULL, 0);
@@ -376,7 +376,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT, 0);
     AssertRC(rc);
 
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
         /* Optional */
@@ -977,14 +977,14 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* VMX_VMCS_CTRL_ENTRY_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
-    val = (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF);
+    val = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
         val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
     /* else Must be zero when AMD64 is not available. */
 
     /* Mask away the bits that the CPU doesn't support */
-    val &= (pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL);
+    val &= pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1;
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
     AssertRC(rc);
 
@@ -1046,11 +1046,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     Log2(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS = %08x\n", val));
 
     /* allowed zero */
-    if ((val & (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & 0xFFFFFFFF))
+    if ((val & pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0)
         Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: zero\n"));
 
     /* allowed one */
-    if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_pin_ctls >> 32ULL)) != 0)
+    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1) != 0)
         Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: one\n"));
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
@@ -1058,11 +1058,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     Log2(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS = %08x\n", val));
 
     /* allowed zero */
-    if ((val & (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & 0xFFFFFFFF))
+    if ((val & pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0)
         Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
 
     /* allowed one */
-    if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls >> 32ULL)) != 0)
+    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1) != 0)
         Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: one\n"));
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
@@ -1070,11 +1070,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     Log2(("VMX_VMCS_CTRL_ENTRY_CONTROLS = %08x\n", val));
 
     /* allowed zero */
-    if ((val & (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_entry & 0xFFFFFFFF))
+    if ((val & pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0)
         Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: zero\n"));
 
     /* allowed one */
-    if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL)) != 0)
+    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1) != 0)
         Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: one\n"));
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
@@ -1082,11 +1082,11 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     Log2(("VMX_VMCS_CTRL_EXIT_CONTROLS = %08x\n", val));
 
     /* allowed zero */
-    if ((val & (pVM->hwaccm.s.vmx.msr.vmx_exit & 0xFFFFFFFF)) != (pVM->hwaccm.s.vmx.msr.vmx_exit & 0xFFFFFFFF))
+    if ((val & pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0)
         Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: zero\n"));
 
     /* allowed one */
-    if ((val & ~(pVM->hwaccm.s.vmx.msr.vmx_exit >> 32ULL)) != 0)
+    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1) != 0)
         Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
 #endif
 
@@ -1794,7 +1794,7 @@ ResumeExecution:
                 break;
             case 8:
                 /* CR8 contains the APIC TPR */
-                Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
+                Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
                 break;
 
             default:
@@ -1815,7 +1815,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
 
             /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
-            Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
+            Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
 
             rc = EMInterpretCRxRead(pVM, CPUMCTX2CORE(pCtx),
                                     VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification),
