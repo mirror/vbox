@@ -277,7 +277,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
 #if HC_ARCH_BITS == 64
     /* Always exit on CR8 writes. */
-    /* @todo investigate TRP treshold option */
+    /* @todo investigate TPR treshold option */
     val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT;
 
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
@@ -1196,7 +1196,7 @@ ResumeExecution:
         int rc = PDMApicGetTPR(pVM, &u8TPR);
         AssertRC(rc);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR;
+        pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR << 4; /* bits 7-4 */
     }
 
     /* Non-register state Guest Context */
