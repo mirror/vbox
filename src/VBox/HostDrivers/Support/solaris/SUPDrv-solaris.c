@@ -166,7 +166,7 @@ typedef struct
 } vbox_devstate_t;
 #endif
 
-/** Opaque pointer to state */
+/** Opaque pointer to list of state */
 static void *g_pVBoxDrvSolarisState;
 
 /** Device extention & session data association structure */
@@ -189,7 +189,7 @@ int _init(void)
 {
     dprintf(("VBoxDrvSolaris _init"));
 
-    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
+    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 1);
     if (!rc)
     {
         rc = mod_install(&g_VBoxDrvSolarisModLinkage);
@@ -230,7 +230,7 @@ int _info(struct modinfo *pModInfo)
  * Attach entry point, to attach a device to the system or resume it.
  *
  * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
+ * @param   enmCmd          Operation type (attach/resume).
  *
  * @return  corresponding solaris error code.
  */
@@ -330,7 +330,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  * Detach entry point, to detach a device to the system or suspend it.
  *
  * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
+ * @param   enmCmd          Operation type (detach/suspend).
  *
  * @return  corresponding solaris error code.
  */
