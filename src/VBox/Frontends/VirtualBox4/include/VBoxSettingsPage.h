@@ -61,5 +61,6 @@ protected:
 
     QWidget *mFirstWidget;
 };
+
 #endif // __VBoxSettingsPage_h__
 

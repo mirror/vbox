@@ -25,6 +25,7 @@
 
 #include <VBoxGlobal.h>
 
+/* Qt includes */
 #ifdef Q_WS_WIN
 #include <QDialog>
 #include <QLineEdit>
@@ -39,11 +40,6 @@
 
 enum
 {
-    /* mTwSelector column numbers */
-    treeWidget_Category = 0,
-    treeWidget_Id = 1,
-    treeWidget_Link = 2,
-
     /* mTwUSBFilters column numbers */
     twUSBFilters_Name = 0,
 };

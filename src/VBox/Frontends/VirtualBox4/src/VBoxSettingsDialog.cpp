@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
+#include "VBoxSettingsSelector.h"
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
@@ -35,24 +36,7 @@
 #include <QPushButton>
 #include <QStackedWidget>
 
-/* Returns the path to the item in the form of 'grandparent > parent > item'
- * using the text of the first column of every item. */
-static QString path (QTreeWidgetItem *aItem)
-{
-    static QString sep = ": ";
-    QString p;
-    QTreeWidgetItem *cur = aItem;
-    while (cur)
-    {
-        if (!p.isNull())
-            p = sep + p;
-        p = cur->text (treeWidget_Category).simplified() + p;
-        cur = cur->parent();
-    }
-    return p;
-}
-
-VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent)
+VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QIMainDialog> (aParent)
     , mPolished (false)
     , mValid (true)
@@ -76,12 +60,13 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent)
     f.setPointSize (f.pointSize() + 2);
     mLbTitle->setFont (f);
 
-    /* Hide unnecessary columns and header */
-    mTwSelector->header()->hide();
-    mTwSelector->hideColumn (treeWidget_Id);
-    mTwSelector->hideColumn (treeWidget_Link);
+    /* Create the classical tree view selector */
+    mSelector = new VBoxSettingsTreeSelector (mAllWidget);
+    QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
+    mainLayout->addWidget (mSelector->widget(), 0, 0, 3, 1);
+    mSelector->widget()->setFocus();
 
-    /* Crating stack of pages */
+    /* Creating stack of pages */
     mStack = new QStackedWidget (mWtStackHandler);
     QVBoxLayout *layout = new QVBoxLayout (mWtStackHandler);
     layout->setContentsMargins (0, 0, 0, 0);
@@ -108,8 +93,8 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent)
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
     connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
-             this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
+    connect (mSelector, SIGNAL (categoryChanged (int)),
+             this, SLOT (categoryChanged (int)));
 
     /* Applying language settings */
     retranslateUi();
@@ -120,44 +105,11 @@ void VBoxSettingsDialog::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxSettingsDialog::retranslateUi (this);
 
-    /* Adjust selector list */
-    mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)
-        ->sizeHintForColumn (treeWidget_Category) + 2 * mTwSelector->frameWidth());
-
-    /* Sort selector by the id column */
-    mTwSelector->sortItems (treeWidget_Id, Qt::AscendingOrder);
-    mTwSelector->resizeColumnToContents (treeWidget_Category);
-
-    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
-    mButtonBox->button (QDialogButtonBox::Ok)
-        ->setWhatsThis (tr ("Accepts (saves) changes and closes the dialog."));
-    mButtonBox->button (QDialogButtonBox::Cancel)
-        ->setWhatsThis (tr ("Cancels changes and closes the dialog."));
-    mButtonBox->button (QDialogButtonBox::Help)
-        ->setWhatsThis (tr ("Displays the dialog help."));
-
     /* Revalidate all pages to retranslate the warning messages also. */
     QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
     foreach (QIWidgetValidator *wval, vlist)
         if (!wval->isValid())
             revalidate (wval);
-
-    /* Add some margin to every item in the tree */
-    mTwSelector->addTopBottomMarginToItems (12);
-}
-
-/**
- *  Returns a path to the given page of this settings dialog. See ::path() for
- *  details.
- */
-QString VBoxSettingsDialog::pagePath (QWidget *aPage)
-{
-    QTreeWidgetItem *li =
-        findItem (mTwSelector,
-                  QString ("%1")
-                      .arg (mStack->indexOf (aPage), 2, 10, QChar ('0')),
-                  treeWidget_Id);
-    return ::path (li);
 }
 
 void VBoxSettingsDialog::setWarning (const QString &aWarning)
@@ -212,18 +164,12 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
     }
 }
 
-void VBoxSettingsDialog::settingsGroupChanged (QTreeWidgetItem *aItem,
-                                               QTreeWidgetItem *)
+void VBoxSettingsDialog::categoryChanged (int aId)
 {
-    if (aItem)
-    {
-        int id = aItem->text (treeWidget_Id).toInt();
-        Assert (id >= 0);
-
 //#ifndef Q_WS_MAC
 #if 1
-        mLbTitle->setText (::path (aItem));
-        mStack->setCurrentIndex (id);
+        mLbTitle->setText (mSelector->itemText (aId));
+        mStack->setCurrentIndex (aId);
 #else /* Q_WS_MAC */
         /* We will update at once later */
         setUpdatesEnabled (false);
@@ -247,19 +193,6 @@ void VBoxSettingsDialog::settingsGroupChanged (QTreeWidgetItem *aItem,
         /* Set the new size to Qt also */
         setFixedSize (minimumSizeHint());
 #endif /* !Q_WS_MAC */
-    }
-}
-
-/* Returns first item of 'aView' matching required 'aMatch' value
- * searching the 'aColumn' column. */
-QTreeWidgetItem* VBoxSettingsDialog::findItem (QTreeWidget *aView,
-                                               const QString &aMatch,
-                                               int aColumn)
-{
-    QList<QTreeWidgetItem*> list =
-        aView->findItems (aMatch, Qt::MatchExactly, aColumn);
-
-    return list.count() ? list [0] : 0;
 }
 
 void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)
