@@ -27,10 +27,14 @@
 #include <QObject>
 
 class QITreeWidget;
+class VBoxToolBar;
+class SelectorAction;
 
 class QTreeWidget;
 class QTreeWidgetItem;
 class QIcon;
+class QAction;
+class QActionGroup;
 
 class VBoxSettingsSelector: public QObject
 {
@@ -56,7 +60,8 @@ public:
 
     virtual void clear() = 0;
 
-    virtual void retranslateUi() = 0;
+    virtual void polish() {};
+    virtual int minWidth () const { return 0; }
 
 signals:
 
@@ -86,7 +91,7 @@ public:
 
     virtual void clear();
 
-    virtual void retranslateUi();
+    virtual void polish();
 
 private slots:
 
@@ -100,6 +105,46 @@ private:
 
     /* Private member vars */
     QITreeWidget *mTwSelector;
+};
+
+class VBoxSettingsToolBarSelector: public VBoxSettingsSelector
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxSettingsToolBarSelector (QWidget *aParent = NULL);
+
+    virtual QWidget *widget() const;
+
+    virtual void addItem (const QIcon &aIcon, const QString &aText, int aIndex, const QString &aLink);
+    virtual QString itemText (int aId) const;
+
+    virtual int currentId() const;
+    virtual int idToIndex (int aId) const;
+    virtual int indexToId (int aIndex) const;
+    virtual int linkToId (const QString &aLink) const;
+    virtual void selectById (int aId);
+    virtual void setVisibleById (int aId, bool aShow);
+
+    virtual void clear();
+
+    virtual int minWidth() const;
+
+private slots:
+
+    void settingsGroupChanged (QAction *aAction);
+
+private:
+
+    int findId (int aIndex) const;
+    int findIndex (int aId) const;
+    int findLink (const QString &aLink) const;
+    SelectorAction* findAction (int aId) const;
+
+    /* Private member vars */
+    VBoxToolBar *mTbSelector;
+    QActionGroup *mActionGroup;
 };
 
 #endif /* __VBoxSettingsSelector_h__ */

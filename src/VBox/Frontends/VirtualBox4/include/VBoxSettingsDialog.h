@@ -57,6 +57,9 @@ protected:
 
     virtual void retranslateUi();
 
+    virtual QString dialogTitle() const = 0;
+    QString titleExtension() const;
+
     void setWarning (const QString &aWarning);
 
     VBoxSettingsSelector *mSelector;

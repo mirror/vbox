@@ -23,6 +23,7 @@
 #include "VBoxSettingsSelector.h"
 #include "VBoxSettingsUtils.h"
 #include "QITreeWidget.h"
+#include "VBoxToolBar.h"
 
 enum
 {
@@ -93,11 +94,9 @@ void VBoxSettingsTreeSelector::addItem (const QIcon &aIcon,
                                         int aId, 
                                         const QString &aLink)
 {
-    QTreeWidgetItem *item = NULL;
-
-    item = new QTreeWidgetItem (mTwSelector, QStringList() << QString (" %1 ").arg (aText)
-                                                           << idToString (aId)
-                                                           << aLink);
+    QTreeWidgetItem *item = new QTreeWidgetItem (mTwSelector, QStringList() << QString (" %1 ").arg (aText)
+                                                                            << idToString (aId)
+                                                                            << aLink);
     item->setIcon (treeWidget_Category, aIcon);
 }
 
@@ -162,7 +161,7 @@ void VBoxSettingsTreeSelector::clear()
     mTwSelector->clear();
 }
 
-void VBoxSettingsTreeSelector::retranslateUi()
+void VBoxSettingsTreeSelector::polish()
 {
     mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)
         ->sizeHintForColumn (treeWidget_Category) + 2 * mTwSelector->frameWidth());
@@ -214,5 +213,184 @@ QTreeWidgetItem* VBoxSettingsTreeSelector::findItem (QTreeWidget *aView,
 QString VBoxSettingsTreeSelector::idToString (int aId) const
 {
     return QString ("%1").arg (aId, 2, 10, QLatin1Char ('0'));
+}
+
+/* VBoxSettingsToolBarSelector */
+
+class SelectorAction: public QAction
+{
+public:
+    SelectorAction (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, QObject *aParent)
+        : QAction (aIcon, aText, aParent)
+        , mId (aId)
+        , mLink (aLink)
+    {
+        setCheckable (true);
+    }
+
+    int id() const { return mId; }
+    QString link() const { return mLink; }
+
+private:
+    int mId;
+    QString mLink;
+};
+
+VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = NULL */)
+    :VBoxSettingsSelector (aParent)
+{
+    /* Init the toolbar */
+    mTbSelector = new VBoxToolBar (aParent);
+    mTbSelector->setUsesTextLabel (true);
+    mTbSelector->setUsesBigPixmaps (true);
+    /* Init the action group for house keeping */
+    mActionGroup = new QActionGroup (this);
+    mActionGroup->setExclusive (true);
+    connect (mActionGroup, SIGNAL (triggered (QAction*)),
+             this, SLOT (settingsGroupChanged (QAction*)));
+}
+
+QWidget *VBoxSettingsToolBarSelector::widget() const
+{
+    return mTbSelector;
+}
+
+void VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon, 
+                                        const QString &aText, 
+                                        int aId, 
+                                        const QString &aLink)
+{
+    SelectorAction *action = new SelectorAction (aIcon, aText, aId, aLink, this);
+
+    mActionGroup->addAction (action);
+    mTbSelector->addAction (action);
+}
+
+QString VBoxSettingsToolBarSelector::itemText (int aId) const
+{
+    QString result;
+    SelectorAction *action = findAction (aId);
+    if (action)
+        result = action->text();
+    return result;
+}
+
+int VBoxSettingsToolBarSelector::currentId () const
+{
+    SelectorAction *action = static_cast<SelectorAction*> (mActionGroup->checkedAction());
+    int id = -1;
+    if (action)
+        id = action->id();
+    return id;
+}
+
+int VBoxSettingsToolBarSelector::idToIndex (int aId) const
+{
+    return findIndex (aId);
+}
+
+int VBoxSettingsToolBarSelector::indexToId (int aIndex) const
+{
+    return findId (aIndex);
+}
+
+int VBoxSettingsToolBarSelector::linkToId (const QString &aLink) const
+{
+    return findLink (aLink);
+}
+
+
+void VBoxSettingsToolBarSelector::selectById (int aId)
+{
+    SelectorAction *action = findAction (aId);
+
+    if (action)
+        action->trigger();
+}
+
+void VBoxSettingsToolBarSelector::setVisibleById (int aId, bool aShow)
+{
+    SelectorAction *action = findAction (aId);
+
+    if (action)
+        action->setVisible (aShow);
+}
+
+void VBoxSettingsToolBarSelector::clear()
+{
+    QList<QAction*> list = mActionGroup->actions();
+    foreach (QAction *action, list)
+       delete action; 
+}
+
+int VBoxSettingsToolBarSelector::minWidth() const
+{
+    return mTbSelector->sizeHint().width() + 2 * 10;
+}
+
+void VBoxSettingsToolBarSelector::settingsGroupChanged (QAction *aAction)
+{
+    SelectorAction *action = static_cast<SelectorAction*> (aAction);
+    if (action)
+        emit categoryChanged (action->id());
+}
+
+int VBoxSettingsToolBarSelector::findId (int aIndex) const
+{
+    int id = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    if (aIndex > -1 && 
+        aIndex < list.count())
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at (aIndex));
+        if (sa)
+            id = sa->id();
+    }
+    return id;
+}
+
+int VBoxSettingsToolBarSelector::findIndex (int aId) const
+{
+    int index = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    for (int a = 0; a < list.count(); ++a)
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
+        if (sa &&
+            sa->id() == aId)
+        {
+            index = a;
+            break;
+        }
+    }
+    return index;
+}
+
+int VBoxSettingsToolBarSelector::findLink (const QString &aLink) const
+{
+    int id = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    for (int a = 0; a < list.count(); ++a)
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
+        if (sa &&
+            sa->link() == aLink)
+        {
+            id = sa->id();
+            break;
+        }
+    }
+    return id;
+}
+
+SelectorAction* VBoxSettingsToolBarSelector::findAction (int aId) const
+{
+    int index = findIndex (aId);
+    SelectorAction *sa = NULL;
+    QList<QAction*> list = mActionGroup->actions();
+    if (index > -1 &&
+        index < list.count())
+        sa = static_cast<SelectorAction*> (list.at (index));
+    return sa;
 }
 

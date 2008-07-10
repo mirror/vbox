@@ -56,6 +56,8 @@ protected:
 
     void retranslateUi();
 
+    QString dialogTitle() const;
+
 private:
 
     void updateAvailability();
@@ -101,6 +103,8 @@ protected:
 
     void retranslateUi();
 
+    QString dialogTitle() const;
+
 private slots:
 
     void onMediaEnumerationDone();
@@ -110,7 +114,6 @@ private:
 
     void updateAvailability();
     VBoxSettingsPage* attachPage (VBoxSettingsPage *aPage);
-    QString dialogTitle() const;
 
     CMachine mMachine;
     bool mAllowResetFirstRunFlag;
