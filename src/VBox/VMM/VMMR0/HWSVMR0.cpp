@@ -262,9 +262,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      * CR0/3/4 writes must be intercepted for obvious reasons.
      */
     if (!pVM->hwaccm.s.fNestedPaging)
-        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
     else
-        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4) | RT_BIT(8);
 
     /* Intercept all DRx reads and writes. */
     pVMCB->ctrl.u16InterceptRdDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
@@ -1126,15 +1126,6 @@ ResumeExecution:
     pCtx->dr6 = pVMCB->guest.u64DR6;
     pCtx->dr7 = pVMCB->guest.u64DR7;
 
-    /* Update the APIC if the cached TPR value has changed. */
-    if (    (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        &&  pVMCB->ctrl.IntCtrl.n.u8VTPR != u8LastVTPR)
-    {
-        rc = PDMApicSetTPR(pVM, pVMCB->ctrl.IntCtrl.n.u8VTPR);
-        AssertRC(rc);
-        u8LastVTPR = pVMCB->ctrl.IntCtrl.n.u8VTPR;
-    }
-
     /* Check if an injected event was interrupted prematurely. */
     pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
     if (    pVMCB->ctrl.ExitIntInfo.n.u1Valid
@@ -1531,6 +1522,8 @@ ResumeExecution:
             break;
         case 4:
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
+            break;
+        case 8:
             break;
         default:
             AssertFailed();
