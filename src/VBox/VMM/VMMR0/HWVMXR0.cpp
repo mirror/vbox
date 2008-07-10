@@ -280,6 +280,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     {
         /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+        Assert(pVM->hwaccm.s.vmx.pAPIC);
     }
     else
         /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
@@ -462,7 +463,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
     if (pVM->hwaccm.s.Event.fPending)
     {
-        Log(("Reinjecting event %VX64 %08x at %VGv\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, pCtx->rip));
+        Log(("Reinjecting event %VX64 %08x at %VGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
         rc = VMXR0InjectEvent(pVM, pCtx, pVM->hwaccm.s.Event.intInfo, 0, pVM->hwaccm.s.Event.errCode);
         AssertRC(rc);
@@ -1793,6 +1794,7 @@ ResumeExecution:
                 break;
             case 8:
                 /* CR8 contains the APIC TPR */
+                Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
                 break;
 
             default:
