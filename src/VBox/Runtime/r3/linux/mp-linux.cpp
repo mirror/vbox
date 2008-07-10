@@ -66,8 +66,7 @@ bool rtLinuxSysFsExistsV(const char *pszFormat, va_list va)
     static const size_t cchPrefix = sizeof("/sys/") - 1;
     strcpy(szFilename, "/sys/");
     size_t cch = RTStrPrintfV(&szFilename[cchPrefix], sizeof(szFilename) - cchPrefix, pszFormat, va);
-    NOREF(cch);
-    Assert(cch < sizeof(szFilename) - cchPrefix - 1);
+    Assert(cch < sizeof(szFilename) - cchPrefix - 1); NOREF(cch);
 
     struct stat st;
     bool fRet = stat(szFilename, &st) == 0;
