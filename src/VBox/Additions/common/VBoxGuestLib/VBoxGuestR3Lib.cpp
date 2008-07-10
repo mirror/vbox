@@ -60,6 +60,8 @@ extern "C" int xf86ioctl(int, unsigned long, pointer);
 /** The VBoxGuest device handle. */
 #ifdef VBOX_VBGLR3_XFREE86
 static int g_File = -1;
+#elif defined(RT_OS_WINDOWS)
+static HANDLE g_hFile = INVALID_HANDLE_VALUE;
 #else
 static RTFILE g_File = NIL_RTFILE;
 #endif
@@ -84,20 +86,31 @@ VBGLR3DECL(int) VbglR3Init(void)
          * However it will work fine for single threaded or otherwise serialized
          * processed calling us more than once.
          */
-#ifndef VBOX_VBGLR3_XFREE86
+#ifndef RT_OS_WINDOWS
+    #ifndef VBOX_VBGLR3_XFREE86
         if (g_File == NIL_RTFILE)
-#else
+    #else
         if (g_File == -1)
-#endif
+    #endif
             return VERR_INTERNAL_ERROR;
+#else
+    if (g_hFile == NULL)
+        return VERR_INTERNAL_ERROR;
+#endif
         return VINF_SUCCESS;
     }
-#ifndef VBOX_VBGLR3_XFREE86
-    if (g_File != NIL_RTFILE)
+
+#ifndef RT_OS_WINDOWS
+    #ifndef VBOX_VBGLR3_XFREE86
+        if (g_File != NIL_RTFILE)
+    #else
+        if (g_File != -1)
+    #endif
+            return VERR_INTERNAL_ERROR;
 #else
-    if (g_File != -1)
-#endif
+    if (g_hFile != INVALID_HANDLE_VALUE)
         return VERR_INTERNAL_ERROR;
+#endif
 
 #if defined(RT_OS_OS2)
     /*
@@ -191,8 +204,25 @@ VBGLR3DECL(int) VbglR3Init(void)
 
     g_File = File;
 
+#elif defined(RT_OS_WINDOWS)
+
+    /* 
+     * Open a handle to the shadow device.
+     */
+    g_hFile = CreateFile(VBOXGUEST_DEVICE_NAME,
+                         GENERIC_READ | GENERIC_WRITE,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                         NULL,
+                         OPEN_EXISTING,
+                         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                         NULL);
+
+    if (g_hFile == INVALID_HANDLE_VALUE)
+        return VERR_OPEN_FAILED;
+
 #else
-    /* the default implemenation. (linux, solaris) */
+
+    /* The default implemenation. (linux, solaris) */
     RTFILE File;
     int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
@@ -222,17 +252,21 @@ VBGLR3DECL(void) VbglR3Term(void)
     uint32_t cInits = ASMAtomicDecU32(&g_cInits);
     if (cInits > 0)
         return;
-#ifndef VBOX_VBGLR3_XFREE86
-    AssertReturnVoid(!cInits);
-    RTFILE File = g_File;
-    g_File = NIL_RTFILE;
-    AssertReturnVoid(File != NIL_RTFILE);
-
+#ifndef RT_OS_WINDOWS
+    #ifndef VBOX_VBGLR3_XFREE86
+        AssertReturnVoid(!cInits);
+        RTFILE File = g_File;
+        g_File = NIL_RTFILE;
+        AssertReturnVoid(File != NIL_RTFILE);
+    #else
+        int File = g_File;
+        g_File = -1;
+        if (File == -1)
+            return;
+    #endif
 #else
-    int File = g_File;
-    g_File = -1;
-    if (File == -1)
-        return;
+    /* Nothing to do here yet. */
+
 #endif
 
 #if defined(RT_OS_OS2)
@@ -242,6 +276,13 @@ VBGLR3DECL(void) VbglR3Term(void)
 #elif defined(VBOX_VBGLR3_XFREE86)
     xf86close(File);
     File = -1;
+
+#elif defined(RT_OS_WINDOWS)
+   if (INVALID_HANDLE_VALUE != g_hFile)
+   {
+       CloseHandle (g_hFile);
+       g_hFile = INVALID_HANDLE_VALUE;
+   }
 
 #else
     int rc = RTFileClose(File);
@@ -290,6 +331,15 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         rc = errno;
         return RTErrConvertFromErrno(rc);
     }
+    return VINF_SUCCESS;
+
+#elif defined(RT_OS_WINDOWS)
+
+    DWORD cbReturned = 0;
+    if (FALSE == DeviceIoControl(g_hFile, iFunction, pvData, cbData,
+                                 pvData, cbData, &cbReturned, NULL))
+        return GetLastError();      /* @todo Add better error lookup. */
+
     return VINF_SUCCESS;
 
 #elif defined(VBOX_VBGLR3_XFREE86)
