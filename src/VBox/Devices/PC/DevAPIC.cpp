@@ -294,6 +294,7 @@ static void apic_bus_deliver(APICState *s, uint32_t deliver_bitmask, uint8_t del
 {
 #endif /* VBOX */
 
+    LogFlow(("apic_bus_deliver mask=%x mode=%x vector=%x polarity=%x trigger_mode=%x\n", deliver_bitmask, delivery_mode, vector_num, polarity, trigger_mode));
     switch (delivery_mode) {
         case APIC_DM_LOWPRI:
         case APIC_DM_FIXED:
@@ -562,6 +563,7 @@ static void apic_update_tpr(APICState *s, uint32_t val)
 
 static void apic_set_irq(APICState *s, int vector_num, int trigger_mode)
 {
+    LogFlow(("apic_set_irq vector=%x, trigger_mode=%x\n", vector_num, trigger_mode));
     set_bit(s->irr, vector_num);
     if (trigger_mode)
         set_bit(s->tmr, vector_num);
@@ -577,6 +579,7 @@ static void apic_eoi(APICState *s)
     if (isrv < 0)
         return;
     reset_bit(s->isr, isrv);
+    LogFlow(("apic_eoi isrv=%x\n", isrv));
     /* XXX: send the EOI packet to the APIC bus to allow the I/O APIC to
             set the remote IRR bit for level triggered interrupts. */
     apic_update_irq(s);
@@ -650,6 +653,7 @@ static void apic_deliver(APICState *s, uint8_t dest, uint8_t dest_mode,
     APICState *apic_iter;
 #endif /* !VBOX */
 
+    LogFlow(("apic_deliver dest=%x dest_mode=%x delivery_mode=%x vector_num=%x polarity=%x trigger_mode=%x\n", dest, dest_mode, delivery_mode, vector_num, polarity, trigger_mode));
     switch (delivery_mode) {
         case APIC_DM_LOWPRI:
             /* XXX: serch for focus processor, arbitration */
@@ -824,6 +828,7 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 #endif /* VBOX */
 
     if (!(s->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
+        LogFlow(("apic_timer: trigger irq\n"));
         apic_set_irq(s, s->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE);
     }
     apic_timer_update(s, s->next_time);
