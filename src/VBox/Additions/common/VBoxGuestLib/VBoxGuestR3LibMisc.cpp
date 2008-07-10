@@ -53,18 +53,25 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
  */
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
+    int rc = VINF_SUCCESS;
+
+#if defined(RT_OS_WINDOWS)
+
+    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), (char *)pch, cb);
+#else
+
     /*
      * *BSD does not accept more than 4KB per ioctl request,
      * so, split it up into 2KB chunks.
      */
 #define STEP 2048
-    int rc = VINF_SUCCESS;
     for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
         size_t cbStep = RT_MIN(cb - off, STEP);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
     }
 #undef STEP
+#endif
     return rc;
 }
 
@@ -78,10 +85,18 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
  */
 VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 {
+
+#if defined(RT_OS_WINDOWS)
+
+    /* @todo Not yet implemented. */
+    return VINF_SUCCESS;
+#else
+
     VBoxGuestFilterMaskInfo Info;
     Info.u32OrMask = fOr;
     Info.u32NotMask = fNot;
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
+#endif
 }
 
 

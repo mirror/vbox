@@ -97,8 +97,10 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
 	VBoxGuestR3LibVideo.cpp
-ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack.
- VBoxGuestR3Lib_SOURCES   = VBoxGuestR3Lib.cpp
+ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
+ VBoxGuestR3Lib_SOURCES   = \
+	VBoxGuestR3Lib.cpp \
+	VBoxGuestR3LibMisc.cpp
 endif
 
 
