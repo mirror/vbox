@@ -325,7 +325,7 @@
 #define VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE                   0x4018
 #define VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH                        0x401A
 /* Optional */
-#define VMX_VMCS_CTRL_TPR_TRESHOLD                              0x401C
+#define VMX_VMCS_CTRL_TPR_THRESHOLD                             0x401C
 /** @} */
 
 
