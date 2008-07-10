@@ -318,6 +318,8 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
     pVMCB->ctrl.IntCtrl.n.u1VIrqMasking = 1;
+    /* Ignore the priority in the TPR; just deliver it when we tell it to. */
+    pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR   = 1; 
 
     /* Set IO and MSR bitmap addresses. */
     pVMCB->ctrl.u64IOPMPhysAddr  = pVM->hwaccm.s.svm.pIOBitmapPhys;
@@ -394,20 +396,23 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
     if (    !TRPMHasTrap(pVM)
         &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
     {
-        if (!(pCtx->eflags.u32 & X86_EFL_IF))
+        if (    !(pCtx->eflags.u32 & X86_EFL_IF)
+            ||  VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
         {
             if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
             {
-                LogFlow(("Enable irq window exit!\n"));
+                if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+                    LogFlow(("Enable irq window exit!\n"));
+                else
+                    Log(("Pending interrupt blocked at %VGv by VM_FF_INHIBIT_INTERRUPTS -> irq window exit\n", pCtx->rip));
+
                 /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
                 pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
                 pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
-                pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 1; /* ignore the priority in the TPR; just deliver it */
                 pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
             }
         }
         else
-        if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
         {
             uint8_t u8Interrupt;
 
@@ -426,8 +431,6 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
                 /* Just continue */
             }
         }
-        else
-            Log(("Pending interrupt blocked at %VGv by VM_FF_INHIBIT_INTERRUPTS!!\n", pCtx->rip));
     }
 
 #ifdef VBOX_STRICT
@@ -1432,7 +1435,6 @@ ResumeExecution:
         /* A virtual interrupt is about to be delivered, which means IF=1. */
         Log(("SVM_EXIT_VINTR IF=%d\n", pCtx->eflags.Bits.u1IF));
         pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 0;
-        pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR    = 0;
         pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0;
         goto ResumeExecution;
 

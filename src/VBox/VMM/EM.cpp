@@ -3023,7 +3023,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             UPDATE_RC();
         }
 
-        /* Replays the handler notification changes. */
+        /* Replay the handler notification changes. */
         if (VM_FF_ISSET(pVM, VM_FF_REM_HANDLER_NOTIFY))
             REMR3ReplayHandlerNotifications(pVM);
 
