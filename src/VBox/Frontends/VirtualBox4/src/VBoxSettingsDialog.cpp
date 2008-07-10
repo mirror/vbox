@@ -77,7 +77,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     mainLayout->setHorizontalSpacing (0);
 #else
     /* Create the classical tree view selector */
-    mSelector = new VBoxSettingsTreeSelector (mAllWidget);
+    mSelector = new VBoxSettingsTreeViewSelector (this);
     mainLayout->addWidget (mSelector->widget(), 0, 0, 3, 1);
     mSelector->widget()->setFocus();
 #endif
