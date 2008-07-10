@@ -1409,6 +1409,14 @@ ResumeExecution:
     AssertRC(rc);
     pCtx->eflags.u32        = val;
 
+    /* Update the APIC with the cached TPR value. */
+    if (    pCtx->msrEFER & MSR_K6_EFER_LMA
+        &&  pVM->hwaccm.s.vmx.pAPIC)
+    {
+        rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
+        AssertRC(rc);
+    }
+
     /* Take care of instruction fusing (sti, mov ss) */
     rc |= VMXReadVMCS(VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE, &val);
     uInterruptState = val;
