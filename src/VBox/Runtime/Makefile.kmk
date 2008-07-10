@@ -408,10 +408,9 @@ RuntimeR3_SOURCES.darwin = \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
-	generic/RTMpGetCurFrequency-generic.cpp \
-	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/darwin/alloc-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
+	r3/darwin/mp-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -420,7 +419,6 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
-	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \

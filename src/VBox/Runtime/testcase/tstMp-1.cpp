@@ -54,7 +54,7 @@ int main()
     RTR3Init();
     RTPrintf("tstMp-1: TESTING...\n");
 
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /*
      * Present and possible CPUs.
      */
