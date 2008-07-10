@@ -58,7 +58,7 @@ static void Usage(char *pszName)
            "     gid=GID            set the default file owner group id to GID\n"
            "     ttl=TTL            set the \"time to live\" to TID for the dentry\n"
            "     iocharset CHARSET  use the character set CHARSET for i/o operations (default utf8)\n"
-           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n");
+           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n\n");
     fprintf(stderr, "Less common used options:\n"
            "     noexec,exec,nodev,dev,nosuid,suid\n");
     exit(1);
