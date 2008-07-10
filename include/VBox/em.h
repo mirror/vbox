@@ -77,6 +77,16 @@ typedef enum EMSTATE
     EMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } EMSTATE;
 
+/*
+ * Callback handlers for instruction emulation functions.
+ */
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2_UINT32(void *pvParam1, uint64_t val2);
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2(void *pvParam1, size_t val2);
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM3(void *pvParam1, uint64_t val2, size_t val3);
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM2(void *pvParam1, uint64_t val2, RTGCUINTREG32 *pf);
+typedef FNEMULATELOCKPARAM2 *PFNEMULATELOCKPARAM2;
+typedef DECLCALLBACK(int)      FNEMULATELOCKPARAM3(void *pvParam1, uint64_t val2, size_t cb, RTGCUINTREG32 *pf);
+typedef FNEMULATELOCKPARAM3 *PFNEMULATELOCKPARAM3;
 
 /**
  * Get the current execution manager status.

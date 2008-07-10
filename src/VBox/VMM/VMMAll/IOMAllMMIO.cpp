@@ -747,6 +747,8 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
 /**
  * AND [MMIO], reg|imm
  * AND reg, [MMIO]
+ * OR [MMIO], reg|imm
+ * OR reg, [MMIO]
  *
  * Restricted implementation.
  *
@@ -758,14 +760,29 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
  * @param   pRange      Pointer MMIO range.
+ * @param   pfnEmulate  Instruction emulation function.
  */
-static int iomInterpretAND(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
+static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, PFN_EMULATE_PARAM3 pfnEmulate)
 {
     unsigned    cb = 0;
     uint64_t    uData1;
     uint64_t    uData2;
     bool        fAndWrite;
     int         rc;
+
+#ifdef LOG_ENABLED
+    const char *pszInstr;
+
+    if (pCpu->pCurInstr->opcode == OP_XOR)
+        pszInstr = "Xor";
+    else if (pCpu->pCurInstr->opcode == OP_OR)
+        pszInstr = "Or";
+    else if (pCpu->pCurInstr->opcode == OP_AND)
+        pszInstr = "And";
+    else
+        pszInstr = "OrXorAnd??";
+#endif
+
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
     {
         /* and reg, [MMIO]. */
@@ -792,7 +809,10 @@ static int iomInterpretAND(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
     if (rc == VINF_SUCCESS)
     {
         /* Emulate AND and update guest flags. */
-        uint32_t eflags = EMEmulateAnd((uint32_t *)&uData1, uData2, cb);
+        uint32_t eflags = pfnEmulate((uint32_t *)&uData1, uData2, cb);
+
+        LogFlow(("iomInterpretOrXorAnd %s result %RX64\n", pszInstr, uData1));
+
         if (fAndWrite)
             /* Store result to MMIO. */
             rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, &uData1, cb);
@@ -813,8 +833,6 @@ static int iomInterpretAND(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
 
     return rc;
 }
-
-
 
 /**
  * TEST [MMIO], reg|imm
@@ -862,6 +880,55 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         uint32_t eflags = EMEmulateAnd((uint32_t *)&uData1, uData2, cb);
         pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                               | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+        iomMMIOStatLength(pVM, cb);
+    }
+
+    return rc;
+}
+
+/**
+ * BT [MMIO], reg|imm
+ *
+ * Restricted implementation.
+ *
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Trap register frame.
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pCpu        Disassembler CPU state.
+ * @param   pRange      Pointer MMIO range.
+ */
+static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
+{
+    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+
+    uint64_t    uBit;
+    uint64_t    uData1;
+    int         rc;
+    unsigned    cb;
+
+    if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uBit, &cb))
+    {
+        /* bt [MMIO], reg|imm. */
+        rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData1, cb);
+    }
+    else
+    {
+        AssertMsgFailed(("Disassember BT problem..\n"));
+        return VERR_IOM_MMIO_HANDLER_DISASM_ERROR;
+    }
+
+    if (rc == VINF_SUCCESS)
+    {
+        /* The size of the memory operand only matters here. */
+        cb = DISGetParamSize(pCpu, &pCpu->param1);
+
+        /* Find the bit inside the faulting address */
+        uBit &= (cb*8 - 1);
+
+        pRegFrame->eflags.Bits.u1CF = (uData1 >> uBit);
         iomMMIOStatLength(pVM, cb);
     }
 
@@ -1061,8 +1128,20 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
 
         case OP_AND:
             STAM_PROFILE_START(&pVM->iom.s.StatGCInstAnd, g);
-            rc = iomInterpretAND(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateAnd);
             STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstAnd, g);
+            break;
+
+        case OP_OR:
+            STAM_PROFILE_START(&pVM->iom.s.StatGCInstOr, k);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateOr);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstOr, k);
+            break;
+
+        case OP_XOR:
+            STAM_PROFILE_START(&pVM->iom.s.StatGCInstXor, m);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateXor);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstXor, m);
             break;
 
         case OP_TEST:
@@ -1070,6 +1149,13 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
             STAM_PROFILE_START(&pVM->iom.s.StatGCInstTest, h);
             rc = iomInterpretTEST(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstTest, h);
+            break;
+
+        case OP_BT:
+            Assert(!(uErrorCode & X86_TRAP_PF_RW));
+            STAM_PROFILE_START(&pVM->iom.s.StatGCInstBt, l);
+            rc = iomInterpretBT(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstBt, l);
             break;
 
         case OP_XCHG:

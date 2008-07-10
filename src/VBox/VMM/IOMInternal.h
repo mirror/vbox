@@ -389,6 +389,9 @@ typedef struct IOM
     STAMPROFILE             StatGCInstMov;
     STAMPROFILE             StatGCInstCmp;
     STAMPROFILE             StatGCInstAnd;
+    STAMPROFILE             StatGCInstOr;
+    STAMPROFILE             StatGCInstXor;
+    STAMPROFILE             StatGCInstBt;
     STAMPROFILE             StatGCInstTest;
     STAMPROFILE             StatGCInstXchg;
     STAMPROFILE             StatGCInstStos;

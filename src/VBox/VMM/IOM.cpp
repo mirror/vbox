@@ -131,6 +131,9 @@ IOMR3DECL(int) IOMR3Init(PVM pVM)
         STAM_REG(pVM, &pVM->iom.s.StatGCInstMov,          STAMTYPE_PROFILE, "/IOM/GC/Inst/MOV",            STAMUNIT_TICKS_PER_CALL, "Profiling of the MOV instruction emulation.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstCmp,          STAMTYPE_PROFILE, "/IOM/GC/Inst/CMP",            STAMUNIT_TICKS_PER_CALL, "Profiling of the CMP instruction emulation.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstAnd,          STAMTYPE_PROFILE, "/IOM/GC/Inst/AND",            STAMUNIT_TICKS_PER_CALL, "Profiling of the AND instruction emulation.");
+        STAM_REG(pVM, &pVM->iom.s.StatGCInstOr,           STAMTYPE_PROFILE, "/IOM/GC/Inst/OR",             STAMUNIT_TICKS_PER_CALL, "Profiling of the OR instruction emulation.");
+        STAM_REG(pVM, &pVM->iom.s.StatGCInstXor,          STAMTYPE_PROFILE, "/IOM/GC/Inst/XOR",            STAMUNIT_TICKS_PER_CALL, "Profiling of the XOR instruction emulation.");
+        STAM_REG(pVM, &pVM->iom.s.StatGCInstBt,           STAMTYPE_PROFILE, "/IOM/GC/Inst/BT",             STAMUNIT_TICKS_PER_CALL, "Profiling of the BT instruction emulation.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstTest,         STAMTYPE_PROFILE, "/IOM/GC/Inst/TEST",           STAMUNIT_TICKS_PER_CALL, "Profiling of the TEST instruction emulation.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstXchg,         STAMTYPE_PROFILE, "/IOM/GC/Inst/XCHG",           STAMUNIT_TICKS_PER_CALL, "Profiling of the XCHG instruction emulation.");
         STAM_REG(pVM, &pVM->iom.s.StatGCInstStos,         STAMTYPE_PROFILE, "/IOM/GC/Inst/STOS",           STAMUNIT_TICKS_PER_CALL, "Profiling of the STOS instruction emulation.");
