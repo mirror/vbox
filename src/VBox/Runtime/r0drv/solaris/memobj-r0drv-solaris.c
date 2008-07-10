@@ -113,12 +113,12 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_LOCK:
         {
             struct as *addrSpace;
-            if (pMemSolaris->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
-                addrSpace = &kas;
-            else
+            if (pMemSolaris->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
+            {
                 addrSpace = ((proc_t *)pMemSolaris->Core.u.Lock.R0Process)->p_as;
-
-            as_pageunlock(addrSpace, pMemSolaris->ppShadowPages, pMemSolaris->Core.pv, pMemSolaris->Core.cb, S_WRITE);
+                as_pageunlock(addrSpace, pMemSolaris->ppShadowPages, pMemSolaris->Core.pv, pMemSolaris->Core.cb, S_WRITE);
+            }
+            /* Nothing to unlock for kernel addresses. */
             break;
         }
 
@@ -299,28 +299,12 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    caddr_t virtAddr = (caddr_t)((uintptr_t)pv & (uintptr_t)PAGEMASK);
-    page_t **ppl;
+    /* Nothing to do here for kernel addresses. */
 
-    /* Lock down kernel pages */
-    int rc = as_pagelock(&kas, &ppl, virtAddr, cb, S_WRITE);
-    if (!rc)
-    {
-        if (ppl)
-        {
-            pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;   /* means kernel, see rtR0MemObjNativeFree() */
-            pMemSolaris->ppShadowPages = ppl;
-            *ppMem = &pMemSolaris->Core;
-            return VINF_SUCCESS;
-        }
-
-        as_pageunlock(&kas, ppl, virtAddr, cb, S_WRITE);
-        cmn_err(CE_NOTE, "rtR0MemObjNativeLockKernel: failed to get shadow pages\n");
-    }
-    else
-        cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: as_pagelock failed rc=%d\n", rc);
-    rtR0MemObjDelete(&pMemSolaris->Core);
-    return VERR_LOCK_FAILED;
+    pMemSolaris->Core.u.Lock.R0Process = RTR0ProcHandleSelf();
+    pMemSolaris->ppShadowPages = NULL;
+    *ppMem = &pMemSolaris->Core;
+    return VINF_SUCCESS;    
 }
 
 
