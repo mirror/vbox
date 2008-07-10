@@ -54,9 +54,6 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
     setWindowIcon (QIcon (":/global_settings_16px.png"));
 #endif /* Q_WS_MAC */
 
-    /* Applying language settings */
-    retranslateUi();
-
     /* Creating settings pages */
     attachPage (new VBoxGLSettingsGeneral());
 
@@ -70,6 +67,9 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Update Selector with available items */
     updateAvailability();
+
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxGLSettingsDlg::getFrom()
@@ -106,7 +106,7 @@ void VBoxGLSettingsDlg::putBackTo()
 void VBoxGLSettingsDlg::retranslateUi()
 {
     /* Set dialog's name */
-    setWindowTitle (tr ("VirtualBox Preferences"));
+    setWindowTitle (dialogTitle());
 
     /* Remember old index */
     int cid = mSelector->currentId();
@@ -132,7 +132,7 @@ void VBoxGLSettingsDlg::retranslateUi()
 #endif
 
     /* Translate the selector */
-    mSelector->retranslateUi();
+    mSelector->polish();
     
     VBoxSettingsDialog::retranslateUi();
 
@@ -141,6 +141,11 @@ void VBoxGLSettingsDlg::retranslateUi()
 
     /* Update Selector with available items */
     updateAvailability();
+}
+
+QString VBoxGLSettingsDlg::dialogTitle() const
+{
+    return tr ("VirtualBox - %1").arg (titleExtension());
 }
 
 VBoxSettingsPage* VBoxGLSettingsDlg::attachPage (VBoxSettingsPage *aPage)
@@ -191,9 +196,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* Common */
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
              this, SLOT (onMediaEnumerationDone()));
-
-    /* Applying language settings */
-    retranslateUi();
 
     /* Creating settings pages */
     VBoxSettingsPage *page = 0;
@@ -254,6 +256,8 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
             }
         }
     }
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
@@ -375,7 +379,7 @@ void VBoxVMSettingsDlg::retranslateUi()
                         tr ("Remote Display"), VRDPId, "#vrdp");
 
     /* Translate the selector */
-    mSelector->retranslateUi();
+    mSelector->polish();
     
     VBoxSettingsDialog::retranslateUi();
 
@@ -390,6 +394,15 @@ void VBoxVMSettingsDlg::retranslateUi()
     foreach (QIWidgetValidator *wval, l)
         if (!wval->isValid())
             revalidate (wval);
+}
+
+QString VBoxVMSettingsDlg::dialogTitle() const
+{
+    QString dialogTitle;
+    if (!mMachine.isNull())
+        dialogTitle = tr ("%1 - %2").arg (mMachine.GetName())
+                                    .arg (titleExtension());
+    return dialogTitle;
 }
 
 void VBoxVMSettingsDlg::onMediaEnumerationDone()
@@ -418,14 +431,6 @@ VBoxSettingsPage* VBoxVMSettingsDlg::attachPage (VBoxSettingsPage *aPage)
     aPage->setOrderAfter (mSelector->widget());
 
     return aPage;
-}
-
-QString VBoxVMSettingsDlg::dialogTitle() const
-{
-    QString dialogTitle;
-    if (!mMachine.isNull())
-        dialogTitle = tr ("%1 - Settings").arg (mMachine.GetName());
-    return dialogTitle;
 }
 
 void VBoxVMSettingsDlg::updateAvailability()

@@ -26,6 +26,7 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
+#include "VBoxToolBar.h"
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
@@ -35,6 +36,11 @@
 #include <QTimer>
 #include <QPushButton>
 #include <QStackedWidget>
+
+
+#if MAC_LEOPARD_STYLE
+# define VBOX_GUI_WITH_TOOLBAR_SETTINGS
+#endif /* MAC_LEOPARD_STYLE */
 
 VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QIMainDialog> (aParent)
@@ -60,11 +66,21 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     f.setPointSize (f.pointSize() + 2);
     mLbTitle->setFont (f);
 
+    QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    mSelector = new VBoxSettingsToolBarSelector (this);
+    setUnifiedTitleAndToolBarOnMac (true);
+    addToolBar (qobject_cast<QToolBar*> (mSelector->widget()));
+    /* No title in this mode, we change the title of the window. */
+    mLbTitle->hide();
+    mainLayout->setColumnMinimumWidth (0, 0);
+    mainLayout->setHorizontalSpacing (0);
+#else
     /* Create the classical tree view selector */
     mSelector = new VBoxSettingsTreeSelector (mAllWidget);
-    QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
     mainLayout->addWidget (mSelector->widget(), 0, 0, 3, 1);
     mSelector->widget()->setFocus();
+#endif
 
     /* Creating stack of pages */
     mStack = new QStackedWidget (mWtStackHandler);
@@ -164,34 +180,47 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
     }
 }
 
+QString VBoxSettingsDialog::titleExtension() const
+{
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    return mSelector->itemText (mSelector->currentId());
+#else
+    return tr ("Settings");
+#endif
+}
+
 void VBoxSettingsDialog::categoryChanged (int aId)
 {
 //#ifndef Q_WS_MAC
 #if 1
-        mLbTitle->setText (mSelector->itemText (aId));
-        mStack->setCurrentIndex (aId);
+# ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    setWindowTitle (dialogTitle());
+# endif
+    mLbTitle->setText (mSelector->itemText (aId));
+    mStack->setCurrentIndex (aId);
 #else /* Q_WS_MAC */
-        /* We will update at once later */
-        setUpdatesEnabled (false);
-        /* Set all tab size policies to ignored */
-        for (int i = 0; i < mStack->count(); ++i)
-            mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
-        /* Set the size policy of the current tab to preferred */
-        if (mStack->widget (id))
-            mStack->widget (id)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
-        /* Set the new current tab */
-        mLbTitle->setText (::path (aItem));
-        mStack->setCurrentIndex (id);
-        /* Activate the new layout */
-        layout()->activate();
-        setUpdatesEnabled (true);
-//        mAllWidget->hide();
-        /* Play the resize animation */
-        ::darwinWindowAnimateResize (this, QRect (x(), y(), 
-                                                  minimumSizeHint().width(), minimumSizeHint().height()));
-//        mAllWidget->show();
-        /* Set the new size to Qt also */
-        setFixedSize (minimumSizeHint());
+    int index = mSelector->idToIndex (aId);
+    /* We will update at once later */
+    setUpdatesEnabled (false);
+    /* Set all tab size policies to ignored */
+    for (int i = 0; i < mStack->count(); ++i)
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    /* Set the size policy of the current tab to preferred */
+    if (mStack->widget (index))
+        mStack->widget (index)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    /* Set the new current tab */
+    mLbTitle->setText (::path (aItem));
+    mStack->setCurrentIndex (index);
+    /* Activate the new layout */
+    layout()->activate();
+    setUpdatesEnabled (true);
+    //        mAllWidget->hide();
+    /* Play the resize animation */
+    ::darwinWindowAnimateResize (this, QRect (x(), y(), 
+                                              minimumSizeHint().width(), minimumSizeHint().height()));
+    //        mAllWidget->show();
+    /* Set the new size to Qt also */
+    setFixedSize (minimumSizeHint());
 #endif /* !Q_WS_MAC */
 }
 
@@ -302,7 +331,11 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
     mPolished = true;
 
     /* Resize to the minimum possible size */
-    resize (minimumSize());
+    int minWidth = mSelector->minWidth();
+    QSize s = minimumSize();
+    if (minWidth > s.width())
+        s.setWidth (minWidth);
+    resize (s);
 
     VBoxGlobal::centerWidget (this, parentWidget());
 }
