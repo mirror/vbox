@@ -23,10 +23,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef RT_OS_OS2
+#if defined(RT_OS_WINDOWS)
+# include <Windows.h>
+
+#elif defined(RT_OS_OS2)
 # define INCL_BASE
 # define INCL_ERRORS
 # include <os2.h>
+
 #elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -86,33 +90,43 @@ VBGLR3DECL(int) VbglR3Init(void)
          * However it will work fine for single threaded or otherwise serialized
          * processed calling us more than once.
          */
-#ifndef RT_OS_WINDOWS
-    #ifndef VBOX_VBGLR3_XFREE86
+#ifdef RT_OS_WINDOWS
+        if (g_hFile == INVALID_HANDLE_VALUE)
+#elif !defined (VBOX_VBGLR3_XFREE86)
         if (g_File == NIL_RTFILE)
-    #else
-        if (g_File == -1)
-    #endif
-            return VERR_INTERNAL_ERROR;
 #else
-    if (g_hFile == NULL)
-        return VERR_INTERNAL_ERROR;
+        if (g_File == -1)
 #endif
+            return VERR_INTERNAL_ERROR;
         return VINF_SUCCESS;
     }
-
-#ifndef RT_OS_WINDOWS
-    #ifndef VBOX_VBGLR3_XFREE86
-        if (g_File != NIL_RTFILE)
-    #else
-        if (g_File != -1)
-    #endif
-            return VERR_INTERNAL_ERROR;
-#else
+#if defined(RT_OS_WINDOWS)
     if (g_hFile != INVALID_HANDLE_VALUE)
-        return VERR_INTERNAL_ERROR;
+#elif !defined(VBOX_VBGLR3_XFREE86)
+    if (g_File != NIL_RTFILE)
+#else
+    if (g_File != -1)
 #endif
+        return VERR_INTERNAL_ERROR;
 
-#if defined(RT_OS_OS2)
+#if defined(RT_OS_WINDOWS)
+    /*
+     * Have to use CreateFile here as we want to specify FILE_FLAG_OVERLAPPED
+     * and possible some other bits not availble thru iprt/file.h.
+     */
+    HANDLE hFile = CreateFile(VBOXGUEST_DEVICE_NAME,
+                              GENERIC_READ | GENERIC_WRITE,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                              NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE)
+        return VERR_OPEN_FAILED;
+    g_hFile = hFile;
+
+#elif defined(RT_OS_OS2)
     /*
      * We might wish to compile this with Watcom, so stick to
      * the OS/2 APIs all the way. And in any case we have to use
@@ -163,15 +177,9 @@ VBGLR3DECL(int) VbglR3Init(void)
     }
     g_File = hf;
 
-#elif defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_FREEBSD)
-    int File = xf86open(VBOXGUEST_DEVICE_NAME, XF86_O_RDWR);
-    if (File == -1)
-        return VERR_OPEN_FAILED;
-    g_File = File;
-
 #elif defined(RT_OS_FREEBSD)
     /*
-     * Try open the BSD device.
+     * Try open the BSD device. The device cloning makes this a bit of work.
      */
 # if defined(VBOX_VBGLR3_XFREE86)
     int File = 0;
@@ -204,21 +212,11 @@ VBGLR3DECL(int) VbglR3Init(void)
 
     g_File = File;
 
-#elif defined(RT_OS_WINDOWS)
-
-    /* 
-     * Open a handle to the shadow device.
-     */
-    g_hFile = CreateFile(VBOXGUEST_DEVICE_NAME,
-                         GENERIC_READ | GENERIC_WRITE,
-                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                         NULL,
-                         OPEN_EXISTING,
-                         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                         NULL);
-
-    if (g_hFile == INVALID_HANDLE_VALUE)
+#elif defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_FREEBSD)
+    int File = xf86open(VBOXGUEST_DEVICE_NAME, XF86_O_RDWR);
+    if (File == -1)
         return VERR_OPEN_FAILED;
+    g_File = File;
 
 #else
 
@@ -249,45 +247,45 @@ VBGLR3DECL(int) VbglR3Init(void)
 
 VBGLR3DECL(void) VbglR3Term(void)
 {
+    /*
+     * Decrement the reference count and see if we're the last one out.
+     */
     uint32_t cInits = ASMAtomicDecU32(&g_cInits);
     if (cInits > 0)
         return;
-#ifndef RT_OS_WINDOWS
-    #ifndef VBOX_VBGLR3_XFREE86
-        AssertReturnVoid(!cInits);
-        RTFILE File = g_File;
-        g_File = NIL_RTFILE;
-        AssertReturnVoid(File != NIL_RTFILE);
-    #else
-        int File = g_File;
-        g_File = -1;
-        if (File == -1)
-            return;
-    #endif
-#else
-    /* Nothing to do here yet. */
+#if !defined(VBOX_VBGLR3_XFREE86)
+    AssertReturnVoid(!cInits);
 
-#endif
+# if defined(RT_OS_WINDOWS)
+    HANDLE hFile = g_hFile;
+    g_hFile = INVALID_HANDLE_VALUE;
+    AssertReturnVoid(hFile != INVALID_HANDLE_VALUE);
+    BOOL fRc = CloseHandle(hFile);
+    Assert(fRc); NOREF(fRc);
 
-#if defined(RT_OS_OS2)
+# elif defined(RT_OS_OS2)
+
+    RTFILE File = g_File;
+    g_File = NIL_RTFILE;
+    AssertReturnVoid(File != NIL_RTFILE);
     APIRET rc = DosClose(File);
     AssertMsg(!rc, ("%ld\n", rc));
 
-#elif defined(VBOX_VBGLR3_XFREE86)
-    xf86close(File);
-    File = -1;
-
-#elif defined(RT_OS_WINDOWS)
-   if (INVALID_HANDLE_VALUE != g_hFile)
-   {
-       CloseHandle (g_hFile);
-       g_hFile = INVALID_HANDLE_VALUE;
-   }
-
-#else
+# else /* The IPRT case. */
+    RTFILE File = g_File;
+    g_File = NIL_RTFILE;
+    AssertReturnVoid(File != NIL_RTFILE);
     int rc = RTFileClose(File);
     AssertRC(rc);
-#endif
+# endif
+
+#else  /* VBOX_VBGLR3_XFREE86 */
+    int File = g_File;
+    g_File = -1;
+    if (File == -1)
+        return;
+    xf86close(File);
+#endif /* VBOX_VBGLR3_XFREE86 */
 }
 
 
@@ -307,7 +305,21 @@ VBGLR3DECL(void) VbglR3Term(void)
  */
 int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 {
-#ifdef RT_OS_OS2
+#if defined(RT_OS_WINDOWS)
+    DWORD cbReturned = 0;
+    if (!DeviceIoControl(g_hFile, iFunction, pvData, cbData, pvData, cbData, &cbReturned, NULL))
+    {
+/** @todo The passing of error codes needs to be tested and fixed (as does *all* the other hosts except for
+ * OS, Michael and Ramshankar!). The idea is that the VBox status codes in ring-0 should be
+ * transfered without loss down to ring-3. However, it's not vitally important right now (obviously, since
+ * the other guys has been ignoring it for 1+ years now). */
+        DWORD LastErr = GetLastError();
+        return RTErrConvertFromWin32(LastErr);
+    }
+
+    return VINF_SUCCESS;
+
+#elif defined(RT_OS_OS2)
     ULONG cbOS2Parm = cbData;
     int32_t vrc = VERR_INTERNAL_ERROR;
     ULONG cbOS2Data = sizeof(vrc);
@@ -331,15 +343,6 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         rc = errno;
         return RTErrConvertFromErrno(rc);
     }
-    return VINF_SUCCESS;
-
-#elif defined(RT_OS_WINDOWS)
-
-    DWORD cbReturned = 0;
-    if (FALSE == DeviceIoControl(g_hFile, iFunction, pvData, cbData,
-                                 pvData, cbData, &cbReturned, NULL))
-        return GetLastError();      /* @todo Add better error lookup. */
-
     return VINF_SUCCESS;
 
 #elif defined(VBOX_VBGLR3_XFREE86)
