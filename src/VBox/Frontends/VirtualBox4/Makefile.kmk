@@ -20,7 +20,14 @@
 #
 
 VBOX_WITH_REGISTRATION := 1
+
+# Ask the user to register at Sun. If this setting is disabled the user can
+# still register using the menu if desired.
 VBOX_WITH_REGISTRATION_REQUEST := 1
+
+# Show the update notifier dialog during startup. If this setting is disabled
+# the user can still register using the menu if desired.
+VBOX_WITH_UPDATE_REQUEST := 1
 
 DEPTH = ../../../..
 include $(KBUILD_PATH)/header.kmk
@@ -449,6 +456,9 @@ ifdef VBOX_WITH_REGISTRATION
 endif
 ifdef VBOX_WITH_REGISTRATION_REQUEST
  VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION_REQUEST
+endif
+ifdef VBOX_WITH_UPDATE_REQUEST
+ VirtualBox4_DEFS         += VBOX_WITH_UPDATE_REQUEST
 endif
 ifdef VBOX_WITH_ALSA
  VirtualBox4_DEFS         += VBOX_WITH_ALSA
