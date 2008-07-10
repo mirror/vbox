@@ -195,6 +195,9 @@ typedef struct VBOXHDDRAW
 #define VD_CAP_CREATE_SPLIT_2G      RT_BIT(3)
 /** Supports being used as differencing image format backend. */
 #define VD_CAP_DIFF                 RT_BIT(4)
+/** The backend operates on files. The caller needs to know to handle the
+ * location appropriately. */
+#define VD_CAP_FILE                 RT_BIT(6)
 /** @}*/
 
 

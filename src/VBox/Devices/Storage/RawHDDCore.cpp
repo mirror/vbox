@@ -994,7 +994,7 @@ VBOXHDDBACKEND g_RawBackend =
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
-    VD_CAP_CREATE_FIXED,
+    VD_CAP_CREATE_FIXED | VD_CAP_FILE,
     /* pfnCheckIfValid */
     rawCheckIfValid,
     /* pfnOpen */
