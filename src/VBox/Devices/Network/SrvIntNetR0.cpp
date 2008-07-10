@@ -1493,7 +1493,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             return VERR_NOT_IMPLEMENTED;
     }
 
-    AssertMsgReturn(fFlags & ~(INTNET_OPEN_FLAGS_PUBLIC), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~(INTNET_OPEN_FLAGS_PUBLIC)), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     AssertPtrReturn(phIf, VERR_INVALID_PARAMETER);
 
     /*
