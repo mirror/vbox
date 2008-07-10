@@ -1,0 +1,528 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxUpdateDlg</class>
+ <widget class="QDialog" name="VBoxUpdateDlg" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>636</width>
+    <height>519</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>VirtualBox New Version Notifier</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../VirtualBox.qrc" >:/refresh_16px.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>0</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QStackedWidget" name="mPageStack" >
+     <property name="currentIndex" >
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="mPageUpdate" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageUpdateHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Welcome to the VirtualBox New Version Notifier!</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line11" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <widget class="QLabel" name="mLogoUpdate" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <item>
+            <widget class="QILabel" name="mTextUpdateInfo" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>&lt;p>VirtualBox can now search for the latest version available for downloading. Will you let VirtualBox to do this?&lt;/p>&lt;p>You can make VirtualBox look for the newer version now by selecting "Check for the new version available" or ask VirtualBox remind you about this in some period of time by selecting "Remind me about it" and choosing the desired period from the corresponding combo-box.&lt;/p>&lt;p>You can also run VirtualBox New Version Notifier anytime from the application Help menu.&lt;/p></string>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeType" >
+              <enum>QSizePolicy::Expanding</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>10</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRbCheck" >
+             <property name="text" >
+              <string>&amp;Check for the new version available</string>
+             </property>
+             <property name="checked" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRbRemind" >
+             <property name="text" >
+              <string>&amp;Remind me about it</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" >
+             <property name="spacing" >
+              <number>0</number>
+             </property>
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType" >
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>16</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="mCbRemindTime" />
+             </item>
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>0</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line12" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <widget class="QProgressBar" name="mPbCheck" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Fixed" hsizetype="Minimum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize" >
+            <size>
+             <width>16777215</width>
+             <height>16</height>
+            </size>
+           </property>
+           <property name="maximum" >
+            <number>0</number>
+           </property>
+           <property name="value" >
+            <number>-1</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnConfirm" >
+           <property name="text" >
+            <string>&amp;Ok</string>
+           </property>
+           <property name="default" >
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mPageFinish" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageFinishHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Search Results</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line11_3" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <widget class="QLabel" name="mLogoFinish" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <item>
+            <layout class="QVBoxLayout" >
+             <property name="spacing" >
+              <number>10</number>
+             </property>
+             <item>
+              <widget class="QILabel" name="mTextSuccessInfo" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text" >
+                <string>&lt;p>New VirtualBox %1 version available to download from:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></string>
+               </property>
+               <property name="wordWrap" >
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QILabel" name="mTextFailureInfo" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text" >
+                <string>&lt;p>Unable to obtain new version information due to network error:&lt;/p>&lt;p>&lt;b>%1&lt;/b>&lt;/p></string>
+               </property>
+               <property name="wordWrap" >
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="mTextNotFoundInfo" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text" >
+                <string>You have already installed the latest VirtualBox version, there is no newer version currently available.</string>
+               </property>
+               <property name="wordWrap" >
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QILabel" name="mTextFinishInfo" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text" >
+                <string>&lt;p>From now you can make VirtualBox automatically look for the new version every time application is being started by selecting "Check for the new version on startup" or ask VirtualBox to remind you about this in some period of time by selecting "Remind me about it" and choosing the desired period from the corresponding combo-box.&lt;/p>&lt;p>You can also run VirtualBox New Version Notifier anytime from the application Help menu.&lt;/p></string>
+               </property>
+               <property name="wordWrap" >
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeType" >
+              <enum>QSizePolicy::Expanding</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>10</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRbAutoCheck" >
+             <property name="text" >
+              <string>&amp;Check for the new version on startup</string>
+             </property>
+             <property name="checked" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRbRecheck" >
+             <property name="text" >
+              <string>&amp;Remind me about it</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" >
+             <property name="spacing" >
+              <number>0</number>
+             </property>
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType" >
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>16</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="mCbRecheckTime" />
+             </item>
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>0</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line12_3" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnFinish" >
+           <property name="text" >
+            <string>&amp;Ok</string>
+           </property>
+           <property name="default" >
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>mBtnConfirm</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
+ <connections/>
+</ui>
