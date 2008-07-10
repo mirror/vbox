@@ -561,7 +561,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (triggered()),
              &vboxGlobal(), SLOT (showRegistrationDialog()));
-    connect (helpUpdateAction, SIGNAL (activated()),
+    connect (helpUpdateAction, SIGNAL (triggered()),
              &vboxGlobal(), SLOT (showUpdateDialog()));
     connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
              helpRegisterAction, SLOT (setEnabled (bool)));
