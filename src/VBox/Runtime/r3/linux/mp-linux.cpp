@@ -109,8 +109,7 @@ int rtLinuxSysFsOpenV(const char *pszFormat, va_list va)
     static const size_t cchPrefix = sizeof("/sys/") - 1;
     strcpy(szFilename, "/sys/");
     size_t cch = RTStrPrintfV(&szFilename[cchPrefix], sizeof(szFilename) - cchPrefix, pszFormat, va);
-    NOREF(cch);
-    Assert(cch < sizeof(szFilename) - cchPrefix - 1);
+    Assert(cch < sizeof(szFilename) - cchPrefix - 1); NOREF(cch);
 
     return open(szFilename, O_RDONLY, 0);
 }
@@ -248,16 +247,16 @@ static RTCPUID rtMpLinuxMaxCpus(void)
  */
 static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
 {
-    FILE *f = fopen("/proc/cpuinfo", "r");
-    if (!f)
+    FILE *pFile = fopen("/proc/cpuinfo", "r");
+    if (!pFile)
         return 0;
 
     char sz[256];
-    char *psz = NULL;
     RTCPUID idCpuFound = NIL_RTCPUID;
-    uint32_t freq = 0;
-    while (fgets(sz, sizeof(sz), f))
+    uint32_t Frequency = 0;
+    while (fgets(sz, sizeof(sz), pFile))
     {
+        char *psz;
         if (   !strncmp(sz, "processor", 9)
             && (sz[10] == ' ' || sz[10] == '\t' || sz[10] == ':')
             && (psz = strchr(sz, ':')))
@@ -278,13 +277,13 @@ static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
             int rc = RTStrToInt64Ex(psz, &psz, 0, &v);
             if (RT_SUCCESS(rc))
             {
-                freq = v;
+                Frequency = v;
                 break;
             }
         }
     }
-    fclose(f);
-    return freq;
+    fclose(pFile);
+    return Frequency;
 }
 
 
@@ -374,11 +373,13 @@ RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
     int64_t kHz = rtLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/cpufreq/cpuinfo_cur_freq", (int)idCpu);
     if (kHz == -1)
     {
-        /* The file may be just unreadable - in that case use plan B, i.e.
+        /*
+         * The file may be just unreadable - in that case use plan B, i.e.
          * /proc/cpuinfo to get the data we want. The assumption is that if
          * cpuinfo_cur_freq doesn't exist then the speed won't change, and
          * thus cur == max. If it does exist then cpuinfo contains the
-         * current frequency. */
+         * current frequency.
+         */
         kHz = rtMpLinuxGetFrequency(idCpu) * 1000;
     }
     return (kHz + 999) / 1000;
@@ -390,8 +391,10 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
     int64_t kHz = rtLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", (int)idCpu);
     if (kHz == -1)
     {
-        /* Check if the file isn't there - if it is there, then /proc/cpuinfo
-         * would provide current frequency information, which is wrong. */
+        /*
+         * Check if the file isn't there - if it is there, then /proc/cpuinfo
+         * would provide current frequency information, which is wrong.
+         */
         if (!rtLinuxSysFsExists("devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", (int)idCpu))
             kHz = rtMpLinuxGetFrequency(idCpu) * 1000;
         else
