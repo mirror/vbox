@@ -69,13 +69,13 @@ signals:
 
 };
 
-class VBoxSettingsTreeSelector: public VBoxSettingsSelector
+class VBoxSettingsTreeViewSelector: public VBoxSettingsSelector
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSettingsTreeSelector (QWidget *aParent = NULL);
+    VBoxSettingsTreeViewSelector (QWidget *aParent = NULL);
 
     virtual QWidget *widget() const;
 
@@ -137,9 +137,6 @@ private slots:
 
 private:
 
-    int findId (int aIndex) const;
-    int findIndex (int aId) const;
-    int findLink (const QString &aLink) const;
     SelectorAction* findAction (int aId) const;
 
     /* Private member vars */

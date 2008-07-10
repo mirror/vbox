@@ -38,7 +38,7 @@ VBoxSettingsSelector::VBoxSettingsSelector (QWidget *aParent /* = NULL */)
 {
 }
 
-/* VBoxSettingsTreeSelector */
+/* VBoxSettingsTreeViewSelector */
 
 /* Returns the path to the item in the form of 'grandparent > parent > item'
  * using the text of the first column of every item. */
@@ -57,7 +57,7 @@ static QString path (QTreeWidgetItem *aItem)
     return p;
 }
 
-VBoxSettingsTreeSelector::VBoxSettingsTreeSelector (QWidget *aParent /* = NULL */)
+VBoxSettingsTreeViewSelector::VBoxSettingsTreeViewSelector (QWidget *aParent /* = NULL */)
     :VBoxSettingsSelector (aParent)
 {
     mTwSelector = new QITreeWidget (aParent);
@@ -84,12 +84,12 @@ VBoxSettingsTreeSelector::VBoxSettingsTreeSelector (QWidget *aParent /* = NULL *
              this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
 }
 
-QWidget *VBoxSettingsTreeSelector::widget() const
+QWidget *VBoxSettingsTreeViewSelector::widget() const
 {
     return mTwSelector;
 }
 
-void VBoxSettingsTreeSelector::addItem (const QIcon &aIcon, 
+void VBoxSettingsTreeViewSelector::addItem (const QIcon &aIcon, 
                                         const QString &aText, 
                                         int aId, 
                                         const QString &aLink)
@@ -100,12 +100,12 @@ void VBoxSettingsTreeSelector::addItem (const QIcon &aIcon,
     item->setIcon (treeWidget_Category, aIcon);
 }
 
-QString VBoxSettingsTreeSelector::itemText (int aId) const
+QString VBoxSettingsTreeViewSelector::itemText (int aId) const
 {
     return pagePath (idToString (aId));
 }
 
-int VBoxSettingsTreeSelector::currentId () const
+int VBoxSettingsTreeViewSelector::currentId () const
 {
     int id = -1;
     QTreeWidgetItem *item = mTwSelector->currentItem();
@@ -114,7 +114,7 @@ int VBoxSettingsTreeSelector::currentId () const
     return id;
 }
 
-int VBoxSettingsTreeSelector::idToIndex (int aId) const
+int VBoxSettingsTreeViewSelector::idToIndex (int aId) const
 {
     int index = -1;
     QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
@@ -123,7 +123,7 @@ int VBoxSettingsTreeSelector::idToIndex (int aId) const
     return index;
 }
 
-int VBoxSettingsTreeSelector::indexToId (int aIndex) const
+int VBoxSettingsTreeViewSelector::indexToId (int aIndex) const
 {
     int id = -1;
     QTreeWidgetItem *item = mTwSelector->topLevelItem (aIndex);
@@ -132,7 +132,7 @@ int VBoxSettingsTreeSelector::indexToId (int aIndex) const
     return id;
 }
 
-int VBoxSettingsTreeSelector::linkToId (const QString &aLink) const
+int VBoxSettingsTreeViewSelector::linkToId (const QString &aLink) const
 {
     int id = -1;
     QTreeWidgetItem *item = findItem (mTwSelector, aLink, treeWidget_Link);
@@ -142,26 +142,26 @@ int VBoxSettingsTreeSelector::linkToId (const QString &aLink) const
 }
 
 
-void VBoxSettingsTreeSelector::selectById (int aId)
+void VBoxSettingsTreeViewSelector::selectById (int aId)
 {
     QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
     if (item)
         mTwSelector->setCurrentItem (item);
 }
 
-void VBoxSettingsTreeSelector::setVisibleById (int aId, bool aShow)
+void VBoxSettingsTreeViewSelector::setVisibleById (int aId, bool aShow)
 {
     QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Category);
     if (item)
         item->setHidden (aShow);
 }
 
-void VBoxSettingsTreeSelector::clear()
+void VBoxSettingsTreeViewSelector::clear()
 {
     mTwSelector->clear();
 }
 
-void VBoxSettingsTreeSelector::polish()
+void VBoxSettingsTreeViewSelector::polish()
 {
     mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)
         ->sizeHintForColumn (treeWidget_Category) + 2 * mTwSelector->frameWidth());
@@ -174,7 +174,7 @@ void VBoxSettingsTreeSelector::polish()
     mTwSelector->addTopBottomMarginToItems (12);
 }
 
-void VBoxSettingsTreeSelector::settingsGroupChanged (QTreeWidgetItem *aItem,
+void VBoxSettingsTreeViewSelector::settingsGroupChanged (QTreeWidgetItem *aItem,
                                                      QTreeWidgetItem * /* aPrevItem */)
 {
     if (aItem)
@@ -189,7 +189,7 @@ void VBoxSettingsTreeSelector::settingsGroupChanged (QTreeWidgetItem *aItem,
  *  Returns a path to the given page of this settings dialog. See ::path() for
  *  details.
  */
-QString VBoxSettingsTreeSelector::pagePath (const QString &aMatch) const
+QString VBoxSettingsTreeViewSelector::pagePath (const QString &aMatch) const
 {
     QTreeWidgetItem *li =
         findItem (mTwSelector,
@@ -200,7 +200,7 @@ QString VBoxSettingsTreeSelector::pagePath (const QString &aMatch) const
 
 /* Returns first item of 'aView' matching required 'aMatch' value
  * searching the 'aColumn' column. */
-QTreeWidgetItem* VBoxSettingsTreeSelector::findItem (QTreeWidget *aView,
+QTreeWidgetItem* VBoxSettingsTreeViewSelector::findItem (QTreeWidget *aView,
                                                      const QString &aMatch,
                                                      int aColumn) const
 {
@@ -210,7 +210,7 @@ QTreeWidgetItem* VBoxSettingsTreeSelector::findItem (QTreeWidget *aView,
     return list.count() ? list [0] : 0;
 }
 
-QString VBoxSettingsTreeSelector::idToString (int aId) const
+QString VBoxSettingsTreeViewSelector::idToString (int aId) const
 {
     return QString ("%1").arg (aId, 2, 10, QLatin1Char ('0'));
 }
@@ -286,17 +286,50 @@ int VBoxSettingsToolBarSelector::currentId () const
 
 int VBoxSettingsToolBarSelector::idToIndex (int aId) const
 {
-    return findIndex (aId);
+    int index = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    for (int a = 0; a < list.count(); ++a)
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
+        if (sa &&
+            sa->id() == aId)
+        {
+            index = a;
+            break;
+        }
+    }
+    return index;
 }
 
 int VBoxSettingsToolBarSelector::indexToId (int aIndex) const
 {
-    return findId (aIndex);
+    int id = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    if (aIndex > -1 && 
+        aIndex < list.count())
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at (aIndex));
+        if (sa)
+            id = sa->id();
+    }
+    return id;
 }
 
 int VBoxSettingsToolBarSelector::linkToId (const QString &aLink) const
 {
-    return findLink (aLink);
+    int id = -1;
+    QList<QAction*> list = mActionGroup->actions();
+    for (int a = 0; a < list.count(); ++a)
+    {
+        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
+        if (sa &&
+            sa->link() == aLink)
+        {
+            id = sa->id();
+            break;
+        }
+    }
+    return id;
 }
 
 
@@ -335,57 +368,9 @@ void VBoxSettingsToolBarSelector::settingsGroupChanged (QAction *aAction)
         emit categoryChanged (action->id());
 }
 
-int VBoxSettingsToolBarSelector::findId (int aIndex) const
-{
-    int id = -1;
-    QList<QAction*> list = mActionGroup->actions();
-    if (aIndex > -1 && 
-        aIndex < list.count())
-    {
-        SelectorAction *sa = static_cast<SelectorAction*> (list.at (aIndex));
-        if (sa)
-            id = sa->id();
-    }
-    return id;
-}
-
-int VBoxSettingsToolBarSelector::findIndex (int aId) const
-{
-    int index = -1;
-    QList<QAction*> list = mActionGroup->actions();
-    for (int a = 0; a < list.count(); ++a)
-    {
-        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
-        if (sa &&
-            sa->id() == aId)
-        {
-            index = a;
-            break;
-        }
-    }
-    return index;
-}
-
-int VBoxSettingsToolBarSelector::findLink (const QString &aLink) const
-{
-    int id = -1;
-    QList<QAction*> list = mActionGroup->actions();
-    for (int a = 0; a < list.count(); ++a)
-    {
-        SelectorAction *sa = static_cast<SelectorAction*> (list.at(a));
-        if (sa &&
-            sa->link() == aLink)
-        {
-            id = sa->id();
-            break;
-        }
-    }
-    return id;
-}
-
 SelectorAction* VBoxSettingsToolBarSelector::findAction (int aId) const
 {
-    int index = findIndex (aId);
+    int index = idToIndex (aId);
     SelectorAction *sa = NULL;
     QList<QAction*> list = mActionGroup->actions();
     if (index > -1 &&

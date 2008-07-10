@@ -226,6 +226,9 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
     attachPage (new VBoxVMSettingsVRDP());
 
+    /* Applying language settings */
+    retranslateUi();
+
     /* Setup Settings Dialog */
     if (!aCategory.isNull())
     {
@@ -256,8 +259,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
             }
         }
     }
-    /* Applying language settings */
-    retranslateUi();
 }
 
 void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
