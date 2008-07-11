@@ -31,7 +31,7 @@
 static const int PushButtonLeftOffset = 6;
 static const int PushButtonTopOffset = 4;
 static const int PushButtonRightOffset = 12;
-static const int PushButtonBottomOffset = 12;
+static const int PushButtonBottomOffset = 4;
 
 QIHelpButton::QIHelpButton(QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QPushButton> (aParent)
