@@ -359,7 +359,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                 vrdpChangeRequest.u32VRDPExperienceLevel = 0;
                 
                 if (DeviceIoControl (gVBoxDriver,
-                                     VBOXGUEST_IOCTL_VMMREQUEST,
+                                     VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevVRDPChangeRequest)),
                                      &vrdpChangeRequest,
                                      sizeof(VMMDevVRDPChangeRequest),
                                      &vrdpChangeRequest,

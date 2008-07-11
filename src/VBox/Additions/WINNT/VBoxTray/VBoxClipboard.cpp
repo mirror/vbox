@@ -161,7 +161,7 @@ static int vboxCall (HANDLE hDriver, void *pvData, unsigned cbData)
     DWORD cbReturned;
 
     if (DeviceIoControl (hDriver,
-                         VBOXGUEST_IOCTL_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL(cbData),
                          pvData, cbData,
                          pvData, cbData,
                          &cbReturned,
@@ -814,7 +814,7 @@ unsigned __stdcall VBoxClipboardThread (void *pInstance)
         DWORD cbReturned;
 
         if (!DeviceIoControl (hDriver,
-                              VBOXGUEST_IOCTL_HGCM_CALL,
+                              VBOXGUEST_IOCTL_HGCM_CALL(sizeof (parms)),
                               &parms, sizeof (parms),
                               &parms, sizeof (parms),
                               &cbReturned,

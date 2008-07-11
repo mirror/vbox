@@ -68,7 +68,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
     req.eventAck = 0;
 
-    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
         dprintf(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
         gCtx.uStatInterval = req.u32StatInterval * 1000;
@@ -224,7 +224,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
     {
         req.guestStats.u32CpuId = i;
 
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
         {
             dprintf(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
         }
@@ -282,7 +282,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
                 vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
                 req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
 
-                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
                 {
                     dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
                     pCtx->uStatInterval = req.u32StatInterval * 1000;
