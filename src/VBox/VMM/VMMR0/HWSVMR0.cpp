@@ -882,7 +882,7 @@ ResumeExecution:
             Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpuTemp->cTLBFlushes));
     }
     if (pCpuTemp->fFlushTLB) 
-        Log(("SVMR0RunGuestCode: First time cpu %d is used -> flush\n", pCpuTemp->idCpu));
+        Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpuTemp->idCpu));
 #endif
 
     /*
