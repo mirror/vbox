@@ -52,7 +52,7 @@ void main(int argc, char *argv[])
     else
         printf("Removing session hack\n");
  
-    if (!DeviceIoControl (gVBoxDriver, (argc == 1) ? IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION : IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
+    if (!DeviceIoControl (gVBoxDriver, (argc == 1) ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
     {
         printf("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n");
     }

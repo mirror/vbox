@@ -355,7 +355,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     
     maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -371,7 +371,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 1000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxDisplayThread : DeviceIOControl succeded\n"));
 
@@ -408,7 +408,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                     displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
                     displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                    BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
+                    BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
                     if (!fDisplayChangeQueried)
                     {
@@ -417,7 +417,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                         displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                         displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest;
                         displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                        fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
+                        fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
                         displayChangeRequest.display = 0;
                     }
@@ -547,7 +547,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     }
                     else
                     {
-                        dprintf(("VBoxDisplayThread : error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
+                        dprintf(("VBoxDisplayThread : error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                         /* sleep a bit to not eat too much CPU while retrying */
                         /* are we supposed to stop? */
                         if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
@@ -560,7 +560,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             }
         } else
         {
-            dprintf(("VBoxDisplayThread : error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxDisplayThread : error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -572,7 +572,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
     }

@@ -44,15 +44,15 @@ DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
     switch (func)
     {
         /* this function can NOT handle cancelled requests */
-        case IOCTL_VBOXGUEST_HGCM_CONNECT:
+        case VBOXGUEST_IOCTL_HGCM_CONNECT:
             return VbglHGCMConnect (data, vboxadd_hgcm_callback, opaque, 0);
 
         /* this function can NOT handle cancelled requests */
-        case IOCTL_VBOXGUEST_HGCM_DISCONNECT:
+        case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
             return VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, 0);
 
         /* this function can handle cancelled requests */
-        case IOCTL_VBOXGUEST_HGCM_CALL:
+        case VBOXGUEST_IOCTL_HGCM_CALL:
             return VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, 0);
 
         default:

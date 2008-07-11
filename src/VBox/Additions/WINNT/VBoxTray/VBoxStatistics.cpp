@@ -68,7 +68,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
     req.eventAck = 0;
 
-    if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
         dprintf(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
         gCtx.uStatInterval = req.u32StatInterval * 1000;
@@ -224,7 +224,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
     {
         req.guestStats.u32CpuId = i;
 
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
         {
             dprintf(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
         }
@@ -249,7 +249,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -265,7 +265,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = (pCtx->uStatInterval) ? pCtx->uStatInterval : 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxStatsThread: DeviceIOControl succeded\n"));
 
@@ -282,7 +282,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
                 vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
                 req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
 
-                if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
                 {
                     dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
                     pCtx->uStatInterval = req.u32StatInterval * 1000;
@@ -293,7 +293,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxStatsThread: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxStatsThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -313,7 +313,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }

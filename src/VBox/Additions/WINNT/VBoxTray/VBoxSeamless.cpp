@@ -84,7 +84,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         vmmreqGuestCaps.caps = VMMDEV_GUEST_SUPPORTS_SEAMLESS;
 
         DWORD cbReturned;
-        if (!DeviceIoControl(pEnv->hDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
+        if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                              &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
         {
             dprintf(("VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
@@ -114,7 +114,7 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     vmmreqGuestCaps.caps = 0;
 
     DWORD cbReturned;
-    if (!DeviceIoControl(pEnv->hDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
+    if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                          &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
     {
         dprintf(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
@@ -294,7 +294,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxSeamlessThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -310,7 +310,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxSeamlessThread: DeviceIOControl succeded\n"));
 
@@ -336,7 +336,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                     vmmdevInitRequest((VMMDevRequestHeader*)&seamlessChangeRequest, VMMDevReq_GetSeamlessChangeRequest);
                     seamlessChangeRequest.eventAck = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
 
-                    BOOL fSeamlessChangeQueried = DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &seamlessChangeRequest, sizeof(seamlessChangeRequest),
+                    BOOL fSeamlessChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &seamlessChangeRequest, sizeof(seamlessChangeRequest),
                                                                  &seamlessChangeRequest, sizeof(seamlessChangeRequest), &cbReturned, NULL);
                     if (fSeamlessChangeQueried)
                     {
@@ -380,7 +380,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                     }
                     else
                     {
-                        dprintf(("VBoxSeamlessThread: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
+                        dprintf(("VBoxSeamlessThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                     }
                     /* sleep a bit to not eat too much CPU while retrying */
                     /* are we supposed to stop? */
@@ -394,7 +394,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxTray: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -407,7 +407,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxSeamlessThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }

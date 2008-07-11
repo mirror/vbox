@@ -53,7 +53,7 @@ int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
 
     /* Check balloon size */
     DWORD dwMemBalloonSize;
-    if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
+    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
     {
         dprintf(("VBoxMemBalloonInit: new balloon size %d MB\n", dwMemBalloonSize));
         gCtx.uMemBalloonSize = dwMemBalloonSize;
@@ -92,7 +92,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxMemBalloonThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -108,7 +108,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxMemBalloonThread: DeviceIOControl succeded\n"));
 
@@ -122,7 +122,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
             {
                 DWORD dwMemBalloonSize;
-                if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
+                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
                 {
                     dprintf(("VBoxMemBalloonThread: new balloon size % MB\n", dwMemBalloonSize));
                     pCtx->uMemBalloonSize = dwMemBalloonSize;
@@ -133,7 +133,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxMemBalloonThread: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxMemBalloonThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -147,7 +147,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxMemBalloonThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }

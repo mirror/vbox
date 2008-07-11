@@ -83,7 +83,7 @@ void WriteLog(char *String, ...)
         fclose(pFh);
     }
 
-    DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->header.size,
+    DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, pReq, pReq->header.size,
                     pReq, pReq->header.size, &cbReturned, NULL);
 
     va_end (va);

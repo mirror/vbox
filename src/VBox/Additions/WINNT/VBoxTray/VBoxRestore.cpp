@@ -83,7 +83,7 @@ void VBoxRestoreCheckVRDP()
     {
         DWORD cbReturned;
 
-        if (!DeviceIoControl (gCtx.pEnv->hDriver, (ret) ? IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION : IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
+        if (!DeviceIoControl (gCtx.pEnv->hDriver, (ret) ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
         {
             dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         }
@@ -105,7 +105,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_RESTORED;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -121,7 +121,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_RESTORED;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxRestoreThread: DeviceIOControl succeded\n"));
 
@@ -140,7 +140,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxTray: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -154,7 +154,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_RESTORED;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
