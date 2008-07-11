@@ -120,6 +120,9 @@ extern VBOXHDDBACKEND g_VDIBackend;
 #ifndef VBOX_OSE
 extern VBOXHDDBACKEND g_VhdBackend;
 #endif
+#ifdef VBOX_WITH_ISCSI
+extern VBOXHDDBACKEND g_ISCSIBackend;
+#endif
 
 static PCVBOXHDDBACKEND aBackends[] =
 {
@@ -128,6 +131,9 @@ static PCVBOXHDDBACKEND aBackends[] =
     &g_VDIBackend,
 #ifndef VBOX_OSE
     &g_VhdBackend,
+#endif
+#ifdef VBOX_WITH_ISCSI
+    &g_ISCSIBackend,
 #endif
     NULL
 };

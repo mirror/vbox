@@ -287,6 +287,8 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_FILTER,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
+    /** iSCSI virtual disk backend. */
+    LOG_GROUP_VD_ISCSI,
     /** Raw virtual disk backend. */
     LOG_GROUP_VD_RAW,
     /** VDI virtual disk backend. */
@@ -434,6 +436,7 @@ typedef enum LOGGROUP
     "USB_DRV",      \
     "USB_FILTER",   \
     "VD",           \
+    "VD_ISCSI",     \
     "VD_RAW",       \
     "VD_VDI",       \
     "VD_VHD",       \

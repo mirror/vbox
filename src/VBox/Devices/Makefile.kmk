@@ -689,6 +689,9 @@ ifdef VBOX_WITH_ISCSI
 	Network/lwip/src/include \
 	Network/lwip/src/include/ipv4 \
 	Network/lwip/vbox/include
+ VBoxDDU_SOURCES      += \
+    Storage/ISCSIHDDCore.cpp
+ VBoxDDU_DEFS         += VBOX_WITH_ISCSI
 endif # VBOX_WITH_ISCSI
 
 ifdef VBOX_WITH_ALSA
