@@ -163,6 +163,7 @@ static int gHostKeySym1 = SDLK_RCTRL;
 static int gHostKeySym2 = SDLK_UNKNOWN;
 #endif
 static const char *gHostKeyDisabledCombinations = "";
+static const char *gpszPidFile;
 static BOOL gfGrabbed = FALSE;
 static BOOL gfGrabOnMouseClick = TRUE;
 static BOOL gfAllowFullscreenToggle = TRUE;
@@ -742,7 +743,7 @@ static void PrintError(const char *pszName, const BSTR pwszDescr, const BSTR pws
  * on the new VT, the VM will be saved with modifier keys stuck. This is
  * annoying enough for introducing this hack.
  */
-void signal_handler(int sig, siginfo_t *info, void *secret)
+void signal_handler_SIGUSR1(int sig, siginfo_t *info, void *secret)
 {
     /* only SIGUSR1 is interesting */
     if (sig == SIGUSR1)
@@ -750,6 +751,19 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
         /* just release the modifiers */
         ResetKeys();
     }
+}
+
+/**
+ * Custom signal handler for catching exit events.
+ */
+void signal_handler_SIGINT(int sig)
+{
+    if (gpszPidFile)
+        RTFileDelete(gpszPidFile);
+    signal(SIGINT, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+    signal(SIGSEGV, SIG_DFL);
+    kill(getpid(), sig);
 }
 #endif /* VBOXSDL_WITH_X11 */
 
@@ -1324,6 +1338,16 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[curArg], "-termacpi") == 0)
         {
             gfACPITerm = TRUE;
+        }
+        else if (strcmp(argv[curArg], "-pidfile") == 0)
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing file name for -pidfile!\n");
+                rc = E_FAIL;
+                break;
+            }
+            gpszPidFile = argv[curArg];
         }
         else if (strcmp(argv[curArg], "-hda") == 0)
         {
@@ -1901,9 +1925,8 @@ int main(int argc, char *argv[])
         goto leave;
     gpFrameBuffer->AddRef();
     if (fFullscreen)
-    {
         gpFrameBuffer->setFullscreen(true);
-    }
+
 #ifdef VBOX_SECURELABEL
     if (fSecureLabel)
     {
@@ -1950,6 +1973,14 @@ int main(int argc, char *argv[])
         gpFrameBuffer->setSecureLabelColor(secureLabelColorFG, secureLabelColorBG);
         gpFrameBuffer->setSecureLabelText(labelUtf8.raw());
     }
+#endif
+
+#ifdef VBOXSDL_WITH_X11
+    /* NOTE1: We still want Ctrl-C to work, so we undo the SDL redirections.
+     * NOTE2: We have to remove the PidFile if this file exists. */
+    signal(SIGINT,  signal_handler_SIGINT);
+    signal(SIGQUIT, signal_handler_SIGINT);
+    signal(SIGSEGV, signal_handler_SIGINT);
 #endif
 
     // register our framebuffer
@@ -2129,7 +2160,7 @@ int main(int argc, char *argv[])
      */
 #ifdef VBOXSDL_WITH_X11
     struct sigaction sa;
-    sa.sa_sigaction = signal_handler;
+    sa.sa_sigaction = signal_handler_SIGUSR1;
     sigemptyset (&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction (SIGUSR1, &sa, NULL);
@@ -2318,6 +2349,21 @@ int main(int argc, char *argv[])
      * Enable keyboard repeats
      */
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+
+    /*
+     * Create PID file.
+     */
+    if (gpszPidFile)
+    {
+        char szBuf[32];
+        const char *pcszLf = "\n";
+        RTFILE PidFile;
+        RTFileOpen(&PidFile, gpszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE);
+        RTStrFormatNumber(szBuf, RTProcSelf(), 10, 0, 0, 0);
+        RTFileWrite(PidFile, szBuf, strlen(szBuf), NULL);
+        RTFileWrite(PidFile, pcszLf, strlen(pcszLf), NULL);
+        RTFileClose(PidFile);
+    }
 
     /*
      * Main event loop
@@ -2718,6 +2764,9 @@ int main(int argc, char *argv[])
     }
 
 leave:
+    if (gpszPidFile)
+        RTFileDelete(gpszPidFile);
+
     LogFlow(("leaving...\n"));
 #if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
     /* make sure the XPCOM event queue thread doesn't do anything harmful */
