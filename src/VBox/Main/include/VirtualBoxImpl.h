@@ -36,11 +36,6 @@
 # include "win/resource.h"
 #endif
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-
 class Machine;
 class SessionMachine;
 class HardDisk;
@@ -131,7 +126,6 @@ public:
     STDMETHOD(COMGETTER(ProgressOperations)) (IProgressCollection **aOperations);
     STDMETHOD(COMGETTER(GuestOSTypes)) (IGuestOSTypeCollection **aGuestOSTypes);
     STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
-    STDMETHOD(COMGETTER(PerformanceCollector)) (IPerformanceCollector **aPerformanceCollector);
 
     /* IVirtualBox methods */
 
@@ -350,10 +344,6 @@ public:
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    PerformanceCollector *getCollector() { return mData.mPerformanceCollector; };
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
 private:
 
     typedef std::list <ComObjPtr <Machine> > MachineList;
@@ -423,9 +413,6 @@ private:
         // const objects not requiring locking
         const ComObjPtr <Host> mHost;
         const ComObjPtr <SystemProperties> mSystemProperties;
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-        const ComObjPtr <PerformanceCollector> mPerformanceCollector;
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
         CfgFile mCfgFile;
 

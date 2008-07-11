@@ -36,6 +36,15 @@ class USBProxyService;
 # include "win/svchlp.h"
 #endif
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+#include "iprt/timer.h"
+#include "iprt/system.h"
+
+/* Each second we obtain new CPU load stats. */
+#define VBOX_USAGE_SAMPLER_INTERVAL 1000
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+
 class VirtualBox;
 class SessionMachine;
 class HostDVDDrive;
@@ -100,6 +109,8 @@ public:
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
     STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter **aFilter);
 
+    STDMETHOD(GetProcessorUsage) (ULONG *aUser, ULONG *aSystem, ULONG *aIdle);
+
     // public methods only for internal purposes
 
     HRESULT loadSettings (const settings::Key &aGlobal);
@@ -159,8 +170,10 @@ private:
 #endif
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics(PerformanceCollector *collector);
-    void unregisterMetrics(PerformanceCollector *collector);
+    /** Static timer callback. */
+    static void UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    /** Member timer callback. */
+    void usageSamplerCallback();
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
@@ -172,6 +185,12 @@ private:
     USBProxyService *mUSBProxyService;
 #endif /* VBOX_WITH_USB */
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /** Pointer to the usage sampling timer. */
+    PRTTIMER mUsageSampler;
+    /** Structure to hold processor usage stats. */
+    RTCPUUSAGESTATS mCpuStats;
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 };
 
 #endif // ____H_HOSTIMPL
