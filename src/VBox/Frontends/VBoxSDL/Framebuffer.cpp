@@ -41,7 +41,6 @@ using namespace com;
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <signal.h>
 
 #include "VBoxSDL.h"
 #include "Framebuffer.h"
@@ -144,12 +143,6 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
         RTPrintf("SDL Error: '%s'\n", SDL_GetError());
         return;
     }
-
-#ifdef VBOXSDL_WITH_X11
-    /* NOTE: we still want Ctrl-C to work, so we undo the SDL redirections */
-    signal(SIGINT, SIG_DFL);
-    signal(SIGQUIT, SIG_DFL);
-#endif
 
     const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
     Assert(videoInfo);
