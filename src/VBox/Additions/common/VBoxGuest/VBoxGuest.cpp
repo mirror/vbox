@@ -1214,7 +1214,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
      * Deal with variably sized requests first.
      */
     int rc = VINF_SUCCESS;
-    if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0)))
+    if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST))
     {
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
         rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
