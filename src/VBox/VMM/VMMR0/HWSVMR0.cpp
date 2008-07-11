@@ -899,6 +899,9 @@ ResumeExecution:
         /* Force a TLB flush on VM entry. */
         pVM->hwaccm.s.svm.fForceTLBFlush = true;
     }
+    else
+        Assert(!pCpu->fFlushTLB);
+
     pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
