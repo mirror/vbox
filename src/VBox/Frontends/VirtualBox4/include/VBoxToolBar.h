@@ -71,6 +71,50 @@ public:
             setStyleSheet ("QToolBar { border: 0px none black; }");
     }
 
+    void setMacToolbar ()
+    {
+#ifdef Q_WS_MAC
+        if (mMainWindow)
+        {
+            mMainWindow->setUnifiedTitleAndToolBarOnMac (true);
+            WindowRef window = ::darwinToWindowRef (this);
+            EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
+            EventTypeSpec eventTypes[2];
+            eventTypes[0].eventClass = kEventClassMouse;
+            eventTypes[0].eventKind  = kEventMouseDown;
+            eventTypes[1].eventClass = kEventClassMouse;
+            eventTypes[1].eventKind  = kEventMouseUp;
+            InstallWindowEventHandler (window, eventHandler,
+                                       RT_ELEMENTS (eventTypes), eventTypes,
+                                       NULL, NULL);
+        }
+#endif /* Q_WS_MAC */
+    }
+
+#ifdef Q_WS_MAC
+    static pascal OSStatus macEventFilter (EventHandlerCallRef aNextHandler,
+                                           EventRef aEvent, void * /* aUserData */)
+    {
+        UInt32 eclass = GetEventClass (aEvent);
+        if (eclass == kEventClassMouse)
+        {
+            WindowPartCode partCode;
+            GetEventParameter (aEvent, kEventParamWindowPartCode, typeWindowPartCode, NULL, sizeof (WindowPartCode), NULL, &partCode);
+            UInt32 ekind = GetEventKind (aEvent);
+            if (partCode == 15 ||
+                partCode == 4)
+                if(ekind == kEventMouseDown || ekind == kEventMouseUp)
+                {
+                    EventMouseButton button = 0;
+                    GetEventParameter (aEvent, kEventParamMouseButton, typeMouseButton, NULL, sizeof (button), NULL, &button);
+                    if (button != kEventMouseButtonPrimary)
+                        return noErr;
+                }
+        }
+        return CallNextEventHandler (aNextHandler, aEvent);
+    }
+#endif /* Q_WS_MAC */
+
     void setShowToolBarButton (bool aShow)
     {
 #ifdef Q_WS_MAC

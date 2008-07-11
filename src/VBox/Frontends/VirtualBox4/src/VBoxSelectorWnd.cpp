@@ -475,8 +475,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     VBoxToolBar *vmTools = new VBoxToolBar (this);
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
-    setUnifiedTitleAndToolBarOnMac (true);
     addToolBar (vmTools);
+    vmTools->setMacToolbar();
     /* No spacing/margin on the mac */
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
     leftVLayout->setSpacing (0);
