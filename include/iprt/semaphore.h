@@ -218,6 +218,8 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
  *
  * @returns iprt status code.
  * @param   pMutexSem   Where to store the mutex semaphore handle.
+ *
+ * @remarks Fast mutex semaphores are not recursive.
  */
 RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem);
 
