@@ -1458,7 +1458,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
          * Try register it with PGM and then insert it into the tree.
          */
         rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                   /*IOMR3MMIOHandler*/ NULL, pRange,
+                                   IOMR3MMIOHandler, pRange,
                                    pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
                                    pVM->iom.s.pfnMMIOHandlerGC, MMHyperR3ToGC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
