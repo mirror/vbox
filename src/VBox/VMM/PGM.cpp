@@ -647,7 +647,9 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmram",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
     { "pgmmap",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
     { "pgmsync",    0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+#ifdef VBOX_STRICT
     { "pgmassertcr3",  0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
+#endif
     { "pgmsyncalways", 0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
 };
 #endif
@@ -3983,6 +3985,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * The '.pgmassertcr3' command.
  *
@@ -4009,7 +4012,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     return VINF_SUCCESS;
 }
-
+#endif
 
 /**
  * The '.pgmsyncalways' command.
