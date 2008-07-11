@@ -1817,12 +1817,16 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     uint32_t cpl;
 
-    /*
-     * The hidden CS.DPL register is always equal to the CPL, it is
-     * not affected by loading a conforming coding segment.
-     */
     if (CPUMAreHiddenSelRegsValid(pVM))
-        cpl = pCtxCore->csHid.Attr.n.u2Dpl;
+    {
+        /*
+         * The hidden CS.DPL register is always equal to the CPL, it is
+         * not affected by loading a conforming coding segment.
+         *
+         * This only seems to apply to AMD-V; in the VT-x case we *do* need to look at SS. (ACP2 regression during install after a far call to ring 2)
+         */
+        cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
+    }
     else if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
         if (RT_LIKELY(!pCtxCore->eflags.Bits.u1VM))
