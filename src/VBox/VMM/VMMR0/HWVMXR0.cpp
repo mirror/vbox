@@ -1493,7 +1493,7 @@ ResumeExecution:
 
 #ifdef VBOX_STRICT
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
-        HWACCMDumpRegs(pCtx);
+        HWACCMDumpRegs(pVM, pCtx);
 #endif
 
     Log2(("E%d", exitReason));

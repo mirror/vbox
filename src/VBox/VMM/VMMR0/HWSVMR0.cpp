@@ -980,7 +980,7 @@ ResumeExecution:
 
     if (exitCode == (uint64_t)SVM_EXIT_INVALID)          /* Invalid guest state. */
     {
-        HWACCMDumpRegs(pCtx);
+        HWACCMDumpRegs(pVM, pCtx);
 #ifdef DEBUG
         Log(("ctrl.u16InterceptRdCRx            %x\n",      pVMCB->ctrl.u16InterceptRdCRx));
         Log(("ctrl.u16InterceptWrCRx            %x\n",      pVMCB->ctrl.u16InterceptWrCRx));
