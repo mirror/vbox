@@ -387,6 +387,8 @@ typedef struct PDMAPIC
     PPDMDEVINSR3                    pDevInsR3;
     /** @copydoc PDMAPICREG::pfnGetInterruptHC */
     DECLR3CALLBACKMEMBER(int,       pfnGetInterruptR3,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetBaseHC */
     DECLR3CALLBACKMEMBER(void,      pfnSetBaseR3,(PPDMDEVINS pDevIns, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseHC */
@@ -403,6 +405,8 @@ typedef struct PDMAPIC
     R0PTRTYPE(PPDMDEVINS)           pDevInsR0;
     /** @copydoc PDMAPICREG::pfnGetInterruptHC */
     DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
+    DECLR0CALLBACKMEMBER(bool, pfnHasPendingIrqR0,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetBaseHC */
     DECLR0CALLBACKMEMBER(void,      pfnSetBaseR0,(PPDMDEVINS pDevIns, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseHC */
@@ -419,6 +423,8 @@ typedef struct PDMAPIC
     PPDMDEVINSGC                    pDevInsGC;
     /** @copydoc PDMAPICREG::pfnGetInterruptHC */
     DECLGCCALLBACKMEMBER(int,       pfnGetInterruptGC,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
+    DECLGCCALLBACKMEMBER(bool, pfnHasPendingIrqGC,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetBaseHC */
     DECLGCCALLBACKMEMBER(void,      pfnSetBaseGC,(PPDMDEVINS pDevIns, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseHC */

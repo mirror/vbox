@@ -266,6 +266,7 @@ __BEGIN_DECLS
 PDMBOTHCBDECL(int)  apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  apicGetInterrupt(PPDMDEVINS pDevIns);
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val);
 PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, uint8_t val);
@@ -760,6 +761,14 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     LogFlow(("apic_get_interrupt: returns %d\n", intno));
     return intno;
 }
+
+/* Check if the APIC has a pending interrupt/if a TPR change would active one. */
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
+{
+    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    return false;
+}
+
 
 static uint32_t apic_get_current_count(APICState *s)
 {
@@ -1679,15 +1688,17 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register the APIC.
      */
-    ApicReg.u32Version          = PDM_APICREG_VERSION;
-    ApicReg.pfnGetInterruptHC   = apicGetInterrupt;
-    ApicReg.pfnSetBaseHC        = apicSetBase;
-    ApicReg.pfnGetBaseHC        = apicGetBase;
-    ApicReg.pfnSetTPRHC         = apicSetTPR;
-    ApicReg.pfnGetTPRHC         = apicGetTPR;
-    ApicReg.pfnBusDeliverHC     = apicBusDeliverCallback;
+    ApicReg.u32Version              = PDM_APICREG_VERSION;
+    ApicReg.pfnGetInterruptHC       = apicGetInterrupt;
+    ApicReg.pfnHasPendingIrqHC      = apicHasPendingIrq;
+    ApicReg.pfnSetBaseHC            = apicSetBase;
+    ApicReg.pfnGetBaseHC            = apicGetBase;
+    ApicReg.pfnSetTPRHC             = apicSetTPR;
+    ApicReg.pfnGetTPRHC             = apicGetTPR;
+    ApicReg.pfnBusDeliverHC         = apicBusDeliverCallback;
     if (fGCEnabled) {
         ApicReg.pszGetInterruptGC   = "apicGetInterrupt";
+        ApicReg.pszHasPendingIrqGC  = "apicHasPendingIrq";
         ApicReg.pszSetBaseGC        = "apicSetBase";
         ApicReg.pszGetBaseGC        = "apicGetBase";
         ApicReg.pszSetTPRGC         = "apicSetTPR";
@@ -1695,6 +1706,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszBusDeliverGC     = "apicBusDeliverCallback";
     } else {
         ApicReg.pszGetInterruptGC   = NULL;
+        ApicReg.pszHasPendingIrqGC  = NULL;
         ApicReg.pszSetBaseGC        = NULL;
         ApicReg.pszGetBaseGC        = NULL;
         ApicReg.pszSetTPRGC         = NULL;
@@ -1703,6 +1715,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
     if (fR0Enabled) {
         ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
+        ApicReg.pszHasPendingIrqR0  = "apicHasPendingIrq";
         ApicReg.pszSetBaseR0        = "apicSetBase";
         ApicReg.pszGetBaseR0        = "apicGetBase";
         ApicReg.pszSetTPRR0         = "apicSetTPR";
@@ -1710,6 +1723,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszBusDeliverR0     = "apicBusDeliverCallback";
     } else {
         ApicReg.pszGetInterruptR0   = NULL;
+        ApicReg.pszHasPendingIrqR0  = NULL;
         ApicReg.pszSetBaseR0        = NULL;
         ApicReg.pszGetBaseR0        = NULL;
         ApicReg.pszSetTPRR0         = NULL;

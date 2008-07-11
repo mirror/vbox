@@ -943,6 +943,14 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(int, pfnGetInterruptHC,(PPDMDEVINS pDevIns));
 
     /**
+     * Check if the APIC has a pending interrupt/if a TPR change would active one
+     *
+     * @returns Pending interrupt yes/no
+     * @param   pDevIns         Device instance of the APIC.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqHC,(PPDMDEVINS pDevIns));
+
+    /**
      * Set the APIC base.
      *
      * @param   pDevIns         Device instance of the APIC.
@@ -997,6 +1005,8 @@ typedef struct PDMAPICREG
 
     /** The name of the GC GetInterrupt entry point. */
     const char         *pszGetInterruptGC;
+    /** The name of the GC HasPendingIrq entry point. */
+    const char         *pszHasPendingIrqGC;
     /** The name of the GC SetBase entry point. */
     const char         *pszSetBaseGC;
     /** The name of the GC GetBase entry point. */
@@ -1010,6 +1020,8 @@ typedef struct PDMAPICREG
 
     /** The name of the R0 GetInterrupt entry point. */
     const char         *pszGetInterruptR0;
+    /** The name of the R0 HasPendingIrq entry point. */
+    const char         *pszHasPendingIrqR0;
     /** The name of the R0 SetBase entry point. */
     const char         *pszSetBaseR0;
     /** The name of the R0 GetBase entry point. */
