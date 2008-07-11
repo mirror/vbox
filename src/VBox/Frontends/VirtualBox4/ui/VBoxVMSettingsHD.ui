@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>332</width>
-    <height>270</height>
+    <width>336</width>
+    <height>306</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" >
@@ -69,6 +69,12 @@
          </property>
          <item>
           <widget class="QITableView" name="mTwAts" >
+           <property name="minimumSize" >
+            <size>
+             <width>0</width>
+             <height>200</height>
+            </size>
+           </property>
            <property name="contextMenuPolicy" >
             <enum>Qt::ActionsContextMenu</enum>
            </property>
