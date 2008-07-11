@@ -471,7 +471,7 @@ static void intnetIfSend(PINTNETIF pIf, const void *pvFrame, unsigned cbFrame)
 {
     LogFlow(("intnetIfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
     int rc = intnetRingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pvFrame, cbFrame);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
         STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatRecvs);
@@ -492,7 +492,7 @@ static void intnetIfSend(PINTNETIF pIf, const void *pvFrame, unsigned cbFrame)
             RTSemEventSignal(pIf->Event);
             RTThreadYield();
             rc = intnetRingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pvFrame, cbFrame);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatRecvs);
@@ -626,7 +626,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void
     }
 
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -700,7 +700,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * allocating the buffer.
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     *ppRing3Buf = pIf->pIntBufR3;
@@ -751,7 +751,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * Assuming that we're in Ring-0, this should be rather simple :-)
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     *ppRing0Buf = pIf->pIntBuf;
@@ -788,7 +788,7 @@ INTNETR0DECL(int) INTNETR0IfGetPhysBuffer(PINTNET pIntNet, INTNETIFHANDLE hIf, P
      * Assuming that we're in Ring-0, this should be rather simple :-)
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /** @todo make a SUPR0 api for obtaining the array. SUPR0 is keeping track of everything, there
@@ -1112,7 +1112,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
     memset(&pIf->Mac, 0xff, sizeof(pIf->Mac)); /* broadcast */
     //pIf->fMacSet = 0;
     int rc = RTSemEventCreate(&pIf->Event);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pIf->pSession = pSession;
         pIf->pNetwork = pNetwork;
@@ -1124,7 +1124,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
         cbSend = RT_ALIGN(RT_MAX(cbSend, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
         const unsigned cbBuf = RT_ALIGN(sizeof(*pIf->pIntBuf), sizeof(INTNETHDR)) + cbRecv + cbSend;
         rc = SUPR0MemAlloc(pIf->pSession, cbBuf, (PRTR0PTR)&pIf->pIntBufDefault, (PRTR3PTR)&pIf->pIntBufDefaultR3);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pIf->pIntBuf = pIf->pIntBufDefault;
             pIf->pIntBufR3 = pIf->pIntBufDefaultR3;
@@ -1146,7 +1146,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
              * Link the interface to the network.
              */
             rc = RTSemFastMutexRequest(pNetwork->FastMutex);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pIf->pNext = pNetwork->pIFs;
                 pNetwork->pIFs = pIf;
@@ -1334,11 +1334,11 @@ static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
                     rc = SUPR0ObjAddRef(pCur->pvObj, pSession);
                     RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
 
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         if (!(pCur->fFlags & INTNET_OPEN_FLAGS_PUBLIC))
                             rc = SUPR0ObjVerifyAccess(pCur->pvObj, pSession, pCur->szName);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                             *ppNetwork = pCur;
                         else
                         {
@@ -1421,7 +1421,7 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     if (!pNew)
         return VERR_NO_MEMORY;
     int rc = RTSemFastMutexCreate(&pNew->FastMutex);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         //pNew->pIFs = NULL;
         pNew->pIntNet = pIntNet;
@@ -1460,7 +1460,7 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
                  * and these must be checked now. SUPR0ObjRegister does no such checks.
                  */
                 rc = SUPR0ObjVerifyAccess(pNew->pvObj, pSession, pNew->szName);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     *ppNetwork = pNew;
                     LogFlow(("intnetCreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
@@ -1550,7 +1550,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
      * Acquire the mutex to serialize open/create.
      */
     int rc = RTSemFastMutexRequest(pIntNet->FastMutex);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1560,7 +1560,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     rc = intnetOpenNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
     if (rc == VERR_NOT_FOUND)
         rc = intnetCreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Create a new interface to this network.
@@ -1568,7 +1568,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
          * interface is destroyed or the last session is doing cleanup (order problems).
          */
         rc = intnetNetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             intnetNetworkClose(pNetwork, pSession);
     }
 
@@ -1650,10 +1650,10 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
         pIntNet->IfHandles.iTail        = UINT32_MAX;
 
         rc = RTSemFastMutexCreate(&pIntNet->FastMutex);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = RTSpinlockCreate(&pIntNet->Spinlock);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 *ppIntNet = pIntNet;
                 LogFlow(("INTNETR0Create: returns VINF_SUCCESS *ppIntNet=%p\n", pIntNet));
