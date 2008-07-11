@@ -876,7 +876,7 @@ ResumeExecution:
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
-     *
+     *       (until the actual world switch)
      */
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
