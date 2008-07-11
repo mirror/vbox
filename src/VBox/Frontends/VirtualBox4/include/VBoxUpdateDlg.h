@@ -30,6 +30,7 @@
 
 /* Qt includes */
 #include <QUrl>
+#include <QDate>
 
 class VBoxNetworkFramework;
 
@@ -57,28 +58,37 @@ class VBoxUpdateData
 {
 public:
 
+    enum
+    {
+        NeverCheck = -2,
+        AutoCheck  = -3
+    };
+
     static void populate();
     static QStringList list();
 
-    VBoxUpdateData (const QString &aData, bool aEncode);
+    VBoxUpdateData (const QString &aData);
+    VBoxUpdateData (int aIndex);
 
     bool isNecessary();
     bool isAutomatic();
 
-    const QString& data() const { return mData; }
-    int index() { return mIndex; }
+    QString data() const;
+    int index() const;
+    QString date() const;
 
 private:
 
     /* Private functions */
-    int decode (const QString &aData) const;
-    QString encode (int aIndex) const;
+    void decode (const QString &aData);
+    void encode (int aIndex);
 
     /* Private variables */
     static QList<UpdateDay> mDayList;
 
     QString mData;
     int mIndex;
+    QDate mDate;
 };
 
 class VBoxUpdateDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
@@ -91,14 +101,13 @@ public:
     static bool isNecessary();
     static bool isAutomatic();
 
-    VBoxUpdateDlg (VBoxUpdateDlg **aSelf, QWidget *aParent = 0,
-                   Qt::WindowFlags aFlags = 0);
+    VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
+                   QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
    ~VBoxUpdateDlg();
 
 public slots:
 
     void accept();
-    void reject();
     void search();
 
 protected:
@@ -108,8 +117,6 @@ protected:
 private slots:
 
     void processTimeout();
-    void onToggleFirstPage();
-    void onToggleSecondPage();
 
     void onNetBegin (int aStatus);
     void onNetData (const QByteArray &aData);
@@ -129,6 +136,7 @@ private:
     VBoxNetworkFramework *mNetfw;
     QTimer *mTimeout;
     QUrl mUrl;
+    bool mForceRun;
     bool mSuicide;
 };
 

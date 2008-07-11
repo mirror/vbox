@@ -30,6 +30,7 @@
 
 #include "VBoxGLSettingsGeneral.h"
 #include "VBoxGLSettingsInput.h"
+#include "VBoxGLSettingsUpdate.h"
 #include "VBoxGLSettingsLanguage.h"
 
 #include "VBoxVMSettingsGeneral.h"
@@ -58,6 +59,8 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
     attachPage (new VBoxGLSettingsGeneral());
 
     attachPage (new VBoxGLSettingsInput());
+
+    attachPage (new VBoxGLSettingsUpdate());
 
     attachPage (new VBoxGLSettingsLanguage());
 
@@ -121,6 +124,10 @@ void VBoxGLSettingsDlg::retranslateUi()
     mSelector->addItem (VBoxGlobal::iconSet (":/hostkey_16px.png"),
                         tr ("Input"), InputId, "#input");
 
+    /* Update page */
+    mSelector->addItem (VBoxGlobal::iconSet (":/refresh_16px.png"),
+                        tr ("Update"), UpdateId, "#update");
+
     /* Language page */
     mSelector->addItem (VBoxGlobal::iconSet (":/site_16px.png"),
                         tr ("Language"), LanguageId, "#language");
@@ -133,7 +140,7 @@ void VBoxGLSettingsDlg::retranslateUi()
 
     /* Translate the selector */
     mSelector->polish();
-    
+
     VBoxSettingsDialog::retranslateUi();
 
     /* Select old remembered category */
@@ -381,7 +388,7 @@ void VBoxVMSettingsDlg::retranslateUi()
 
     /* Translate the selector */
     mSelector->polish();
-    
+
     VBoxSettingsDialog::retranslateUi();
 
     /* Select old remembered category */

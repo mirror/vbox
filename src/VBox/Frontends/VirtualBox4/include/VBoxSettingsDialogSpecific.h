@@ -43,6 +43,7 @@ public:
     {
         GeneralId = 0,
         InputId,
+        UpdateId,
         LanguageId,
         USBId
     };

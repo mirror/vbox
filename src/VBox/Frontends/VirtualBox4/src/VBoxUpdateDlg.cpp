@@ -28,14 +28,9 @@
 
 /* Qt includes */
 #include <QTimer>
-#include <QDate>
 
 /* Time to auto-disconnect if no network answer received. */
 static const int MaxWaitTime = 20000;
-/* Inner index number used as 'never' show identifier. */
-static const int IndexNever = -1;
-/* Inner index number used as 'auto' search identifier. */
-static const int IndexAuto = -2;
 
 
 /* VBoxVersion stuff */
@@ -86,23 +81,20 @@ void VBoxUpdateData::populate()
      * have to be retranslated separately. */
 
     /* Separately retranslate each day */
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 1 day"),  "1 d");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 2 days"), "2 d");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 3 days"), "3 d");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 4 days"), "4 d");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 5 days"), "5 d");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 6 days"), "6 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("1 day"),  "1 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("2 days"), "2 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("3 days"), "3 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("4 days"), "4 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("5 days"), "5 d");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("6 days"), "6 d");
 
     /* Separately retranslate each week */
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 1 week"),  "1 w");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 2 weeks"), "2 w");
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 3 weeks"), "3 w");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("1 week"),  "1 w");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("2 weeks"), "2 w");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("3 weeks"), "3 w");
 
     /* Separately retranslate each month */
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("in 1 month"), "1 m");
-
-    /* Retranslate 'never' */
-    mDayList << UpdateDay (VBoxUpdateDlg::tr ("never"), "never");
+    mDayList << UpdateDay (VBoxUpdateDlg::tr ("1 month"), "1 m");
 }
 
 QStringList VBoxUpdateData::list()
@@ -113,81 +105,108 @@ QStringList VBoxUpdateData::list()
     return result;
 }
 
-VBoxUpdateData::VBoxUpdateData (const QString &aData, bool aEncode)
+VBoxUpdateData::VBoxUpdateData (const QString &aData)
+    : mData (aData)
+    , mIndex (-1)
 {
-    if (aEncode)
-    {
-        if (aData.isNull())
-            mIndex = IndexAuto;
-        else
-        {
-            mIndex = mDayList.indexOf (UpdateDay (aData, QString::null));
-            Assert (mIndex >= 0);
-        }
+    decode (mData);
+}
 
-        if (mIndex >= 0 && mDayList [mIndex].key == "never")
-            mIndex = IndexNever;
-
-        mData = encode (mIndex);
-    }
-    else
-    {
-        mData = aData;
-        mIndex = decode (mData);
-    }
+VBoxUpdateData::VBoxUpdateData (int aIndex)
+    : mIndex (aIndex)
+{
+    encode (mIndex);
 }
 
 bool VBoxUpdateData::isNecessary()
 {
-    return mIndex != IndexNever;
+    return mIndex != NeverCheck &&
+           QDate::currentDate() >= mDate;
 }
 
 bool VBoxUpdateData::isAutomatic()
 {
-    return mIndex == IndexAuto;
+    return mIndex == AutoCheck;
 }
 
-int VBoxUpdateData::decode (const QString &aData) const
+QString VBoxUpdateData::data() const
 {
-    int result = 0;
+    return mData;
+}
 
+int VBoxUpdateData::index() const
+{
+    return mIndex;
+}
+
+QString VBoxUpdateData::date() const
+{
+    return mIndex == NeverCheck ? VBoxUpdateDlg::tr ("never") :
+           mIndex == AutoCheck ? VBoxUpdateDlg::tr ("on startup") :
+           mDate.toString ("yyyy.MM.dd");
+}
+
+void VBoxUpdateData::decode (const QString &aData)
+{
+    /* Parse standard values */
     if (aData == "auto")
-        result = IndexAuto;
+        mIndex = AutoCheck;
     else if (aData == "never")
-        result = IndexNever;
+        mIndex = NeverCheck;
+    /* Parse other values */
     else
     {
-        QDate date = QDate::fromString (aData);
-        if (date.isValid() && QDate::currentDate() < date)
-            result = IndexNever;
-    }
+        QStringList parser (aData.split (", ", QString::SkipEmptyParts));
+        if (parser.size() == 2)
+        {
+            /* Parse 'remind' value */
+            if (mDayList.isEmpty())
+                populate();
+            mIndex = mDayList.indexOf (UpdateDay (QString::null, parser [0]));
 
-    return result;
+            /* Parse 'date' value */
+            mDate = QDate::fromString (parser [1], Qt::ISODate);
+        }
+
+        /* Incorrect values handles as 'once per day' mode.
+         * This is the default value if there is no such extra-data. */
+        if (mIndex == -1 || !mDate.isValid())
+        {
+            mIndex = 0;
+            mDate = QDate::currentDate();
+        }
+    }
 }
 
-QString VBoxUpdateData::encode (int aIndex) const
+void VBoxUpdateData::encode (int aIndex)
 {
-    QString result;
-
-    if (aIndex == IndexAuto)
-        result = "auto";
-    else if (aIndex == IndexNever)
-        result = "never";
+    /* Encode standard values */
+    if (aIndex == AutoCheck)
+        mData = "auto";
+    else if (aIndex == NeverCheck)
+        mData = "never";
+    /* Encode other values */
     else
     {
-        QDate date = QDate::currentDate();
-        QString remindTime = mDayList [aIndex].key;
-        QStringList parser = remindTime.split (' ');
-        if (parser [1] == "d")
-            date = date.addDays (parser [0].toInt());
-        else if (parser [1] == "w")
-            date = date.addDays (parser [0].toInt() * 7);
-        else if (parser [1] == "m")
-            date = date.addMonths (parser [0].toInt());
-        result = date.toString();
-    }
+        /* Encode 'remind' value */
+        if (mDayList.isEmpty())
+            populate();
+        QString remindPeriod = mDayList [aIndex].key;
 
-    return result;
+        /* Encode 'date' value */
+        mDate = QDate::currentDate();
+        QStringList parser (remindPeriod.split (' '));
+        if (parser [1] == "d")
+            mDate = mDate.addDays (parser [0].toInt());
+        else if (parser [1] == "w")
+            mDate = mDate.addDays (parser [0].toInt() * 7);
+        else if (parser [1] == "m")
+            mDate = mDate.addMonths (parser [0].toInt());
+        QString remindDate = mDate.toString (Qt::ISODate);
+
+        /* Composite mData */
+        mData = QString ("%1, %2").arg (remindPeriod, remindDate);
+    }
 }
 
 
@@ -195,7 +214,7 @@ QString VBoxUpdateData::encode (int aIndex) const
 bool VBoxUpdateDlg::isNecessary()
 {
     VBoxUpdateData data (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_UpdateDate), false);
+        GetExtraData (VBoxDefs::GUI_UpdateDate));
 
     return data.isNecessary();
 }
@@ -203,19 +222,19 @@ bool VBoxUpdateDlg::isNecessary()
 bool VBoxUpdateDlg::isAutomatic()
 {
     VBoxUpdateData data (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_UpdateDate), false);
+        GetExtraData (VBoxDefs::GUI_UpdateDate));
 
     return data.isAutomatic();
 }
 
-VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf,
-                              QWidget *aParent,
-                              Qt::WindowFlags aFlags)
+VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
+                              QWidget *aParent, Qt::WindowFlags aFlags)
     : QIWithRetranslateUI2<QIAbstractWizard> (aParent, aFlags)
     , mSelf (aSelf)
     , mNetfw (0)
     , mTimeout (new QTimer (this))
     , mUrl ("http://www.virtualbox.org/download/latest_version")
+    , mForceRun (aForceRun)
     , mSuicide (false)
 {
     /* Store external pointer to this dialog. */
@@ -232,18 +251,12 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf,
 
     /* Setup other connections */
     connect (mTimeout, SIGNAL (timeout()), this, SLOT (processTimeout()));
-    connect (mRbCheck, SIGNAL (toggled (bool)), this, SLOT (onToggleFirstPage()));
-    connect (mRbRemind, SIGNAL (toggled (bool)), this, SLOT (onToggleFirstPage()));
-    connect (mRbAutoCheck, SIGNAL (toggled (bool)), this, SLOT (onToggleSecondPage()));
-    connect (mRbRecheck, SIGNAL (toggled (bool)), this, SLOT (onToggleSecondPage()));
+    connect (mBtnCheck, SIGNAL (clicked()), this, SLOT (search()));
 
     /* Initialize wizard hdr */
     initializeWizardFtr();
 
     /* Setup initial condition */
-    onToggleFirstPage();
-    onToggleSecondPage();
-
     mPbCheck->setMinimumWidth (mLogoUpdate->width() +
                                mLogoUpdate->frameWidth() * 2);
     mPbCheck->hide();
@@ -271,31 +284,14 @@ VBoxUpdateDlg::~VBoxUpdateDlg()
 
 void VBoxUpdateDlg::accept()
 {
-    if (mPageStack->currentWidget() == mPageUpdate)
-    {
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
-            VBoxUpdateData (mCbRemindTime->currentText(), true).data());
-    } else
-    if (mPageStack->currentWidget() == mPageFinish)
-    {
-        if (mRbAutoCheck->isChecked())
-            vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
-                VBoxUpdateData (QString::null, true).data());
-        else
-            vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
-                VBoxUpdateData (mCbRecheckTime->currentText(), true).data());
-    } else
-    Assert (0);
+    /* Recalculate new update data */
+    VBoxUpdateData oldData (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_UpdateDate));
+    VBoxUpdateData newData (oldData.index());
+    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
+                                            newData.data());
 
     QIAbstractWizard::accept();
-}
-
-void VBoxUpdateDlg::reject()
-{
-    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
-        VBoxUpdateData (VBoxUpdateData::list() [2], true).data());
-
-    QIAbstractWizard::reject();
 }
 
 void VBoxUpdateDlg::search()
@@ -321,40 +317,11 @@ void VBoxUpdateDlg::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxUpdateDlg::retranslateUi (this);
-
-    int ci1 = mCbRemindTime->currentIndex();
-    int ci2 = mCbRecheckTime->currentIndex();
-
-    mCbRemindTime->clear();
-    mCbRecheckTime->clear();
-
-    VBoxUpdateData::populate();
-    mCbRemindTime->insertItems (0, VBoxUpdateData::list());
-    mCbRecheckTime->insertItems (0, VBoxUpdateData::list());
-
-    mCbRemindTime->setCurrentIndex (ci1 == -1 ? 0 : ci1);
-    mCbRecheckTime->setCurrentIndex (ci2 == -1 ? 0 : ci2);
 }
 
 void VBoxUpdateDlg::processTimeout()
 {
     searchAbort (tr ("Connection timed out."));
-}
-
-void VBoxUpdateDlg::onToggleFirstPage()
-{
-    disconnect (mBtnConfirm, SIGNAL (clicked()), 0, 0);
-    if (mRbCheck->isChecked())
-        connect (mBtnConfirm, SIGNAL (clicked()), this, SLOT (search()));
-    else
-        connect (mBtnConfirm, SIGNAL (clicked()), this, SLOT (accept()));
-
-    mCbRemindTime->setEnabled (mRbRemind->isChecked());
-}
-
-void VBoxUpdateDlg::onToggleSecondPage()
-{
-    mCbRecheckTime->setEnabled (mRbRecheck->isChecked());
 }
 
 /* Handles the network request begining. */
@@ -395,11 +362,9 @@ void VBoxUpdateDlg::onNetError (const QString &aError)
 void VBoxUpdateDlg::onPageShow()
 {
     if (mPageStack->currentWidget() == mPageUpdate)
-        mRbCheck->isChecked() ? mRbCheck->setFocus() :
-                                mRbRemind->setFocus();
+        mBtnCheck->setFocus();
     else
-        mRbAutoCheck->isChecked() ? mRbAutoCheck->setFocus() :
-                                    mRbRecheck->setFocus();
+        mBtnFinish->setFocus();
 }
 
 void VBoxUpdateDlg::searchAbort (const QString &aReason)
@@ -414,7 +379,8 @@ void VBoxUpdateDlg::searchAbort (const QString &aReason)
     if (isHidden())
     {
         /* For background update */
-        mPageStack->setCurrentIndex (1);
+        if (mForceRun)
+            vboxProblem().showUpdateFailure (this, aReason);
         QTimer::singleShot (0, this, SLOT (accept()));
     }
     else
@@ -433,9 +399,8 @@ void VBoxUpdateDlg::searchComplete (const QString &aFullList)
 
     QStringList list = aFullList.split ("\n", QString::SkipEmptyParts);
 
-//  gcc-3.2 cannot grok this expression for some reason
-//  QString latestVersion (QString (list [0]).remove (QRegExp ("Version: ")));
-    QString latestVersion = ((QString)(list [0])).remove (QRegExp ("Version: "));
+    QString latestVersion (list [0]);
+    latestVersion.remove (QRegExp ("Version: "));
     QString currentVersion (vboxGlobal().virtualBox().GetVersion());
     VBoxVersion cv (currentVersion);
     VBoxVersion lv (latestVersion);
@@ -453,9 +418,8 @@ void VBoxUpdateDlg::searchComplete (const QString &aFullList)
                 if (isHidden())
                 {
                     /* For background update */
-                    vboxProblem().showUpdateResult (this,
+                    vboxProblem().showUpdateSuccess (this,
                         lv.toString(), platformInfo [1]);
-                    mPageStack->setCurrentIndex (1);
                     QTimer::singleShot (0, this, SLOT (accept()));
                 }
                 else
@@ -475,7 +439,8 @@ void VBoxUpdateDlg::searchComplete (const QString &aFullList)
     if (isHidden())
     {
         /* For background update */
-        mPageStack->setCurrentIndex (1);
+        if (mForceRun)
+            vboxProblem().showUpdateNotFound (this);
         QTimer::singleShot (0, this, SLOT (accept()));
     }
     else

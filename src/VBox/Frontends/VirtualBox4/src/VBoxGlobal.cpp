@@ -3937,7 +3937,6 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
 void VBoxGlobal::showUpdateDialog (bool aForce)
 {
     bool isNecessary = VBoxUpdateDlg::isNecessary();
-    bool isAutomatic = VBoxUpdateDlg::isAutomatic();
 
     if (!aForce && !isNecessary)
         return;
@@ -3965,14 +3964,14 @@ void VBoxGlobal::showUpdateDialog (bool aForce)
         if (mVBox.isOk())
         {
             /* We've got the "mutex", create a new update dialog */
-            VBoxUpdateDlg *dlg = new VBoxUpdateDlg (&mUpdDlg, 0);
+            VBoxUpdateDlg *dlg = new VBoxUpdateDlg (&mUpdDlg, aForce, 0);
             dlg->setAttribute (Qt::WA_DeleteOnClose);
             Assert (dlg == mUpdDlg);
 
-            if (!aForce && isAutomatic)
-                mUpdDlg->search();
-            else
-                mUpdDlg->show();
+            /* Update dialog always in background mode for now.
+             * if (!aForce && isAutomatic) */
+            mUpdDlg->search();
+            /* else mUpdDlg->show(); */
         }
     }
 }
