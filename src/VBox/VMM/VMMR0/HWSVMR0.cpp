@@ -893,8 +893,10 @@ ResumeExecution:
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
         && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
-        if (++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID)
+        if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID
+            ||  pCpu->fFlushTLB)
         {
+            pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;       /* wrap around; flush TLB */
             pCpu->cTLBFlushes++;
@@ -906,6 +908,8 @@ ResumeExecution:
     }
     else
     {
+        Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
+
         /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
         if (!pCpu->uCurrentASID)
             pCpu->uCurrentASID = 1;
