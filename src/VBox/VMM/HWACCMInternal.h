@@ -395,6 +395,15 @@ typedef HWACCM *PHWACCM;
 #ifdef IN_RING0
 
 #ifdef VBOX_STRICT
+/**
+ * Returns the cpu structure for the current cpu.
+ * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
+ *
+ * @returns cpu structure pointer
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu();
+
 HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx);
 HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *pszMsg);
 #else
@@ -410,7 +419,7 @@ HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu,
 HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
 HWACCMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
 HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
-HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
+HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx);
 HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
 HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
 

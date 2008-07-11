@@ -764,9 +764,8 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
- * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
+HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
@@ -776,8 +775,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu
     uint8_t     u8LastVTPR;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
-
-    AssertReturn(pCpu->fConfigured, VERR_EM_INTERNAL_ERROR);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
     AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
@@ -878,6 +875,7 @@ ResumeExecution:
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
      *       (until the actual world switch)
      */
+    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
     if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
