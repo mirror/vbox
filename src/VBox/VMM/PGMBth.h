@@ -60,7 +60,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     pModeData->pfnR3BthPrefetchPage      = PGM_BTH_NAME(PrefetchPage);
     pModeData->pfnR3BthVerifyAccessSyncPage = PGM_BTH_NAME(VerifyAccessSyncPage);
 #ifdef VBOX_STRICT
-    PGM_BTH_PFN(AssertCR3, pVM)         = PGM_BTH_NAME(AssertCR3);
+    pModeData->pfnR3BthAssertCR3         = PGM_BTH_NAME(AssertCR3);
 #endif
 
     if (fResolveGCAndR0)
