@@ -436,8 +436,6 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnBusDeliverHC */
     DECLGCCALLBACKMEMBER(void,      pfnBusDeliverGC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
-    /** Alignment padding. */
-    RTRCPTR                         GCPtrPadding;
 } PDMAPIC;
 
 
