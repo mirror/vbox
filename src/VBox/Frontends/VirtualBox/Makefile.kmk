@@ -116,7 +116,7 @@ VBoxHlp_SOURCES     = \
 
 
 #
-# VBoxKeyboard - keyboard library for X11.
+# VBoxKeyboard3 - keyboard library for X11.
 #
 VBoxKeyboard3_TEMPLATE = VBOXR3
 VBoxKeyboard3_SOURCES  = \
