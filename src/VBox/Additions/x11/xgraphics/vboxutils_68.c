@@ -121,7 +121,7 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
         err = -1;
     }
 #else
-    err = ioctl (pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST, hdrp);
+    err = ioctl (pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(0), hdrp);
 #endif
     if (err < 0)
         RETERROR(pScrn->scrnIndex, FALSE,
@@ -149,7 +149,7 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
             "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
     if (   RT_SUCCESS(vrc)
-        && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST, (void*)&req) < 0))
+        && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)&req) < 0))
     {
         vrc = VERR_FILE_IO_ERROR;
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
