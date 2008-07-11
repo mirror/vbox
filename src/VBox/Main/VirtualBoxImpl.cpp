@@ -227,6 +227,13 @@ HRESULT VirtualBox::init()
 
             Key global = tree.rootKey().key ("Global");
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+            /* create the performance collector object BEFORE host */
+            unconst (mData.mPerformanceCollector).createObject();
+            rc = mData.mPerformanceCollector->init ();
+            ComAssertComRCThrowRC (rc);
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
             /* create the host object early, machines will need it */
             unconst (mData.mHost).createObject();
             rc = mData.mHost->init (this);
@@ -374,6 +381,14 @@ void VirtualBox::uninit()
         mData.mHost->uninit();
         unconst (mData.mHost).setNull();
     }
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    if (mData.mPerformanceCollector)
+    {
+        mData.mPerformanceCollector->uninit();
+        unconst (mData.mPerformanceCollector).setNull();
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     /*
      *  Uninit all other children still referenced by clients
@@ -570,6 +585,25 @@ VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
     mData.mSystemProperties.queryInterfaceTo (aSystemProperties);
     return S_OK;
 }
+
+STDMETHODIMP
+VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanceCollector)
+{
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    if (!aPerformanceCollector)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    mData.mPerformanceCollector.queryInterfaceTo (aPerformanceCollector);
+
+    return S_OK;
+#else /* !VBOX_WITH_RESOURCE_USAGE_API */
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
+}
+
 
 /**
  * @note Locks this object for reading.
