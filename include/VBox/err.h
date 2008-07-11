@@ -1108,6 +1108,10 @@
 #define VERR_INTNET_FLT_IF_BUSY                     (-3601)
 /** Failed to create or connect to a networking interface filter. */
 #define VERR_INTNET_FLT_IF_FAILED                   (-3602)
+/** The network already exists with a different trunk configuration. */
+#define VERR_INTNET_INCOMPATIBLE_TRUNK              (-3603)
+/** The network already exists with a different security profile (restricted / public). */
+#define VERR_INTNET_INCOMPATIBLE_FLAGS              (-3604)
 /** @} */
 
 

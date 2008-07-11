@@ -82,6 +82,7 @@ typedef struct INTNETIF
     /** The SUPR0 object id. */
     void                   *pvObj;
 } INTNETIF;
+/** Pointer to an internal network interface. */
 typedef INTNETIF *PINTNETIF;
 
 
@@ -102,13 +103,18 @@ typedef struct INTNETNETWORK
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
     void                   *pvObj;
-    /**  Access restricted? */
-    bool                    fRestrictAccess;
+    /** Network creation flags (INTNET_OPEN_FLAGS_*). */
+    uint32_t                fFlags;
     /** The length of the network name. */
     uint8_t                 cchName;
     /** The network name. */
     char                    szName[INTNET_MAX_NETWORK_NAME];
+    /** The trunk type. */
+    INTNETTRUNKTYPE         enmTrunkType;
+    /** The trunk name. */
+    char                    szTrunk[INTNET_MAX_TRUNK_NAME];
 } INTNETNETWORK;
+/** Pointer to an internal network. */
 typedef INTNETNETWORK *PINTNETNETWORK;
 
 
@@ -1271,19 +1277,27 @@ static DECLCALLBACK(void) intnetNetworkDestruct(void *pvObj, void *pvUser1, void
  * Opens an existing network.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   pSession    The current session.
- * @param   pszNetwork  The network name. This has a valid length.
- * @param   ppNetwork   Where to store the pointer to the network on success.
+ * @param   pIntNet         The instance data.
+ * @param   pSession        The current session.
+ * @param   pszNetwork      The network name. This has a valid length.
+ * @param   enmTrunkType    The trunk type.
+ * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
+ * @param   ppNetwork       Where to store the pointer to the network on success.
  */
-static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, PINTNETNETWORK *ppNetwork)
+static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
+                             const char *pszTrunk, uint32_t fFlags, PINTNETNETWORK *ppNetwork)
 {
-    LogFlow(("intnetOpenNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
-             pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
+    LogFlow(("intnetOpenNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x ppNetwork=%p\n",
+             pIntNet, pSession, pszNetwork, pszNetwork, enmTrunkType, pszTrunk, pszTrunk, fFlags, ppNetwork));
 
+    /* just pro forma validation, the caller is internal. */
     AssertPtr(pIntNet);
     AssertPtr(pSession);
     AssertPtr(pszNetwork);
+    Assert(enmTrunkType > kIntNetTrunkType_Invalid && enmTrunkType < kIntNetTrunkType_End);
+    AssertPtr(pszTrunk);
+    Assert(!(fFlags & ~(INTNET_OPEN_FLAGS_PUBLIC)));
     AssertPtr(ppNetwork);
     *ppNetwork = NULL;
 
@@ -1303,25 +1317,43 @@ static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
             &&  !memcmp(pCur->szName, pszNetwork, cchName))
         {
             /*
-             * Increment the reference and check that the
-             * session can access this network.
+             * Found the network, now check that we have the same ideas
+             * about the trunk setup and security.
              */
-            int rc = SUPR0ObjAddRef(pCur->pvObj, pSession);
-            RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
-
-            if (VBOX_SUCCESS(rc))
+            int rc;
+            if (    enmTrunkType == kIntNetTrunkType_WhateverNone
+                ||  (   pCur->enmTrunkType == enmTrunkType
+                     && !strcmp(pCur->szTrunk, pszTrunk)))
             {
-                if (pCur->fRestrictAccess)
-                    rc = SUPR0ObjVerifyAccess(pCur->pvObj, pSession, pCur->szName);
-                if (VBOX_SUCCESS(rc))
-                    *ppNetwork = pCur;
-                else
+                if (!((pCur->fFlags ^ fFlags) & (INTNET_OPEN_FLAGS_PUBLIC)))
                 {
-                    RTSpinlockAcquire(pIntNet->Spinlock, &Tmp);
-                    SUPR0ObjRelease(pCur->pvObj, pSession);
+                    /*
+                     * Increment the reference and check that the
+                     * session can access this network.
+                     */
+                    rc = SUPR0ObjAddRef(pCur->pvObj, pSession);
                     RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
+
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        if (!(pCur->fFlags & INTNET_OPEN_FLAGS_PUBLIC))
+                            rc = SUPR0ObjVerifyAccess(pCur->pvObj, pSession, pCur->szName);
+                        if (VBOX_SUCCESS(rc))
+                            *ppNetwork = pCur;
+                        else
+                        {
+                            RTSpinlockAcquire(pIntNet->Spinlock, &Tmp);
+                            SUPR0ObjRelease(pCur->pvObj, pSession);
+                            RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
+                        }
+                    }
                 }
+                else
+                    rc = VERR_INTNET_INCOMPATIBLE_FLAGS;
             }
+            else
+                rc = VERR_INTNET_INCOMPATIBLE_TRUNK;
+
             LogFlow(("intnetOpenNetwork: returns %Vrc *ppNetwork=%p\n", rc, *ppNetwork));
             return rc;
         }
@@ -1329,8 +1361,8 @@ static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
     }
     RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
 
-    LogFlow(("intnetOpenNetwork: returns VERR_FILE_NOT_FOUND\n"));
-    return VERR_FILE_NOT_FOUND;
+    LogFlow(("intnetOpenNetwork: returns VERR_NOT_FOUND\n"));
+    return VERR_NOT_FOUND;
 }
 
 
@@ -1342,20 +1374,27 @@ static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
  *
  * @returns VBox status code.
  * @param   pIntNet         The instance data.
+ * @param   pSession        The session handle.
  * @param   pszNetwork      The name of the network. This must be at least one character long and no longer
  *                          than the INTNETNETWORK::szName.
- * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
- * @param   pSession        The session handle.
+ * @param   enmTrunkType    The trunk type.
+ * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
  * @param   ppNetwork       Where to store the network.
  */
-static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, bool fRestrictAccess, PINTNETNETWORK *ppNetwork)
+static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
+                               const char *pszTrunk, uint32_t fFlags, PINTNETNETWORK *ppNetwork)
 {
-    LogFlow(("intnetCreateNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
-             pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
+    LogFlow(("intnetCreateNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x ppNetwork=%p\n",
+             pIntNet, pSession, pszNetwork, pszNetwork, enmTrunkType, pszTrunk, pszTrunk, fFlags, ppNetwork));
 
+    /* just pro forma validation, the caller is internal. */
     AssertPtr(pIntNet);
     AssertPtr(pSession);
     AssertPtr(pszNetwork);
+    Assert(enmTrunkType > kIntNetTrunkType_Invalid && enmTrunkType < kIntNetTrunkType_End);
+    AssertPtr(pszTrunk);
+    Assert(!(fFlags & ~(INTNET_OPEN_FLAGS_PUBLIC)));
     AssertPtr(ppNetwork);
     *ppNetwork = NULL;
 
@@ -1386,10 +1425,13 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     {
         //pNew->pIFs = NULL;
         pNew->pIntNet = pIntNet;
+        pNew->fFlags = fFlags;
         pNew->cchName = cchName;
-        pNew->fRestrictAccess = fRestrictAccess;
         Assert(cchName && cchName < sizeof(pNew->szName));  /* caller's responsibility. */
         memcpy(pNew->szName, pszNetwork, cchName);          /* '\0' by alloc. */
+        pNew->enmTrunkType = enmTrunkType;
+        Assert(strlen(pszTrunk) < sizeof(pNew->szTrunk));   /* caller's responsibility. */
+        strcpy(pNew->szTrunk, pszTrunk);
 
         /*
          * Register the object in the current session.
@@ -1398,25 +1440,32 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         if (pNew->pvObj)
         {
             /*
-             * Insert the network into the list.
+             * Check again that the network doesn't exist and then link in the new one.
              * This must be done before we attempt any SUPR0ObjRelease call.
              */
             RTSpinlockAcquire(pIntNet->Spinlock, &Tmp);
+            for (PINTNETNETWORK pCur = pIntNet->pNetworks; pCur; pCur = pCur->pNext)
+                if (    pCur->cchName == cchName
+                    &&  !memcmp(pCur->szName, pszNetwork, cchName))
+                    rc = VERR_ALREADY_EXISTS;
             pNew->pNext = pIntNet->pNetworks;
             pIntNet->pNetworks = pNew;
             RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
 
-            /*
-             * Check if the current session is actually allowed to create and open
-             * the network. It is possible to implement network name based policies
-             * and these must be checked now. SUPR0ObjRegister does no such checks.
-             */
-            rc = SUPR0ObjVerifyAccess(pNew->pvObj, pSession, pNew->szName);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
-                *ppNetwork = pNew;
-                LogFlow(("intnetCreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
-                return VINF_SUCCESS;
+                /*
+                 * Check if the current session is actually allowed to create and open
+                 * the network. It is possible to implement network name based policies
+                 * and these must be checked now. SUPR0ObjRegister does no such checks.
+                 */
+                rc = SUPR0ObjVerifyAccess(pNew->pvObj, pSession, pNew->szName);
+                if (VBOX_SUCCESS(rc))
+                {
+                    *ppNetwork = pNew;
+                    LogFlow(("intnetCreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
+                    return VINF_SUCCESS;
+                }
             }
 
             /* The release will destroy the object. */
@@ -1473,9 +1522,10 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         AssertPtrReturn(pszTrunk, VERR_INVALID_PARAMETER);
         const char *pszTrunkEnd = (const char *)memchr(pszTrunk, '\0', INTNET_MAX_TRUNK_NAME);
         AssertReturn(pszTrunkEnd, VERR_INVALID_PARAMETER);
-        if (pszTrunkEnd == pszTrunk)
-            pszTrunk = NULL;
     }
+    else
+        pszTrunk = "";
+
     AssertMsgReturn(enmTrunkType > kIntNetTrunkType_Invalid && enmTrunkType < kIntNetTrunkType_End,
                     ("%d\n", enmTrunkType), VERR_INVALID_PARAMETER);
     switch (enmTrunkType)
@@ -1507,9 +1557,9 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
      * Try open/create the network.
      */
     PINTNETNETWORK pNetwork;
-    rc = intnetOpenNetwork(pIntNet, pSession, pszNetwork, &pNetwork);
-    if (rc == VERR_FILE_NOT_FOUND)
-        rc = intnetCreateNetwork(pIntNet, pSession, pszNetwork, !(fFlags & INTNET_OPEN_FLAGS_PUBLIC), &pNetwork);
+    rc = intnetOpenNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
+    if (rc == VERR_NOT_FOUND)
+        rc = intnetCreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
     if (VBOX_SUCCESS(rc))
     {
         /*
