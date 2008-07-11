@@ -1099,7 +1099,8 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 
 #if defined(RT_OS_WINDOWS)
-# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \       /* @todo Remove this later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
+/* @todo Remove IOCTL_CODE later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
+# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
   ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
@@ -1238,7 +1239,6 @@ typedef struct _VBoxGuestHGCMCallInfo
 } VBoxGuestHGCMCallInfo;
 #pragma pack()
 
-//#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_HGCM_CONNECT       VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CONNECT       VBOXGUEST_IOCTL_HGCM_CONNECT
 # define VBOXGUEST_IOCTL_HGCM_DISCONNECT    VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
@@ -1247,12 +1247,6 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define IOCTL_VBOXGUEST_HGCM_CALL          VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
-/*#else
-# define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
-# define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
-# define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
-# define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
-#endif*/
 
 #define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
