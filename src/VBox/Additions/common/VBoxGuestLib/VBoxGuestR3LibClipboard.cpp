@@ -99,7 +99,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, 
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL, &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
@@ -149,7 +149,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, 
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL, &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
@@ -187,7 +187,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
     Msg.hdr.cParms = 1;
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL, &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     return rc;
@@ -216,7 +216,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat,
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL, &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     return rc;
