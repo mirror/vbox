@@ -3550,8 +3550,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # ifndef IN_RING0
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDGC, NULL, &HCPhysShw);
-#  else
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE
     rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
+#  elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePML4HC, NULL, &HCPhysShw);
 #  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
