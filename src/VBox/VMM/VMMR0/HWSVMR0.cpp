@@ -896,6 +896,9 @@ ResumeExecution:
         if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID
             ||  pCpu->fFlushTLB)
         {
+            if (pCpu->fFlushTLB) 
+                Log(("SVMR0RunGuestCode: First time cpu %d is used -> flush\n", pCpu->idCpu));
+
             pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;       /* wrap around; flush TLB */
