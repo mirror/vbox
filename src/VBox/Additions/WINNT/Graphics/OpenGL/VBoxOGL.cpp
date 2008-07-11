@@ -256,7 +256,7 @@ int vboxHGCMCall(void *pvData, unsigned cbData)
     DWORD cbReturned;
 
     if (DeviceIoControl (vboxOGLCtx.hGuestDrv,
-                         VBOXGUEST_IOCTL_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL(cbData),
                          pvData, cbData,
                          pvData, cbData,
                          &cbReturned,

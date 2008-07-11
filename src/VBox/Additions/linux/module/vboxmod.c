@@ -434,7 +434,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 }
                 IOCTL_LOG_EXIT(arg);
         }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST)
+        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))  {
             VMMDevRequestHeader reqHeader;
             VMMDevRequestHeader *reqFull = NULL;
@@ -524,7 +524,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 VbglGRFree(reqFull);
             IOCTL_VMM_EXIT(arg);
         }
-        else if (   (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL)
+        else if (   (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
             || (cmd == VBOXGUEST_IOCTL_HGCM_CALL))
         {

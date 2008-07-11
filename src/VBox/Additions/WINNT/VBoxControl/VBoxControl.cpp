@@ -882,7 +882,7 @@ static int hgcmCall(HANDLE hDevice, VBoxGuestHGCMCallInfo *pMsg, size_t cbMsg)
     int rc = VERR_NOT_SUPPORTED;
 
     if (DeviceIoControl (hDevice,
-                         VBOXGUEST_IOCTL_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL(cbMsg),
                          pMsg, cbMsg,
                          pMsg, cbMsg,
                          &cbReturned,

@@ -408,7 +408,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                     displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
                     displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                    BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
+                    BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest2)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
                     if (!fDisplayChangeQueried)
                     {
@@ -417,7 +417,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                         displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                         displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest;
                         displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                        fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
+                        fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
                         displayChangeRequest.display = 0;
                     }

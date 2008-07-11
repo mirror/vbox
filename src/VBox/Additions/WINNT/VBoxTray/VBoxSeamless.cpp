@@ -84,7 +84,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         vmmreqGuestCaps.caps = VMMDEV_GUEST_SUPPORTS_SEAMLESS;
 
         DWORD cbReturned;
-        if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
+        if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                              &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
         {
             dprintf(("VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
@@ -114,7 +114,7 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     vmmreqGuestCaps.caps = 0;
 
     DWORD cbReturned;
-    if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
+    if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                          &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
     {
         dprintf(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
@@ -336,7 +336,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                     vmmdevInitRequest((VMMDevRequestHeader*)&seamlessChangeRequest, VMMDevReq_GetSeamlessChangeRequest);
                     seamlessChangeRequest.eventAck = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
 
-                    BOOL fSeamlessChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &seamlessChangeRequest, sizeof(seamlessChangeRequest),
+                    BOOL fSeamlessChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(seamlessChangeRequest)), &seamlessChangeRequest, sizeof(seamlessChangeRequest),
                                                                  &seamlessChangeRequest, sizeof(seamlessChangeRequest), &cbReturned, NULL);
                     if (fSeamlessChangeQueried)
                     {

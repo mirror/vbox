@@ -1187,7 +1187,7 @@ typedef struct _VBoxGuestWaitEventInfo
 /** IOCTL to VBoxGuest to perform a VMM request
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
-#define VBOXGUEST_IOCTL_VMMREQUEST                  VBOXGUEST_IOCTL_CODE(3, sizeof(VMMDevRequestHeader))
+#define VBOXGUEST_IOCTL_VMMREQUEST(Size)            VBOXGUEST_IOCTL_CODE(3, (Size))
 
 /** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
 typedef struct _VBoxGuestFilterMaskInfo
@@ -1237,7 +1237,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 
 # define VBOXGUEST_IOCTL_HGCM_CONNECT       VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define VBOXGUEST_IOCTL_HGCM_DISCONNECT    VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
-# define VBOXGUEST_IOCTL_HGCM_CALL          VBOXGUEST_IOCTL_CODE(18, sizeof(VBoxGuestHGCMCallInfo))
+# define VBOXGUEST_IOCTL_HGCM_CALL(Size)    VBOXGUEST_IOCTL_CODE(18, (Size))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 
 # define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
