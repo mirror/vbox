@@ -91,7 +91,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
     NOREF(u32ClientID);
     NOREF(pvClient);
 
-    Log(("svcConnect: u32ClientID = %d\n", u32ClientID));
+    LogRel(("SharedFolders host service: connected, u32ClientID = %d\n", u32ClientID));
 
     return rc;
 }
@@ -101,7 +101,7 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
     int rc = VINF_SUCCESS;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    Log(("svcDisconnect: u32ClientID = %d\n", u32ClientID));
+    LogRel(("SharedFolders host service: disconnected, u32ClientID = %d\n", u32ClientID));
 
     vbsfDisconnect(pClient);
     return rc;
@@ -117,7 +117,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 {
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    Log(("svcSaveState: u32ClientID = %d\n", u32ClientID));
+    LogRel(("SharedFolders host service: saving state, u32ClientID = %d\n", u32ClientID));
 
     int rc = SSMR3PutU32(pSSM, SHFL_SSM_VERSION);
     AssertRCReturn(rc, rc);
@@ -176,7 +176,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
     uint32_t        len, version;
 
-    Log(("svcLoadState: u32ClientID = %d\n", u32ClientID));
+    LogRel(("SharedFolders host service: loading state, u32ClientID = %d\n", u32ClientID));
 
     int rc = SSMR3GetU32(pSSM, &version);
     AssertRCReturn(rc, rc);
@@ -273,6 +273,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
         }
     }
+    LogRel(("SharedFolders host service: success\n"));
     return VINF_SUCCESS;
 }
 
@@ -811,6 +812,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         case SHFL_FN_MAP_FOLDER:
         {
             Log(("svcCall: SHFL_FN_MAP_FOLDER\n"));
+            if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
+                LogRel(("SharedFolders host service: request to map folder %S\n",
+                        ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
+            else
+                LogRel(("SharedFolders host service: request to map folder %lS\n",
+                        ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_MAP_FOLDER)
@@ -842,12 +849,17 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     paParms[1].u.uint32 = root;
                 }
             }
+            LogRel(("SharedFolders host service: map operation result %Rrc.\n", rc));
+            if (RT_SUCCESS(rc))
+                LogRel(("    Mapped to handle %d.\n", paParms[1].u.uint32));
             break;
         }
 
         case SHFL_FN_UNMAP_FOLDER:
         {
             Log(("svcCall: SHFL_FN_UNMAP_FOLDER\n"));
+            LogRel(("SharedFolders host service: request to unmap folder handle %d\n",
+                    paParms[0].u.uint32));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_UNMAP_FOLDER)
@@ -873,6 +885,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     /* nothing */
                 }
             }
+            LogRel(("SharedFolders host service: unmap operation result %Rrc.\n", rc));
             break;
         }
 
@@ -1117,6 +1130,11 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     case SHFL_FN_ADD_MAPPING:
     {
         Log(("svcCall: SHFL_FN_ADD_MAPPING\n"));
+        LogRel(("SharedFolders host service: adding host mapping.\n"));
+        LogRel(("    Host path %lS, map name %lS, writable %d\n",
+                ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
+                ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
+                paParms[2].u.uint32));
 
         /* Verify parameter count and types. */
         if (cParms != SHFL_CPARMS_ADD_MAPPING)
@@ -1160,12 +1178,15 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
             }
         }
+        LogRel(("SharedFolders host service: add mapping result %Rrc\n", rc));
         break;
     }
 
     case SHFL_FN_REMOVE_MAPPING:
     {
         Log(("svcCall: SHFL_FN_REMOVE_MAPPING\n"));
+        LogRel(("SharedFolders host service: removing host mapping %lS\n",
+                ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
 
         /* Verify parameter count and types. */
         if (cParms != SHFL_CPARMS_REMOVE_MAPPING)
@@ -1202,6 +1223,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
             }
         }
+        LogRel(("SharedFolders host service: remove mapping result %Rrc\n", rc));
         break;
     }
 
