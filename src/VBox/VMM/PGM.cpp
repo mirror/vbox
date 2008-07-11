@@ -632,6 +632,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
 static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
 
@@ -646,6 +647,7 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmram",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
     { "pgmmap",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
     { "pgmsync",    0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+    { "pgmassertcr3",  0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
     { "pgmsyncalways", 0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
 };
 #endif
@@ -3884,7 +3886,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      * Validate input.
      */
     if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
     if (!pVM->pgm.s.pRamRangesGC)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no Ram is registered.\n");
 
@@ -3922,7 +3924,7 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      * Validate input.
      */
     if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
     if (!pVM->pgm.s.pMappingsR3)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no mappings are registered.\n");
 
@@ -3966,7 +3968,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
      * Validate input.
      */
     if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
     /*
      * Force page directory sync.
@@ -3976,6 +3978,34 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Forcing page directory sync.\n");
     if (VBOX_FAILURE(rc))
         return rc;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The '.pgmassertcr3' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+
+    int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Checking shadow CR3 page tables for consistency.\n");
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    PGMAssertCR3(pVM, CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM));
 
     return VINF_SUCCESS;
 }
@@ -3997,7 +4027,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * Validate input.
      */
     if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
     /*
      * Force page directory sync.
