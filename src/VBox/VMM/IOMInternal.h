@@ -437,6 +437,23 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  */
 IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 
+#ifdef IN_RING3
+/**
+ * \#PF Handler callback for MMIO ranges.
+ *
+ * @returns VINF_SUCCESS if the handler have carried out the operation.
+ * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          The physical address the guest is writing to.
+ * @param   pvPhys          The HC mapping of that address.
+ * @param   pvBuf           What the guest is reading/writing.
+ * @param   cbBuf           How much it's reading/writing.
+ * @param   enmAccessType   The access type.
+ * @param   pvUser      Pointer to the MMIO range entry.
+ */
+DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+#endif
+
 /**
  * Gets the I/O port range for the specified I/O port in the current context.
  *
