@@ -317,7 +317,11 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
  * Fake class for build without USB.
  * We need an empty collection & enum for deviceFilters, that's all.
  */
-class ATL_NO_VTABLE USBDeviceFilter : public VirtualBoxBaseNEXT, public IUSBDeviceFilter
+class ATL_NO_VTABLE USBDeviceFilter :
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <USBDeviceFilter, IUSBDeviceFilter>,
+    public VirtualBoxSupportTranslation <USBDeviceFilter>,
+    public IUSBDeviceFilter
 {
 public:
     DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
