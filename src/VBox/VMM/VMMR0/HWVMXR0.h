@@ -131,9 +131,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
- * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
+HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
 
 
 #define VMX_WRITE_SELREG(REG, reg) \

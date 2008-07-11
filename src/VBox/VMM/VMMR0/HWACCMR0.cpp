@@ -66,7 +66,7 @@ static struct
     DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, CPUMCTX *pCtx));
-    DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu));
+    DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, CPUMCTX *pCtx));
     DECLR0CALLBACKMEMBER(int, pfnEnableCpu, (PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys));
     DECLR0CALLBACKMEMBER(int, pfnDisableCpu, (PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys));
     DECLR0CALLBACKMEMBER(int, pfnInitVM, (PVM pVM));
@@ -794,14 +794,28 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
     RTCPUID  idCpu = RTMpCpuId();
 
     Assert(!VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
+    Assert(HWACCMR0Globals.aCpuInfo[idCpu].fConfigured);
 
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
         return rc;
 
-    return HWACCMR0Globals.pfnRunGuestCode(pVM, pCtx, &HWACCMR0Globals.aCpuInfo[idCpu]);
+    return HWACCMR0Globals.pfnRunGuestCode(pVM, pCtx);
 }
 
+/**
+ * Returns the cpu structure for the current cpu.
+ * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
+ *
+ * @returns cpu structure pointer
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
+{
+    RTCPUID  idCpu = RTMpCpuId();
+
+    return &HWACCMR0Globals.aCpuInfo[idCpu];
+}
 
 #ifdef VBOX_STRICT
 #include <iprt/string.h>
@@ -1046,7 +1060,7 @@ HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu)
+HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     return VINF_SUCCESS;
 }

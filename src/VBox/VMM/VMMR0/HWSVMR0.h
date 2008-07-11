@@ -112,9 +112,8 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
- * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx, PHWACCM_CPUINFO pCpu);
+HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
 
 
 /**
