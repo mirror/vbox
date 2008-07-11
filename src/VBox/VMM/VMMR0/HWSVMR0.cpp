@@ -872,17 +872,19 @@ ResumeExecution:
     pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.fNestedPaging;
 
 #ifdef LOG_ENABLED
-    PHWACCM_CPUINFO pCpuTemp = HWACCMR0GetCurrentCpu();
-    if (    pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu
-        ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpuTemp->cTLBFlushes)
     {
-        if (pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu)
-            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpuTemp->idCpu));
-        else
-            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpuTemp->cTLBFlushes));
+        PHWACCM_CPUINFO pCpuTemp = HWACCMR0GetCurrentCpu();
+        if (    pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu
+            ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpuTemp->cTLBFlushes)
+        {
+            if (pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu)
+                Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpuTemp->idCpu));
+            else
+                Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpuTemp->cTLBFlushes));
+        }
+        if (pCpuTemp->fFlushTLB) 
+            Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpuTemp->idCpu));
     }
-    if (pCpuTemp->fFlushTLB) 
-        Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpuTemp->idCpu));
 #endif
 
     /*
