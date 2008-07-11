@@ -22,85 +22,88 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>381</width>
-    <height>205</height>
+    <width>292</width>
+    <height>91</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" >
+  <layout class="QGridLayout" >
    <property name="leftMargin" >
     <number>0</number>
    </property>
    <property name="topMargin" >
-    <number>5</number>
+    <number>0</number>
    </property>
    <property name="rightMargin" >
     <number>0</number>
    </property>
    <property name="bottomMargin" >
-    <number>5</number>
+    <number>0</number>
    </property>
-   <item>
-    <widget class="QGroupBox" name="mGbInput" >
-     <property name="title" >
-      <string>&amp;Keyboard</string>
+   <item rowspan="2" row="0" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
      </property>
-     <layout class="QVBoxLayout" >
-      <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <widget class="QLabel" name="mLbHostKey" >
-          <property name="text" >
-           <string>Host &amp;Key</string>
-          </property>
-          <property name="buddy" >
-           <cstring>mHeHostKey</cstring>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QIHotKeyEdit" name="mHeHostKey" >
-          <property name="whatsThis" >
-           <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="mCbAutoGrab" >
-        <property name="whatsThis" >
-         <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
-        </property>
-        <property name="text" >
-         <string>&amp;Auto capture keyboard</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="1" >
+    <widget class="QLabel" name="mLbHostKey" >
+     <property name="text" >
+      <string>Host &amp;Key:</string>
+     </property>
+     <property name="buddy" >
+      <cstring>mHeHostKey</cstring>
+     </property>
     </widget>
    </item>
-   <item>
+   <item row="0" column="2" >
+    <widget class="QIHotKeyEdit" name="mHeHostKey" >
+     <property name="whatsThis" >
+      <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>0</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="2" colspan="2" >
+    <widget class="QCheckBox" name="mCbAutoGrab" >
+     <property name="whatsThis" >
+      <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Auto capture keyboard</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="3" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
      <property name="sizeHint" >
       <size>
-       <width>20</width>
-       <height>0</height>
+       <width>121</width>
+       <height>271</height>
       </size>
      </property>
     </spacer>
