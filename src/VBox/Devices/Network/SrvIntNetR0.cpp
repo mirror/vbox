@@ -991,9 +991,9 @@ static DECLCALLBACK(void) intnetIfDestruct(void *pvObj, void *pvUser1, void *pvU
      * If we've got a network unlink ourselves from it.
      * Because of cleanup order we might be an orphan now.
      */
-    if (pIf->pNetwork)
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
+    if (pNetwork)
     {
-        PINTNETNETWORK pNetwork = pIf->pNetwork;
         RTSemFastMutexRequest(pNetwork->FastMutex);
         if (pNetwork->pIFs == pIf)
             pNetwork->pIFs = pIf->pNext;
@@ -1017,7 +1017,7 @@ static DECLCALLBACK(void) intnetIfDestruct(void *pvObj, void *pvUser1, void *pvU
         /*
          * Release or reference to the network.
          */
-        SUPR0ObjRelease(pIf->pNetwork->pvObj, pIf->pSession);
+        SUPR0ObjRelease(pNetwork->pvObj, pIf->pSession);
         pIf->pNetwork = NULL;
     }
 
