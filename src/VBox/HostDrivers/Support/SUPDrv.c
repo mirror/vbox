@@ -1481,6 +1481,10 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
  * @returns IPRT status code.
  * @param   pvObj           The identifier returned by SUPR0ObjRegister().
  * @param   pSession        The session which is referencing the object.
+ *
+ * @remarks The caller should not own any spinlocks and must carefully protect
+ *          itself against potential race with the destructor so freed memory
+ *          isn't accessed here.
  */
 SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 {
@@ -1492,17 +1496,28 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 
     /*
      * Validate the input.
+     * Be ready for the destruction race (someone might be stuck in the
+     * destructor waiting a lock we own).
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
-                    ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
+    AssertPtrReturn(pObj, VERR_INVALID_POINTER);
+    AssertMsgReturn(pObj->u32Magic == SUPDRVOBJ_MAGIC || pObj->u32Magic == SUPDRVOBJ_MAGIC + 1,
+                    ("Invalid pvObj=%p magic=%#x (expected %#x or %#x)\n", pvObj, pObj->u32Magic, SUPDRVOBJ_MAGIC, SUPDRVOBJ_MAGIC + 1),
                     VERR_INVALID_PARAMETER);
+
+    RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+
+    if (RT_UNLIKELY(pObj->u32Magic != SUPDRVOBJ_MAGIC))
+    {
+        AssertMsg(pObj->u32Magic == SUPDRVOBJ_MAGIC + 1, ("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
+
+        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        return VERR_WRONG_ORDER;
+    }
 
     /*
      * Preallocate the usage record.
      */
-    RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
-
     pUsagePre = pDevExt->pUsageFree;
     if (pUsagePre)
         pDevExt->pUsageFree = pUsagePre->pNext;
@@ -1512,6 +1527,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
         pUsagePre = (PSUPDRVUSAGE)RTMemAlloc(sizeof(*pUsagePre));
         if (!pUsagePre)
             return VERR_NO_MEMORY;
+
         RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
     }
 
