@@ -706,7 +706,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     *ppRing3Buf = pIf->pIntBufR3;
 
     rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
-    LogFlow(("INTNETR0IfGetRing3Buffer: returns %Vrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
+    LogFlow(("INTNETR0IfGetRing3Buffer: returns %Rrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
     return rc;
 }
 
@@ -757,7 +757,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     *ppRing0Buf = pIf->pIntBuf;
 
     rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
-    LogFlow(("INTNETR0IfGetRing0Buffer: returns %Vrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
+    LogFlow(("INTNETR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
     return rc;
 }
 
@@ -904,7 +904,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t c
     }
     else
         rc = VERR_SEM_DESTROYED;
-    LogFlow(("INTNETR0IfWait: returns %Vrc\n", rc));
+    LogFlow(("INTNETR0IfWait: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -944,7 +944,7 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf)
         return VERR_INVALID_HANDLE;
 
     int rc = SUPR0ObjRelease(pIf->pvObj, pIf->pSession);
-    LogFlow(("INTNETR0IfClose: returns %Vrc\n", rc));
+    LogFlow(("INTNETR0IfClose: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1172,7 +1172,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
                     rc = VERR_NO_MEMORY;
 
                     SUPR0ObjRelease(pIf->pvObj, pSession);
-                    LogFlow(("intnetNetworkCreateIf: returns %Vrc\n", rc));
+                    LogFlow(("intnetNetworkCreateIf: returns %Rrc\n", rc));
                     return rc;
                 }
                 rc = VERR_NO_MEMORY;
@@ -1188,7 +1188,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
         pIf->Event = NIL_RTSEMEVENT;
     }
     RTMemFree(pIf);
-    LogFlow(("intnetNetworkCreateIf: returns %Vrc\n", rc));
+    LogFlow(("intnetNetworkCreateIf: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1206,7 +1206,7 @@ static int intnetNetworkClose(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession)
     AssertPtrReturn(pNetwork, VERR_INVALID_PARAMETER);
 
     int rc = SUPR0ObjRelease(pNetwork->pvObj, pSession);
-    LogFlow(("intnetNetworkClose: return %Vrc\n", rc));
+    LogFlow(("intnetNetworkClose: return %Rrc\n", rc));
     return rc;
 }
 
@@ -1350,7 +1350,7 @@ static int intnetOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
             else
                 rc = VERR_INTNET_INCOMPATIBLE_TRUNK;
 
-            LogFlow(("intnetOpenNetwork: returns %Vrc *ppNetwork=%p\n", rc, *ppNetwork));
+            LogFlow(("intnetOpenNetwork: returns %Rrc *ppNetwork=%p\n", rc, *ppNetwork));
             return rc;
         }
         pCur = pCur->pNext;
@@ -1466,7 +1466,7 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
 
             /* The release will destroy the object. */
             SUPR0ObjRelease(pNew->pvObj, pSession);
-            LogFlow(("intnetCreateNetwork: returns %Vrc\n", rc));
+            LogFlow(("intnetCreateNetwork: returns %Rrc\n", rc));
             return rc;
         }
         rc = VERR_NO_MEMORY;
@@ -1475,7 +1475,7 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         pNew->FastMutex = NIL_RTSEMFASTMUTEX;
     }
     RTMemFree(pNew);
-    LogFlow(("intnetCreateNetwork: returns %Vrc\n", rc));
+    LogFlow(("intnetCreateNetwork: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1570,7 +1570,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
 
     RTSemFastMutexRelease(pIntNet->FastMutex);
 
-    LogFlow(("INTNETR0Open: return %Vrc *phIf=%RX32\n", rc, *phIf));
+    LogFlow(("INTNETR0Open: return %Rrc *phIf=%RX32\n", rc, *phIf));
     return rc;
 }
 
@@ -1660,7 +1660,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
         RTMemFree(pIntNet);
     }
     *ppIntNet = NULL;
-    LogFlow(("INTNETR0Create: returns %Vrc\n", rc));
+    LogFlow(("INTNETR0Create: returns %Rrc\n", rc));
     return rc;
 }
 
