@@ -146,10 +146,6 @@ Machine::Data::Data()
 
     mSession.mPid = NIL_RTPROCESS;
     mSession.mState = SessionState_Closed;
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    mUsageSampler = NULL;
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 Machine::Data::~Data()
@@ -500,18 +496,6 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             autoInitSpan.setLimited();
     }
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /* Start resource usage sampler */
-    {
-        vrc = RTTimerCreate (&mData->mUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL,
-                             Machine::UsageSamplerCallback, this);
-        AssertMsgRC (vrc, ("Failed to create resource usage "
-                            "sampling timer(%Rra)\n", vrc));
-        if (RT_FAILURE (vrc))
-            rc = E_FAIL;
-    }
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
     LogFlowThisFunc (("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
                       "rc=%08X\n",
                       !!mUserData ? mUserData->mName.raw() : NULL,
@@ -635,15 +619,6 @@ void Machine::uninit()
      * SessionMachine::uninit(), etc.
      */
     AutoMultiWriteLock2 alock (mParent, this);
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    /* Destroy resource usage sampler */
-    {
-        int vrc = RTTimerDestroy (mData->mUsageSampler);
-        AssertMsgRC (vrc, ("Failed to destroy resource usage "
-                           "sampling timer (%Rra)\n", vrc));
-    }
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     if (!mData->mSession.mMachine.isNull())
     {
@@ -2811,24 +2786,6 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_INFO_SVC) */
-}
-
-STDMETHODIMP Machine::GetProcessorUsage (ULONG *aUser, ULONG *aSystem)
-{
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    if (aUser == NULL || aSystem == NULL)
-        return E_POINTER;
-
-//  LogFlowThisFunc (("user=%u%% system=%u%% &mData->mCpuStats=%p\n",
-//                    mData->mCpuStats.u32User / 10000000,
-//                    mData->mCpuStats.u32System / 10000000, &mData->mCpuStats));
-
-    *aUser   = mData->mCpuStats.u32User;
-    *aSystem = mData->mCpuStats.u32System;
-    return S_OK;
-#else /* !VBOX_WITH_RESOURCE_USAGE_API */
-    return E_NOTIMPL;
-#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 
@@ -7319,37 +7276,38 @@ void Machine::copyFrom (Machine *aThat)
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-
-/* static */
-void Machine::UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+void Machine::registerMetrics(PerformanceCollector *collector)
 {
-    AssertReturnVoid (pvUser != NULL);
-    static_cast <Machine *> (pvUser)->usageSamplerCallback();
-}
+    pm::MetricFactory *metricFactory = collector->getMetricFactory();
+    // Create sub metrics
+    pm::SubMetric *cpuLoadUser = new pm::SubMetric("CPU/Load/User");
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric("CPU/Load/Kernel");
+    // Create and register base metrics
+    IUnknown *objptr;
 
-void Machine::usageSamplerCallback()
+    ComObjPtr<Machine> tmp = this;
+    tmp.queryInterfaceTo(&objptr);
+    pm::BaseMetric *cpuLoad =
+        metricFactory->createMachineCpuLoad(objptr, mData->mSession.mPid, cpuLoadUser, cpuLoadKernel);
+    collector->registerBaseMetric(cpuLoad);
+
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateAvg()));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMin()));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMax()));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, 0));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateAvg()));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMin()));
+    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMax()));
+};
+
+void Machine::unregisterMetrics(PerformanceCollector *collector)
 {
-//  LogFlowThisFunc (("mData->mSession.mPid = %u &mData->mCpuStats = %p)\n",
-//                    mData->mSession.mPid, &m_CpuStats));
-    if (mData->mSession.mPid != NIL_RTPROCESS)
-    {
-        int vrc = RTProcessGetProcessorUsageStats (mData->mSession.mPid,
-                                                   &mData->mCpuStats);
-        AssertMsgRC (vrc, ("Failed to get CPU stats (%Rra)\n", vrc));
-    }
-    else
-    {
-        mData->mCpuStats.u32User   = 0;
-        mData->mCpuStats.u32System = 0;
-    }
-//  LogFlowThisFunc (("user=%u%% system=%u%% &mData->mCpuStats=%p\n",
-//                    mData->mCpuStats.u32User / 10000000,
-//                    mData->mCpuStats.u32System / 10000000, &mData->mCpuStats));
-//  LogFlowThisFunc (("user=%.2f system=%.2f\n",
-//                    mData->mCpuStats.u32User/10000000., mData->mCpuStats.u32System/10000000.));
-}
-
+    collector->unregisterMetricsFor(this);
+    collector->unregisterBaseMetricsFor(this);
+};
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 
 /////////////////////////////////////////////////////////////////////////////
 // SessionMachine class
@@ -10405,3 +10363,5 @@ HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
 
     return S_OK;
 }
+
+
