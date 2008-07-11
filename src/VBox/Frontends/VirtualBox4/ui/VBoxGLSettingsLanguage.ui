@@ -22,158 +22,193 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>346</width>
+    <height>282</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" >
+  <layout class="QGridLayout" >
    <property name="leftMargin" >
     <number>0</number>
    </property>
    <property name="topMargin" >
-    <number>5</number>
+    <number>0</number>
    </property>
    <property name="rightMargin" >
     <number>0</number>
    </property>
    <property name="bottomMargin" >
-    <number>5</number>
+    <number>0</number>
    </property>
-   <item>
-    <widget class="QGroupBox" name="mGbLanguage" >
-     <property name="title" >
-      <string>&amp;Interface Language</string>
+   <item row="0" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
      </property>
-     <layout class="QHBoxLayout" >
-      <item>
-       <widget class="QITreeWidget" name="mTwLanguage" >
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize" >
-         <size>
-          <width>0</width>
-          <height>150</height>
-         </size>
-        </property>
-        <property name="whatsThis" >
-         <string>Lists all available user interface languages. The effective language is written in &lt;b>bold&lt;/b>. Select &lt;i>Default&lt;/i> to reset to the system default language.</string>
-        </property>
-        <property name="rootIsDecorated" >
-         <bool>false</bool>
-        </property>
-        <column>
-         <property name="text" >
-          <string>Name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text" >
-          <string>Id</string>
-         </property>
-        </column>
-        <column>
-         <property name="text" >
-          <string>Language</string>
-         </property>
-        </column>
-        <column>
-         <property name="text" >
-          <string>Author</string>
-         </property>
-        </column>
-       </widget>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" >
-        <item>
-         <layout class="QGridLayout" >
-          <item row="0" column="0" >
-           <widget class="QLabel" name="mLbName" >
-            <property name="sizePolicy" >
-             <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text" >
-             <string>Language:</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" >
-           <widget class="QLabel" name="mTxName" >
-            <property name="sizePolicy" >
-             <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-            </property>
-            <property name="wordWrap" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0" >
-           <widget class="QLabel" name="mLbAuthor" >
-            <property name="sizePolicy" >
-             <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text" >
-             <string>Author(s):</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1" >
-           <widget class="QLabel" name="mTxAuthor" >
-            <property name="sizePolicy" >
-             <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-            </property>
-            <property name="wordWrap" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>20</width>
-            <height>0</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-     </layout>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="1" colspan="2" >
+    <widget class="QLabel" name="mGbLanguage" >
+     <property name="text" >
+      <string>&amp;Interface Language:</string>
+     </property>
+     <property name="buddy" >
+      <cstring>mTwLanguage</cstring>
+     </property>
     </widget>
+   </item>
+   <item row="1" column="1" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="2" >
+    <widget class="QITreeWidget" name="mTwLanguage" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize" >
+      <size>
+       <width>0</width>
+       <height>150</height>
+      </size>
+     </property>
+     <property name="whatsThis" >
+      <string>Lists all available user interface languages. The effective language is written in &lt;b>bold&lt;/b>. Select &lt;i>Default&lt;/i> to reset to the system default language.</string>
+     </property>
+     <property name="rootIsDecorated" >
+      <bool>false</bool>
+     </property>
+     <column>
+      <property name="text" >
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Id</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Language</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Author</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="2" column="2" >
+    <layout class="QGridLayout" >
+     <item row="0" column="0" >
+      <widget class="QLabel" name="mLbName" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text" >
+        <string>Language:</string>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" >
+      <widget class="QLabel" name="mTxName" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize" >
+        <size>
+         <width>0</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
+       <property name="wordWrap" >
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" >
+      <widget class="QLabel" name="mLbAuthor" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text" >
+        <string>Author(s):</string>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" >
+      <widget class="QLabel" name="mTxAuthor" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
+       <property name="wordWrap" >
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="2" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

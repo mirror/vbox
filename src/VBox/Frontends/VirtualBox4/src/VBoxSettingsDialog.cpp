@@ -68,11 +68,12 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
 
     QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    mLbTitle->hide();
+    mLbWhatsThis->hide();
     mSelector = new VBoxSettingsToolBarSelector (this);
     static_cast<VBoxToolBar*> (mSelector->widget())->setMacToolbar();
     addToolBar (qobject_cast<QToolBar*> (mSelector->widget()));
     /* No title in this mode, we change the title of the window. */
-    mLbTitle->hide();
     mainLayout->setColumnMinimumWidth (0, 0);
     mainLayout->setHorizontalSpacing (0);
 #else
@@ -193,9 +194,6 @@ void VBoxSettingsDialog::categoryChanged (int aId)
 {
     int index = mSelector->idToIndex (aId);
 #ifndef Q_WS_MAC
-# ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    setWindowTitle (dialogTitle());
-# endif
     mLbTitle->setText (mSelector->itemText (aId));
     mStack->setCurrentIndex (index);
 #else /* Q_WS_MAC */
@@ -234,6 +232,9 @@ void VBoxSettingsDialog::categoryChanged (int aId)
         mLbTitle->setText (mSelector->itemText (aId));
         mStack->setCurrentIndex (index);
     }
+# ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    setWindowTitle (dialogTitle());
+# endif
 #endif /* !Q_WS_MAC */
 }
 
@@ -349,7 +350,7 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
     if (minWidth > s.width())
         s.setWidth (minWidth);
 #ifdef Q_WS_MAC
-    setFixedSize (s);
+    categoryChanged (mSelector->currentId());
 #else /* Q_WS_MAC */
     resize (s);
 #endif /* Q_WS_MAC */
