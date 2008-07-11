@@ -121,7 +121,7 @@ int VBoxMouseInit(void)
     req.mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     req.pointerXPos = 0;
     req.pointerYPos = 0;
-    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST, (void*)&req) < 0)
+    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)&req) < 0)
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
                errno, strerror(errno));
@@ -145,7 +145,7 @@ int VBoxMouseQueryPosition(unsigned int *abs_x, unsigned int *abs_y)
     if (g_vboxaddHandle < 0)
         return 1;
     /* perform VMM request */
-    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST, (void*)g_vmmreqMouseStatus) >= 0)
+    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)g_vmmreqMouseStatus) >= 0)
     {
         if (VBOX_SUCCESS(g_vmmreqMouseStatus->header.rc))
         {
@@ -184,7 +184,7 @@ int VBoxMouseFini(void)
     req.mouseFeatures = 0;
     req.pointerXPos = 0;
     req.pointerYPos = 0;
-    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST, (void*)&req) < 0)
+    if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)&req) < 0)
     {
         ErrorF("ioctl to vboxadd module failed, rc = %d (%s)\n",
                errno, strerror(errno));
