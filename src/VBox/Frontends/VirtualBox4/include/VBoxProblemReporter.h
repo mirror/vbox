@@ -266,9 +266,12 @@ public:
     void showRegisterResult (QWidget *aParent,
                              const QString &aResult);
 
-    void showUpdateResult (QWidget *aParent,
-                           const QString &aVersion,
-                           const QString &aLink);
+    void showUpdateSuccess (QWidget *aParent,
+                            const QString &aVersion,
+                            const QString &aLink);
+    void showUpdateFailure (QWidget *aParent,
+                            const QString &aReason);
+    void showUpdateNotFound (QWidget *aParent);
 
     bool confirmInputCapture (bool *aAutoConfirmed = NULL);
     void remindAboutAutoCapture();

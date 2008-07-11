@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>636</width>
-    <height>519</height>
+    <width>578</width>
+    <height>417</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -63,7 +63,7 @@
           </font>
          </property>
          <property name="text" >
-          <string>Welcome to the VirtualBox New Version Notifier!</string>
+          <string>Check for a new version</string>
          </property>
         </widget>
        </item>
@@ -112,7 +112,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>VirtualBox can now search for the latest version available for downloading. Will you let VirtualBox to do this?&lt;/p>&lt;p>You can make VirtualBox look for the newer version now by selecting "Check for the new version available" or ask VirtualBox remind you about this in some period of time by selecting "Remind me about it" and choosing the desired period from the corresponding combo-box.&lt;/p>&lt;p>You can also run VirtualBox New Version Notifier anytime from the application Help menu.&lt;/p></string>
+              <string>&lt;p>VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p>&lt;p>You can make VirtualBox look for the newer version now by pressing &lt;b>Check&lt;/b> button or postpone it for then next time by pressing &lt;b>Cancel&lt;/b>.&lt;/p>&lt;p>You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b>'Check for a new version...'&lt;/b> action.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -134,62 +134,6 @@
               </size>
              </property>
             </spacer>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="mRbCheck" >
-             <property name="text" >
-              <string>&amp;Check for the new version available</string>
-             </property>
-             <property name="checked" >
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="mRbRemind" >
-             <property name="text" >
-              <string>&amp;Remind me about it</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <property name="spacing" >
-              <number>0</number>
-             </property>
-             <item>
-              <spacer>
-               <property name="orientation" >
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType" >
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" >
-                <size>
-                 <width>16</width>
-                 <height>10</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QComboBox" name="mCbRemindTime" />
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation" >
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" >
-                <size>
-                 <width>0</width>
-                 <height>10</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
            </item>
           </layout>
          </item>
@@ -240,12 +184,35 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnConfirm" >
+          <widget class="QPushButton" name="mBtnCheck" >
            <property name="text" >
-            <string>&amp;Ok</string>
+            <string>Chec&amp;k</string>
            </property>
            <property name="default" >
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType" >
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel" >
+           <property name="text" >
+            <string>&amp;Cancel</string>
            </property>
           </widget>
          </item>
@@ -266,7 +233,7 @@
           </font>
          </property>
          <property name="text" >
-          <string>Search Results</string>
+          <string>Check Results</string>
          </property>
         </widget>
        </item>
@@ -371,28 +338,6 @@
                </property>
               </widget>
              </item>
-             <item>
-              <widget class="QILabel" name="mTextFinishInfo" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize" >
-                <size>
-                 <width>300</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text" >
-                <string>&lt;p>From now you can make VirtualBox automatically look for the new version every time application is being started by selecting "Check for the new version on startup" or ask VirtualBox to remind you about this in some period of time by selecting "Remind me about it" and choosing the desired period from the corresponding combo-box.&lt;/p>&lt;p>You can also run VirtualBox New Version Notifier anytime from the application Help menu.&lt;/p></string>
-               </property>
-               <property name="wordWrap" >
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
             </layout>
            </item>
            <item>
@@ -410,62 +355,6 @@
               </size>
              </property>
             </spacer>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="mRbAutoCheck" >
-             <property name="text" >
-              <string>&amp;Check for the new version on startup</string>
-             </property>
-             <property name="checked" >
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="mRbRecheck" >
-             <property name="text" >
-              <string>&amp;Remind me about it</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <property name="spacing" >
-              <number>0</number>
-             </property>
-             <item>
-              <spacer>
-               <property name="orientation" >
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType" >
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" >
-                <size>
-                 <width>16</width>
-                 <height>10</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QComboBox" name="mCbRecheckTime" />
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation" >
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" >
-                <size>
-                 <width>0</width>
-                 <height>10</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
            </item>
           </layout>
          </item>
@@ -496,7 +385,7 @@
          <item>
           <widget class="QPushButton" name="mBtnFinish" >
            <property name="text" >
-            <string>&amp;Ok</string>
+            <string>&amp;Close</string>
            </property>
            <property name="default" >
             <bool>true</bool>
@@ -519,7 +408,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>mBtnConfirm</tabstop>
+  <tabstop>mBtnCheck</tabstop>
  </tabstops>
  <resources>
   <include location="../VirtualBox.qrc" />

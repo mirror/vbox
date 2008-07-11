@@ -51,6 +51,7 @@ FORMS = \
     ui/VBoxVMSettingsVRDP.ui \
     ui/VBoxGLSettingsGeneral.ui \
     ui/VBoxGLSettingsInput.ui \
+    ui/VBoxGLSettingsUpdate.ui \
     ui/VBoxGLSettingsLanguage.ui
 
 TRANSLATIONS = \

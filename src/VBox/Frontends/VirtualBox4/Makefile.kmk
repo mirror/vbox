@@ -571,6 +571,7 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxVMSettingsVRDP.h \
 	include/VBoxGLSettingsGeneral.h \
 	include/VBoxGLSettingsInput.h \
+	include/VBoxGLSettingsUpdate.h \
 	include/VBoxGLSettingsLanguage.h \
 	include/VBoxSettingsDialog.h \
 	include/VBoxSettingsDialogSpecific.h \
@@ -641,6 +642,7 @@ VirtualBox4_SOURCES = \
 	src/VBoxVMSettingsVRDP.cpp \
 	src/VBoxGLSettingsGeneral.cpp \
 	src/VBoxGLSettingsInput.cpp \
+	src/VBoxGLSettingsUpdate.cpp \
 	src/VBoxGLSettingsLanguage.cpp \
 	src/VBoxSettingsDialog.cpp \
 	src/VBoxSettingsDialogSpecific.cpp \

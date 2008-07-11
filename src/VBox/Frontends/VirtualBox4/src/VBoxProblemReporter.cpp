@@ -1543,9 +1543,9 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
                  .arg (aResult));
 }
 
-void VBoxProblemReporter::showUpdateResult (QWidget *aParent,
-                                            const QString &aVersion,
-                                            const QString &aLink)
+void VBoxProblemReporter::showUpdateSuccess (QWidget *aParent,
+                                             const QString &aVersion,
+                                             const QString &aLink)
 {
     message (aParent, Info,
              tr ("<p>VirtualBox New Version Notifier "
@@ -1554,6 +1554,22 @@ void VBoxProblemReporter::showUpdateResult (QWidget *aParent,
                  "please proceed to the following link:</p>"
                  "<p><a href=%2>%3</a></p>")
                  .arg (aVersion, aLink, aLink));
+}
+
+void VBoxProblemReporter::showUpdateFailure (QWidget *aParent,
+                                             const QString &aReason)
+{
+    message (aParent, Info,
+             tr ("<p>Unable to obtain new version information "
+                 "due to network error:</p><p><b>%1</b></p>")
+                 .arg (aReason));
+}
+
+void VBoxProblemReporter::showUpdateNotFound (QWidget *aParent)
+{
+    message (aParent, Info,
+             tr ("You have already installed the latest VirtualBox "
+                 "version, there is no newer version currently available."));
 }
 
 /**

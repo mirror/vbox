@@ -1494,7 +1494,7 @@ void VBoxConsoleWnd::retranslateUi()
                                           "enable/disable..."));
     vmAutoresizeMenu->setToolTip (tr ("Auto-resize Guest Display",
                                       "enable/disable..."));
-    vmAutoresizeGuestAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Auto-resize &Guest Display"), 
+    vmAutoresizeGuestAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Auto-resize &Guest Display"),
                                                                          "G"));
     vmAutoresizeGuestAction->setStatusTip (
         tr ("Automatically resize the guest display when the window is resized "
@@ -1590,9 +1590,9 @@ void VBoxConsoleWnd::retranslateUi()
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
 
-    helpUpdateAction->setText (tr ("&Update VirtualBox..."));
+    helpUpdateAction->setText (tr ("C&heck for a new version..."));
     helpUpdateAction->setStatusTip (
-        tr ("Open VirtualBox New Version Notifier"));
+        tr ("Check for a new VirtualBox version"));
 
     helpAboutAction->setText (tr ("&About VirtualBox..."));
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));

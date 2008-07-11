@@ -1218,9 +1218,9 @@ void VBoxSelectorWnd::retranslateUi()
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
 
-    helpUpdateAction->setText (tr ("&Update VirtualBox..."));
+    helpUpdateAction->setText (tr ("C&heck for a new version..."));
     helpUpdateAction->setStatusTip (
-        tr ("Open VirtualBox New Version Notifier"));
+        tr ("Check for a new VirtualBox version"));
 
     helpAboutAction->setText (tr ("&About VirtualBox..."));
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));
