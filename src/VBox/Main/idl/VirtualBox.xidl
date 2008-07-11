@@ -884,7 +884,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="2d3b9ea7-25f5-4f07-a8e1-7dd7e0dcf667"
+    uuid="557a07bc-e6ae-4520-a361-4a8493199137"
     wsmap="managed"
   >
     <desc>
@@ -1054,6 +1054,11 @@
           In the current version of the product, global shared folders are not
           implemented and therefore this collection is always empty.
         </note>
+      </desc>
+    </attribute>
+    <attribute name="performanceCollector" type="IPerformanceCollector" readonly="yes">
+      <desc>
+        The only instance of IPerformanceCollector.
       </desc>
     </attribute>
 
@@ -3529,28 +3534,6 @@
       </param>
     </method>
 
-    <method name="getProcessorUsage">
-      <desc>
-        Returns the current processor usage by this virtual machine measured
-        over all cores of all processors in the host system.
-
-        The values returned for each parameter are in range from <tt>0</tt> (the
-        machine is powered off or does not load the CPUs at all) to
-        <tt>1 000 000 000</tt> (all cores of all CPUs are fully in use by this
-        machine).
-      </desc>
-      <param name="user" type="unsigned long" dir="out">
-        <desc>
-          Pecentage of processor time spent executing in user mode.
-        </desc>
-      </param>
-      <param name="system" type="unsigned long" dir="out">
-        <desc>
-          Pecentage of processor time spent executing in kernel mode.
-        </desc>
-      </param>
-    </method>
-
   </interface>
 
   <!--
@@ -5052,37 +5035,6 @@
       </param>
     </method>
 
-    <method name="getProcessorUsage">
-      <desc>
-        Returns the processor usage by the whole host system measured over all
-        cores of all processors of the host machine.
-
-        The values returned for each parameter are in range from <tt>0</tt> (the
-        machine is powered off or doesn't load the CPUs at all) to
-        <tt>1 000 000 000</tt> (all cores of all CPUs are fully loaded by this
-        machine).
-
-        <note>
-          The maximum value is 1000000000 which means that all cores of all CPUs
-          are completely used.
-        </note>
-      </desc>
-      <param name="user" type="unsigned long" dir="out">
-        <desc>
-          Pecentage of processor time spent executing in user mode.
-        </desc>
-      </param>
-      <param name="system" type="unsigned long" dir="out">
-        <desc>
-          Pecentage of processor time spent executing in kernel mode.
-        </desc>
-      </param>
-      <param name="idle" type="unsigned long" dir="out">
-        <desc>
-          Pecentage of processor time spent doing nothing.
-        </desc>
-      </param>
-    </method>
   </interface>
 
   <!--
@@ -10120,6 +10072,150 @@
   </interface>
 
 </if>
+
+  <interface
+    name="IPerformanceMetric" extends="$unknown"
+    uuid="50831d4c-ed55-4221-836c-87b487d3b44a" wsmap="managed"
+  >
+    <desc>Holds metrics parameters.</desc>
+  
+    <attribute name="metricName" type="wstring" readonly="yes">
+      <desc>
+        Name of the metric.
+      </desc>
+    </attribute>
+
+    <attribute name="object" type="$unknown" readonly="yes">
+      <desc>
+        The object this metric belongs to.
+      </desc>
+    </attribute>
+
+    <attribute name="period" type="unsigned long" readonly="yes">
+      <desc>
+        The time interval between samples, measured in seconds.
+      </desc>
+    </attribute>
+
+    <attribute name="count" type="unsigned long" readonly="yes">
+      <desc>
+        The number of recent samples retained by the collector. Older samples 
+        are discarded.
+      </desc>
+    </attribute>
+
+    <attribute name="unit" type="wstring" readonly="yes">
+      <desc>
+        The unit of measurement.
+      </desc>
+    </attribute>
+
+    <attribute name="minimumValue" type="long" readonly="yes">
+      <desc>
+        The minimum possible value of this metric.
+      </desc>
+    </attribute>
+
+    <attribute name="maximumValue" type="long" readonly="yes">
+      <desc>
+        The maximum possible value of this metric.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IPerformanceCollector" extends="$unknown"
+    uuid="dcd37e5a-3964-43d1-be30-0f3c7234e347"
+    wsmap="managed"
+  >
+    <desc>
+      This object collects and stores performace metrics data. Performance 
+      metrics are associated with objects like IHost and IMachine. Each object 
+      has a distict set of performance metrics. It can be obtained with
+      <link to="IPerformanceCollector::getMetrics"/>.
+    </desc>
+
+    <attribute name="metricNames" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        An array of unique names of metrics regardless of objects they are 
+        associated with.
+      </desc>
+    </attribute>
+  
+    <method name="getMetrics">
+      <desc>
+        Returns parameters (characteristics?) of specified metrics for a set of
+        objects.
+        <note>
+          Null metrics array means all metrics. Null object array means all 
+          existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
+      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+      <param name="metrics" type="IPerformanceMetric" dir="return" safearray="yes"/>
+    </method>
+  
+    <method name="setupMetrics">
+      <desc>
+        Sets parameters of specified metrics for a set of objects.
+        <note>
+          Null metrics array means all metrics. Null object array means all 
+          existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
+      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+      <param name="period" type="unsigned long" dir="in"/>
+      <param name="count" type="unsigned long" dir="in"/>
+    </method>
+
+    <method name="enableMetrics">
+      <desc>
+        Turn on collection of specified metrics.
+        <note>
+          Null metrics array means all metrics. Null object array means all 
+          existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
+      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+    </method>
+
+    <method name="disableMetrics">
+      <desc>
+        Turn off collection of specified metrics.
+        <note>
+          Null metrics array means all metrics. Null object array means all 
+          existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
+      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+    </method>
+
+    <method name="queryMetricsData">
+      <desc>
+        Queries collected metrics data for a set of objects.
+        <note>
+          Null metrics array means all applicable metrics. Null object array 
+          means all existing objects. The @a returnData parameter is a
+          flattened array of arrays. Each start and length of a sub-array is
+          indicated by @a returnDataIndices and @a returnDataLengths. The
+          rationale behind this API style is that it doesn't require objects
+          to be returned, and thus eliminates all but the unavoidable IPC.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
+      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+      <param name="returnMetricNames" type="wstring" dir="out" safearray="yes"/>
+      <param name="returnObjects" type="$unknown" dir="out" safearray="yes"/>
+      <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes"/>
+      <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes"/>
+      <param name="returnData" type="long" dir="return" safearray="yes"/>
+    </method>
+
+  </interface>
 
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"

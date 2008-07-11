@@ -919,18 +919,49 @@ int main(int argc, char *argv[])
 #endif
 
 #if 1
-    for (int i = 0; i < 10; i++)
     {
+        Bstr metricNames[] = { L"CPU/User:avg,CPU/System:avg,CPU/Idle:avg" };
+        com::SafeArray<BSTR> metrics(1);
+        metricNames[0].detachTo(&metrics[0]);
+
         ComPtr <IHost> host;
         CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
+        ComPtr <IPerformanceCollector> collector;
+        CHECK_RC( virtualBox->COMGETTER(PerformanceCollector)(collector.asOutParam()) );
+
+        com::SafeIfaceArray<IUnknown> objects(1);
+        host.queryInterfaceTo(&objects[0]);
+        collector->SetupMetrics(ComSafeArrayAsInParam(metrics),
+                                ComSafeArrayAsInParam(objects), 1u, 10u);
+        RTThreadSleep(3000); /* Sleep 10 seconds. */
+        /*com::SafeIfaceArray<IPerformanceData> result;
+        collector->QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                    ComSafeArrayAsInParam(objects),
+                                    ComSafeArrayAsOutParam(result));
+        for (unsigned i = 0; i < result.size(); i++)
+        {
+            Bstr metricName;
+            result[i]->COMGETTER(MetricName) (metricName.asOutParam());
+            com::SafeArray<LONG> values;
+            result[i]->COMGETTER(Values) (ComSafeArrayAsOutParam(values));
+            printf("%ls", metricName.raw());
+            for (unsigned j = 0; j < values.size(); j++)
+            {
+                printf(" %d\n", values[j]);
+            }
+        }*/
+    }
+#endif
+#if 0
+    for (int i = 0; i < 10; i++)
+    {
         ULONG user, system, idle;
         host->GetProcessorUsage(&user, &system, &idle);
         printf("user=%u system=%u idle=%u\n", user/10000000, system/10000000, idle/10000000);
-        RTThreadSleep(1000);
     }
 #endif
 
-#if 1
+#if 0
     {
         ComPtr <IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dsl";
