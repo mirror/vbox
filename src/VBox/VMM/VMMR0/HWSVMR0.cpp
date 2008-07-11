@@ -773,6 +773,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
     uint8_t     u8LastVTPR;
+    PHWACCM_CPUINFO pCpu = 0;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -872,26 +873,24 @@ ResumeExecution:
     pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.fNestedPaging;
 
 #ifdef LOG_ENABLED
+    pCpu = HWACCMR0GetCurrentCpu();
+    if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
+        ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
     {
-        PHWACCM_CPUINFO pCpuTemp = HWACCMR0GetCurrentCpu();
-        if (    pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu
-            ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpuTemp->cTLBFlushes)
-        {
-            if (pVM->hwaccm.s.svm.idLastCpu != pCpuTemp->idCpu)
-                Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpuTemp->idCpu));
-            else
-                Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpuTemp->cTLBFlushes));
-        }
-        if (pCpuTemp->fFlushTLB) 
-            Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpuTemp->idCpu));
+        if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
+            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpu->idCpu));
+        else
+            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
     }
+    if (pCpu->fFlushTLB) 
+        Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
 #endif
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
      *       (until the actual world switch)
      */
-    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
+    pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
     if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
