@@ -72,11 +72,11 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 
 /**
- * Check if the APIC has a pending interrupt/if a TPR change would active one
+ * Check if the APIC has a pending interrupt/if a TPR change would active one.
  *
- * @returns Pending interrupt yes/no
+ * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
  * @param   pDevIns         Device instance of the APIC.
- * @param   pfPending       Pending state (out)
+ * @param   pfPending       Pending state (out).
  */
 PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
 
