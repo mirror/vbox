@@ -69,7 +69,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     mSelector = new VBoxSettingsToolBarSelector (this);
-    setUnifiedTitleAndToolBarOnMac (true);
+    static_cast<VBoxToolBar*> (mSelector->widget())->setMacToolbar();
     addToolBar (qobject_cast<QToolBar*> (mSelector->widget()));
     /* No title in this mode, we change the title of the window. */
     mLbTitle->hide();
