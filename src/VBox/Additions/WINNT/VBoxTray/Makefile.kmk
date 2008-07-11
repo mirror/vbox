@@ -46,7 +46,8 @@ VBoxTray_SOURCES  = \
 	helpers.cpp \
 	VBoxTray.rc
 VBoxTray_LIBS     = \
-	$(VBOX_LIB_IPRT_GUEST_R3)
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3)
 
 # VBoxTray.cpp uses VBOX_SVN_REV.
 VBoxTray.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
