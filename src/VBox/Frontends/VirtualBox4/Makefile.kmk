@@ -201,9 +201,11 @@ TEMPLATE_VBOXQT4GUIEXE = VBox Qt4 GUI Executable
 ifdef USE_KBUILD_QT_UNIT
  USES += qt4
  TEMPLATE_VBOXQT4GUIEXE_USES = qt4
+ TEMPLATE_VBOXQT4GUIEXE_QTTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_MOCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_UICTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_RCCTOOL = QT4
+ TEMPLATE_VBOXQT4GUIEXE_LRCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
 endif # USE_KBUILD_QT_UNIT
 TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
@@ -696,10 +698,15 @@ ifdef USE_KBUILD_QT_UNIT
  VirtualBox_OSE.qrc_RCCFLAGS = -name OSE
  VirtualBox_NonOSE.qrc_RCCFLAGS = -name NonOSE
 
- # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts.
- ## @todo figure out how/if to do the translations in the qt4 unit, it doesn't quite fit it really. :-/
+
+ # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
  VirtualBox4_QT_TRANSLATIONS := $(TRANSLATIONS) \
  	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
+ # Compress the translation units.
+ VirtualBox4_LRCFLAGS = -compress
+ # Where to install the translations (a separate install target, VirtualBox4-nls-inst is created).
+ VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
+
 
 else # !USE_KBUILD_QT_UNIT
 
@@ -1081,6 +1088,26 @@ $(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | 
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
 
 
+ifdef USE_KBUILD_QT_UNIT
+#
+# Update all known NLS translation (.ts) files in the nls/ subdirectory.
+#
+# NOTE: This target is intened to be run only by the GUI maintainer shortly
+# before a new product release. VirtualBox_xx_YY.ts is a template for new
+# languages and should never be actually translated or installed.
+#
+updatenls:: \
+		$(VirtualBox4_QT_UISRCS) \
+		$(filter-out %.qrc,$(VirtualBox4_SOURCES)) \
+		$(wildcard include/*.h)
+	$(call MSG_L1,lupdate all languages (nls/*.ts))
+	$(QUIET)$(TOOL_QT4_LUPDATE) \
+		$^ \
+		-ts \
+		$(filter-out nls/qt_%.ts,$(VirtualBox4_QT_TRANSLATIONS)) \
+		nls/VirtualBox_xx_YY.ts
+
+else
 #
 # Custom targets
 #
@@ -1089,16 +1116,10 @@ $(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | 
 # NOTE: This target is intened to be run only by the GUI maintainer shortly
 # before a new product release. VirtualBox_xx_YY.ts is a template for new
 # languages and should never be actually translated or installed.
-## @todo Dmitry, why aren't the .ui files here? I guess this is why the .gen.h files are included.
-# But I completely fail to see what purpose the .moc files has in this list... From what I can tell
-# lupdate doesn't require anything to be built to run, at least not the trolltech examples, it will
-# eat the .ui files directly unless I'm much mistaken.
 updatenls:: $(VirtualBox4_SOURCES) $(VirtualBox4_HEADERS)
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(VBOX_LUPDATE4) $^ -ts $(VirtualBox4_QT_TRANSLATIONS) nls/VirtualBox_xx_YY.ts
 
-
-ifndef USE_KBUILD_QT_UNIT
 #
 # Test targets
 #
@@ -1119,7 +1140,7 @@ test2:
 
 test3:
 	@echo $(VirtualBox4_HEADERS) | $(SED) -e "s/ /\n/g"
-endif # USE_KBUILD_QT_UNIT
+endif # !USE_KBUILD_QT_UNIT
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $(VBOX_WRAPPERS_FILE4)
