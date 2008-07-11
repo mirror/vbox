@@ -170,7 +170,15 @@ HRESULT Host::init (VirtualBox *parent)
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    registerMetrics(parent->getCollector());
+    /* Start resource usage sampler */
+    {
+        int vrc = RTTimerCreate (&mUsageSampler, VBOX_USAGE_SAMPLER_INTERVAL,
+                                 UsageSamplerCallback, this);
+        AssertMsgRC (vrc, ("Failed to create resource usage sampling "
+                           "timer (%Rra)\n", vrc));
+        if (RT_FAILURE (vrc))
+            return E_FAIL;
+    }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     setReady(true);
@@ -187,10 +195,6 @@ void Host::uninit()
 
     AssertReturn (isReady(), (void) 0);
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    unregisterMetrics(mParent->getCollector());
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
      * devices */
@@ -206,6 +210,15 @@ void Host::uninit()
 #ifdef VBOX_WITH_USB
     mUSBDeviceFilters.clear();
 #endif
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    /* Destroy resource usage sampler */
+    {
+        int vrc = RTTimerDestroy (mUsageSampler);
+        AssertMsgRC (vrc, ("Failed to destroy resource usage "
+                           "sampling timer (%Rra)\n", vrc));
+    }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     setReady (FALSE);
 }
@@ -1096,6 +1109,22 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
      * (w/o treting it as a failure), for example, as in OSE */
     return E_NOTIMPL;
 #endif
+}
+
+STDMETHODIMP Host::GetProcessorUsage (ULONG *aUser, ULONG *aSystem, ULONG *aIdle)
+{
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    if (aUser == NULL || aSystem == NULL || aIdle == NULL)
+        return E_POINTER;
+
+    *aUser   = mCpuStats.u32User;
+    *aSystem = mCpuStats.u32System;
+    *aIdle   = mCpuStats.u32Idle;
+
+    return S_OK;
+#else /* !VBOX_WITH_RESOURCE_USAGE_API */
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 // public methods only for internal purposes
@@ -2692,38 +2721,25 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Host::registerMetrics(PerformanceCollector *collector)
-{
-    pm::MetricFactory *metricFactory = collector->getMetricFactory();
-    // Create sub metrics
-    pm::SubMetric *cpuLoadUser = new pm::SubMetric("CPU/Load/User");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric("CPU/Load/Kernel");
-    pm::SubMetric *cpuLoadIdle = new pm::SubMetric("CPU/Load/Idle");
-    // Create and register base metrics
-    IUnknown *objptr;
-    ComObjPtr<Host> tmp = this;
-    tmp.queryInterfaceTo(&objptr);
-    pm::BaseMetric *cpuLoad =
-        metricFactory->createHostCpuLoad(objptr, cpuLoadUser, cpuLoadKernel, cpuLoadIdle);
-    collector->registerBaseMetric(cpuLoad);
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMax()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMax()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateMax()));
-};
 
-void Host::unregisterMetrics(PerformanceCollector *collector)
+/* static */
+void Host::UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-    collector->unregisterMetricsFor(this);
-    collector->unregisterBaseMetricsFor(this);
-};
+    AssertReturnVoid (pvUser != NULL);
+    static_cast <Host *> (pvUser)->usageSamplerCallback();
+}
+
+void Host::usageSamplerCallback()
+{
+    int vrc = RTSystemProcessorGetUsageStats (&mCpuStats);
+    AssertMsgRC (vrc, ("Failed to get CPU stats (%Rra)\n", vrc));
+
+//  LogFlowThisFunc (("user=%u%% system=%u%% &mCpuStats=%p\n",
+//                    mCpuStats.u32User / 10000000,
+//                    mCpuStats.u32System / 10000000, &mCpuStats);
+//  LogFlowThisFunc (("user=%.2f system=%.2f idle=%.2f\n", mCpuStats.u32User/10000000.,
+//                    mCpuStats.u32System/10000000., mCpuStats.u32Idle/10000000.);
+}
+
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 

@@ -38,9 +38,6 @@
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 #include "SATAControllerImpl.h"
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 // generated header
 #include "SchemaDefs.h"
@@ -50,6 +47,10 @@
 #include <iprt/file.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+#include <iprt/system.h>
+#include <iprt/timer.h>
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #include <list>
 
@@ -167,6 +168,12 @@ public:
         ComObjPtr <Snapshot> mFirstSnapshot;
         ComObjPtr <Snapshot> mCurrentSnapshot;
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+        /** Pointer to the usage sampling timer. */
+        PRTTIMER mUsageSampler;
+        /** Structure to hold processor usage stats. */
+        RTPROCCPUUSAGESTATS mCpuStats;
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
     };
 
     /**
@@ -522,6 +529,8 @@ public:
     STDMETHOD(GetGuestProperty) (INPTR BSTR aKey, BSTR *aValue);
     STDMETHOD(SetGuestProperty) (INPTR BSTR aKey, INPTR BSTR aValue);
 
+    STDMETHOD(GetProcessorUsage) (ULONG *user, ULONG *system);
+
     // public methods only for internal purposes
 
     /// @todo (dmik) add lock and make non-inlined after revising classes
@@ -711,8 +720,10 @@ protected:
     void copyFrom (Machine *aThat);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics(PerformanceCollector *collector);
-    void unregisterMetrics(PerformanceCollector *collector);
+    /** Static timer callback. */
+    static void UsageSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    /** Member timer callback. */
+    void usageSamplerCallback();
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     const InstanceType mType;
