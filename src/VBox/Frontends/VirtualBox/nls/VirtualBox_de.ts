@@ -5051,7 +5051,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation>Falls ausgewählt versucht die virtuelle Maschine einen speziellen Virtualisierungsmodus der CPU (Intel VT-x bzw. AMD-V) zu verwenden. Eine graue Checkbox bedeutet die Übername dieser Einstellung aus den globalen Einstellungen.</translation>
+        <translation>Falls ausgewählt versucht die virtuelle Maschine einen speziellen Virtualisierungsmodus der CPU (Intel VT-x bzw. AMD-V) zu verwenden. Eine graue Checkbox bedeutet die Übernahme dieser Einstellung aus den globalen Einstellungen.</translation>
     </message>
     <message>
         <source>Other &amp;Settings</source>
