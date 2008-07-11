@@ -121,10 +121,17 @@ __BEGIN_DECLS
  *          and will be ignored on those.
  */
 #define RTFILE_O_WRITE_THROUGH      0x00008000
+/** Unix file mode mask for use when creating files. */
+#define RTFILE_O_CREATE_MODE_MASK   0x1ff00000
+/** The number of bits to shift to get the file mode mask.
+ * To extract it: (fFlags & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT.
+ */
+#define RTFILE_O_CREATE_MODE_SHIFT  20
+
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK         0x0000FB73
+#define RTFILE_O_VALID_MASK          0x1ff0FB73
 
 /** @} */
 
