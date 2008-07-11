@@ -1099,7 +1099,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 
 #if defined(RT_OS_WINDOWS)
-# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
+# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \       /* @todo Remove this later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
   ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
