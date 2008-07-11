@@ -2644,6 +2644,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         return VERR_INVALID_PARAMETER;
     }
     if (    !pApicReg->pfnGetInterruptHC
+        ||  !pApicReg->pfnHasPendingIrqHC
         ||  !pApicReg->pfnSetBaseHC
         ||  !pApicReg->pfnGetBaseHC
         ||  !pApicReg->pfnSetTPRHC
@@ -2651,6 +2652,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         ||  !pApicReg->pfnBusDeliverHC)
     {
         Assert(pApicReg->pfnGetInterruptHC);
+        Assert(pApicReg->pfnHasPendingIrqHC);
         Assert(pApicReg->pfnSetBaseHC);
         Assert(pApicReg->pfnGetBaseHC);
         Assert(pApicReg->pfnSetTPRHC);
@@ -2660,12 +2662,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         return VERR_INVALID_PARAMETER;
     }
     if (   (    pApicReg->pszGetInterruptGC
+            ||  pApicReg->pszHasPendingIrqGC
             ||  pApicReg->pszSetBaseGC
             ||  pApicReg->pszGetBaseGC
             ||  pApicReg->pszSetTPRGC
             ||  pApicReg->pszGetTPRGC
             ||  pApicReg->pszBusDeliverGC)
         &&  (   !VALID_PTR(pApicReg->pszGetInterruptGC)
+            ||  !VALID_PTR(pApicReg->pszHasPendingIrqGC)
             ||  !VALID_PTR(pApicReg->pszSetBaseGC)
             ||  !VALID_PTR(pApicReg->pszGetBaseGC)
             ||  !VALID_PTR(pApicReg->pszSetTPRGC)
@@ -2674,6 +2678,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
        )
     {
         Assert(VALID_PTR(pApicReg->pszGetInterruptGC));
+        Assert(VALID_PTR(pApicReg->pszHasPendingIrqGC));
         Assert(VALID_PTR(pApicReg->pszSetBaseGC));
         Assert(VALID_PTR(pApicReg->pszGetBaseGC));
         Assert(VALID_PTR(pApicReg->pszSetTPRGC));
@@ -2683,12 +2688,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         return VERR_INVALID_PARAMETER;
     }
     if (   (    pApicReg->pszGetInterruptR0
+            ||  pApicReg->pszHasPendingIrqR0
             ||  pApicReg->pszSetBaseR0
             ||  pApicReg->pszGetBaseR0
             ||  pApicReg->pszSetTPRR0
             ||  pApicReg->pszGetTPRR0
             ||  pApicReg->pszBusDeliverR0)
         &&  (   !VALID_PTR(pApicReg->pszGetInterruptR0)
+            ||  !VALID_PTR(pApicReg->pszHasPendingIrqR0)
             ||  !VALID_PTR(pApicReg->pszSetBaseR0)
             ||  !VALID_PTR(pApicReg->pszGetBaseR0)
             ||  !VALID_PTR(pApicReg->pszSetTPRR0)
@@ -2697,6 +2704,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
        )
     {
         Assert(VALID_PTR(pApicReg->pszGetInterruptR0));
+        Assert(VALID_PTR(pApicReg->pszHasPendingIrqR0));
         Assert(VALID_PTR(pApicReg->pszSetBaseR0));
         Assert(VALID_PTR(pApicReg->pszGetBaseR0));
         Assert(VALID_PTR(pApicReg->pszSetTPRR0));
@@ -2730,6 +2738,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     {
         int rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszGetInterruptGC, &pVM->pdm.s.Apic.pfnGetInterruptGC);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszGetInterruptGC, rc));
+        if (RT_SUCCESS(rc))
+        {
+            rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszHasPendingIrqGC, &pVM->pdm.s.Apic.pfnHasPendingIrqGC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszHasPendingIrqGC, rc));
+        }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszSetBaseGC, &pVM->pdm.s.Apic.pfnSetBaseGC);
@@ -2766,6 +2779,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     {
         pVM->pdm.s.Apic.pDevInsGC           = 0;
         pVM->pdm.s.Apic.pfnGetInterruptGC   = 0;
+        pVM->pdm.s.Apic.pfnHasPendingIrqGC  = 0;
         pVM->pdm.s.Apic.pfnSetBaseGC        = 0;
         pVM->pdm.s.Apic.pfnGetBaseGC        = 0;
         pVM->pdm.s.Apic.pfnSetTPRGC         = 0;
@@ -2780,6 +2794,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     {
         int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, &pVM->pdm.s.Apic.pfnGetInterruptR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, rc));
+        if (RT_SUCCESS(rc))
+        {
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszHasPendingIrqR0, &pVM->pdm.s.Apic.pfnHasPendingIrqR0);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszHasPendingIrqR0, rc));
+        }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, &pVM->pdm.s.Apic.pfnSetBaseR0);
@@ -2816,6 +2835,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     else
     {
         pVM->pdm.s.Apic.pfnGetInterruptR0   = 0;
+        pVM->pdm.s.Apic.pfnHasPendingIrqR0  = 0;
         pVM->pdm.s.Apic.pfnSetBaseR0        = 0;
         pVM->pdm.s.Apic.pfnGetBaseR0        = 0;
         pVM->pdm.s.Apic.pfnSetTPRR0         = 0;
@@ -2829,6 +2849,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
      */
     pVM->pdm.s.Apic.pDevInsR3           = pDevIns;
     pVM->pdm.s.Apic.pfnGetInterruptR3   = pApicReg->pfnGetInterruptHC;
+    pVM->pdm.s.Apic.pfnHasPendingIrqR3  = pApicReg->pfnHasPendingIrqHC;
     pVM->pdm.s.Apic.pfnSetBaseR3        = pApicReg->pfnSetBaseHC;
     pVM->pdm.s.Apic.pfnGetBaseR3        = pApicReg->pfnGetBaseHC;
     pVM->pdm.s.Apic.pfnSetTPRR3         = pApicReg->pfnSetTPRHC;

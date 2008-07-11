@@ -72,6 +72,15 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 
 /**
+ * Check if the APIC has a pending interrupt/if a TPR change would active one
+ *
+ * @returns Pending interrupt yes/no
+ * @param   pDevIns         Device instance of the APIC.
+ * @param   pfPending       Pending state (out)
+ */
+PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
+
+/**
  * Set the APIC base.
  *
  * @returns VBox status code.
