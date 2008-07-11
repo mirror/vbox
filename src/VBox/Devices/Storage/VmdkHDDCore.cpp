@@ -4086,6 +4086,8 @@ static int vmdkFlush(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
+    
+    Assert(pImage);
 
     rc = vmdkFlushImage(pImage);
     LogFlowFunc(("returns %Vrc\n", rc));
