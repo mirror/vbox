@@ -1100,6 +1100,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 #if defined(RT_OS_WINDOWS)
 /* @todo Remove IOCTL_CODE later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
+/** @todo r=bird: IOCTL_CODE is supposedly defined in some header included by Windows.h or ntddk.h, which is why it wasn't in the #if 0 earlier. See HostDrivers/Support/SUPDrvIOC.h... */
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
   ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
@@ -1139,8 +1140,8 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 #endif
 
 /** IOCTL to VBoxGuest to query the VMMDev IO port region start. */
-# define VBOXGUEST_IOCTL_GETVMMDEVPORT  VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
-# define IOCTL_VBOXGUEST_GETVMMDEVPORT  VBOXGUEST_IOCTL_GETVMMDEVPORT
+#define VBOXGUEST_IOCTL_GETVMMDEVPORT   VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
+#define IOCTL_VBOXGUEST_GETVMMDEVPORT   VBOXGUEST_IOCTL_GETVMMDEVPORT
 
 #pragma pack(4)
 typedef struct _VBoxGuestPortInfo
@@ -1150,13 +1151,13 @@ typedef struct _VBoxGuestPortInfo
 } VBoxGuestPortInfo;
 
 /** IOCTL to VBoxGuest to wait for a VMMDev host notification */
-# define VBOXGUEST_IOCTL_WAITEVENT      VBOXGUEST_IOCTL_CODE(2, sizeof(VBoxGuestWaitEventInfo))
-# define IOCTL_VBOXGUEST_WAITEVENT      VBOXGUEST_IOCTL_WAITEVENT
+#define VBOXGUEST_IOCTL_WAITEVENT       VBOXGUEST_IOCTL_CODE(2, sizeof(VBoxGuestWaitEventInfo))
+#define IOCTL_VBOXGUEST_WAITEVENT       VBOXGUEST_IOCTL_WAITEVENT
 
 /** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
  * Handled inside the guest additions and not seen by the host at all.
  * @see VBOXGUEST_IOCTL_WAITEVENT */
-# define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS    VBOXGUEST_IOCTL_CODE(5, 0)
+#define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE(5, 0)
 
 /**
  * Result codes for VBoxGuestWaitEventInfo::u32Result
@@ -1188,8 +1189,8 @@ typedef struct _VBoxGuestWaitEventInfo
 /** IOCTL to VBoxGuest to perform a VMM request
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
-# define VBOXGUEST_IOCTL_VMMREQUEST(Size)   VBOXGUEST_IOCTL_CODE(3, (Size))
-# define IOCTL_VBOXGUEST_VMMREQUEST         VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
+#define VBOXGUEST_IOCTL_VMMREQUEST(Size)    VBOXGUEST_IOCTL_CODE(3, (Size))
+#define IOCTL_VBOXGUEST_VMMREQUEST          VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
 
 /** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
 typedef struct _VBoxGuestFilterMaskInfo
@@ -1200,22 +1201,22 @@ typedef struct _VBoxGuestFilterMaskInfo
 #pragma pack()
 
 /** IOCTL to VBoxGuest to control event filter mask. */
-# define VBOXGUEST_IOCTL_CTL_FILTER_MASK            VBOXGUEST_IOCTL_CODE(4, sizeof(VBoxGuestFilterMaskInfo))
-# define IOCTL_VBOXGUEST_CTL_FILTER_MASK            VBOXGUEST_IOCTL_CTL_FILTER_MASK
+#define VBOXGUEST_IOCTL_CTL_FILTER_MASK             VBOXGUEST_IOCTL_CODE(4, sizeof(VBoxGuestFilterMaskInfo))
+#define IOCTL_VBOXGUEST_CTL_FILTER_MASK             VBOXGUEST_IOCTL_CTL_FILTER_MASK
 
 /** IOCTL to VBoxGuest to check memory ballooning. */
-# define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK     VBOXGUEST_IOCTL_CODE(7, 100)
-# define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK
+#define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK      VBOXGUEST_IOCTL_CODE(7, 100)
+#define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON           VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK
 
 /** IOCTL to VBoxGuest to perform backdoor logging. */
-# define VBOXGUEST_IOCTL_LOG(Size)                  VBOXGUEST_IOCTL_CODE(6, (Size))
+#define VBOXGUEST_IOCTL_LOG(Size)                   VBOXGUEST_IOCTL_CODE(6, (Size))
 
 
 #ifdef VBOX_HGCM
 /* These structures are shared between the driver and other binaries,
  * therefore packing must be defined explicitely.
  */
-#pragma pack(1)
+# pragma pack(1)
 typedef struct _VBoxGuestHGCMConnectInfo
 {
     uint32_t result;          /**< OUT */
@@ -1237,7 +1238,7 @@ typedef struct _VBoxGuestHGCMCallInfo
     uint32_t cParms;          /**< IN  How many parms. */
     /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
 } VBoxGuestHGCMCallInfo;
-#pragma pack()
+# pragma pack()
 
 # define VBOXGUEST_IOCTL_HGCM_CONNECT       VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CONNECT       VBOXGUEST_IOCTL_HGCM_CONNECT
@@ -1248,7 +1249,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
 
-#define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
+# define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
 #endif /* VBOX_HGCM */
 
