@@ -260,6 +260,12 @@ VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
 VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWindows.cpp
 endif
 
+ifdef VBOX_WITH_RESOURCE_USAGE_API
+VBoxSVC_SOURCES  += \
+	PerformanceImpl.cpp \
+	Performance.cpp
+endif
+
 VBoxSVC_LDFLAGS.darwin  = -framework IOKit
 ifeq ($(KBUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()

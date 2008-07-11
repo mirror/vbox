@@ -292,7 +292,7 @@ public:
         aArr.reset (static_cast<int> (aVec.size()));
         for (int i = 0; i < aVec.size(); ++i)
         {
-            aArr [i] = aVec.at (i);
+            aArr [i] = aVec.at (i).iface();
             if (aArr [i])
                 aArr [i]->AddRef();
         }
