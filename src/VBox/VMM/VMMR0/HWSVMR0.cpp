@@ -882,6 +882,12 @@ ResumeExecution:
             /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
         ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
     {
+#ifdef LOG_ENABLED
+        if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
+            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpu->idCpu));
+        else
+            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
+#endif
         /* Force a TLB flush on VM entry. */
         pVM->hwaccm.s.svm.fForceTLBFlush = true;
     }
@@ -894,8 +900,10 @@ ResumeExecution:
         if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID
             ||  pCpu->fFlushTLB)
         {
+#ifdef LOG_ENABLED
             if (pCpu->fFlushTLB) 
                 Log(("SVMR0RunGuestCode: First time cpu %d is used -> flush\n", pCpu->idCpu));
+#endif
 
             pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
