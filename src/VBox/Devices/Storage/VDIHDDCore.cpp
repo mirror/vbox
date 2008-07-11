@@ -1080,6 +1080,8 @@ static int vdiFlush(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
+    Assert(pImage);
+
     vdiFlushImage(pImage);
     LogFlowFunc(("returns %Vrc\n", rc));
     return rc;
