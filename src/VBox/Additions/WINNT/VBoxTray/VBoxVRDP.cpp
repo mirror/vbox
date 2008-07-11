@@ -320,7 +320,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
     
     maskInfo.u32OrMask = VMMDEV_EVENT_VRDP;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -336,7 +336,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn   = 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_VRDP;
-        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             dprintf(("VBoxVRDPThread: DeviceIOControl succeded\n"));
 
@@ -359,7 +359,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                 vrdpChangeRequest.u32VRDPExperienceLevel = 0;
                 
                 if (DeviceIoControl (gVBoxDriver,
-                                     IOCTL_VBOXGUEST_VMMREQUEST,
+                                     VBOXGUEST_IOCTL_VMMREQUEST,
                                      &vrdpChangeRequest,
                                      sizeof(VMMDevVRDPChangeRequest),
                                      &vrdpChangeRequest,
@@ -409,7 +409,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                 }
                 else
                 {
-                    dprintf(("VBoxTray: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
+                    dprintf(("VBoxTray: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
 
                     /* sleep a bit to not eat too much CPU in case the above call always fails */
                     if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -422,7 +422,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxTray: error from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxTray: error from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -435,7 +435,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_VRDP;
-    if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }

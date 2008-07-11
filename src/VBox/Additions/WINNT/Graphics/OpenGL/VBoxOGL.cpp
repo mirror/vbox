@@ -151,7 +151,7 @@ BOOL VBoxOGLThreadAttach()
     DWORD cbReturned;
 
     if (DeviceIoControl(vboxOGLCtx.hGuestDrv,
-                        IOCTL_VBOXGUEST_HGCM_CONNECT,
+                        VBOXGUEST_IOCTL_HGCM_CONNECT,
                         &info, sizeof (info),
                         &info, sizeof (info),
                         &cbReturned,
@@ -219,7 +219,7 @@ BOOL VBoxOGLThreadDetach()
         DWORD cbReturned;
 
         BOOL bRet = DeviceIoControl(vboxOGLCtx.hGuestDrv,
-                                    IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                                    VBOXGUEST_IOCTL_HGCM_DISCONNECT,
                                     &info, sizeof (info),
                                     &info, sizeof (info),
                                     &cbReturned,
@@ -256,7 +256,7 @@ int vboxHGCMCall(void *pvData, unsigned cbData)
     DWORD cbReturned;
 
     if (DeviceIoControl (vboxOGLCtx.hGuestDrv,
-                         IOCTL_VBOXGUEST_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL,
                          pvData, cbData,
                          pvData, cbData,
                          &cbReturned,

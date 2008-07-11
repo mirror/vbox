@@ -67,7 +67,7 @@ bool credentialsAvailable(void)
     vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqCredentials, VMMDevReq_QueryCredentials);
     vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_QUERYPRESENCE;
     DWORD cbReturned;
-    if (!DeviceIoControl(vboxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqCredentials, sizeof(vmmreqCredentials),
+    if (!DeviceIoControl(vboxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqCredentials, sizeof(vmmreqCredentials),
                          &vmmreqCredentials, sizeof(vmmreqCredentials), &cbReturned, NULL))
     {
         Log(("VBoxGINA::credentialsAvailable: error doing IOCTL, last error: %d\n", GetLastError()));
@@ -95,7 +95,7 @@ bool credentialsRetrieve(void)
     vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_READ;
     vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_CLEAR;
     DWORD cbReturned;
-    if (!DeviceIoControl(vboxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqCredentials, sizeof(vmmreqCredentials),
+    if (!DeviceIoControl(vboxDriver, VBOXGUEST_IOCTL_VMMREQUEST, &vmmreqCredentials, sizeof(vmmreqCredentials),
                          &vmmreqCredentials, sizeof(vmmreqCredentials), &cbReturned, NULL))
     {
         Log(("VBoxGINA::credentialsRetrieve: error doing IOCTL, last error: %d\n", GetLastError()));

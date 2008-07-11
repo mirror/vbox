@@ -140,7 +140,7 @@ DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo
 
         if (VBOX_SUCCESS(rc))
         {
-            rc = vbglDriverIOCtl (&pHandleData->driver, IOCTL_VBOXGUEST_HGCM_CONNECT, pData, sizeof (*pData));
+            rc = vbglDriverIOCtl (&pHandleData->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, pData, sizeof (*pData));
 
             if (VBOX_SUCCESS(rc))
             {
@@ -165,7 +165,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnect
 {
     int rc = VINF_SUCCESS;
 
-    rc = vbglDriverIOCtl (&handle->driver, IOCTL_VBOXGUEST_HGCM_DISCONNECT, pData, sizeof (*pData));
+    rc = vbglDriverIOCtl (&handle->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, pData, sizeof (*pData));
 
     vbglDriverClose (&handle->driver);
 
@@ -181,7 +181,7 @@ DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData,
     VBGL_HGCM_ASSERTMsg(cbData >= sizeof (VBoxGuestHGCMCallInfo) + pData->cParms * sizeof (HGCMFunctionParameter),
                         ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms, sizeof (VBoxGuestHGCMCallInfo) + pData->cParms * sizeof (VBoxGuestHGCMCallInfo)));
 
-    rc = vbglDriverIOCtl (&handle->driver, IOCTL_VBOXGUEST_HGCM_CALL, pData, cbData);
+    rc = vbglDriverIOCtl (&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL, pData, cbData);
 
     return rc;
 }

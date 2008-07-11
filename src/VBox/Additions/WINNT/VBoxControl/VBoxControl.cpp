@@ -831,7 +831,7 @@ static int hgcmConnect(HANDLE hDevice, char *pszService, uint32_t *pu32ClientID)
     info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     DWORD cbReturned;
     if (DeviceIoControl (hDevice,
-                         IOCTL_VBOXGUEST_HGCM_CONNECT,
+                         VBOXGUEST_IOCTL_HGCM_CONNECT,
                          &info, sizeof (info),
                          &info, sizeof (info),
                          &cbReturned,
@@ -882,7 +882,7 @@ static int hgcmCall(HANDLE hDevice, VBoxGuestHGCMCallInfo *pMsg, size_t cbMsg)
     int rc = VERR_NOT_SUPPORTED;
 
     if (DeviceIoControl (hDevice,
-                         IOCTL_VBOXGUEST_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL,
                          pMsg, cbMsg,
                          pMsg, cbMsg,
                          &cbReturned,
@@ -1004,7 +1004,7 @@ static void hgcmDisconnect(HANDLE hDevice, uint32_t u32ClientID)
 
     DWORD cbReturned;
     DeviceIoControl (hDevice,
-                     IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                     VBOXGUEST_IOCTL_HGCM_DISCONNECT,
                      &info, sizeof (info),
                      &info, sizeof (info),
                      &cbReturned,

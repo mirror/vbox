@@ -86,7 +86,7 @@ static int vboxClipboardConnect (VBOXCLIPBOARDCONTEXT *pCtx)
     DWORD cbReturned;
 
     if (DeviceIoControl (pCtx->pEnv->hDriver,
-                         IOCTL_VBOXGUEST_HGCM_CONNECT,
+                         VBOXGUEST_IOCTL_HGCM_CONNECT,
                          &info, sizeof (info),
                          &info, sizeof (info),
                          &cbReturned,
@@ -121,7 +121,7 @@ static void vboxClipboardDisconnect (VBOXCLIPBOARDCONTEXT *pCtx)
     DWORD cbReturned;
 
     DeviceIoControl (pCtx->pEnv->hDriver,
-                     IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                     VBOXGUEST_IOCTL_HGCM_DISCONNECT,
                      &info, sizeof (info),
                      &info, sizeof (info),
                      &cbReturned,
@@ -161,7 +161,7 @@ static int vboxCall (HANDLE hDriver, void *pvData, unsigned cbData)
     DWORD cbReturned;
 
     if (DeviceIoControl (hDriver,
-                         IOCTL_VBOXGUEST_HGCM_CALL,
+                         VBOXGUEST_IOCTL_HGCM_CALL,
                          pvData, cbData,
                          pvData, cbData,
                          &cbReturned,
@@ -814,7 +814,7 @@ unsigned __stdcall VBoxClipboardThread (void *pInstance)
         DWORD cbReturned;
 
         if (!DeviceIoControl (hDriver,
-                              IOCTL_VBOXGUEST_HGCM_CALL,
+                              VBOXGUEST_IOCTL_HGCM_CALL,
                               &parms, sizeof (parms),
                               &parms, sizeof (parms),
                               &cbReturned,

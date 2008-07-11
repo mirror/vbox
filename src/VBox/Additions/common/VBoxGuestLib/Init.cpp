@@ -50,7 +50,7 @@ static void vbglQueryVMMDevPort (void)
     {
         VBoxGuestPortInfo port;
 
-        rc = vbglDriverIOCtl (&driver, IOCTL_VBOXGUEST_GETVMMDEVPORT, &port, sizeof (port));
+        rc = vbglDriverIOCtl (&driver, VBOXGUEST_IOCTL_GETVMMDEVPORT, &port, sizeof (port));
 
         if (VBOX_SUCCESS (rc))
         {

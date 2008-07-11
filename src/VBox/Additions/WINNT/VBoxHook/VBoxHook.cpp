@@ -134,7 +134,7 @@ static HANDLE gVBoxDriver = INVALID_HANDLE_VALUE;
 VBGLR3DECL(int) VbglR3GRPerform(VMMDevRequestHeader *pReq)
 {
     DWORD cbReturned;
-    DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->size,
+    DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST, pReq, pReq->size,
                     pReq, pReq->size, &cbReturned, NULL);
     return VINF_SUCCESS;
 }
