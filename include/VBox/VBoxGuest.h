@@ -1099,15 +1099,10 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 
 #if defined(RT_OS_WINDOWS)
-# if 0 /** @todo Andy, enable this locally and make it work (may require changes to WINNT/VBoxGuest and other places that
-        * calls it). Then remove all the #else cases in the #ifdef VBOXGUEST_IOCTL_CODE test below and commit. (see #2993) */
+# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
+  ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
-# else
-  /* legacy encoding. */
-# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
-    ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
-# endif
 
 #elif defined(RT_OS_OS2)
   /* No automatic buffering, size not encoded. */
@@ -1143,12 +1138,8 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 #endif
 
 /** IOCTL to VBoxGuest to query the VMMDev IO port region start. */
-#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_GETVMMDEVPORT  VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
 # define IOCTL_VBOXGUEST_GETVMMDEVPORT  VBOXGUEST_IOCTL_GETVMMDEVPORT
-#else
-# define IOCTL_VBOXGUEST_GETVMMDEVPORT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestPortInfo))
-#endif
 
 #pragma pack(4)
 typedef struct _VBoxGuestPortInfo
@@ -1158,21 +1149,13 @@ typedef struct _VBoxGuestPortInfo
 } VBoxGuestPortInfo;
 
 /** IOCTL to VBoxGuest to wait for a VMMDev host notification */
-#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_WAITEVENT      VBOXGUEST_IOCTL_CODE(2, sizeof(VBoxGuestWaitEventInfo))
 # define IOCTL_VBOXGUEST_WAITEVENT      VBOXGUEST_IOCTL_WAITEVENT
-#else
-# define IOCTL_VBOXGUEST_WAITEVENT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2049, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestWaitEventInfo))
-#endif
 
 /** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
  * Handled inside the guest additions and not seen by the host at all.
  * @see VBOXGUEST_IOCTL_WAITEVENT */
-#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS    VBOXGUEST_IOCTL_CODE(5, 0)
-#else
-# define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS    IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2054, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-#endif
 
 /**
  * Result codes for VBoxGuestWaitEventInfo::u32Result
@@ -1204,12 +1187,8 @@ typedef struct _VBoxGuestWaitEventInfo
 /** IOCTL to VBoxGuest to perform a VMM request
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
-#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_VMMREQUEST(Size)   VBOXGUEST_IOCTL_CODE(3, (Size))
 # define IOCTL_VBOXGUEST_VMMREQUEST         VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
-#else
-# define IOCTL_VBOXGUEST_VMMREQUEST IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2050, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VMMDevRequestHeader))
-#endif
 
 /** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
 typedef struct _VBoxGuestFilterMaskInfo
@@ -1220,27 +1199,15 @@ typedef struct _VBoxGuestFilterMaskInfo
 #pragma pack()
 
 /** IOCTL to VBoxGuest to control event filter mask. */
-#ifdef VBOXGUEST_IOCTL_CODE
-# define VBOXGUEST_IOCTL_CTL_FILTER_MASK    VBOXGUEST_IOCTL_CODE(4, sizeof(VBoxGuestFilterMaskInfo))
-# define IOCTL_VBOXGUEST_CTL_FILTER_MASK    VBOXGUEST_IOCTL_CTL_FILTER_MASK
-#else
-# define IOCTL_VBOXGUEST_CTL_FILTER_MASK IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof (VBoxGuestFilterMaskInfo))
-#endif
+# define VBOXGUEST_IOCTL_CTL_FILTER_MASK            VBOXGUEST_IOCTL_CODE(4, sizeof(VBoxGuestFilterMaskInfo))
+# define IOCTL_VBOXGUEST_CTL_FILTER_MASK            VBOXGUEST_IOCTL_CTL_FILTER_MASK
 
 /** IOCTL to VBoxGuest to check memory ballooning. */
-#ifdef VBOXGUEST_IOCTL_CODE
-# define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK     VBOXGUEST_IOCTL_CODE(4, 100)
+# define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK     VBOXGUEST_IOCTL_CODE(7, 100)
 # define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK
-#else
-# define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2052, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-#endif
 
 /** IOCTL to VBoxGuest to perform backdoor logging. */
-#ifdef VBOXGUEST_IOCTL_CODE
-# define VBOXGUEST_IOCTL_LOG(Size)          VBOXGUEST_IOCTL_CODE(6, (Size))
-#else
-# define VBOXGUEST_IOCTL_LOG(Size)          IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2055, METHOD_BUFFERED, FILE_WRITE_ACCESS, (Size))
-#endif
+# define VBOXGUEST_IOCTL_LOG(Size)                  VBOXGUEST_IOCTL_CODE(6, (Size))
 
 
 #ifdef VBOX_HGCM
@@ -1271,7 +1238,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 } VBoxGuestHGCMCallInfo;
 #pragma pack()
 
-#ifdef VBOXGUEST_IOCTL_CODE
+//#ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_HGCM_CONNECT       VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CONNECT       VBOXGUEST_IOCTL_HGCM_CONNECT
 # define VBOXGUEST_IOCTL_HGCM_DISCONNECT    VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
@@ -1280,12 +1247,12 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define IOCTL_VBOXGUEST_HGCM_CALL          VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
-#else
+/*#else
 # define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
-#endif
+#endif*/
 
 #define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
