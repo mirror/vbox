@@ -573,7 +573,10 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
 
-    pCpu->idCpu = idCpu;
+    pCpu->idCpu     = idCpu;
+
+    /* Make sure we start with a clean TLB. */
+    pCpu->fFlushTLB = true;
 
     /* Should never happen */
     if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)

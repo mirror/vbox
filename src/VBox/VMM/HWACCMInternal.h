@@ -138,6 +138,9 @@ typedef struct
     /* TLB flush count */
     uint32_t    cTLBFlushes;
 
+    /* Set the first time a cpu is used to make sure we start with a clean TLB. */
+    bool        fFlushTLB;
+
     bool        fConfigured;
 } HWACCM_CPUINFO;
 typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
