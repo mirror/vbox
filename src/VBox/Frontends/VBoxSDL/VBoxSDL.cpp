@@ -40,6 +40,7 @@ using namespace com;
 # if !defined (VBOX_WITHOUT_XCURSOR)
 #  include <X11/Xcursor/Xcursor.h>
 # endif
+# include <unistd.h>
 #endif
 
 #ifndef RT_OS_DARWIN
