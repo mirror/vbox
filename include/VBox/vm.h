@@ -470,7 +470,7 @@ typedef struct VM
 #ifdef ___PDMInternal_h
         struct PDM s;
 #endif
-        char        padding[1056];      /* multiple of 32 */
+        char        padding[1280];      /* multiple of 32 */
     } pdm;
 
     /** IOM part. */
