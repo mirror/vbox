@@ -875,19 +875,15 @@ ResumeExecution:
     pVMCB->ctrl.NestedPaging.n.u1NestedPaging = pVM->hwaccm.s.fNestedPaging;
 
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
-    if (!pVM->hwaccm.s.svm.fResumeVM)
+    /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
+    if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
+            /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
+        ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
     {
-        if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
-                /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-            ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
-        {
-            /* Force a TLB flush on VM entry. */
-            pVM->hwaccm.s.svm.fForceTLBFlush = true;
-        }
-        pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
+        /* Force a TLB flush on VM entry. */
+        pVM->hwaccm.s.svm.fForceTLBFlush = true;
     }
-    else
-        Assert(pVM->hwaccm.s.svm.idLastCpu == pCpu->idCpu);
+    pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
     if (    pVM->hwaccm.s.svm.fForceTLBFlush
