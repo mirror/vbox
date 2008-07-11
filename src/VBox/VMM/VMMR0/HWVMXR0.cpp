@@ -2033,14 +2033,14 @@ ResumeExecution:
 
     case VMX_EXIT_HLT:                  /* 12 Guest software attempted to execute HLT. */
         /** Check if external interrupts are pending; if so, don't switch back. */
+        pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
             &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
         {
-            pCtx->rip++;    /* skip hlt */
             goto ResumeExecution;
         }
 
-        rc = VINF_EM_RAW_EMULATE_INSTR_HLT;
+        rc = VINF_EM_HALT;
         break;
 
     case VMX_EXIT_RSM:                  /* 17 Guest software attempted to execute RSM in SMM. */
