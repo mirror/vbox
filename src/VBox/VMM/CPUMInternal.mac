@@ -419,7 +419,7 @@ struc CPUM
 %endif
 
     ; CPUID leafs
-    .aGuestCpuIdStd       resb    16*5
+    .aGuestCpuIdStd       resb    16*6
     .aGuestCpuIdExt       resb    16*10
     .aGuestCpuIdCentaur   resb    16*4
     .GuestCpuIdDef        resb    16
