@@ -521,7 +521,7 @@ int main()
                                 {
                                     int rc2 = VINF_SUCCESS;
                                     rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2);
-#if 1 /** @todo it looks like I'm subject to some false wakeup calls here. (2.6.23-gentoo-r3 amd64) */
+#if 1 /** @todo it looks like I'm subject to some false wakeup calls here (2.6.23-gentoo-r3 amd64). See #3023.*/
                                     for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
                                     {
                                         RTThreadSleep(1);
@@ -533,7 +533,7 @@ int main()
                                     {
                                         ThreadSend0 = NIL_RTTHREAD;
                                         rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL);
-#if 1 /** @todo it looks like I'm subject to some false wakeup calls here. (2.6.23-gentoo-r3 amd64) */
+#if 1 /** @todo it looks like I'm subject to some false wakeup calls here (2.6.23-gentoo-r3 amd64). See #3023.*/
                                         for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
                                         {
                                             RTThreadSleep(1);
