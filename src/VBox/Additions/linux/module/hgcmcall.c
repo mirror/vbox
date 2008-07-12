@@ -289,8 +289,6 @@ static int vbox_hgcm_return_r0_struct(VBoxGuestHGCMCallInfo *hgcmR3, void *pUser
  * @returns   0 on success or Linux error code on failure
  * @param arg User space pointer to the call data structure
  */
-AssertCompile((_IOC_SIZE(VBOXGUEST_IOCTL_HGCM_CALL) == sizeof(VBoxGuestHGCMCallInfo)));
-
 int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
 {
     VBoxGuestHGCMCallInfo callHeader, *hgcmR3, *hgcmR0;
@@ -321,7 +319,7 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
         of the structure we just copied and print them to the log. */
     vbox_hgcm_dump_params(hgcmR0);
     /* Call the internal VBoxGuest ioctl interface with the ioctl structure we have just copied. */
-    rc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CALL, hgcmR0);
+    rc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CALL(0), hgcmR0);
     if (VBOX_FAILURE(rc))
     {
         LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: internal ioctl call failed, rc=%Rrc\n", rc));
