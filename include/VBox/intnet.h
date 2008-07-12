@@ -550,7 +550,7 @@ typedef struct INTNETTRUNKIFPORT
  * The component factory interface for create a network
  * interface filter (like VBoxNetFlt).
  */
-typedef struct INTNETTRUNKNETFLTFACTORY
+typedef struct INTNETTRUNKFACTORY
 {
     /**
      * Create an instance for the specfied host interface and connects it
@@ -574,16 +574,18 @@ typedef struct INTNETTRUNKNETFLTFACTORY
      *
      * @remarks Called while owning the network and the out-bound trunk semaphores.
      */
-    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(struct INTNETTRUNKNETFLTFACTORY *pIfFactory, const char *pszName,
+    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(struct INTNETTRUNKFACTORY *pIfFactory, const char *pszName,
                                                    PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
-} INTNETTRUNKNETFLTFACTORY;
+} INTNETTRUNKFACTORY;
 /** Pointer to the trunk factory. */
-typedef INTNETTRUNKNETFLTFACTORY *PINTNETTRUNKNETFLTFACTORY;
+typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
-/** The UUID for the current network interface filter factory. */
-#define INTNETTRUNKNETFLTFACTORY_UUID_STR   "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
-
-
+/** The UUID for the (current) trunk factory for host network interface filtering. */
+#define INTNETTRUNKFACTORY_NETFLT_UUID_STR  "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
+/** The UUID for the (current) trunk factory for TAP. */
+#define INTNETTRUNKFACTORY_NETTAP_UUID_STR  "aea1f233-1c1e-4c4f-b30a-9142e41ad9cb"
+/** The UUID for the (current) trunk factory for NAT. */
+#define INTNETTRUNKFACTORY_SRVNAT_UUID_STR  "c1c55569-725a-45a1-9065-fe87e2cd8746"
 
 
 /**
