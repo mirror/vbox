@@ -376,6 +376,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      *        ECX - extensions (ignored for now)
      * Safe to expose
      */
+    if (!(pCPUM->aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_MONITOR))
+        pCPUM->aGuestCpuIdStd[5].eax = pCPUM->aGuestCpuIdStd[5].ebx = 0;
+
     pCPUM->aGuestCpuIdStd[5].ecx = pCPUM->aGuestCpuIdStd[5].edx = 0;
 
     /*
