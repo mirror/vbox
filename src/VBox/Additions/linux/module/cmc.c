@@ -52,11 +52,12 @@ DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
             return VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, 0);
 
         /* this function can handle cancelled requests */
-        case VBOXGUEST_IOCTL_HGCM_CALL:
-            return VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, 0);
-
         default:
-            return VERR_VBGL_IOCTL_FAILED;
+            if (VBOXGUEST_IOCTL_STRIP_SIZE(func) != VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
+                return VERR_VBGL_IOCTL_FAILED;
+            /* fall thru */
+        case VBOXGUEST_IOCTL_STRIP_SIZE (VBOXGUEST_IOCTL_HGCM_CALL (0)):
+            return VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, 0);
     }
 }
 
