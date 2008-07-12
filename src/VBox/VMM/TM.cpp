@@ -566,7 +566,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
                 PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
 
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                if (   (uEDX & RT_BIT(8)) /* TscInvariant */
+                if (   (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
                     && pGip->u32Mode == SUPGIPMODE_SYNC_TSC /* no fixed tsc if the gip timer is in async mode */)
                     return true;
             }
