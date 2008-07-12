@@ -347,7 +347,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      *
      * Intel returns values of the highest standard function, while AMD
      * returns zeros. VIA on the other hand seems to returning nothing or
-     * perhaps some random garbage, we don't try duplicate this behavior.
+     * perhaps some random garbage, we don't try to duplicate this behavior.
      */
     ASMCpuId(pCPUM->aGuestCpuIdStd[0].eax + 10,
              &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
@@ -362,6 +362,52 @@ static int cpumR3CpuIdInit(PVM pVM)
      *        0x800000006 L2/L3 cache information
      */
 
+    /* Cpuid 0x800000007: 
+     * AMD:               EAX, EBX, ECX - reserved
+     *                    EDX: Advanced Power Management Information
+     * Intel:             Reserved
+     */
+    if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000007))
+    {
+        Assert(pVM->cpum.s.enmCPUVendor != CPUMCPUVENDOR_INVALID);
+
+        pCPUM->aGuestCpuIdExt[7].eax = pCPUM->aGuestCpuIdExt[7].ebx = pCPUM->aGuestCpuIdExt[7].ecx = 0;
+
+        if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
+        {
+            /* Only expose the TSC invariant capability bit to the guest. */
+            pCPUM->aGuestCpuIdExt[7].edx    &= 0
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_TS
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_FID
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_VID
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_TTP
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_TM
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_STC
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_MC
+                                            //| X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE
+                                            | X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR
+                                            | 0;
+        }
+        else
+            pCPUM->aGuestCpuIdExt[7].edx    = 0;
+    }
+
+    /* Cpuid 0x800000008:
+     * AMD:               EBX, EDX - reserved
+     *                    EAX: Virtual/Physical address Size
+     *                    ECX: Number of cores + APICIdCoreIdSize
+     * Intel:             EAX: Virtual/Physical address Size
+     *                    EBX, ECX, EDX - reserved
+     */
+    if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000008))
+    {
+        /* Only expose the virtual and physical address sizes to the guest. (EAX completely) */
+        pCPUM->aGuestCpuIdExt[8].ebx = pCPUM->aGuestCpuIdExt[8].edx = 0;  /* reserved */
+        /* Set APICIdCoreIdSize to zero (use legacy method to determine the number of cores per cpu)
+         * NC (0-7) Number of cores; 0 equals 1 core */
+        pCPUM->aGuestCpuIdExt[8].ecx = 0;
+    }
+
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
      *
@@ -374,8 +420,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < RT_ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
         pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
 
-    if (pCPUM->aGuestCpuIdExt[0].eax > UINT32_C(0x80000006))
-        pCPUM->aGuestCpuIdExt[0].eax = UINT32_C(0x80000006);
+    if (pCPUM->aGuestCpuIdExt[0].eax > UINT32_C(0x80000008))
+        pCPUM->aGuestCpuIdExt[0].eax = UINT32_C(0x80000008);
     for (i = pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000000)
            ? pCPUM->aGuestCpuIdExt[0].eax - UINT32_C(0x80000000) + 1
            : 0;
