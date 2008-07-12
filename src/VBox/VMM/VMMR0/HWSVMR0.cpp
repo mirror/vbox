@@ -1130,7 +1130,7 @@ ResumeExecution:
 
     /** @note NOW IT'S SAFE FOR LOGGING! */
 
-    /* Take care of instruction fusing (sti, mov ss) */
+    /* Take care of instruction fusing (sti, mov ss) (see 15.20.5 Interrupt Shadows) */
     if (pVMCB->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
     {
         Log(("uInterruptState %x eip=%VGv\n", pVMCB->ctrl.u64IntShadow, pCtx->rip));
@@ -1750,9 +1750,8 @@ ResumeExecution:
         pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
             &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
-        {
             goto ResumeExecution;
-        }
+
         rc = VINF_EM_HALT;
         break;
 

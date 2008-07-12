@@ -2036,9 +2036,7 @@ ResumeExecution:
         pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
             &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
-        {
             goto ResumeExecution;
-        }
 
         rc = VINF_EM_HALT;
         break;
