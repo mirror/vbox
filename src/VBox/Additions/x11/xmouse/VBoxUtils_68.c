@@ -121,6 +121,7 @@ int VBoxMouseInit(void)
     req.mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     req.pointerXPos = 0;
     req.pointerYPos = 0;
+/** @todo r=bird: Michael, I thought we decided a long time ago that all these should be replaced by VbglR3. I assume this is just a leftover... */
     if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0)
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
@@ -145,6 +146,7 @@ int VBoxMouseQueryPosition(unsigned int *abs_x, unsigned int *abs_y)
     if (g_vboxaddHandle < 0)
         return 1;
     /* perform VMM request */
+/** @todo r=bird: Michael, ditto. */
     if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(vmmdevGetRequestSize(VMMDevReq_GetMouseStatus)), (void*)g_vmmreqMouseStatus) >= 0)
     {
         if (VBOX_SUCCESS(g_vmmreqMouseStatus->header.rc))
@@ -180,6 +182,7 @@ int VBoxMouseFini(void)
     req.mouseFeatures = 0;
     req.pointerXPos = 0;
     req.pointerYPos = 0;
+/** @todo r=bird: Michael, ditto. */
     if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0)
     {
         ErrorF("ioctl to vboxadd module failed, rc = %d (%s)\n",
