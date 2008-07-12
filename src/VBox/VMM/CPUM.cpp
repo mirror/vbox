@@ -342,6 +342,42 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 
+    /* Cpuid 2: 
+     * Intel: Cache and TLB information
+     * AMD:   Reserved
+     * Safe to expose
+     */
+
+    /* Cpuid 3: 
+     * Intel: EAX, EBX - reserved
+     *        ECX, EDX - Processor Serial Number if available, otherwise reserved
+     * AMD:   Reserved
+     * Safe to expose
+     */
+    if (!(pCPUM->aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_PSN))
+        pCPUM->aGuestCpuIdStd[3].ecx = pCPUM->aGuestCpuIdStd[3].edx = 0;
+
+    /* Cpuid 4: 
+     * Intel: Deterministic Cache Parameters Leaf
+     *        Note: Depends on the ECX input! -> Feeling rather lazy now, so we just return 0
+     * AMD:   Reserved
+     * Safe to expose, except for EAX:
+     *      Bits 25-14: Maximum number of threads sharing this cache in a physical package (see note)**
+     *      Bits 31-26: Maximum number of processor cores in this physical package**
+     */
+    pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
+    pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
+
+    /* Cpuid 5:     Monitor/mwait Leaf
+     * Intel: ECX, EDX - reserved
+     *        EAX, EBX - Smallest and largest monitor line size
+     * AMD:   EDX - reserved
+     *        EAX, EBX - Smallest and largest monitor line size
+     *        ECX - extensions (ignored for now)
+     * Safe to expose
+     */
+    pCPUM->aGuestCpuIdStd[5].ecx = pCPUM->aGuestCpuIdStd[5].edx = 0;
+
     /*
      * Determine the default.
      *
@@ -738,9 +774,10 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
     uint32_t cElements;
     int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+    /* Support old saved states with a smaller standard cpuid array. */
+    if (cElements > ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
+    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdStd[0]));
 
     rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
     if (cElements != ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))

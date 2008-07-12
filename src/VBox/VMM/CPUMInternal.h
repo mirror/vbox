@@ -335,7 +335,7 @@ typedef struct CPUM
     uint8_t                 abPadding[3 + (HC_ARCH_BITS == 64) * 4];
 
     /** The standard set of CpuId leafs. */
-    CPUMCPUID               aGuestCpuIdStd[5];
+    CPUMCPUID               aGuestCpuIdStd[6];
     /** The extended set of CpuId leafs. */
     CPUMCPUID               aGuestCpuIdExt[10];
     /** The centaur set of CpuId leafs. */
