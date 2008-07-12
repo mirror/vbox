@@ -524,9 +524,8 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 VbglGRFree(reqFull);
             IOCTL_VMM_EXIT(arg);
         }
-        else if (   (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
-                == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
-            || (cmd == VBOXGUEST_IOCTL_HGCM_CALL))
+        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
+                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
         {
         /* This IOCTL allows the guest to make an HGCM call from user space.  The
            OS-independant part of the Guest Additions already contain code for making an
@@ -1008,7 +1007,7 @@ static __init int init(void)
     {
         VMMDevReqGuestCapabilities2 *vmmreqGuestCaps;
 
-        
+
         rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vmmreqGuestCaps,
                               sizeof(VMMDevReqGuestCapabilities2),
                               VMMDevReq_SetGuestCapabilities);
