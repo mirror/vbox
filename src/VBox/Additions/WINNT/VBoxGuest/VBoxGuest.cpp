@@ -796,7 +796,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             break;
         }
 
-        case VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader)):
+        case VBOXGUEST_IOCTL_VMMREQUEST(0): /* (The size isn't relevant on NT.)*/
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_VMMREQUEST\n"));
 
@@ -971,7 +971,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         } break;
 
-        case VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo)):
+        case VBOXGUEST_IOCTL_HGCM_CALL(0): /* (The size isn't relevant on NT.) */
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CALL\n"));
 
