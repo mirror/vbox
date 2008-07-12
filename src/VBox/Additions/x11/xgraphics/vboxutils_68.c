@@ -121,6 +121,7 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
         err = -1;
     }
 #else
+    /** @todo r=bird: Michael, I thought we decided a long time ago that all these should be replaced by VbglR3. I assume this is just a leftover... */
     err = ioctl (pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(0), hdrp);
 #endif
     if (err < 0)
@@ -148,8 +149,9 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     if (RT_FAILURE (vrc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
             "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
+/** @todo r=bird: Michael, ditto. */
     if (   RT_SUCCESS(vrc)
-        && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)&req) < 0))
+        && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0))
     {
         vrc = VERR_FILE_IO_ERROR;
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -818,7 +820,7 @@ static void vbox_load_cursor_argb (ScrnInfoPtr pScrn, CursorPtr pCurs)
     /* Init AND mask to 1 */
     memset (pm, 0xFF, mask_size);
 
-    /** 
+    /**
      * The additions driver must provide the AND mask for alpha cursors. The host frontend
      * which can handle alpha channel, will ignore the AND mask and draw an alpha cursor.
      * But if the host does not support ARGB, then it simply uses the AND mask and the color
