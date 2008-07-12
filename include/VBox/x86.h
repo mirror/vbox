@@ -501,6 +501,31 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @} */
 
 
+/** @name CPUID AMD Feature information.
+ * CPUID query with EAX=0x80000007.
+ * @{
+ */
+/** Bit 0 - TS - Temperature Sensor. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_TS        RT_BIT(0)
+/** Bit 1 - FID - Frequency ID Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_FID       RT_BIT(1)
+/** Bit 2 - VID - Voltage ID Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_VID       RT_BIT(2)
+/** Bit 3 - TTP - THERMTRIP. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_TTP       RT_BIT(3)
+/** Bit 4 - TM - Hardware Thermal Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_TM        RT_BIT(4)
+/** Bit 5 - STC - Software Thermal Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_STC       RT_BIT(5)
+/** Bit 6 - MC - 100 Mhz Multiplier Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_MC        RT_BIT(6)
+/** Bit 7 - HWPSTATE - Hardware P-State Control. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE  RT_BIT(7)
+/** Bit 8 - TSCINVAR - TSC Invariant. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR  RT_BIT(8)
+/** @} */
+
+
 /** @name CR0
  * @{ */
 /** Bit 0 - PE - Protection Enabled */
