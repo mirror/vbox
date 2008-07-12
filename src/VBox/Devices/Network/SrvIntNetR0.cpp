@@ -91,6 +91,22 @@ typedef INTNETIF *PINTNETIF;
 
 
 /**
+ * A trunk interface.
+ */
+typedef struct INTNETTRUNKIF
+{
+    /** The port interface we present to the component. */
+    INTNETTRUNKSWPORT   SwitchPort;
+    /** The port interface we get from the component. */
+    PINTNETTRUNKIFPORT  pIfPort;
+    /** The trunk mutex that serializes all calls <b>to</b> the component. */
+    RTSEMFASTMUTEX      FastMutex;
+} INTNETTRUNKIF;
+/** Pointer to a trunk interface. */
+typedef INTNETTRUNKIF *PINTNETTRUNKIF;
+
+
+/**
  * Internal representation of a network.
  */
 typedef struct INTNETNETWORK
@@ -1246,7 +1262,7 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
  */
 static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession)
 {
-    const char *pszFactoryUUID;
+    const char *pszName;
     switch (pNetwork->enmTrunkType)
     {
         /*
@@ -1259,21 +1275,59 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
             return VERR_NOT_IMPLEMENTED;
 
         case kIntNetTrunkType_NetFlt:
-            pszFactoryUUID = INTNETTRUNKFACTORY_NETFLT_UUID_STR;
+            pszName = "VBoxNetFlt";
             break;
         case kIntNetTrunkType_NetTap:
-            pszFactoryUUID = INTNETTRUNKFACTORY_NETTAP_UUID_STR;
+            pszName = "VBoxNetTap";
             break;
         case kIntNetTrunkType_SrvNat:
-            pszFactoryUUID = INTNETTRUNKFACTORY_SRVNAT_UUID_STR;
+            pszName = "VBoxSrvNat";
             break;
     }
 
+#if 0
     /*
-     * Query the factory.
+     * Allocate the trunk interface.
      */
+    PINTNETTRUNKIF pTrunkIF = (PINTNETTRUNKIF)RTMemAllocZ(sizeof(*pTrunkIF));
+    if (!pTrunkIF)
+        return VERR_NO_MEMORY;
+    pTrunkIF->SwitchPort.u32Version     = INTNETTRUNKSWPORT_VERSION;
+    pTrunkIF->SwitchPort.pfnSetSGPhys   = intnetTrunkIfPortSetSGPhys;
+    pTrunkIF->SwitchPort.pfnRecv        = intnetTrunkIfPortRecv;
+    pTrunkIF->SwitchPort.pfnSGRetain    = intnetTrunkIfPortSGRetain;
+    pTrunkIF->SwitchPort.pfnSGRelease   = intnetTrunkIfPortSGRelease;
+    pTrunkIF->SwitchPort.u32VersionEnd  = INTNETTRUNKSWPORT_VERSION;
+    //pTrunkIF->pIfPort = NULL;
+    int rc = RTSemFastMutexCreate(&pTrunkIF->FastMutex);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Query the factory we want, then use it create and connect the trunk.
+         */
+        PINTNETTRUNKFACTORY pTrunkFactory = NULL;
+        rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort, &pTrunkIF->pIfPort);
+            /** @todo pTrunkFactory->pfnRelease(pTrunkFactory); */
+            if (RT_SUCCESS(rc))
+            {
+                Assert(pTrunkIF->pIfPort);
+                LogFlow(("intnetNetworkCreateTrunkConnection: VINF_SUCCESS - pszName=%s szTrunk=%s Network=%s\n",
+                         rc, pszName, pNetwork->szTrunk, pNetwork->szName));
+                return VINF_SUCCESS;
+            }
+        }
 
+        RTMemFree(pTrunkIF);
+    }
+    LogFlow(("intnetNetworkCreateTrunkConnection: %Rrc - pszName=%s szTrunk=%s Network=%s\n",
+             rc, pszName, pNetwork->szTrunk, pNetwork->szName));
+    return rc;
+#else
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 

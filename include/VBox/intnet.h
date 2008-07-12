@@ -580,12 +580,8 @@ typedef struct INTNETTRUNKFACTORY
 /** Pointer to the trunk factory. */
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
-/** The UUID for the (current) trunk factory for host network interface filtering. */
-#define INTNETTRUNKFACTORY_NETFLT_UUID_STR  "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
-/** The UUID for the (current) trunk factory for TAP. */
-#define INTNETTRUNKFACTORY_NETTAP_UUID_STR  "aea1f233-1c1e-4c4f-b30a-9142e41ad9cb"
-/** The UUID for the (current) trunk factory for NAT. */
-#define INTNETTRUNKFACTORY_SRVNAT_UUID_STR  "c1c55569-725a-45a1-9065-fe87e2cd8746"
+/** The UUID for the (current) trunk factory */
+#define INTNETTRUNKFACTORY_UUID_STR     "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
 
 
 /**
