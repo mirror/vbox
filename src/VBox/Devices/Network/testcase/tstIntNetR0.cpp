@@ -486,6 +486,7 @@ int main()
 
                             /*
                              * Start threaded testcase.
+                             * Give it 5 mins to finish.
                              */
                             if (!g_cErrors)
                             {
@@ -519,10 +520,30 @@ int main()
                                 if (VBOX_SUCCESS(rc))
                                 {
                                     int rc2 = VINF_SUCCESS;
-                                    rc = RTThreadWait(ThreadSend0, 30000, &rc2);
-                                    if (    VBOX_SUCCESS(rc)
-                                        &&  VBOX_SUCCESS(rc2))
-                                        rc = RTThreadWait(ThreadSend1, 30000, &rc2);
+                                    rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2);
+#if 1 /** @todo it looks like I'm subject to some false wakeup calls here. (2.6.23-gentoo-r3 amd64) */
+                                    for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
+                                    {
+                                        RTThreadSleep(1);
+                                        rc = RTThreadWait(ThreadSend0, 1, &rc2);
+                                    }
+#endif
+                                    AssertRC(rc);
+                                    if (VBOX_SUCCESS(rc))
+                                    {
+                                        ThreadSend0 = NIL_RTTHREAD;
+                                        rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL);
+#if 1 /** @todo it looks like I'm subject to some false wakeup calls here. (2.6.23-gentoo-r3 amd64) */
+                                        for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
+                                        {
+                                            RTThreadSleep(1);
+                                            rc = RTThreadWait(ThreadSend1, 1, &rc2);
+                                        }
+#endif
+                                        AssertRC(rc);
+                                        if (RT_SUCCESS(rc))
+                                            ThreadSend1 = NIL_RTTHREAD;
+                                    }
                                     if (    VBOX_SUCCESS(rc)
                                         &&  VBOX_SUCCESS(rc2))
                                     {
@@ -543,6 +564,24 @@ int main()
                                         /*
                                          * Closing time...
                                          */
+                                        rc = RTThreadWait(ThreadRecv0, 5000, &rc2);
+                                        if (RT_SUCCESS(rc))
+                                            ThreadRecv0 = NIL_RTTHREAD;
+                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
+                                        {
+                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
+                                            g_cErrors++;
+                                        }
+
+                                        rc = RTThreadWait(ThreadRecv1, 5000, &rc2);
+                                        if (RT_SUCCESS(rc))
+                                            ThreadRecv1 = NIL_RTTHREAD;
+                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
+                                        {
+                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
+                                            g_cErrors++;
+                                        }
+
                                         rc = INTNETR0IfClose(pIntNet, hIf0);
                                         if (VBOX_SUCCESS(rc))
                                         {
@@ -554,6 +593,7 @@ int main()
                                             RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Vrc! (hIf0)\n", rc);
                                             g_cErrors++;
                                         }
+
                                         rc = INTNETR0IfClose(pIntNet, hIf1);
                                         if (VBOX_SUCCESS(rc))
                                         {
@@ -566,19 +606,6 @@ int main()
                                             g_cErrors++;
                                         }
 
-                                        rc = RTThreadWait(ThreadRecv0, 5000, &rc2);
-                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
-                                        {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
-                                            g_cErrors++;
-                                        }
-
-                                        rc = RTThreadWait(ThreadRecv1, 5000, &rc2);
-                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
-                                        {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
-                                            g_cErrors++;
-                                        }
 
                                         /* check if the network still exist... */
                                         if (pIntNet->pNetworks)
@@ -592,6 +619,15 @@ int main()
                                         RTPrintf("tstIntNetR0: Waiting on senders failed, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
                                         g_cErrors++;
                                     }
+
+                                    /*
+                                     * Give them a chance to complete...
+                                     */
+                                    RTThreadWait(ThreadRecv0, 5000, NULL);
+                                    RTThreadWait(ThreadRecv1, 5000, NULL);
+                                    RTThreadWait(ThreadSend0, 5000, NULL);
+                                    RTThreadWait(ThreadSend1, 5000, NULL);
+
                                 }
                                 else
                                 {
@@ -617,12 +653,18 @@ int main()
                     RTPrintf("tstIntNetR0: INTNETOpen returned invalid handle on success! (hIf1)\n");
                     g_cErrors++;
                 }
+
+                if (hIf1 != INTNET_HANDLE_INVALID)
+                    rc = INTNETR0IfClose(pIntNet, hIf1);
             }
             else
             {
                 RTPrintf("tstIntNetR0: INTNETOpen failed for the 2nd interface! rc=%Vrc\n", rc);
                 g_cErrors++;
             }
+
+            if (hIf0 != INTNET_HANDLE_INVALID)
+                rc = INTNETR0IfClose(pIntNet, hIf0);
         }
         else
         {
