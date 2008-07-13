@@ -139,6 +139,8 @@ HWACCMR0DECL(int) HWACCMR0Init()
 
     memset(&HWACCMR0Globals, 0, sizeof(HWACCMR0Globals));
     HWACCMR0Globals.enmHwAccmState = HWACCMSTATE_UNINITIALIZED;
+    for (unsigned i = 0; i < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo); i++)
+        HWACCMR0Globals.aCpuInfo[i].pMemObj = NIL_RTR0MEMOBJ;
 
     /* Fill in all callbacks with placeholders. */
     HWACCMR0Globals.pfnEnterSession     = HWACCMR0DummyEnter;
@@ -349,7 +351,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
         HWACCMR0Globals.pfnTermVM           = VMXR0TermVM;
         HWACCMR0Globals.pfnSetupVM          = VMXR0SetupVM;
     }
-    else 
+    else
     if (HWACCMR0Globals.svm.fSupported)
     {
         HWACCMR0Globals.pfnEnterSession     = SVMR0Enter;
@@ -414,10 +416,10 @@ HWACCMR0DECL(int) HWACCMR0Term()
     for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
     {
         AssertMsg(VBOX_SUCCESS(aRc[i]), ("HWACCMR0DisableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
-        if (HWACCMR0Globals.aCpuInfo[i].pMemObj)
+        if (HWACCMR0Globals.aCpuInfo[i].pMemObj != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(HWACCMR0Globals.aCpuInfo[i].pMemObj, false);
-            HWACCMR0Globals.aCpuInfo[i].pMemObj = NULL;
+            HWACCMR0Globals.aCpuInfo[i].pMemObj = NIL_RTR0MEMOBJ;
         }
     }
     return rc;
@@ -528,7 +530,7 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 
                 void *pvR0 = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[i].pMemObj);
                 Assert(pvR0);
-                memset(pvR0, 0, PAGE_SIZE);
+                ASMMemZeroPage(pvR0);
 
 #ifdef LOG_ENABLED
                 SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0));

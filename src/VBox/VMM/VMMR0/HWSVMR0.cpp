@@ -119,6 +119,12 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
     int rc;
 
+    pVM->hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
+    pVM->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
+    pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
+    pVM->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+
+
     /* Allocate one page for the VM control block (VMCB). */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
     if (RT_FAILURE(rc))
@@ -126,7 +132,7 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
 
     pVM->hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjVMCB);
     pVM->hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjVMCB, 0);
-    ASMMemZero32(pVM->hwaccm.s.svm.pVMCB, PAGE_SIZE);
+    ASMMemZeroPage(pVM->hwaccm.s.svm.pVMCB);
 
     /* Allocate one page for the host context */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -135,7 +141,7 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
 
     pVM->hwaccm.s.svm.pVMCBHost     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjVMCBHost);
     pVM->hwaccm.s.svm.pVMCBHostPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjVMCBHost, 0);
-    ASMMemZero32(pVM->hwaccm.s.svm.pVMCBHost, PAGE_SIZE);
+    ASMMemZeroPage(pVM->hwaccm.s.svm.pVMCBHost);
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -201,33 +207,33 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
  */
 HWACCMR0DECL(int) SVMR0TermVM(PVM pVM)
 {
-    if (pVM->hwaccm.s.svm.pMemObjVMCB)
+    if (pVM->hwaccm.s.svm.pMemObjVMCB != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjVMCB, false);
         pVM->hwaccm.s.svm.pVMCB       = 0;
         pVM->hwaccm.s.svm.pVMCBPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjVMCB = 0;
+        pVM->hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
     }
-    if (pVM->hwaccm.s.svm.pMemObjVMCBHost)
+    if (pVM->hwaccm.s.svm.pMemObjVMCBHost != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjVMCBHost, false);
         pVM->hwaccm.s.svm.pVMCBHost       = 0;
         pVM->hwaccm.s.svm.pVMCBHostPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjVMCBHost = 0;
+        pVM->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
     }
-    if (pVM->hwaccm.s.svm.pMemObjIOBitmap)
+    if (pVM->hwaccm.s.svm.pMemObjIOBitmap != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjIOBitmap, false);
         pVM->hwaccm.s.svm.pIOBitmap       = 0;
         pVM->hwaccm.s.svm.pIOBitmapPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjIOBitmap = 0;
+        pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
     }
-    if (pVM->hwaccm.s.svm.pMemObjMSRBitmap)
+    if (pVM->hwaccm.s.svm.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjMSRBitmap, false);
         pVM->hwaccm.s.svm.pMSRBitmap       = 0;
         pVM->hwaccm.s.svm.pMSRBitmapPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjMSRBitmap = 0;
+        pVM->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
     }
     return VINF_SUCCESS;
 }
@@ -319,7 +325,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
     pVMCB->ctrl.IntCtrl.n.u1VIrqMasking = 1;
     /* Ignore the priority in the TPR; just deliver it when we tell it to. */
-    pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR   = 1; 
+    pVMCB->ctrl.IntCtrl.n.u1IgnoreTPR   = 1;
 
     /* Set IO and MSR bitmap addresses. */
     pVMCB->ctrl.u64IOPMPhysAddr  = pVM->hwaccm.s.svm.pIOBitmapPhys;
@@ -882,7 +888,7 @@ ResumeExecution:
         else
             Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
     }
-    if (pCpu->fFlushTLB) 
+    if (pCpu->fFlushTLB)
         Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
 #endif
 

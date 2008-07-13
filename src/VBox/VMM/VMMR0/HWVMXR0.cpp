@@ -138,6 +138,10 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x\n", pVM);
 #endif
+    pVM->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
+    pVM->hwaccm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
+    pVM->hwaccm.s.vmx.pMemObjRealModeTSS = NIL_RTR0MEMOBJ;
+
 
     /* Allocate one page for the VM control structure (VMCS). */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjVMCS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -198,24 +202,24 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
  */
 HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
-    if (pVM->hwaccm.s.vmx.pMemObjVMCS)
+    if (pVM->hwaccm.s.vmx.pMemObjVMCS != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjVMCS, false);
-        pVM->hwaccm.s.vmx.pMemObjVMCS = 0;
+        pVM->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
         pVM->hwaccm.s.vmx.pVMCS       = 0;
         pVM->hwaccm.s.vmx.pVMCSPhys   = 0;
     }
-    if (pVM->hwaccm.s.vmx.pMemObjRealModeTSS)
+    if (pVM->hwaccm.s.vmx.pMemObjRealModeTSS != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjRealModeTSS, false);
-        pVM->hwaccm.s.vmx.pMemObjRealModeTSS = 0;
+        pVM->hwaccm.s.vmx.pMemObjRealModeTSS = NIL_RTR0MEMOBJ;
         pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
         pVM->hwaccm.s.vmx.pRealModeTSSPhys   = 0;
     }
-    if (pVM->hwaccm.s.vmx.pMemObjAPIC)
+    if (pVM->hwaccm.s.vmx.pMemObjAPIC != NIL_RTR0MEMOBJ)
     {
         RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjAPIC, false);
-        pVM->hwaccm.s.vmx.pMemObjAPIC = 0;
+        pVM->hwaccm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
         pVM->hwaccm.s.vmx.pAPIC       = 0;
         pVM->hwaccm.s.vmx.pAPICPhys   = 0;
     }
@@ -2067,20 +2071,20 @@ ResumeExecution:
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
         /* already handled above */
-        AssertMsg(   rc == VINF_PGM_CHANGE_MODE 
-                  || rc == VINF_EM_RAW_INTERRUPT 
-                  || rc == VERR_EM_INTERPRETER 
-                  || rc == VINF_EM_RAW_EMULATE_INSTR 
-                  || rc == VINF_PGM_SYNC_CR3 
-                  || rc == VINF_IOM_HC_IOPORT_READ 
+        AssertMsg(   rc == VINF_PGM_CHANGE_MODE
+                  || rc == VINF_EM_RAW_INTERRUPT
+                  || rc == VERR_EM_INTERPRETER
+                  || rc == VINF_EM_RAW_EMULATE_INSTR
+                  || rc == VINF_PGM_SYNC_CR3
+                  || rc == VINF_IOM_HC_IOPORT_READ
                   || rc == VINF_IOM_HC_IOPORT_WRITE
-                  || rc == VINF_EM_RAW_GUEST_TRAP 
-                  || rc == VINF_TRPM_XCPT_DISPATCHED 
-                  || rc == VINF_EM_RESCHEDULE_REM, 
+                  || rc == VINF_EM_RAW_GUEST_TRAP
+                  || rc == VINF_TRPM_XCPT_DISPATCHED
+                  || rc == VINF_EM_RESCHEDULE_REM,
                   ("rc = %d\n", rc));
         break;
 
-    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */       
+    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
         /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
