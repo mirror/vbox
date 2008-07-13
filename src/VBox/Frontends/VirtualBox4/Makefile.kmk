@@ -19,7 +19,9 @@
 # additional information or have any questions.
 #
 
-#USE_KBUILD_QT_UNIT := 1	                # Testing before enabling it.
+if1of ($(KBUILD_TARGET), darwin)
+USE_KBUILD_QT_UNIT := 1	                # Testing before enabling it.
+endif
 
 VBOX_WITH_REGISTRATION := 1
 
