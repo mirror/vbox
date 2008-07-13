@@ -19,7 +19,7 @@
 # additional information or have any questions.
 #
 
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin windows)
 USE_KBUILD_QT_UNIT := 1	                # Testing before enabling it.
 endif
 
