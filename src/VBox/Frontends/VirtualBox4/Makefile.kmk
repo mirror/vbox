@@ -19,7 +19,15 @@
 # additional information or have any questions.
 #
 
-if1of ($(KBUILD_TARGET), darwin windows)
+DEPTH = ../../../..
+include $(KBUILD_PATH)/header.kmk
+
+#
+# Globals.
+#
+VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
+
+if1of ($(KBUILD_TARGET), darwin win)
 USE_KBUILD_QT_UNIT := 1	                # Testing before enabling it.
 endif
 
@@ -32,14 +40,6 @@ VBOX_WITH_REGISTRATION_REQUEST := 1
 # Show the update notifier dialog during startup. If this setting is disabled
 # the user can still register using the menu if desired.
 VBOX_WITH_UPDATE_REQUEST := 1
-
-DEPTH = ../../../..
-include $(KBUILD_PATH)/header.kmk
-
-#
-# Globals.
-#
-VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
 
 
 # Disable the debugger for now, this is another story.
