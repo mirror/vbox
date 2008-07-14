@@ -114,9 +114,12 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif # !USE_KBUILD_QT_UNIT_PART_2
 else
 
+ifndef USE_KBUILD_QT_UNIT_PART_2
  VBOX_INCS_QT4       = \
 	$(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt) \
 	$(VBOX_PATH_QT4_INCLUDE)
+endif
+ VBOX_INCS_QT4       = $(VBOX_PATH_QT4_INCLUDE) ## @todo add this to the qt4 unit.
  ifeq ($(KBUILD_TARGET),win)
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
    ## @todo This is the correct one here: VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc2005
@@ -131,16 +134,13 @@ else
  # add the VBox prefix to Qt libs if they are built by us
  ifeq ($(KBUILD_TARGET),win)
   VBOX_LIBS_QT4      = $(patsubst %, VBox%4, $(VBOX_MODULE_QT4))
-  VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/VBox%4.dll, $(VBOX_MODULE_QT4))
  else ifdef VBOX_WITH_QT4_SUN
   # Qt4 compiled by Sun with altered library names
   VBOX_LIBS_QT4      = $(patsubst %, VBox%, $(VBOX_MODULE_QT4))
-  VBOX_QT4_RUNTIME   = $(patsubst %, $(VBOX_PATH_QT4_LIB)/libVBox%.so.4, $(VBOX_MODULE_QT4))
   # Export the ld library path
   export LD_LIBRARY_PATH := $(VBOX_PATH_QT4_LIB):$(LD_LIBRARY_PATH)
  else
   VBOX_LIBS_QT4      = $(VBOX_MODULE_QT4)
-  VBOX_QT4_RUNTIME   =
  endif
 
  ifeq ($(KBUILD_TARGET),win)
@@ -177,36 +177,31 @@ else
  $(error Port me!)
 endif
 
-# All the following should be done in some root Makefile and removed from this
-# one.
-ifeq ($(KBUILD_TARGET),darwin)
- # The following is necessary on Non OSE only. On the OSE version the Qt
- # frameworks provided by Trolltech have to be installed on the target system
- # in the system wide Frameworks directory (/Library/Frameworks).
- ifndef VBOX_OSE
-  # Create the targets of the form
-  # @executable_path/../Frameworks/Qt???.framework/Versions/4/Qt???
-  QT_LIB_INSTALL = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join $(PATH_BIN)/../Frameworks/, $(mod)), .framework/Versions/4/$(mod)))
-  # The target for the libs. This is a special target cause is creates the
-  # necessary directory structure. @Bird: is there something for this in
-  # kBuild already? Todo: What about uninstall?
-  ## @todo bird: a qt4-framework install target with a source list like this:
-  # QtCore.framework/Versions/4/QtCore=>QtCore.framework/Versions/4/QtCore \
-  # QtGui.framework/Versions/4/QtGui=>QtGui.framework/Versions/4/QtGui
-  $(QT_LIB_INSTALL): $(PATH_BIN)/../Frameworks/%: $(VBOX_PATH_QT4_FRAMEWORKS)/%
-	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(INSTALL) -m 0644 $< $(@D)
-  # Add the lib targets to the OTHER dependencies.
-  OTHERS = $(QT_LIB_INSTALL)
- endif
-else
- # The Qt DLLs
- ## @todo move to the root Makefile.kmk, and remove qt4-bin from INSTALLS below.
- qt4-bin_SOURCES += $(VBOX_QT4_RUNTIME)
- qt4-bin_INST = $(INST_BIN)
+ifdef VBOX_WITH_QT4_SUN
+#
+# Install our Qt DLLs / Shared Objects / Frameworks.
+#
+## @todo move to the root Makefile.kmk, and remove qt4-bin from INSTALLS below.
+ INSTALLS += qt4-bin
  qt4-bin_MODE = 644
-endif
+ ifeq ($(KBUILD_TARGET),darwin)
+  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/Frameworks/
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>QtCore.framework/Versions/4/QtCore \
+	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>QtGui.framework/Versions/4/QtGui
+ else ifeq ($(KBUILD_TARGET),win)
+  qt4-bin_INST = $(INST_BIN)
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtCore4.dll \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll
+ else
+  qt4-bin_INST = $(INST_BIN)
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtCore.so.4 \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtGui.so.4
+ endif
+endif # VBOX_WITH_QT4_SUN
+
 
 # Template copy from the qt3 stuff. Appended a "4" on the
 # relevant places.
@@ -387,7 +382,7 @@ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X1
  OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
  CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
-INSTALLS += VirtualBox4.nls qt4-bin
+INSTALLS += VirtualBox4.nls
 
 
 #
