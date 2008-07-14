@@ -268,6 +268,12 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
              PortsId, "#ports");
 
+    /* USB page */
+    prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
+    addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+             USBId, "#usb",
+             prefPage, PortsId);
+
     /* Serial page */
     prefPage = new VBoxVMSettingsSerialPage();
     addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
@@ -278,12 +284,6 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     prefPage = new VBoxVMSettingsParallelPage();
     addItem (VBoxGlobal::iconSet (":/parallel_port_16px.png"),
              ParallelId, "#parallelPorts",
-             prefPage, PortsId);
-
-    /* USB page */
-    prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
-    addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
-             USBId, "#usb",
              prefPage, PortsId);
 
     /* SFolders page */
