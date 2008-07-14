@@ -78,7 +78,6 @@ ifeq ($(VBOX_PATH_QT4),)
  if1of ($(USERNAME), bird)
   # gentoo (64-bit)
   VBOX_PATH_QT4          ?= /usr
-  VBOX_PATH_QT4_BIN      ?= /usr/bin
   VBOX_PATH_QT4_INCLUDE  ?= /usr/include/qt4
   VBOX_PATH_QT4_LIB      ?= /usr/lib/qt4
   VBOX_PATH_QT4_LIB64    ?= /usr/lib/qt4
@@ -86,7 +85,6 @@ ifeq ($(VBOX_PATH_QT4),)
  endif
 endif
 VBOX_PATH_QT4            ?= /usr
-VBOX_PATH_QT4_BIN        ?= $(VBOX_PATH_QT4)/bin
 VBOX_PATH_QT4_INCLUDE    ?= $(VBOX_PATH_QT4)/include
 VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
 VBOX_PATH_QT4_LIB64      ?= $(VBOX_PATH_QT4)/lib64
@@ -94,9 +92,11 @@ VBOX_PATH_QT4_FRAMEWORKS ?= $(VBOX_PATH_QT4)/Frameworks
 VBOX_PATH_QT4_SHARE      ?= $(VBOX_PATH_QT4)
 
 ifneq ($(KBUILD_TARGET),darwin)
+ifndef USE_KBUILD_QT4_UNIT_PART_3
  VBOX_INCS_QT4      += $(VBOX_PATH_QT4_INCLUDE) ## @todo add this to the qt4 unit.
+endif
 
- ifeq (enabled,enabled) # Adding mkspecs to the INCS is hopefully not really necessary... Will try disable it later.
+ ifeq (disabled,yes) # Adding mkspecs to the INCS is hopefully not really necessary... Will try disable it later.
   ifeq ($(KBUILD_TARGET),win)
    ifeq ($(KBUILD_TARGET_ARCH),amd64)
     ## @todo This is the correct one here: VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc2005
@@ -109,9 +109,11 @@ ifneq ($(KBUILD_TARGET),darwin)
   endif
  endif
 
- # Move down.
- ifeq ($(KBUILD_TARGET),win)
-  VBOX_LIBS_QT4 := VBoxqtmain.lib
+ ifndef USE_KBUILD_QT4_UNIT_PART_3
+  # Move down.
+  ifeq ($(KBUILD_TARGET),win)
+   VBOX_LIBS_QT4 := VBoxqtmain.lib
+  endif
  endif
 
 endif
@@ -125,31 +127,6 @@ endif
 
 # Some default defs
 VBOX_DEFS_QT4 += QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
-
-VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic
-VBOX_MOC4      ?= $(VBOX_PATH_QT4_BIN)/moc
-VBOX_RCC4      ?= $(VBOX_PATH_QT4_BIN)/rcc
-VBOX_LUPDATE4  ?= $(VBOX_PATH_QT4_BIN)/lupdate
-VBOX_LRELEASE4 ?= $(VBOX_PATH_QT4_BIN)/lrelease
-
-# tell moc what platform we are on to let it properly define
-# Q_OS_* and Q_WS_* macros when including qglobal.h
-# (is there a better way?)
-ifeq ($(KBUILD_TARGET),win)
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  VBOX_MOC4    += -DWIN64
- else
-  VBOX_MOC4    += -DWIN32
- endif
-else ifeq ($(KBUILD_TARGET),darwin)
-  VBOX_MOC4    += -D__APPLE__ -D__GNUC__
-else ifeq ($(KBUILD_TARGET),solaris)
-  VBOX_MOC4    += -D__sun
-else ifeq ($(KBUILD_TARGET),linux)
- # when nothing special is defined, Q_OS_UNIX/Q_WS_X11 will be set
-else
- $(error Port me!)
-endif
 
 ifdef VBOX_WITH_QT4_SUN
 #
@@ -260,6 +237,7 @@ else # the gcc guys:
 	$(LIB_REM) \
 	$(LIB_VMM)
 
+ifeq (disabled,yes)
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
 	$(VBOX_PATH_QT4_LIB64) $(VBOX_PATH_QT4_LIB)
@@ -267,6 +245,7 @@ else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
 	$(VBOX_PATH_QT4_LIB)
  endif
+endif
 
  ifeq ($(KBUILD_TARGET),linux)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
@@ -275,7 +254,9 @@ else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
     $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
+ifndef USE_KBUILD_QT4_UNIT_PART_3
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS) ## @todo fix in the qt unit. Somehow this fixes the #include <QtCore/qstring.h> stuff.
+endif
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
@@ -312,7 +293,7 @@ endif
 TEMPLATE_VBOXQT4GUIEXE_LIBS            += \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
 ifdef VBOX_WITH_XPCOM
- ## @todo may be worth creating the VBOX_XPCOM SDK def
+ ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
  TEMPLATE_VBOXQT4GUIEXE_DEFS            += VBOX_WITH_XPCOM
  TEMPLATE_VBOXQT4GUIEXE_INCS            += \
 	$(VBOX_XPCOM_INCS)
