@@ -256,7 +256,13 @@ public:
                               Bstr *aMachineIDs = NULL);
 
     const ComObjPtr <Host> &host() { return mData.mHost; }
-    const ComObjPtr <SystemProperties> &systemProperties() { return mData.mSystemProperties; }
+    const ComObjPtr <SystemProperties> &systemProperties()
+        { return mData.mSystemProperties; }
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    const ComObjPtr <PerformanceCollector> &performanceCollector()
+        { return mData.mPerformanceCollector; }
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 
     /** Returns the VirtualBox home directory */
     const Utf8Str &homeDir() { return mData.mHomeDir; }
@@ -349,10 +355,6 @@ public:
 
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    PerformanceCollector *getCollector() { return mData.mPerformanceCollector; };
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 private:
 

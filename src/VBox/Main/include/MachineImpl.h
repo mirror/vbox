@@ -711,8 +711,8 @@ protected:
     void copyFrom (Machine *aThat);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics(PerformanceCollector *collector);
-    void unregisterMetrics(PerformanceCollector *collector);
+    void registerMetrics (PerformanceCollector *aCollector);
+    void unregisterMetrics (PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     const InstanceType mType;

@@ -71,7 +71,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *parent);
+    HRESULT init (VirtualBox *aParent);
     void uninit();
 
     // IHost properties
@@ -163,8 +163,8 @@ private:
 #endif
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics(PerformanceCollector *collector);
-    void unregisterMetrics(PerformanceCollector *collector);
+    void registerMetrics (PerformanceCollector *aCollector);
+    void unregisterMetrics (PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     ComObjPtr <VirtualBox, ComWeakRef> mParent;

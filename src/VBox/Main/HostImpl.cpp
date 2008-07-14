@@ -134,19 +134,18 @@ void Host::FinalRelease()
 /**
  * Initializes the host object.
  *
- * @returns COM result indicator
- * @param parent handle of our parent object
+ * @param aParent   VirtualBox parent object.
  */
-HRESULT Host::init (VirtualBox *parent)
+HRESULT Host::init (VirtualBox *aParent)
 {
     LogFlowThisFunc (("isReady=%d\n", isReady()));
 
-    ComAssertRet (parent, E_INVALIDARG);
+    ComAssertRet (aParent, E_INVALIDARG);
 
     AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
-    mParent = parent;
+    mParent = aParent;
 
 #ifdef VBOX_WITH_USB
     /*
@@ -170,7 +169,7 @@ HRESULT Host::init (VirtualBox *parent)
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    registerMetrics(parent->getCollector());
+    registerMetrics (aParent->performanceCollector());
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     setReady(true);
@@ -188,7 +187,7 @@ void Host::uninit()
     AssertReturn (isReady(), (void) 0);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    unregisterMetrics(mParent->getCollector());
+    unregisterMetrics (mParent->performanceCollector());
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #ifdef VBOX_WITH_USB
@@ -2692,38 +2691,48 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Host::registerMetrics(PerformanceCollector *collector)
+void Host::registerMetrics (PerformanceCollector *aCollector)
 {
-    pm::MetricFactory *metricFactory = collector->getMetricFactory();
-    // Create sub metrics
-    pm::SubMetric *cpuLoadUser = new pm::SubMetric("CPU/Load/User");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric("CPU/Load/Kernel");
-    pm::SubMetric *cpuLoadIdle = new pm::SubMetric("CPU/Load/Idle");
-    // Create and register base metrics
+    pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
+    /* Create sub metrics */
+    pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User");
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
+    pm::SubMetric *cpuLoadIdle = new pm::SubMetric ("CPU/Load/Idle");
+    /* Create and register base metrics */
     IUnknown *objptr;
-    ComObjPtr<Host> tmp = this;
-    tmp.queryInterfaceTo(&objptr);
+    ComObjPtr <Host> tmp = this;
+    tmp.queryInterfaceTo (&objptr);
     pm::BaseMetric *cpuLoad =
-        metricFactory->createHostCpuLoad(objptr, cpuLoadUser, cpuLoadKernel, cpuLoadIdle);
-    collector->registerBaseMetric(cpuLoad);
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, new pm::AggregateMax()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, new pm::AggregateMax()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, 0));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateAvg()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateMin()));
-    collector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, new pm::AggregateMax()));
+        metricFactory->createHostCpuLoad (objptr, cpuLoadUser, cpuLoadKernel,
+                                          cpuLoadIdle);
+    aCollector->registerBaseMetric (cpuLoad);
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+                                               new pm::AggregateMax()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel, 0));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+                                               new pm::AggregateMax()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle, 0));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
+                                               new pm::AggregateMax()));
 };
 
-void Host::unregisterMetrics(PerformanceCollector *collector)
+void Host::unregisterMetrics (PerformanceCollector *aCollector)
 {
-    collector->unregisterMetricsFor(this);
-    collector->unregisterBaseMetricsFor(this);
+    aCollector->unregisterMetricsFor (this);
+    aCollector->unregisterBaseMetricsFor (this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 

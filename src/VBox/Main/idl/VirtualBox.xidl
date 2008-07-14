@@ -1056,9 +1056,10 @@
         </note>
       </desc>
     </attribute>
+
     <attribute name="performanceCollector" type="IPerformanceCollector" readonly="yes">
       <desc>
-        The only instance of IPerformanceCollector.
+        Associated performance collector object.
       </desc>
     </attribute>
 
@@ -10073,12 +10074,20 @@
 
 </if>
 
+  <!--
+  // IPerformanceCollector & friends
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
   <interface
     name="IPerformanceMetric" extends="$unknown"
     uuid="50831d4c-ed55-4221-836c-87b487d3b44a" wsmap="managed"
   >
-    <desc>Holds metrics parameters.</desc>
-  
+    <desc>
+      The IPerformanceMetric interface represents parameters of the given
+      performance metric.
+    </desc>
+
     <attribute name="metricName" type="wstring" readonly="yes">
       <desc>
         Name of the metric.
@@ -10087,38 +10096,41 @@
 
     <attribute name="object" type="$unknown" readonly="yes">
       <desc>
-        The object this metric belongs to.
+        Object this metric belongs to.
       </desc>
     </attribute>
 
     <attribute name="period" type="unsigned long" readonly="yes">
       <desc>
-        The time interval between samples, measured in seconds.
+        Time interval between samples, measured in seconds.
       </desc>
     </attribute>
 
     <attribute name="count" type="unsigned long" readonly="yes">
       <desc>
-        The number of recent samples retained by the collector. Older samples 
+        Number of recent samples retained by the performance collector for this
+        metric.
+
+        When the collected sample count exceeds this number, older samples
         are discarded.
       </desc>
     </attribute>
 
     <attribute name="unit" type="wstring" readonly="yes">
       <desc>
-        The unit of measurement.
+        Unit of measurement.
       </desc>
     </attribute>
 
     <attribute name="minimumValue" type="long" readonly="yes">
       <desc>
-        The minimum possible value of this metric.
+        Minimum possible value of this metric.
       </desc>
     </attribute>
 
     <attribute name="maximumValue" type="long" readonly="yes">
       <desc>
-        The maximum possible value of this metric.
+        Maximum possible value of this metric.
       </desc>
     </attribute>
   </interface>
@@ -10129,90 +10141,173 @@
     wsmap="managed"
   >
     <desc>
-      This object collects and stores performace metrics data. Performance 
-      metrics are associated with objects like IHost and IMachine. Each object 
-      has a distict set of performance metrics. It can be obtained with
-      <link to="IPerformanceCollector::getMetrics"/>.
+      The IPerformanceCollector interfaces represents a service that collects
+      and stores performace metrics data.
+
+      Performance metrics are associated with objects like IHost and IMachine.
+      Each object has a distict set of performance metrics. It can be obtained
+      with <link to="IPerformanceCollector::getMetrics"/>.
     </desc>
 
     <attribute name="metricNames" type="wstring" readonly="yes" safearray="yes">
       <desc>
-        An array of unique names of metrics regardless of objects they are 
-        associated with.
+        Array of unique names of metrics.
+
+        This array represents all metrics supported by the performance
+        collector. Individual objects do not necessarily support all of them.
+        <link to="IPerformanceCollector::getMetrics"/> can be used to get the
+        list of supported metrics for a particular object.
       </desc>
     </attribute>
-  
+
     <method name="getMetrics">
       <desc>
-        Returns parameters (characteristics?) of specified metrics for a set of
-        objects.
+        Returns parameters of specified metrics for a set of objects.
         <note>
-          Null metrics array means all metrics. Null object array means all 
-          existing objects.
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
         </note>
       </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
-      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
-      <param name="metrics" type="IPerformanceMetric" dir="return" safearray="yes"/>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to return metric parameters for.
+        </desc>
+      </param>
+      <param name="metrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of returned metric parameters.
+        </desc>
+      </param>
     </method>
-  
+
     <method name="setupMetrics">
       <desc>
         Sets parameters of specified metrics for a set of objects.
         <note>
-          Null metrics array means all metrics. Null object array means all 
-          existing objects.
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
         </note>
       </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
-      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
-      <param name="period" type="unsigned long" dir="in"/>
-      <param name="count" type="unsigned long" dir="in"/>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to setup metric parameters for.
+        </desc>
+      </param>
+      <param name="period" type="unsigned long" dir="in">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
+      <param name="count" type="unsigned long" dir="in">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
     </method>
 
     <method name="enableMetrics">
       <desc>
-        Turn on collection of specified metrics.
+        Turns on collecting specified metrics.
         <note>
-          Null metrics array means all metrics. Null object array means all 
-          existing objects.
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
         </note>
       </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
-      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to enable metrics for.
+        </desc>
+      </param>
     </method>
 
     <method name="disableMetrics">
       <desc>
-        Turn off collection of specified metrics.
+        Turns off collecting specified metrics.
         <note>
-          Null metrics array means all metrics. Null object array means all 
-          existing objects.
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
         </note>
       </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
-      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to disable metrics for.
+        </desc>
+      </param>
     </method>
 
     <method name="queryMetricsData">
       <desc>
         Queries collected metrics data for a set of objects.
+
+        The @a returnData parameter is a flattened array of arrays. Each start
+        and length of a sub-array is indicated by @a returnDataIndices and @a
+        returnDataLengths.
+
         <note>
-          Null metrics array means all applicable metrics. Null object array 
-          means all existing objects. The @a returnData parameter is a
-          flattened array of arrays. Each start and length of a sub-array is
-          indicated by @a returnDataIndices and @a returnDataLengths. The
-          rationale behind this API style is that it doesn't require objects
-          to be returned, and thus eliminates all but the unavoidable IPC.
+          @c Null metrics array means all applicable metrics. @c Null object
+          array means all existing objects.
         </note>
       </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes"/>
-      <param name="objects" type="$unknown" dir="in" safearray="yes"/>
-      <param name="returnMetricNames" type="wstring" dir="out" safearray="yes"/>
-      <param name="returnObjects" type="$unknown" dir="out" safearray="yes"/>
-      <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes"/>
-      <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes"/>
-      <param name="returnData" type="long" dir="return" safearray="yes"/>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to query metrics for.
+        </desc>
+      </param>
+      <param name="returnMetricNames" type="wstring" dir="out" safearray="yes">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
+      <param name="returnObjects" type="$unknown" dir="out" safearray="yes">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
+      <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
+      <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
+      <param name="returnData" type="long" dir="return" safearray="yes">
+        <desc>
+          @todo ???
+        </desc>
+      </param>
     </method>
 
   </interface>
