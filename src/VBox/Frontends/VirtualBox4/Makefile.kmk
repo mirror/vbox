@@ -115,11 +115,9 @@ ifeq ($(KBUILD_TARGET),darwin)
 else
 
 ifndef USE_KBUILD_QT_UNIT_PART_2
- VBOX_INCS_QT4       = \
-	$(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt) \
-	$(VBOX_PATH_QT4_INCLUDE)
+ VBOX_INCS_QT4       = $(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt)
 endif
- VBOX_INCS_QT4       = $(VBOX_PATH_QT4_INCLUDE) ## @todo add this to the qt4 unit.
+ VBOX_INCS_QT4      += $(VBOX_PATH_QT4_INCLUDE) ## @todo add this to the qt4 unit.
  ifeq ($(KBUILD_TARGET),win)
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
    ## @todo This is the correct one here: VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc2005
@@ -307,8 +305,8 @@ ifndef USE_KBUILD_QT_UNIT_PART_2
   # We have to add the framework path to both the linker and the compiler also.
   # Note that the -F flag is apple gcc only.
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS) $(addprefix -framework , $(VBOX_MODULE_QT4))
-  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS)
 endif
+  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS) ## @todo fix in the qt unit. Somehow this fixes the #include <QtCore/qstring.h> stuff.
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
