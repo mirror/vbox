@@ -390,7 +390,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
         {
             g_apSessionHashTab[iHash] = pSession->pNextHash;
             pSession->pNextHash = NULL;
-            ASMAtomicIncS32(&g_cSessions);
+            ASMAtomicDecS32(&g_cSessions);
         }
         else
         {
@@ -402,7 +402,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
                 {
                     pPrev->pNextHash = pSession->pNextHash;
                     pSession->pNextHash = NULL;
-                    ASMAtomicIncS32(&g_cSessions);
+                    ASMAtomicDecS32(&g_cSessions);
                     break;
                 }
 
