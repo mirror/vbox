@@ -36,6 +36,10 @@ class USBProxyService;
 # include "win/svchlp.h"
 #endif
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+# include "PerformanceImpl.h"
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 class VirtualBox;
 class SessionMachine;
 class HostDVDDrive;
