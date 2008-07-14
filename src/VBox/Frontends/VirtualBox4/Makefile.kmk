@@ -46,6 +46,15 @@ VBOX_WITH_UPDATE_REQUEST := 1
 VBOX_WITH_DEBUGGER_GUI :=
 DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 
+# Guess VBOX_WITH_QT4_SUN
+ifndef VBOX_WITH_QT4_SUN
+ ifndef VBOX_OSE
+  if1of ($(KBUILD_TARGET), darwin solaris win)
+   VBOX_WITH_QT4_SUN := 1
+  endif
+ endif
+endif
+
 #
 # Handmade configuration of qt4 - very annoying, this needs to
 # be cleaned up properly later some time (not important now).
@@ -215,6 +224,11 @@ ifdef USE_KBUILD_QT_UNIT
  TEMPLATE_VBOXQT4GUIEXE_RCCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_LRCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
+ ifdef VBOX_WITH_QT4_SUN
+  ifneq ($(KBUILD_TARGET),darwin) ## @todo The next darwin build should also make use the prefix just to make things more uniform.
+   TEMPLATE_VBOXQT4GUIEXE_QT_PREFIX = VBox
+  endif
+ endif
 endif # USE_KBUILD_QT_UNIT
 TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
 TEMPLATE_VBOXQT4GUIEXE_INCS = \
