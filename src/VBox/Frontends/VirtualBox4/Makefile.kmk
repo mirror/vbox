@@ -27,8 +27,6 @@ include $(KBUILD_PATH)/header.kmk
 #
 VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
 
-USE_KBUILD_QT4_UNIT_PART_3 := 1
-
 VBOX_WITH_REGISTRATION := 1
 
 # Ask the user to register at Sun. If this setting is disabled the user can
@@ -80,45 +78,11 @@ ifeq ($(VBOX_PATH_QT4),)
  if1of ($(USERNAME), bird)
   # gentoo (64-bit)
   VBOX_PATH_QT4          ?= /usr
-  VBOX_PATH_QT4_INCLUDE  ?= /usr/include/qt4
   VBOX_PATH_QT4_LIB      ?= /usr/lib/qt4
-  VBOX_PATH_QT4_LIB64    ?= /usr/lib/qt4
-  VBOX_PATH_QT4_SHARE    ?= /usr/share/qt4
  endif
 endif
 VBOX_PATH_QT4            ?= /usr
-VBOX_PATH_QT4_INCLUDE    ?= $(VBOX_PATH_QT4)/include
 VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
-VBOX_PATH_QT4_LIB64      ?= $(VBOX_PATH_QT4)/lib64
-VBOX_PATH_QT4_FRAMEWORKS ?= $(VBOX_PATH_QT4)/Frameworks
-VBOX_PATH_QT4_SHARE      ?= $(VBOX_PATH_QT4)
-
-ifneq ($(KBUILD_TARGET),darwin)
-ifndef USE_KBUILD_QT4_UNIT_PART_3
- VBOX_INCS_QT4      += $(VBOX_PATH_QT4_INCLUDE) ## @todo add this to the qt4 unit.
-endif
-
- ifeq (disabled,yes) # Adding mkspecs to the INCS is hopefully not really necessary... Will try disable it later.
-  ifeq ($(KBUILD_TARGET),win)
-   ifeq ($(KBUILD_TARGET_ARCH),amd64)
-    ## @todo This is the correct one here: VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc2005
-    VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc.net
-   else
-    VBOX_INCS_QT4    += $(VBOX_PATH_QT4_SHARE)/mkspecs/win32-msvc.net
-   endif
-  else ifeq ($(KBUILD_TARGET),linux)
-   VBOX_INCS_QT4     += $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++
-  endif
- endif
-
- ifndef USE_KBUILD_QT4_UNIT_PART_3
-  # Move down.
-  ifeq ($(KBUILD_TARGET),win)
-   VBOX_LIBS_QT4 := VBoxqtmain.lib
-  endif
- endif
-
-endif
 
 # Hack LD_LIBRARY_PATH for stuff in tools.
 ifdef VBOX_WITH_QT4_SUN
@@ -127,8 +91,6 @@ ifdef VBOX_WITH_QT4_SUN
  endif
 endif
 
-# Some default defs
-VBOX_DEFS_QT4 += QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
 ifdef VBOX_WITH_QT4_SUN
 #
@@ -177,10 +139,9 @@ ifdef VBOX_WITH_QT4_SUN
   TEMPLATE_VBOXQT4GUIEXE_QT_PREFIX = VBox
  endif
 endif
-TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
+TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXQT4GUIEXE_INCS = \
-	$(VBOX_PATH_SDK)/include \
-	$(VBOX_INCS_QT4)
+	$(VBOX_PATH_SDK)/include
 
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXQT4GUIEXE_TOOL = $(VBOX_VCC_TOOL)
@@ -212,7 +173,6 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
- TEMPLATE_VBOXQT4GUIEXE_LIBPATH = $(VBOX_PATH_QT4_LIB)
  TEMPLATE_VBOXQT4GUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys:
@@ -239,16 +199,6 @@ else # the gcc guys:
 	$(LIB_REM) \
 	$(LIB_VMM)
 
-ifeq (disabled,yes)
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
-	$(VBOX_PATH_QT4_LIB64) $(VBOX_PATH_QT4_LIB)
- else
-  TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
-	$(VBOX_PATH_QT4_LIB)
- endif
-endif
-
  ifeq ($(KBUILD_TARGET),linux)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
@@ -256,9 +206,6 @@ endif
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
     $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
-ifndef USE_KBUILD_QT4_UNIT_PART_3
-  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS += -F$(VBOX_PATH_QT4_FRAMEWORKS) ## @todo fix in the qt unit. Somehow this fixes the #include <QtCore/qstring.h> stuff.
-endif
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
