@@ -62,7 +62,6 @@ protected:
 private:
 
     void updateAvailability();
-    VBoxSettingsPage* attachPage (VBoxSettingsPage *aPage);
 };
 
 /*
@@ -78,11 +77,13 @@ public:
     enum VMSettingsPageIds
     {
         GeneralId = 0,
+        StorageId,
         HDId,
         CDId,
         FDId,
         AudioId,
         NetworkId,
+        PortsId,
         SerialId,
         ParallelId,
         USBId,
@@ -113,8 +114,9 @@ private slots:
 
 private:
 
+    void addItem (const QIcon &aIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
     void updateAvailability();
-    VBoxSettingsPage* attachPage (VBoxSettingsPage *aPage);
+    VBoxSettingsPage* attachValidator (VBoxSettingsPage *aPage);
 
     CMachine mMachine;
     bool mAllowResetFirstRunFlag;
