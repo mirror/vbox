@@ -27,9 +27,10 @@ include $(KBUILD_PATH)/header.kmk
 #
 VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
 
-if1of ($(KBUILD_TARGET), darwin win)
+#if1of ($(KBUILD_TARGET), darwin win)
 USE_KBUILD_QT_UNIT := 1	                # Testing before enabling it.
-endif
+USE_KBUILD_QT_UNIT_PART_2 := 1
+#endif
 
 VBOX_WITH_REGISTRATION := 1
 
