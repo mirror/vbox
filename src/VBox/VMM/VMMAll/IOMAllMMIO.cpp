@@ -1487,7 +1487,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
-    Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+    Log(("IOM: rep ins%d port %#x count %d -> GCPtr %VGv\n", cbTransfer * 8, uPort, cTransfers, GCPtrDst));
     if (cTransfers > 1)
     {
         /* If the device supports string transfers, ask it to do as
