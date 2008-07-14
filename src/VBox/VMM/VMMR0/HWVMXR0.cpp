@@ -1036,6 +1036,9 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     RTGCUINTPTR errCode, instrInfo, uInterruptState;
     bool        fGuestStateSynced = false;
     unsigned    cResume = 0;
+#ifdef VBOX_STRICT
+    RTCPUID  idCpuCheck;
+#endif
 
     Log2(("\nE"));
 
@@ -1192,6 +1195,9 @@ ResumeExecution:
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
      *       (until the actual world switch)
      */
+#ifdef VBOX_STRICT
+    idCpuCheck = RTMpCpuId();
+#endif
     /* Save the host state first. */
     rc  = VMXR0SaveHostState(pVM);
     if (rc != VINF_SUCCESS)
@@ -1229,6 +1235,9 @@ ResumeExecution:
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
+#ifdef VBOX_STRICT
+    Assert(idCpuCheck == RTMpCpuId());
+#endif
     rc = pVM->hwaccm.s.vmx.pfnStartVM(pVM->hwaccm.s.vmx.fResumeVM, pCtx);
 
     /* In case we execute a goto ResumeExecution later on. */
