@@ -10207,12 +10207,14 @@
       </param>
       <param name="period" type="unsigned long" dir="in">
         <desc>
-          @todo ???
+          Time interval in seconds between two consecutive samples of performace 
+          data.
         </desc>
       </param>
       <param name="count" type="unsigned long" dir="in">
         <desc>
-          @todo ???
+          Number of samples to retain in performance data history. Older samples 
+          get discarded.
         </desc>
       </param>
     </method>
@@ -10285,27 +10287,30 @@
       </param>
       <param name="returnMetricNames" type="wstring" dir="out" safearray="yes">
         <desc>
-          @todo ???
+          Names of metrics returned in @c returnData.
         </desc>
       </param>
       <param name="returnObjects" type="$unknown" dir="out" safearray="yes">
         <desc>
-          @todo ???
+          Objects associated with metrics returned in @c returnData.
         </desc>
       </param>
       <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
         <desc>
-          @todo ???
+          Indices of the first elements of value sequences of particular metrics
+          returned in @c returnData.
         </desc>
       </param>
       <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes">
         <desc>
-          @todo ???
+          Lengths of value sequences of particular metrics.
         </desc>
       </param>
       <param name="returnData" type="long" dir="return" safearray="yes">
         <desc>
-          @todo ???
+          Flattened array of all metric data containing sequences of values for 
+          each metric. The first value for metric <tt>metricNames[i]</tt> is at
+          <tt> returnData[returnIndices[i]]</tt>.
         </desc>
       </param>
     </method>
