@@ -689,7 +689,7 @@ endif
 ifdef USE_KBUILD_QT_UNIT
  ## @todo Move to the appropriate places.
 
-ifndef USE_KBUILD_QT_UNIT_PART_2
+ifdef USE_KBUILD_QT_UNIT_PART_2
  # The Qt modules we're using.
  # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
  VirtualBox4_QT_MODULES = Core Gui
