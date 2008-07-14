@@ -392,11 +392,16 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
     {
         /*
          * This is where you set your ring-0 logging preferences.
+         *
+         * On platforms which don't differ between debugger and kernel
+         * log printing, STDOUT is gonna be a stub and the DEBUGGER
+         * destination is the one doing all the work. On platforms
+         * that do differ (like Darwin), STDOUT is the kernel log.
          */
-# if 0//defined(DEBUG_bird) && !defined(IN_GUEST)
+# if 0 /*defined(DEBUG_bird) && !defined(IN_GUEST)*/
         RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
         RTLogFlags(pLogger, "enabled unbuffered pid tid");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
 # endif
 # if defined(DEBUG_sandervl) && !defined(IN_GUEST)
         RTLogGroupSettings(pLogger, "+all");
@@ -411,7 +416,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if 0 /* vboxdrv logging - ATTENTION: this is what we're refering to guys! Change to '# if 1'. */
         RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
         RTLogFlags(pLogger, "enabled unbuffered tid");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
 # endif
     }
 #endif /* IN_RING0 */

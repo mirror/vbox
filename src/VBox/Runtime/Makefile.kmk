@@ -909,7 +909,6 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strtonum.cpp \
 	common/table/avlpv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
-	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
@@ -922,6 +921,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
@@ -951,6 +951,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
@@ -1004,6 +1005,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/process-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteDebugger-r0drv-darwin.cpp \
+	r0drv/darwin/RTLogWriteStdOut-r0drv-darwin.cpp \
 	r0drv/darwin/semaphore-r0drv-darwin.cpp \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
@@ -1028,6 +1030,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	\
 	common/misc/thread.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
 	generic/RTMpCpuIdFromSetIndex-generic.cpp \
 	generic/RTMpCpuIdToSetIndex-generic.cpp \
@@ -1075,6 +1078,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/string/strchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
 	generic/RTMpCpuIdFromSetIndex-generic.cpp \
 	generic/RTMpCpuIdToSetIndex-generic.cpp \
@@ -1108,6 +1112,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
