@@ -780,6 +780,9 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     unsigned    cResume = 0;
     uint8_t     u8LastVTPR;
     PHWACCM_CPUINFO pCpu = 0;
+#ifdef VBOX_STRICT
+    RTCPUID  idCpuCheck;
+#endif
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -888,6 +891,10 @@ ResumeExecution:
      *       (until the actual world switch)
      */
 
+#ifdef VBOX_STRICT
+    idCpuCheck = RTMpCpuId();
+#endif
+
     /* Load the guest state; *must* be here as it sets up the shadow cr0 for lazy fpu syncing! */
     rc = SVMR0LoadGuestState(pVM, pCtx);
     if (rc != VINF_SUCCESS)
@@ -971,6 +978,9 @@ ResumeExecution:
     Assert(pVMCB->ctrl.u64MSRPMPhysAddr == pVM->hwaccm.s.svm.pMSRBitmapPhys);
     Assert(pVMCB->ctrl.u64LBRVirt == 0);
 
+#ifdef VBOX_STRICT
+    Assert(idCpuCheck == RTMpCpuId());
+#endif
     pVM->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVM->hwaccm.s.svm.pVMCBPhys, pCtx);
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatInGC, x);
 
