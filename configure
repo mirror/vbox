@@ -1332,6 +1332,9 @@ EOF
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
           cnf_append "VBOX_PATH_QT4_INCLUDE" "$INCQT4"
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
+          cnf_append "SDK_QT4_LIBPATH" "`strip_L "$LIBQT4"`"
+          # this is not quite right since the qt libpath does not have to be first...
+          cnf_append "PATH_SDK_QT4_LIB" '$'"(firstword `strip_L "$LIBQT4"`)"
           if [ "$foundqt4" = "2" ]; then
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
@@ -1346,6 +1349,8 @@ EOF
                 log_success "found version $moc_ver"
                 cnf_append "VBOX_PATH_QT4_BIN" "$q/bin"
                 cnf_append "VBOX_PATH_QT4" "$q"
+                cnf_append "PATH_SDK_QT4" "$q"
+                cnf_append "PATH_TOOL_QT4" "$q"
                 return
               fi
             fi
