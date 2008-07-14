@@ -1273,14 +1273,21 @@ check_qt4()
       # default is to use pkg-config
       if which_wrapper pkg-config > /dev/null; then
         # this braindead path is necessary for mdv2008.1
-        qt4_ver=`PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig pkg-config QtCore --modversion 2>> $LOG`
+        qt4_ver=`\
+            PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig
+            pkg-config QtCore --modversion 2>> $LOG`
         if [ $? -ne 0 ]; then
           log_failure "not found"
           fail
         else
-          FLGQT4=`PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig pkg-config QtCore --cflags`
+          FLGQT4=`\
+              PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig \
+              pkg-config QtCore --cflags`
           INCQT4=`strip_I "$FLGQT4"`
-          LIBQT4=`PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig pkg-config QtCore --libs`
+          LIBQT4=`\
+              PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig \
+              PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 \
+              pkg-config QtCore --libs`
           foundqt4=1
         fi
       else
