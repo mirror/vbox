@@ -322,8 +322,14 @@ else
 endif
 # Enable the host/guest information service and registry
 VBOX_WITH_INFO_SVC = 1
-# Enable performance API
+# Enable performance API on Linux, Solaris and Windows
+if1of ($(KBUILD_TARGET),linux solaris win)
 VBOX_WITH_RESOURCE_USAGE_API = 1
+endif
+# Enable POSIX timers on Linux and Solaris
+if1of ($(KBUILD_TARGET),linux solaris)
+IPRT_WITH_POSIX_TIMERS = 1
+endif
 
 #
 # Skip stuff.
