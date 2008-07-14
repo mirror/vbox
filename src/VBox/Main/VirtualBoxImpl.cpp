@@ -230,7 +230,7 @@ HRESULT VirtualBox::init()
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
             /* create the performance collector object BEFORE host */
             unconst (mData.mPerformanceCollector).createObject();
-            rc = mData.mPerformanceCollector->init ();
+            rc = mData.mPerformanceCollector->init();
             ComAssertComRCThrowRC (rc);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -569,6 +569,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Host) (IHost **aHost)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* mHost is const, no need to lock */
     mData.mHost.queryInterfaceTo (aHost);
     return S_OK;
 }
@@ -582,28 +583,10 @@ VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* mSystemProperties is const, no need to lock */
     mData.mSystemProperties.queryInterfaceTo (aSystemProperties);
     return S_OK;
 }
-
-STDMETHODIMP
-VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanceCollector)
-{
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    if (!aPerformanceCollector)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    mData.mPerformanceCollector.queryInterfaceTo (aPerformanceCollector);
-
-    return S_OK;
-#else /* !VBOX_WITH_RESOURCE_USAGE_API */
-    return E_NOTIMPL;
-#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
-}
-
 
 /**
  * @note Locks this object for reading.
@@ -761,6 +744,25 @@ VirtualBox::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
     CheckComRCReturnRC (autoCaller.rc());
 
     return setError (E_NOTIMPL, "Not yet implemented");
+}
+
+STDMETHODIMP
+VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanceCollector)
+{
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    if (!aPerformanceCollector)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mPerformanceCollector is const, no need to lock */
+    mData.mPerformanceCollector.queryInterfaceTo (aPerformanceCollector);
+
+    return S_OK;
+#else /* !VBOX_WITH_RESOURCE_USAGE_API */
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
 // IVirtualBox methods

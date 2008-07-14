@@ -921,17 +921,18 @@ int main(int argc, char *argv[])
 #if 1
     do {
         Bstr metricNames[] = { L"CPU/User:avg,CPU/System:avg,CPU/Idle:avg" };
-        com::SafeArray<BSTR> metrics(1);
-        metricNames[0].detachTo(&metrics[0]);
+        com::SafeArray<BSTR> metrics (1);
+        metricNames[0].cloneTo (&metrics [0]);
 
         ComPtr <IHost> host;
-        CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
+        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
         ComPtr <IPerformanceCollector> collector;
-        CHECK_RC_BREAK( virtualBox->COMGETTER(PerformanceCollector)(collector.asOutParam()) );
+        CHECK_ERROR_BREAK (virtualBox,
+                           COMGETTER(PerformanceCollector) (collector.asOutParam()));
 
         com::SafeIfaceArray<IUnknown> objects(1);
         host.queryInterfaceTo(&objects[0]);
-        CHECK_RC_BREAK( collector->SetupMetrics(ComSafeArrayAsInParam(metrics),
+        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(metrics),
                                                 ComSafeArrayAsInParam(objects), 1u, 10u) );
         RTThreadSleep(3000); /* Sleep 10 seconds. */
         com::SafeArray<BSTR>          retNames;
@@ -939,13 +940,13 @@ int main(int argc, char *argv[])
         com::SafeArray<ULONG>         retIndices;
         com::SafeArray<ULONG>         retLengths;
         com::SafeArray<LONG>          retData;
-        CHECK_RC_BREAK( collector->QueryMetricsData(ComSafeArrayAsInParam(metrics),
-                                                    ComSafeArrayAsInParam(objects),
-                                                    ComSafeArrayAsOutParam(retNames),
-                                                    ComSafeArrayAsOutParam(retObjects),
-                                                    ComSafeArrayAsOutParam(retIndices),
-                                                    ComSafeArrayAsOutParam(retLengths),
-                                                    ComSafeArrayAsOutParam(retData)) );
+        CHECK_ERROR_BREAK (collector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                                       ComSafeArrayAsInParam(objects),
+                                                       ComSafeArrayAsOutParam(retNames),
+                                                       ComSafeArrayAsOutParam(retObjects),
+                                                       ComSafeArrayAsOutParam(retIndices),
+                                                       ComSafeArrayAsOutParam(retLengths),
+                                                       ComSafeArrayAsOutParam(retData)) );
         for (unsigned i = 0; i < retNames.size(); i++)
         {
             Bstr metricName(retNames[i]);
