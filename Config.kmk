@@ -322,7 +322,8 @@ else
 endif
 # Enable the host/guest information service and registry
 VBOX_WITH_INFO_SVC = 1
-
+# Enable performance API
+VBOX_WITH_RESOURCE_USAGE_API = 1
 
 #
 # Skip stuff.
