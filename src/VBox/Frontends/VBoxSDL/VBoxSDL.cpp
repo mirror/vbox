@@ -3605,9 +3605,9 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
         case 0x38|0x100:  /* Right ALT */
         {
             if (ev->type == SDL_KEYUP)
-                gaModifiersState[keycode] = 0;
+                gaModifiersState[keycode & ~0x100] = 0;
             else
-                gaModifiersState[keycode] = 1;
+                gaModifiersState[keycode & ~0x100] = 1;
             break;
         }
 
