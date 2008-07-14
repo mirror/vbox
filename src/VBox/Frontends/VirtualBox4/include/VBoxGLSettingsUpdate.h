@@ -49,14 +49,12 @@ protected:
 private slots:
 
     void toggleUpdater (bool aOn);
-    void toggleType();
     void activatedPeriod (int aIndex);
 
 private:
 
     void showEvent (QShowEvent *aEvent);
 
-    QRadioButton *mLastSelected;
     bool mSettingsChanged;
 };
 

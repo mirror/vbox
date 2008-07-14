@@ -60,8 +60,7 @@ public:
 
     enum
     {
-        NeverCheck = -2,
-        AutoCheck  = -3
+        NeverCheck = -2
     };
 
     static void populate();
@@ -71,7 +70,7 @@ public:
     VBoxUpdateData (int aIndex);
 
     bool isNecessary();
-    bool isAutomatic();
+    bool isNeverCheck();
 
     QString data() const;
     int index() const;
@@ -99,7 +98,6 @@ class VBoxUpdateDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
 public:
 
     static bool isNecessary();
-    static bool isAutomatic();
 
     VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
                    QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);

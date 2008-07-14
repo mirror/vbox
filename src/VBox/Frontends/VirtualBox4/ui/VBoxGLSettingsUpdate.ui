@@ -39,8 +39,8 @@
    <property name="bottomMargin" >
     <number>0</number>
    </property>
-   <item row="0" column="1" colspan="2" >
-    <widget class="QCheckBox" name="mGbCheck" >
+   <item row="0" column="1" >
+    <widget class="QCheckBox" name="mCbCheck" >
      <property name="text" >
       <string>&amp;Check for a new version</string>
      </property>
@@ -60,102 +60,77 @@
      <property name="sizeHint" >
       <size>
        <width>40</width>
-       <height>20</height>
+       <height>10</height>
       </size>
      </property>
     </spacer>
    </item>
    <item row="1" column="1" >
-    <spacer>
-     <property name="orientation" >
-      <enum>Qt::Horizontal</enum>
+    <layout class="QHBoxLayout" >
+     <property name="spacing" >
+      <number>0</number>
      </property>
-     <property name="sizeType" >
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" >
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType" >
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" >
+        <size>
+         <width>20</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="mLbOncePer" >
+       <property name="text" >
+        <string>&amp;Once per</string>
+       </property>
+       <property name="buddy" >
+        <cstring>mCbOncePer</cstring>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType" >
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" >
+        <size>
+         <width>16</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QComboBox" name="mCbOncePer" />
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" >
+        <size>
+         <width>0</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
-   <item row="1" column="2" >
-    <widget class="QWidget" native="1" name="mGbCheckContent" >
-     <layout class="QGridLayout" >
-      <property name="leftMargin" >
-       <number>0</number>
-      </property>
-      <property name="topMargin" >
-       <number>0</number>
-      </property>
-      <property name="rightMargin" >
-       <number>0</number>
-      </property>
-      <property name="bottomMargin" >
-       <number>0</number>
-      </property>
-      <property name="verticalSpacing" >
-       <number>0</number>
-      </property>
-      <item row="0" column="0" >
-       <widget class="QRadioButton" name="mRbAuto" >
-        <property name="text" >
-         <string>On &amp;startup</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" >
-       <widget class="QRadioButton" name="mRbOncePer" >
-        <property name="text" >
-         <string>&amp;Once per</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1" >
-       <layout class="QHBoxLayout" >
-        <property name="spacing" >
-         <number>0</number>
-        </property>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType" >
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QComboBox" name="mCbOncePer" />
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>0</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="1" colspan="2" >
+   <item row="2" column="1" >
     <layout class="QHBoxLayout" >
      <property name="spacing" >
       <number>10</number>
@@ -185,15 +160,15 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="2" >
+   <item row="3" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
      <property name="sizeHint" >
       <size>
-       <width>20</width>
-       <height>40</height>
+       <width>10</width>
+       <height>0</height>
       </size>
      </property>
     </spacer>

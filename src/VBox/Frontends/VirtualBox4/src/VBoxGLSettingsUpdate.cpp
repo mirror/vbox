@@ -25,17 +25,14 @@
 #include "VBoxGlobal.h"
 
 VBoxGLSettingsUpdate::VBoxGLSettingsUpdate()
-    : mLastSelected (0)
-    , mSettingsChanged (false)
+    : mSettingsChanged (false)
 {
     /* Apply UI decorations */
     Ui::VBoxGLSettingsUpdate::setupUi (this);
 
     /* Setup connections */
-    connect (mGbCheck, SIGNAL (toggled (bool)),
+    connect (mCbCheck, SIGNAL (toggled (bool)),
              this, SLOT (toggleUpdater (bool)));
-    connect (mRbAuto, SIGNAL (clicked()), this, SLOT (toggleType()));
-    connect (mRbOncePer, SIGNAL (clicked()), this, SLOT (toggleType()));
     connect (mCbOncePer, SIGNAL (activated (int)),
              this, SLOT (activatedPeriod (int)));
 
@@ -49,25 +46,9 @@ void VBoxGLSettingsUpdate::getFrom (const CSystemProperties &,
     VBoxUpdateData data (vboxGlobal().virtualBox().
                          GetExtraData (VBoxDefs::GUI_UpdateDate));
 
-    if (data.index() == VBoxUpdateData::NeverCheck)
-    {
-        mGbCheck->setChecked (false);
-    }
-    else
-    {
-        mGbCheck->setChecked (true);
-
-        if (data.isAutomatic())
-        {
-            mRbAuto->setChecked (true);
-        }
-        else
-        {
-            mRbOncePer->setChecked (true);
-            Assert (data.index() >= 0);
-            mCbOncePer->setCurrentIndex (data.index());
-        }
-    }
+    mCbCheck->setChecked (!data.isNeverCheck());
+    if (mCbCheck->isChecked())
+        mCbOncePer->setCurrentIndex (data.index());
     mTxDate->setText (data.date());
 
     mSettingsChanged = false;
@@ -79,33 +60,19 @@ void VBoxGLSettingsUpdate::putBackTo (CSystemProperties &,
     if (!mSettingsChanged)
         return;
 
-    int index = -1;
-
-    if (!mGbCheck->isChecked())
-    {
-        index = VBoxUpdateData::NeverCheck;
-    }
-    else
-    {
-        if (mRbAuto->isChecked())
-            index = VBoxUpdateData::AutoCheck;
-        else
-            index = mCbOncePer->currentIndex();
-    }
+    int index = mCbCheck->isChecked() ? mCbOncePer->currentIndex() :
+                                        VBoxUpdateData::NeverCheck;
     Assert (index != -1);
 
     VBoxUpdateData newData (index);
-
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
                                             newData.data());
 }
 
 void VBoxGLSettingsUpdate::setOrderAfter (QWidget *aWidget)
 {
-    setTabOrder (aWidget, mGbCheck);
-    setTabOrder (mGbCheck, mRbAuto);
-    setTabOrder (mRbAuto, mRbOncePer);
-    setTabOrder (mRbOncePer, mCbOncePer);
+    setTabOrder (aWidget, mCbCheck);
+    setTabOrder (mCbCheck, mCbOncePer);
 }
 
 void VBoxGLSettingsUpdate::retranslateUi()
@@ -123,42 +90,15 @@ void VBoxGLSettingsUpdate::retranslateUi()
 
 void VBoxGLSettingsUpdate::toggleUpdater (bool aOn)
 {
-    /* Toggle auto-exclusiveness on/off to let the buttons be
-     * unchecked both in case of group-box is not checked and
-     * exclusively checked in case of group-box is checked. */
-    mRbAuto->setAutoExclusive (aOn);
-    mRbOncePer->setAutoExclusive (aOn);
-
     /* Enable/disable the sub widget */
-    mGbCheckContent->setEnabled (aOn);
+    mLbOncePer->setEnabled (aOn);
+    mCbOncePer->setEnabled (aOn);
 
-    /* Toggle both buttons off when the group box unchecked. */
-    if (!aOn)
-    {
-        mLastSelected = mRbOncePer->isChecked() ? mRbOncePer : mRbAuto;
-        mRbAuto->blockSignals (true);
-        mRbOncePer->blockSignals (true);
-        mRbAuto->setChecked (false);
-        mRbOncePer->setChecked (false);
-        mRbAuto->blockSignals (false);
-        mRbOncePer->blockSignals (false);
+    /* Update 'check for new version' time */
+    if (aOn)
+        activatedPeriod (mCbOncePer->currentIndex());
+    else
         activatedPeriod (VBoxUpdateData::NeverCheck);
-    }
-    /* Toggle last checked button on when the group box checked. */
-    else if (!mRbAuto->isChecked() && !mRbOncePer->isChecked())
-    {
-        mLastSelected->blockSignals (true);
-        mLastSelected->setChecked (true);
-        mLastSelected->blockSignals (false);
-        toggleType();
-    }
-}
-
-void VBoxGLSettingsUpdate::toggleType()
-{
-    mCbOncePer->setEnabled (mRbOncePer->isChecked());
-    activatedPeriod (mRbAuto->isChecked() ?
-        VBoxUpdateData::AutoCheck : mCbOncePer->currentIndex());
 }
 
 void VBoxGLSettingsUpdate::activatedPeriod (int aIndex)
