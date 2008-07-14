@@ -19,6 +19,8 @@
  * additional information or have any questions.
  */
 
+#include <iprt/types.h>
+
 #if defined (VBOX_WITH_XPCOM)
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
