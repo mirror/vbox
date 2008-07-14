@@ -888,6 +888,7 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
     /* That little hack allows avoid one of qt4 children focusing bug */
     QWidget *current = QApplication::focusWidget();
     mTwAts->setFocus (Qt::TabFocusReason);
-    current->setFocus (Qt::TabFocusReason);
+    if (current)
+        current->setFocus (Qt::TabFocusReason);
 }
 

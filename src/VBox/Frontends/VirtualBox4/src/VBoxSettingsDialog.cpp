@@ -26,6 +26,7 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
+#include "VBoxSettingsPage.h"
 #include "VBoxToolBar.h"
 
 #ifdef Q_WS_MAC
@@ -192,50 +193,43 @@ QString VBoxSettingsDialog::titleExtension() const
 
 void VBoxSettingsDialog::categoryChanged (int aId)
 {
-    int index = mSelector->idToIndex (aId);
+    QWidget *rootPage = mSelector->rootPage (aId);
 #ifndef Q_WS_MAC
     mLbTitle->setText (mSelector->itemText (aId));
-    mStack->setCurrentIndex (index);
+    mStack->setCurrentIndex (mStack->indexOf (rootPage));
 #else /* Q_WS_MAC */
-    if (isVisible())
-    {
-        int index = mSelector->idToIndex (aId);
-        /* We will update at once later */
-        setUpdatesEnabled (false);
-        setMinimumSize (QSize (minimumWidth(), 0));
-        setMaximumSize (QSize (minimumWidth(), QWIDGETSIZE_MAX));
-        /* Set all tab size policies to ignored */
-        for (int i = 0; i < mStack->count(); ++i)
-            mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
-        /* Set the size policy of the current tab to preferred */
-        if (mStack->widget (index))
-            mStack->widget (index)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
-        /* Set the new current tab */
-        mLbTitle->setText (mSelector->itemText (aId));
-        mStack->setCurrentIndex (index);
-        /* Activate the new layout */
-        layout()->activate();
-        setUpdatesEnabled (true);
-        //        mAllWidget->hide();
-        QSize s = minimumSize();
-        int minWidth = mSelector->minWidth();
-        if (minWidth > s.width())
-            s.setWidth (minWidth);
-        /* Play the resize animation */
-        ::darwinWindowAnimateResize (this, QRect (x(), y(), 
-                                                  s.width(), s.height()));
-        //        mAllWidget->show();
-        /* Set the new size to Qt also */
-        setFixedSize (s);
-    }else
-    {
-        mLbTitle->setText (mSelector->itemText (aId));
-        mStack->setCurrentIndex (index);
-    }
+    /* We will update at once later */
+    setUpdatesEnabled (false);
+    setMinimumSize (QSize (minimumWidth(), 0));
+    setMaximumSize (QSize (minimumWidth(), QWIDGETSIZE_MAX));
+    /* Set all tab size policies to ignored */
+    QList<QWidget*> list = mSelector->rootPages ();
+    for (int i = 0; i < list.count(); ++i)
+        list.at (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    /* Set the size policy of the current tab to preferred */
+    if (mStack->widget (mStack->indexOf (rootPage)))
+        mStack->widget (mStack->indexOf (rootPage))->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    /* Set the new current tab */
+    mLbTitle->setText (mSelector->itemText (aId));
+    mStack->setCurrentIndex (mStack->indexOf (rootPage));
+    /* Activate the new layout */
+    layout()->activate();
+    setUpdatesEnabled (true);
+    //        mAllWidget->hide();
+    QSize s = minimumSize();
+    int minWidth = mSelector->minWidth();
+    if (minWidth > s.width())
+        s.setWidth (minWidth);
+    /* Play the resize animation */
+    ::darwinWindowAnimateResize (this, QRect (x(), y(), 
+                                              s.width(), s.height()));
+    //        mAllWidget->show();
+    /* Set the new size to Qt also */
+    setFixedSize (s);
+#endif /* !Q_WS_MAC */
 # ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle (dialogTitle());
 # endif
-#endif /* !Q_WS_MAC */
 }
 
 void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)

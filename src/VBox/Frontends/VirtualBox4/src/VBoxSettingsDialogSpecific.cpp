@@ -56,16 +56,54 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 #endif /* Q_WS_MAC */
 
     /* Creating settings pages */
-    attachPage (new VBoxGLSettingsGeneral());
+    QWidget *page = NULL;
+    VBoxSettingsPage *prefPage = NULL;
 
-    attachPage (new VBoxGLSettingsInput());
+    /* General page */
+    prefPage = new VBoxGLSettingsGeneral();
+    page = mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+                               GeneralId, "#general",
+                               prefPage);
+    if (page)
+        mStack->addWidget (page);
+    prefPage->setOrderAfter (mSelector->widget());
 
-    attachPage (new VBoxGLSettingsUpdate());
+    /* Input page */
+    prefPage = new VBoxGLSettingsInput();
+    page = mSelector->addItem (VBoxGlobal::iconSet (":/hostkey_16px.png"),
+                               InputId, "#input",
+                               prefPage);
+    if (page)
+        mStack->addWidget (page);
+    prefPage->setOrderAfter (mSelector->widget());
 
-    attachPage (new VBoxGLSettingsLanguage());
+    /* Update page */
+    prefPage = new VBoxGLSettingsUpdate();
+    page = mSelector->addItem (VBoxGlobal::iconSet (":/refresh_16px.png"),
+                               UpdateId, "#update",
+                               prefPage);
+    if (page)
+        mStack->addWidget (page);
+    prefPage->setOrderAfter (mSelector->widget());
+
+    /* Language page */
+    prefPage = new VBoxGLSettingsLanguage();
+    page = mSelector->addItem (VBoxGlobal::iconSet (":/site_16px.png"),
+                               LanguageId, "#language",
+                               prefPage);
+    if (page)
+        mStack->addWidget (page);
+    prefPage->setOrderAfter (mSelector->widget());
 
 #ifdef ENABLE_GLOBAL_USB
-    attachPage (new VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType));
+    /* USB page */
+    prefPage = VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
+    page = mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+                               USBId, "#usb",
+                               prefPage);
+    if (page)
+        mStack->addWidget (page);
+    prefPage->setOrderAfter (mSelector->widget());
 #endif
 
     /* Update Selector with available items */
@@ -73,6 +111,9 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Applying language settings */
     retranslateUi();
+
+    /* First item as default */
+    mSelector->selectById (0);
 }
 
 void VBoxGLSettingsDlg::getFrom()
@@ -80,7 +121,7 @@ void VBoxGLSettingsDlg::getFrom()
     CSystemProperties prop = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings sett = vboxGlobal().settings();
 
-    QList<VBoxSettingsPage*> pages = mStack->findChildren<VBoxSettingsPage*>();
+    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         if (page->isEnabled())
             page->getFrom (prop, sett);
@@ -92,7 +133,7 @@ void VBoxGLSettingsDlg::putBackTo()
     VBoxGlobalSettings sett = vboxGlobal().settings();
     VBoxGlobalSettings newsett = sett;
 
-    QList<VBoxSettingsPage*> pages = mStack->findChildren<VBoxSettingsPage*>();
+    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         if (page->isEnabled())
             page->putBackTo (prop, newsett);
@@ -111,40 +152,27 @@ void VBoxGLSettingsDlg::retranslateUi()
     /* Set dialog's name */
     setWindowTitle (dialogTitle());
 
-    /* Remember old index */
-    int cid = mSelector->currentId();
-    /* Remove all items */
-    mSelector->clear();
-
     /* General page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
-                        tr ("General"), GeneralId, "#general");
+    mSelector->setItemText (GeneralId, tr ("General"));
 
     /* Input page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/hostkey_16px.png"),
-                        tr ("Input"), InputId, "#input");
+    mSelector->setItemText (InputId, tr ("Input"));
 
     /* Update page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/refresh_16px.png"),
-                        tr ("Update"), UpdateId, "#update");
+    mSelector->setItemText (UpdateId, tr ("Update"));
 
     /* Language page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/site_16px.png"),
-                        tr ("Language"), LanguageId, "#language");
+    mSelector->setItemText (LanguageId, tr ("Language"));
 
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
-                        tr ("USB"), USBId, "#usb");
+    mSelector->setItemText (USBId, tr ("USB"));
 #endif
 
     /* Translate the selector */
     mSelector->polish();
 
     VBoxSettingsDialog::retranslateUi();
-
-    /* Select old remembered category */
-    mSelector->selectById (cid == -1 ? 0 : cid);
 
     /* Update Selector with available items */
     updateAvailability();
@@ -153,15 +181,6 @@ void VBoxGLSettingsDlg::retranslateUi()
 QString VBoxGLSettingsDlg::dialogTitle() const
 {
     return tr ("VirtualBox - %1").arg (titleExtension());
-}
-
-VBoxSettingsPage* VBoxGLSettingsDlg::attachPage (VBoxSettingsPage *aPage)
-{
-    mStack->addWidget (aPage);
-
-    aPage->setOrderAfter (mSelector->widget());
-
-    return aPage;
 }
 
 void VBoxGLSettingsDlg::updateAvailability()
@@ -179,12 +198,6 @@ void VBoxGLSettingsDlg::updateAvailability()
         /* Disable the USB controller category if the USB controller is
          * not available (i.e. in VirtualBox OSE) */
         mSelector->setVisibleById (USBId, false);
-        int index = mSelector->idToIndex (USBId);
-        if (index > -1)
-        {
-            if (mStack->widget (index))
-                mStack->widget (index)->setEnabled (false);
-        }
     }
 }
 
@@ -205,36 +218,90 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
              this, SLOT (onMediaEnumerationDone()));
 
     /* Creating settings pages */
-    VBoxSettingsPage *page = 0;
+    VBoxSettingsPage *prefPage = NULL;
 
-    page = attachPage (new VBoxVMSettingsGeneral());
-    connect (page, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
+    /* General page */
+    prefPage = new VBoxVMSettingsGeneral();
+    connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
+    addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+             GeneralId, "#general", 
+             prefPage);
 
-    page = attachPage (new VBoxVMSettingsHD());
-    connect (page, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
+    /* Storage page */
+    addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
+             StorageId, "#storage");
 
-    page = attachPage (new VBoxVMSettingsCD());
-    connect (page, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
+    /* HD page */
+    prefPage = new VBoxVMSettingsHD();
+    connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
+    addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
+             HDId, "#hdds", 
+             prefPage, StorageId);
 
-    page = attachPage (new VBoxVMSettingsFD());
-    connect (page, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
+    /* CD page */
+    prefPage = new VBoxVMSettingsCD();
+    connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
+    addItem (VBoxGlobal::iconSet (":/cd_16px.png"),
+             CDId, "#dvd",
+             prefPage, StorageId);
 
-    attachPage (new VBoxVMSettingsAudio());
+    /* FD page */
+    prefPage = new VBoxVMSettingsFD();
+    connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
+    addItem (VBoxGlobal::iconSet (":/fd_16px.png"),
+             FDId, "#floppy",
+             prefPage, StorageId);
 
-    attachPage (new VBoxVMSettingsNetworkPage());
+    /* Audio page */
+    prefPage = new VBoxVMSettingsAudio();
+    addItem (VBoxGlobal::iconSet (":/sound_16px.png"),
+             AudioId, "#audio",
+             prefPage);
 
-    attachPage (new VBoxVMSettingsSerialPage());
+    /* Network page */
+    prefPage = new VBoxVMSettingsNetworkPage();
+    addItem (VBoxGlobal::iconSet (":/nw_16px.png"),
+             NetworkId, "#network",
+             prefPage);
 
-    attachPage (new VBoxVMSettingsParallelPage());
+    /* Ports page */
+    addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
+             PortsId, "#ports");
 
-    attachPage (new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType));
+    /* Serial page */
+    prefPage = new VBoxVMSettingsSerialPage();
+    addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
+             SerialId, "#serialPorts",
+             prefPage, PortsId);
 
-    attachPage (new VBoxVMSettingsSF (MachineType));
+    /* Parallel page */
+    prefPage = new VBoxVMSettingsParallelPage();
+    addItem (VBoxGlobal::iconSet (":/parallel_port_16px.png"),
+             ParallelId, "#parallelPorts",
+             prefPage, PortsId);
 
-    attachPage (new VBoxVMSettingsVRDP());
+    /* USB page */
+    prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
+    addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+             USBId, "#usb",
+             prefPage, PortsId);
+
+    /* SFolders page */
+    prefPage = new VBoxVMSettingsSF (MachineType);
+    addItem (VBoxGlobal::iconSet (":/shared_folder_16px.png"),
+             SFId, "#sfolders",
+             prefPage);
+
+    /* VRDP page */
+    prefPage = new VBoxVMSettingsVRDP();
+    addItem (VBoxGlobal::iconSet (":/vrdp_16px.png"),
+             VRDPId, "#vrdp",
+             prefPage);
 
     /* Applying language settings */
     retranslateUi();
+    
+    /* First item as default */
 
     /* Setup Settings Dialog */
     if (!aCategory.isNull())
@@ -265,7 +332,19 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                 w->setFocus();
             }
         }
-    }
+    }else
+        mSelector->selectById (0);
+}
+
+void VBoxVMSettingsDlg::addItem (const QIcon &aIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage /* = NULL*/, int aParentId /* = -1 */)
+{
+    QWidget *page = mSelector->addItem (aIcon,
+                                        aId, aLink,
+                                        aPrefPage, aParentId);
+    if (page)
+        mStack->addWidget (page);
+    if (aPrefPage)
+        attachValidator (aPrefPage);
 }
 
 void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
@@ -276,9 +355,9 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
 
     QString warningText;
 
-    QString pageTitle = mSelector->itemTextByIndex (mStack->indexOf (pg));
-
     VBoxSettingsPage *page = static_cast<VBoxSettingsPage*> (pg);
+    QString pageTitle = mSelector->itemTextByPage (page);
+
     valid = page->revalidate (warningText, pageTitle);
 
     if (!valid)
@@ -290,7 +369,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
 
 void VBoxVMSettingsDlg::getFrom()
 {
-    QList<VBoxSettingsPage*> pages = mStack->findChildren<VBoxSettingsPage*>();
+    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->getFrom (mMachine);
 
@@ -302,7 +381,7 @@ void VBoxVMSettingsDlg::getFrom()
 
 void VBoxVMSettingsDlg::putBackTo()
 {
-    QList<VBoxSettingsPage*> pages = mStack->findChildren<VBoxSettingsPage*>();
+    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->putBackTo();
 
@@ -321,78 +400,57 @@ void VBoxVMSettingsDlg::retranslateUi()
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already. */
     QEvent event (QEvent::LanguageChange);
-
-    /* Populate selector list */
-    QWidget *curpage = 0;
-
-    /* Remember old index */
-    int cid = mSelector->currentId();
-    /* Remove all items */
-    mSelector->clear();
+    QWidget *page = NULL;
 
     /* General page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
-                        tr ("General"), GeneralId, "#general");
+    mSelector->setItemText (GeneralId, tr ("General"));
+
+    /* Storage page */
+    mSelector->setItemText (StorageId, tr ("Storage"));
 
     /* HD page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
-                        tr ("Hard Disks"), HDId, "#hdds");
+    mSelector->setItemText (HDId, tr ("Hard Disks"));
 
     /* CD page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/cd_16px.png"),
-                        tr ("CD/DVD-ROM"), CDId, "#dvd");
+    mSelector->setItemText (CDId, tr ("CD/DVD-ROM"));
 
     /* FD page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/fd_16px.png"),
-                        tr ("Floppy"), FDId, "#floppy");
+    mSelector->setItemText (FDId, tr ("Floppy"));
 
     /* Audio page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/sound_16px.png"),
-                        tr ("Audio"), AudioId, "#audio");
+    mSelector->setItemText (AudioId, tr ("Audio"));
 
     /* Network page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/nw_16px.png"),
-                        tr ("Network"), NetworkId, "#network");
+    mSelector->setItemText (NetworkId, tr ("Network"));
+    if ((page = mSelector->idToPage (NetworkId)))
+        qApp->sendEvent (page, &event);
 
-    curpage = mStack->widget (mSelector->idToIndex (NetworkId));
-    if (curpage)
-        qApp->sendEvent (curpage, &event);
+    /* Ports page */
+    mSelector->setItemText (PortsId, tr ("Ports"));
 
     /* Serial page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
-                        tr ("Serial Ports"), SerialId, "#serialPorts");
-
-    curpage = mStack->widget (mSelector->idToIndex (SerialId));
-    if (curpage)
-        qApp->sendEvent (curpage, &event);
+    mSelector->setItemText (SerialId, tr ("Serial Ports"));
+    if ((page = mSelector->idToPage (SerialId)))
+        qApp->sendEvent (page, &event);
 
     /* Parallel page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/parallel_port_16px.png"),
-                        tr ("Parallel Ports"), ParallelId, "#parallelPorts");
-
-    curpage = mStack->widget (mSelector->idToIndex (ParallelId));
-    if (curpage)
-        qApp->sendEvent (curpage, &event);
+    mSelector->setItemText (ParallelId, tr ("Parallel Ports"));
+    if ((page = mSelector->idToPage (ParallelId)))
+        qApp->sendEvent (page, &event);
 
     /* USB page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
-                        tr ("USB"), USBId, "#usb");
+    mSelector->setItemText (USBId, tr ("USB"));
 
     /* SFolders page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/shared_folder_16px.png"),
-                        tr ("Shared Folders"), SFId, "#sfolders");
+    mSelector->setItemText (SFId, tr ("Shared Folders"));
 
     /* VRDP page */
-    mSelector->addItem (VBoxGlobal::iconSet (":/vrdp_16px.png"),
-                        tr ("Remote Display"), VRDPId, "#vrdp");
+    mSelector->setItemText (VRDPId, tr ("Remote Display"));
 
     /* Translate the selector */
     mSelector->polish();
 
     VBoxSettingsDialog::retranslateUi();
-
-    /* Select old remembered category */
-    mSelector->selectById (cid == -1 ? 0 : cid);
 
     /* Update QTreeWidget with available items */
     updateAvailability();
@@ -424,11 +482,9 @@ void VBoxVMSettingsDlg::resetFirstRunFlag()
         mResetFirstRunFlag = true;
 }
 
-VBoxSettingsPage* VBoxVMSettingsDlg::attachPage (VBoxSettingsPage *aPage)
+VBoxSettingsPage* VBoxVMSettingsDlg::attachValidator (VBoxSettingsPage *aPage)
 {
-    mStack->addWidget (aPage);
-
-    QIWidgetValidator *wval = new QIWidgetValidator (mSelector->itemTextByIndex (mStack->indexOf (aPage)),
+    QIWidgetValidator *wval = new QIWidgetValidator (mSelector->itemTextByPage (aPage),
                                                      aPage, this);
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableOk (const QIWidgetValidator*)));
@@ -448,12 +504,6 @@ void VBoxVMSettingsDlg::updateAvailability()
 
     /* Parallel Port Page (currently disabled) */
     mSelector->setVisibleById (ParallelId, false);
-    int index = mSelector->idToIndex (ParallelId);
-    if (index > -1)
-    {
-        if (mStack->widget (index))
-            mStack->widget (index)->setEnabled (false);
-    }
 
     /* USB Stuff */
     CUSBController ctl = mMachine.GetUSBController();
@@ -467,12 +517,6 @@ void VBoxVMSettingsDlg::updateAvailability()
         /* Disable the USB controller category if the USB controller is
          * not available (i.e. in VirtualBox OSE) */
         mSelector->setVisibleById (USBId, false);
-        int index = mSelector->idToIndex (USBId);
-        if (index > -1)
-        {
-            if (mStack->widget (index))
-                mStack->widget (index)->setEnabled (false);
-        }
     }
 
     /* VRDP Stuff */
@@ -482,12 +526,6 @@ void VBoxVMSettingsDlg::updateAvailability()
         /* Disable the VRDP category if VRDP is
          * not available (i.e. in VirtualBox OSE) */
         mSelector->setVisibleById (VRDPId, false);
-        int index = mSelector->idToIndex (VRDPId);
-        if (index > -1)
-        {
-            if (mStack->widget (index))
-                mStack->widget (index)->setEnabled (false);
-        }
         /* If mMachine has something to say, show the message */
         vboxProblem().cannotLoadMachineSettings (mMachine, false /* strict */);
     }

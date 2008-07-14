@@ -52,6 +52,7 @@ public:
 protected slots:
 
     virtual void revalidate (QIWidgetValidator * /* aWval */) {}
+    void categoryChanged (int aId);
 
 protected:
 
@@ -70,8 +71,6 @@ private slots:
     void enableOk (const QIWidgetValidator *aWval);
     void updateWhatsThis (bool aGotFocus = false);
     void whatsThisCandidateDestroyed (QObject *aObj = 0);
-
-    void categoryChanged (int aId);
 
 private:
 
