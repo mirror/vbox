@@ -124,9 +124,9 @@ bool VBoxUpdateData::isNecessary()
            QDate::currentDate() >= mDate;
 }
 
-bool VBoxUpdateData::isAutomatic()
+bool VBoxUpdateData::isNeverCheck()
 {
-    return mIndex == AutoCheck;
+    return mIndex == NeverCheck;
 }
 
 QString VBoxUpdateData::data() const
@@ -142,16 +142,13 @@ int VBoxUpdateData::index() const
 QString VBoxUpdateData::date() const
 {
     return mIndex == NeverCheck ? VBoxUpdateDlg::tr ("never") :
-           mIndex == AutoCheck ? VBoxUpdateDlg::tr ("on startup") :
            mDate.toString ("yyyy.MM.dd");
 }
 
 void VBoxUpdateData::decode (const QString &aData)
 {
     /* Parse standard values */
-    if (aData == "auto")
-        mIndex = AutoCheck;
-    else if (aData == "never")
+    if (aData == "never")
         mIndex = NeverCheck;
     /* Parse other values */
     else
@@ -181,9 +178,7 @@ void VBoxUpdateData::decode (const QString &aData)
 void VBoxUpdateData::encode (int aIndex)
 {
     /* Encode standard values */
-    if (aIndex == AutoCheck)
-        mData = "auto";
-    else if (aIndex == NeverCheck)
+    if (aIndex == NeverCheck)
         mData = "never";
     /* Encode other values */
     else
@@ -217,14 +212,6 @@ bool VBoxUpdateDlg::isNecessary()
         GetExtraData (VBoxDefs::GUI_UpdateDate));
 
     return data.isNecessary();
-}
-
-bool VBoxUpdateDlg::isAutomatic()
-{
-    VBoxUpdateData data (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_UpdateDate));
-
-    return data.isAutomatic();
 }
 
 VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
