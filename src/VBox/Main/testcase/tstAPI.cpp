@@ -919,7 +919,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if 1
-    {
+    do {
         Bstr metricNames[] = { L"CPU/User:avg,CPU/System:avg,CPU/Idle:avg" };
         com::SafeArray<BSTR> metrics(1);
         metricNames[0].detachTo(&metrics[0]);
@@ -927,30 +927,35 @@ int main(int argc, char *argv[])
         ComPtr <IHost> host;
         CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
         ComPtr <IPerformanceCollector> collector;
-        CHECK_RC( virtualBox->COMGETTER(PerformanceCollector)(collector.asOutParam()) );
+        CHECK_RC_BREAK( virtualBox->COMGETTER(PerformanceCollector)(collector.asOutParam()) );
 
         com::SafeIfaceArray<IUnknown> objects(1);
         host.queryInterfaceTo(&objects[0]);
-        collector->SetupMetrics(ComSafeArrayAsInParam(metrics),
-                                ComSafeArrayAsInParam(objects), 1u, 10u);
+        CHECK_RC_BREAK( collector->SetupMetrics(ComSafeArrayAsInParam(metrics),
+                                                ComSafeArrayAsInParam(objects), 1u, 10u) );
         RTThreadSleep(3000); /* Sleep 10 seconds. */
-        /*com::SafeIfaceArray<IPerformanceData> result;
-        collector->QueryMetricsData(ComSafeArrayAsInParam(metrics),
-                                    ComSafeArrayAsInParam(objects),
-                                    ComSafeArrayAsOutParam(result));
-        for (unsigned i = 0; i < result.size(); i++)
+        com::SafeArray<BSTR>          retNames;
+        com::SafeIfaceArray<IUnknown> retObjects;
+        com::SafeArray<ULONG>         retIndices;
+        com::SafeArray<ULONG>         retLengths;
+        com::SafeArray<LONG>          retData;
+        CHECK_RC_BREAK( collector->QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                                    ComSafeArrayAsInParam(objects),
+                                                    ComSafeArrayAsOutParam(retNames),
+                                                    ComSafeArrayAsOutParam(retObjects),
+                                                    ComSafeArrayAsOutParam(retIndices),
+                                                    ComSafeArrayAsOutParam(retLengths),
+                                                    ComSafeArrayAsOutParam(retData)) );
+        for (unsigned i = 0; i < retNames.size(); i++)
         {
-            Bstr metricName;
-            result[i]->COMGETTER(MetricName) (metricName.asOutParam());
-            com::SafeArray<LONG> values;
-            result[i]->COMGETTER(Values) (ComSafeArrayAsOutParam(values));
+            Bstr metricName(retNames[i]);
             printf("%ls", metricName.raw());
-            for (unsigned j = 0; j < values.size(); j++)
+            for (unsigned j = 0; j < retLengths[i]; j++)
             {
-                printf(" %d\n", values[j]);
+                printf(" %d\n", retData[retIndices[i] + j]);
             }
-        }*/
-    }
+        }
+    } while (0);
 #endif
 #if 0
     for (int i = 0; i < 10; i++)
