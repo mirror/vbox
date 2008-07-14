@@ -1487,15 +1487,14 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
-    Log(("IOM: rep ins%d port %#x count %d -> GCPtr %VGv\n", cbTransfer * 8, uPort, cTransfers, GCPtrDst));
+    Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
     if (cTransfers > 1)
     {
         /* If the device supports string transfers, ask it to do as
          * much as it wants. The rest is done with single-word transfers. */
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
-        AssertRCReturn(rc, rc); 
-        Assert(cTransfers <= cTransfersOrg);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
         pRegFrame->rdi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
@@ -1503,7 +1502,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     MMGCRamRegisterTrapHandler(pVM);
 #endif
 
-    while (cTransfers)
+    while (cTransfers && rc == VINF_SUCCESS)
     {
         uint32_t u32Value;
         rc = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
@@ -1656,8 +1655,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
          */
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
-        AssertRCReturn(rc, rc); 
-        Assert(cTransfers <= cTransfersOrg);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
         pRegFrame->rsi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
@@ -1665,7 +1663,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     MMGCRamRegisterTrapHandler(pVM);
 #endif
 
-    while (cTransfers)
+    while (cTransfers && rc == VINF_SUCCESS)
     {
         uint32_t u32Value;
         rc = iomRamRead(pVM, &u32Value, GCPtrSrc, cbTransfer);
