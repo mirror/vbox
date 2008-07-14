@@ -55,9 +55,9 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
 #if defined(RT_OS_WINDOWS) /** @todo more OSes could take this route (solaris and freebsd for instance). */
     /*
-     * Handle the entire request in one go.
+     * Handle the entire request in one go (size ignored in IOCTL code).
      */
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), (char *)pch, cb);
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(0), (char *)pch, cb);
 
 #else
     /*
