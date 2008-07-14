@@ -1167,25 +1167,9 @@ ResumeExecution:
 
     /** @todo check timers?? */
 
-    /* Save the host state first. */
-    rc  = VMXR0SaveHostState(pVM);
-    if (rc != VINF_SUCCESS)
-    {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
-        goto end;
-    }
-    /* Load the guest state */
-    rc = VMXR0LoadGuestState(pVM, pCtx);
-    if (rc != VINF_SUCCESS)
-    {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
-        goto end;
-    }
-    fGuestStateSynced = true;
-
     /* TPR caching using CR8 is only available in 64 bits mode */
     /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
-    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock). */
+    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!! */
     /*
      * @todo reduce overhead
      */
@@ -1203,6 +1187,26 @@ ResumeExecution:
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, u8TPR);
         AssertRC(rc);
     }
+
+    /*
+     * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
+     *       (until the actual world switch)
+     */
+    /* Save the host state first. */
+    rc  = VMXR0SaveHostState(pVM);
+    if (rc != VINF_SUCCESS)
+    {
+        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        goto end;
+    }
+    /* Load the guest state */
+    rc = VMXR0LoadGuestState(pVM, pCtx);
+    if (rc != VINF_SUCCESS)
+    {
+        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        goto end;
+    }
+    fGuestStateSynced = true;
 
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
