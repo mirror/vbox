@@ -22,194 +22,153 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>376</width>
-    <height>292</height>
+    <width>239</width>
+    <height>299</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>5</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>5</number>
-   </property>
-   <item>
-    <widget class="QGroupBox" name="mGbCD" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" colspan="3" >
+    <widget class="QCheckBox" name="mGbCD" >
      <property name="whatsThis" >
       <string>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</string>
      </property>
-     <property name="title" >
+     <property name="text" >
       <string>&amp;Mount CD/DVD Drive</string>
-     </property>
-     <property name="checkable" >
-      <bool>true</bool>
      </property>
      <property name="checked" >
       <bool>true</bool>
      </property>
-     <layout class="QVBoxLayout" >
-      <property name="topMargin" >
-       <number>5</number>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="1" >
+    <widget class="QWidget" native="1" name="mMountCDChild" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Preferred" hsizetype="Expanding" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QGridLayout" >
+      <property name="leftMargin" >
+       <number>0</number>
       </property>
-      <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <widget class="QRadioButton" name="mRbHostCD" >
-          <property name="whatsThis" >
-           <string>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</string>
-          </property>
-          <property name="text" >
-           <string>Host CD/DVD &amp;Drive</string>
-          </property>
-          <property name="autoExclusive" >
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="mCbHostCD" >
-          <property name="whatsThis" >
-           <string>Lists host CD/DVD drives available to mount to the virtual machine.</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>0</width>
-            <height>10</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
+      <property name="topMargin" >
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
+      </property>
+      <property name="verticalSpacing" >
+       <number>-1</number>
+      </property>
+      <item row="0" column="0" colspan="2" >
+       <widget class="QRadioButton" name="mRbHostCD" >
+        <property name="whatsThis" >
+         <string>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</string>
+        </property>
+        <property name="text" >
+         <string>Host CD/DVD &amp;Drive</string>
+        </property>
+        <property name="autoExclusive" >
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
-      <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType" >
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>19</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="mCbPassthrough" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="whatsThis" >
-           <string>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</string>
-          </property>
-          <property name="text" >
-           <string>Enable &amp;Passthrough</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+      <item row="1" column="0" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType" >
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>8</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
       </item>
-      <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <widget class="QRadioButton" name="mRbIsoCD" >
-          <property name="whatsThis" >
-           <string>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</string>
-          </property>
-          <property name="text" >
-           <string>&amp;ISO Image File</string>
-          </property>
-          <property name="autoExclusive" >
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>0</width>
-            <height>10</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
+      <item row="1" column="1" >
+       <widget class="QComboBox" name="mCbHostCD" >
+        <property name="whatsThis" >
+         <string>Lists host CD/DVD drives available to mount to the virtual machine.</string>
+        </property>
+       </widget>
       </item>
-      <item>
-       <layout class="QHBoxLayout" >
-        <item>
-         <spacer>
-          <property name="orientation" >
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType" >
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" >
-           <size>
-            <width>19</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="VBoxMediaComboBox" name="mCbIsoCD" >
-          <property name="whatsThis" >
-           <string>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="mTbIsoCD" >
-          <property name="whatsThis" >
-           <string>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</string>
-          </property>
-          <property name="text" >
-           <string/>
-          </property>
-          <property name="autoRaise" >
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
+      <item row="2" column="1" >
+       <widget class="QCheckBox" name="mCbPassthrough" >
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="whatsThis" >
+         <string>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</string>
+        </property>
+        <property name="text" >
+         <string>Enable &amp;Passthrough</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2" >
+       <widget class="QRadioButton" name="mRbIsoCD" >
+        <property name="whatsThis" >
+         <string>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</string>
+        </property>
+        <property name="text" >
+         <string>&amp;ISO Image File</string>
+        </property>
+        <property name="autoExclusive" >
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1" >
+       <widget class="VBoxMediaComboBox" name="mCbIsoCD" >
+        <property name="whatsThis" >
+         <string>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2" >
+       <widget class="QToolButton" name="mTbIsoCD" >
+        <property name="whatsThis" >
+         <string>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</string>
+        </property>
+        <property name="text" >
+         <string/>
+        </property>
+        <property name="autoRaise" >
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="2" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -217,7 +176,7 @@
      <property name="sizeHint" >
       <size>
        <width>20</width>
-       <height>0</height>
+       <height>40</height>
       </size>
      </property>
     </spacer>
