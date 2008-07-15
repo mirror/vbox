@@ -777,6 +777,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
     bool        fGuestStateSynced = false;
+    bool        fSyncTPR = false;
     unsigned    cResume = 0;
     uint8_t     u8LastVTPR;
     PHWACCM_CPUINFO pCpu = 0;
@@ -877,6 +878,8 @@ ResumeExecution:
              * There are enough world switches for detecting pending interrupts.
              */
             pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
+
+        fSyncTPR = !fPending;
     }
 
     /* All done! Let's start VM execution. */
@@ -1209,6 +1212,12 @@ ResumeExecution:
     else
         STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
 #endif
+
+    if (fSyncTPR)
+    {
+        rc = PDMApicSetTPR(pVM, pVMCB->ctrl.IntCtrl.n.u8VTPR);
+        AssertRC(rc);
+    }
 
     /* Deal with the reason of the VM-exit. */
     switch (exitCode)
