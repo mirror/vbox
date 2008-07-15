@@ -446,7 +446,7 @@ VirtualBox4_QT_MOCHDRS = \
 	include/QITreeWidget.h \
 	include/QIMainDialog.h \
 	include/QIHelpButton.h \
-	include/VBoxPathSelector.h \
+	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxGlobal.h \
@@ -518,7 +518,7 @@ VirtualBox4_SOURCES = \
 	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
 	src/QIHelpButton.cpp \
-	src/VBoxPathSelector.cpp \
+	src/VBoxFilePathSelectorWidget.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \

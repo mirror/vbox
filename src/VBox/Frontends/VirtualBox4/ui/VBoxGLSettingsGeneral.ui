@@ -113,7 +113,7 @@
   <customwidget>
    <class>VBoxFilePathSelectorWidget</class>
    <extends>QWidget</extends>
-   <header>VBoxPathSelector.h</header>
+   <header>VBoxFilePathSelectorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
