@@ -28,6 +28,8 @@
 #include <VBox/cdefs.h>
 #undef INTNETR0DECL
 #define INTNETR0DECL INTNETR3DECL
+#undef DECLR0CALLBACKMEMBER
+#define DECLR0CALLBACKMEMBER(type, name, args) DECLR3CALLBACKMEMBER(type, name, args)
 #include <VBox/intnet.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
