@@ -167,14 +167,8 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
     /* The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
      *
      * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
-     *
-     * If the guest uses the MSR_K6_EFER_FFXSR as well, then it has to manually restore the XMM state. 
-     * In that case we don't care.
-     *
-     * We would end up saving/restoring too much if the guest has it enabled, but the host hasn't.
      */
-    if (    (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR) /* 0x80000001 */
-        &&  !(pCtx->msrEFER & MSR_K6_EFER_FFXSR))
+    if (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR /* cpuid 0x80000001 */)
     {
         /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
         uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
