@@ -31,6 +31,9 @@
 LIBRARY SUPR0.dll
 
 EXPORTS
+    SUPR0ComponentRegisterFactory
+    SUPR0ComponentDeregisterFactory
+    SUPR0ComponentQueryFactory
     SUPR0ObjRegister
     SUPR0ObjAddRef
     SUPR0ObjRelease
