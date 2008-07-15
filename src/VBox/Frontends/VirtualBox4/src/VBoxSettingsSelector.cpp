@@ -216,6 +216,8 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QIcon &aIcon,
                                                                                   << idToString (aId)
                                                                                   << aLink);
         twitem->setIcon (treeWidget_Category, aIcon);
+        aPage->setContentsMargins (9, 2, 9, 2);
+        VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
         result = aPage;
     }
     return result;
@@ -389,6 +391,8 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon,
     {
         mActionGroup->addAction (item->action());
         mTbSelector->addAction (item->action());
+        aPage->setContentsMargins (0, 0, 0, 0);
+        VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
         result = aPage;
     }
     else if (aParentId == -1 &&
@@ -397,6 +401,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon,
         mActionGroup->addAction (item->action());
         mTbSelector->addAction (item->action());
         QTabWidget *tabWidget= new QTabWidget ();
+        tabWidget->setContentsMargins (0, 0, 0, 0);
 //        connect (tabWidget, SIGNAL (currentChanged (int)),
 //                 this, SLOT (settingsGroupChanged (int)));
         item->setTabWidget (tabWidget);
@@ -407,6 +412,8 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon,
         if (parent)
         {
             QTabWidget *tabWidget = parent->tabWidget();
+            aPage->setContentsMargins (9, 5, 9, 9);
+            VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
             if (tabWidget)
                 tabWidget->addTab (aPage, aIcon, "");
         }
