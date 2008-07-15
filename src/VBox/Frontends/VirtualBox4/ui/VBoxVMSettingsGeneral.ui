@@ -22,15 +22,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>593</width>
-    <height>689</height>
+    <width>451</width>
+    <height>477</height>
    </rect>
   </property>
   <layout class="QHBoxLayout" >
    <item>
     <widget class="QTabWidget" name="mTabGeneral" >
      <property name="currentIndex" >
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="mTabBasic" >
       <attribute name="title" >
