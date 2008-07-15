@@ -839,7 +839,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->rc))
                 {
-                    dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_VMMREQUEST: error issuing request to VMMDev!"
+                    dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_VMMREQUEST: Error issuing request to VMMDev! "
                              "rc = %d, VMMDev rc = %Vrc\n", rc, req->rc));
                     Status = STATUS_UNSUCCESSFUL;
                 }
@@ -1055,6 +1055,15 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             break;
         }
 #endif
+
+        case VBOXGUEST_IOCTL_LOG(0):    /* The size isn't relevant on NT. */
+        {
+            /* Enable this only for debugging: 
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_LOG\n"));
+             */
+            LogRel(("%.*s\n", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
+            cbOut = 0;
+        } break;
 
         default:
              Status = STATUS_INVALID_PARAMETER;
