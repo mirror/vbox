@@ -47,12 +47,11 @@ VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	X11 \
 	Xt
-ifeq ($(KBUILD_TARGET),linux)
 # These are static replacements for gcc-specific parts of libstdc++
 VBoxClient_LIBS += \
 	supc++ \
 	gcc_eh
-endif
+
 ## @todo r=bird: move to the template (that's what they are there for). ditto for VBoxService.
 VBoxClient_LIBPATH.freebsd += \
 	/usr/local/lib
