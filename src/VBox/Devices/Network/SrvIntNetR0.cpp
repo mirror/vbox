@@ -1252,6 +1252,37 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
 }
 
 
+#ifdef IN_RING0
+
+/** @copydoc INTNETTRUNKSWPORT::pfnSetSGPhys */
+static DECLCALLBACK(bool) intnetTrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pIfPort, bool fEnable)
+{
+    AssertMsgFailed(("Not implemented because it wasn't required on Darwin\n"));
+    return false;
+}
+
+
+/** @copydoc INTNETTRUNKSWPORT::pfnRecv */
+static DECLCALLBACK(bool) intnetTrunkIfPortRecv(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG, uint32_t fSrc)
+{
+    return false;
+}
+
+
+/** @copydoc INTNETTRUNKSWPORT::pfnSGRetain */
+static DECLCALLBACK(void) intnetTrunkIfPortSGRetain(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG)
+{
+
+}
+
+
+/** @copydoc INTNETTRUNKSWPORT::pfnSGRelease */
+static DECLCALLBACK(void) intnetTrunkIfPortSGRelease(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG)
+{
+
+}
+
+
 /**
  * Creates the trunk connection (if any).
  *
@@ -1271,9 +1302,14 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
         case kIntNetTrunkType_None:
         case kIntNetTrunkType_WhateverNone:
             return VINF_SUCCESS;
+
+        /* Can't happen, but makes GCC happy. */
         default:
             return VERR_NOT_IMPLEMENTED;
 
+        /*
+         * Translate enum to component factory name.
+         */
         case kIntNetTrunkType_NetFlt:
             pszName = "VBoxNetFlt";
             break;
@@ -1285,7 +1321,6 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
             break;
     }
 
-#if 0
     /*
      * Allocate the trunk interface.
      */
@@ -1325,10 +1360,9 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
     LogFlow(("intnetNetworkCreateTrunkConnection: %Rrc - pszName=%s szTrunk=%s Network=%s\n",
              rc, pszName, pNetwork->szTrunk, pNetwork->szName));
     return rc;
-#else
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
+
+#endif /* IN_RING0 */
 
 
 /**
@@ -1575,7 +1609,9 @@ static int intnetCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
                 /*
                  * Connect the trunk.
                  */
+#ifdef IN_RING0
                 rc = intnetNetworkCreateTrunkConnection(pNew, pSession);
+#endif
                 if (RT_SUCCESS(rc))
                 {
                     *ppNetwork = pNew;

@@ -787,6 +787,17 @@ ifdef VBOX_WITH_TESTCASES
 endif
 
 #
+# Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
+#
+ifdef VBOX_WITH_TESTCASES
+ PROGRAMS += tstIntNet-1
+ tstIntNet-1_TEMPLATE    = VBOXR3TSTEXE
+ tstIntNet-1_SOURCES     = \
+	Network/testcase/tstIntNet-1.cpp
+endif
+
+
+#
 # EEPROM device unit test requires cppunit
 #
 ifdef VBOX_WITH_CPPUNIT_TESTCASES

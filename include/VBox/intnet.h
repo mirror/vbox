@@ -632,6 +632,9 @@ typedef struct INTNETOPENREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** The network name. (input) */
     char            szNetwork[INTNET_MAX_NETWORK_NAME];
     /** What to connect to the trunk port. (input)

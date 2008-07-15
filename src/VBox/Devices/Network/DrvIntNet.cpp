@@ -703,6 +703,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     memset(&OpenReq, 0, sizeof(OpenReq));
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    OpenReq.pSession = NULL;
 
     /** @cfgm{Network, string}
      * The name of the internal network to connect to.
