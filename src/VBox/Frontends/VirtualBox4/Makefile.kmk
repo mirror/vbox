@@ -783,7 +783,6 @@ $(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | 
 # languages and should never be actually translated or installed.
 #
 updatenls:: \
-		$(VirtualBox4_QT_UISRCS) \
 		$(filter-out %.qrc,$(VirtualBox4_SOURCES)) \
 		$(wildcard include/*.h)
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
