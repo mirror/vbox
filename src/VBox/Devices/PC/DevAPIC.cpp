@@ -508,6 +508,16 @@ static int apic_get_ppr(APICState *s)
     return ppr;
 }
 
+static int apic_get_ppr_zero_tpr(APICState *s)
+{
+    int isrv;
+
+    isrv = get_highest_priority_int(s->isr);
+    if (isrv < 0)
+        isrv = 0;
+    return isrv;
+}
+
 static int apic_get_arb_pri(APICState *s)
 {
     /* XXX: arbitration */
@@ -543,6 +553,27 @@ static bool apic_update_irq(APICState *s)
 }
 
 #ifdef VBOX
+
+/* Check if the APIC has a pending interrupt/if a TPR change would active one. */
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
+{
+    int irrv, ppr;
+
+    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    if (!s) 
+        return false;
+
+    irrv = get_highest_priority_int(s->irr);
+    if (irrv < 0)
+        return false;
+
+    ppr = apic_get_ppr_zero_tpr(s);
+    if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
+        return false;
+
+    return true;
+}
+
 static void apic_update_tpr(APICState *s, uint32_t val)
 {
     bool fIrqIsActive = false;
@@ -761,20 +792,6 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     LogFlow(("apic_get_interrupt: returns %d\n", intno));
     return intno;
 }
-
-/* Check if the APIC has a pending interrupt/if a TPR change would active one. */
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
-{
-    int irrv;
-
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
-    if (!s) 
-        return false;
-
-    irrv = get_highest_priority_int(s->irr);
-    return irrv >= 0;
-}
-
 
 static uint32_t apic_get_current_count(APICState *s)
 {
