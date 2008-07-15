@@ -1218,7 +1218,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         }
     }
 
-#if 0 /// @todo Sander, this breaks the linux image (panics). So, I'm disabling it for now. (OP_MOV triggers it btw.)
+    /* Try our own instruction emulator before falling back to the recompiler. */
     DISCPUSTATE Cpu;
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "GEN EMU");
     if (VBOX_SUCCESS(rc))
@@ -1227,6 +1227,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 
         switch (Cpu.pCurInstr->opcode)
         {
+        /* @todo we can do more now */
         case OP_MOV:
         case OP_AND:
         case OP_OR:
@@ -1249,7 +1250,6 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
             break;
         }
     }
-#endif
     STAM_PROFILE_START(&pVM->em.s.StatREMEmu, a);
     rc = REMR3EmulateInstruction(pVM);
     STAM_PROFILE_STOP(&pVM->em.s.StatREMEmu, a);
