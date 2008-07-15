@@ -50,7 +50,8 @@ class VBoxSDLFB :
 {
 public:
     VBoxSDLFB(bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
-              uint32_t u32FixedWidth = ~(uint32_t)0, uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
+              bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
+              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
     virtual ~VBoxSDLFB();
 
 #ifdef RT_OS_WINDOWS
@@ -123,6 +124,7 @@ public:
     void setFullscreen(bool fFullscreen);
     int  getXOffset();
     int  getYOffset();
+    void getFullScreenGeometry(uint32_t *width, uint32_t *height);
     uint32_t getGuestXRes() { return mGuestXRes; }
     uint32_t getGuestYRes() { return mGuestYRes; }
 #ifdef VBOX_SECURELABEL
@@ -164,6 +166,9 @@ private:
     uint32_t mCenterYOffset;
     /** flag whether we're in fullscreen mode */
     bool  mfFullscreen;
+    /** flag wheter we keep the host screen resolution when switching to
+     *  fullscreen or not */
+    bool  mfKeepHostRes;
     /** framebuffer update semaphore */
     RTCRITSECT mUpdateLock;
     /** flag whether the SDL window should be resizable */

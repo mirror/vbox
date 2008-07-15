@@ -77,11 +77,14 @@ DECLSPEC void (SDLCALL *pTTF_Quit)(void);
  * @param fFullscreen    flag whether we start in fullscreen mode
  * @param fResizable     flag whether the SDL window should be resizable
  * @param fShowSDLConfig flag whether we print out SDL settings
- * @param iFixedWidth   fixed SDL width (-1 means not set)
- * @param iFixedHeight  fixed SDL height (-1 means not set)
+ * @param fKeepHostRes   flag whether we switch the host screen resolution
+ *                       when switching to fullscreen or not
+ * @param iFixedWidth    fixed SDL width (-1 means not set)
+ * @param iFixedHeight   fixed SDL height (-1 means not set)
  */
 VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
-                     uint32_t u32FixedWidth, uint32_t u32FixedHeight, uint32_t u32FixedBPP)
+                     bool fKeepHostRes, uint32_t u32FixedWidth,
+                     uint32_t u32FixedHeight, uint32_t u32FixedBPP)
 {
     int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
@@ -94,6 +97,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mSurfVRAM       = NULL;
     mfInitialized   = false;
     mfFullscreen    = fFullscreen;
+    mfKeepHostRes   = fKeepHostRes;
     mTopOffset      = 0;
     mfResizable     = fResizable;
     mfShowSDLConfig = fShowSDLConfig;
@@ -946,6 +950,40 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
     resizeSDL();
 }
 
+/**
+ *
+ */
+void VBoxSDLFB::getFullScreenGeometry(uint32_t *width, uint32_t *height)
+{
+    SDL_Rect **modes;
+
+    /* Get available fullscreen/hardware modes */
+    modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
+    Assert(modes != NULL);
+    /* -1 means that any mode is possible (usually non fullscreen) */
+    if (modes != (SDL_Rect **)-1)
+    {
+        /*
+         * According to the SDL documentation, the API guarantees that the modes
+         * are sorted from larger to smaller, so we just take the first entry as
+         * the maximum.
+         *
+         * XXX Crude Xinerama hack :-/
+         */
+        if (   modes[0]->w > (16*modes[0]->h/9)
+            && modes[1]
+            && modes[1]->h == modes[0]->h)
+        {
+            *width  = modes[1]->w;
+            *height = modes[1]->h;
+        }
+        else
+        {
+            *width  = modes[0]->w;
+            *height = modes[0]->w;
+        }
+    }
+}
 
 /**
  * Returns the current x offset of the start of the guest screen
