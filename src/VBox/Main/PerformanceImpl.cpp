@@ -38,27 +38,27 @@
 
 static Bstr gMetricNames[] =
 {
-    "CPU/User:avg",
-    "CPU/User:min",
-    "CPU/User:max",
-    "CPU/Kernel:avg",
-    "CPU/Kernel:min",
-    "CPU/Kernel:max",
-    "CPU/Idle:avg",
-    "CPU/Idle:min",
-    "CPU/Idle:max",
+    "CPU/Load/User:avg",
+    "CPU/Load/User:min",
+    "CPU/Load/User:max",
+    "CPU/Load/Kernel:avg",
+    "CPU/Load/Kernel:min",
+    "CPU/Load/Kernel:max",
+    "CPU/Load/Idle:avg",
+    "CPU/Load/Idle:min",
+    "CPU/Load/Idle:max",
     "CPU/MHz:avg",
     "CPU/MHz:min",
     "CPU/MHz:max",
-    "RAM/Total:avg",
-    "RAM/Total:min",
-    "RAM/Total:max",
-    "RAM/Used:avg",
-    "RAM/Used:min",
-    "RAM/Used:max",
-    "RAM/Free:avg",
-    "RAM/Free:min",
-    "RAM/Free:max",
+    "RAM/Usage/Total:avg",
+    "RAM/Usage/Total:min",
+    "RAM/Usage/Total:max",
+    "RAM/Usage/Used:avg",
+    "RAM/Usage/Used:min",
+    "RAM/Usage/Used:max",
+    "RAM/Usage/Free:avg",
+    "RAM/Usage/Free:min",
+    "RAM/Usage/Free:max",
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ static Bstr gMetricNames[] =
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-PerformanceCollector::PerformanceCollector() : mFactory(0) {}
+PerformanceCollector::PerformanceCollector() {}
 
 PerformanceCollector::~PerformanceCollector() {}
 
@@ -101,10 +101,10 @@ HRESULT PerformanceCollector::init()
     HRESULT rc = S_OK;
 
     /* @todo Obviously other platforms must be added as well. */
-    mFactory = new pm::MetricFactoryLinux();
+    m.mFactory = new pm::MetricFactoryLinux();
     /* Start resource usage sampler */
 
-    int vrc = RTTimerCreate (&mSampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
+    int vrc = RTTimerCreate (&m.mSampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
                              &PerformanceCollector::staticSamplerCallback, this);
     AssertMsgRC (vrc, ("Failed to create resource usage "
                        "sampling timer(%Rra)\n", vrc));
@@ -138,13 +138,13 @@ void PerformanceCollector::uninit()
     }
 
     /* Destroy resource usage sampler */
-    int vrc = RTTimerDestroy (mSampler);
+    int vrc = RTTimerDestroy (m.mSampler);
     AssertMsgRC (vrc, ("Failed to destroy resource usage "
                        "sampling timer (%Rra)\n", vrc));
-    mSampler = NULL;
+    m.mSampler = NULL;
 
-    delete mFactory;
-    mFactory = NULL;
+    delete m.mFactory;
+    m.mFactory = NULL;
 
     LogFlowThisFuncLeave();
 }
@@ -193,15 +193,14 @@ STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(const BSTR, metr
                                                  ComSafeArrayIn(IUnknown *, objects),
                                                  ULONG aPeriod, ULONG aCount)
 {
-#if 0
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
-    std::list<pm::Metric*>::iterator it;
-    for (it = mMetrics.begin(); it != mMetrics.end(); ++it)
-        if (filter.match(*it))
+    BaseMetricList::iterator it;
+    for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
+        if (filter.match((*it)->getObject(), (*it)->getName()))
             (*it)->init(aPeriod, aCount);
-#endif
-    return E_NOTIMPL;
+
+    return S_OK;
 }
 
 STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(const BSTR, metricNames),
@@ -230,10 +229,10 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, 
     /// @todo r=dmik don't we need to lock this for reading?
 
     int i;
-    std::list<pm::Metric*>::const_iterator it;
+    MetricList::const_iterator it;
     /* Let's compute the size of the resulting flat array */
     size_t flatSize = 0, numberOfMetrics = 0;
-    for (it = mMetrics.begin(); it != mMetrics.end(); ++it)
+    for (it = m.mMetrics.begin(); it != m.mMetrics.end(); ++it)
     {
         /* @todo Filtering goes here! */
         flatSize += (*it)->getLength();
@@ -245,7 +244,7 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, 
     com::SafeArray<ULONG> retIndices(numberOfMetrics);
     com::SafeArray<ULONG> retLengths(numberOfMetrics);
     com::SafeArray<LONG> retData(flatSize);
-    for (it = mMetrics.begin(), i = 0; it != mMetrics.end(); ++it)
+    for (it = m.mMetrics.begin(), i = 0; it != m.mMetrics.end(); ++it)
     {
         /* @todo Filtering goes here! */
         unsigned long *values, length;
@@ -273,24 +272,24 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, 
 
 void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 {
-    mBaseMetrics.push_back (baseMetric);
+    m.mBaseMetrics.push_back (baseMetric);
 }
 
 void PerformanceCollector::registerMetric (pm::Metric *metric)
 {
-    mMetrics.push_back (metric);
+    m.mMetrics.push_back (metric);
 }
 
 void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    std::remove_if (mBaseMetrics.begin(), mBaseMetrics.end(),
+    std::remove_if (m.mBaseMetrics.begin(), m.mBaseMetrics.end(),
                     std::bind2nd (std::mem_fun (&pm::BaseMetric::associatedWith),
                                   aObject));
 }
 
 void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    std::remove_if (mMetrics.begin(), mMetrics.end(),
+    std::remove_if (m.mMetrics.begin(), m.mMetrics.end(),
                     std::bind2nd (std::mem_fun (&pm::Metric::associatedWith),
                                   aObject));
 }
@@ -309,70 +308,6 @@ void PerformanceCollector::staticSamplerCallback (PRTTIMER pTimer, void *pvUser,
 void PerformanceCollector::samplerCallback()
 {
 }
-
-#if 0
-PerformanceData::PerformanceData()
-{
-}
-
-PerformanceData::~PerformanceData()
-{
-}
-
-HRESULT PerformanceData::FinalConstruct()
-{
-    LogFlowThisFunc (("\n"));
-
-    return S_OK;
-}
-
-void PerformanceData::FinalRelease()
-{
-    LogFlowThisFunc (("\n"));
-
-    uninit ();
-}
-
-HRESULT PerformanceData::init (const char *aMetricName, IUnknown *anObject,
-                               unsigned long *data, unsigned long aLength)
-{
-    mMetricName = aMetricName;
-    mObject = anObject;
-    mData = data;
-    mLength = aLength;
-    return S_OK;
-}
-
-void PerformanceData::uninit()
-{
-    RTMemFree(mData);
-    mData = 0;
-    mLength = 0;
-}
-
-STDMETHODIMP PerformanceData::COMGETTER(MetricName) (BSTR *aMetricName)
-{
-    Bstr tmp(mMetricName);
-    tmp.detachTo(aMetricName);
-    return S_OK;
-}
-
-STDMETHODIMP PerformanceData::COMGETTER(Object) (IUnknown **anObject)
-{
-    *anObject = mObject;
-    return S_OK;
-}
-
-STDMETHODIMP PerformanceData::COMGETTER(Values) (ComSafeArrayOut (LONG, values))
-{
-    SafeArray <LONG> ret (mLength);
-    for (size_t i = 0; i < mLength; ++ i)
-        ret[i] = mData[i];
-
-    ret.detachTo(ComSafeArrayOutArg(values));
-    return S_OK;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // PerformanceMetric class
