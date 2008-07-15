@@ -57,9 +57,10 @@
  * 3.1->3.2 Because pfnRegisterExtension was added
  * 3.2->3.3 Because pfnDisconnectClient helper was added
  * 3.3->4.1 Because the pvService entry and parameter was added
+ * 4.1->4.2 Because the VBOX_HGCM_SVC_PARM_CALLBACK paramteter type was added
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0004)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -81,11 +82,18 @@ typedef struct _VBOXHGCMSVCHELPERS
 
 typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
 
+/**
+ * Callback type for HGCM services which can send notification messages.
+ * Intended for use on the host side.
+ */
+typedef DECLCALLBACK(void) FNVBOXHGCMCALLBACK(void *pvParm);
+typedef FNVBOXHGCMCALLBACK *PFNVBOXHGCMCALLBACK;
 
-#define VBOX_HGCM_SVC_PARM_INVALID (0U)
-#define VBOX_HGCM_SVC_PARM_32BIT (1U)
-#define VBOX_HGCM_SVC_PARM_64BIT (2U)
-#define VBOX_HGCM_SVC_PARM_PTR   (3U)
+#define VBOX_HGCM_SVC_PARM_INVALID  (0U)
+#define VBOX_HGCM_SVC_PARM_32BIT    (1U)
+#define VBOX_HGCM_SVC_PARM_64BIT    (2U)
+#define VBOX_HGCM_SVC_PARM_PTR      (3U)
+#define VBOX_HGCM_SVC_PARM_CALLBACK (4U)
 
 typedef struct VBOXHGCMSVCPARM
 {
@@ -101,6 +109,11 @@ typedef struct VBOXHGCMSVCPARM
             uint32_t size;
             void *addr;
         } pointer;
+        struct
+        {
+            PFNVBOXHGCMCALLBACK pFunction;
+            void *pvData;
+        } callback;
     } u;
 } VBOXHGCMSVCPARM;
 
