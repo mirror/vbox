@@ -675,7 +675,7 @@ OTHER_CLEAN = \
 
 
 #
-# On OS X (darwin) we need to install icon resources and compusory bundle contents.
+# On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
 #
 INSTALLS.darwin += VirtualBox.app
@@ -781,7 +781,7 @@ testwrappers:: $(VBOX_WRAPPERS_FILE4)
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.
 #
-# NOTE: This target is intened to be run only by the GUI maintainer shortly
+# NOTE: This target is intended to be run only by the GUI maintainer shortly
 # before a new product release. VirtualBox_xx_YY.ts is a template for new
 # languages and should never be actually translated or installed.
 #
