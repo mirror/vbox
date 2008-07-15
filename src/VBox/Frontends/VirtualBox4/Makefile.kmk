@@ -774,6 +774,9 @@ $(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | 
 	$(call MSG_TOOL,xsltproc,VirtualBox4,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
 
+# alias for generating the COM Wrappers file.
+testwrappers:: $(VBOX_WRAPPERS_FILE4)
+
 
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.
@@ -793,6 +796,4 @@ updatenls:: \
 		nls/VirtualBox_xx_YY.ts
 
 
-# alias for generating the COM Wrappers file.
-testwrappers:: $(VBOX_WRAPPERS_FILE4)
 
