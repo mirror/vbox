@@ -1298,7 +1298,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
  * The instance is flushed and all output destinations closed (where applicable).
  *
  * @returns iprt status code.
- * @param   pLogger             The logger instance which close destroyed.
+ * @param   pLogger             The logger instance which close destroyed. NULL is fine.
  */
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
 

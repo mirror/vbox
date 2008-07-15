@@ -532,7 +532,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGro
  * The instance is flushed and all output destinations closed (where applicable).
  *
  * @returns iprt status code.
- * @param   pLogger             The logger instance which close destroyed.
+ * @param   pLogger             The logger instance which close destroyed. NULL is fine.
  */
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 {
@@ -543,6 +543,8 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Validate input.
      */
+    if (!pLogger)
+        return VINF_SUCCESS;
     AssertReturn(VALID_PTR(pLogger), VERR_INVALID_POINTER);
     AssertReturn(pLogger->u32Magic == RTLOGGER_MAGIC, VERR_INVALID_MAGIC);
 
