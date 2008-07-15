@@ -440,11 +440,13 @@ VirtualBox4_QT_MOCHDRS = \
 	include/QIMessageBox.h \
 	include/QILabel.h \
 	include/QILabel_p.h \
+	include/QILabelSeparator.h \
 	include/QIAbstractWizard.h \
 	include/QIListView.h \
 	include/QITreeWidget.h \
 	include/QIMainDialog.h \
 	include/QIHelpButton.h \
+	include/VBoxPathSelector.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxGlobal.h \
@@ -507,6 +509,7 @@ VirtualBox4_SOURCES = \
 	src/QIStatusBar.cpp \
 	src/QIMessageBox.cpp \
 	src/QILabel.cpp \
+	src/QILabelSeparator.cpp \
 	src/QIAbstractWizard.cpp \
 	src/QIDialog.cpp \
 	src/QIDialogButtonBox.cpp \
@@ -515,6 +518,7 @@ VirtualBox4_SOURCES = \
 	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
 	src/QIHelpButton.cpp \
+	src/VBoxPathSelector.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
