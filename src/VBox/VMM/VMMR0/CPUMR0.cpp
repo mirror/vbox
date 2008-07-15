@@ -171,6 +171,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
     if (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR /* cpuid 0x80000001 */)
     {
         /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
+        /* Note: Solaris sets this bit on a per-process basis, so we do need to check each time. */
         uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
 
         if (msrEFERHost & MSR_K6_EFER_FFXSR)
