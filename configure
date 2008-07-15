@@ -1337,7 +1337,6 @@ EOF
           # store only the first path, remove all other pathes
           # most likely pkg-config gave us -I/usr/include/qt4 -I/usr/include/qt4/QtCore
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
-          cnf_append "VBOX_PATH_QT4_INCLUDE" "$INCQT4"
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
           cnf_append "SDK_QT4_LIBPATH" "`strip_L "$LIBQT4"`"
           # this is not quite right since the qt libpath does not have to be first...
@@ -1354,7 +1353,6 @@ EOF
                 fail
               else
                 log_success "found version $moc_ver"
-                cnf_append "VBOX_PATH_QT4_BIN" "$q/bin"
                 cnf_append "VBOX_PATH_QT4" "$q"
                 cnf_append "PATH_SDK_QT4" "$q"
                 cnf_append "PATH_TOOL_QT4" "$q"
