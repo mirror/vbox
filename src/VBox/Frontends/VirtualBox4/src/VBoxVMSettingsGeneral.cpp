@@ -74,9 +74,9 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
              this, SLOT (textChangedRAM (const QString&)));
     connect (mLeVideo, SIGNAL (textChanged (const QString&)),
              this, SLOT (textChangedVRAM (const QString&)));
-    connect (mTbSelectSnapshot, SIGNAL (clicked()),
+    connect (mPsSnapshot, SIGNAL (selectPath()),
              this, SLOT (selectSnapshotFolder()));
-    connect (mTbResetSnapshot, SIGNAL (clicked()),
+    connect (mPsSnapshot, SIGNAL (resetPath()),
              this, SLOT (resetSnapshotFolder()));
     connect (mTbBootItemUp, SIGNAL (clicked()),
              this, SLOT (moveBootItemUp()));
@@ -213,7 +213,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbPae->setChecked (aMachine.GetPAEEnabled());
 
     /* Snapshot folder */
-    mLeSnapshot->setText (aMachine.GetSnapshotFolder());
+    mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
 
     /* Description */
     mTeDescription->setPlainText (aMachine.GetDescription());
@@ -286,12 +286,12 @@ void VBoxVMSettingsGeneral::putBackTo()
     mMachine.SetPAEEnabled (mCbPae->isChecked());
 
     /* Saved state folder */
-    if (mLeSnapshot->isModified())
+    if (mPsSnapshot->isModified())
     {
-        mMachine.SetSnapshotFolder (mLeSnapshot->text());
+        mMachine.SetSnapshotFolder (mPsSnapshot->path());
         if (!mMachine.isOk())
             vboxProblem().cannotSetSnapshotFolder (mMachine,
-                    QDir::convertSeparators (mLeSnapshot->text()));
+                    QDir::convertSeparators (mPsSnapshot->path()));
     }
 
     /* Description (set empty to null to avoid an empty <Description> node
@@ -330,11 +330,9 @@ void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mCbApic, mCbVirt);
     setTabOrder (mCbVirt, mCbClipboard);
     setTabOrder (mCbClipboard, mCbIDEController);
-    setTabOrder (mCbIDEController, mLeSnapshot);
-    setTabOrder (mLeSnapshot, mTbSelectSnapshot);
-    setTabOrder (mTbSelectSnapshot, mTbResetSnapshot);
+    setTabOrder (mCbIDEController, mPsSnapshot);
 
-    setTabOrder (mTbResetSnapshot, mTeDescription);
+    setTabOrder (mPsSnapshot, mTeDescription);
 
     setTabOrder (mTeDescription, mCbSaveMounted);
 }
@@ -374,6 +372,11 @@ void VBoxVMSettingsGeneral::retranslateUi()
     /* IDE Controller Type */
     mCbIDEController->setItemText (0, vboxGlobal().toString (KIDEControllerType_PIIX3));
     mCbIDEController->setItemText (1, vboxGlobal().toString (KIDEControllerType_PIIX4));
+
+    /* Path selector */
+    mPsSnapshot->setLineEditWhatsThis (tr ("Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space."));
+    mPsSnapshot->setSelectorWhatsThis (tr ("Selects the snapshot folder path."));
+    mPsSnapshot->setResetWhatsThis (tr ("Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
 }
 
 
@@ -445,7 +448,7 @@ void VBoxVMSettingsGeneral::onCurrentBootItemChanged (QTreeWidgetItem *aItem,
 
 void VBoxVMSettingsGeneral::selectSnapshotFolder()
 {
-    QString settingsFolder = VBoxGlobal::getFirstExistingDir (mLeSnapshot->text());
+    QString settingsFolder = VBoxGlobal::getFirstExistingDir (mPsSnapshot->path());
     if (settingsFolder.isNull())
         settingsFolder = QFileInfo (mMachine.GetSettingsFilePath()).absolutePath();
 
@@ -457,18 +460,12 @@ void VBoxVMSettingsGeneral::selectSnapshotFolder()
     /* Remove trailing slash if any */
     folder.remove (QRegExp ("[\\\\/]$"));
 
-    /* Do this instead of le->setText (folder) to cause
-     * isModified() return true */
-    mLeSnapshot->selectAll();
-    mLeSnapshot->insert (folder);
+    mPsSnapshot->setPath (folder);
 }
 
 void VBoxVMSettingsGeneral::resetSnapshotFolder()
 {
-    /* Do this instead of le->setText (QString::null) to cause
-     * isModified() return true */
-    mLeSnapshot->selectAll();
-    mLeSnapshot->del();
+    mPsSnapshot->setPath ("");
 }
 
 void VBoxVMSettingsGeneral::adjustBootOrderTWSize()
