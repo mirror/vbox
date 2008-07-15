@@ -765,8 +765,14 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
 /* Check if the APIC has a pending interrupt/if a TPR change would active one. */
 PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
 {
+    int irrv;
+
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
-    return false;
+    if (!s) 
+        return false;
+
+    irrv = get_highest_priority_int(s->irr);
+    return irrv >= 0;
 }
 
 
