@@ -1,6 +1,6 @@
 /* $Rev$ */
 /** @file
- * The VirtualBox Support Driver - Linux hosts.
+ * VBoxDrv - The VirtualBox Support Driver - Linux specifics.
  */
 
 /*
@@ -33,6 +33,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "../SUPDrvInternal.h"
 #include "the-linux-kernel.h"
 #include "version-generated.h"
@@ -44,7 +45,7 @@
 #include <iprt/process.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/mp.h>
 
 #include <linux/sched.h>

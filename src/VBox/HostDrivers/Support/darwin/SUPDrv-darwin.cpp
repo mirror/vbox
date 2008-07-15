@@ -1,4 +1,6 @@
+/* $Id: $ */
 /** @file
+ *
  * VBox host drivers - Ring-0 support drivers - Darwin host:
  * Darwin driver C code
  */
@@ -28,10 +30,10 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 /*
  * Deal with conflicts first.
  * PVM - BSD mess, that FreeBSD has correct a long time ago.
@@ -53,6 +55,7 @@
 #include <iprt/alloc.h>
 #include <iprt/uuid.h>
 #include <iprt/err.h>
+#include <VBox/log.h>
 
 #include <mach/kmod.h>
 #include <miscfs/devfs/devfs.h>
@@ -218,7 +221,9 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
 static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
     int rc;
-    dprintf(("VBoxDrvDarwinStart\n"));
+#ifdef DEBUG
+    printf("VBoxDrvDarwinStart\n");
+#endif
 
     /*
      * Initialize IPRT.
@@ -250,30 +255,30 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                                                      UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME);
                     if (g_hDevFsDevice)
                     {
-                        OSDBGPRINT(("VBoxDrv: Successfully started. (major=%d)\n", g_iMajorDeviceNo));
+                        LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
+                                VBOX_SVN_REV, SUPDRVIOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
                         return KMOD_RETURN_SUCCESS;
                     }
 
-                    OSDBGPRINT(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n",
-                                g_iMajorDeviceNo, DEVICE_NAME));
+                    LogRel(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n", g_iMajorDeviceNo, DEVICE_NAME));
                     cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
                     g_iMajorDeviceNo = -1;
                 }
                 else
-                    OSDBGPRINT(("VBoxDrv: cdevsw_add failed (%d)\n", g_iMajorDeviceNo));
+                    LogRel(("VBoxDrv: cdevsw_add failed (%d)\n", g_iMajorDeviceNo));
                 RTSpinlockDestroy(g_Spinlock);
                 g_Spinlock = NIL_RTSPINLOCK;
             }
             else
-                OSDBGPRINT(("VBoxDrv: RTSpinlockCreate failed (rc=%d)\n", rc));
+                LogRel(("VBoxDrv: RTSpinlockCreate failed (rc=%d)\n", rc));
             supdrvDeleteDevExt(&g_DevExt);
         }
         else
-            OSDBGPRINT(("VBoxDrv: failed to initialize device extension (rc=%d)\n", rc));
+            printf("VBoxDrv: failed to initialize device extension (rc=%d)\n", rc);
         RTR0Term();
     }
     else
-        OSDBGPRINT(("VBoxDrv: failed to initialize IPRT (rc=%d)\n", rc));
+        printf("VBoxDrv: failed to initialize IPRT (rc=%d)\n", rc);
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
     return KMOD_RETURN_FAILURE;
@@ -286,7 +291,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
 static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
     int rc;
-    dprintf(("VBoxDrvDarwinStop\n"));
+    LogFlow(("VBoxDrvDarwinStop\n"));
 
     /** @todo I've got a nagging feeling that we'll have to keep track of users and refuse
      * unloading if we're busy. Investigate and implement this! */
@@ -310,7 +315,9 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
     RTR0Term();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
-    dprintf(("VBoxDrvDarwinStop - done\n"));
+#ifdef DEBUG
+    printf("VBoxDrvDarwinStop - done\n");
+#endif
     return KMOD_RETURN_SUCCESS;
 }
 
@@ -329,7 +336,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
     char szName[128];
     szName[0] = '\0';
     proc_name(proc_pid(pProcess), szName, sizeof(szName));
-    dprintf(("VBoxDrvDarwinOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
+    Log(("VBoxDrvDarwinOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
 #endif
 
     /*
@@ -361,7 +368,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
 #ifdef DEBUG_DARWIN_GIP
     OSDBGPRINT(("VBoxDrvDarwinOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
 #else
-    dprintf(("VBoxDrvDarwinOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
+    Log(("VBoxDrvDarwinOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
 #endif
     return VBoxDrvDarwinErr2DarwinErr(rc);
 }
@@ -377,7 +384,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
     const unsigned  iHash = SESSION_HASH(Process);
     PSUPDRVSESSION  pSession;
 
-    dprintf(("VBoxDrvDarwinClose: pid=%d\n", (int)Process));
+    Log(("VBoxDrvDarwinClose: pid=%d\n", (int)Process));
 
     /*
      * Remove from the hash table.
@@ -487,7 +494,7 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
  */
 static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
 {
-    dprintf(("VBoxDrvDarwinIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
+    LogFlow(("VBoxDrvDarwinIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
 
 
     /*
@@ -570,7 +577,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
     }
     else
     {
-        dprintf(("VBoxDrvDarwinIOCtlSlow: huh? cbReq=%#x iCmd=%#lx\n", cbReq, iCmd));
+        Log(("VBoxDrvDarwinIOCtlSlow: huh? cbReq=%#x iCmd=%#lx\n", cbReq, iCmd));
         return EINVAL;
     }
 
@@ -616,11 +623,11 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                 RTMemTmpFree(pHdr);
         }
 
-        dprintf(("VBoxDrvDarwinIOCtlSlow: pid=%d iCmd=%lx pData=%p failed, rc=%d\n", proc_pid(pProcess), iCmd, (void *)pData, rc));
+        Log(("VBoxDrvDarwinIOCtlSlow: pid=%d iCmd=%lx pData=%p failed, rc=%d\n", proc_pid(pProcess), iCmd, (void *)pData, rc));
         rc = EINVAL;
     }
 
-    dprintf2(("VBoxDrvDarwinIOCtlSlow: returns %d\n", rc));
+    Log2(("VBoxDrvDarwinIOCtlSlow: returns %d\n", rc));
     return rc;
 }
 
@@ -777,7 +784,7 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
  */
 bool org_virtualbox_SupDrv::init(OSDictionary *pDictionary)
 {
-    dprintf(("org_virtualbox_SupDrv::init([%p], %p)\n", this, pDictionary));
+    LogFlow(("org_virtualbox_SupDrv::init([%p], %p)\n", this, pDictionary));
     if (IOService::init(pDictionary))
     {
         /* init members. */
@@ -792,7 +799,7 @@ bool org_virtualbox_SupDrv::init(OSDictionary *pDictionary)
  */
 void org_virtualbox_SupDrv::free(void)
 {
-    dprintf(("IOService::free([%p])\n", this));
+    LogFlow(("IOService::free([%p])\n", this));
     IOService::free();
 }
 
@@ -803,7 +810,7 @@ void org_virtualbox_SupDrv::free(void)
  */
 IOService *org_virtualbox_SupDrv::probe(IOService *pProvider, SInt32 *pi32Score)
 {
-    dprintf(("org_virtualbox_SupDrv::probe([%p])\n", this));
+    LogFlow(("org_virtualbox_SupDrv::probe([%p])\n", this));
     return IOService::probe(pProvider, pi32Score);
 }
 
@@ -813,7 +820,7 @@ IOService *org_virtualbox_SupDrv::probe(IOService *pProvider, SInt32 *pi32Score)
  */
 bool org_virtualbox_SupDrv::start(IOService *pProvider)
 {
-    dprintf(("org_virtualbox_SupDrv::start([%p])\n", this));
+    LogFlow(("org_virtualbox_SupDrv::start([%p])\n", this));
 
     if (IOService::start(pProvider))
     {
@@ -830,7 +837,7 @@ bool org_virtualbox_SupDrv::start(IOService *pProvider)
  */
 void org_virtualbox_SupDrv::stop(IOService *pProvider)
 {
-    dprintf(("org_virtualbox_SupDrv::stop([%p], %p)\n", this, pProvider));
+    LogFlow(("org_virtualbox_SupDrv::stop([%p], %p)\n", this, pProvider));
     IOService::stop(pProvider);
 }
 
@@ -844,14 +851,14 @@ void org_virtualbox_SupDrv::stop(IOService *pProvider)
 bool org_virtualbox_SupDrv::terminate(IOOptionBits fOptions)
 {
     bool fRc;
-    dprintf(("org_virtualbox_SupDrv::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
+    LogFlow(("org_virtualbox_SupDrv::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
              KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions));
     if (    KMOD_INFO_NAME.reference_count != 0
         ||  ASMAtomicUoReadS32(&g_cSessions))
         fRc = false;
     else
         fRc = IOService::terminate(fOptions);
-    dprintf(("org_virtualbox_SupDrv::terminate: returns %d\n", fRc));
+    LogFlow(("org_virtualbox_SupDrv::terminate: returns %d\n", fRc));
     return fRc;
 }
 
@@ -868,7 +875,7 @@ bool org_virtualbox_SupDrv::terminate(IOOptionBits fOptions)
  */
 bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecurityId, UInt32 u32Type)
 {
-    dprintf(("org_virtualbox_SupDrvClient::initWithTask([%p], %#x, %p, %#x)\n", this, OwningTask, pvSecurityId, u32Type));
+    LogFlow(("org_virtualbox_SupDrvClient::initWithTask([%p], %#x, %p, %#x)\n", this, OwningTask, pvSecurityId, u32Type));
 
     if (!OwningTask)
         return false;
@@ -888,7 +895,7 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
  */
 bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
 {
-    dprintf(("org_virtualbox_SupDrvClient::start([%p], %p)\n", this, pProvider));
+    LogFlow(("org_virtualbox_SupDrvClient::start([%p], %p)\n", this, pProvider));
     if (IOUserClient::start(pProvider))
     {
         m_pProvider = OSDynamicCast(org_virtualbox_SupDrv, pProvider);
@@ -897,7 +904,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
             /* this is where we could create the section. */
             return true;
         }
-        dprintf(("org_virtualbox_SupDrvClient::start: %p isn't org_virtualbox_SupDrv\n", pProvider));
+        LogFlow(("org_virtualbox_SupDrvClient::start: %p isn't org_virtualbox_SupDrv\n", pProvider));
     }
     return false;
 }
@@ -908,7 +915,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
  */
 IOReturn org_virtualbox_SupDrvClient::clientClose(void)
 {
-    dprintf(("org_virtualbox_SupDrvClient::clientClose([%p])\n", this));
+    LogFlow(("org_virtualbox_SupDrvClient::clientClose([%p])\n", this));
 
     m_pProvider = NULL;
     terminate();
@@ -922,7 +929,7 @@ IOReturn org_virtualbox_SupDrvClient::clientClose(void)
  */
 IOReturn org_virtualbox_SupDrvClient::clientDied(void)
 {
-    dprintf(("org_virtualbox_SupDrvClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n",
+    LogFlow(("org_virtualbox_SupDrvClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n",
              this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
 
     /*
@@ -936,7 +943,7 @@ IOReturn org_virtualbox_SupDrvClient::clientDied(void)
     {
         for (PSUPDRVSESSION pSession = g_apSessionHashTab[i]; pSession; pSession = pSession->pNextHash)
         {
-            dprintf2(("pSession=%p R0Process=%p (=? %p)\n", pSession, pSession->R0Process, R0Process));
+            Log2(("pSession=%p R0Process=%p (=? %p)\n", pSession, pSession->R0Process, R0Process));
             if (pSession->R0Process == R0Process)
             {
                 /*
@@ -962,7 +969,7 @@ IOReturn org_virtualbox_SupDrvClient::clientDied(void)
  */
 bool org_virtualbox_SupDrvClient::terminate(IOOptionBits fOptions)
 {
-    dprintf(("org_virtualbox_SupDrvClient::terminate([%p], %#x)\n", this, fOptions));
+    LogFlow(("org_virtualbox_SupDrvClient::terminate([%p], %#x)\n", this, fOptions));
     return IOUserClient::terminate(fOptions);
 }
 
@@ -972,7 +979,7 @@ bool org_virtualbox_SupDrvClient::terminate(IOOptionBits fOptions)
  */
 bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
 {
-    dprintf(("org_virtualbox_SupDrvClient::finalize([%p], %#x)\n", this, fOptions));
+    LogFlow(("org_virtualbox_SupDrvClient::finalize([%p], %#x)\n", this, fOptions));
     return IOUserClient::finalize(fOptions);
 }
 
@@ -982,7 +989,7 @@ bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
  */
 void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
 {
-    dprintf(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
+    LogFlow(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
     IOUserClient::stop(pProvider);
 }
 

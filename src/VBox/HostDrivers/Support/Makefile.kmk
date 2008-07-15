@@ -149,7 +149,7 @@ VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
  VBoxDrv_NOINST       = true
 endif
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITH_IDT_PATCHING
 VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -228,7 +228,7 @@ endif # real linux
 #
 ifeq ($(KBUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_IDT_PATCHING
 VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
@@ -303,7 +303,7 @@ endif
 #
 ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0
+vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
