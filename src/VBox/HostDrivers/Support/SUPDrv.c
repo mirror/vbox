@@ -1,6 +1,6 @@
 /* $Revision$ */
 /** @file
- * VirtualBox Support Driver - Shared code.
+ * VBoxDrv - The VirtualBox Support Driver - Common code.
  */
 
 /*
@@ -28,10 +28,10 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "SUPDrvInternal.h"
 #ifndef PAGE_SHIFT
 # include <iprt/param.h>
@@ -43,8 +43,8 @@
 #include <iprt/process.h>
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
-#include <iprt/log.h>
 #include <iprt/uuid.h>
+#include <VBox/log.h>
 #include <VBox/err.h>
 /* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
@@ -124,6 +124,9 @@
 static SUPFUNC g_aFunctions[] =
 {
     /* name                                     function */
+    { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
+    { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
+    { "SUPR0ComponentQueryFactory",             (void *)SUPR0ComponentQueryFactory },
     { "SUPR0ObjRegister",                       (void *)SUPR0ObjRegister },
     { "SUPR0ObjAddRef",                         (void *)SUPR0ObjAddRef },
     { "SUPR0ObjRelease",                        (void *)SUPR0ObjRelease },
@@ -273,10 +276,24 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
  */
 int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
 {
+    int rc;
+
+#ifdef SUPDRV_WITH_RELEASE_LOGGER
+    /*
+     * Create the release log.
+     */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    PRTLOGGER pRelLogger;
+    rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
+                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+    if (RT_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(pRelLogger);
+#endif
+
     /*
      * Initialize it.
      */
-    int rc;
     memset(pDevExt, 0, sizeof(*pDevExt));
     rc = RTSpinlockCreate(&pDevExt->Spinlock);
     if (!rc)
@@ -309,6 +326,11 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
         RTSpinlockDestroy(pDevExt->Spinlock);
         pDevExt->Spinlock = NIL_RTSPINLOCK;
     }
+#ifdef SUPDRV_WITH_RELEASE_LOGGER
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
+#endif
+
     return rc;
 }
 
@@ -375,8 +397,14 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
         RTMemFree(pvFree);
     }
 
-    /* kill the GIP */
+    /* kill the GIP. */
     supdrvGipDestroy(pDevExt);
+
+#ifdef SUPDRV_WITH_RELEASE_LOGGER
+    /* destroy the loggers. */
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
+#endif
 }
 
 
@@ -4880,7 +4908,8 @@ void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS,
 }
 
 
-#ifndef DEBUG /** @todo change #ifndef DEBUG -> #ifdef LOG_ENABLED */
+#ifndef SUPDRV_WITH_RELEASE_LOGGER
+# ifndef DEBUG /** @todo change #ifndef DEBUG -> #ifdef LOG_ENABLED */
 /**
  * Stub function for non-debug builds.
  */
@@ -4936,5 +4965,5 @@ RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
 RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 {
 }
-#endif /* !DEBUG */
-
+# endif /* !DEBUG */
+#endif /* !SUPDRV_WITH_RELEASE_LOGGER */

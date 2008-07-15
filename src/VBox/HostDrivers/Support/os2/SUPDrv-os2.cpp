@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDrv - OS/2 specifics.
+ * VBoxDrv - The VirtualBox Support Driver - OS/2 specifics.
  */
 
 /*
@@ -28,10 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
 
@@ -45,7 +45,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/process.h>
 #include <iprt/assert.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/param.h>
 
 

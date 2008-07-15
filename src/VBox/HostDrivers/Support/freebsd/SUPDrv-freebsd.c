@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDrv - FreeBSD specifics.
+ * VBoxDrv - The VirtualBox Support Driver - FreeBSD specifics.
  */
 
 /*
@@ -28,10 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 /* Deal with conflicts first. */
 #include <sys/param.h>
 #undef PVM
@@ -51,7 +51,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/process.h>
 #include <iprt/assert.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/err.h>
 

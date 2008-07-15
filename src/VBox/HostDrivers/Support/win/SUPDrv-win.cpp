@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Support Driver - Windows NT specific parts.
+ * VBoxDrv - The VirtualBox Support Driver - Windows NT specifics.
  */
 
 /*
@@ -28,16 +28,16 @@
  * additional information or have any questions.
  */
 
-
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "../SUPDrvInternal.h"
 #include <excpt.h>
 #include <iprt/assert.h>
 #include <iprt/process.h>
 #include <iprt/initterm.h>
+#include <VBox/log.h>
 
 
 /*******************************************************************************
