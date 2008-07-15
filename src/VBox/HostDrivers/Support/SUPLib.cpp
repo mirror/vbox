@@ -210,16 +210,16 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
         CookieReq.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
-        CookieReq.u.In.u32ReqVersion = SUPDRVIOC_VERSION;
-        const uint32_t MinVersion = (SUPDRVIOC_VERSION & 0xffff0000) == 0x00070000
-                                  ? 0x00070004 /* need new exports */
-                                  : SUPDRVIOC_VERSION & 0xffff0000;
+        CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
+        const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00070000
+                                  ? 0x00070005 /* need new exports */
+                                  : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
             &&  RT_SUCCESS(CookieReq.Hdr.rc))
         {
-            if (    (CookieReq.u.Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000)
+            if (    (CookieReq.u.Out.u32SessionVersion & 0xffff0000) == (SUPDRV_IOC_VERSION & 0xffff0000)
                 &&  CookieReq.u.Out.u32SessionVersion >= MinVersion)
             {
                 /*
@@ -286,7 +286,7 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
             else
             {
                 LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x MinVersion=%#x\n",
-                        CookieReq.u.Out.u32SessionVersion, CookieReq.u.Out.u32DriverVersion, SUPDRVIOC_VERSION, MinVersion));
+                        CookieReq.u.Out.u32SessionVersion, CookieReq.u.Out.u32DriverVersion, SUPDRV_IOC_VERSION, MinVersion));
                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
             }
         }
@@ -296,14 +296,14 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
             {
                 rc = CookieReq.Hdr.rc;
                 LogRel(("Support driver version mismatch: DriverVersion=%#x ClientVersion=%#x rc=%Rrc\n",
-                        CookieReq.u.Out.u32DriverVersion, SUPDRVIOC_VERSION, rc));
+                        CookieReq.u.Out.u32DriverVersion, SUPDRV_IOC_VERSION, rc));
                 if (rc != VERR_VM_DRIVER_VERSION_MISMATCH)
                     rc = VERR_VM_DRIVER_VERSION_MISMATCH;
             }
             else
             {
                 /* for pre 0x00060000 drivers */
-                LogRel(("Support driver version mismatch: DriverVersion=too-old ClientVersion=%#x\n", SUPDRVIOC_VERSION));
+                LogRel(("Support driver version mismatch: DriverVersion=too-old ClientVersion=%#x\n", SUPDRV_IOC_VERSION));
                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
             }
         }
@@ -375,17 +375,21 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTSpinlockRelease",                      0xefef002a },
         { "RTSpinlockAcquireNoInts",                0xefef002b },
         { "RTSpinlockReleaseNoInts",                0xefef002c },
-        { "RTThreadNativeSelf",                     0xefef002d },
-        { "RTThreadSleep",                          0xefef002e },
-        { "RTThreadYield",                          0xefef002f },
-        { "RTLogDefaultInstance",                   0xefef0030 },
-        { "RTLogRelDefaultInstance",                0xefef0031 },
-        { "RTLogSetDefaultInstanceThread",          0xefef0032 },
-        { "RTLogLogger",                            0xefef0033 },
-        { "RTLogLoggerEx",                          0xefef0034 },
-        { "RTLogLoggerExV",                         0xefef0035 },
-        { "AssertMsg1",                             0xefef0036 },
-        { "AssertMsg2",                             0xefef0037 },
+        { "RTTimeNanoTS",                           0xefef002d },
+        { "RTTimeMillieTS",                         0xefef002e },
+        { "RTTimeSystemNanoTS",                     0xefef002f },
+        { "RTTimeSystemMillieTS",                   0xefef0030 },
+        { "RTThreadNativeSelf",                     0xefef0031 },
+        { "RTThreadSleep",                          0xefef0032 },
+        { "RTThreadYield",                          0xefef0033 },
+        { "RTLogDefaultInstance",                   0xefef0034 },
+        { "RTLogRelDefaultInstance",                0xefef0035 },
+        { "RTLogSetDefaultInstanceThread",          0xefef0036 },
+        { "RTLogLogger",                            0xefef0037 },
+        { "RTLogLoggerEx",                          0xefef0038 },
+        { "RTLogLoggerExV",                         0xefef0039 },
+        { "AssertMsg1",                             0xefef003a },
+        { "AssertMsg2",                             0xefef003b },
     };
 
     /* fake r0 functions. */

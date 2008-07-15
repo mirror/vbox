@@ -191,6 +191,10 @@ static SUPFUNC g_aFunctions[] =
     { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
     { "RTSpinlockAcquireNoInts",                (void *)RTSpinlockAcquireNoInts },
     { "RTSpinlockReleaseNoInts",                (void *)RTSpinlockReleaseNoInts },
+    { "RTTimeNanoTS",                           (void *)RTTimeNanoTS },
+    { "RTTimeMillieTS",                         (void *)RTTimeMilliTS },
+    { "RTTimeSystemNanoTS",                     (void *)RTTimeSystemNanoTS },
+    { "RTTimeSystemMillieTS",                   (void *)RTTimeSystemMilliTS },
     { "RTThreadNativeSelf",                     (void *)RTThreadNativeSelf },
     { "RTThreadSleep",                          (void *)RTThreadSleep },
     { "RTThreadYield",                          (void *)RTThreadYield },
@@ -887,7 +891,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 pReq->u.Out.u32Cookie         = 0xffffffff;
                 pReq->u.Out.u32SessionCookie  = 0xffffffff;
                 pReq->u.Out.u32SessionVersion = 0xffffffff;
-                pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.u32DriverVersion  = SUPDRV_IOC_VERSION;
                 pReq->u.Out.pSession          = NULL;
                 pReq->u.Out.cFunctions        = 0;
                 pReq->Hdr.rc = VERR_PERMISSION_DENIED;
@@ -899,15 +903,15 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
              * Match the version.
              * The current logic is very simple, match the major interface version.
              */
-            if (    pReq->u.In.u32MinVersion > SUPDRVIOC_VERSION
-                ||  (pReq->u.In.u32MinVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
+            if (    pReq->u.In.u32MinVersion > SUPDRV_IOC_VERSION
+                ||  (pReq->u.In.u32MinVersion & 0xffff0000) != (SUPDRV_IOC_VERSION & 0xffff0000))
             {
                 OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
-                            pReq->u.In.u32ReqVersion, pReq->u.In.u32MinVersion, SUPDRVIOC_VERSION));
+                            pReq->u.In.u32ReqVersion, pReq->u.In.u32MinVersion, SUPDRV_IOC_VERSION));
                 pReq->u.Out.u32Cookie         = 0xffffffff;
                 pReq->u.Out.u32SessionCookie  = 0xffffffff;
                 pReq->u.Out.u32SessionVersion = 0xffffffff;
-                pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.u32DriverVersion  = SUPDRV_IOC_VERSION;
                 pReq->u.Out.pSession          = NULL;
                 pReq->u.Out.cFunctions        = 0;
                 pReq->Hdr.rc = VERR_VERSION_MISMATCH;
@@ -916,14 +920,14 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /*
              * Fill in return data and be gone.
-             * N.B. The first one to change SUPDRVIOC_VERSION shall makes sure that
+             * N.B. The first one to change SUPDRV_IOC_VERSION shall makes sure that
              *      u32SessionVersion <= u32ReqVersion!
              */
             /** @todo Somehow validate the client and negotiate a secure cookie... */
             pReq->u.Out.u32Cookie         = pDevExt->u32Cookie;
             pReq->u.Out.u32SessionCookie  = pSession->u32Cookie;
-            pReq->u.Out.u32SessionVersion = SUPDRVIOC_VERSION;
-            pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+            pReq->u.Out.u32SessionVersion = SUPDRV_IOC_VERSION;
+            pReq->u.Out.u32DriverVersion  = SUPDRV_IOC_VERSION;
             pReq->u.Out.pSession          = pSession;
             pReq->u.Out.cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
             pReq->Hdr.rc = VINF_SUCCESS;

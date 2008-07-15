@@ -599,7 +599,7 @@ nmi_activated:
                        g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
                 LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
                 printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                       VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
+                       VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
                 return rc;
             }
 
@@ -1008,7 +1008,7 @@ MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRV_IOC_VERSION) ")");
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)

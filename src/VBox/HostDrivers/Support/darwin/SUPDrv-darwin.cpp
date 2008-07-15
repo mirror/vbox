@@ -256,7 +256,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                     if (g_hDevFsDevice)
                     {
                         LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
-                                VBOX_SVN_REV, SUPDRVIOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
+                                VBOX_SVN_REV, SUPDRV_IOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
                         return KMOD_RETURN_SUCCESS;
                     }
 
