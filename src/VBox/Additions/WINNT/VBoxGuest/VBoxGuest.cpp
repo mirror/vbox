@@ -32,6 +32,7 @@
 #include "Helper.h"
 #include <excpt.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <stdio.h>
@@ -1058,12 +1059,13 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         case VBOXGUEST_IOCTL_LOG(0):    /* The size isn't relevant on NT. */
         {
-            /* Enable this only for debugging: 
-            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_LOG\n"));
+            /* Enable this only for debugging:
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_LOG %.*s\n", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
              */
-            LogRel(("%.*s\n", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
+            LogRel(("%.*s", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
             cbOut = 0;
-        } break;
+            break;
+        }
 
         default:
              Status = STATUS_INVALID_PARAMETER;
