@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: VBoxPathSelector class declaration
+ * VirtualBox Qt extensions: VBoxFilePathSelectorWidget class declaration
  */
 
 /*
@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxPathSelector_h__
-#define __VBoxPathSelector_h__
+#ifndef __VBoxFilePathSelectorWidget_h__
+#define __VBoxFilePathSelectorWidget_h__
 
 #include "QIWithRetranslateUI.h"
 
@@ -38,14 +38,23 @@ class QToolButton;
 class QFileIconProvider;
 class QComboBox;
 
-class VBoxPathSelector: public QIWithRetranslateUI<QWidget>
+class VBoxFilePathSelectorWidget: public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxPathSelector (QWidget *aParent = NULL);
-    ~VBoxPathSelector();
+    enum SelectorMode 
+    { 
+        PathMode = 0,
+        FileMode
+    };
+
+    VBoxFilePathSelectorWidget (QWidget *aParent = NULL);
+    ~VBoxFilePathSelectorWidget();
+
+    void setMode (SelectorMode aMode);
+    SelectorMode mode() const;
 
     void setLineEditWhatsThis (const QString &aText);
     void setSelectorWhatsThis (const QString &aText);
@@ -74,10 +83,14 @@ private slots:
 private:
 
     void init();
+    QIcon defaultIcon() const;
+    QString filePath (const QString &aName, bool bLast) const;
 
     /* Private member vars */
-    QString mPath;
-    QString mNoneStr;
+    SelectorMode mMode;
+    QString      mPath;
+    QString      mNoneStr;
+
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     QComboBox   *mCbPath;
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
@@ -90,5 +103,5 @@ private:
     QFileIconProvider *mIconProvider;
 };
 
-#endif /* __VBoxPathSelector_h__ */
+#endif /* __VBoxFilePathSelectorWidget_h__ */
 

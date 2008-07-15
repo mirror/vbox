@@ -851,7 +851,7 @@
         </widget>
        </item>
        <item row="4" column="1" >
-        <widget class="VBoxPathSelector" native="1" name="mPsSnapshot" />
+        <widget class="VBoxFilePathSelectorWidget" native="1" name="mPsSnapshot" />
        </item>
        <item row="5" column="1" >
         <spacer>
@@ -976,9 +976,9 @@
    <header>QILabelSeparator.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxPathSelector</class>
+   <class>VBoxFilePathSelectorWidget</class>
    <extends>QWidget</extends>
-   <header>VBoxPathSelector.h</header>
+   <header>VBoxFilePathSelectorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

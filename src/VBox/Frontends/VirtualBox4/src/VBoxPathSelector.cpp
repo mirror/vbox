@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: VBoxPathSelector class implementation
+ * VirtualBox Qt extensions: VBoxFilePathSelectorWidget class implementation
  */
 
 /*
@@ -42,18 +42,29 @@ enum
     ResetId
 };
 
-VBoxPathSelector::VBoxPathSelector (QWidget *aParent /* = NULL */)
+VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QWidget> (aParent)
+    , mMode (PathMode)
 {
     init();
 }
 
-VBoxPathSelector::~VBoxPathSelector()
+VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
 {
     delete mIconProvider;
 }
 
-void VBoxPathSelector::setLineEditWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setMode (SelectorMode aMode)
+{
+    mMode = aMode;
+}
+
+VBoxFilePathSelectorWidget::SelectorMode VBoxFilePathSelectorWidget::mode() const
+{
+    return mMode;
+}
+
+void VBoxFilePathSelectorWidget::setLineEditWhatsThis (const QString &aText)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     NOREF (aText);
@@ -62,7 +73,7 @@ void VBoxPathSelector::setLineEditWhatsThis (const QString &aText)
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxPathSelector::setSelectorWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setSelectorWhatsThis (const QString &aText)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     mCbPath->setItemData (SelectId, aText, Qt::WhatsThisRole);
@@ -71,7 +82,7 @@ void VBoxPathSelector::setSelectorWhatsThis (const QString &aText)
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxPathSelector::setResetWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setResetWhatsThis (const QString &aText)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     mCbPath->setItemData (ResetId, aText, Qt::WhatsThisRole);
@@ -80,7 +91,7 @@ void VBoxPathSelector::setResetWhatsThis (const QString &aText)
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-bool VBoxPathSelector::isModified() const
+bool VBoxFilePathSelectorWidget::isModified() const
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     return true;
@@ -89,7 +100,7 @@ bool VBoxPathSelector::isModified() const
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxPathSelector::setPath (const QString &aPath)
+void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
 {
     mPath = aPath;
     QString tmpPath (aPath);
@@ -98,28 +109,27 @@ void VBoxPathSelector::setPath (const QString &aPath)
     if (fi.exists())
         icon = mIconProvider->icon (fi);
     else
-        icon = mIconProvider->icon (QFileIconProvider::Folder);
+        icon = defaultIcon();
     if (tmpPath.isEmpty())
         tmpPath = mNoneStr;
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    QDir dir (tmpPath);
-    mCbPath->setItemText (PathId, dir.dirName());
+    mCbPath->setItemText (PathId, filePath (tmpPath, true));
     mCbPath->setItemIcon (PathId, icon);
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
     /* Do this instead of le->setText (folder) to cause
      * isModified() return true */
     mLePath->selectAll();
-    mLePath->insert (tmpPath);
+    mLePath->insert (filePath (tmpPath, false));
     mLbIcon->setPixmap (icon.pixmap (16, 16));
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-QString VBoxPathSelector::path() const
+QString VBoxFilePathSelectorWidget::path() const
 {
     return mPath;
 }
 
-void VBoxPathSelector::retranslateUi()
+void VBoxFilePathSelectorWidget::retranslateUi()
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     mNoneStr = tr ("None");
@@ -128,7 +138,7 @@ void VBoxPathSelector::retranslateUi()
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxPathSelector::cbActivated (int aIndex)
+void VBoxFilePathSelectorWidget::cbActivated (int aIndex)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
    switch (aIndex)
@@ -150,13 +160,14 @@ void VBoxPathSelector::cbActivated (int aIndex)
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxPathSelector::init()
+void VBoxFilePathSelectorWidget::init()
 {
     mIconProvider = new QFileIconProvider();
     QHBoxLayout *layout = new QHBoxLayout (this);
     VBoxGlobal::setLayoutMargin (layout, 0);
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     mCbPath = new QComboBox();
+    mCbPath->setMinimumWidth (200);
     mCbPath->insertItem (PathId, "");
     mCbPath->insertItem (SelectId, "");
     mCbPath->insertItem (ResetId, "");
@@ -166,6 +177,7 @@ void VBoxPathSelector::init()
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
     mLbIcon = new QLabel();
     mLePath = new QLineEdit();
+    mLePath->setMinimumWidth (180);
     mLePath->setReadOnly (true);
     mTbSelect = new QToolButton();
     mTbSelect->setIcon (QIcon (":/select_file_16px.png"));
@@ -186,4 +198,32 @@ void VBoxPathSelector::init()
 
     retranslateUi();
 }
+
+QIcon VBoxFilePathSelectorWidget::defaultIcon() const
+{
+    if (mMode == PathMode)
+        return mIconProvider->icon (QFileIconProvider::Folder);
+    else
+        return mIconProvider->icon (QFileIconProvider::File);
+}  
+
+QString VBoxFilePathSelectorWidget::filePath (const QString &aName, bool bLast) const
+{
+    if (mMode == PathMode)
+    {
+        QDir dir (aName);
+        if (bLast)
+            return dir.dirName();
+        else
+            return dir.path();
+    }
+    else
+    {
+        QFileInfo fi (aName);
+        if (bLast)
+            return fi.fileName();
+        else
+            return fi.filePath();
+    }
+}  
 
