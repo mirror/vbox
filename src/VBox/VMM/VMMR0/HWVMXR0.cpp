@@ -1181,13 +1181,20 @@ ResumeExecution:
     {
         /* TPR caching in CR8 */
         uint8_t u8TPR;
-        int rc = PDMApicGetTPR(pVM, &u8TPR);
+        bool    fPending;
+
+        int rc = PDMApicGetTPR(pVM, &u8TPR, &fPending);
         AssertRC(rc);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
         pVM->hwaccm.s.vmx.pAPIC[0x80] = u8TPR << 4; /* bits 7-4 contain the task priority */
 
-        /* CR8 updates that lower the TPR value to below the current value should cause an exit. */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, u8TPR);
+        /* Two options here:
+         * - external interrupt pending, but masked by the TPR value.
+         *   -> CR8 updates that lower the TPR value to below the current value should cause an exit
+         * - no pending interrupts
+         *   -> We don't need to be explicitely notified. There are enough world switches for detecting pending interrupts.
+         */
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
         AssertRC(rc);
     }
 
