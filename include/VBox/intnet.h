@@ -553,6 +553,17 @@ typedef struct INTNETTRUNKIFPORT
 typedef struct INTNETTRUNKFACTORY
 {
     /**
+     * Release this factory.
+     *
+     * SUPR0ComponentQueryFactory (SUPDRVFACTORY::pfnQueryFactoryInterface to be precise)
+     * will retain a reference to the factory and the caller has to call this method to
+     * release it once the pfnCreateAndConnect call(s) has been done.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRelease,(struct INTNETTRUNKFACTORY *pIfFactory));
+
+    /**
      * Create an instance for the specfied host interface and connects it
      * to the internal network trunk port.
      *
@@ -581,7 +592,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory */
-#define INTNETTRUNKFACTORY_UUID_STR     "0e32db7d-165d-4fc9-9bce-acb2798ce7fb"
+#define INTNETTRUNKFACTORY_UUID_STR     "c913a8e4-8593-41cd-ae73-f8d7701b08fb"
 
 
 /**

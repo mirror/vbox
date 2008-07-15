@@ -1345,7 +1345,7 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
         if (RT_SUCCESS(rc))
         {
             rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort, &pTrunkIF->pIfPort);
-            /** @todo pTrunkFactory->pfnRelease(pTrunkFactory); */
+            pTrunkFactory->pfnRelease(pTrunkFactory);
             if (RT_SUCCESS(rc))
             {
                 Assert(pTrunkIF->pIfPort);
