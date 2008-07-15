@@ -44,8 +44,25 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
     /* Setup the elide mode */
     view()->setTextElideMode (Qt::ElideRight);
     /* Setup default size policy */
+#ifdef Q_WS_MAC
+    QSizePolicy sp (QSizePolicy::Expanding, QSizePolicy::Fixed, QSizePolicy::ComboBox);
+#else
     QSizePolicy sp (QSizePolicy::Ignored, QSizePolicy::Fixed, QSizePolicy::ComboBox);
+#endif
     setSizePolicy (sp);
+
+#if 0
+//#ifdef Q_WS_MAC
+    /* Fix the background color of the QComboBox */
+    QBrush brush (Qt::white);
+//    if (aParent)
+//        brush = aParent->palette().brush (QPalette::Background);
+    QPalette pal = view()->palette();
+    pal.setBrush (QPalette::Window, brush);
+    pal.setBrush (QPalette::AlternateBase, brush);
+    view()->setPalette (pal);
+    view()->setAutoFillBackground (false);
+#endif /* Q_WS_MAC */
 
     /* Setup enumeration handlers */
     connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),

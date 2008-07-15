@@ -217,6 +217,8 @@ void VBoxVMSettingsCD::onGbChange (bool aSwitchedOn)
         mLastSelected->blockSignals (false);
     }
 
+    mMountCDChild->setEnabled (aSwitchedOn);
+
     onCbChange();
 }
 
