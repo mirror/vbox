@@ -54,19 +54,31 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
  */
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
-#if defined(RT_OS_WINDOWS) /** @todo more OSes could take this route (solaris and freebsd for instance). */
     /*
-     * Handle the entire request in one go.
+     * Quietly skip NULL strings.
+     * (Happens in the RTLogBackdoorPrintf case.)
      */
-    if (!pch || !cb)
+    if (!cb)
         return VINF_SUCCESS;
+    if (!VALID_PTR(pch))
+        return VERR_INVALID_POINTER;
 
+#ifdef RT_OS_WINDOWS
+    /*
+     * Duplicate the string as it may be read only (a C string).
+     */
     void *pvTmp = RTMemDup(pch, cb);
     if (!pvTmp)
         return VERR_NO_MEMORY;
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), pvTmp, cb);
     RTMemFree(pvTmp);
     return rc;
+
+#elif 0 /** @todo Several OSes could take this route (solaris and freebsd for instance). */
+    /*
+     * Handle the entire request in one go.
+     */
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), pvTmp, cb);
 
 #else
     /*
