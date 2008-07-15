@@ -497,6 +497,7 @@ try_again:
                 rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.pHCShwAmd64CR3);
                 if (rc == VERR_PGM_POOL_FLUSHED)
                 {
+                    Log(("MapCR3: Flush pool and try again\n"));
                     Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
                     rc = pgmPoolSyncCR3(pVM);
                     AssertRC(rc);
