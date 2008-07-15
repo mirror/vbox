@@ -45,6 +45,7 @@
 #include <QToolButton>
 #include <QProcess>
 #include <QThread>
+#include <QPainter>
 
 #ifdef Q_WS_X11
 #ifndef VBOX_OSE
@@ -856,6 +857,24 @@ QStringList VBoxGlobal::vmGuestOSTypeDescriptions() const
     if (list.empty()) {
         for (int i = 0; i < vm_os_types.count(); i++) {
             list += vm_os_types [i].GetDescription();
+        }
+    }
+    return list;
+}
+
+QList<QPixmap> VBoxGlobal::vmGuestOSTypeIcons (int aHorizonalMargin, int aVerticalMargin) const
+{
+    static QList<QPixmap> list;
+    if (list.empty()) 
+    {
+        for (int i = 0; i < vm_os_types.count(); i++) 
+        {
+            QPixmap image(32 + 2*aHorizonalMargin, 32 + 2*aVerticalMargin);
+            image.fill (Qt::transparent);
+            QPainter p(&image);
+            p.drawPixmap (aHorizonalMargin, aVerticalMargin, *vm_os_type_icons.value (vm_os_types [i].GetId()));
+            p.end();
+            list << image;
         }
     }
     return list;

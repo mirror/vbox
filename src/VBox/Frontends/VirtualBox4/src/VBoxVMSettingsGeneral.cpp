@@ -100,8 +100,10 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
                                                    ":/list_movedown_disabled_16px.png"));
 
     /* Setup initial values */
-
     mCbOsType->insertItems (0, vboxGlobal().vmGuestOSTypeDescriptions());
+    QList<QPixmap> list = vboxGlobal().vmGuestOSTypeIcons (0, 2);
+    for (int i=0; i < list.count(); ++i)
+        mCbOsType->setItemIcon (i, list.at (i));
 
     mSlRam->setPageStep (calcPageStep (MaxRAM));
     mSlRam->setSingleStep (mSlRam->pageStep() / 4);

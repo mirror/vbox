@@ -208,6 +208,7 @@ public:
     /* VBox enum to/from string/icon/color convertors */
 
     QStringList vmGuestOSTypeDescriptions() const;
+    QList<QPixmap> vmGuestOSTypeIcons (int aHorizonalMargin, int aVerticalMargin) const;
     CGuestOSType vmGuestOSType (int aIndex) const;
     int vmGuestOSTypeIndex (const QString &aId) const;
     QPixmap vmGuestOSTypeIcon (const QString &aId) const;
