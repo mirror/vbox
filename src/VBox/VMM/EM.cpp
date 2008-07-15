@@ -1220,7 +1220,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 
     /* Try our own instruction emulator before falling back to the recompiler. */
     DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "GEN EMU");
+    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "GEN EMU");
     if (VBOX_SUCCESS(rc))
     {
         uint32_t size;
