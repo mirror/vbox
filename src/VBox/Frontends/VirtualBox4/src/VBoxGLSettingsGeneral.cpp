@@ -30,13 +30,15 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsGeneral::setupUi (this);
 
+    mPsVRDP->setMode (VBoxFilePathSelectorWidget::FileMode);
+
     /* Setup connections */
-    connect (mTbVdiSelect, SIGNAL (clicked()), this, SLOT (onSelectFolderClicked()));
-    connect (mTbMachSelect, SIGNAL (clicked()), this, SLOT (onSelectFolderClicked()));
-    connect (mTbVRDPSelect, SIGNAL (clicked()), this, SLOT (onSelectFolderClicked()));
-    connect (mTbVdiReset, SIGNAL (clicked()), this, SLOT (onResetFolderClicked()));
-    connect (mTbMachReset, SIGNAL (clicked()), this, SLOT (onResetFolderClicked()));
-    connect (mTbVRDPReset, SIGNAL (clicked()), this, SLOT (onResetFolderClicked()));
+    connect (mPsVdi,  SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
+    connect (mPsMach, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
+    connect (mPsVRDP, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
+    connect (mPsVdi,  SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
+    connect (mPsMach, SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
+    connect (mPsVRDP, SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
 
     /* Applying language settings */
     retranslateUi();
@@ -45,74 +47,65 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
                                          const VBoxGlobalSettings &)
 {
-    mLeVdi->setText (aProps.GetDefaultVDIFolder());
-    mLeMach->setText (aProps.GetDefaultMachineFolder());
-    mLeVRDP->setText (aProps.GetRemoteDisplayAuthLibrary());
+    mPsVdi->setPath (aProps.GetDefaultVDIFolder());
+    mPsMach->setPath (aProps.GetDefaultMachineFolder());
+    mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
 }
 
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
                                            VBoxGlobalSettings &)
 {
-    if (mLeVdi->isModified())
-        aProps.SetDefaultVDIFolder (mLeVdi->text());
-    if (aProps.isOk() && mLeMach->isModified())
-        aProps.SetDefaultMachineFolder (mLeMach->text());
-    if (mLeVRDP->isModified())
-        aProps.SetRemoteDisplayAuthLibrary (mLeVRDP->text());
+    if (mPsVdi->isModified())
+        aProps.SetDefaultVDIFolder (mPsVdi->path());
+    if (aProps.isOk() && mPsMach->isModified())
+        aProps.SetDefaultMachineFolder (mPsMach->path());
+    if (mPsVdi->isModified())
+        aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
 }
 
 void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
 {
-    setTabOrder (aWidget, mLeVdi);
-    setTabOrder (mLeVdi, mTbVdiSelect);
-    setTabOrder (mTbVdiSelect, mTbVdiReset);
-    setTabOrder (mTbVdiReset, mLeMach);
-    setTabOrder (mLeMach, mTbMachSelect);
-    setTabOrder (mTbMachSelect, mTbMachReset);
-    setTabOrder (mTbMachReset, mLeVRDP);
-    setTabOrder (mLeVRDP, mTbVRDPSelect);
-    setTabOrder (mTbVRDPSelect, mTbVRDPReset);
+    setTabOrder (aWidget, mPsVdi);
+    setTabOrder (mPsVdi, mPsMach);
+    setTabOrder (mPsMach, mPsVRDP);
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
+
+    mPsVdi->setLineEditWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
+    mPsVdi->setSelectorWhatsThis (tr ("Opens a dialog to select the default VDI folder."));
+    mPsVdi->setResetWhatsThis (tr ("Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
+
+    mPsMach->setLineEditWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
+    mPsMach->setSelectorWhatsThis (tr ("Opens a dialog to select the default virtual machine folder."));
+    mPsMach->setResetWhatsThis (tr ("Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
+
+    mPsVRDP->setLineEditWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
+    mPsVRDP->setSelectorWhatsThis (tr ("Opens a dialog to select the VRDP authentication library file."));
+    mPsVRDP->setResetWhatsThis (tr ("Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again."));
 }
 
 void VBoxGLSettingsGeneral::onResetFolderClicked()
 {
-    QToolButton *tb = qobject_cast<QToolButton*> (sender());
-    Assert (tb);
-
-    QLineEdit *le = 0;
-    if (tb == mTbVdiReset) le = mLeVdi;
-    else if (tb == mTbMachReset) le = mLeMach;
-    else if (tb == mTbVRDPReset) le = mLeVRDP;
-    Assert (le);
-
-    /* Do this instead of le->setText (QString::null) to cause
-     * isModified() return true */
-    le->selectAll();
-    le->del();
+    VBoxFilePathSelectorWidget *ps = qobject_cast<VBoxFilePathSelectorWidget*> (sender());
+    Assert (ps);
+    ps->setPath ("");
 }
 
 void VBoxGLSettingsGeneral::onSelectFolderClicked()
 {
-    QToolButton *tb = qobject_cast<QToolButton*> (sender());
-    Assert (tb);
+    VBoxFilePathSelectorWidget *ps = qobject_cast<VBoxFilePathSelectorWidget*> (sender());
+    Assert (ps);
 
-    QLineEdit *le = 0;
-    if (tb == mTbVdiSelect) le = mLeVdi;
-    else if (tb == mTbMachSelect) le = mLeMach;
-    else if (tb == mTbVRDPSelect) le = mLeVRDP;
-    Assert (le);
-
-    QString initDir = VBoxGlobal::getFirstExistingDir (le->text());
+    QString initDir = VBoxGlobal::getFirstExistingDir (ps->path());
     if (initDir.isNull())
         initDir = vboxGlobal().virtualBox().GetHomeFolder();
 
-    QString path = le == mLeVRDP ?
+
+    QString path = ps == mPsVRDP ?
         VBoxGlobal::getOpenFileName (initDir, QString::null, this, QString::null) :
         VBoxGlobal::getExistingDirectory (initDir, this);
     if (path.isNull())
@@ -122,9 +115,6 @@ void VBoxGLSettingsGeneral::onSelectFolderClicked()
     /* remove trailing slash if any */
     path.remove (QRegExp ("[\\\\/]$"));
 
-    /* Do this instead of le->setText (QString::null) to cause
-     * isModified() return true */
-    le->selectAll();
-    le->insert (path);
+    ps->setPath (path);
 }
 
