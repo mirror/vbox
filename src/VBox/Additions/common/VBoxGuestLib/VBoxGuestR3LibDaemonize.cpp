@@ -49,6 +49,7 @@
 #endif
 
 #include <iprt/string.h>
+#include <iprt/file.h>
 #include <VBox/VBoxGuest.h>
 
 
@@ -61,13 +62,19 @@
  *
  * @param   fNoChDir    Pass false to change working directory to root.
  * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
+ * @param   pszPidfile  Path to a file to write the pid of the daemon process
+ *                      to.  Daemonising will fail if this file already exists
+ *                      or cannot be written.  Optional.
  */
-VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
+VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
+                                char const *pszPidfile)
 {
 #if defined(RT_OS_DARWIN)
 # error "PORTME"
 
 #elif defined(RT_OS_OS2)
+    /** @todo create a pidfile if this is (/was :) ) usual on OS/2 */
+    noref(pszPidfile);
     PPIB pPib;
     PTIB pTib;
     DosGetInfoBlocks(&pTib, &pPib);
@@ -141,6 +148,21 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
      *   tty automagically when a session leader first opens a tty, we will
      *   fork() once more on Linux to get rid of the session leadership role.
      */
+
+    /* We start off by opening the pidfile, so that we can fail straight away
+     * if it already exists. */
+    RTFILE hPidfile = NULL;
+    if (pszPidfile != NULL)
+    {
+        /* @note the exclusive create is not guaranteed on all file
+         * systems (e.g. NFSv2) */
+        int rc = RTFileOpen(&hPidfile, pszPidfile,
+                              RTFILE_O_READWRITE | RTFILE_O_CREATE
+                            | (0644 << RTFILE_O_CREATE_MODE_SHIFT));
+        if (!RT_SUCCESS(rc))
+            return rc;
+    }
+
     struct sigaction OldSigAct;
     struct sigaction SigAct;
     memset(&SigAct, 0, sizeof(SigAct));
@@ -151,7 +173,18 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
     if (pid == -1)
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
+    {
+# ifndef RT_OS_LINUX /* On Linux we do another fork later */
+        if (hPidfile != NULL)
+        {
+            char szBuf[256];
+            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
+            RTFileWrite(hPidfile, szBuf, cbPid, NULL);
+            RTFileClose(hPidfile);
+        }
+# endif
         exit(0);
+    }
 
     /*
      * The orphaned child becomes is reparented to the init process.
@@ -203,7 +236,16 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
     if (pid == -1)
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
+    {
+        if (hPidfile != NULL)
+        {
+            char szBuf[256];
+            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
+            RTFileWrite(hPidfile, szBuf, cbPid, NULL);
+            RTFileClose(hPidfile);
+        }
         exit(0);
+    }
 # endif /* RT_OS_LINUX */
 
     return VINF_SUCCESS;

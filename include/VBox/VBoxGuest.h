@@ -1484,7 +1484,17 @@ VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
 VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
 VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot);
-VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose);
+VBGLR3DECL(int)     VbglR3Daemonize(
+#ifdef __cplusplus
+    bool fNoChDir,
+    bool fNoClose,
+    char const *pszPidfile = NULL
+#else
+    bool fNoChDir,
+    bool fNoClose,
+    char const *pszPidfile
+#endif
+    );
 VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
 
 /** @name Shared clipboard
