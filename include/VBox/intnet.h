@@ -336,12 +336,12 @@ typedef struct INTNETTRUNKSWPORT
      *
      * @returns The old setting.
      *
-     * @param   pIfPort     Pointer to this structure.
+     * @param   pSwitchPort Pointer to this structure.
      * @param   fEnable     Whether to enable or disable it.
      *
      * @remarks Will grab the network semaphore.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pIfPort, bool fEnable));
+    DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable));
 
     /**
      * Incoming frame.
@@ -349,7 +349,7 @@ typedef struct INTNETTRUNKSWPORT
      * @returns true if we've handled it and it should be dropped.
      *          false if it should hit the wire.
      *
-     * @param   pIfPort     Pointer to this structure.
+     * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         The (scatter /) gather structure for the frame.
      *                      This will only be use during the call, so a temporary one can
      *                      be used. The Phys member will not be used.
@@ -359,17 +359,17 @@ typedef struct INTNETTRUNKSWPORT
      *
      * @remark  NAT and TAP will use this interface.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG, uint32_t fSrc));
+    DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc));
 
     /**
      * Retain a SG.
      *
-     * @param   pIfPort     Pointer to this structure.
+     * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure.
      *
      * @remarks Will not grab any locks.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSGRetain,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(void, pfnSGRetain,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG));
 
     /**
      * Release a SG.
@@ -377,12 +377,12 @@ typedef struct INTNETTRUNKSWPORT
      * This is called by the pfnXmit code when done with a SG. This may safe
      * be done in an asynchronous manner.
      *
-     * @param   pIfPort     Pointer to this structure.
+     * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure.
      *
      * @remarks Will grab the network semaphore.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG));
+    DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG));
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;

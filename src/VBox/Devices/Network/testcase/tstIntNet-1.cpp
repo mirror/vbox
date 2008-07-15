@@ -122,6 +122,7 @@ int main(int argc, char **argv)
         g_cErrors++;
     }
 
+    RTThreadSleep(1000);
     SUPTerm(false /* not forced */);
 
     /*

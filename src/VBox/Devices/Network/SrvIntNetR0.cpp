@@ -35,6 +35,7 @@
 #include <iprt/thread.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
 
 
 /*******************************************************************************
@@ -96,14 +97,22 @@ typedef INTNETIF *PINTNETIF;
 typedef struct INTNETTRUNKIF
 {
     /** The port interface we present to the component. */
-    INTNETTRUNKSWPORT   SwitchPort;
+    INTNETTRUNKSWPORT       SwitchPort;
     /** The port interface we get from the component. */
-    PINTNETTRUNKIFPORT  pIfPort;
+    PINTNETTRUNKIFPORT      pIfPort;
     /** The trunk mutex that serializes all calls <b>to</b> the component. */
-    RTSEMFASTMUTEX      FastMutex;
+    RTSEMFASTMUTEX          FastMutex;
+    /** Pointer to the network we're connect to.
+     * This may be NULL if we're orphaned? */
+    struct INTNETNETWORK   *pNetwork;
+    /** Whether to supply physical addresses with the outbound SGs. */
+    bool volatile           fPhysSG;
 } INTNETTRUNKIF;
 /** Pointer to a trunk interface. */
 typedef INTNETTRUNKIF *PINTNETTRUNKIF;
+
+/** Converts a pointer to INTNETTRUNKIF::SwitchPort to a PINTNETTRUNKIF. */
+#define INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort) ((PINTNETTRUNKIF)(pSwitchPort))
 
 
 /**
@@ -117,6 +126,9 @@ typedef struct INTNETNETWORK
     /** List of interfaces connected to the network.
      * This is protected by the INTNET::FastMutex. */
     PINTNETIF               pIFs;
+    /** Pointer to the trunk interface.
+     * Can be NULL if there is no trunk connection. */
+    PINTNETTRUNKIF          pTrunkIF;
     /** The network mutex.
      * It protects everything dealing with this network. */
     RTSEMFASTMUTEX          FastMutex;
@@ -190,6 +202,15 @@ typedef struct INTNET
     /** Handle table for the interfaces. */
     INTNETHT                IfHandles;
 } INTNET;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static PINTNETTRUNKIF intnetTrunkIfRetain(PINTNETTRUNKIF pThis);
+static void intnetTrunkIfRelease(PINTNETTRUNKIF pThis);
+static bool intnetTrunkIfOutLock(PINTNETTRUNKIF pThis);
+static void intnetTrunkIfOutUnlock(PINTNETTRUNKIF pThis);
 
 
 
@@ -1252,34 +1273,236 @@ static int intnetNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
 }
 
 
-#ifdef IN_RING0
+
+
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSetSGPhys */
-static DECLCALLBACK(bool) intnetTrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pIfPort, bool fEnable)
+static DECLCALLBACK(bool) intnetTrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable)
 {
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
     AssertMsgFailed(("Not implemented because it wasn't required on Darwin\n"));
-    return false;
+    return ASMAtomicXchgBool(&pThis->fPhysSG, fEnable);
 }
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnRecv */
-static DECLCALLBACK(bool) intnetTrunkIfPortRecv(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG, uint32_t fSrc)
+static DECLCALLBACK(bool) intnetTrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
 {
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+
+    /* assert some sanity */
+    AssertPtrReturn(pNetwork, false);
+    AssertReturn(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX, false);
+    AssertPtr(pSG);
+    Assert(fSrc);
+
+    /*
+     *
+     */
+
+
     return false;
 }
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSGRetain */
-static DECLCALLBACK(void) intnetTrunkIfPortSGRetain(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG)
+static DECLCALLBACK(void) intnetTrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
 
+    /* assert some sanity */
+    AssertPtrReturnVoid(pNetwork);
+    AssertReturnVoid(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX);
+    AssertPtr(pSG);
+    Assert(pSG->cUsers > 0);
+
+    /* do it. */
+    ++pSG->cUsers;
 }
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSGRelease */
-static DECLCALLBACK(void) intnetTrunkIfPortSGRelease(PINTNETTRUNKSWPORT pIfPort, PINTNETSG pSG)
+static DECLCALLBACK(void) intnetTrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
 
+    /* assert some sanity */
+    AssertPtrReturnVoid(pNetwork);
+    AssertReturnVoid(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX);
+    AssertPtr(pSG);
+    Assert(pSG->cUsers > 0);
+
+    /*
+     * Free it?
+     */
+    if (!--pSG->cUsers)
+    {
+        /** @todo later */
+    }
+}
+
+
+/**
+ * Retain the trunk interface.
+ *
+ * @returns pThis.
+ *
+ * @param   pThis       The trunk.
+ *
+ * @remarks Any locks.
+ */
+static PINTNETTRUNKIF intnetTrunkIfRetain(PINTNETTRUNKIF pThis)
+{
+    if (pThis && pThis->pIfPort)
+        pThis->pIfPort->pfnRetain(pThis->pIfPort);
+    return pThis;
+}
+
+
+/**
+ * Release the trunk interface.
+ *
+ * @param   pThis       The trunk.
+ */
+static void intnetTrunkIfRelease(PINTNETTRUNKIF pThis)
+{
+    if (pThis && pThis->pIfPort)
+        pThis->pIfPort->pfnRelease(pThis->pIfPort);
+}
+
+
+/**
+ * Takes the out-bound trunk lock.
+ *
+ * This will ensure that pIfPort is valid.
+ *
+ * @returns success indicator.
+ * @param   pThis       The trunk.
+ *
+ * @remarks No locks other than the create/destroy one.
+ */
+static bool intnetTrunkIfOutLock(PINTNETTRUNKIF pThis)
+{
+    AssertPtrReturn(pThis, false);
+    int rc = RTSemFastMutexRequest(pThis->FastMutex);
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_LIKELY(pThis->pIfPort))
+            return true;
+        RTSemFastMutexRelease(pThis->FastMutex);
+    }
+    else
+        AssertMsg(rc == VERR_SEM_DESTROYED, ("%Rrc\n", rc));
+    return false;
+}
+
+
+/**
+ * Releases the out-bound trunk lock.
+ *
+ * @param   pThis       The trunk.
+ */
+static void intnetTrunkIfOutUnlock(PINTNETTRUNKIF pThis)
+{
+    if (pThis)
+    {
+        int rc = RTSemFastMutexRelease(pThis->FastMutex);
+        AssertRC(rc);
+    }
+}
+
+
+/**
+ * Activates the trunk interface.
+ *
+ * @param   pThis       The trunk.
+ * @param   fActive     What to do with it.
+ *
+ * @remarks Caller may only own the create/destroy lock.
+ */
+static void intnetTrunkIfActivate(PINTNETTRUNKIF pThis, bool fActive)
+{
+    if (intnetTrunkIfOutLock(pThis))
+    {
+        pThis->pIfPort->pfnSetActive(pThis->pIfPort, fActive);
+        intnetTrunkIfOutUnlock(pThis);
+    }
+}
+
+
+/**
+ * Shutdown the trunk interface.
+ *
+ * @param   pThis       The trunk.
+ * @param   pNetworks   The network.
+ *
+ * @remarks The caller must *NOT* hold the network lock. The global
+ *          create/destroy lock is fine though.
+ */
+static void intnetTrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork)
+{
+    /* assert sanity */
+    if (!pThis)
+        return;
+    AssertPtr(pThis);
+    Assert(pThis->pNetwork == pNetwork);
+    AssertPtrNull(pThis->pIfPort);
+
+    /*
+     * The interface has already been deactivated, we just to wait for
+     * it to become idle before we can disconnect and release it.
+     */
+    PINTNETTRUNKIFPORT pIfPort = pThis->pIfPort;
+    if (pIfPort)
+    {
+        intnetTrunkIfOutLock(pThis);
+
+        /* unset it */
+        pThis->pIfPort = NULL;
+
+        /* wait in portions so we can complain ever now an then. */
+        uint64_t StartTS = RTTimeSystemNanoTS();
+        int rc = pIfPort->pfnWaitForIdle(pIfPort, 10*1000);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc).\n",
+                    pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
+            Assert(rc == VERR_TIMEOUT);
+            while (     RT_FAILURE(rc)
+                   &&   RTTimeSystemNanoTS() - StartTS < UINT64_C(30000000000)) /* 30 sec */
+                rc = pIfPort->pfnWaitForIdle(pIfPort, 10*1000);
+            if (rc == VERR_TIMEOUT)
+            {
+                LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc).\n",
+                        pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
+                while (     rc == VERR_TIMEOUT
+                       &&   RTTimeSystemNanoTS() - StartTS < UINT64_C(360000000000)) /* 360 sec */
+                    rc = pIfPort->pfnWaitForIdle(pIfPort, 30*1000);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc), giving up.\n",
+                            pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
+                    AssertRC(rc);
+                }
+            }
+        }
+
+        /* disconnect & release it. */
+        pIfPort->pfnDisconnectAndRelease(pIfPort);
+    }
+
+    /*
+     * Free up the resources.
+     */
+    RTSEMFASTMUTEX FastMutex = pThis->FastMutex;
+    pThis->FastMutex = NIL_RTSEMFASTMUTEX;
+    pThis->pNetwork = NULL;
+    RTSemFastMutexRelease(FastMutex);
+    RTSemFastMutexDestroy(FastMutex);
+    RTMemFree(pThis);
 }
 
 
@@ -1334,9 +1557,12 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
     pTrunkIF->SwitchPort.pfnSGRelease   = intnetTrunkIfPortSGRelease;
     pTrunkIF->SwitchPort.u32VersionEnd  = INTNETTRUNKSWPORT_VERSION;
     //pTrunkIF->pIfPort = NULL;
+    pTrunkIF->pNetwork = pNetwork;
+    //pTrunkIF->fPhysSG = false;
     int rc = RTSemFastMutexCreate(&pTrunkIF->FastMutex);
     if (RT_SUCCESS(rc))
     {
+#ifdef IN_RING0 /* (testcase is ring-3) */
         /*
          * Query the factory we want, then use it create and connect the trunk.
          */
@@ -1349,20 +1575,21 @@ static int intnetNetworkCreateTrunkConnection(PINTNETNETWORK pNetwork, PSUPDRVSE
             if (RT_SUCCESS(rc))
             {
                 Assert(pTrunkIF->pIfPort);
+                pNetwork->pTrunkIF = pTrunkIF;
                 LogFlow(("intnetNetworkCreateTrunkConnection: VINF_SUCCESS - pszName=%s szTrunk=%s Network=%s\n",
                          rc, pszName, pNetwork->szTrunk, pNetwork->szName));
                 return VINF_SUCCESS;
             }
         }
-
-        RTMemFree(pTrunkIF);
+#endif /* IN_RING0 */
+        RTSemFastMutexDestroy(pTrunkIF->FastMutex);
     }
+    RTMemFree(pTrunkIF);
     LogFlow(("intnetNetworkCreateTrunkConnection: %Rrc - pszName=%s szTrunk=%s Network=%s\n",
              rc, pszName, pNetwork->szTrunk, pNetwork->szName));
     return rc;
 }
 
-#endif /* IN_RING0 */
 
 
 /**
@@ -1398,8 +1625,14 @@ static DECLCALLBACK(void) intnetNetworkDestruct(void *pvObj, void *pvUser1, void
     PINTNET         pIntNet = (PINTNET)pvUser2;
     Assert(pNetwork->pIntNet == pIntNet);
 
+    /* take the create/destroy sem. */
     RTSemFastMutexRequest(pIntNet->FastMutex);
 
+    /*
+     * Deactivate the trunk connection first (if any).
+     */
+    if (pNetwork->pTrunkIF)
+        intnetTrunkIfActivate(pNetwork->pTrunkIF, false /* fActive */);
 
     /*
      * Unlink the network.
@@ -1420,13 +1653,13 @@ static DECLCALLBACK(void) intnetNetworkDestruct(void *pvObj, void *pvUser1, void
     pNetwork->pNext = NULL;
     pNetwork->pvObj = NULL;
 
-    RTSemFastMutexRequest(pNetwork->FastMutex);
-
     /*
      * Because of the undefined order of the per session object dereferencing when closing a session,
      * we have to handle the case where the network is destroyed before the interfaces. We'll
      * deal with this by simply orphaning the interfaces.
      */
+    RTSemFastMutexRequest(pNetwork->FastMutex);
+
     PINTNETIF pCur = pNetwork->pIFs;
     while (pCur)
     {
@@ -1436,7 +1669,18 @@ static DECLCALLBACK(void) intnetNetworkDestruct(void *pvObj, void *pvUser1, void
         pCur = pNext;
     }
 
+    /* Grab and zap the trunk pointer before leaving the mutex. */
+    PINTNETTRUNKIF pTrunkIF = pNetwork->pTrunkIF;
+    pNetwork->pTrunkIF = NULL;
+
     RTSemFastMutexRelease(pNetwork->FastMutex);
+
+    /*
+     * If there is a trunk, delete it.
+     * Note that this may tak a while if we're unlucky...
+     */
+    if (pTrunkIF)
+        intnetTrunkIfDestroy(pTrunkIF, pNetwork);
 
     /*
      * Free resources.
@@ -1445,6 +1689,7 @@ static DECLCALLBACK(void) intnetNetworkDestruct(void *pvObj, void *pvUser1, void
     pNetwork->FastMutex = NIL_RTSEMFASTMUTEX;
     RTMemFree(pNetwork);
 
+    /* release the create/destroy sem. (can be done before trunk destruction.) */
     RTSemFastMutexRelease(pIntNet->FastMutex);
 }
 
