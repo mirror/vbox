@@ -24,6 +24,7 @@
 
 #include <iprt/types.h>
 #include <VBox/com/defs.h>
+#include <list>
 #include <string>
 
 namespace pm {
@@ -92,8 +93,10 @@ namespace pm {
     class BaseMetric
     {
     public:
-        BaseMetric(CollectorHAL *hal, IUnknown *object) : mLength(0), mHAL(hal), mObject(object) {};
+        BaseMetric(CollectorHAL *hal, const char *name, IUnknown *object)
+            : mHAL(hal), mLength(0), mName(name), mObject(object) {};
 
+        virtual void init(unsigned long period, unsigned long length) = 0;
         virtual void collect() = 0;
         virtual const char *getUnit() = 0;
         virtual unsigned long getMinValue() = 0;
@@ -101,13 +104,15 @@ namespace pm {
 
         unsigned long getPeriod() { return mPeriod; };
         unsigned long getLength() { return mLength; };
+        const char *getName() { return mName; };
         IUnknown *getObject() { return mObject; };
         bool associatedWith(IUnknown *object) { return mObject == object; };
 
     protected:
+        CollectorHAL *mHAL;
         unsigned long mPeriod;
         unsigned long mLength;
-        CollectorHAL *mHAL;
+        const char   *mName;
         IUnknown     *mObject;
     };
     
@@ -115,7 +120,7 @@ namespace pm {
     {
     public:
         HostCpuLoad(CollectorHAL *hal, IUnknown *object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-        : BaseMetric(hal, object), mUser(user), mKernel(kernel), mIdle(idle) {};
+        : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
         void init(unsigned long period, unsigned long length);
 
         void collect();
@@ -134,7 +139,6 @@ namespace pm {
     public:
         HostCpuLoadRaw(CollectorHAL *hal, IUnknown *object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : HostCpuLoad(hal, object, user, kernel, idle), mUserPrev(0), mKernelPrev(0), mIdlePrev(0) {};
-        void init(unsigned long period, unsigned long length);
 
         void collect();
     private:
@@ -147,8 +151,9 @@ namespace pm {
     {
     public:
         HostCpuMhz(CollectorHAL *hal, IUnknown *object, SubMetric *mhz)
-        : BaseMetric(hal, object), mMHz(mhz) {};
+        : BaseMetric(hal, "CPU/MHz", object), mMHz(mhz) {};
 
+        void init(unsigned long period, unsigned long length);
         void collect();
         const char *getUnit() { return "MHz"; };
         unsigned long getMinValue() { return 0; };
@@ -161,8 +166,9 @@ namespace pm {
     {
     public:
         HostRamUsage(CollectorHAL *hal, IUnknown *object, SubMetric *total, SubMetric *used, SubMetric *available)
-        : BaseMetric(hal, object), mTotal(total), mUsed(used), mAvailable(available) {};
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
 
+        void init(unsigned long period, unsigned long length);
         void collect();
         const char *getUnit() { return "kB"; };
         unsigned long getMinValue() { return 0; };
@@ -177,8 +183,9 @@ namespace pm {
     {
     public:
         MachineCpuLoad(CollectorHAL *hal, IUnknown *object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
-        : BaseMetric(hal, object), mProcess(process), mUser(user), mKernel(kernel) {};
+        : BaseMetric(hal, "CPU/Load", object), mProcess(process), mUser(user), mKernel(kernel) {};
 
+        void init(unsigned long period, unsigned long length);
         void collect();
         const char *getUnit() { return "%"; };
         unsigned long getMinValue() { return 0; };
@@ -206,8 +213,9 @@ namespace pm {
     {
     public:
         MachineRamUsage(CollectorHAL *hal, IUnknown *object, RTPROCESS process, SubMetric *used)
-        : BaseMetric(hal, object), mProcess(process), mUsed(used) {};
+        : BaseMetric(hal, "RAM/Usage", object), mProcess(process), mUsed(used) {};
 
+        void init(unsigned long period, unsigned long length);
         void collect();
         const char *getUnit() { return "kB"; };
         unsigned long getMinValue() { return 0; };
@@ -305,6 +313,19 @@ namespace pm {
         MetricFactoryLinux();
         virtual BaseMetric   *createHostCpuLoad(IUnknown *object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
         virtual BaseMetric   *createMachineCpuLoad(IUnknown *object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
+    };
+
+    class Filter
+    {
+    public:
+        Filter(ComSafeArrayIn(const BSTR, metricNames),
+               ComSafeArrayIn(IUnknown *, objects));
+        bool match(const IUnknown *object, const std::string &name) const;
+    private:
+        typedef std::pair<const IUnknown*, const std::string> FilterElement;
+        std::list<FilterElement> mElements;
+
+        void processMetricList(const std::string &name, const IUnknown *object);
     };
 }
 

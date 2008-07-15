@@ -920,7 +920,7 @@ int main(int argc, char *argv[])
 
 #if 1
     do {
-        Bstr metricNames[] = { L"CPU/User:avg,CPU/System:avg,CPU/Idle:avg" };
+        Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg" };
         com::SafeArray<BSTR> metrics (1);
         metricNames[0].cloneTo (&metrics [0]);
 
@@ -953,8 +953,9 @@ int main(int argc, char *argv[])
             printf("%ls", metricName.raw());
             for (unsigned j = 0; j < retLengths[i]; j++)
             {
-                printf(" %d\n", retData[retIndices[i] + j]);
+                printf(" %d", retData[retIndices[i] + j]);
             }
+            printf("\n");
         }
     } while (0);
 #endif

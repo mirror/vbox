@@ -34,6 +34,7 @@
 //#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #include <list>
+#include <set>
 
 #include "Performance.h"
 
@@ -228,7 +229,7 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
     //
-    pm::MetricFactory *getMetricFactory() { return mFactory; };
+    pm::MetricFactory *getMetricFactory() { return m.mFactory; };
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"PerformanceCollector"; }
@@ -238,10 +239,17 @@ private:
     static void staticSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
     void samplerCallback();
 
-    std::list<pm::BaseMetric*> mBaseMetrics;
-    std::list<pm::Metric*>     mMetrics;
-    PRTTIMER                   mSampler;
-    pm::MetricFactory         *mFactory;
+    typedef std::list<pm::Metric*> MetricList;
+    typedef std::list<pm::BaseMetric*> BaseMetricList;
+
+    struct Data {
+        Data() : mFactory(0) {};
+
+        BaseMetricList     mBaseMetrics;
+        MetricList         mMetrics;
+        PRTTIMER           mSampler;
+        pm::MetricFactory *mFactory;
+    } m;
 };
 
 #endif //!____H_PERFORMANCEIMPL

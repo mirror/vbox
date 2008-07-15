@@ -21,7 +21,9 @@
  * additional information or have any questions.
  */
 
+#include <VBox/com/array.h>
 #include <VBox/com/ptr.h>
+#include <VBox/com/string.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
@@ -218,11 +220,27 @@ void HostCpuLoadRaw::collect()
     mIdlePrev   = idle;
 }
 
+void HostCpuMhz::init(unsigned long period, unsigned long length)
+{
+    mPeriod = period;
+    mLength = length;
+    mMHz->init(mLength);
+}
+
 void HostCpuMhz::collect()
 {
     unsigned long mhz;
     mHAL->getHostCpuMHz(&mhz);
     mMHz->put(mhz);
+}
+
+void HostRamUsage::init(unsigned long period, unsigned long length)
+{
+    mPeriod = period;
+    mLength = length;
+    mTotal->init(mLength);
+    mUsed->init(mLength);
+    mAvailable->init(mLength);
 }
 
 void HostRamUsage::collect()
@@ -234,6 +252,15 @@ void HostRamUsage::collect()
     mAvailable->put(available);
 }
 
+
+
+void MachineCpuLoad::init(unsigned long period, unsigned long length)
+{
+    mPeriod = period;
+    mLength = length;
+    mUser->init(mLength);
+    mKernel->init(mLength);
+}
 
 void MachineCpuLoad::collect()
 {
@@ -258,6 +285,13 @@ void MachineCpuLoadRaw::collect()
     mHostTotalPrev     = hostTotal;
     mProcessUserPrev   = processUser;
     mProcessKernelPrev = processKernel;
+}
+
+void MachineRamUsage::init(unsigned long period, unsigned long length)
+{
+    mPeriod = period;
+    mLength = length;
+    mUsed->init(mLength);
 }
 
 void MachineRamUsage::collect()
@@ -360,3 +394,30 @@ const char * AggregateMax::getName()
     return "max";
 }
 
+Filter::Filter(ComSafeArrayIn(const BSTR, metricNames),
+               ComSafeArrayIn(IUnknown *, objects))
+{
+    com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+    com::SafeArray <BSTR> nameArray(ComSafeArrayInArg(metricNames));
+    for (size_t i = 0; i < objectArray.size(); ++i)
+        processMetricList(std::string(com::Utf8Str(nameArray[i])), objectArray[i]);
+}
+
+void Filter::processMetricList(const std::string &name, const IUnknown *object)
+{
+    std::string::size_type startPos = 0;
+
+    for (std::string::size_type pos = name.find(",");
+         pos != std::string::npos;
+         pos = name.find(",", startPos))
+    {
+        mElements.push_back(std::make_pair(object, name.substr(startPos, pos - startPos)));
+        startPos = pos + 1;
+    }
+    mElements.push_back(std::make_pair(object, name.substr(startPos)));
+}
+
+bool Filter::match(const IUnknown *object, const std::string &name) const
+{
+    return true;
+}
