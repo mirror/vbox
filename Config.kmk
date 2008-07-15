@@ -344,8 +344,6 @@ ifdef VBOX_QUICK
 endif # VBOX_QUICK
 
 ifeq ($(KBUILD_TARGET),darwin)
- # Internal networking requires testing and possibly proper ring-3/ring0 separation.
- VBOX_WITH_INTERNAL_NETWORKING=
  # Don't bother with SDL ttf for now.
  VBOX_WITH_SECURELABEL=
  # We'll use the native html/help viewer.
