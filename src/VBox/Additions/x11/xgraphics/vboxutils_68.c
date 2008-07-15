@@ -30,10 +30,6 @@
 #include "compiler.h"
 #include "cursorstr.h"
 
-#ifndef RT_OS_SOLARIS
-#include <asm/ioctl.h>
-#endif
-
 #include "vboxvideo_68.h"
 
 #define VBOX_MAX_CURSOR_WIDTH 64
@@ -113,16 +109,14 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
     int err;
 
     TRACE_ENTRY ();
-#ifdef RT_OS_SOLARIS
-    err = vbglR3GRPerform(hdrp);
-    if (RT_FAILURE(err))
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VbglR3Perform failed. rc=%d\n", err);
-        err = -1;
-    }
+#ifdef RT_OS_LINUX
+    err = ioctl (pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(hdrp->size), hdrp);
 #else
-    /** @todo r=bird: Michael, I thought we decided a long time ago that all these should be replaced by VbglR3. I assume this is just a leftover... */
-    err = ioctl (pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(0), hdrp);
+/**
+ * @todo this should work fine on other platforms too, but it needs to be
+ *       checked for each one.
+ */
+# error port me!
 #endif
     if (err < 0)
         RETERROR(pScrn->scrnIndex, FALSE,
@@ -149,9 +143,12 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     if (RT_FAILURE (vrc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
             "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
-/** @todo r=bird: Michael, ditto. */
+#ifdef RT_OS_LINUX
     if (   RT_SUCCESS(vrc)
         && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0))
+#else
+# error port me!
+#endif
     {
         vrc = VERR_FILE_IO_ERROR;
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
