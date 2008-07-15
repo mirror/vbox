@@ -248,7 +248,6 @@ ENDPROC   CPUMRestoreHostFPUStateAsm
 ;;
 ; Restores the guest's FPU/XMM state
 ;
-; @returns  0
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
 align 16
@@ -269,7 +268,6 @@ ENDPROC     CPUMLoadFPUAsm
 ;;
 ; Restores the host's FPU/XMM state
 ;
-; @returns  0
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
 align 16
