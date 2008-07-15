@@ -20,7 +20,7 @@
  * additional information or have any questions.
  */
 
-#include "VBoxPathSelector.h"
+#include "VBoxFilePathSelectorWidget.h"
 #include "VBoxGlobal.h"
 
 /* Qt includes */
