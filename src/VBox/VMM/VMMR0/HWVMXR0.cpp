@@ -1035,6 +1035,7 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo, uInterruptState;
     bool        fGuestStateSynced = false;
+    bool        fSyncTPR = false;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
     RTCPUID  idCpuCheck;
@@ -1196,6 +1197,8 @@ ResumeExecution:
          */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
         AssertRC(rc);
+
+        fSyncTPR = !fPending;
     }
 
     /*
@@ -1526,6 +1529,12 @@ ResumeExecution:
     Log2(("Interruption error code %d\n", errCode));
     Log2(("IntInfo = %08x\n", intInfo));
     Log2(("New EIP=%VGv\n", pCtx->rip));
+
+    if (fSyncTPR)
+    {
+        rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80]);
+        AssertRC(rc);
+    }
 
     /* Some cases don't need a complete resync of the guest CPU state; handle them here. */
     switch (exitReason)
