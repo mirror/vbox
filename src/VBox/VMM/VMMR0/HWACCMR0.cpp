@@ -773,9 +773,8 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
     /* Restore host FPU and XMM state if necessary. */
     if (CPUMIsGuestFPUStateActive(pVM))
     {
-        Log2(("CPUMRestoreHostFPUState\n"));
-        /** @note CPUMRestoreHostFPUState keeps the current CR0 intact. */
-        CPUMRestoreHostFPUState(pVM);
+        Log2(("CPUMR0SaveGuestFPU\n"));
+        CPUMR0SaveGuestFPU(pVM, pCtx);
 
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }

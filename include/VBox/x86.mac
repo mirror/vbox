@@ -178,7 +178,7 @@
 %define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
 %define X86_DR7_LEN_BYTE                    0
 %define X86_DR7_LEN_WORD                    1
-%define X86_DR7_LEN_QWORD                   2 /**< AMD64 long mode only. */
+%define X86_DR7_LEN_QWORD                   2 ;/**< AMD64 long mode only. */
 %define X86_DR7_LEN_DWORD                   3
 %define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
 %define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(6) | RT_BIT(7))
@@ -421,3 +421,39 @@
 %define X86_TRAP_PF_US              RT_BIT(2)
 %define X86_TRAP_PF_RSVD            RT_BIT(3)
 %define X86_TRAP_PF_ID              RT_BIT(4)
+
+;;
+; FPU/XMM state
+;;
+struc X86FXSTATE
+    ;/** Control word. */
+    .FCW            resw    1
+    ;/** Status word. */
+    .FSW            resw    1
+    ;/** Tag word (it's a byte actually). */
+    .FTW            resb    1
+    .huh1           resb    1
+    ;/** Opcode. */
+    .FOP            resw    1
+    ;/** Instruction pointer. */
+    .FPUIP          resd    1
+    ;/** Code selector. */
+    .CS             resw    1
+    .Rsvrd1         resw    1
+    ;/* - offset 16 - */
+    ;/** Data pointer. */
+    .FPUDP          resd    1
+    ;/** Data segment */
+    .DS             resw    1
+    .Rsrvd2         resw    1
+    .MXCSR          resd    1
+    .MXCSR_MASK     resd    1
+    ;/* - offset 32 - */
+    ; FPU & MMX registers
+    .aRegs          resq    8*2
+    ;/* - offset 160 - */
+    ;/* 8 XMM registers in 32 bits mode; 16 in long mode */
+    .aXMM           resq    16*2
+    ;/* - offset 416 - */
+    .au32RsrvdRest  resd    (512 - 416) / 4
+endstruc
