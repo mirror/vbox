@@ -244,3 +244,45 @@ gth_fpu_no:
     ret
 ENDPROC   CPUMRestoreHostFPUStateAsm
 
+
+;;
+; Restores the guest's FPU/XMM state
+;
+; @returns  0
+; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+;
+align 16
+BEGINPROC   CPUMLoadFPUAsm
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xDX, rcx
+ %else
+    mov     xDX, rdi
+ %endif
+%else
+    mov     xDX, dword [esp + 4]
+%endif
+    fxrstor [xDX + CPUMCTX.fpu]
+    ret
+ENDPROC     CPUMLoadFPUAsm
+
+;;
+; Restores the host's FPU/XMM state
+;
+; @returns  0
+; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
+;
+align 16
+BEGINPROC   CPUMSaveFPUAsm
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xDX, rcx
+ %else
+    mov     xDX, rdi
+ %endif
+%else
+    mov     xDX, dword [esp + 4]
+%endif
+    fxsave  [xDX + CPUMCTX.fpu]
+    ret
+ENDPROC CPUMSaveFPUAsm

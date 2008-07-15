@@ -1044,6 +1044,24 @@ CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
  */
 CPUMR0DECL(int) CPUMR0Init(PVM pVM);
 
+/**
+ * Lazily sync in the FPU/XMM state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ */
+CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
+
+/**
+ * Save guest FPU/XMM state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ */
+CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
+
 /** @} */
 #endif
 

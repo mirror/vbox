@@ -108,3 +108,78 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
 }
 
 
+/**
+ * Lazily sync in the FPU/XMM state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ */
+CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
+{
+    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+
+    /* If the FPU state has already been loaded, then it's a guest trap. */
+    if (pVM->cpum.s.fUseFlags & CPUM_USED_FPU)
+    {
+        Assert(    ((pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
+               ||  ((pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)));
+        return VINF_EM_RAW_GUEST_TRAP;
+    }
+
+    /*
+     * There are two basic actions:
+     *   1. Save host fpu and restore guest fpu.
+     *   2. Generate guest trap.
+     *
+     * When entering the hypervisor we'll always enable MP (for proper wait
+     * trapping) and TS (for intercepting all fpu/mmx/sse stuff). The EM flag
+     * is taken from the guest OS in order to get proper SSE handling.
+     *
+     *
+     * Actions taken depending on the guest CR0 flags:
+     *
+     *   3    2    1
+     *  TS | EM | MP | FPUInstr | WAIT :: VMM Action
+     * ------------------------------------------------------------------------
+     *   0 |  0 |  0 | Exec     | Exec :: Clear TS & MP, Save HC, Load GC.
+     *   0 |  0 |  1 | Exec     | Exec :: Clear TS, Save HC, Load GC.
+     *   0 |  1 |  0 | #NM      | Exec :: Clear TS & MP, Save HC, Load GC.
+     *   0 |  1 |  1 | #NM      | Exec :: Clear TS, Save HC, Load GC.
+     *   1 |  0 |  0 | #NM      | Exec :: Clear MP, Save HC, Load GC. (EM is already cleared.)
+     *   1 |  0 |  1 | #NM      | #NM  :: Go to guest taking trap there.
+     *   1 |  1 |  0 | #NM      | Exec :: Clear MP, Save HC, Load GC. (EM is already set.)
+     *   1 |  1 |  1 | #NM      | #NM  :: Go to guest taking trap there.
+     */
+
+    switch(pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
+    {
+    case X86_CR0_MP | X86_CR0_TS:
+    case X86_CR0_MP | X86_CR0_EM | X86_CR0_TS:
+        return VINF_EM_RAW_GUEST_TRAP;
+
+    default:
+        break;
+    }
+    CPUMLoadFPUAsm(pCtx);
+    pVM->cpum.s.fUseFlags |= CPUM_USED_FPU;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Save guest FPU/XMM state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ */
+CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
+{
+    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+    AssertReturn((pVM->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
+
+    CPUMSaveFPUAsm(pCtx);
+    pVM->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
+    return VINF_SUCCESS;
+}

@@ -357,8 +357,10 @@ typedef struct CPUM
 
 __BEGIN_DECLS
 
-DECLASM(int) CPUMHandleLazyFPUAsm(PCPUM pCPUM);
-DECLASM(int) CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
+DECLASM(int)  CPUMHandleLazyFPUAsm(PCPUM pCPUM);
+DECLASM(int)  CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
+DECLASM(void) CPUMLoadFPUAsm(PCPUMCTX pCtx);
+DECLASM(void) CPUMSaveFPUAsm(PCPUMCTX pCtx);
 
 __END_DECLS
 
