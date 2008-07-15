@@ -1291,7 +1291,9 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[curArg], "-fullscreenresize") == 0)
         {
             gfFullscreenResize = true;
+#ifdef VBOXSDL_WITH_X11
             setenv("SDL_VIDEO_X11_VIDMODE", "0", 1);
+#endif
         }
         else if (strcmp(argv[curArg], "-fixedmode") == 0)
         {
