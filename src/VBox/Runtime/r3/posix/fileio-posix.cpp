@@ -163,6 +163,8 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
             AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
+    /* Unix permissions */
+    fOpenMode |= (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT;
 
     /** @todo sharing! */
 
