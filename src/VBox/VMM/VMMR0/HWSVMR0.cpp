@@ -268,7 +268,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
      * CR0/3/4 writes must be intercepted for obvious reasons.
      */
     if (!pVM->hwaccm.s.fNestedPaging)
-        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
     else
         pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4) | RT_BIT(8);
 
@@ -860,10 +860,23 @@ ResumeExecution:
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!!!!! */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
+        bool fPending;
+
         /* TPR caching in CR8 */
-        int rc = PDMApicGetTPR(pVM, &u8LastVTPR);
+        int rc = PDMApicGetTPR(pVM, &u8LastVTPR, &fPending);
         AssertRC(rc);
         pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastVTPR;
+
+        if (fPending)
+        {
+            /* A TPR change could activate a pending interrupt, so catch cr8 writes. */
+            pVMCB->ctrl.u16InterceptWrCRx |= RT_BIT(8);
+        }
+        else
+            /* No interrupts are pending, so we don't need to be explicitely notified. 
+             * There are enough world switches for detecting pending interrupts.
+             */
+            pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
     }
 
     /* All done! Let's start VM execution. */

@@ -967,7 +967,7 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseHC,(PPDMDEVINS pDevIns));
 
     /**
-     * Set the TPR (task priority register?).
+     * Set the TPR (task priority register).
      *
      * @param   pDevIns         Device instance of the APIC.
      * @param   u8TPR           The new TPR.
@@ -975,10 +975,11 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(void, pfnSetTPRHC,(PPDMDEVINS pDevIns, uint8_t u8TPR));
 
     /**
-     * Get the TPR (task priority register?).
+     * Get the TPR (task priority register).
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
+     * @param   pfPending       Pending interrupt state (out).
      */
     DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRHC,(PPDMDEVINS pDevIns));
 

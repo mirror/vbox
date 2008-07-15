@@ -99,7 +99,7 @@ PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base);
 PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
 
 /**
- * Set the TPR (task priority register?).
+ * Set the TPR (task priority register).
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
@@ -108,13 +108,14 @@ PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
 PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
 
 /**
- * Get the TPR (task priority register?).
+ * Get the TPR (task priority register).
  *
  * @returns The current TPR.
  * @param   pVM             VM handle.
  * @param   pu8TPR          Where to store the TRP.
+ * @param   pfPending       Pending state (out).
  */
-PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR);
+PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
 
 
 #ifdef IN_RING3

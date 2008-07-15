@@ -229,19 +229,22 @@ PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
 
 
 /**
- * Get the TPR (task priority register?).
+ * Get the TPR (task priority register).
  *
  * @returns The current TPR.
  * @param   pVM             VM handle.
  * @param   pu8TPR          Where to store the TRP.
- */
-PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR)
+ * @param   pfPending       Pending interrupt state (out).
+*/
+PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
 {
     if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnGetTPR));
         pdmLock(pVM);
         *pu8TPR = pVM->pdm.s.Apic.CTXALLSUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+        if (pfPending)
+            *pfPending = pVM->pdm.s.Apic.CTXALLSUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
