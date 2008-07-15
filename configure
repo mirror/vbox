@@ -1339,6 +1339,7 @@ EOF
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
           cnf_append "SDK_QT4_LIBPATH" "`strip_L "$LIBQT4"`"
+          cnf_append "PATH_SDK_QT4_INC" "$INCQT4"
           # this is not quite right since the qt libpath does not have to be first...
           cnf_append "PATH_SDK_QT4_LIB" '$'"(firstword `strip_L "$LIBQT4"`)"
           if [ "$foundqt4" = "2" ]; then
