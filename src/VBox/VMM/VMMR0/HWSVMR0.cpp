@@ -1225,21 +1225,14 @@ ResumeExecution:
 
         case X86_XCPT_NM:
         {
-            uint32_t oldCR0;
-
             Log(("#NM fault at %VGv\n", pCtx->rip));
 
             /** @todo don't intercept #NM exceptions anymore when we've activated the guest FPU state. */
-            oldCR0 = ASMGetCR0();
             /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
-            rc = CPUMHandleLazyFPU(pVM);
+            rc = CPUMR0LoadGuestFPU(pVM, pCtx);
             if (rc == VINF_SUCCESS)
             {
                 Assert(CPUMIsGuestFPUStateActive(pVM));
-
-                /* CPUMHandleLazyFPU could have changed CR0; restore it. */
-                ASMSetCR0(oldCR0);
-
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowNM);
 
                 /* Continue execution. */

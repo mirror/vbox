@@ -118,6 +118,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
 CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+    Assert(ASMGetCR4() & X86_CR4_OSFSXR);
 
     /* If the FPU state has already been loaded, then it's a guest trap. */
     if (pVM->cpum.s.fUseFlags & CPUM_USED_FPU)
@@ -162,6 +163,30 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
         break;
     }
     CPUMLoadFPUAsm(pCtx);
+
+    /* The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
+     *
+     * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
+     *
+     * If the guest uses the MSR_K6_EFER_FFXSR as well, then it has to manually restore the XMM state. 
+     * In that case we don't care.
+     *
+     * We would end up saving/restoring too much if the guest has it enabled, but the host hasn't.
+     */
+    if (    (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR) /* 0x80000001 */
+        &&  !(pCtx->msrEFER & MSR_K6_EFER_FFXSR))
+    {
+        /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
+        uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
+
+        if (msrEFERHost & MSR_K6_EFER_FFXSR)
+        {
+            /* fxrstor doesn't restore the XMM state! */
+            CPUMLoadXMMAsm(pCtx);
+            pVM->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+        }
+    }
+
     pVM->cpum.s.fUseFlags |= CPUM_USED_FPU;
     return VINF_SUCCESS;
 }
@@ -177,9 +202,15 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+    Assert(ASMGetCR4() & X86_CR4_OSFSXR);
     AssertReturn((pVM->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
 
     CPUMSaveFPUAsm(pCtx);
-    pVM->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
+    if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+    {
+        /* fxsave doesn't save the XMM state! */
+        CPUMSaveXMMAsm(pCtx);
+    }
+    pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU|CPUM_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
 }

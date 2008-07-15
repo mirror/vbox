@@ -73,6 +73,8 @@
 #define CPUM_USE_DEBUG_REGS_HOST        RT_BIT(4)
 /** Enabled use of debug registers in guest context. */
 #define CPUM_USE_DEBUG_REGS             RT_BIT(5)
+/** The XMM state was manually restored. (AMD only) */
+#define CPUM_MANUAL_XMM_RESTORE         RT_BIT(6)
 /** @} */
 
 /* Sanity check. */
@@ -361,6 +363,9 @@ DECLASM(int)  CPUMHandleLazyFPUAsm(PCPUM pCPUM);
 DECLASM(int)  CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
 DECLASM(void) CPUMLoadFPUAsm(PCPUMCTX pCtx);
 DECLASM(void) CPUMSaveFPUAsm(PCPUMCTX pCtx);
+DECLASM(void) CPUMLoadXMMAsm(PCPUMCTX pCtx);
+DECLASM(void) CPUMSaveXMMAsm(PCPUMCTX pCtx);
+
 
 __END_DECLS
 
