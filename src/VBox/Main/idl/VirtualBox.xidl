@@ -10156,8 +10156,8 @@
     wsmap="managed"
   >
     <desc>
-      The IPerformanceCollector interfaces represents a service that collects
-      and stores performace metrics data.
+      The IPerformanceCollector interface represents a service that collects and
+      stores performace metrics data.
 
       Performance metrics are associated with objects like IHost and IMachine.
       Each object has a distict set of performance metrics. It can be obtained
@@ -10279,10 +10279,17 @@
     <method name="queryMetricsData">
       <desc>
         Queries collected metrics data for a set of objects.
+        
+        The data itself and related metric information are returned in four
+        parallel and one flattened array of arrays. Elements of @c
+        returnMetricNames, @c returnObjects, @c returnDataIndices and @ 
+        returnDataLengths with the same index describe one set of values 
+        corresponding to a single metric.
 
         The @a returnData parameter is a flattened array of arrays. Each start
         and length of a sub-array is indicated by @a returnDataIndices and @a
-        returnDataLengths.
+        returnDataLengths. The first value for metric <tt>metricNames[i]</tt> is at
+        <tt> returnData[returnIndices[i]]</tt>.
 
         <note>
           @c Null metrics array means all applicable metrics. @c Null object
@@ -10324,8 +10331,7 @@
       <param name="returnData" type="long" dir="return" safearray="yes">
         <desc>
           Flattened array of all metric data containing sequences of values for 
-          each metric. The first value for metric <tt>metricNames[i]</tt> is at
-          <tt> returnData[returnIndices[i]]</tt>.
+          each metric.
         </desc>
       </param>
     </method>

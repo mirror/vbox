@@ -68,7 +68,7 @@ static Bstr gMetricNames[] =
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-PerformanceCollector::PerformanceCollector() {}
+PerformanceCollector::PerformanceCollector() : mMagic(0) {}
 
 PerformanceCollector::~PerformanceCollector() {}
 
@@ -102,8 +102,11 @@ HRESULT PerformanceCollector::init()
 
     /* @todo Obviously other platforms must be added as well. */
     m.mFactory = new pm::MetricFactoryLinux();
-    /* Start resource usage sampler */
 
+    /* Let the sampler know it gets a valid collector.  */
+    mMagic = MAGIC;
+
+    /* Start resource usage sampler */
     int vrc = RTTimerCreate (&m.mSampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
                              &PerformanceCollector::staticSamplerCallback, this);
     AssertMsgRC (vrc, ("Failed to create resource usage "
@@ -136,6 +139,8 @@ void PerformanceCollector::uninit()
         LogFlowThisFuncLeave();
         return;
     }
+
+    mMagic = 0;
 
     /* Destroy resource usage sampler */
     int vrc = RTTimerDestroy (m.mSampler);
@@ -189,7 +194,7 @@ STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(const BSTR, metricN
     return E_NOTIMPL;
 }
 
-STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(const BSTR, metricNames),
+STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(INPTR BSTR, metricNames),
                                                  ComSafeArrayIn(IUnknown *, objects),
                                                  ULONG aPeriod, ULONG aCount)
 {
@@ -198,7 +203,10 @@ STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(const BSTR, metr
     BaseMetricList::iterator it;
     for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
         if (filter.match((*it)->getObject(), (*it)->getName()))
+        {
             (*it)->init(aPeriod, aCount);
+            (*it)->enable();
+        }
 
     return S_OK;
 }
@@ -206,13 +214,27 @@ STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(const BSTR, metr
 STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(const BSTR, metricNames),
                                                   ComSafeArrayIn(IUnknown *, objects))
 {
-    return E_NOTIMPL;
+    pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
+
+    BaseMetricList::iterator it;
+    for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
+        if (filter.match((*it)->getObject(), (*it)->getName()))
+            (*it)->enable();
+
+    return S_OK;
 }
 
 STDMETHODIMP PerformanceCollector::DisableMetrics (ComSafeArrayIn(const BSTR, metricNames),
                                                    ComSafeArrayIn(IUnknown *, objects))
 {
-    return E_NOTIMPL;
+    pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
+
+    BaseMetricList::iterator it;
+    for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
+        if (filter.match((*it)->getObject(), (*it)->getName()))
+            (*it)->disable();
+
+    return S_OK;
 }
 
 STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, metricNames),
@@ -244,6 +266,7 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, 
     com::SafeArray<ULONG> retIndices(numberOfMetrics);
     com::SafeArray<ULONG> retLengths(numberOfMetrics);
     com::SafeArray<LONG> retData(flatSize);
+
     for (it = m.mMetrics.begin(), i = 0; it != m.mMetrics.end(); ++it)
     {
         /* @todo Filtering goes here! */
@@ -253,12 +276,13 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, 
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
         Bstr tmp((*it)->getName());
         tmp.detachTo(&retNames[i]);
-        retObjects[i] = (*it)->getObject();
+        (*it)->getObject().queryInterfaceTo(&retObjects[i]);
         retLengths[i] = length;
         retIndices[i] = flatIndex;
         ++i;
         flatIndex += length;
     }
+
     retNames.detachTo(ComSafeArrayOutArg(outMetricNames));
     retObjects.detachTo(ComSafeArrayOutArg(outObjects));
     retIndices.detachTo(ComSafeArrayOutArg(outDataIndices));
@@ -302,11 +326,19 @@ void PerformanceCollector::staticSamplerCallback (PRTTIMER pTimer, void *pvUser,
                                                   uint64_t iTick)
 {
     AssertReturnVoid (pvUser != NULL);
-    static_cast <PerformanceCollector *> (pvUser)->samplerCallback();
+    PerformanceCollector *collector = static_cast <PerformanceCollector *> (pvUser);
+    Assert(collector->mMagic == MAGIC);
+    if (collector->mMagic == MAGIC)
+    {
+        collector->samplerCallback();
+    }
 }
 
 void PerformanceCollector::samplerCallback()
 {
+    uint64_t timestamp = RTTimeMilliTS();
+    std::for_each(m.mBaseMetrics.begin(), m.mBaseMetrics.end(),
+                  std::bind2nd (std::mem_fun (&pm::BaseMetric::collectorBeat), timestamp));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
