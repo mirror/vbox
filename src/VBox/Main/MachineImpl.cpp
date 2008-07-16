@@ -188,6 +188,7 @@ Machine::HWData::HWData()
     mVRAMSize = 8;
     mMonitorCount = 1;
     mHWVirtExEnabled = TSBool_False;
+    mHWVirtExNestedPagingEnabled = true;
     mPAEEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
@@ -215,6 +216,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mVRAMSize != that.mVRAMSize ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
+        mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
         mPAEEnabled != that.mPAEEnabled ||
         mClipboardMode != that.mClipboardMode)
         return false;
@@ -1115,6 +1117,40 @@ STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TSBool_T enable)
 
     return S_OK;
 }
+
+STDMETHODIMP Machine::COMGETTER(HWVirtExNestedPagingEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    *enabled = mHWData->mHWVirtExNestedPagingEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(HWVirtExNestedPagingEnabled)(BOOL enable)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    /** @todo check validity! */
+
+    mHWData.backup();
+    mHWData->mHWVirtExNestedPagingEnabled = enable;
+
+    return S_OK;
+}
+
 
 STDMETHODIMP Machine::COMGETTER(PAEEnabled)(BOOL *enabled)
 {
@@ -4477,8 +4513,9 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
-        mHWData->mHWVirtExEnabled = TSBool_Default;
-        mHWData->mPAEEnabled      = false;
+        mHWData->mHWVirtExEnabled             = TSBool_Default;
+        mHWData->mHWVirtExNestedPagingEnabled = true;
+        mHWData->mPAEEnabled                  = false;
 
         Key cpuNode = aNode.findKey ("CPU");
         if (!cpuNode.isNull())
@@ -4494,6 +4531,13 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 else
                     mHWData->mHWVirtExEnabled = TSBool_Default;
             }
+            /* HardwareVirtExNestedPaging (optional, default is true) */
+            Key HWVirtExNestedPagingNode = cpuNode.findKey ("HardwareVirtExNestedPaging");
+            if (!HWVirtExNestedPagingNode.isNull())
+            {
+                mHWData->mHWVirtExNestedPagingEnabled = HWVirtExNestedPagingNode.value <bool> ("enabled");
+            }
+
             /* PAE (optional, default is false) */
             Key PAENode = cpuNode.findKey ("PAE");
             if (!PAENode.isNull())
@@ -5860,6 +5904,10 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         }
         hwVirtExNode.setStringValue ("enabled", value);
 
+        /* Nested paging (optional, default is true) */
+        Key HWVirtExNestedPagingNode = cpuNode.createKey ("HardwareVirtExNestedPaging");
+        HWVirtExNestedPagingNode.setValue <bool> ("enabled", !!mHWData->mHWVirtExNestedPagingEnabled);
+        
         /* PAE (optional, default is false) */
         Key PAENode = cpuNode.createKey ("PAE");
         PAENode.setValue <bool> ("enabled", !!mHWData->mPAEEnabled);

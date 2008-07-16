@@ -2510,7 +2510,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="d6181581-e7c7-418a-b3b6-2da10b11a763"
+     uuid="9966d6d7-8bed-4f18-8553-2486f32957b3"
      wsmap="managed"
      >
     <desc>
@@ -2730,6 +2730,14 @@
         the host CPU's hardware virtualization extensions such as Intel VT-x
         and AMD-V. Note that in case such extensions are not available,
         they will not be used.
+      </desc>
+    </attribute>
+
+    <attribute name="HWVirtExNestedPagingEnabled" type="boolean" default="true">
+      <desc>
+        This setting determines whether VirtualBox will try to make use of
+        the nested paging extension of Intel VT-x and AMD-V. Note that in case 
+        such extensions are not available, they will not be used.
       </desc>
     </attribute>
 

@@ -335,6 +335,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-ioapic on|off]\n"
                  "                            [-pae on|off]\n"
                  "                            [-hwvirtex on|off|default]\n"
+                 "                            [-nestedpaging on|off]\n"
                  "                            [-monitorcount <number>]\n"
                  "                            [-bioslogofadein on|off]\n"
                  "                            [-bioslogofadeout on|off]\n"
@@ -981,6 +982,12 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         else
             RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TSBool_True ? "on" : "off");
     }
+    BOOL HWVirtExNestedPagingEnabled;
+    machine->COMGETTER(HWVirtExNestedPagingEnabled)(&HWVirtExNestedPagingEnabled);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("nestedpaging=\"%s\"\n", HWVirtExNestedPagingEnabled ? "on" : "off");
+    else
+        RTPrintf("Nested Paging:   %s\n", HWVirtExNestedPagingEnabled ? "on" : "off");
 
     MachineState_T machineState;
     const char *pszState = NULL;
@@ -3748,6 +3755,7 @@ static int handleModifyVM(int argc, char *argv[],
     ULONG vramSize = 0;
     char *acpi = NULL;
     char *hwvirtex = NULL;
+    char *nestedpaging = NULL;
     char *pae = NULL;
     char *ioapic = NULL;
     int monitorcount = -1;
@@ -3872,6 +3880,13 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             hwvirtex = argv[i];
+        }
+        else if (strcmp(argv[i], "-nestedpaging") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            nestedpaging = argv[i];
         }
         else if (strcmp(argv[i], "-pae") == 0)
         {
@@ -4495,6 +4510,23 @@ static int handleModifyVM(int argc, char *argv[],
             else
             {
                 errorArgument("Invalid -hwvirtex argument '%s'", hwvirtex);
+                rc = E_FAIL;
+                break;
+            }
+        }
+        if (nestedpaging)
+        {
+            if (strcmp(nestedpaging, "on") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(HWVirtExNestedPagingEnabled)(true));
+            }
+            else if (strcmp(nestedpaging, "off") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(HWVirtExNestedPagingEnabled)(false));
+            }
+            else
+            {
+                errorArgument("Invalid -nestedpaging argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
