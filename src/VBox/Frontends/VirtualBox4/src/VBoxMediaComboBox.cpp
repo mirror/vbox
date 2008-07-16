@@ -43,13 +43,9 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
 {
     /* Setup the elide mode */
     view()->setTextElideMode (Qt::ElideRight);
-    /* Setup default size policy */
-#ifdef Q_WS_MAC
-    QSizePolicy sp (QSizePolicy::Expanding, QSizePolicy::Fixed, QSizePolicy::ComboBox);
-#else
-    QSizePolicy sp (QSizePolicy::Ignored, QSizePolicy::Fixed, QSizePolicy::ComboBox);
-#endif
-    setSizePolicy (sp);
+    QSizePolicy sp1 (QSizePolicy::Ignored, QSizePolicy::Fixed, QSizePolicy::ComboBox);
+    sp1.setHorizontalStretch (2);
+    setSizePolicy (sp1);
 
 #if 0
 //#ifdef Q_WS_MAC

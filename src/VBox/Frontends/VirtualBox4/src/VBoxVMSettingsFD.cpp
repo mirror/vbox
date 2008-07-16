@@ -214,6 +214,8 @@ void VBoxVMSettingsFD::onGbChange (bool aSwitchedOn)
         mLastSelected->blockSignals (false);
     }
 
+    mMountFDChild->setEnabled (aSwitchedOn);
+
     onCbChange();
 }
 
