@@ -8626,7 +8626,7 @@
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="b3a02721-556a-4481-9d47-052a3f8cff90"
+     uuid="54ebce96-fa7d-4a4d-bc81-a7db41c29637"
      wsmap="suppress"
      >
     <method name="resetStats">
@@ -8689,7 +8689,14 @@
     <attribute name="HWVirtExEnabled" type="boolean" readonly="yes">
       <desc>
         Flag indicating whether the VM is currently making use of CPU hardware
-        virtualization extensions
+        virtualization extensions.
+      </desc>
+    </attribute>
+
+    <attribute name="HWVirtExNestedPagingEnabled" type="boolean" readonly="yes">
+      <desc>
+        Flag indicating whether the VM is currently making use of the nested paging
+        CPU hardware virtualization extension.
       </desc>
     </attribute>
 
