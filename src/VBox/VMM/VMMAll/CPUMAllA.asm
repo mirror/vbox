@@ -290,6 +290,7 @@ ENDPROC CPUMSaveFPUAsm
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+align 16
 BEGINPROC   CPUMLoadXMMAsm
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
@@ -333,6 +334,7 @@ ENDPROC     CPUMLoadXMMAsm
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+align 16
 BEGINPROC   CPUMSaveXMMAsm
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
@@ -370,3 +372,67 @@ CPUMSaveXMMAsm_done:
     ret
 ENDPROC     CPUMSaveXMMAsm
 
+
+;;
+; Set the FPU control word; clearing exceptions first
+;
+; @param  u16FCW    x86:[esp+4] GCC:rdi MSC:rcx     New FPU control word
+align 16
+BEGINPROC CPUMSetFCW
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xAX, rcx
+ %else
+    mov     xAX, rdi
+ %endif
+%else
+    mov     xAX, dword [esp + 4]
+%endif
+    fnclex
+    push    xAX
+    fldcw   [xSP]
+    pop     xAX
+    ret
+ENDPROC   CPUMSetFCW
+
+;;
+; Get the FPU control word
+;
+align 16
+BEGINPROC CPUMGetFCW
+    fnstcw  [xSP - 8]
+    mov     ax, word [xSP - 8]
+    ret
+ENDPROC   CPUMGetFCW
+
+
+;;
+; Set the MXCSR; 
+;
+; @param  u32MXCSR    x86:[esp+4] GCC:rdi MSC:rcx     New MXCSR
+align 16
+BEGINPROC CPUMSetMXCSR
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xAX, rcx
+ %else
+    mov     xAX, rdi
+ %endif
+%else
+    mov     xAX, dword [esp + 4]
+%endif
+    push    xAX
+    ldmxcsr [xSP]
+    pop     xAX
+    ret
+ENDPROC   CPUMSetMXCSR
+
+;;
+; Get the MXCSR
+;
+align 16
+BEGINPROC CPUMGetMXCSR
+    stmxcsr [xSP - 8]
+    mov     eax, dword [xSP - 8]
+    ret
+ENDPROC   CPUMGetMXCSR
