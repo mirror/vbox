@@ -27,6 +27,8 @@ VBoxVMSettingsAudio::VBoxVMSettingsAudio()
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsAudio::setupUi (this);
+    connect (mGbAudio, SIGNAL (toggled (bool)),
+             mAudioChild, SLOT (setEnabled (bool)));
     /* Applying language settings */
     retranslateUi();
 }
