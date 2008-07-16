@@ -264,9 +264,9 @@ void VBoxSettingsTreeViewSelector::selectById (int aId)
 
 void VBoxSettingsTreeViewSelector::setVisibleById (int aId, bool aShow)
 {
-    QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Category);
+    QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
     if (item)
-        item->setHidden (aShow);
+        item->setHidden (!aShow);
 }
 
 void VBoxSettingsTreeViewSelector::polish()
