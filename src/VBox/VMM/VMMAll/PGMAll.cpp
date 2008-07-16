@@ -1565,6 +1565,7 @@ PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
         case PGMMODE_PAE_NX:    return "PAE+NX";
         case PGMMODE_AMD64:     return "AMD64";
         case PGMMODE_AMD64_NX:  return "AMD64+NX";
+        case PGMMODE_NESTED:    return "Nested";
         default:                return "unknown mode value";
     }
 }
