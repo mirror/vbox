@@ -1496,7 +1496,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
     pUsage->cUsage      = 1;
     pUsage->pObj        = pObj;
     pUsage->pNext       = pSession->pUsage;
-    Log2(("SUPR0ObjRegister: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));
+    /* Log2(("SUPR0ObjRegister: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext)); */
     pSession->pUsage    = pUsage;
 
     RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
@@ -1541,9 +1541,9 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 
     if (RT_UNLIKELY(pObj->u32Magic != SUPDRVOBJ_MAGIC))
     {
-        AssertMsg(pObj->u32Magic == SUPDRVOBJ_MAGIC + 1, ("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
-
         RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+
+        AssertMsgFailed(("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
         return VERR_WRONG_ORDER;
     }
 
@@ -1573,7 +1573,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
      */
     for (pUsage = pSession->pUsage; pUsage; pUsage = pUsage->pNext)
     {
-        Log(("SUPR0AddRef: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));
+        /*Log(("SUPR0AddRef: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));*/
         if (pUsage->pObj == pObj)
             break;
     }
@@ -1586,7 +1586,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
         pUsagePre->pObj     = pObj;
         pUsagePre->pNext    = pSession->pUsage;
         pSession->pUsage    = pUsagePre;
-        Log(("SUPR0AddRef: pUsagePre=%p:{.pObj=%p, .pNext=%p}\n", pUsagePre, pUsagePre->pObj, pUsagePre->pNext));
+        /*Log(("SUPR0AddRef: pUsagePre=%p:{.pObj=%p, .pNext=%p}\n", pUsagePre, pUsagePre->pObj, pUsagePre->pNext));*/
 
         pUsagePre = NULL;
     }
@@ -1641,7 +1641,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
          pUsage;
          pUsagePrev = pUsage, pUsage = pUsage->pNext)
     {
-        Log2(("SUPR0ObjRelease: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));
+        /*Log2(("SUPR0ObjRelease: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));*/
         if (pUsage->pObj == pObj)
         {
             AssertMsg(pUsage->cUsage >= 1 && pObj->cUsage >= pUsage->cUsage, ("glob %d; sess %d\n", pObj->cUsage, pUsage->cUsage));
