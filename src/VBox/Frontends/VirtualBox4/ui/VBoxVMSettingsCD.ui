@@ -22,12 +22,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>239</width>
-    <height>299</height>
+    <width>500</width>
+    <height>261</height>
    </rect>
   </property>
   <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="3" >
+   <item row="0" column="0" colspan="2" >
     <widget class="QCheckBox" name="mGbCD" >
      <property name="whatsThis" >
       <string>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</string>
@@ -76,9 +76,6 @@
       </property>
       <property name="bottomMargin" >
        <number>0</number>
-      </property>
-      <property name="verticalSpacing" >
-       <number>-1</number>
       </property>
       <item row="0" column="0" colspan="2" >
        <widget class="QRadioButton" name="mRbHostCD" >
