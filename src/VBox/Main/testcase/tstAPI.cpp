@@ -920,9 +920,9 @@ int main(int argc, char *argv[])
 
 #if 1
     do {
-        Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg" };
-        com::SafeArray<BSTR> metrics (1);
-        metricNames[0].cloneTo (&metrics [0]);
+        Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
+        com::SafeArray<BSTR> baseMetrics (1);
+        baseMetricNames[0].cloneTo (&baseMetrics [0]);
 
         ComPtr <IHost> host;
         CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
@@ -932,9 +932,13 @@ int main(int argc, char *argv[])
 
         com::SafeIfaceArray<IUnknown> objects(1);
         host.queryInterfaceTo(&objects[0]);
-        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(metrics),
+        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
                                                 ComSafeArrayAsInParam(objects), 1u, 10u) );
         RTThreadSleep(3000); /* Sleep 10 seconds. */
+
+        Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total.RAM/Usage/Used:avg" };
+        com::SafeArray<BSTR> metrics (1);
+        metricNames[0].cloneTo (&metrics [0]);
         com::SafeArray<BSTR>          retNames;
         com::SafeIfaceArray<IUnknown> retObjects;
         com::SafeArray<ULONG>         retIndices;

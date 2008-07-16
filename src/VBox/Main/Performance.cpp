@@ -34,27 +34,27 @@ using namespace pm;
 
 // Default factory
 
-BaseMetric *MetricFactory::createHostCpuLoad(IUnknown *object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
+BaseMetric *MetricFactory::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
 {
     Assert(mHAL);
     return new HostCpuLoad(mHAL, object, user, kernel, idle);
 }
-BaseMetric *MetricFactory::createHostCpuMHz(IUnknown *object, SubMetric *mhz)
+BaseMetric *MetricFactory::createHostCpuMHz(ComPtr<IUnknown> object, SubMetric *mhz)
 {
     Assert(mHAL);
     return new HostCpuMhz(mHAL, object, mhz);
 }
-BaseMetric *MetricFactory::createHostRamUsage(IUnknown *object, SubMetric *total, SubMetric *used, SubMetric *available)
+BaseMetric *MetricFactory::createHostRamUsage(ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
 {
     Assert(mHAL);
     return new HostRamUsage(mHAL, object, total, used, available);
 }
-BaseMetric *MetricFactory::createMachineCpuLoad(IUnknown *object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
+BaseMetric *MetricFactory::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
 {
     Assert(mHAL);
     return new MachineCpuLoad(mHAL, object, process, user, kernel);
 }
-BaseMetric *MetricFactory::createMachineRamUsage(IUnknown *object, RTPROCESS process, SubMetric *used)
+BaseMetric *MetricFactory::createMachineRamUsage(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used)
 {
     Assert(mHAL);
     return new MachineRamUsage(mHAL, object, process, used);
@@ -68,13 +68,13 @@ MetricFactoryLinux::MetricFactoryLinux()
     Assert(mHAL);
 }
 
-BaseMetric *MetricFactoryLinux::createHostCpuLoad(IUnknown *object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
+BaseMetric *MetricFactoryLinux::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
 {
     Assert(mHAL);
     return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
 }
 
-BaseMetric *MetricFactoryLinux::createMachineCpuLoad(IUnknown *object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
+BaseMetric *MetricFactoryLinux::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
 {
     Assert(mHAL);
     return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
@@ -172,13 +172,49 @@ int CollectorLinux::getHostCpuMHz(unsigned long *mhz)
 {
     return E_NOTIMPL;
 }
+
 int CollectorLinux::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
 {
+#ifdef RT_OS_LINUX
+    int rc = VINF_SUCCESS;
+    unsigned long buffers, cached;
+    FILE *f = fopen("/proc/meminfo", "r");
+
+    if (f)
+    {
+        int processed = fscanf(f, "MemTotal: %lu kB", total);
+        processed    += fscanf(f, "MemFree: %lu kB", available);
+        processed    += fscanf(f, "Buffers: %lu kB", &buffers);
+        processed    += fscanf(f, "Cached: %lu kB", &cached);
+        if (processed == 4)
+            *available += buffers + cached;
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+#else
     return E_NOTIMPL;
+#endif
 }
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
 {
     return E_NOTIMPL;
+}
+
+void BaseMetric::collectorBeat(uint64_t nowAt)
+{
+    if (isEnabled())
+    {
+        if (nowAt - mLastSampleTaken >= mPeriod * 1000)
+        {
+            mLastSampleTaken = nowAt;
+            collect();
+        }
+    }
 }
 
 void HostCpuLoad::init(unsigned long period, unsigned long length)
@@ -204,20 +240,23 @@ void HostCpuLoadRaw::collect()
     unsigned long user, kernel, idle;
     unsigned long userDiff, kernelDiff, idleDiff, totalDiff;
 
-    mHAL->getRawHostCpuLoad(&user, &kernel, &idle);
-
-    userDiff   = user   - mUserPrev;
-    kernelDiff = kernel - mKernelPrev;
-    idleDiff   = idle   - mIdlePrev;
-    totalDiff  = userDiff + kernelDiff + idleDiff;
-
-    mUser->put(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff);
-    mKernel->put(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff);
-    mIdle->put(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff);
-
-    mUserPrev   = user;
-    mKernelPrev = kernel;
-    mIdlePrev   = idle;
+    int rc = mHAL->getRawHostCpuLoad(&user, &kernel, &idle);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        userDiff   = user   - mUserPrev;
+        kernelDiff = kernel - mKernelPrev;
+        idleDiff   = idle   - mIdlePrev;
+        totalDiff  = userDiff + kernelDiff + idleDiff;
+    
+        mUser->put(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff);
+        mKernel->put(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff);
+        mIdle->put(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff);
+    
+        mUserPrev   = user;
+        mKernelPrev = kernel;
+        mIdlePrev   = idle;
+    }
 }
 
 void HostCpuMhz::init(unsigned long period, unsigned long length)
@@ -230,8 +269,10 @@ void HostCpuMhz::init(unsigned long period, unsigned long length)
 void HostCpuMhz::collect()
 {
     unsigned long mhz;
-    mHAL->getHostCpuMHz(&mhz);
-    mMHz->put(mhz);
+    int rc = mHAL->getHostCpuMHz(&mhz);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+        mMHz->put(mhz);
 }
 
 void HostRamUsage::init(unsigned long period, unsigned long length)
@@ -246,10 +287,14 @@ void HostRamUsage::init(unsigned long period, unsigned long length)
 void HostRamUsage::collect()
 {
     unsigned long total, used, available;
-    mHAL->getHostMemoryUsage(&total, &used, &available);
-    mTotal->put(total);
-    mUsed->put(used);
-    mAvailable->put(available);
+    int rc = mHAL->getHostMemoryUsage(&total, &used, &available);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        mTotal->put(total);
+        mUsed->put(used);
+        mAvailable->put(available);
+    }
 }
 
 
@@ -265,9 +310,13 @@ void MachineCpuLoad::init(unsigned long period, unsigned long length)
 void MachineCpuLoad::collect()
 {
     unsigned long user, kernel;
-    mHAL->getProcessCpuLoad(mProcess, &user, &kernel);
-    mUser->put(user);
-    mKernel->put(kernel);
+    int rc = mHAL->getProcessCpuLoad(mProcess, &user, &kernel);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        mUser->put(user);
+        mKernel->put(kernel);
+    }
 }
 
 void MachineCpuLoadRaw::collect()
@@ -275,16 +324,24 @@ void MachineCpuLoadRaw::collect()
     unsigned long hostUser, hostKernel, hostIdle, hostTotal;
     unsigned long processUser, processKernel;
 
-    mHAL->getRawHostCpuLoad(&hostUser, &hostKernel, &hostIdle);
-    hostTotal = hostUser + hostKernel + hostIdle;
-
-    mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel);
-    mUser->put(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev));
-    mUser->put(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev));
-
-    mHostTotalPrev     = hostTotal;
-    mProcessUserPrev   = processUser;
-    mProcessKernelPrev = processKernel;
+    int rc = mHAL->getRawHostCpuLoad(&hostUser, &hostKernel, &hostIdle);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        hostTotal = hostUser + hostKernel + hostIdle;
+    
+        rc = mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            mUser->put(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev));
+            mUser->put(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev));
+        
+            mHostTotalPrev     = hostTotal;
+            mProcessUserPrev   = processUser;
+            mProcessKernelPrev = processKernel;
+        }
+    }
 }
 
 void MachineRamUsage::init(unsigned long period, unsigned long length)
@@ -297,8 +354,10 @@ void MachineRamUsage::init(unsigned long period, unsigned long length)
 void MachineRamUsage::collect()
 {
     unsigned long used;
-    mHAL->getProcessMemoryUsage(mProcess, &used);
-    mUsed->put(used);
+    int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+        mUsed->put(used);
 }
 
 void CircularBuffer::init(unsigned long length)
@@ -307,32 +366,44 @@ void CircularBuffer::init(unsigned long length)
         RTMemFree(mData);
     mLength = length;
     mData = (unsigned long *)RTMemAllocZ(length * sizeof(unsigned long));
-    mPosition = 0;
+    mWrapped = false;
+    mEnd = 0;
 }
 
 unsigned long CircularBuffer::length()
 {
-    return mLength;
+    return mWrapped ? mLength : mEnd;
 }
 
 void CircularBuffer::put(unsigned long value)
 {
-    mData[mPosition++] = value;
-    if (mPosition >= mLength)
-        mPosition = 0;
+    if (mData)
+    {
+        mData[mEnd++] = value;
+        if (mEnd >= mLength)
+        {
+            mEnd = 0;
+            mWrapped = true;
+        }
+    }
 }
 
-void CircularBuffer::copyTo(unsigned long *data, unsigned long length)
+void CircularBuffer::copyTo(unsigned long *data)
 {
-    memcpy(data, mData + mPosition, (length - mPosition) * sizeof(unsigned long));
-    // Copy the wrapped part
-    if (mPosition)
-        memcpy(data + mPosition, mData, mPosition * sizeof(unsigned long));
+    if (mWrapped)
+    {
+        memcpy(data, mData + mEnd, (mLength - mEnd) * sizeof(unsigned long));
+        // Copy the wrapped part
+        if (mEnd)
+            memcpy(data + mEnd, mData, mEnd * sizeof(unsigned long));
+    }
+    else
+        memcpy(data, mData, mEnd * sizeof(unsigned long));
 }
 
-void SubMetric::query(unsigned long *data, unsigned long count)
+void SubMetric::query(unsigned long *data)
 {
-    copyTo(data, count);
+    copyTo(data);
 }
     
 void Metric::query(unsigned long **data, unsigned long *count)
@@ -344,12 +415,13 @@ void Metric::query(unsigned long **data, unsigned long *count)
     if (length)
     {
         tmpData = (unsigned long*)RTMemAlloc(sizeof(*tmpData)*length);
-        mSubMetric->query(tmpData, length);
+        mSubMetric->query(tmpData);
         if (mAggregate)
         {
             *count = 1;
             *data  = (unsigned long*)RTMemAlloc(sizeof(**data));
             **data = mAggregate->compute(tmpData, length);
+            RTMemFree(tmpData);
         }
         else
         {
@@ -366,7 +438,10 @@ void Metric::query(unsigned long **data, unsigned long *count)
 
 unsigned long AggregateAvg::compute(unsigned long *data, unsigned long length)
 {
-    return 0;
+    uint64_t tmp = 0;
+    for (unsigned long i = 0; i < length; ++i)
+        tmp += data[i];
+    return tmp / length;
 }
 
 const char * AggregateAvg::getName()
@@ -376,7 +451,11 @@ const char * AggregateAvg::getName()
 
 unsigned long AggregateMin::compute(unsigned long *data, unsigned long length)
 {
-    return 0;
+    unsigned long tmp = *data;
+    for (unsigned long i = 0; i < length; ++i)
+        if (data[i] < tmp)
+            tmp = data[i];
+    return tmp;
 }
 
 const char * AggregateMin::getName()
@@ -386,7 +465,11 @@ const char * AggregateMin::getName()
 
 unsigned long AggregateMax::compute(unsigned long *data, unsigned long length)
 {
-    return 0;
+    unsigned long tmp = *data;
+    for (unsigned long i = 0; i < length; ++i)
+        if (data[i] > tmp)
+            tmp = data[i];
+    return tmp;
 }
 
 const char * AggregateMax::getName()
@@ -394,16 +477,16 @@ const char * AggregateMax::getName()
     return "max";
 }
 
-Filter::Filter(ComSafeArrayIn(const BSTR, metricNames),
+Filter::Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
                ComSafeArrayIn(IUnknown *, objects))
 {
     com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
-    com::SafeArray <BSTR> nameArray(ComSafeArrayInArg(metricNames));
+    com::SafeArray <INPTR BSTR> nameArray(ComSafeArrayInArg(metricNames));
     for (size_t i = 0; i < objectArray.size(); ++i)
         processMetricList(std::string(com::Utf8Str(nameArray[i])), objectArray[i]);
 }
 
-void Filter::processMetricList(const std::string &name, const IUnknown *object)
+void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> object)
 {
     std::string::size_type startPos = 0;
 
@@ -417,7 +500,7 @@ void Filter::processMetricList(const std::string &name, const IUnknown *object)
     mElements.push_back(std::make_pair(object, name.substr(startPos)));
 }
 
-bool Filter::match(const IUnknown *object, const std::string &name) const
+bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
 {
     return true;
 }

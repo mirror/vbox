@@ -2695,9 +2695,12 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
 {
     pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
     /* Create sub metrics */
-    pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User");
+    pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User");
     pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
-    pm::SubMetric *cpuLoadIdle = new pm::SubMetric ("CPU/Load/Idle");
+    pm::SubMetric *cpuLoadIdle   = new pm::SubMetric ("CPU/Load/Idle");
+    pm::SubMetric *ramUsageTotal = new pm::SubMetric ("RAM/Usage/Total");
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used");
+    pm::SubMetric *ramUsageFree  = new pm::SubMetric ("RAM/Usage/Free");
     /* Create and register base metrics */
     IUnknown *objptr;
     ComObjPtr <Host> tmp = this;
@@ -2706,6 +2709,11 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
         metricFactory->createHostCpuLoad (objptr, cpuLoadUser, cpuLoadKernel,
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
+    pm::BaseMetric *ramUsage =
+        metricFactory->createHostCpuLoad (objptr, ramUsageTotal, ramUsageUsed,
+                                          ramUsageFree);
+    aCollector->registerBaseMetric (ramUsage);
+
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
                                                new pm::AggregateAvg()));
@@ -2713,6 +2721,7 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
                                                new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
                                                new pm::AggregateMax()));
+
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
                                                new pm::AggregateAvg()));
@@ -2720,12 +2729,37 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
                                                new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
                                                new pm::AggregateMax()));
+
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
                                                new pm::AggregateAvg()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
                                                new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
+                                               new pm::AggregateMax()));
+
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal, 0));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
+                                               new pm::AggregateMax()));
+
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed, 0));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateMax()));
+
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree, 0));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
                                                new pm::AggregateMax()));
 };
 
