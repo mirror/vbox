@@ -183,7 +183,5 @@ private:
     bool mLockNetworkListUpdate;
 };
 
-#undef Q_WS_WIN
-
 #endif // __VBoxVMSettingsNetwork_h__
 
