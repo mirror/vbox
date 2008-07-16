@@ -72,6 +72,8 @@
 #define RTTHREADINT_MAGIC_DEAD      0x19360614
 /** Magic number for timer handles. (Jared Mason Diamond) */
 #define RTTIMER_MAGIC               0x19370910
+/** Magic number for cache object headers. (Joseph Weizenbaum) */
+#define RTOBJCACHE_MAGIC            0x19230108
 
 /** @} */
 
