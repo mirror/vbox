@@ -71,6 +71,17 @@ if test -n "$LOADED"; then
 fi
 
 set -e
+
+# Copy the .kext to the symbols directory and tweak the kextload options.
+if test -n "$VBOX_DARWIN_SYMS"; then
+    echo "load.sh: copying the extension the symbol area..."
+    rm -Rf "$VBOX_DARWIN_SYMS/$DRVNAME"
+    mkdir -p "$VBOX_DARWIN_SYMS"
+    cp -R "$DIR" "$VBOX_DARWIN_SYMS/"
+    OPTS="$OPTS -s $VBOX_DARWIN_SYMS/ "
+    sync
+fi
+
 trap "sudo chown -R `whoami` $DIR; exit 1" INT
 # On smbfs, this might succeed just fine but make no actual changes,
 # so we might have to temporarily copy the driver to a local directory.
