@@ -507,6 +507,18 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
 }
 
 /**
+ * Save the host state
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
+/**
  * Loads the guest state
  *
  * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
