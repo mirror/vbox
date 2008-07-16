@@ -174,6 +174,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 #endif
 
+    /* Nested paging (VT-x/AMD-V) */
+    BOOL fEnableNestedPaging = false;
+    hrc = pMachine->COMGETTER(HWVirtExNestedPagingEnabled)(&fEnableNestedPaging);   H();
+    rc = CFGMR3InsertInteger(pRoot, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
+
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;
     hrc = pMachine->COMGETTER(PAEEnabled)(&fEnablePAE);                             H();
