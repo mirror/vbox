@@ -538,6 +538,9 @@ private:
 
     PVBOXHDD mContainer;
 
+    VDINTERFACE      mInterfaceError;
+    VDINTERFACEERROR mInterfaceErrorCallbacks;
+
     Utf8Str mLastVDError;
 
     friend class HardDisk;
@@ -649,6 +652,9 @@ private:
     Bstr mFormat;
 
     PVBOXHDD mContainer;
+
+    VDINTERFACE      mInterfaceError;
+    VDINTERFACEERROR mInterfaceErrorCallbacks;
 
     Utf8Str mLastVDError;
 
@@ -762,6 +768,9 @@ private:
     Bstr mFilePathFull;
 
     PVBOXHDD mContainer;
+
+    VDINTERFACE      mInterfaceError;
+    VDINTERFACEERROR mInterfaceErrorCallbacks;
 
     Utf8Str mLastVDError;
 

@@ -1092,7 +1092,17 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 
     RTFileClose(RawFile);
 
-    vrc = VDCreate(handleVDError, NULL, &pDisk);
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    vrc = VDInterfaceCreate(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                            &vdInterfaceErrorCallbacks, NULL, NULL);
+    AssertRC(vrc);
+
+    vrc = VDCreate(&vdInterfaceError, &pDisk);
     if (VBOX_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Vrc\n", vrc);
@@ -1191,7 +1201,17 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     PVBOXHDD pDisk = NULL;
 
-    int vrc = VDCreate(handleVDError, NULL, &pDisk);
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    int vrc = VDInterfaceCreate(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                                &vdInterfaceErrorCallbacks, NULL, NULL);
+    AssertRC(vrc);
+
+    vrc = VDCreate(&vdInterfaceError, &pDisk);
     if (VBOX_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Vrc\n", vrc);

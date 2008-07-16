@@ -55,6 +55,8 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     PVBOXHDD pVD = NULL;
     PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
 
 #define CHECK(str) \
     do \
@@ -67,7 +69,16 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
         } \
     } while (0)
 
-    rc = VDCreate(tstVDError, NULL, &pVD);
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                           NULL, NULL);
+    AssertRC(rc);
+
+    rc = VDCreate(&VDIError, &pVD);
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pszBackend, pszFilename, enmType, cbSize,
@@ -419,6 +430,8 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize  = 1000 * _1M;
     uint32_t u32SectorSize = 512;
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
 
 #define CHECK(str) \
     do \
@@ -431,7 +444,17 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
         } \
     } while (0)
 
-    rc = VDCreate(tstVDError, NULL, &pVD);
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                           NULL, NULL);
+    AssertRC(rc);
+
+
+    rc = VDCreate(&VDIError, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;
@@ -525,6 +548,8 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize  = 1000 * _1M;
     uint32_t u32SectorSize = 512;
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
 
 #define CHECK(str) \
     do \
@@ -537,7 +562,17 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
         } \
     } while (0)
 
-    rc = VDCreate(tstVDError, NULL, &pVD);
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                           NULL, NULL);
+    AssertRC(rc);
+
+
+    rc = VDCreate(&VDIError, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;

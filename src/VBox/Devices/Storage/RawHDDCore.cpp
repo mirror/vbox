@@ -47,9 +47,9 @@ typedef struct RAWIMAGE
     RTFILE          File;
 
     /** Error callback. */
-    PFNVDERROR      pfnError;
+    PVDINTERFACE      pInterfaceError;
     /** Opaque data for error callback. */
-    void            *pvErrorUser;
+    PVDINTERFACEERROR pInterfaceErrorCallbacks;
 
     /** Open flags passed by VBoxHD layer. */
     unsigned        uOpenFlags;
@@ -83,9 +83,9 @@ DECLINLINE(int) rawError(PRAWIMAGE pImage, int rc, RT_SRC_POS_DECL,
 {
     va_list va;
     va_start(va, pszFormat);
-    if (pImage->pfnError)
-        pImage->pfnError(pImage->pvErrorUser, rc, RT_SRC_POS_ARGS,
-                         pszFormat, va);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
+                                                   pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -97,6 +97,9 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
 {
     int rc;
     RTFILE File;
+
+    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
+        return VERR_NOT_SUPPORTED;
 
     pImage->uOpenFlags = uOpenFlags;
 
@@ -304,8 +307,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
-                    PFNVDERROR pfnError, void *pvErrorUser,
-                    void **ppBackendData)
+                   PVDINTERFACE pInterfaces, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
     int rc;
@@ -335,8 +337,12 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
     }
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
-    pImage->pfnError = pfnError;
-    pImage->pvErrorUser = pvErrorUser;
+    pImage->pInterfaceError = NULL;
+    pImage->pInterfaceErrorCallbacks = NULL;
+
+    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
 
     rc = rawOpenImage(pImage, uOpenFlags);
     if (VBOX_SUCCESS(rc))
@@ -355,10 +361,10 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry,
                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                      void *pvUser, unsigned uPercentStart,
-                     unsigned uPercentSpan, PFNVDERROR pfnError,
-                     void *pvErrorUser, void **ppBackendData)
+                     unsigned uPercentSpan, PVDINTERFACE pInterfaces,
+                     void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pfnError=%#p pvErrorUser=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pfnError, pvErrorUser, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
     int rc;
     PRAWIMAGE pImage;
 
@@ -388,8 +394,11 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
-    pImage->pfnError = pfnError;
-    pImage->pvErrorUser = pvErrorUser;
+
+    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+
 
     rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,
@@ -986,6 +995,61 @@ static void rawDump(void *pBackendData)
     }
 }
 
+static int rawGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int rawGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int rawSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int rawGetParentFilename(void *pvBackendData, char **ppszParentFilename)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static int rawSetParentFilename(void *pvBackendData, const char *pszParentFilename)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static bool rawIsAsyncIOSupported(void *pvBackendData)
+{
+    return false;
+}
+
+static int rawAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+                        PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Vrc\n", rc));
+    return rc;
+}
+
+static int rawAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+                         PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Vrc\n", rc));
+    return rc;
+}
 
 VBOXHDDBACKEND g_RawBackend =
 {
@@ -1054,5 +1118,22 @@ VBOXHDDBACKEND g_RawBackend =
     /* pfnSetParentModificationUuid */
     rawSetParentModificationUuid,
     /* pfnDump */
-    rawDump
+    rawDump,
+    /* pfnGetTimeStamp */
+    rawGetTimeStamp,
+    /* pfnGetParentTimeStamp */
+    rawGetParentTimeStamp,
+    /* pfnSetParentTimeStamp */
+    rawSetParentTimeStamp,
+    /* pfnGetParentFilename */
+    rawGetParentFilename,
+    /* pfnSetParentFilename */
+    rawSetParentFilename,
+    /* pfnIsAsyncIOSupported */
+    rawIsAsyncIOSupported,
+    /* pfnAsyncRead */
+    rawAsyncRead,
+    /* pfnAsyncWrite */
+    rawAsyncWrite
 };
+

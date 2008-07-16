@@ -507,6 +507,20 @@ typedef PDMMAC *PPDMMAC;
 /** Pointer to a const MAC address. */
 typedef const PDMMAC *PCPDMMAC;
 
+/**
+ * Data transport buffer (scatter/gather)
+ */
+typedef struct PDMDATASEG
+{
+    /** Length of buffer in entry. */
+    size_t  cbSeg;
+    /** Pointer to the start of the buffer. */
+    void   *pvSeg;
+} PDMDATASEG;
+/** Pointer to a data transport segment. */
+typedef PDMDATASEG *PPDMDATASEG;
+/** Pointer to a const data transport segment. */
+typedef PDMDATASEG const *PCPDMDATASEG;
 
 /** @} */
 

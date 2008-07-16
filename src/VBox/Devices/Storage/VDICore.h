@@ -561,10 +561,10 @@ typedef struct VDIIMAGEDESC
     const char             *pszFilename;
     /** Physical geometry of this image (never actually stored). */
     PDMMEDIAGEOMETRY        PCHSGeometry;
-    /** Error callback. */
-    PFNVDERROR              pfnError;
-    /** Opaque data for error callback. */
-    void                   *pvErrorUser;
+    /** Error interface. */
+    PVDINTERFACE            pInterfaceError;
+    /** Error interface callback table. */
+    PVDINTERFACEERROR       pInterfaceErrorCallbacks;
 #endif /* VBOX_VDICORE_VD */
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 

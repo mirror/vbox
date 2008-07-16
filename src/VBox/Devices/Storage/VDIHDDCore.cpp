@@ -62,9 +62,10 @@ DECLINLINE(int) vdiError(PVDIIMAGEDESC pImage, int rc, RT_SRC_POS_DECL,
 {
     va_list va;
     va_start(va, pszFormat);
-    if (pImage->pfnError)
-        pImage->pfnError(pImage->pvErrorUser, rc, RT_SRC_POS_ARGS,
-                         pszFormat, va);
+    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
+        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser,
+                                                   rc, RT_SRC_POS_ARGS,
+                                                   pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -508,6 +509,9 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
     int rc;
     RTFILE File;
 
+    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
+        return VERR_NOT_SUPPORTED;
+
     pImage->uOpenFlags = uOpenFlags;
 
     /*
@@ -730,8 +734,8 @@ static int vdiCheckIfValid(const char *pszFilename)
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
     pImage->paBlocks = NULL;
-    pImage->pfnError = NULL;
-    pImage->pvErrorUser = NULL;
+    pImage->pInterfaceError = NULL;
+    pImage->pInterfaceErrorCallbacks = NULL;
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);
@@ -743,7 +747,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
-                   PFNVDERROR pfnError, void *pvErrorUser,
+                   PVDINTERFACE pInterfaces,
                    void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
@@ -774,8 +778,12 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
     pImage->paBlocks = NULL;
-    pImage->pfnError = pfnError;
-    pImage->pvErrorUser = pvErrorUser;
+    pImage->pInterfaceError = NULL;
+    pImage->pInterfaceErrorCallbacks = NULL;
+
+    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
 
     rc = vdiOpenImage(pImage, uOpenFlags);
     if (VBOX_SUCCESS(rc))
@@ -794,10 +802,10 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry,
                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                      void *pvUser, unsigned uPercentStart,
-                     unsigned uPercentSpan, PFNVDERROR pfnError,
-                     void *pvErrorUser, void **ppBackendData)
+                     unsigned uPercentSpan, PVDINTERFACE pInterfaces,
+                     void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pfnError=%#p pvErrorUser=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pfnError, pvErrorUser, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
     int rc;
     PVDIIMAGEDESC pImage;
 
@@ -830,8 +838,8 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
     pImage->paBlocks = NULL;
-    pImage->pfnError = pfnError;
-    pImage->pvErrorUser = pvErrorUser;
+    pImage->pInterfaceError = NULL;
+    pImage->pInterfaceErrorCallbacks = NULL;
 
     rc = vdiCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,
@@ -1753,6 +1761,28 @@ static int vdiSetParentFilename(void *pvBackendData, const char *pszParentFilena
     return rc;
 }
 
+static bool vdiIsAsyncIOSupported(void *pvBackendData)
+{
+    return false;
+}
+
+static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+                        PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Vrc\n", rc));
+    return rc;
+}
+
+static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+                         PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Vrc\n", rc));
+    return rc;
+}
+
+
 VBOXHDDBACKEND g_VDIBackend =
 {
     /* pszBackendName */
@@ -1831,6 +1861,12 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnGetParentFilename */
     vdiGetParentFilename,
     /* pfnSetParentFilename */
-    vdiSetParentFilename
+    vdiSetParentFilename,
+    /* pfnIsAsyncIOSupported */
+    vdiIsAsyncIOSupported,
+    /* pfnAsyncRead */
+    vdiAsyncRead,
+    /* pfnAsyncWrite */
+    vdiAsyncWrite
 };
 

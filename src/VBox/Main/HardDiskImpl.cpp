@@ -3402,8 +3402,16 @@ HRESULT HVMDKImage::FinalConstruct()
     mSize = 0;
     mActualSize = 0;
 
+    /* Create supported error interface. */
+    mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    mInterfaceErrorCallbacks.pfnError     = VDError;
+    int vrc = VDInterfaceCreate(&mInterfaceError, "VMDK_IError", VDINTERFACETYPE_ERROR,
+                                &mInterfaceErrorCallbacks, this, NULL);
+    ComAssertRCRet (vrc, E_FAIL);
+
     /* initialize the container */
-    int vrc = VDCreate (VDError, this, &mContainer);
+    vrc = VDCreate (&mInterfaceError, &mContainer);
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
@@ -4282,6 +4290,14 @@ HRESULT HCustomHardDisk::FinalConstruct()
 
     ComAssertRCRet (rc, E_FAIL);
 
+    /* Create supported error interface. */
+    mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    mInterfaceErrorCallbacks.pfnError     = VDError;
+    int vrc = VDInterfaceCreate(&mInterfaceError, "Custom_IError", VDINTERFACETYPE_ERROR,
+                                &mInterfaceErrorCallbacks, this, NULL);
+    ComAssertRCRet (vrc, E_FAIL);
+
     return S_OK;
 }
 
@@ -4343,7 +4359,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         mFormat = aCustomNode.stringValue ("format");
 
         /* initialize the container */
-        vrc = VDCreate (VDError, this, &mContainer);
+        vrc = VDCreate (&mInterfaceError, &mContainer);
         if (VBOX_FAILURE (vrc))
         {
             AssertRC (vrc);
@@ -4446,8 +4462,8 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
             mFormat = Bstr (pszFormat);
             RTStrFree (pszFormat);
 
-            /* Create the corresponding container. */
-            vrc = VDCreate (VDError, this, &mContainer);
+            /* initialize the container */
+            vrc = VDCreate (&mInterfaceError, &mContainer);
 
             /* the format has been already checked for presence at this point */
             ComAssertRCBreak (vrc, rc = E_FAIL);
@@ -5110,8 +5126,16 @@ HRESULT HVHDImage::FinalConstruct()
     mSize = 0;
     mActualSize = 0;
 
+    /* Create supported error interface. */
+    mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    mInterfaceErrorCallbacks.pfnError     = VDError;
+    int vrc = VDInterfaceCreate(&mInterfaceError, "VHD_IError", VDINTERFACETYPE_ERROR,
+                                &mInterfaceErrorCallbacks, this, NULL);
+    ComAssertRCRet (vrc, E_FAIL);
+
     /* initialize the container */
-    int vrc = VDCreate (VDError, this, &mContainer);
+    vrc = VDCreate (&mInterfaceError, &mContainer);
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;

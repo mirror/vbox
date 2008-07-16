@@ -907,6 +907,10 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
+    GEN_CHECK_OFF(AHCIPort, StatDMA);
+    GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
+    GEN_CHECK_OFF(AHCIPort, StatBytesRead);
+    GEN_CHECK_OFF(AHCIPort, StatQueueFillRate);
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
