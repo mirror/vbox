@@ -40,10 +40,8 @@ VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     mLePath->setValidator (new QRegExpValidator (QRegExp (".+"), this));
 
     /* Setup constraints */
-    mLeIRQ->setMaximumWidth (mLeIRQ->fontMetrics().width ("888888"));
-    mLeIRQ->setMinimumWidth (mLeIRQ->minimumWidth());
-    mLeIOPort->setMaximumWidth (mLeIOPort->fontMetrics().width ("8888888"));
-    mLeIOPort->setMinimumWidth (mLeIOPort->minimumWidth());
+    mLeIRQ->setFixedWidth (mLeIRQ->fontMetrics().width ("8888"));
+    mLeIOPort->setFixedWidth (mLeIOPort->fontMetrics().width ("8888888"));
 
     /* Set initial values */
     /* Note: If you change one of the following don't forget retranslateUi. */
@@ -179,6 +177,7 @@ void VBoxVMSettingsSerial::mCbModeActivated (const QString &aText)
 {
     KPortMode mode = vboxGlobal().toPortMode (aText);
     mCbPipe->setEnabled (mode == KPortMode_HostPipe);
+    mLbPath->setEnabled (mode != KPortMode_Disconnected);
     mLePath->setEnabled (mode != KPortMode_Disconnected);
     if (mValidator)
         mValidator->revalidate();
@@ -191,12 +190,9 @@ VBoxVMSettingsSerialPage::VBoxVMSettingsSerialPage()
 {
     /* TabWidget creation */
     mTabWidget = new QTabWidget (this);
-    mTabWidget->setSizePolicy (QSizePolicy::Expanding,
-                               QSizePolicy::Fixed);
     QVBoxLayout *layout = new QVBoxLayout (this);
     layout->setContentsMargins (0, 5, 0, 5);
     layout->addWidget (mTabWidget);
-    layout->addStretch();
 
     /* Applying language settings */
     retranslateUi();
