@@ -3615,6 +3615,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                      pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx));
                 return VERR_INVALID_PARAMETER;
             }
+            /** @todo validate pReq->u.In.EP.VMMR0.pvVMMR0 against pvImage! */
             if (    (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryInt  - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
                 ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryFast - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
                 ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryEx   - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
