@@ -152,6 +152,11 @@
  * However, 'pointer-to-...' types (e.g. 'long *', 'wstring *') are not
  * supported and therefore cannot be used as element types.
  *
+ * In order to pass input BSTR array parameters delcared using the
+ * ComSafeArrayIn (INPTR BSTR, aParam) macro to the SafeArray<> constructor
+ * using the ComSafeArrayInArg() macro, you should use INPTR BSTR as the
+ * SafeArray<> template argument, not just BSTR.
+ *
  * Arrays of interface pointers are also supported but they require to use a
  * special SafeArray implementation, com::SafeIfacePointer, which takes the
  * interface class name as a template argument (e.g. com::SafeIfacePointer
@@ -264,6 +269,33 @@ public:
     {
         return const_cast <const PRUnichar **> (aArr);
     }
+    static const PRUnichar **__asInParam_Arr (const PRUnichar **aArr) { return aArr; }
+};
+
+template<>
+struct SafeArrayTraits <const PRUnichar *>
+{
+protected:
+
+    static void Init (const PRUnichar * &aElem) { aElem = NULL; }
+    static void Uninit (const PRUnichar * &aElem)
+    {
+        if (aElem)
+        {
+            ::SysFreeString (const_cast <PRUnichar *> (aElem));
+            aElem = NULL;
+        }
+    }
+
+    static void Copy (const PRUnichar * aFrom, const PRUnichar * &aTo)
+    {
+        AssertCompile (sizeof (PRUnichar) == sizeof (OLECHAR));
+        aTo = aFrom ? ::SysAllocString ((const OLECHAR *) aFrom) : NULL;
+    }
+
+public:
+
+    /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard */
     static const PRUnichar **__asInParam_Arr (const PRUnichar **aArr) { return aArr; }
 };
 
