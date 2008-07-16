@@ -237,7 +237,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 #if 0
         int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, abBuf, cb);
 #else
-        int rc = intnetRingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, abBuf, cb);
+        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, abBuf, cb);
         if (RT_SUCCESS(rc))
             rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, NULL, 0);
 #endif
@@ -314,7 +314,7 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         while (INTNETRingGetReadable(&pArgs->pBuf->Recv))
         {
             uint8_t abBuf[16384];
-            unsigned cb = intnetRingReadFrame(pArgs->pBuf, &pArgs->pBuf->Recv, abBuf);
+            unsigned cb = intnetR0RingReadFrame(pArgs->pBuf, &pArgs->pBuf->Recv, abBuf);
             unsigned *puFrame = (unsigned *)&abBuf[sizeof(PDMMAC) * 2];
 
             /* check for termination frame. */
@@ -460,7 +460,7 @@ int main()
                                 RTPrintf("tstIntNetR0: %d readable bytes, expected %d!\n", INTNETRingGetReadable(&pBuf1->Recv), cbExpect);
                                 g_cErrors++;
                             }
-                            unsigned cb = intnetRingReadFrame(pBuf1, &pBuf1->Recv, abBuf);
+                            unsigned cb = intnetR0RingReadFrame(pBuf1, &pBuf1->Recv, abBuf);
                             if (cb != sizeof(g_TestFrame0))
                             {
                                 RTPrintf("tstIntNetR0: read %d frame bytes, expected %d!\n", cb, sizeof(g_TestFrame0));
