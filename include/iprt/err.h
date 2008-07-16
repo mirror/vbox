@@ -929,6 +929,14 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_GETOPT_INVALID_ARGUMENT_FORMAT     (-827)
 /** @} */
 
+/** @name RTCache status codes
+ * @{ */
+/** RTCache: cache is full. */
+#define VERR_CACHE_FULL                         (-850)
+/** RTCache: cache is empty. */
+#define VERR_CACHE_EMPTY                        (-851)
+/** @} */
+
 /* SED-END */
 
 /** @} */
