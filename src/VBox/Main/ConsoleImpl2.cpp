@@ -853,6 +853,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
                 STR_FREE();
                 rc = CFGMR3InsertString(pCfg,   "Format",           "VMDK");                RC_CHECK();
+
+                /* 
+                 * Create cfgm nodes for async transport driver because VMDK is currently the only
+                 * one which may support async I/O. This has to be made generic based on the capabiliy flags
+                 * when the new HardDisk interface is merged.
+                 */
+                rc = CFGMR3InsertNode(pLunL1, "AttachedDriver", &pLunL2);                   RC_CHECK();
+                rc = CFGMR3InsertString(pLunL2, "Driver",      "TransportAsync");           RC_CHECK();
+                /* The async transport driver has no config options yet. */
             }
             else if (hddType == HardDiskStorageType_CustomHardDisk)
             {

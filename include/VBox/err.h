@@ -1048,6 +1048,10 @@
 #define VERR_VDI_BLOCK_FREE                         (-3215)
 /** Configuration value not found. */
 #define VERR_VDI_VALUE_NOT_FOUND                    (-3216)
+/** Asynchronous I/O request finished. */
+#define VINF_VDI_ASYNC_IO_FINISHED                  3218
+/** Asynchronous I/O is not finished yet. */
+#define VERR_VDI_ASYNC_IO_IN_PROGRESS               (-3219)
 /** @} */
 
 

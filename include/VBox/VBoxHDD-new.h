@@ -177,8 +177,14 @@ typedef struct VBOXHDDRAW
  * created by other products). Images opened with this flag should only be
  * used for querying information, and nothing else. */
 #define VD_OPEN_FLAGS_INFO          RT_BIT(3)
+/** Open image for asynchronous access.
+ *  Only available if VD_CAP_ASYNC_IO is set
+ *  Check with VDIsAsynchonousIoSupported wether
+ *  asynchronous I/O is really supported for this file.
+ */
+#define VD_OPEN_FLAGS_ASYNC_IO      RT_BIT(4)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)
 /** @}*/
 
 
@@ -195,11 +201,12 @@ typedef struct VBOXHDDRAW
 #define VD_CAP_CREATE_SPLIT_2G      RT_BIT(3)
 /** Supports being used as differencing image format backend. */
 #define VD_CAP_DIFF                 RT_BIT(4)
+/** Supports asynchronous I/O operations for at least some configurations. */
+#define VD_CAP_ASYNC                RT_BIT(5)
 /** The backend operates on files. The caller needs to know to handle the
  * location appropriately. */
 #define VD_CAP_FILE                 RT_BIT(6)
 /** @}*/
-
 
 /**
  * Data structure for returning a list of backend capabilities.
@@ -212,19 +219,342 @@ typedef struct VDBACKENDINFO
     uint64_t uBackendCaps;
 } VDBACKENDINFO, *PVDBACKENDINFO;
 
+/**
+ * Supported interface types.
+ */
+typedef enum VDINTERFACETYPE
+{
+    /** First valid interface. */
+    VDINTERFACETYPE_FIRST = 0,
+    /** Interface to pass error message to upper layers. */
+    VDINTERFACETYPE_ERROR = VDINTERFACETYPE_FIRST,
+    /** Interface for asynchronous I/O operations. */
+    VDINTERFACETYPE_ASYNCIO,
+    /** Interface for progress notification. */
+    VDINTERFACETYPE_PROGRESS,
+    /** invalid interface. */
+    VDINTERFACETYPE_INVALID
+} VDINTERFACETYPE;
 
 /**
- * Error message callback.
- *
- * @param   pvUser          The opaque data passed on container creation.
- * @param   rc              The VBox error code.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
- * @param   pszFormat       Error message format string.
- * @param   va              Error message arguments.
+ * Common structure for all interfaces.
  */
-typedef DECLCALLBACK(void) FNVDERROR(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
-/** Pointer to a FNVDERROR(). */
-typedef FNVDERROR *PFNVDERROR;
+typedef struct VDINTERFACE
+{
+    /** Human readable interface name. */
+    const char         *pszInterfaceName;
+    /** The size of the struct. */
+    uint32_t            cbSize;
+    /** Pointer to the next common interface structure. */
+    struct VDINTERFACE *pNext;
+    /** Interface type. */
+    VDINTERFACETYPE     enmInterface;
+    /** Opaque user data which is passed on every call. */
+    void               *pvUser;
+    /** Pointer to the function call table of the interface. 
+     *  As this is opaque this must be casted to the right interface
+     *  struct defined below based on the interface type in enmInterface. */
+    void               *pCallbacks;
+} VDINTERFACE, *PVDINTERFACE;
+/** Pointer to a const PVDINTERFACE. */
+typedef const PVDINTERFACE PCVDINTERFACE;
+
+/**
+ * Helper functions to handle interface lists.
+ */
+
+/**
+ * Get a specific interface from a list of interfaces specified by the type.
+ *
+ * @returns Pointer to the matching interface or NULL if none was found.
+ * @param   pInterfaces     Pointer to the first interface in the list.
+ * @param   enmInterface    Interface to search for.
+ */
+DECLINLINE(PVDINTERFACE) VDGetInterfaceFromList(PVDINTERFACE pInterfaces, VDINTERFACETYPE enmInterface)
+{
+    AssertMsgReturn(   (enmInterface >= VDINTERFACETYPE_FIRST)
+                    && (enmInterface < VDINTERFACETYPE_INVALID),
+                    ("enmInterface=%u", enmInterface), NULL);
+
+    while (pInterfaces)
+    {
+        /* Sanity checks. */
+        AssertMsgBreak(pInterfaces->cbSize == sizeof(VDINTERFACE),
+                       ("cbSize=%u\n", pInterfaces->cbSize));
+                       
+        if (pInterfaces->enmInterface == enmInterface)
+            return pInterfaces;
+        pInterfaces = pInterfaces->pNext;
+    }
+
+    /* No matching interface was found. */
+    return NULL;
+}
+
+/**
+ * Initialize a common interface structure.
+ *
+ * @return VBox status code.
+ * @param  pInterface   Pointer to an unitialized common interface structure.
+ * @param  pszName      Name of the interface.
+ * @param  enmInterface Type of the interface.
+ * @param  pCallbacks   The callback table of the interface.
+ * @param  pvUser       Opaque user data passed on every function call.
+ * @param  pNext        Pointer to the next supported interface if any.
+ */
+DECLINLINE(int) VDInterfaceCreate(PVDINTERFACE pInterface, const char *pszName,
+                                  VDINTERFACETYPE enmInterface, void *pCallbacks,
+                                  void *pvUser, PVDINTERFACE pNext)
+{
+
+    /** Argument checks. */
+    AssertMsgReturn(   (enmInterface >= VDINTERFACETYPE_FIRST)
+                    && (enmInterface < VDINTERFACETYPE_INVALID),
+                    ("enmInterface=%u", enmInterface), VERR_INVALID_PARAMETER);
+
+    AssertMsgReturn(VALID_PTR(pCallbacks),
+                    ("pCallbacks=%#p", pCallbacks),
+                    VERR_INVALID_PARAMETER);
+
+    pInterface->cbSize           = sizeof(VDINTERFACE);
+    pInterface->pszInterfaceName = pszName;
+    pInterface->enmInterface     = enmInterface;
+    pInterface->pCallbacks       = pCallbacks;
+    pInterface->pvUser           = pvUser;
+    pInterface->pNext            = pNext;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Interface to deliver error messages to upper layers.
+ */
+typedef struct VDINTERFACEERROR
+{
+    /**
+     * Size of the error interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Error message callback.
+     *
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   rc              The VBox error code.
+     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   pszFormat       Error message format string.
+     * @param   va              Error message arguments.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnError, (void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+
+} VDINTERFACEERROR, *PVDINTERFACEERROR;
+
+/**
+ * Get error interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pCallbacks Opaque interface pointer.
+ */
+DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(void *pCallbacks)
+{
+    PVDINTERFACEERROR pInterfaceError = (PVDINTERFACEERROR)pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceError->cbSize == sizeof(VDINTERFACEERROR))
+                    && (pInterfaceError->enmInterface == VDINTERFACETYPE_ERROR),
+                    ("Not an error interface\n"), NULL);
+
+    return pInterfaceError;
+}
+
+/** 
+ * Completion callback which is called by the interface owner
+ * to inform the backend that a task finished.
+ * 
+ * @returns VBox status code.
+ * @param   pvUser          Opaque user data which is passed on request submission.
+ */
+typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser);
+/** Pointer to FNVDCOMPLETED() */
+typedef FNVDCOMPLETED *PFNVDCOMPLETED;
+
+
+/**
+ * Support interface for asynchronous I/O
+ */
+typedef struct VDINTERFACEASYNCIO
+{
+    /**
+     * Size of the async interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Open callback
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pszLocation     Name of the location to open.
+     * @param   fReadonly       Whether to open the storage medium read only.
+     * @param   ppStorage       Where to store the opaque storage handle.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, bool fReadonly, void **ppStorage));
+
+    /**
+     * Close callback.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The opaque storage handle to close.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvUser, void *pStorage));
+
+    /**
+     * Synchronous write callback.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The storage handle to use.
+     * @param   uOffset         The offset to start from.
+     * @þaram   cbWrite         How many bytes to write.
+     * @param   pvBuf           Pointer to the bits need to be written.
+     * @param   pcbWritten      Where to store how many bytes where actually written.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvUser, void *pStorage, uint64_t uOffset, 
+                                         size_t cbWrite, const void *pvBuf, size_t *pcbWritten));
+
+    /**
+     * Synchronous read callback.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The storage handle to use.
+     * @param   uOffset         The offset to start from.
+     * @þaram   cbRead          How many bytes to read.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   pcbRead         Where to store how many bytes where actually read.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvUser, void *pStorage, uint64_t uOffset, 
+                                        size_t cbRead, void *pvBuf, size_t *pcbRead));
+
+    /**
+     * Flush data to the storage backend.
+     *
+     * @returns VBox statis code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The storage handle to flush.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvUser, void *pStorage));
+
+    /**
+     * Prepare an asynchronous read task.
+     *
+     * @returns VBox status code.
+     * @param   pvUser         The opqaue user data passed on container creation.
+     * @param   pStorage       The storage handle.
+     * @param   uOffset        The offset to start reading from.
+     * @param   pvBuf          Where to store read bits.
+     * @param   cbRead         How many bytes to read.
+     * @param   ppTask         Where to store the opaque task handle.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (void *pvUser, void *pStorage, uint64_t uOffset, 
+                                               void *pvBuf, size_t cbRead, void **ppTask));
+
+    /**
+     * Prepare an asynchronous write task.
+     *
+     * @returns VBox status code.
+     * @param   pvUser         The opaque user data passed on conatiner creation.
+     * @param   pStorage       The storage handle.
+     * @param   uOffset        The offset to start writing to.
+     * @param   pvBuf          Where to read the data from.
+     * @param   cbWrite        How many bytes to write.
+     * @param   ppTask         Where to store the opaque task handle.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (void *pvUser, void *pStorage, uint64_t uOffset, 
+                                                void *pvBuf, size_t cbWrite, void **ppTask));
+
+    /**
+     * Submit an array of tasks for processing
+     *
+     * @returns VBox status code.
+     * @param   pvUser        The opaque user data passed on container creation.
+     * @param   apTasks       Array of task handles to submit.
+     * @param   cTasks        How many tasks to submit.
+     * @param   pvUser2       User data which is passed on completion.
+     * @param   pvUserCaller  Opaque user data the caller of VDAsyncWrite/Read passed.
+     * @param   pfnTasksCompleted Pointer to callback which is called on request completion.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTasksSubmit, (void *pvUser, void *apTasks[], unsigned cTasks, void *pvUser2,
+                                               void *pvUserCaller, PFNVDCOMPLETED pfnTasksCompleted));
+
+} VDINTERFACEASYNCIO, *PVDINTERFACEASYNCIO;
+
+/**
+ * Get async I/O interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pCallbacks Opaque interface pointer.
+ */
+DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(void *pCallbacks)
+{
+    PVDINTERFACEASYNCIO pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceAsyncIO->cbSize == sizeof(VDINTERFACEASYNCIO))
+                    && (pInterfaceAsyncIO->enmInterface == VDINTERFACETYPE_ASYNCIO),
+                    ("Not an async I/O interface\n"), NULL);
+
+    return pInterfaceAsyncIO;
+}
+
+/**
+ * Progress notification interface
+ */
+typedef struct VDINTERFACEPROGRESS
+{
+    /**
+     * Size of the progress interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Progress notification callbacks.
+     */
+    PFNVMPROGRESS   pfnProgress;
+} VDINTERFACEPROGRESS, *PVDINTERFACEPROGRESS;
+
+/**
+ * Get progress interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pCallbacks Opaque interface pointer.
+ */
+DECLINLINE(PVDINTERFACEPROGRESS) VDGetInterfaceProgress(void *pCallbacks)
+{
+    PVDINTERFACEPROGRESS pInterfaceProgress = (PVDINTERFACEPROGRESS)pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceProgress->cbSize == sizeof(VDINTERFACEPROGRESS))
+                    && (pInterfaceProgress->enmInterface == VDINTERFACETYPE_PROGRESS),
+                    ("Not an progress notification interface\n"), NULL);
+
+    return pInterfaceProgress;
+}
 
 
 /**
@@ -249,18 +579,25 @@ typedef VBOXHDD *PVBOXHDD;
 VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                                 unsigned *pcEntriesUsed);
 
+/**
+ * Lists the capablities of a backend indentified by its name.
+ * Free all returned names with RTStrFree() when you no longer need them.
+ *
+ * @returns VBox status code.
+ * @param   pszBackend      The backend name.
+ * @param   pEntries        Pointer to an entry.
+ */
+VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry);
 
 /**
  * Allocates and initializes an empty HDD container.
  * No image files are opened.
  *
  * @returns VBox status code.
- * @param   pfnError        Callback for setting extended error information.
- * @param   pvErrorUser     Opaque parameter for pfnError.
+ * @param   pInterfaces     Pointer to the first supported interface.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PFNVDERROR pfnError, void *pvErrorUser,
-                           PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk);
 
 /**
  * Destroys HDD container.
@@ -558,6 +895,18 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
                                  PVDIMAGETYPE penmType);
 
 /**
+ * List the capabilities of image backend in HDD container.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pbackendInfo    Where to store the backend information.
+ */
+VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
+                                      PVDBACKENDINFO pBackendInfo);
+
+/**
  * Get flags of image in HDD container.
  *
  * @returns VBox status code.
@@ -712,6 +1061,51 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk);
+
+
+/**
+ * Query if asynchronous operations are supported for this disk.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pfAIOSupported  Where to store if async IO is supported.
+ */
+VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, bool *pfAIOSupported);
+
+
+/**
+ * Start a asynchronous read request.
+ *
+ * @returns VBox status code.
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   uOffset         The offset of the virtual disk to read from.
+ * @param   cbRead          How many bytes to read.
+ * @param   paSeg           Pointer to an array of segments.
+ * @param   cSeg            Number of segments in the array.
+ * @param   pvUser          User data which is passed on completion
+ */
+VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead, 
+                              PPDMDATASEG paSeg, unsigned cSeg,
+                              void *pvUser);
+
+
+/**
+ * Start a asynchronous write request.
+ *
+ * @returns VBox status code.
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   uOffset         The offset of the virtual disk to write to.
+ * @param   cbWrtie         How many bytes to write.
+ * @param   paSeg           Pointer to an array of segments.
+ * @param   cSeg            Number of segments in the array.
+ * @param   pvUser          User data which is passed on completion.
+ */
+VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
+                               PPDMDATASEG paSeg, unsigned cSeg,
+                               void *pvUser);
+
 
 __END_DECLS
 

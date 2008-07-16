@@ -70,11 +70,11 @@ typedef struct VBOXHDDBACKEND
      * @param   pszFilename     Name of the image file to open. Guaranteed to be available and
      *                          unchanged during the lifetime of this image.
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
-     * @param   pfnError        Callback for setting extended error information.
-     * @param   pvErrorUser     Opaque parameter for pfnError.
+     * @param   pInterfaces     Pointer to the first element of supported interfaces of the caller.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags,
+                                        PVDINTERFACE pInterfaces, void **ppvBackendData));
 
     /**
      * Create a disk image.
@@ -93,11 +93,10 @@ typedef struct VBOXHDDBACKEND
      * @param   pvUser          User argument for the progress callback.
      * @param   uPercentStart   Starting value for progress percentage.
      * @param   uPercentSpan    Span for varying progress percentage.
-     * @param   pfnError        Callback for setting extended error information.
-     * @param   pvErrorUser     Opaque parameter for pfnError.
+     * @param   pInterfaces     Pointer to the supported interfaces of the caller.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PVDINTERFACE pInterfaces, void **ppvBackendData));
 
     /**
      * Rename a disk image. Only needs to work as long as the operating
@@ -419,6 +418,43 @@ typedef struct VBOXHDDBACKEND
      * @param   pszParentFilename Where to get the path from.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pvBackendData, const char *pszParentFilename));
+
+    /**
+     * Return whether asynchronous I/O operations are supported for this image.
+     *
+     * @returns true if asynchronous I/O is supported
+     *          false otherwise.
+     * @param   pvBackendData    Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsAsyncIOSupported, (void *pvBackendData));
+
+    /**
+     * Start an asynchronous read request.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   uOffset         The offset of the virtual disk to read from.
+     * @param   cbRead          How many bytes to read.
+     * @param   paSeg           Pointer to the segment array.
+     * @param   cSeg            Number of segments.
+     * @param   pvUser          Opaque user data.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pvBackendData, uint64_t uOffset, size_t cbRead,
+                                             PPDMDATASEG paSeg, unsigned cSeg, void *pvUser));
+
+    /**
+     * Start an asynchronous write request.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   uOffset         The offset of the virtual disk to write to.
+     * @param   cbWrite         How many bytes to write.
+     * @param   paSeg           Pointer to the segment array.
+     * @param   cSeg            Number of segments.
+     * @param   pvUser          Oaque user data-
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+                                              PPDMDATASEG paSeg, unsigned cSeg, void *pvUser));
 
 } VBOXHDDBACKEND;
 
