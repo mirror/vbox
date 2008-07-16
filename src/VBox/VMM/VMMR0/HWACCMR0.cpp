@@ -64,7 +64,6 @@ static struct
     /** Ring 0 handlers for VT-x and AMD-V. */
     DECLR0CALLBACKMEMBER(int, pfnEnterSession,(PVM pVM, PHWACCM_CPUINFO pCpu));
     DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM));
-    DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, CPUMCTX *pCtx));
     DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, CPUMCTX *pCtx));
     DECLR0CALLBACKMEMBER(int, pfnEnableCpu, (PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys));
@@ -145,7 +144,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
     /* Fill in all callbacks with placeholders. */
     HWACCMR0Globals.pfnEnterSession     = HWACCMR0DummyEnter;
     HWACCMR0Globals.pfnLeaveSession     = HWACCMR0DummyLeave;
-    HWACCMR0Globals.pfnSaveHostState    = HWACCMR0DummySaveHostState;
     HWACCMR0Globals.pfnLoadGuestState   = HWACCMR0DummyLoadGuestState;
     HWACCMR0Globals.pfnRunGuestCode     = HWACCMR0DummyRunGuestCode;
     HWACCMR0Globals.pfnEnableCpu        = HWACCMR0DummyEnableCpu;
@@ -342,7 +340,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
     {
         HWACCMR0Globals.pfnEnterSession     = VMXR0Enter;
         HWACCMR0Globals.pfnLeaveSession     = VMXR0Leave;
-        HWACCMR0Globals.pfnSaveHostState    = VMXR0SaveHostState;
         HWACCMR0Globals.pfnLoadGuestState   = VMXR0LoadGuestState;
         HWACCMR0Globals.pfnRunGuestCode     = VMXR0RunGuestCode;
         HWACCMR0Globals.pfnEnableCpu        = VMXR0EnableCpu;
@@ -356,7 +353,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
     {
         HWACCMR0Globals.pfnEnterSession     = SVMR0Enter;
         HWACCMR0Globals.pfnLeaveSession     = SVMR0Leave;
-        HWACCMR0Globals.pfnSaveHostState    = SVMR0SaveHostState;
         HWACCMR0Globals.pfnLoadGuestState   = SVMR0LoadGuestState;
         HWACCMR0Globals.pfnRunGuestCode     = SVMR0RunGuestCode;
         HWACCMR0Globals.pfnEnableCpu        = SVMR0EnableCpu;
@@ -741,8 +737,6 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, &HWACCMR0Globals.aCpuInfo[idCpu]);
-    AssertRC(rc);
-    rc |= HWACCMR0Globals.pfnSaveHostState(pVM);
     AssertRC(rc);
     rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, pCtx);
     AssertRC(rc);
