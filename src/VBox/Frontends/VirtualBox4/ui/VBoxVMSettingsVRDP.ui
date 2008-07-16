@@ -22,45 +22,62 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>365</width>
-    <height>185</height>
+    <width>277</width>
+    <height>151</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>5</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>5</number>
-   </property>
-   <item>
-    <widget class="QGroupBox" name="mGbVRDP" >
+  <layout class="QGridLayout" >
+   <item row="0" column="0" colspan="2" >
+    <widget class="QCheckBox" name="mGbVRDP" >
      <property name="whatsThis" >
       <string>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</string>
      </property>
-     <property name="title" >
+     <property name="text" >
       <string>&amp;Enable VRDP Server</string>
      </property>
-     <property name="checkable" >
+     <property name="checked" >
       <bool>true</bool>
      </property>
-     <property name="checked" >
-      <bool>false</bool>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
      </property>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="1" >
+    <widget class="QWidget" native="1" name="mVRDPChild" >
      <layout class="QGridLayout" >
+      <property name="leftMargin" >
+       <number>0</number>
+      </property>
       <property name="topMargin" >
-       <number>5</number>
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
       </property>
       <item row="0" column="0" >
        <widget class="QLabel" name="mLbVRDPPort" >
         <property name="text" >
-         <string>Server &amp;Port</string>
+         <string>Server &amp;Port:</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
          <cstring>mLeVRDPPort</cstring>
@@ -69,28 +86,24 @@
       </item>
       <item row="0" column="1" >
        <widget class="QLineEdit" name="mLeVRDPPort" >
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="whatsThis" >
          <string>Displays the VRDP Server port number. You may specify &lt;tt>0&lt;/tt> (zero) to reset the port to the default value.</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2" >
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" >
-         <size>
-          <width>0</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="1" column="0" >
        <widget class="QLabel" name="mLbVRDPMethod" >
         <property name="text" >
-         <string>Authentication &amp;Method</string>
+         <string>Authentication &amp;Method:</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
          <cstring>mCbVRDPMethod</cstring>
@@ -104,23 +117,13 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2" >
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" >
-         <size>
-          <width>0</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="2" column="0" >
        <widget class="QLabel" name="mLbVRDPTimeout" >
         <property name="text" >
-         <string>Authentication &amp;Timeout</string>
+         <string>Authentication &amp;Timeout:</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
          <cstring>mLeVRDPTimeout</cstring>
@@ -129,28 +132,34 @@
       </item>
       <item row="2" column="1" >
        <widget class="QLineEdit" name="mLeVRDPTimeout" >
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="whatsThis" >
          <string>Specifies the timeout for guest authentication, in milliseconds.</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2" >
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" >
-         <size>
-          <width>0</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="1" column="2" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -158,7 +167,7 @@
      <property name="sizeHint" >
       <size>
        <width>20</width>
-       <height>0</height>
+       <height>40</height>
       </size>
      </property>
     </spacer>
@@ -166,5 +175,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>mGbVRDP</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mVRDPChild</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>80</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>159</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
