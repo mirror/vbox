@@ -93,11 +93,6 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /* Check CFGM option. */
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging);
-    if (VBOX_FAILURE(rc))
-        pVM->hwaccm.s.fAllowNestedPaging = true;    /* enabled by default now. */
-
     /* Misc initialisation. */
     pVM->hwaccm.s.vmx.fSupported = false;
     pVM->hwaccm.s.svm.fSupported = false;
@@ -189,6 +184,11 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
 
     /* Disabled by default. */
     pVM->fHWACCMEnabled = false;
+
+    /* Check CFGM options. */
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging);
+    if (VBOX_FAILURE(rc))
+        pVM->hwaccm.s.fAllowNestedPaging = true;    /* enabled by default now. */
 
     /* HWACCM support must be explicitely enabled in the configuration file. */
     pVM->hwaccm.s.fAllowed = false;
