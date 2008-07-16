@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>351</width>
-    <height>253</height>
+    <width>294</width>
+    <height>218</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -32,27 +32,21 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <layout class="QVBoxLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>5</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>5</number>
-   </property>
-   <item>
-    <widget class="QGroupBox" name="mGbSharedFolders" >
-     <property name="title" >
-      <string>Shared &amp;Folders</string>
-     </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QWidget" native="1" name="mGbSharedFolders" >
      <layout class="QHBoxLayout" >
+      <property name="leftMargin" >
+       <number>0</number>
+      </property>
       <property name="topMargin" >
-       <number>5</number>
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
       </property>
       <item>
        <widget class="QTreeWidget" name="mTreeView" >
