@@ -185,14 +185,16 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     /* Disabled by default. */
     pVM->fHWACCMEnabled = false;
 
-    /* Check CFGM options. */
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging);
-    if (VBOX_FAILURE(rc))
-        pVM->hwaccm.s.fAllowNestedPaging = true;    /* enabled by default now. */
+    /*
+     * Check CFGM options.
+     */
+    /* Nested paging: enabled by default now */
+    rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging, true);
+    AssertRC(rc);
 
     /* HWACCM support must be explicitely enabled in the configuration file. */
-    pVM->hwaccm.s.fAllowed = false;
-    CFGMR3QueryBool(CFGMR3GetChild(CFGMR3GetRoot(pVM), "HWVirtExt/"), "Enabled", &pVM->hwaccm.s.fAllowed);
+    rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "HWVirtExt/"), "Enabled", &pVM->hwaccm.s.fAllowed, false);
+    AssertRC(rc);
 
     return VINF_SUCCESS;
 }
@@ -653,7 +655,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             return false;
 
         /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
-        /* Windows XP; switch to protected mode; all selectors are marked not present in the 
+        /* Windows XP; switch to protected mode; all selectors are marked not present in the
          * hidden registers (possible recompiler bug) */
         if (pCtx->csHid.Attr.n.u1Present == 0)
             return false;
