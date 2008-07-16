@@ -747,31 +747,6 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 }
 
 
-/** Runtime assert implementation for Darwin Ring-0. */
-RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
-{
-    printf("!!Assertion Failed!!\n"
-             "Expression: %s\n"
-             "Location  : %s(%d) %s\n",
-             pszExpr, pszFile, uLine, pszFunction);
-}
-
-
-/** Runtime assert implementation for the Darwin Ring-0 driver.
- * @todo this one needs fixing! */
-RTDECL(void) AssertMsg2(const char *pszFormat, ...)
-{   /* forwarder. */
-    va_list     ap;
-    char        msg[256];
-
-    va_start(ap, pszFormat);
-    vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
-    msg[sizeof(msg) - 1] = '\0';
-    printf("%s", msg);
-    va_end(ap);
-}
-
-
 /*
  *
  * org_virtualbox_SupDrv
