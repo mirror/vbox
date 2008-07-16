@@ -240,6 +240,14 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 HWACCMR3DECL(bool) HWACCMR3IsActive(PVM pVM);
 
 /**
+ * Checks if we are currently using nested paging.
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
+
+/**
  * Checks hardware accelerated raw mode is allowed.
  *
  * @returns boolean

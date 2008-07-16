@@ -66,6 +66,7 @@ public:
     STDMETHOD(COMGETTER(LogEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(LogEnabled))(BOOL enable);
     STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *enabled);
+    STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled))(BOOL *enabled);
     STDMETHOD(COMGETTER(PAEEnabled))(BOOL *enabled);
     STDMETHOD(COMGETTER(VirtualTimeRate))(ULONG *pct);
     STDMETHOD(COMSETTER(VirtualTimeRate))(ULONG pct);

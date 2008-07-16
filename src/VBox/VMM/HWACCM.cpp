@@ -711,6 +711,17 @@ HWACCMR3DECL(bool) HWACCMR3IsActive(PVM pVM)
 }
 
 /**
+ * Checks if we are currently using nested paging.
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
+{
+    return pVM->hwaccm.s.fNestedPaging;
+}
+
+/**
  * Checks if internal events are pending. In that case we are not allowed to dispatch interrupts.
  *
  * @returns boolean
