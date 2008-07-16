@@ -64,11 +64,11 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
 
     /* Setup dialog for current platform */
 #ifndef Q_WS_X11
-    mGbTAP->setHidden (true);
+    setTapVisible (false);
 #endif
 #ifdef Q_WS_MAC
     /* No Host Interface Networking on the Mac yet */
-    mGbTAP->setHidden (true);
+    setTapVisible (false);
 #endif
 #ifdef Q_WS_X11
     /* Setup iconsets */
@@ -77,6 +77,8 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
     mTbTerminate_x11->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                                     ":/select_file_dis_16px.png"));
 #endif
+
+    layout()->activate();
 
     /* Applying language settings */
     retranslateUi();
@@ -265,7 +267,7 @@ void VBoxVMSettingsNetwork::naTypeChanged (const QString &aString)
 #ifdef Q_WS_X11
     bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
                         KNetworkAttachmentType_HostInterface;
-    mGbTAP->setEnabled (enableHostIf);
+    setTapEnabled (enableHostIf);
 #endif
     if (mValidator)
         mValidator->revalidate();
@@ -306,13 +308,21 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
     /* Refill them */
     mCbAType->insertItem (0,
         vboxGlobal().toString (KNetworkAdapterType_Am79C970A));
+    mCbAType->setItemData (0,
+        mCbAType->itemText(0), Qt::ToolTipRole);
     mCbAType->insertItem (1,
         vboxGlobal().toString (KNetworkAdapterType_Am79C973));
+    mCbAType->setItemData (1,
+        mCbAType->itemText(1), Qt::ToolTipRole);
 #ifdef VBOX_WITH_E1000
     mCbAType->insertItem (2,
         vboxGlobal().toString (KNetworkAdapterType_I82540EM));
+    mCbAType->setItemData (2,
+        mCbAType->itemText(2), Qt::ToolTipRole);
     mCbAType->insertItem (3,
         vboxGlobal().toString (KNetworkAdapterType_I82543GC));
+    mCbAType->setItemData (3,
+        mCbAType->itemText(3), Qt::ToolTipRole);
 #endif
     /* Set the old value */
     mCbAType->setCurrentIndex (currentAdapter);
@@ -324,18 +334,51 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
     /* Refill them */
     mCbNAType->insertItem (0,
         vboxGlobal().toString (KNetworkAttachmentType_Null));
+    mCbNAType->setItemData (0,
+        mCbNAType->itemText(0), Qt::ToolTipRole);
     mCbNAType->insertItem (1,
         vboxGlobal().toString (KNetworkAttachmentType_NAT));
+    mCbNAType->setItemData (1,
+        mCbNAType->itemText(1), Qt::ToolTipRole);
 #ifndef Q_WS_MAC /* Not yet on the Mac */
     mCbNAType->insertItem (2,
         vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
+    mCbNAType->setItemData (2,
+        mCbNAType->itemText(2), Qt::ToolTipRole);
     mCbNAType->insertItem (3,
         vboxGlobal().toString (KNetworkAttachmentType_Internal));
+    mCbNAType->setItemData (3,
+        mCbNAType->itemText(3), Qt::ToolTipRole);
 #endif
     /* Set the old value */
     mCbNAType->setCurrentIndex (currentAttachment);
 }
 
+void VBoxVMSettingsNetwork::setTapEnabled (bool aEnabled)
+{
+    mGbTap->setEnabled (aEnabled);
+    mLbInterface_x11->setEnabled (aEnabled);
+    mLeInterface_x11->setEnabled (aEnabled);
+    mLbSetup_x11->setEnabled (aEnabled);
+    mLeSetup_x11->setEnabled (aEnabled);
+    mTbSetup_x11->setEnabled (aEnabled);
+    mLbTerminate_x11->setEnabled (aEnabled);
+    mLeTerminate_x11->setEnabled (aEnabled);
+    mTbTerminate_x11->setEnabled (aEnabled);
+}
+
+void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
+{
+    mGbTap->setVisible (aVisible);
+    mLbInterface_x11->setVisible (aVisible);
+    mLeInterface_x11->setVisible (aVisible);
+    mLbSetup_x11->setVisible (aVisible);
+    mLeSetup_x11->setVisible (aVisible);
+    mTbSetup_x11->setVisible (aVisible);
+    mLbTerminate_x11->setVisible (aVisible);
+    mLeTerminate_x11->setVisible (aVisible);
+    mTbTerminate_x11->setVisible (aVisible);
+}
 
 /* VBoxNIList Stuff */
 #ifdef Q_WS_WIN
@@ -378,12 +421,19 @@ private:
 };
 
 VBoxNIList::VBoxNIList (QWidget *aParent)
-    : QIWithRetranslateUI<QGroupBox> (aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
 {
+    QGridLayout *mainLayout = new QGridLayout (this);
+    VBoxGlobal::setLayoutMargin (mainLayout, 0);
+    mLbTitle = new QILabelSeparator();
+    mainLayout->addWidget (mLbTitle, 0, 0, 1, 2);
+//    mainLayout->addItem (new QSpacerItem (8, 16, QSizePolicy::Fixed, QSizePolicy::Minimum), 1, 0);
     /* Creating List Widget */
-    QHBoxLayout *layout = new QHBoxLayout (this);
+    QHBoxLayout *layout = new QHBoxLayout ();
+    mainLayout->addLayout (layout, 1, 0);
     mList = new QTreeWidget (this);
     setFocusProxy (mList);
+    mLbTitle->setBuddy (mList);
     mList->setColumnCount (1);
     mList->header()->hide();
     mList->setContextMenuPolicy (Qt::ActionsContextMenu);
@@ -573,7 +623,7 @@ void VBoxNIList::delHostInterface()
 
 void VBoxNIList::retranslateUi()
 {
-    setTitle (tr ("Host &Interfaces"));
+    mLbTitle->setText (tr ("Host &Interfaces"));
 
     mList->setWhatsThis (tr ("Lists all available host interfaces."));
 
@@ -634,8 +684,9 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
     mNIList = new VBoxNIList (this);
     layout->addWidget (mNIList);
 #else
-    layout->addStretch();
+//    layout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
 #endif
+//    layout->activate();
 }
 
 void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
@@ -671,6 +722,8 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
         /* Setup connections */
         connect (page->mCbNetwork, SIGNAL (editTextChanged (const QString&)),
                  this, SLOT (updateNetworksList()));
+        page->layout()->activate();
+        page->updateGeometry();
     }
 
 #ifdef Q_WS_WIN

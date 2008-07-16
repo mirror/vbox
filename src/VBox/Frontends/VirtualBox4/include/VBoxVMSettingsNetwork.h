@@ -79,6 +79,9 @@ private:
 
     void prepareComboboxes();
 
+    void setTapEnabled (bool aEnabled);
+    void setTapVisible (bool aVisible);
+
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
 
@@ -92,7 +95,7 @@ private:
 /*
  * QGroupBox sub-class which represents network interface list.
  */
-class VBoxNIList : public QIWithRetranslateUI<QGroupBox>
+class VBoxNIList : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -122,7 +125,8 @@ private:
 
     void populateInterfacesList();
 
-    QTreeWidget *mList;
+    QILabelSeparator *mLbTitle;
+    QTreeWidget      *mList;
 
     QAction *mAddAction;
     QAction *mDelAction;
@@ -178,6 +182,8 @@ private:
     /* Flags */
     bool mLockNetworkListUpdate;
 };
+
+#undef Q_WS_WIN
 
 #endif // __VBoxVMSettingsNetwork_h__
 
