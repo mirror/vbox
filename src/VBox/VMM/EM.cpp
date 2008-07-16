@@ -1218,6 +1218,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         }
     }
 
+#if 0
     /* Try our own instruction emulator before falling back to the recompiler. */
     DISCPUSTATE Cpu;
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "GEN EMU");
@@ -1250,6 +1251,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
             break;
         }
     }
+#endif
     STAM_PROFILE_START(&pVM->em.s.StatREMEmu, a);
     rc = REMR3EmulateInstruction(pVM);
     STAM_PROFILE_STOP(&pVM->em.s.StatREMEmu, a);
