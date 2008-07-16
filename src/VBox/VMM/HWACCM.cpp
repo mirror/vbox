@@ -520,6 +520,9 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.svm.fEnabled = true;
 
+                if (pVM->hwaccm.s.fNestedPaging)
+                    LogRel(("HWACCM:    Enabled nested paging\n"));
+
                 hwaccmr3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
