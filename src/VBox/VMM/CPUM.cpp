@@ -82,7 +82,6 @@ typedef enum CPUMDUMPTYPE
 /** Pointer to a cpu info dump type. */
 typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -134,6 +133,7 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
         return VERR_UNSUPPORTED_CPU;
     }
     ASMCpuId_ECX_EDX(1, &pVM->cpum.s.CPUFeatures.ecx, &pVM->cpum.s.CPUFeatures.edx);
+    ASMCpuId_ECX_EDX(0x80000001, &pVM->cpum.s.CPUFeaturesExt.ecx, &pVM->cpum.s.CPUFeaturesExt.edx);
 
     /* Setup the CR4 AND and OR masks used in the switcher */
     /* Depends on the presence of FXSAVE(SSE) support on the host CPU */

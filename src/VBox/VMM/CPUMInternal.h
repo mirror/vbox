@@ -321,6 +321,14 @@ typedef struct CPUM
         /** ecx part */
         X86CPUIDFEATECX     ecx;
     }   CPUFeatures;
+    /** Host extended CPU features. */
+    struct
+    {
+        /** edx part */
+        uint32_t     edx;
+        /** ecx part */
+        uint32_t     ecx;
+    }   CPUFeaturesExt;
 
     /* CPU manufacturer. */
     CPUMCPUVENDOR           enmCPUVendor;
@@ -359,13 +367,16 @@ typedef struct CPUM
 
 __BEGIN_DECLS
 
-DECLASM(int)  CPUMHandleLazyFPUAsm(PCPUM pCPUM);
-DECLASM(int)  CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
-DECLASM(void) CPUMLoadFPUAsm(PCPUMCTX pCtx);
-DECLASM(void) CPUMSaveFPUAsm(PCPUMCTX pCtx);
-DECLASM(void) CPUMLoadXMMAsm(PCPUMCTX pCtx);
-DECLASM(void) CPUMSaveXMMAsm(PCPUMCTX pCtx);
-
+DECLASM(int)      CPUMHandleLazyFPUAsm(PCPUM pCPUM);
+DECLASM(int)      CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
+DECLASM(void)     CPUMLoadFPUAsm(PCPUMCTX pCtx);
+DECLASM(void)     CPUMSaveFPUAsm(PCPUMCTX pCtx);
+DECLASM(void)     CPUMLoadXMMAsm(PCPUMCTX pCtx);
+DECLASM(void)     CPUMSaveXMMAsm(PCPUMCTX pCtx);
+DECLASM(void)     CPUMSetFCW(uint16_t u16FCW);
+DECLASM(uint16_t) CPUMGetFCW();
+DECLASM(void)     CPUMSetMXCSR(uint32_t u32MXCSR);
+DECLASM(uint32_t) CPUMGetMXCSR();
 
 __END_DECLS
 

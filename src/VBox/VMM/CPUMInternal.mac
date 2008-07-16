@@ -405,6 +405,10 @@ struc CPUM
     .CPUFeatures.edx      resd    1
     .CPUFeatures.ecx      resd    1
 
+    ; CPUID eax=0x80000001
+    .CPUFeaturesExt.edx   resd    1
+    .CPUFeaturesExt.ecx   resd    1
+
     .enmCPUVendor         resd    1
 
     ; CR4 masks

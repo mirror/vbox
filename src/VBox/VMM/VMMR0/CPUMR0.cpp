@@ -162,16 +162,22 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
     default:
         break;
     }
+    /* Save the FPU control word and MXCSR, so we can restore the properly afterwards. 
+     * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
+     */
+    pVM->cpum.s.Host.fpu.FCW = CPUMGetFCW();
+    if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
+        pVM->cpum.s.Host.fpu.MXCSR = CPUMGetMXCSR();
+
     CPUMLoadFPUAsm(pCtx);
 
     /* The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
      *
      * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
      */
-    if (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR /* cpuid 0x80000001 */)
+    if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
     {
         /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
-        /* Note: Solaris sets this bit on a per-process basis, so we do need to check each time. */
         uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
 
         if (msrEFERHost & MSR_K6_EFER_FFXSR)
@@ -206,6 +212,13 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
         /* fxsave doesn't save the XMM state! */
         CPUMSaveXMMAsm(pCtx);
     }
+    /* Restore the original FPU control word and MXCSR. 
+     * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
+     */
+    CPUMSetFCW(pVM->cpum.s.Host.fpu.FCW);
+    if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
+        CPUMSetMXCSR(pVM->cpum.s.Host.fpu.MXCSR);
+
     pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU|CPUM_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
 }
