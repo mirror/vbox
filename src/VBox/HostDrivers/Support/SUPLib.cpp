@@ -523,7 +523,6 @@ SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation)
 
 SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
 {
-#if 0 /* temp hack. */
     /*
      * The following operations don't belong here.
      */
@@ -532,14 +531,6 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
-#else
-    if (    (    uOperation == SUP_VMMR0_DO_RAW_RUN
-             ||  uOperation == SUP_VMMR0_DO_HWACC_RUN
-             ||  uOperation == SUP_VMMR0_DO_NOP)
-        &&  !pReqHdr
-        &&  !u64Arg)
-        return (int) SUPCallVMMR0Fast(pVMR0, uOperation);
-#endif
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -597,21 +588,14 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
     return g_pfnCallVMMR0(pVMR0, uOperation, pvArg);
 
 #else
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
-    {
-        Assert(!pvArg);
-        return suplibOsIOCtlFast(SUP_IOCTL_FAST_DO_RAW_RUN);
-    }
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HWACC_RUN))
-    {
-        Assert(!pvArg);
-        return suplibOsIOCtlFast(SUP_IOCTL_FAST_DO_HWACC_RUN);
-    }
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_NOP))
-    {
-        Assert(!pvArg);
-        return suplibOsIOCtlFast(SUP_IOCTL_FAST_DO_NOP);
-    }
+    /*
+     * The following operations don't belong here.
+     */
+    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
+                    &&  uOperation != SUP_VMMR0_DO_HWACC_RUN
+                    &&  uOperation != SUP_VMMR0_DO_NOP,
+                    ("%#x\n", uOperation),
+                    VERR_INTERNAL_ERROR);
     return SUPCallVMMR0Ex(pVMR0, uOperation, (uintptr_t)pvArg, NULL);
 #endif
 }
