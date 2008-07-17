@@ -281,25 +281,6 @@ typedef INTNETSG const *PCINTNETSG;
 /** @} */
 
 
-/**
- * Initializes a scatter / gather buffer from a internal networking packet.
- *
- * @returns Pointer to the start of the frame.
- * @param   pSG         Pointer to the scatter / gather structure.
- *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
- * @param   pHdr        Pointer to the packet header.
- * @param   pBuf        The buffer the header is within. Only used in strict builds.
- * @remarks Perhaps move this...
- */
-DECLINLINE(void) INTNETSgInitFromPkt(PINTNETSG pSG, PCINTNETHDR pPktHdr, PCINTNETBUF pBuf)
-{
-    pSG->cSegsUsed = 1;
-    pSG->cbTotal = pSG->aSegs[0].cb = pPktHdr->cbFrame;
-    pSG->aSegs[0].pv = INTNETHdrGetFramePtr(pPktHdr, pBuf);
-    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
-}
-
-
 /** @name Direction (packet source or destination)
  * @{ */
 /** To/From the wire. */
@@ -625,7 +606,25 @@ typedef enum INTNETTRUNKTYPE
 /** @name INTNETR0Open flags.
  * @{ */
 /** Whether new participants should be subjected to access check or not. */
-#define INTNET_OPEN_FLAGS_PUBLIC    RT_BIT_32(1)
+#define INTNET_OPEN_FLAGS_PUBLIC                                RT_BIT_32(1)
+/** Ignore any requests for promiscuous mode. */
+#define INTNET_OPEN_FLAGS_IGNORE_PROMISC                        RT_BIT_32(2)
+/** Ignore any requests for promiscuous mode, quietly applied/ignored on open. */
+#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC                RT_BIT_32(3)
+/** Ignore any requests for promiscuous mode on the trunk wire connection. */
+#define INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE             RT_BIT_32(4)
+/** Ignore any requests for promiscuous mode on the trunk wire connection, quietly applied/ignored on open. */
+#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE     RT_BIT_32(5)
+/** Ignore any requests for promiscuous mode on the trunk host connection. */
+#define INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST             RT_BIT_32(6)
+/** Ignore any requests for promiscuous mode on the trunk host connection, quietly applied/ignored on open. */
+#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST     RT_BIT_32(7)
+/** The mask of flags which causes security incompatibilities. */
+#define INTNET_OPEN_FLAGS_SECURITY_XOR_MASK                     (RT_BIT_32(1) | RT_BIT_32(2) | RT_BIT_32(4) | RT_BIT_32(6))
+/** The mask of flags is always ORed in, even on open. (the quiet stuff) */
+#define INTNET_OPEN_FLAGS_SECURITY_OR_MASK                      (RT_BIT_32(3) | RT_BIT_32(5) | RT_BIT_32(7))
+/** The mask of valid flags. */
+#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x000000fe)
 /** @} */
 
 /** The maximum length of a network name. */
@@ -848,8 +847,8 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
  * @returns VBox status code.
  * @param   pIntNet     The instance data.
  * @param   hIF         The interface handle.
- * @param   pvFrame     Pointer to the frame.
- * @param   cbFrame     Size of the frame.
+ * @param   pvFrame     Pointer to the frame. Optional, please don't use.
+ * @param   cbFrame     Size of the frame. Optional, please don't use.
  */
 INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void *pvFrame, unsigned cbFrame);
 
