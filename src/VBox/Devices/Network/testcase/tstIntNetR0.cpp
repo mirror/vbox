@@ -1,6 +1,9 @@
+/* $Id$ */
 /** @file
+ * Internal networking - Usermode testcase for the kernel mode bits.
  *
- * VBox - Testcase for the Ring-0 part of internal networking.
+ * This is a bit hackish as we're mixing context here, however it is
+ * very useful when making changes to the internal networking service.
  */
 
 /*
@@ -237,7 +240,9 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 #if 0
         int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, abBuf, cb);
 #else
-        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, abBuf, cb);
+        INTNETSG Sg;
+        intnetR0SgInitTemp(&Sg, abBuf, cb);
+        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, &Sg);
         if (RT_SUCCESS(rc))
             rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, NULL, 0);
 #endif
