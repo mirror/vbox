@@ -69,7 +69,10 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    return SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+    rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        rc = pVM->vmm.s.iLastGCRc;
+    return rc;
 }
 
 
@@ -103,7 +106,9 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+    rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        rc = pVM->vmm.s.iLastGCRc;
     bool fDump = false;
     if (rc != rcExpect)
     {
@@ -346,7 +351,9 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         uint64_t    TickStart = ASMReadTSC();
         do
         {
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
             if (VBOX_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
@@ -397,7 +404,9 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {
