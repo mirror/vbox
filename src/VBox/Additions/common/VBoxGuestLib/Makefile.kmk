@@ -101,7 +101,8 @@ ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all i
  VBoxGuestR3Lib_SOURCES   = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
-	VBoxGuestR3LibMisc.cpp
+	$(if $(VBOX_WITH_INFO_SVC),VBoxGuestR3LibInfoSvc.cpp,) \
+	VBoxGuestR3LibMisc.cpp	
 endif
 
 
