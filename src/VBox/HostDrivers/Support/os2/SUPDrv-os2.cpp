@@ -228,7 +228,7 @@ DECLASM(int) VBoxDrvClose(uint16_t sfn)
 }
 
 
-DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc)
+DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
 {
     /*
      * Find the session.
