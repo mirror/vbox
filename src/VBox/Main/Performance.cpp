@@ -482,8 +482,32 @@ Filter::Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
 {
     com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
     com::SafeArray <INPTR BSTR> nameArray(ComSafeArrayInArg(metricNames));
-    for (size_t i = 0; i < objectArray.size(); ++i)
-        processMetricList(std::string(com::Utf8Str(nameArray[i])), objectArray[i]);
+    if (objectArray.isNull())
+    {
+        if (nameArray.size())
+        {
+            for (size_t i = 0; i < nameArray.size(); ++i)
+                processMetricList(std::string(com::Utf8Str(nameArray[i])), ComPtr<IUnknown>());
+        }
+        else
+            processMetricList(std::string("*"), ComPtr<IUnknown>());
+    }
+    else
+    {
+        for (size_t i = 0; i < objectArray.size(); ++i)
+            switch (nameArray.size())
+            {
+                case 0:
+                    processMetricList(std::string("*"), objectArray[i]);
+                    break;
+                case 1:
+                    processMetricList(std::string(com::Utf8Str(nameArray[0])), objectArray[i]);
+                    break;
+                default:
+                    processMetricList(std::string(com::Utf8Str(nameArray[i])), objectArray[i]);
+                    break;
+            }
+    }
 }
 
 void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> object)
@@ -502,5 +526,22 @@ void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> o
 
 bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
 {
-    return true;
+    ElementList::const_iterator it;
+
+    printf("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str());
+    for (it = mElements.begin(); it != mElements.end(); it++)
+    {
+        printf("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str());
+        if ((*it).first.isNull() || (*it).first == object)
+        {
+            // Objects match, compare names
+            if ((*it).second == "*" || (*it).second == name)
+            {
+                printf("...found!\n");
+                return true;
+            }
+        }
+    }
+    printf("...no matches!\n");
+    return false;
 }

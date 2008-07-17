@@ -86,11 +86,11 @@ public:
     // IPerformanceMetric properties
     STDMETHOD(COMGETTER(MetricName)) (BSTR *aMetricName);
     STDMETHOD(COMGETTER(Object)) (IUnknown **anObject);
-    STDMETHOD(COMGETTER(Period)) (unsigned long *aPeriod);
-    STDMETHOD(COMGETTER(Count)) (unsigned long *aCount);
+    STDMETHOD(COMGETTER(Period)) (ULONG *aPeriod);
+    STDMETHOD(COMGETTER(Count)) (ULONG *aCount);
     STDMETHOD(COMGETTER(Unit)) (BSTR *aUnit);
-    STDMETHOD(COMGETTER(MinValue)) (long *aMinValue);
-    STDMETHOD(COMGETTER(MaxValue)) (long *aMaxValue);
+    STDMETHOD(COMGETTER(MinimumValue)) (LONG *aMinValue);
+    STDMETHOD(COMGETTER(MaximumValue)) (LONG *aMaxValue);
 
     // IPerformanceMetric methods
 
@@ -201,17 +201,17 @@ public:
     STDMETHOD(COMGETTER(MetricNames)) (ComSafeArrayOut (BSTR, metricNames));
 
     // IPerformanceCollector methods
-    STDMETHOD(GetMetrics) (ComSafeArrayIn (const BSTR, metricNames),
+    STDMETHOD(GetMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                            ComSafeArrayIn (IUnknown *, objects),
-                           ComSafeArrayOut (IPerformanceMetric *, metrics));
+                           ComSafeArrayOut (IPerformanceMetric *, outMetrics));
     STDMETHOD(SetupMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                              ComSafeArrayIn (IUnknown *, objects),
                              ULONG aPeriod, ULONG aCount);
-    STDMETHOD(EnableMetrics) (ComSafeArrayIn (const BSTR, metricNames),
+    STDMETHOD(EnableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                               ComSafeArrayIn (IUnknown *, objects));
-    STDMETHOD(DisableMetrics) (ComSafeArrayIn (const BSTR, metricNames),
+    STDMETHOD(DisableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                ComSafeArrayIn (IUnknown *, objects));
-    STDMETHOD(QueryMetricsData) (ComSafeArrayIn (const BSTR, metricNames),
+    STDMETHOD(QueryMetricsData) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                  ComSafeArrayIn (IUnknown *, objects),
                                  ComSafeArrayOut (BSTR, outMetricNames),
                                  ComSafeArrayOut (IUnknown *, outObjects),
