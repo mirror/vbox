@@ -48,6 +48,7 @@ FORMS = \
     ui/VBoxVMSettingsSF.ui \
     ui/VBoxVMSettingsSerial.ui \
     ui/VBoxVMSettingsUSB.ui \
+    ui/VBoxVMSettingsUSBFilterDetails.ui \
     ui/VBoxVMSettingsVRDP.ui \
     ui/VBoxGLSettingsGeneral.ui \
     ui/VBoxGLSettingsInput.ui \
