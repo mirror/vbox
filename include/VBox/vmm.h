@@ -369,6 +369,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_HWACC_RUN = SUP_VMMR0_DO_HWACC_RUN,
     /** Official NOP that we use for profiling. */
     VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
+    /** Official slow iocl NOP that we use for profiling. */
+    VMMR0_DO_SLOW_NOP,
 
     /** Ask the GVMM to create a new VM. */
     VMMR0_DO_GVMM_CREATE_VM,
@@ -492,7 +494,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
  * @param   enmOperation    Which operation to execute.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
+VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
 
 /**
  * The Ring 0 entry point, called by the support library (SUP).

@@ -286,27 +286,25 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
+     *
+     * Note: The previous method of returning the rc prior to IDC version
+     *       7.4 has been abandond, we're no longer compatible with that
+     *       interface.
      */
     ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
     if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
     {
-        KIRQL oldIrql;
-        int   rc;
-
-        /* We're here with METHOD_NEITHER, which means no parameter validation has been performed. Do not use input
-         * or write to output parameters!
-         */
-
         /* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+        KIRQL oldIrql;
         KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
-        rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
+        int rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
         KeLowerIrql(oldIrql);
 
         /* Complete the I/O request. */
-        NTSTATUS rcNt = pIrp->IoStatus.Status = STATUS_SUCCESS;
+        NTSTATUS rcNt = pIrp->IoStatus.Status = RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
         IoCompleteRequest(pIrp, IO_NO_INCREMENT);
         return rcNt;
     }

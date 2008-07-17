@@ -110,6 +110,7 @@ int main(int argc, char **argv)
                 pVM->pVMR0 = pVMR0;
                 pVM->paVMPagesR3 = paPages;
                 pVM->pSession = pSession;
+                pVM->enmVMState = VMSTATE_CREATED;
 
                 rc = SUPSetVMForFastIOCtl(pVMR0);
                 if (!rc)
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
                      */
                     for (i = cIterations; i > 0; i--)
                     {
-                        rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
+                        rc = SUPCallVMMR0(pVMR0, VMMR0_DO_SLOW_NOP, NULL);
                         if (rc != VINF_SUCCESS)
                         {
                             RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
@@ -131,9 +132,9 @@ int main(int argc, char **argv)
                     RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
 
                     /*
-                     * Profile it.
+                     * The fast path.
                      */
-                    if (!rc)
+                    if (rc == VINF_SUCCESS)
                     {
                         RTTimeNanoTS();
                         uint64_t StartTS = RTTimeNanoTS();
@@ -142,14 +143,14 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
+                            rc = SUPCallVMMR0Fast(pVMR0, VMMR0_DO_NOP);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0Fast -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -157,7 +158,7 @@ int main(int argc, char **argv)
                         uint64_t Ticks = ASMReadTSC() - StartTick;
                         uint64_t NanoSecs = RTTimeNanoTS() - StartTS;
 
-                        RTPrintf("tstInt: SUPCallVMMR0     - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
+                        RTPrintf("tstInt: SUPCallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
 
 #ifdef VBOX_WITH_IDT_PATCHING
@@ -171,14 +172,14 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0Fast(pVMR0, VMMR0_DO_NOP);
+                            rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0/idt -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -186,7 +187,7 @@ int main(int argc, char **argv)
                         Ticks = ASMReadTSC() - StartTick;
                         NanoSecs = RTTimeNanoTS() - StartTS;
 
-                        RTPrintf("tstInt: SUPCallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
+                        RTPrintf("tstInt: SUPCallVMMR0/idt - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
 #endif /* VBOX_WITH_IDT_PATCHING */
 
@@ -200,14 +201,14 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0Ex(pVMR0, VMMR0_DO_NOP, 0, NULL);
+                            rc = SUPCallVMMR0Ex(pVMR0, VMMR0_DO_SLOW_NOP, 0, NULL);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0Ex -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }

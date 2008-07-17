@@ -716,8 +716,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
  */
 int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
-    int rc;
-
     /*
      * We check the two prereqs after doing this only to allow the compiler to optimize things better.
      */
@@ -726,23 +724,20 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
         switch (uIOCtl)
         {
             case SUP_IOCTL_FAST_DO_RAW_RUN:
-                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
-                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
-                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
                 break;
             default:
-                rc = VERR_INTERNAL_ERROR;
-                break;
+                return VERR_INTERNAL_ERROR;
         }
+        return VINF_SUCCESS;
     }
-    else
-        rc = VERR_INTERNAL_ERROR;
-
-    return rc;
+    return VERR_INTERNAL_ERROR;
 }
 
 
