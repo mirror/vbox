@@ -1016,6 +1016,7 @@ int main(int argc, char *argv[])
     return rc;
 }
 
+#if 0
 void queryMetrics (ComPtr <IPerformanceCollector> collector,
                    ComSafeArrayIn (IUnknown *, objects))
 {
@@ -1059,3 +1060,4 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         printf("\n");
     }
 }
+#endif
