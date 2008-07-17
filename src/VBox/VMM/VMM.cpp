@@ -1948,7 +1948,9 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1997,6 +1999,8 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
             rc = VERR_GENERAL_FAILURE;
 #else
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2077,7 +2081,9 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2131,7 +2137,9 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                rc = pVM->vmm.s.iLastGCRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 

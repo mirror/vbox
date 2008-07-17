@@ -295,6 +295,10 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         KIRQL oldIrql;
         int   rc;
 
+        /* We're here with METHOD_NEITHER, which means no parameter validation has been performed. Do not use input
+         * or write to output parameters!
+         */
+
         /* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
         KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
@@ -303,16 +307,6 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         /* Complete the I/O request. */
         NTSTATUS rcNt = pIrp->IoStatus.Status = STATUS_SUCCESS;
-        pIrp->IoStatus.Information = sizeof(rc);
-        __try
-        {
-            *(int *)pIrp->UserBuffer = rc;
-        }
-        __except(EXCEPTION_EXECUTE_HANDLER)
-        {
-            rcNt = pIrp->IoStatus.Status = GetExceptionCode();
-            dprintf(("VBoxSupDrvDeviceContorl: Exception Code %#x\n", rcNt));
-        }
         IoCompleteRequest(pIrp, IO_NO_INCREMENT);
         return rcNt;
     }

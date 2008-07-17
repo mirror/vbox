@@ -170,10 +170,9 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 int suplibOsIOCtlFast(uintptr_t uFunction)
 {
     int32_t rcRet = VERR_INTERNAL_ERROR;
-    ULONG cbRet = sizeof(rcRet);
     int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY_FAST, uFunction,
                          NULL, 0, NULL,
-                         &rcRet, sizeof(rcRet), &cbRet);
+                         NULL, 0, NULL);
     if (RT_LIKELY(rc == NO_ERROR))
         rc = rcRet;
     else
