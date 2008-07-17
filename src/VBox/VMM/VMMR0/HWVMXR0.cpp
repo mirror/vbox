@@ -910,13 +910,9 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Debug registers. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
     {
-        /** @todo DR0-6 */
-        val  = pCtx->dr7;
+        val  = pCtx->dr7 & 0xffffffff;                                  /* upper 32 bits reserved */
         val &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
-        val |= 0x400;                                       /* must be one */
-#ifdef VBOX_STRICT
-        val = 0x400;
-#endif
+        val |= 0x400;                                                   /* must be one */
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DR7,              val);
         AssertRC(rc);
 
@@ -925,7 +921,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DEBUGCTL_HIGH,    0);
         AssertRC(rc);
 
-        /** @todo */
+        /** @todo do we really ever need this? */
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DEBUG_EXCEPTIONS,         0);
         AssertRC(rc);
     }
@@ -1436,16 +1432,6 @@ ResumeExecution:
     AssertRC(rc);
     pCtx->eflags.u32        = val;
 
-    /* Update the APIC with the cached TPR value.
-     * @todo reduce overhead
-     */
-    if (    pCtx->msrEFER & MSR_K6_EFER_LMA
-        &&  pVM->hwaccm.s.vmx.pAPIC)
-    {
-        rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
-        AssertRC(rc);
-    }
-
     /* Take care of instruction fusing (sti, mov ss) */
     rc |= VMXReadVMCS(VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE, &val);
     uInterruptState = val;
@@ -1532,7 +1518,7 @@ ResumeExecution:
 
     if (fSyncTPR)
     {
-        rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80]);
+        rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
         AssertRC(rc);
     }
 
