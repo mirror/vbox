@@ -604,8 +604,9 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             }
 
             Assert(!pVM->vmm.s.fSwitcherDisabled);
-            return VERR_NOT_SUPPORTED;
-        }
+            pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+            break;
+       }
 
         /*
          * Run guest code using the available hardware acceleration technology.
@@ -644,6 +645,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
          * For profiling.
          */
         case VMMR0_DO_NOP:
+            pVM->vmm.s.iLastGCRc = VINF_SUCCESS;
             return VINF_SUCCESS;
 
         /*
@@ -651,8 +653,11 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
          */
         default:
             AssertMsgFailed(("%#x\n", enmOperation));
-            return VERR_NOT_SUPPORTED;
+            pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+            break;
     }
+    /* Error case, but the error was written to pVM->vmm.s.iLastGCRc */
+    return VINF_SUCCESS;
 }
 
 
