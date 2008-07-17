@@ -287,7 +287,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      *
-     * Note: The previous method of returning the rc prior to IDC version
+     * Note: The previous method of returning the rc prior to IOC version
      *       7.4 has been abandond, we're no longer compatible with that
      *       interface.
      */
