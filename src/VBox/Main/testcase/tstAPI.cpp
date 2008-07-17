@@ -43,6 +43,13 @@ using namespace com;
 
 #define printf RTPrintf
 
+
+// forward declarations
+///////////////////////////////////////////////////////////////////////////////
+
+void queryMetrics (ComPtr <IPerformanceCollector> collector,
+                   ComSafeArrayIn (IUnknown *, objects));
+
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -920,64 +927,35 @@ int main(int argc, char *argv[])
 
 #if 1
     do {
-        Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
-        com::SafeArray<BSTR> baseMetrics (1);
-        baseMetricNames[0].cloneTo (&baseMetrics [0]);
-
-        ComPtr <IHost> host;
-        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
+        // Get collector
         ComPtr <IPerformanceCollector> collector;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(PerformanceCollector) (collector.asOutParam()));
 
-        com::SafeIfaceArray<IUnknown> objects(1);
-        host.queryInterfaceTo(&objects[0]);
-        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
-                                                ComSafeArrayAsInParam(objects), 1u, 10u) );
-        RTThreadSleep(3000); /* Sleep 10 seconds. */
 
-        Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total.RAM/Usage/Used:avg" };
-        com::SafeArray<BSTR> metrics (1);
-        metricNames[0].cloneTo (&metrics [0]);
-        com::SafeArray<BSTR>          retNames;
-        com::SafeIfaceArray<IUnknown> retObjects;
-        com::SafeArray<ULONG>         retIndices;
-        com::SafeArray<ULONG>         retLengths;
-        com::SafeArray<LONG>          retData;
-        CHECK_ERROR_BREAK (collector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
-                                                       ComSafeArrayAsInParam(objects),
-                                                       ComSafeArrayAsOutParam(retNames),
-                                                       ComSafeArrayAsOutParam(retObjects),
-                                                       ComSafeArrayAsOutParam(retIndices),
-                                                       ComSafeArrayAsOutParam(retLengths),
-                                                       ComSafeArrayAsOutParam(retData)) );
-        for (unsigned i = 0; i < retNames.size(); i++)
-        {
-            Bstr metricName(retNames[i]);
-            printf("%ls", metricName.raw());
-            for (unsigned j = 0; j < retLengths[i]; j++)
-            {
-                printf(" %d", retData[retIndices[i] + j]);
-            }
-            printf("\n");
-        }
-    } while (0);
-#endif
-#if 0
-    for (int i = 0; i < 10; i++)
-    {
-        ULONG user, system, idle;
-        host->GetProcessorUsage(&user, &system, &idle);
-        printf("user=%u system=%u idle=%u\n", user/10000000, system/10000000, idle/10000000);
-    }
-#endif
+        // Fill base metrics array
+        Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
+        com::SafeArray<BSTR> baseMetrics (1);
+        baseMetricNames[0].cloneTo (&baseMetrics [0]);
 
-#if 0
-    {
+        // Get host
+        ComPtr <IHost> host;
+        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
+
+        // Get machine
         ComPtr <IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dsl";
         printf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
+
+        // Setup base metrics
+        com::SafeIfaceArray<IUnknown> objects(2);
+        host.queryInterfaceTo(&objects[0]);
+        machine.queryInterfaceTo(&objects[1]);
+        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
+                                                   ComSafeArrayAsInParam(objects), 1u, 10u) );
+
+        // Open session
         Guid guid;
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         printf ("Opening a remote session for this machine...\n");
@@ -989,37 +967,35 @@ int main(int argc, char *argv[])
         ComPtr <IMachine> sessionMachine;
         printf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
+
+        // Get console
         ComPtr <IConsole> console;
         printf ("Getting console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
-        for (int i = 0; i < 10; i++)
-        {
-            ComPtr <IHost> host;
-            CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
-            ULONG user, system;
-            sessionMachine->GetProcessorUsage(&user, &system);
-            printf("VM: user=%u system=%u\n", user/10000000, system/10000000);
-            RTThreadSleep(1000);
-        }
+
+        RTThreadSleep(3000); // Sleep for 10 seconds
+
+        printf("Metrics collected with DSL machine running: --------------------\n");
+        queryMetrics(collector, ComSafeArrayAsInParam(objects));
+
+        // Pause
         printf ("Press enter to pause the VM execution in the remote session...");
         getchar();
         CHECK_RC (console->Pause());
-        for (int i = 0; i < 10; i++)
-        {
-            ComPtr <IHost> host;
-            CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
-            ULONG user, system;
-            sessionMachine->GetProcessorUsage(&user, &system);
-            printf("VM: user=%u system=%u\n", user/10000000, system/10000000);
-            RTThreadSleep(1000);
-        }
+
+        RTThreadSleep(3000); // Sleep for 10 seconds
+
+        printf("Metrics collected with DSL machine paused: ---------------------\n");
+        queryMetrics(collector, ComSafeArrayAsInParam(objects));
+
+        // Power off
         printf ("Press enter to power off VM...");
         getchar();
         CHECK_RC (console->PowerDown());
         printf ("Press enter to close this session...");
         getchar();
         session->Close();
-    }
+    } while (false);
 #endif
 
     printf ("Press enter to release Session and VirtualBox instances...");
@@ -1038,4 +1014,48 @@ int main(int argc, char *argv[])
     printf ("tstAPI FINISHED.\n");
 
     return rc;
+}
+
+void queryMetrics (ComPtr <IPerformanceCollector> collector,
+                   ComSafeArrayIn (IUnknown *, objects))
+{
+    HRESULT rc;
+
+    Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total,RAM/Usage/Used:avg" };
+    com::SafeArray<BSTR> metrics (1);
+    metricNames[0].cloneTo (&metrics [0]);
+    com::SafeArray<BSTR>          retNames;
+    com::SafeIfaceArray<IUnknown> retObjects;
+    com::SafeArray<ULONG>         retIndices;
+    com::SafeArray<ULONG>         retLengths;
+    com::SafeArray<LONG>          retData;
+    CHECK_ERROR (collector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                             ComSafeArrayInArg(objects),
+                                             ComSafeArrayAsOutParam(retNames),
+                                             ComSafeArrayAsOutParam(retObjects),
+                                             ComSafeArrayAsOutParam(retIndices),
+                                             ComSafeArrayAsOutParam(retLengths),
+                                             ComSafeArrayAsOutParam(retData)) );
+    for (unsigned i = 0; i < retNames.size(); i++)
+    {
+        // Get info for the metric
+        com::SafeArray<BSTR> nameOfMetric(1);
+        Bstr (retNames[i]).cloneTo (&nameOfMetric[0]);
+        com::SafeIfaceArray<IUnknown> anObject(1);
+        ComPtr<IUnknown>(retObjects[i]).queryInterfaceTo(&anObject[0]);
+        com::SafeIfaceArray <IPerformanceMetric> metricInfo;
+        CHECK_RC_BREAK (collector->GetMetrics( ComSafeArrayAsInParam(nameOfMetric),
+                                               ComSafeArrayAsInParam(anObject),
+                                               ComSafeArrayAsOutParam(metricInfo) ));
+        BSTR metricUnitBSTR;
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
+        Bstr metricUnit(metricUnitBSTR);
+        Bstr metricName(retNames[i]);
+        printf("%ls", metricName.raw());
+        for (unsigned j = 0; j < retLengths[i]; j++)
+        {
+            printf(", %d %s", retData[retIndices[i] + j], metricUnit.raw());
+        }
+        printf("\n");
+    }
 }

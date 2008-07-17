@@ -182,22 +182,47 @@ PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut (BSTR, theMetricNa
 // IPerformanceCollector methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(const BSTR, metricNames),
+STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(INPTR BSTR, metricNames),
                                               ComSafeArrayIn(IUnknown *, objects),
-                                              ComSafeArrayOut(IPerformanceMetric *, metrics))
+                                              ComSafeArrayOut(IPerformanceMetric *, outMetrics))
 {
     //LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
+
+    HRESULT rc = S_OK;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    return E_NOTIMPL;
+    pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
+
+    MetricList filteredMetrics;
+    MetricList::iterator it;
+    for (it = m.mMetrics.begin(); it != m.mMetrics.end(); ++it)
+        if (filter.match((*it)->getObject(), (*it)->getName()))
+            filteredMetrics.push_back(*it);
+
+    com::SafeIfaceArray<IPerformanceMetric> retMetrics(filteredMetrics.size());
+    int i = 0;
+    for (it = m.mMetrics.begin(); it != m.mMetrics.end(); ++it)
+    {
+        ComObjPtr<PerformanceMetric> metric;
+        rc = metric.createObject();
+        if (SUCCEEDED (rc))
+            rc = metric->init (*it);
+        ComAssertComRCThrowRC (rc);
+        metric.queryInterfaceTo(&retMetrics[i++]);
+    }
+    retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
+    return rc;
 }
 
 STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(INPTR BSTR, metricNames),
                                                  ComSafeArrayIn(IUnknown *, objects),
                                                  ULONG aPeriod, ULONG aCount)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
     BaseMetricList::iterator it;
@@ -211,9 +236,12 @@ STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(INPTR BSTR, metr
     return S_OK;
 }
 
-STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(const BSTR, metricNames),
+STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(INPTR BSTR, metricNames),
                                                   ComSafeArrayIn(IUnknown *, objects))
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
     BaseMetricList::iterator it;
@@ -224,9 +252,12 @@ STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(const BSTR, met
     return S_OK;
 }
 
-STDMETHODIMP PerformanceCollector::DisableMetrics (ComSafeArrayIn(const BSTR, metricNames),
+STDMETHODIMP PerformanceCollector::DisableMetrics (ComSafeArrayIn(INPTR BSTR, metricNames),
                                                    ComSafeArrayIn(IUnknown *, objects))
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
     BaseMetricList::iterator it;
@@ -237,7 +268,7 @@ STDMETHODIMP PerformanceCollector::DisableMetrics (ComSafeArrayIn(const BSTR, me
     return S_OK;
 }
 
-STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(const BSTR, metricNames),
+STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(INPTR BSTR, metricNames),
                                                      ComSafeArrayIn(IUnknown *, objects),
                                                      ComSafeArrayOut(BSTR, outMetricNames),
                                                      ComSafeArrayOut(IUnknown *, outObjects),
@@ -397,13 +428,13 @@ STDMETHODIMP PerformanceMetric::COMGETTER(Object) (IUnknown **anObject)
     return S_OK;
 }
 
-STDMETHODIMP PerformanceMetric::COMGETTER(Period) (unsigned long *aPeriod)
+STDMETHODIMP PerformanceMetric::COMGETTER(Period) (ULONG *aPeriod)
 {
     *aPeriod = mMetric->getPeriod();
     return S_OK;
 }
 
-STDMETHODIMP PerformanceMetric::COMGETTER(Count) (unsigned long *aCount)
+STDMETHODIMP PerformanceMetric::COMGETTER(Count) (ULONG *aCount)
 {
     *aCount = mMetric->getLength();
     return S_OK;
@@ -416,13 +447,13 @@ STDMETHODIMP PerformanceMetric::COMGETTER(Unit) (BSTR *aUnit)
     return S_OK;
 }
 
-STDMETHODIMP PerformanceMetric::COMGETTER(MinValue) (long *aMinValue)
+STDMETHODIMP PerformanceMetric::COMGETTER(MinimumValue) (LONG *aMinValue)
 {
     *aMinValue = mMetric->getMinValue();
     return S_OK;
 }
 
-STDMETHODIMP PerformanceMetric::COMGETTER(MaxValue) (long *aMaxValue)
+STDMETHODIMP PerformanceMetric::COMGETTER(MaximumValue) (LONG *aMaxValue)
 {
     *aMaxValue = mMetric->getMaxValue();
     return S_OK;

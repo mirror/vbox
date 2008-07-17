@@ -10157,7 +10157,7 @@
   >
     <desc>
       The IPerformanceCollector interface represents a service that collects and
-      stores performace metrics data.
+      stores performance metrics data.
 
       Performance metrics are associated with objects like IHost and IMachine.
       Each object has a distict set of performance metrics. It can be obtained
