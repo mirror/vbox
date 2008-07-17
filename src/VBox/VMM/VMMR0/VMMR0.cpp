@@ -567,12 +567,12 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 /**
  * The Ring 0 entry point, called by the fast-ioctl path.
  *
- * @returns VBox status code.
  * @param   pVM             The VM to operate on.
+ *                          The return code is stored in pVM->vmm.s.iLastGCRc.
  * @param   enmOperation    Which operation to execute.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
+VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 {
     switch (enmOperation)
     {
@@ -600,13 +600,14 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
                 vmmR0RecordRC(pVM, rc);
 #endif
-                return rc;
             }
-
-            Assert(!pVM->vmm.s.fSwitcherDisabled);
-            pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+            else
+            {
+                Assert(!pVM->vmm.s.fSwitcherDisabled);
+                pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+            }
             break;
-       }
+        }
 
         /*
          * Run guest code using the available hardware acceleration technology.
@@ -638,7 +639,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             vmmR0RecordRC(pVM, rc);
 #endif
             /* No special action required for external interrupts, just return. */
-            return rc;
+            break;
         }
 
         /*
@@ -646,7 +647,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
          */
         case VMMR0_DO_NOP:
             pVM->vmm.s.iLastGCRc = VINF_SUCCESS;
-            return VINF_SUCCESS;
+            break;
 
         /*
          * Impossible.
@@ -656,8 +657,6 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
             break;
     }
-    /* Error case, but the error was written to pVM->vmm.s.iLastGCRc */
-    return VINF_SUCCESS;
 }
 
 
@@ -909,6 +908,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
          * For profiling.
          */
         case VMMR0_DO_NOP:
+        case VMMR0_DO_SLOW_NOP:
             return VINF_SUCCESS;
 
         /*

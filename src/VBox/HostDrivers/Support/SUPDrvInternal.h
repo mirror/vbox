@@ -614,7 +614,7 @@ typedef struct SUPDRVDEVEXT
     /** VMMR0EntryInt() pointer. */
     DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryInt, (PVM pVM, unsigned uOperation, void *pvArg));
     /** VMMR0EntryFast() pointer. */
-    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryFast, (PVM pVM, unsigned uOperation));
+    DECLR0CALLBACKMEMBER(void, pfnVMMR0EntryFast, (PVM pVM, unsigned uOperation));
     /** VMMR0EntryEx() pointer. */
     DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryEx, (PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg));
 
