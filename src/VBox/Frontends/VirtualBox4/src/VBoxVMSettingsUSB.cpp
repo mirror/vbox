@@ -21,6 +21,7 @@
  */
 
 #include "VBoxVMSettingsUSB.h"
+#include "VBoxVMSettingsUSBFilterDetails.h"
 #include "VBoxSettingsUtils.h"
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
@@ -43,12 +44,14 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     /* Prepare actions */
     mNewAction = new QAction (mTwFilters);
     mAddAction = new QAction (mTwFilters);
+    mEdtAction = new QAction (mTwFilters);
     mDelAction = new QAction (mTwFilters);
     mMupAction = new QAction (mTwFilters);
     mMdnAction = new QAction (mTwFilters);
 
     mNewAction->setShortcut (QKeySequence ("Ins"));
     mAddAction->setShortcut (QKeySequence ("Alt+Ins"));
+    mEdtAction->setShortcut (QKeySequence ("Ctrl+Return"));
     mDelAction->setShortcut (QKeySequence ("Del"));
     mMupAction->setShortcut (QKeySequence ("Ctrl+Up"));
     mMdnAction->setShortcut (QKeySequence ("Ctrl+Down"));
@@ -56,6 +59,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     mNewAction->setIcon (VBoxGlobal::iconSet (":/usb_new_16px.png",
                                               ":/usb_new_disabled_16px.png"));
     mAddAction->setIcon (VBoxGlobal::iconSet (":/usb_add_16px.png",
+                                              ":/usb_add_disabled_16px.png"));
+    mEdtAction->setIcon (VBoxGlobal::iconSet (":/usb_add_16px.png",
                                               ":/usb_add_disabled_16px.png"));
     mDelAction->setIcon (VBoxGlobal::iconSet (":/usb_remove_16px.png",
                                               ":/usb_remove_disabled_16px.png"));
@@ -69,6 +74,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     mMenu->addAction (mNewAction);
     mMenu->addAction (mAddAction);
     mMenu->addSeparator();
+    mMenu->addAction (mEdtAction);
+    mMenu->addSeparator();
     mMenu->addAction (mDelAction);
     mMenu->addSeparator();
     mMenu->addAction (mMupAction);
@@ -81,10 +88,13 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     toolBar->setOrientation (Qt::Vertical);
     toolBar->addAction (mNewAction);
     toolBar->addAction (mAddAction);
+    toolBar->addAction (mEdtAction);
     toolBar->addAction (mDelAction);
     toolBar->addAction (mMupAction);
     toolBar->addAction (mMdnAction);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    toolBar->updateGeometry();
+    toolBar->setMinimumHeight (toolBar->sizeHint().height());
     mWtFilterHandler->layout()->addWidget (toolBar);
 
     /* Setup connections */
@@ -94,6 +104,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
              this, SLOT (currentChanged (QTreeWidgetItem*, QTreeWidgetItem*)));
     connect (mTwFilters, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
+    connect (mTwFilters, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
+             this, SLOT (edtClicked ()));
 
     mUSBDevicesMenu = new VBoxUSBMenu (this);
     connect (mUSBDevicesMenu, SIGNAL (triggered (QAction*)),
@@ -102,6 +114,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
              this, SLOT (newClicked()));
     connect (mAddAction, SIGNAL (triggered (bool)),
              this, SLOT (addClicked()));
+    connect (mEdtAction, SIGNAL (triggered (bool)),
+             this, SLOT (edtClicked()));
     connect (mDelAction, SIGNAL (triggered (bool)),
              this, SLOT (delClicked()));
     connect (mMupAction, SIGNAL (triggered (bool)),
@@ -109,40 +123,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     connect (mMdnAction, SIGNAL (triggered (bool)),
              this, SLOT (mdnClicked()));
 
-    connect (mLeName, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeVendorID, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeProductID, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeRevision, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLePort, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeManufacturer, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeProduct, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mLeSerialNo, SIGNAL (textEdited (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mCbRemote, SIGNAL (activated (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-    connect (mCbAction, SIGNAL (activated (const QString &)),
-             this, SLOT (setCurrentText (const QString &)));
-
     /* Setup dialog */
     mTwFilters->header()->hide();
-
-    mCbRemote->addItem (""); /* Any */
-    mCbRemote->addItem (""); /* Yes */
-    mCbRemote->addItem (""); /* No */
-    mLbRemote->setHidden (mType != MachineType);
-    mCbRemote->setHidden (mType != MachineType);
-
-    mCbAction->insertItem (0, ""); /* KUSBDeviceFilterAction_Ignore */
-    mCbAction->insertItem (1, ""); /* KUSBDeviceFilterAction_Hold */
-    mLbAction->setHidden (mType != HostType);
-    mCbAction->setHidden (mType != HostType);
 
     /* Applying language settings */
     retranslateUi();
@@ -243,16 +225,6 @@ void VBoxVMSettingsUSB::setOrderAfter (QWidget *aWidget)
     setTabOrder (aWidget, mGbUSB);
     setTabOrder (mGbUSB, mCbUSB2);
     setTabOrder (mCbUSB2, mTwFilters);
-    setTabOrder (mTwFilters, mLeName);
-    setTabOrder (mLeName, mLeVendorID);
-    setTabOrder (mLeVendorID, mLeManufacturer);
-    setTabOrder (mLeManufacturer, mLeProductID);
-    setTabOrder (mLeProductID, mLeProduct);
-    setTabOrder (mLeProduct, mLeRevision);
-    setTabOrder (mLeRevision, mLeSerialNo);
-    setTabOrder (mLeSerialNo, mLePort);
-    setTabOrder (mLePort, mCbRemote);
-    setTabOrder (mCbRemote, mCbAction);
 }
 
 void VBoxVMSettingsUSB::retranslateUi()
@@ -262,6 +234,7 @@ void VBoxVMSettingsUSB::retranslateUi()
 
     mNewAction->setText (tr ("&Add Empty Filter"));
     mAddAction->setText (tr ("A&dd Filter From Device"));
+    mEdtAction->setText (tr ("&Edit Filter"));
     mDelAction->setText (tr ("&Remove Filter"));
     mMupAction->setText (tr ("&Move Filter Up"));
     mMdnAction->setText (tr ("M&ove Filter Down"));
@@ -270,6 +243,8 @@ void VBoxVMSettingsUSB::retranslateUi()
         QString (" (%1)").arg (mNewAction->shortcut().toString()));
     mAddAction->setToolTip (mAddAction->text().remove ('&') +
         QString (" (%1)").arg (mAddAction->shortcut().toString()));
+    mEdtAction->setToolTip (mEdtAction->text().remove ('&') +
+        QString (" (%1)").arg (mEdtAction->shortcut().toString()));
     mDelAction->setToolTip (mDelAction->text().remove ('&') +
         QString (" (%1)").arg (mDelAction->shortcut().toString()));
     mMupAction->setToolTip (mMupAction->text().remove ('&') +
@@ -284,18 +259,10 @@ void VBoxVMSettingsUSB::retranslateUi()
     mAddAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
                                   "set to the values of the selected USB "
                                   "device attached to the host PC."));
+    mEdtAction->setWhatsThis (tr ("Edit the selected filter."));
     mDelAction->setWhatsThis (tr ("Removes the selected USB filter."));
     mMupAction->setWhatsThis (tr ("Moves the selected USB filter up."));
     mMdnAction->setWhatsThis (tr ("Moves the selected USB filter down."));
-
-    mCbRemote->setItemText (0, tr ("Any", "remote"));
-    mCbRemote->setItemText (1, tr ("Yes", "remote"));
-    mCbRemote->setItemText (2, tr ("No", "remote"));
-
-    mCbAction->setItemText (0,
-        vboxGlobal().toString (KUSBDeviceFilterAction_Ignore));
-    mCbAction->setItemText (1,
-        vboxGlobal().toString (KUSBDeviceFilterAction_Hold));
 
     mUSBFilterName = tr ("New Filter %1", "usb");
 }
@@ -303,7 +270,6 @@ void VBoxVMSettingsUSB::retranslateUi()
 void VBoxVMSettingsUSB::usbAdapterToggled (bool aOn)
 {
     mGbUSBFilters->setEnabled (aOn);
-    mWtProperties->setEnabled (aOn && mTwFilters->topLevelItemCount());
 }
 
 void VBoxVMSettingsUSB::currentChanged (QTreeWidgetItem *aItem,
@@ -321,112 +287,10 @@ void VBoxVMSettingsUSB::currentChanged (QTreeWidgetItem *aItem,
     }
 
     /* Enable/disable operational buttons */
+    mEdtAction->setEnabled (aItem);
     mDelAction->setEnabled (aItem);
     mMupAction->setEnabled (aItem && mTwFilters->itemAbove (aItem));
     mMdnAction->setEnabled (aItem && mTwFilters->itemBelow (aItem));
-
-    /* Load filter parameters */
-    CUSBDeviceFilter filter;
-    if (aItem)
-        filter = mFilters [mTwFilters->indexOfTopLevelItem (aItem)];
-
-    mLeName->setText (filter.isNull() ? QString::null : filter.GetName());
-    mLeVendorID->setText (filter.isNull() ? QString::null : filter.GetVendorId());
-    mLeProductID->setText (filter.isNull() ? QString::null : filter.GetProductId());
-    mLeRevision->setText (filter.isNull() ? QString::null : filter.GetRevision());
-    mLePort->setText (filter.isNull() ? QString::null : filter.GetPort());
-    mLeManufacturer->setText (filter.isNull() ? QString::null : filter.GetManufacturer());
-    mLeProduct->setText (filter.isNull() ? QString::null : filter.GetProduct());
-    mLeSerialNo->setText (filter.isNull() ? QString::null : filter.GetSerialNumber());
-    switch (mType)
-    {
-        case MachineType:
-        {
-            QString remote = filter.isNull() ? QString::null : filter.GetRemote();
-            if (remote == "yes" || remote == "true" || remote == "1")
-                mCbRemote->setCurrentIndex (1);
-            else if (remote == "no" || remote == "false" || remote == "0")
-                mCbRemote->setCurrentIndex (2);
-            else
-                mCbRemote->setCurrentIndex (0);
-            break;
-        }
-        case HostType:
-        {
-            CHostUSBDeviceFilter hostFilter = CUnknown (filter);
-            KUSBDeviceFilterAction action = hostFilter.isNull() ?
-                KUSBDeviceFilterAction_Ignore : hostFilter.GetAction();
-            if (action == KUSBDeviceFilterAction_Ignore)
-                mCbAction->setCurrentIndex (0);
-            else if (action == KUSBDeviceFilterAction_Hold)
-                mCbAction->setCurrentIndex (1);
-            else
-                AssertMsgFailed (("Invalid USBDeviceFilterAction type"));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid VBoxVMSettingsUSB type"));
-            break;
-        }
-    }
-
-    mWtProperties->setEnabled (aItem);
-}
-
-void VBoxVMSettingsUSB::setCurrentText (const QString &aText)
-{
-    QObject *sdr = sender();
-    QTreeWidgetItem *item = mTwFilters->currentItem();
-    Assert (item);
-
-    CUSBDeviceFilter filter =
-        mFilters [mTwFilters->indexOfTopLevelItem (item)];
-
-    /* Update filter's attribute on line-edited action */
-    if (sdr == mLeName)
-    {
-        filter.SetName (aText);
-        item->setText (twUSBFilters_Name, aText);
-    } else
-    if (sdr == mLeVendorID)
-    {
-        filter.SetVendorId (aText);
-    } else
-    if (sdr == mLeProductID)
-    {
-        filter.SetProductId (aText);
-    } else
-    if (sdr == mLeRevision)
-    {
-        filter.SetRevision (aText);
-    } else
-    if (sdr == mLePort)
-    {
-        filter.SetPort (aText);
-    } else
-    if (sdr == mLeManufacturer)
-    {
-        filter.SetManufacturer (aText);
-    } else
-    if (sdr == mLeProduct)
-    {
-        filter.SetProduct (aText);
-    } else
-    if (sdr == mLeSerialNo)
-    {
-        filter.SetSerialNumber (aText);
-    } else
-    if (sdr == mCbRemote)
-    {
-        filter.SetRemote (mCbRemote->currentIndex() > 0 ?
-                          aText.toLower() : QString::null);
-    } else
-    if (sdr == mCbAction)
-    {
-        CHostUSBDeviceFilter hostFilter = CUnknown (filter);
-        hostFilter.SetAction (vboxGlobal().toUSBDevFilterAction (aText));
-    }
 }
 
 void VBoxVMSettingsUSB::newClicked()
@@ -527,6 +391,89 @@ void VBoxVMSettingsUSB::addConfirmed (QAction *aAction)
     mUSBFilterListModified = true;
 }
 
+void VBoxVMSettingsUSB::edtClicked()
+{
+    QTreeWidgetItem *item = mTwFilters->currentItem();
+    Assert (item);
+
+    VBoxVMSettingsUSBFilterDetails fd (mType, this);
+
+    CUSBDeviceFilter filter =
+        mFilters [mTwFilters->indexOfTopLevelItem (item)];
+
+    fd.mLeName->setText (filter.isNull() ? QString::null : filter.GetName());
+    fd.mLeVendorID->setText (filter.isNull() ? QString::null : filter.GetVendorId());
+    fd.mLeProductID->setText (filter.isNull() ? QString::null : filter.GetProductId());
+    fd.mLeRevision->setText (filter.isNull() ? QString::null : filter.GetRevision());
+    fd.mLePort->setText (filter.isNull() ? QString::null : filter.GetPort());
+    fd.mLeManufacturer->setText (filter.isNull() ? QString::null : filter.GetManufacturer());
+    fd.mLeProduct->setText (filter.isNull() ? QString::null : filter.GetProduct());
+    fd.mLeSerialNo->setText (filter.isNull() ? QString::null : filter.GetSerialNumber());
+
+    switch (mType)
+    {
+        case MachineType:
+        {
+            QString remote = filter.isNull() ? QString::null : filter.GetRemote().toLower();
+            if (remote == "yes" || remote == "true" || remote == "1")
+                fd.mCbRemote->setCurrentIndex (ModeOn);
+            else if (remote == "no" || remote == "false" || remote == "0")
+                fd.mCbRemote->setCurrentIndex (ModeOff);
+            else
+                fd.mCbRemote->setCurrentIndex (ModeAny);
+            break;
+        }
+        case HostType:
+        {
+            CHostUSBDeviceFilter hostFilter = CUnknown (filter);
+            KUSBDeviceFilterAction action = hostFilter.isNull() ?
+                KUSBDeviceFilterAction_Ignore : hostFilter.GetAction();
+            if (action == KUSBDeviceFilterAction_Ignore)
+                fd.mCbAction->setCurrentIndex (0);
+            else if (action == KUSBDeviceFilterAction_Hold)
+                fd.mCbAction->setCurrentIndex (1);
+            else
+                AssertMsgFailed (("Invalid USBDeviceFilterAction type"));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed (("Invalid VBoxVMSettingsUSB type"));
+            break;
+        }
+    }
+
+    if (fd.exec() == QDialog::Accepted)
+    {
+        filter.SetName (fd.mLeName->text().isEmpty() ? QString::null : fd.mLeName->text());
+        item->setText (twUSBFilters_Name, fd.mLeName->text());
+        filter.SetVendorId (fd.mLeVendorID->text().isEmpty() ? QString::null : fd.mLeVendorID->text());
+        filter.SetProductId (fd.mLeProductID->text().isEmpty() ? QString::null : fd.mLeProductID->text());
+        filter.SetRevision (fd.mLeRevision->text().isEmpty() ? QString::null : fd.mLeRevision->text());
+        filter.SetManufacturer (fd.mLeManufacturer->text().isEmpty() ? QString::null : fd.mLeManufacturer->text());
+        filter.SetProduct (fd.mLeProduct->text().isEmpty() ? QString::null : fd.mLeProduct->text());
+        filter.SetSerialNumber (fd.mLeSerialNo->text().isEmpty() ? QString::null : fd.mLeSerialNo->text());
+        filter.SetPort (fd.mLePort->text().isEmpty() ? QString::null : fd.mLePort->text());
+        if (mType == MachineType)
+        {
+            switch (fd.mCbRemote->currentIndex())
+             {
+                 case ModeAny: filter.SetRemote (QString::null); break;
+                 case ModeOn:  filter.SetRemote ("yes"); break;
+                 case ModeOff: filter.SetRemote ("no"); break;
+                 default: AssertMsgFailed (("Invalid combo box index"));
+             }
+        }
+        else
+        if (mType == HostType)
+        {
+            CHostUSBDeviceFilter hostFilter = CUnknown (filter);
+            hostFilter.SetAction (vboxGlobal().toUSBDevFilterAction (fd.mCbAction->currentText()));
+        }
+        item->setToolTip (0, vboxGlobal().toolTip (filter));
+    }
+}
+
 void VBoxVMSettingsUSB::delClicked()
 {
     QTreeWidgetItem *item = mTwFilters->currentItem();
@@ -537,13 +484,8 @@ void VBoxVMSettingsUSB::delClicked()
     mFilters.removeAt (index);
 
     /* Setup validators */
-    if (!mTwFilters->topLevelItemCount() && mLeName->validator())
+    if (!mTwFilters->topLevelItemCount())
     {
-        mLeName->setValidator (0);
-        mLeVendorID->setValidator (0);
-        mLeProductID->setValidator (0);
-        mLeRevision->setValidator (0);
-        mLePort->setValidator (0);
         if (mValidator)
         {
             mValidator->rescan();
@@ -605,24 +547,10 @@ void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
         new QTreeWidgetItem (mTwFilters);
     item->setCheckState (0, aFilter.GetActive() ? Qt::Checked : Qt::Unchecked);
     item->setText (twUSBFilters_Name, aFilter.GetName());
-
-    /* Setup validators */
-    if (!mLeName->validator())
-    {
-        mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
-        mLeVendorID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-        mLeProductID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-        mLeRevision->setValidator (new QRegExpValidator (QRegExp ("[0-9]{0,4}"), this));
-        mLePort->setValidator (new QRegExpValidator (QRegExp ("[0-9]*"), this));
-        if (mValidator)
-            mValidator->rescan();
-    }
+    item->setToolTip (0, vboxGlobal().toolTip (aFilter));
 
     if (isNew)
-    {
         mTwFilters->setCurrentItem (item);
-        mLeName->setFocus();
-    }
 
     if (mValidator)
         mValidator->revalidate();

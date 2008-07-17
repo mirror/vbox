@@ -1392,6 +1392,59 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
 }
 
 /**
+ *  Returns the multi-line description of the given USB filter
+ */
+QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
+{
+    QString tip;
+
+    QString vendorId = aFilter.GetVendorId();
+    if (!vendorId.isEmpty())
+        tip += tr ("<nobr>Vendor ID: %1</nobr>", "USB filter tooltip")
+                   .arg (vendorId);
+
+    QString productId = aFilter.GetProductId();
+    if (!productId.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Product ID: %2</nobr>", "USB filter tooltip")
+                                                .arg (productId);
+
+    QString revision = aFilter.GetRevision();
+    if (!revision.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Revision: %3</nobr>", "USB filter tooltip")
+                                                .arg (revision);
+
+    QString product = aFilter.GetProduct();
+    if (!product.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Product: %4</nobr>", "USB filter tooltip")
+                                                .arg (product);
+
+    QString manufacturer = aFilter.GetManufacturer();
+    if (!manufacturer.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Manufacturer: %5</nobr>", "USB filter tooltip")
+                                                .arg (manufacturer);
+
+    QString serial = aFilter.GetSerialNumber();
+    if (!serial.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Serial No.: %1</nobr>", "USB filter tooltip")
+                                                .arg (serial);
+
+    QString port = aFilter.GetPort();
+    if (!port.isEmpty())
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>Port: %1</nobr>", "USB filter tooltip")
+                                                .arg (port);
+
+    /* add the state field if it's a host USB device */
+    CHostUSBDevice hostDev = CUnknown (aFilter);
+    if (!hostDev.isNull())
+    {
+        tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>State: %1</nobr>", "USB filter tooltip")
+                                                .arg (vboxGlobal().toString (hostDev.GetState()));
+    }
+
+    return tip;
+}
+
+/**
  *  Puts soft hyphens after every path component in the given file name.
  *  @param fn   file name (must be a full path name)
  */

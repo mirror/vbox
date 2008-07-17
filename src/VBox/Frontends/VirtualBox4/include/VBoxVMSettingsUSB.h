@@ -43,6 +43,13 @@ public:
         MachineType = 2
     };
 
+    enum RemoteMode 
+    {
+        ModeAny = 0,
+        ModeOn,
+        ModeOff
+    };
+
     VBoxVMSettingsUSB (FilterType aType);
 
 protected:
@@ -66,9 +73,10 @@ private slots:
     void usbAdapterToggled (bool aOn);
     void currentChanged (QTreeWidgetItem *aItem = 0,
                          QTreeWidgetItem *aPrev = 0);
-    void setCurrentText (const QString &aText);
+
     void newClicked();
     void addClicked();
+    void edtClicked();
     void addConfirmed (QAction *aAction);
     void delClicked();
     void mupClicked();
@@ -84,6 +92,7 @@ private:
     FilterType mType;
     QAction *mNewAction;
     QAction *mAddAction;
+    QAction *mEdtAction;
     QAction *mDelAction;
     QAction *mMupAction;
     QAction *mMdnAction;

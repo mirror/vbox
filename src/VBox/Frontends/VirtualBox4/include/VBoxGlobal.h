@@ -464,6 +464,7 @@ public:
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;
+    QString toolTip (const CUSBDeviceFilter &aFilter) const;
 
     QString prepareFileNameForHTML (const QString &fn) const;
 
