@@ -925,7 +925,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#if 0
     do {
         // Get collector
         ComPtr <IPerformanceCollector> collector;
