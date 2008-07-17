@@ -665,8 +665,61 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETSG pSG)
  */
 static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, uint32_t fDst, PINTNETSG pSG, bool fTrunkLocked)
 {
-    Assert(fTrunkLocked);
-    /** @todo implement + move?  */
+    /*
+     * Quick sanity check.
+     */
+    AssertPtr(pThis);
+    AssertPtr(pNetwork);
+    AssertPtr(pSG);
+    Assert(fDst);
+    AssertReturnVoid(pThis->pIfPort);
+
+    /*
+     * Temporarily leave the network lock while transmitting the frame.
+     *
+     * Note that we're relying on the out-bound lock to serialize threads down
+     * in INTNETR0IfSend. It's theoretically possible for there to be race now
+     * because I didn't implement async SG handling yet. Which is why we currently
+     * require the trunk to be locked, well, one of the reasons.
+     */
+    AssertReturnVoid(fTrunkLocked); /* to be removed. */
+
+    int rc;
+    if (    fTrunkLocked
+        ||  intnetR0TrunkIfRetain(pThis))
+    {
+        rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            if (    fTrunkLocked
+                ||  intnetR0TrunkIfOutLock(pThis))
+            {
+                rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
+
+                if (!fTrunkLocked)
+                    intnetR0TrunkIfOutUnlock(pThis);
+            }
+            else
+            {
+                AssertFailed();
+                rc = VERR_SEM_DESTROYED;
+            }
+
+            int rc2 = RTSemFastMutexRequest(pNetwork->FastMutex);
+            AssertRC(rc2);
+        }
+
+        if (!fTrunkLocked)
+            intnetR0TrunkIfRelease(pThis);
+    }
+    else
+    {
+        AssertFailed();
+        rc = VERR_SEM_DESTROYED;
+    }
+
+    /** @todo failure statistics? */
 }
 
 
