@@ -88,6 +88,10 @@ private:
     /* WhatsThis Stuff */
     QTimer *mWhatsThisTimer;
     QWidget *mWhatsThisCandidate;
+
+#ifdef Q_WS_MAC
+    QList<QSize> mSizeList;
+#endif /* Q_WS_MAC */
 };
 
 #endif // __VBoxSettingsDialog_h__

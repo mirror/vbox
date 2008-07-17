@@ -198,34 +198,29 @@ void VBoxSettingsDialog::categoryChanged (int aId)
     mLbTitle->setText (mSelector->itemText (aId));
     mStack->setCurrentIndex (mStack->indexOf (rootPage));
 #else /* Q_WS_MAC */
-    /* We will update at once later */
-    setUpdatesEnabled (false);
+    QSize cs = size();
+    /* First make all fully resizeable */
     setMinimumSize (QSize (minimumWidth(), 0));
     setMaximumSize (QSize (minimumWidth(), QWIDGETSIZE_MAX));
-    /* Set all tab size policies to ignored */
-    QList<QWidget*> list = mSelector->rootPages ();
-    for (int i = 0; i < list.count(); ++i)
-        list.at (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
-    /* Set the size policy of the current tab to preferred */
-    if (mStack->widget (mStack->indexOf (rootPage)))
-        mStack->widget (mStack->indexOf (rootPage))->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
-    /* Set the new current tab */
-    mLbTitle->setText (mSelector->itemText (aId));
-    mStack->setCurrentIndex (mStack->indexOf (rootPage));
-    /* Activate the new layout */
-    layout()->activate();
-    setUpdatesEnabled (true);
-    //        mAllWidget->hide();
-    QSize s = minimumSize();
-    int minWidth = mSelector->minWidth();
-    if (minWidth > s.width())
-        s.setWidth (minWidth);
-    /* Play the resize animation */
-    ::darwinWindowAnimateResize (this, QRect (x(), y(), 
-                                              s.width(), s.height()));
-    //        mAllWidget->show();
-    /* Set the new size to Qt also */
-    setFixedSize (s);
+    for (int i = 0; i < mStack->count(); ++i)
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    int a = mStack->indexOf (rootPage);
+    if (a < mSizeList.count())
+    {
+        QSize ss = mSizeList.at (a);
+        mStack->widget (a)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+        /* Switch to the new page first if we are shrinking */
+        if (cs.height() > ss.height())
+            mStack->setCurrentIndex (mStack->indexOf (rootPage));
+        /* Do the animation */
+        ::darwinWindowAnimateResize (this, QRect (x(), y(), 
+                                                  ss.width(), ss.height()));
+        /* Switch to the new page last if we are zooming */
+        if (cs.height() <= ss.height())
+            mStack->setCurrentIndex (mStack->indexOf (rootPage));
+        /* Make the widget fixed size */
+        setFixedSize (ss);
+    }
 #endif /* !Q_WS_MAC */
 # ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle (dialogTitle());
@@ -326,7 +321,6 @@ bool VBoxSettingsDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 {
     QIMainDialog::showEvent (aEvent);
-
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
      * the widget style & layout are not fully done, at least the minimum
@@ -338,14 +332,27 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 
     mPolished = true;
 
+#ifdef Q_WS_MAC
+    /* Set all size policies to ignored */
+    for (int i = 0; i < mStack->count(); ++i)
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    /* Activate every single page to get the optimal size */
+    for (int i = mStack->count() - 1; i >= 0; --i)
+    {
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mStack->setCurrentIndex (i);
+        layout()->activate();
+        mSizeList.insert (0, minimumSize());
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    }
+
+    categoryChanged (mSelector->currentId());
+#else /* Q_WS_MAC */
     /* Resize to the minimum possible size */
     int minWidth = mSelector->minWidth();
     QSize s = minimumSize();
     if (minWidth > s.width())
         s.setWidth (minWidth);
-#ifdef Q_WS_MAC
-    categoryChanged (mSelector->currentId());
-#else /* Q_WS_MAC */
     resize (s);
 #endif /* Q_WS_MAC */
 
