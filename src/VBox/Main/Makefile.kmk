@@ -187,8 +187,11 @@ VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
-	adm \
+	adm
+ifdef VBOX_WITH_USB
+ VBoxSVC_LIBS.solaris += \
 	devinfo
+endif
 
 VBoxSVC_INTERMEDIATES = $(VBOX_MAIN_PREREQS)
 
