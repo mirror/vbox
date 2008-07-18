@@ -66,7 +66,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
 #ifndef Q_WS_X11
     setTapVisible (false);
 #endif
-#ifdef Q_WS_MAC
+#ifdef Q_WS_MAC /// @todo hif on mac
     /* No Host Interface Networking on the Mac yet */
     setTapVisible (false);
 #endif
@@ -340,7 +340,6 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
         vboxGlobal().toString (KNetworkAttachmentType_NAT));
     mCbNAType->setItemData (1,
         mCbNAType->itemText(1), Qt::ToolTipRole);
-#ifndef Q_WS_MAC /* Not yet on the Mac */
     mCbNAType->insertItem (2,
         vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
     mCbNAType->setItemData (2,
@@ -349,7 +348,6 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
         vboxGlobal().toString (KNetworkAttachmentType_Internal));
     mCbNAType->setItemData (3,
         mCbNAType->itemText(3), Qt::ToolTipRole);
-#endif
     /* Set the old value */
     mCbNAType->setCurrentIndex (currentAttachment);
 }
