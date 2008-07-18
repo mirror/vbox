@@ -586,6 +586,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     pLogger->MutexSem = NIL_RTSEMFASTMUTEX;
     if (MutexSem != NIL_RTSEMFASTMUTEX)
     {
+        RTSemFastMutexRelease(MutexSem);
         int rc2 = RTSemFastMutexDestroy(MutexSem);
         AssertRC(rc2);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
