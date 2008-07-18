@@ -756,8 +756,12 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     int rc;
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
-    rc = RTCacheDestroy(pData->pCache);
-    AssertRC(rc);
+
+    if (pData->pCache)
+    {
+        rc = RTCacheDestroy(pData->pCache);
+        AssertRC(rc);
+    }
 }
 
 
