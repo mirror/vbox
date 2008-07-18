@@ -1334,7 +1334,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
-                               (PFNRT) changeFramebuffer, 3,
+                               (PFNRT) changeFramebuffer, 4,
                                this, static_cast <IFramebuffer *> (frameBuf),
                                true /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         if (VBOX_SUCCESS (vrc))
@@ -1415,7 +1415,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
-                               (PFNRT) changeFramebuffer, 3,
+                               (PFNRT) changeFramebuffer, 4,
                                this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
@@ -1454,7 +1454,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
-                               (PFNRT) changeFramebuffer, 3,
+                               (PFNRT) changeFramebuffer, 4,
                                this, aFramebuffer, false /* aInternal */, aScreenId);
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
