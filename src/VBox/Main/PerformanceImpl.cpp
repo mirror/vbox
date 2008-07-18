@@ -101,7 +101,21 @@ HRESULT PerformanceCollector::init()
     HRESULT rc = S_OK;
 
     /* @todo Obviously other platforms must be added as well. */
+#ifdef RT_OS_SOLARIS
+    m.mFactory = new pm::MetricFactorySolaris();
+#endif
+#ifdef RT_OS_LINUX
     m.mFactory = new pm::MetricFactoryLinux();
+#endif
+#ifdef RT_OS_WINDOWS
+    m.mFactory = new pm::MetricFactoryWin();
+#endif
+#ifdef RT_OS_OS2
+    m.mFactory = new pm::MetricFactoryOS2();
+#endif
+#ifdef RT_OS_DARWIN
+    m.mFactory = new pm::MetricFactoryDarwin();
+#endif
 
     /* Let the sampler know it gets a valid collector.  */
     mMagic = MAGIC;
@@ -195,6 +209,8 @@ STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(INPTR BSTR, metricN
 
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
+    AutoReadLock alock (this);
+
     MetricList filteredMetrics;
     MetricList::iterator it;
     for (it = m.mMetrics.begin(); it != m.mMetrics.end(); ++it)
@@ -203,13 +219,14 @@ STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(INPTR BSTR, metricN
 
     com::SafeIfaceArray<IPerformanceMetric> retMetrics(filteredMetrics.size());
     int i = 0;
-    for (it = m.mMetrics.begin(); it != m.mMetrics.end(); ++it)
+    for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it)
     {
         ComObjPtr<PerformanceMetric> metric;
         rc = metric.createObject();
         if (SUCCEEDED (rc))
             rc = metric->init (*it);
         ComAssertComRCThrowRC (rc);
+        LogFlow(("PerformanceCollector::GetMetrics() store a metric at retMetrics[%d]...\n", i));
         metric.queryInterfaceTo(&retMetrics[i++]);
     }
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
@@ -224,6 +241,8 @@ STDMETHODIMP PerformanceCollector::SetupMetrics (ComSafeArrayIn(INPTR BSTR, metr
     CheckComRCReturnRC (autoCaller.rc());
 
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
+
+    AutoWriteLock alock (this);
 
     BaseMetricList::iterator it;
     for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
@@ -244,6 +263,8 @@ STDMETHODIMP PerformanceCollector::EnableMetrics (ComSafeArrayIn(INPTR BSTR, met
 
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
 
+    AutoReadLock alock (this); /* Need a read lock to access mBaseMetrics */
+
     BaseMetricList::iterator it;
     for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
         if (filter.match((*it)->getObject(), (*it)->getName()))
@@ -259,6 +280,8 @@ STDMETHODIMP PerformanceCollector::DisableMetrics (ComSafeArrayIn(INPTR BSTR, me
     CheckComRCReturnRC (autoCaller.rc());
 
     pm::Filter filter(ComSafeArrayInArg(metricNames), ComSafeArrayInArg(objects));
+
+    AutoReadLock alock (this);
 
     BaseMetricList::iterator it;
     for (it = m.mBaseMetrics.begin(); it != m.mBaseMetrics.end(); ++it)
@@ -279,7 +302,7 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(INPTR BSTR, 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /// @todo r=dmik don't we need to lock this for reading?
+    AutoReadLock alock (this);
 
     int i;
     MetricList::const_iterator it;
@@ -327,16 +350,19 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData (ComSafeArrayIn(INPTR BSTR, 
 
 void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 {
+    AutoWriteLock alock (this);
     m.mBaseMetrics.push_back (baseMetric);
 }
 
 void PerformanceCollector::registerMetric (pm::Metric *metric)
 {
+    AutoWriteLock alock (this);
     m.mMetrics.push_back (metric);
 }
 
 void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aObject)
 {
+    AutoWriteLock alock (this);
     std::remove_if (m.mBaseMetrics.begin(), m.mBaseMetrics.end(),
                     std::bind2nd (std::mem_fun (&pm::BaseMetric::associatedWith),
                                   aObject));
@@ -344,6 +370,7 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
 
 void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObject)
 {
+    AutoWriteLock alock (this);
     std::remove_if (m.mMetrics.begin(), m.mMetrics.end(),
                     std::bind2nd (std::mem_fun (&pm::Metric::associatedWith),
                                   aObject));
@@ -367,6 +394,8 @@ void PerformanceCollector::staticSamplerCallback (PRTTIMER pTimer, void *pvUser,
 
 void PerformanceCollector::samplerCallback()
 {
+    AutoWriteLock alock (this);
+
     uint64_t timestamp = RTTimeMilliTS();
     std::for_each(m.mBaseMetrics.begin(), m.mBaseMetrics.end(),
                   std::bind2nd (std::mem_fun (&pm::BaseMetric::collectorBeat), timestamp));
@@ -379,9 +408,8 @@ void PerformanceCollector::samplerCallback()
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-PerformanceMetric::PerformanceMetric()
+PerformanceMetric::PerformanceMetric() : mMetric(0)
 {
-    mMetric = 0;
 }
 
 PerformanceMetric::~PerformanceMetric()
