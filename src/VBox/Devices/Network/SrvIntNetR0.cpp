@@ -681,6 +681,9 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, u
      * in INTNETR0IfSend. It's theoretically possible for there to be race now
      * because I didn't implement async SG handling yet. Which is why we currently
      * require the trunk to be locked, well, one of the reasons.
+     *
+     * Another reason is that the intnetR0NetworkSendUnicast code may have to
+     * call into the trunk interface component to do package switching.
      */
     AssertReturnVoid(fTrunkLocked); /* to be removed. */
 
@@ -817,8 +820,9 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
     }
 
     /*
-     * Send it to the trunk? Only consider this if we didn't find an recipient
-     * or if the trunk is in some form or promiscuous mode.
+     * Send it to the trunk?
+     * If we didn't find the recipient on the internal network the
+     * frame will hit the wire.
      */
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
     if (    pIfSender
@@ -826,15 +830,24 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
         &&  pTrunkIf->pIfPort)
     {
         uint32_t fDst = 0;
+
+        /* promiscuous checks first as they are cheaper than pfnIsHostMac. */
         if (    pTrunkIf->fPromiscuousWire
             &&  !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE)) )
             fDst |= INTNETTRUNKDIR_WIRE;
         if (    !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST))
             ||  pTrunkIf->pIfPort->pfnIsPromiscuous(pTrunkIf->pIfPort) )
             fDst |= INTNETTRUNKDIR_HOST;
-        else if (   !fExactIntNetRecipient      /* if you have duplicate mac addresses, you're screwed. */
-                 && pTrunkIf->pIfPort->pfnIsHostMac(pTrunkIf->pIfPort, &pEthHdr->MacDst))
-            fDst |= INTNETTRUNKDIR_HOST;
+
+        if (    fDst != (INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE)
+            &&  !fExactIntNetRecipient  /* if you have duplicate mac addresses, you're screwed. */ )
+        {
+            if (pTrunkIf->pIfPort->pfnIsHostMac(pTrunkIf->pIfPort, &pEthHdr->MacDst))
+                fDst |= INTNETTRUNKDIR_HOST;
+            else
+                fDst |= INTNETTRUNKDIR_WIRE;
+        }
+
         if (fDst)
             intnetR0TrunkIfSend(pTrunkIf, pNetwork, fDst, pSG, fTrunkLocked);
     }
