@@ -38,11 +38,15 @@
 #include <iprt/log.h>
 #include <iprt/crc32.h>
 
+#include "../Pcap.h"
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static int g_cErrors = 0;
+static int      g_cErrors = 0;
+static uint64_t g_StartTS = 0;
+
 
 
 /**
@@ -146,15 +150,16 @@ static int tstIntNetWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const v
  * @param   pBuf            The shared interface buffer.
  * @param   pvFrame         The frame without a crc.
  * @param   cbFrame         The size of it.
+ * @param   pFileRaw        The file to write the raw data to (optional).
  */
-static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, void *pvFrame, size_t cbFrame)
+static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, void *pvFrame, size_t cbFrame, PRTSTREAM pFileRaw)
 {
     /*
      * Calcuate and append the checksum.
      */
     uint32_t u32Crc = RTCrc32(pvFrame, cbFrame);
-    u32Crc = RT_H2BE_U32(u32Crc);
-    memcpy(pvFrame, &u32Crc, sizeof(u32Crc));
+    u32Crc = RT_H2LE_U32(u32Crc); /* huh? */
+    memcpy((uint8_t *)pvFrame + cbFrame, &u32Crc, sizeof(u32Crc));
     cbFrame += sizeof(u32Crc);
 
     /*
@@ -164,7 +169,12 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
      * it's not supposed to happen here in this testcase.
      */
     int rc = tstIntNetWriteFrame(pBuf, &pBuf->Send, pvFrame, cbFrame);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        if (pFileRaw)
+            PcapStreamFrame(pFileRaw, g_StartTS, pvFrame, cbFrame, 0xffff);
+    }
+    else
     {
         RTPrintf("tstIntNet-1: tstIntNetWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
         g_cErrors++;
@@ -181,6 +191,95 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
         RTPrintf("tstIntNet-1: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SEND,) failed, rc=%Rrc\n", rc);
         g_cErrors++;
     }
+
+}
+
+
+/**
+ * Internt protocol checksumming
+ * This is great fun because of the pseudo header.
+ */
+static uint16_t tstIntNet1InetCheckSum(void const *pvBuf, size_t cbBuf, uint32_t u32Src, uint32_t u32Dst, uint8_t u8Proto)
+{
+    /*
+     * Construct the pseudo header and sum it.
+     */
+    struct pseudo_header
+    {
+        uint32_t u32Src;
+        uint32_t u32Dst;
+        uint8_t  u8Zero;
+        uint8_t  u8Proto;
+        uint16_t u16Len;
+    } s =
+    {
+        RT_H2BE_U32(u32Src),
+        RT_H2BE_U32(u32Dst),
+        0,
+        u8Proto,
+        RT_H2BE_U16((uint16_t)cbBuf)
+    };
+    const uint16_t *pu16 = (const uint16_t *)&s;
+    int32_t iSum = *pu16++;
+    iSum += *pu16++;
+    iSum += *pu16++;
+    iSum += *pu16++;
+    iSum += *pu16++;
+    iSum += *pu16++;
+    AssertCompileSize(s, 12);
+
+    /*
+     * Continue with protocol header and data.
+     */
+    pu16 = (const uint16_t *)pvBuf;
+    while (cbBuf > 1)
+    {
+        iSum += *pu16++;
+        cbBuf -= 2;
+    }
+
+    /* deal with odd size */
+    if (cbBuf)
+    {
+        RTUINT16U u16;
+        u16.u = 0;
+        u16.au8[0] = *(uint8_t const *)pu16;
+        iSum += u16.u;
+    }
+
+    /* 16-bit one complement fun */
+    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
+    iSum += iSum >> 16;                     /* carry */
+    return (uint16_t)~iSum;
+}
+
+
+/**
+ * IP checksumming
+ */
+static uint16_t tstIntNet1IpCheckSum(void const *pvBuf, size_t cbBuf)
+{
+    const uint16_t *pu16 = (const uint16_t *)pvBuf;
+    int32_t iSum = 0;
+    while (cbBuf > 1)
+    {
+        iSum += *pu16++;
+        cbBuf -= 2;
+    }
+
+    /* deal with odd size */
+    if (cbBuf)
+    {
+        RTUINT16U u16;
+        u16.u = 0;
+        u16.au8[0] = *(uint8_t const *)pu16;
+        iSum += u16.u;
+    }
+
+    /* 16-bit one complement fun */
+    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
+    iSum += iSum >> 16;                     /* carry */
+    return (uint16_t)~iSum;
 }
 
 
@@ -191,68 +290,159 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
  * @param   pSession        The session.
  * @param   pBuf            The shared interface buffer.
  * @param   pSrcMac         The mac address to use as source.
+ * @param   pFileRaw        The file to write the raw data to (optional).
  */
-static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac)
+static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw)
 {
+    uint8_t abFrame[4096];
+
 #pragma pack(1)
-    struct
+
+    struct MyEthHdr
     {
         PDMMAC      DstMac;
         PDMMAC      SrcMac;
         uint16_t    u16Type;
+    } *pEthHdr = (struct MyEthHdr *)&abFrame[0];
+    struct MyIpHdr
+    {
+#ifdef RT_BIG_ENDIAN
+        unsigned int    ip_v : 4;
+        unsigned int    ip_hl : 4;
+        unsigned int    ip_tos : 8;
+        unsigned int    ip_len : 16;
+#else
+        unsigned int    ip_hl : 4;
+        unsigned int    ip_v : 4;
+        unsigned int    ip_tos : 8;
+        unsigned int    ip_len : 16;
+#endif
+        uint16_t        ip_id;
+        uint16_t        ip_off;
+        uint8_t         ip_ttl;
+        uint8_t         ip_p;
+        uint16_t        ip_sum;
+        uint32_t        ip_src;
+        uint32_t        ip_dst;
+        /* more */
+        uint32_t        ip_options[1];
+    } *pIpHdr = (struct MyIpHdr *)(pEthHdr + 1);
 
-        union
-        {
-            uint8_t     abData[4096];
-            struct
-            {
+    struct MyUdpHdr
+    {
+        uint16_t    uh_sport;
+        uint16_t    uh_dport;
+        uint16_t    uh_ulen;
+        uint16_t    uh_sum;
+    } *pUdpHdr = (struct MyUdpHdr *)(pIpHdr + 1);
 
-                uint8_t     Op;
-                uint8_t     HType;
-                uint8_t     HLen;
-                uint8_t     Hops;
-                uint32_t    XID;
-                uint16_t    Secs;
-                uint16_t    Flags;
-                uint32_t    CIAddr;
-                uint32_t    YIAddr;
-                uint32_t    SIAddr;
-                uint32_t    GIAddr;
-                uint8_t     CHAddr[16];
-                uint8_t     SName[64];
-                uint8_t     File[128];
-                uint8_t     Options[64];
-                uint8_t     u8TheEnd;
-            } DhcpMsg;
-        } u;
-    } Frame;
+    struct MyDhcpMsg
+    {
+        uint8_t     Op;
+        uint8_t     HType;
+        uint8_t     HLen;
+        uint8_t     Hops;
+        uint32_t    XID;
+        uint16_t    Secs;
+        uint16_t    Flags;
+        uint32_t    CIAddr;
+        uint32_t    YIAddr;
+        uint32_t    SIAddr;
+        uint32_t    GIAddr;
+        uint8_t     CHAddr[16];
+        uint8_t     SName[64];
+        uint8_t     File[128];
+        uint8_t     abMagic[4];
+        uint8_t     DhcpOpt;
+        uint8_t     DhcpLen; /* 1 */
+        uint8_t     DhcpReq;
+        uint8_t     abOptions[57];
+    } *pDhcpMsg = (struct MyDhcpMsg *)(pUdpHdr + 1);
+
 #pragma pack(0)
 
     /*
      * Create a simple DHCP broadcast request.
      */
-    memset(&Frame, 0, sizeof(Frame));
-    memset(&Frame.DstMac, 0xff, sizeof(Frame.DstMac));
-    Frame.SrcMac = *pSrcMac;
-    Frame.u16Type = 0x0800;
-    Frame.u.DhcpMsg.Op = 1; /* request */
-    Frame.u.DhcpMsg.HType = 6;
-    Frame.u.DhcpMsg.HLen = sizeof(PDMMAC);
-    Frame.u.DhcpMsg.Hops = 0;
-    Frame.u.DhcpMsg.XID = RTRandU32();
-    Frame.u.DhcpMsg.Secs = 0;
-    Frame.u.DhcpMsg.Flags = 1; /* broadcast */
-    Frame.u.DhcpMsg.CIAddr = 0;
-    Frame.u.DhcpMsg.YIAddr = 0;
-    Frame.u.DhcpMsg.SIAddr = 0;
-    Frame.u.DhcpMsg.GIAddr = 0;
-    memset(&Frame.u.DhcpMsg.CHAddr[0], '\0', sizeof(Frame.u.DhcpMsg.CHAddr));
-    memcpy(&Frame.u.DhcpMsg.CHAddr[0], pSrcMac, sizeof(*pSrcMac));
-    memset(&Frame.u.DhcpMsg.SName[0], '\0', sizeof(Frame.u.DhcpMsg.SName));
-    memset(&Frame.u.DhcpMsg.File[0], '\0', sizeof(Frame.u.DhcpMsg.File));
-    memset(&Frame.u.DhcpMsg.Options[0], '\0', sizeof(Frame.u.DhcpMsg.Options));
+    memset(&abFrame, 0, sizeof(abFrame));
 
-    doXmitFrame(hIf,pSession,pBuf, &Frame, &Frame.u.DhcpMsg.u8TheEnd - (uint8_t *)&Frame);
+    pDhcpMsg->Op = 1; /* request */
+    pDhcpMsg->HType = 1;
+    pDhcpMsg->HLen = sizeof(PDMMAC);
+    pDhcpMsg->Hops = 0;
+    pDhcpMsg->XID = RTRandU32();
+    pDhcpMsg->Secs = 0;
+    pDhcpMsg->Flags = 0; /* unicast */ //RT_H2BE_U16(0x8000); /* broadcast */
+    pDhcpMsg->CIAddr = 0;
+    pDhcpMsg->YIAddr = 0;
+    pDhcpMsg->SIAddr = 0;
+    pDhcpMsg->GIAddr = 0;
+    memset(&pDhcpMsg->CHAddr[0], '\0', sizeof(pDhcpMsg->CHAddr));
+    memcpy(&pDhcpMsg->CHAddr[0], pSrcMac, sizeof(*pSrcMac));
+    memset(&pDhcpMsg->SName[0], '\0', sizeof(pDhcpMsg->SName));
+    memset(&pDhcpMsg->File[0], '\0', sizeof(pDhcpMsg->File));
+    pDhcpMsg->abMagic[0] = 99;
+    pDhcpMsg->abMagic[1] = 130;
+    pDhcpMsg->abMagic[2] = 83;
+    pDhcpMsg->abMagic[3] = 99;
+
+    pDhcpMsg->DhcpOpt = 53; /* DHCP Msssage Type option */
+    pDhcpMsg->DhcpLen = 1;
+    pDhcpMsg->DhcpReq = 1;  /* DHCPDISCOVER */
+
+    memset(&pDhcpMsg->abOptions[0], '\0', sizeof(pDhcpMsg->abOptions));
+    uint8_t *pbOpt = &pDhcpMsg->abOptions[0];
+
+    *pbOpt++ = 116;         /* DHCP Auto-Configure */
+    *pbOpt++ = 1;
+    *pbOpt++ = 1;
+
+    *pbOpt++ = 61;          /* Client identifier */
+    *pbOpt++ = 1 + sizeof(*pSrcMac);
+    *pbOpt++ = 1;           /* hw type: ethernet */
+    memcpy(pbOpt, pSrcMac, sizeof(*pSrcMac));
+    pbOpt += sizeof(*pSrcMac);
+
+    *pbOpt++ = 12;          /* Host name */
+    *pbOpt++ = sizeof("tstIntNet-1") - 1;
+    memcpy(pbOpt, "tstIntNet-1", sizeof("tstIntNet-1") - 1);
+    pbOpt += sizeof("tstIntNet-1") - 1;
+
+    *pbOpt = 0xff;          /* the end */
+
+    /* UDP */
+    pUdpHdr->uh_sport = RT_H2BE_U16(68); /* bootp */
+    pUdpHdr->uh_dport = RT_H2BE_U16(67); /* bootps */
+    pUdpHdr->uh_ulen = RT_H2BE_U16(sizeof(*pDhcpMsg) + sizeof(*pUdpHdr));
+    pUdpHdr->uh_sum = 0; /* pretend checksumming is disabled */
+
+    /* IP */
+    pIpHdr->ip_v = 4;
+    pIpHdr->ip_hl = sizeof(*pIpHdr) / sizeof(uint32_t);
+    pIpHdr->ip_tos = 0;
+    pIpHdr->ip_len = RT_H2BE_U16(sizeof(*pDhcpMsg) + sizeof(*pUdpHdr) + sizeof(*pIpHdr));
+    pIpHdr->ip_id = (uint16_t)RTRandU32();
+    pIpHdr->ip_off = 0;
+    pIpHdr->ip_ttl = 255;
+    pIpHdr->ip_p = 0x11; /* UDP */
+    pIpHdr->ip_sum = 0;
+    pIpHdr->ip_src = 0;
+    pIpHdr->ip_dst = UINT32_C(0xffffffff); /* broadcast */
+    pIpHdr->ip_sum = tstIntNet1IpCheckSum(pIpHdr, sizeof(*pIpHdr));
+
+    /* calc the UDP checksum. */
+    pUdpHdr->uh_sum = tstIntNet1InetCheckSum(pUdpHdr,
+                                             RT_BE2H_U16(pUdpHdr->uh_ulen),
+                                             RT_BE2H_U32(pIpHdr->ip_src),
+                                             RT_BE2H_U32(pIpHdr->ip_dst),
+                                             pIpHdr->ip_p);
+
+    /* Ethernet */
+    memset(&pEthHdr->DstMac, 0xff, sizeof(pEthHdr->DstMac)); /* broadcast */
+    pEthHdr->SrcMac = *pSrcMac;
+    pEthHdr->u16Type = RT_H2BE_U16(0x0800); /* IP */
+
+    doXmitFrame(hIf, pSession, pBuf, &abFrame[0], (uint8_t *)(pDhcpMsg + 1) - (uint8_t *)&abFrame[0], pFileRaw);
 }
 
 
@@ -270,21 +460,15 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                              PRTSTREAM pFileRaw, PRTSTREAM pFileText)
 {
     /*
-     * Write the raw file header.
-     */
-
-
-    /*
      * The loop.
      */
-    uint64_t const StartTS = RTTimeNanoTS();
     PINTNETRINGBUF pRingBuf = &pBuf->Recv;
     for (;;)
     {
         /*
          * Wait for a packet to become available.
          */
-        uint64_t cElapsedMillies = (RTTimeNanoTS() - StartTS) / 1000000;
+        uint64_t cElapsedMillies = (RTTimeNanoTS() - g_StartTS) / 1000000;
         if (cElapsedMillies >= cMillies)
             break;
         INTNETIFWAITREQ WaitReq;
@@ -313,11 +497,10 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
             {
                 size_t      cbFrame = pHdr->cbFrame;
                 const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
-                uint64_t    NanoTS = RTTimeNanoTS() - StartTS;
+                uint64_t    NanoTS = RTTimeNanoTS() - g_StartTS;
 
                 if (pFileRaw)
-                {
-                }
+                    PcapStreamFrame(pFileRaw, g_StartTS, pvFrame, cbFrame, 0xffff);
 
                 if (pFileText)
                     RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs\n",
@@ -335,7 +518,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
         }
     }
 
-    uint64_t NanoTS = RTTimeNanoTS() - StartTS;
+    uint64_t NanoTS = RTTimeNanoTS() - g_StartTS;
     RTStrmPrintf(pFileText ? pFileText : g_pStdOut,
                  "%3RU64.%09u: stopped. cRecvs=%RU64 cbRecv=%RU64 cLost=%RU64 cOYs=%RU64 cNYs=%RU64\n",
                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
@@ -577,10 +760,17 @@ int main(int argc, char **argv)
             if (RT_SUCCESS(rc))
             {
                 /*
+                 * Start the stop watch, init the pcap file.
+                 */
+                g_StartTS = RTTimeNanoTS();
+                if (pFileRaw)
+                    PcapStreamHdr(pFileRaw, g_StartTS);
+
+                /*
                  * Do the transmit test first and so we can sniff for the response.
                  */
                 if (fXmitTest)
-                    doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac);
+                    doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw);
 
                 /*
                  * Either enter sniffing mode or do a timeout thing.
