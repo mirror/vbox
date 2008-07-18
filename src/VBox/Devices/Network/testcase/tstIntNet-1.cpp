@@ -40,12 +40,83 @@
 
 #include "../Pcap.h"
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+#pragma pack(1)
+
+struct MyEthHdr
+{
+    PDMMAC      DstMac;
+    PDMMAC      SrcMac;
+    uint16_t    u16Type;
+};
+
+struct MyIpHdr
+{
+#ifdef RT_BIG_ENDIAN
+    unsigned int    ip_v : 4;
+    unsigned int    ip_hl : 4;
+    unsigned int    ip_tos : 8;
+    unsigned int    ip_len : 16;
+#else
+    unsigned int    ip_hl : 4;
+    unsigned int    ip_v : 4;
+    unsigned int    ip_tos : 8;
+    unsigned int    ip_len : 16;
+#endif
+    uint16_t        ip_id;
+    uint16_t        ip_off;
+    uint8_t         ip_ttl;
+    uint8_t         ip_p;
+    uint16_t        ip_sum;
+    uint32_t        ip_src;
+    uint32_t        ip_dst;
+    /* more */
+    uint32_t        ip_options[1];
+};
+
+struct MyUdpHdr
+{
+    uint16_t    uh_sport;
+    uint16_t    uh_dport;
+    uint16_t    uh_ulen;
+    uint16_t    uh_sum;
+};
+
+struct MyDhcpMsg
+{
+    uint8_t     Op;
+    uint8_t     HType;
+    uint8_t     HLen;
+    uint8_t     Hops;
+    uint32_t    XID;
+    uint16_t    Secs;
+    uint16_t    Flags;
+    uint32_t    CIAddr;
+    uint32_t    YIAddr;
+    uint32_t    SIAddr;
+    uint32_t    GIAddr;
+    uint8_t     CHAddr[16];
+    uint8_t     SName[64];
+    uint8_t     File[128];
+    uint8_t     abMagic[4];
+    uint8_t     DhcpOpt;
+    uint8_t     DhcpLen; /* 1 */
+    uint8_t     DhcpReq;
+    uint8_t     abOptions[57];
+};
+
+#pragma pack(0)
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static int      g_cErrors = 0;
 static uint64_t g_StartTS = 0;
+static uint32_t g_DhcpXID = 0;
+static bool     g_fDhcpReply = false;
 
 
 
@@ -295,71 +366,10 @@ static uint16_t tstIntNet1IpCheckSum(void const *pvBuf, size_t cbBuf)
 static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw)
 {
     uint8_t abFrame[4096];
-
-#pragma pack(1)
-
-    struct MyEthHdr
-    {
-        PDMMAC      DstMac;
-        PDMMAC      SrcMac;
-        uint16_t    u16Type;
-    } *pEthHdr = (struct MyEthHdr *)&abFrame[0];
-    struct MyIpHdr
-    {
-#ifdef RT_BIG_ENDIAN
-        unsigned int    ip_v : 4;
-        unsigned int    ip_hl : 4;
-        unsigned int    ip_tos : 8;
-        unsigned int    ip_len : 16;
-#else
-        unsigned int    ip_hl : 4;
-        unsigned int    ip_v : 4;
-        unsigned int    ip_tos : 8;
-        unsigned int    ip_len : 16;
-#endif
-        uint16_t        ip_id;
-        uint16_t        ip_off;
-        uint8_t         ip_ttl;
-        uint8_t         ip_p;
-        uint16_t        ip_sum;
-        uint32_t        ip_src;
-        uint32_t        ip_dst;
-        /* more */
-        uint32_t        ip_options[1];
-    } *pIpHdr = (struct MyIpHdr *)(pEthHdr + 1);
-
-    struct MyUdpHdr
-    {
-        uint16_t    uh_sport;
-        uint16_t    uh_dport;
-        uint16_t    uh_ulen;
-        uint16_t    uh_sum;
-    } *pUdpHdr = (struct MyUdpHdr *)(pIpHdr + 1);
-
-    struct MyDhcpMsg
-    {
-        uint8_t     Op;
-        uint8_t     HType;
-        uint8_t     HLen;
-        uint8_t     Hops;
-        uint32_t    XID;
-        uint16_t    Secs;
-        uint16_t    Flags;
-        uint32_t    CIAddr;
-        uint32_t    YIAddr;
-        uint32_t    SIAddr;
-        uint32_t    GIAddr;
-        uint8_t     CHAddr[16];
-        uint8_t     SName[64];
-        uint8_t     File[128];
-        uint8_t     abMagic[4];
-        uint8_t     DhcpOpt;
-        uint8_t     DhcpLen; /* 1 */
-        uint8_t     DhcpReq;
-        uint8_t     abOptions[57];
-    } *pDhcpMsg = (struct MyDhcpMsg *)(pUdpHdr + 1);
-
-#pragma pack(0)
+    struct MyEthHdr    *pEthHdr  = (struct MyEthHdr  *)&abFrame[0];
+    struct MyIpHdr     *pIpHdr   = (struct MyIpHdr   *)(pEthHdr + 1);
+    struct MyUdpHdr    *pUdpHdr  = (struct MyUdpHdr  *)(pIpHdr  + 1);
+    struct MyDhcpMsg   *pDhcpMsg = (struct MyDhcpMsg *)(pUdpHdr + 1);
 
     /*
      * Create a simple DHCP broadcast request.
@@ -367,10 +377,10 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     memset(&abFrame, 0, sizeof(abFrame));
 
     pDhcpMsg->Op = 1; /* request */
-    pDhcpMsg->HType = 1;
+    pDhcpMsg->HType = 1; /* ethernet */
     pDhcpMsg->HLen = sizeof(PDMMAC);
     pDhcpMsg->Hops = 0;
-    pDhcpMsg->XID = RTRandU32();
+    pDhcpMsg->XID = g_DhcpXID = RTRandU32();
     pDhcpMsg->Secs = 0;
     pDhcpMsg->Flags = 0; /* unicast */ //RT_H2BE_U16(0x8000); /* broadcast */
     pDhcpMsg->CIAddr = 0;
@@ -455,9 +465,10 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
  * @param   cMillies        The time period, ms.
  * @param   pFileRaw        The file to write the raw data to (optional).
  * @param   pFileText       The file to write a textual packet summary to (optional).
+ * @param   pSrcMac         Out MAC address.
  */
 static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, uint32_t cMillies,
-                             PRTSTREAM pFileRaw, PRTSTREAM pFileText)
+                             PRTSTREAM pFileRaw, PRTSTREAM pFileText, PCPDMMAC pSrcMac)
 {
     /*
      * The loop.
@@ -502,10 +513,39 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                 if (pFileRaw)
                     PcapStreamFrame(pFileRaw, g_StartTS, pvFrame, cbFrame, 0xffff);
 
+                struct MyEthHdr const *pEthHdr = (struct MyEthHdr const *)pvFrame;
                 if (pFileText)
-                    RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs\n",
+                    RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s\n",
                                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
-                                 cbFrame, pvFrame, (uint8_t *)pvFrame + 6);
+                                 cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->u16Type),
+                                 !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
+
+                /* Loop for the DHCP reply. */
+                if (    cbFrame > 64
+                    &&  RT_BE2H_U16(pEthHdr->u16Type) == 0x0800 /* EtherType == IP */)
+                {
+                    struct MyIpHdr const  *pIpHdr  = (struct MyIpHdr const  *)(pEthHdr + 1);
+                    struct MyUdpHdr const *pUdpHdr = (struct MyUdpHdr const *)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
+                    if (    pIpHdr->ip_p == 0x11 /*UDP*/
+                        &&  RT_BE2H_U16(pUdpHdr->uh_dport) == 68 /* bootp */
+                        &&  RT_BE2H_U16(pUdpHdr->uh_sport) == 67 /* bootps */)
+                    {
+                        struct MyDhcpMsg const *pDhcpMsg = (struct MyDhcpMsg const *)(pUdpHdr + 1);
+                        if (    pDhcpMsg->Op == 2 /* boot reply */
+                            &&  pDhcpMsg->HType == 1 /* ethernet */
+                            &&  pDhcpMsg->HLen == sizeof(PDMMAC)
+                            &&  (pDhcpMsg->XID == g_DhcpXID || !g_DhcpXID)
+                            &&  !memcmp(&pDhcpMsg->CHAddr[0], pSrcMac, sizeof(*pSrcMac)))
+                        {
+                            g_fDhcpReply = true;
+                            RTPrintf("tstIntNet-1: DHCP server reply! My IP: %d.%d.%d.%d\n",
+                                     RT_BYTE4(RT_BE2H_U32(pDhcpMsg->YIAddr)),
+                                     RT_BYTE3(RT_BE2H_U32(pDhcpMsg->YIAddr)),
+                                     RT_BYTE2(RT_BE2H_U32(pDhcpMsg->YIAddr)),
+                                     RT_BYTE1(RT_BE2H_U32(pDhcpMsg->YIAddr)));
+                        }
+                    }
+                }
             }
             else
             {
@@ -776,7 +816,14 @@ int main(int argc, char **argv)
                  * Either enter sniffing mode or do a timeout thing.
                  */
                 if (fSniffer)
-                    doPacketSniffing(OpenReq.hIf, pSession, pBuf, cMillies, pFileRaw, pFileText);
+                {
+                    doPacketSniffing(OpenReq.hIf, pSession, pBuf, cMillies, pFileRaw, pFileText, &SrcMac);
+                    if (fXmitTest != g_fDhcpReply)
+                    {
+                        RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
+                        g_cErrors++;
+                    }
+                }
                 else
                     RTThreadSleep(cMillies);
             }
