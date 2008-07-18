@@ -95,6 +95,8 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
     }
 
     ASMAtomicIncU32(&pFastInt->u32Magic);
+    Assert(pFastInt->Mutex.Count == 1);
+    Assert(pFastInt->Mutex.Contention == 0);
     RTMemFree(pFastInt);
     return VINF_SUCCESS;
 }
