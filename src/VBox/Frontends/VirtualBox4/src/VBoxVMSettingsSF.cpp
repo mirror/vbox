@@ -21,19 +21,15 @@
  */
 
 #include "VBoxVMSettingsSF.h"
+#include "VBoxVMSettingsSFDetails.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
-#include "QIDialogButtonBox.h"
 #include "VBoxToolBar.h"
 
-#include <QLineEdit>
-#include <QToolButton>
-#include <QPushButton>
-#include <QDir>
+/* Qt includes */
 #include <QHeaderView>
 #include <QTimer>
-#include <QLabel>
 
 class SFTreeViewItem : public QTreeWidgetItem
 {
@@ -370,34 +366,36 @@ void VBoxVMSettingsSF::retranslateUi()
 void VBoxVMSettingsSF::addTriggered()
 {
     /* Invoke Add-Box Dialog */
-    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDialogType,
-                         mDialogType & ConsoleType, usedList (true));
-    if (dlg.exec() != QDialog::Accepted)
-        return;
+    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::AddType,
+                                 mDialogType & ConsoleType, 
+                                 usedList (true),
+                                 this);
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QString name = dlg.name();
+        QString path = dlg.path();
+        bool isPermanent = dlg.isPermanent();
+        /* Shared folder's name & path could not be empty */
+        Assert (!name.isEmpty() && !path.isEmpty());
+        /* Searching root for the new listview item */
+        SFTreeViewItem *root = searchRoot (isPermanent);
+        Assert (root);
+        /* Appending a new listview item to the root */
+        QStringList fields;
+        fields << name /* name */ << path /* path */
+            << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
+            << "edited" /* mark item as edited */;
+        SFTreeViewItem *item = new SFTreeViewItem (root, fields,
+                                                   SFTreeViewItem::EllipsisFile);
+        mTreeView->sortItems (0, Qt::AscendingOrder);
+        mTreeView->scrollToItem (item);
+        mTreeView->setCurrentItem (item);
+        processCurrentChanged (item);
+        mTreeView->setFocus();
+        adjustList();
 
-    QString name = dlg.getName();
-    QString path = dlg.getPath();
-    bool isPermanent = dlg.getPermanent();
-    /* Shared folder's name & path could not be empty */
-    Assert (!name.isEmpty() && !path.isEmpty());
-    /* Searching root for the new listview item */
-    SFTreeViewItem *root = searchRoot (isPermanent);
-    Assert (root);
-    /* Appending a new listview item to the root */
-    QStringList fields;
-    fields << name /* name */ << path /* path */
-           << (dlg.getWritable() ? mTrFull : mTrReadOnly /* writable? */)
-           << "edited" /* mark item as edited */;
-    SFTreeViewItem *item = new SFTreeViewItem (root, fields,
-                                               SFTreeViewItem::EllipsisFile);
-    mTreeView->sortItems (0, Qt::AscendingOrder);
-    mTreeView->scrollToItem (item);
-    mTreeView->setCurrentItem (item);
-    processCurrentChanged (item);
-    mTreeView->setFocus();
-    adjustList();
-
-    mIsListViewChanged = true;
+        mIsListViewChanged = true;
+    }
 }
 
 void VBoxVMSettingsSF::edtTriggered()
@@ -412,44 +410,46 @@ void VBoxVMSettingsSF::edtTriggered()
     Assert (item->parent());
 
     /* Invoke Edit-Box Dialog */
-    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::EditDialogType,
-                         mDialogType & ConsoleType, usedList (false));
+    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::EditType,
+                                 mDialogType & ConsoleType, 
+                                 usedList (false),
+                                 this);
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
     dlg.setPermanent ((SFDialogType)item->parent()->text (1).toInt()
                       != ConsoleType);
-    dlg.setWritable (item->getText (2) == mTrFull);
-    if (dlg.exec() != QDialog::Accepted)
-        return;
-
-    QString name = dlg.getName();
-    QString path = dlg.getPath();
-    bool isPermanent = dlg.getPermanent();
-    /* Shared folder's name & path could not be empty */
-    Assert (!name.isEmpty() && !path.isEmpty());
-    /* Searching new root for the selected listview item */
-    SFTreeViewItem *root = searchRoot (isPermanent);
-    Assert (root);
-    /* Updating an edited listview item */
-    QStringList fields;
-    fields << name /* name */ << path /* path */
-           << (dlg.getWritable() ? mTrFull : mTrReadOnly /* writable? */)
-           << "edited" /* mark item as edited */;
-    item->updateText (fields);
-    mTreeView->sortItems (0, Qt::AscendingOrder);
-    if (item->parent() != root)
+    dlg.setWriteable (item->getText (2) == mTrFull);
+    if (dlg.exec() == QDialog::Accepted)
     {
-        /* Move the selected item into new location */
-        item->parent()->takeChild (item->parent()->indexOfChild (item));
-        root->insertChild (root->childCount(), item);
-        mTreeView->scrollToItem (item);
-        mTreeView->setCurrentItem (item);
-        processCurrentChanged (item);
-        mTreeView->setFocus();
-    }
-    adjustList();
+        QString name = dlg.name();
+        QString path = dlg.path();
+        bool isPermanent = dlg.isPermanent();
+        /* Shared folder's name & path could not be empty */
+        Assert (!name.isEmpty() && !path.isEmpty());
+        /* Searching new root for the selected listview item */
+        SFTreeViewItem *root = searchRoot (isPermanent);
+        Assert (root);
+        /* Updating an edited listview item */
+        QStringList fields;
+        fields << name /* name */ << path /* path */
+            << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
+            << "edited" /* mark item as edited */;
+        item->updateText (fields);
+        mTreeView->sortItems (0, Qt::AscendingOrder);
+        if (item->parent() != root)
+        {
+            /* Move the selected item into new location */
+            item->parent()->takeChild (item->parent()->indexOfChild (item));
+            root->insertChild (root->childCount(), item);
+            mTreeView->scrollToItem (item);
+            mTreeView->setCurrentItem (item);
+            processCurrentChanged (item);
+            mTreeView->setFocus();
+        }
+        adjustList();
 
-    mIsListViewChanged = true;
+        mIsListViewChanged = true;
+    }
 }
 
 void VBoxVMSettingsSF::delTriggered()
@@ -724,184 +724,5 @@ SFoldersNameList VBoxVMSettingsSF::usedList (bool aIncludeSelected)
         ++ it;
     }
     return list;
-}
-
-
-VBoxAddSFDialog::VBoxAddSFDialog (VBoxVMSettingsSF *aParent,
-                                  VBoxAddSFDialog::DialogType aType,
-                                  bool aEnableSelector,
-                                  const SFoldersNameList &aUsedNames)
-    : QIWithRetranslateUI<QDialog> (aParent)
-    , mType(aType), mLePath (0), mLeName (0), mCbPermanent (0), mCbReadonly (0)
-    , mUsedNames (aUsedNames)
-{
-    setModal (true);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout (this);
-
-    /* Setup Input layout */
-    QGridLayout *inputLayout = new QGridLayout ();
-    mainLayout->addLayout (inputLayout);
-    mLbPath = new QLabel (this);
-    mLePath = new QLineEdit (this);
-    mTbPath = new QToolButton (this);
-    mTbPath->setAutoRaise (true);
-    mLbName = new QLabel (this);
-    mLeName = new QLineEdit (this);
-    mTbPath->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
-                                          ":/select_file_dis_16px.png"));
-    mTbPath->setFocusPolicy (Qt::TabFocus);
-    connect (mLePath, SIGNAL (textChanged (const QString &)),
-             this, SLOT (validate()));
-    connect (mLeName, SIGNAL (textChanged (const QString &)),
-             this, SLOT (validate()));
-    connect (mTbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
-    mCbReadonly = new QCheckBox (this);
-    mCbReadonly->setChecked (false);
-
-    inputLayout->addWidget (mLbPath,  0, 0);
-    inputLayout->addWidget (mLePath, 0, 1);
-    inputLayout->addWidget (mTbPath,  0, 2);
-    inputLayout->addWidget (mLbName,  1, 0);
-    inputLayout->addWidget (mLeName, 1, 1, 1, 2);
-    inputLayout->addWidget (mCbReadonly, 2, 0, 1, 3);
-
-    if (aEnableSelector)
-    {
-        mCbPermanent = new QCheckBox (this);
-        mCbPermanent->setChecked (true);
-        inputLayout->addWidget (mCbPermanent, 3, 0, 1, 3);
-        connect (mCbPermanent, SIGNAL (toggled (bool)),
-                 this, SLOT (validate()));
-    }
-
-    /* Setup Button layout */
-    mButtonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    mButtonBox->setCenterButtons (true);
-    connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
-    connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
-    mainLayout->addWidget (mButtonBox);
-
-    /* Validate fields */
-    validate();
-
-    retranslateUi();
-}
-
-QString VBoxAddSFDialog::getPath()
-{
-    return mLePath->text();
-}
-QString VBoxAddSFDialog::getName()
-{
-    return mLeName->text();
-}
-bool VBoxAddSFDialog::getPermanent()
-{
-    return mCbPermanent ? mCbPermanent->isChecked() : true;
-}
-bool VBoxAddSFDialog::getWritable()
-{
-    return !mCbReadonly->isChecked();
-}
-
-void VBoxAddSFDialog::setPath (const QString &aPath)
-{
-    mLePath->setText (aPath);
-}
-void VBoxAddSFDialog::setName (const QString &aName)
-{
-    mLeName->setText (aName);
-}
-void VBoxAddSFDialog::setPermanent (bool aPermanent)
-{
-    if (mCbPermanent)
-    {
-        mCbPermanent->setChecked (aPermanent);
-        mCbPermanent->setEnabled (!aPermanent);
-    }
-}
-void VBoxAddSFDialog::setWritable (bool aWritable)
-{
-    mCbReadonly->setChecked (!aWritable);
-}
-
-void VBoxAddSFDialog::retranslateUi()
-{
-    switch (mType)
-    {
-        case AddDialogType:
-            setWindowTitle (tr ("Add Share"));
-            break;
-        case EditDialogType:
-            setWindowTitle (tr ("Edit Share"));
-            break;
-        default:
-            AssertMsgFailed (("Incorrect SF Dialog type\n"));
-    }
-
-    mLbPath->setText (tr ("Folder Path"));
-    mLePath->setWhatsThis (tr ("Displays the path to an existing folder "
-                               "on the host PC."));
-
-    mLbName->setText (tr ("Folder Name"));
-    mLeName->setWhatsThis (tr ("Displays the name of the shared folder "
-                               "(as it will be seen by the guest OS)."));
-
-    mTbPath->setWhatsThis (tr ("Opens the dialog to select a folder."));
-
-    mCbReadonly->setText (tr ("&Read-only"));
-    mCbReadonly->setWhatsThis (tr ("When checked, the guest OS will not "
-                                   "be able to write to the specified "
-                                   "shared folder."));
-
-    if (mCbPermanent)
-        mCbPermanent->setText (tr ("&Make Permanent"));
-}
-
-void VBoxAddSFDialog::validate()
-{
-    int dlgType = static_cast<VBoxVMSettingsSF*>
-                  (parent())->dialogType();
-    SFDialogType resultType =
-        mCbPermanent && !mCbPermanent->isChecked() ? ConsoleType :
-        dlgType & MachineType ? MachineType : GlobalType;
-    SFolderName pair = qMakePair (mLeName->text(), resultType);
-
-    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!mLePath->text().isEmpty() &&
-                                                           !mLeName->text().trimmed().isEmpty() && 
-                                                           !mLeName->text().contains(" ") &&
-                                                           !mUsedNames.contains (pair));
-}
-
-void VBoxAddSFDialog::showFileDialog()
-{
-    QString folderName = vboxGlobal()
-        .getExistingDirectory (mLePath->text().isEmpty() ? QDir::homePath() : mLePath->text(),
-                               this,
-                               tr ("Select a folder to share"));
-    if (folderName.isNull())
-        return;
-
-    QDir folder (folderName);
-    mLePath->setText (QDir::toNativeSeparators (folder.absolutePath()));
-    if (!folder.isRoot())
-        /* processing non-root folder */
-        mLeName->setText (folder.dirName());
-    else
-    {
-        /* processing root folder */
-#if defined (Q_OS_WIN) || defined (Q_OS_OS2)
-        mLeName->setText (folderName.toUpper()[0] + "_DRIVE");
-#elif defined (Q_OS_UNIX)
-        mLeName->setText ("ROOT");
-#endif
-    }
-}
-
-void VBoxAddSFDialog::showEvent (QShowEvent *aEvent)
-{
-    setFixedHeight (height());
-    QDialog::showEvent (aEvent);
 }
 

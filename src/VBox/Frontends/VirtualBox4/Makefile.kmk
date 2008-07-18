@@ -483,6 +483,7 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxVMSettingsUSB.h \
 	include/VBoxVMSettingsUSBFilterDetails.h \
 	include/VBoxVMSettingsSF.h \
+	include/VBoxVMSettingsSFDetails.h \
 	include/VBoxVMSettingsVRDP.h \
 	include/VBoxGLSettingsGeneral.h \
 	include/VBoxGLSettingsInput.h \
@@ -557,6 +558,7 @@ VirtualBox4_SOURCES = \
 	src/VBoxVMSettingsUSB.cpp \
 	src/VBoxVMSettingsUSBFilterDetails.cpp \
 	src/VBoxVMSettingsSF.cpp \
+	src/VBoxVMSettingsSFDetails.cpp \
 	src/VBoxVMSettingsVRDP.cpp \
 	src/VBoxGLSettingsGeneral.cpp \
 	src/VBoxGLSettingsInput.cpp \
