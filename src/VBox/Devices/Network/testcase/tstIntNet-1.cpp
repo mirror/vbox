@@ -34,12 +34,226 @@
 #include <iprt/thread.h>
 #include <iprt/param.h>
 #include <iprt/getopt.h>
+#include <iprt/rand.h>
+#include <iprt/log.h>
+#include <iprt/crc32.h>
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static int g_cErrors = 0;
+
+
+/**
+ * Writes a frame packet to the buffer.
+ *
+ * @returns VBox status code.
+ * @param   pBuf        The buffer.
+ * @param   pRingBuf    The ring buffer to read from.
+ * @param   pvFrame     The frame to write.
+ * @param   cbFrame     The size of the frame.
+ * @remark  This is the same as INTNETRingWriteFrame and drvIntNetRingWriteFrame.
+ */
+static int tstIntNetWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
+{
+    /*
+     * Validate input.
+     */
+    Assert(pBuf);
+    Assert(pRingBuf);
+    Assert(pvFrame);
+    Assert(cbFrame >= sizeof(PDMMAC) * 2);
+    uint32_t offWrite = pRingBuf->offWrite;
+    Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
+    uint32_t offRead = pRingBuf->offRead;
+    Assert(offRead == RT_ALIGN_32(offRead, sizeof(INTNETHDR)));
+
+    const uint32_t cb = RT_ALIGN_32(cbFrame, sizeof(INTNETHDR));
+    if (offRead <= offWrite)
+    {
+        /*
+         * Try fit it all before the end of the buffer.
+         */
+        if (pRingBuf->offEnd - offWrite >= cb + sizeof(INTNETHDR))
+        {
+            PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame;
+            pHdr->offFrame = sizeof(INTNETHDR);
+
+            memcpy(pHdr + 1, pvFrame, cbFrame);
+
+            offWrite += cb + sizeof(INTNETHDR);
+            Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
+            if (offWrite >= pRingBuf->offEnd)
+                offWrite = pRingBuf->offStart;
+            Log2(("WriteFrame: offWrite: %#x -> %#x (1)\n", pRingBuf->offWrite, offWrite));
+            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Try fit the frame at the start of the buffer.
+         * (The header fits before the end of the buffer because of alignment.)
+         */
+        AssertMsg(pRingBuf->offEnd - offWrite >= sizeof(INTNETHDR), ("offEnd=%x offWrite=%x\n", pRingBuf->offEnd, offWrite));
+        if (offRead - pRingBuf->offStart > cb) /* not >= ! */
+        {
+            PINTNETHDR  pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+            void       *pvFrameOut = (PINTNETHDR)((uint8_t *)pBuf + pRingBuf->offStart);
+            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame;
+            pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
+
+            memcpy(pvFrameOut, pvFrame, cbFrame);
+
+            offWrite = pRingBuf->offStart + cb;
+            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+            Log2(("WriteFrame: offWrite: %#x -> %#x (2)\n", pRingBuf->offWrite, offWrite));
+            return VINF_SUCCESS;
+        }
+    }
+    /*
+     * The reader is ahead of the writer, try fit it into that space.
+     */
+    else if (offRead - offWrite > cb + sizeof(INTNETHDR)) /* not >= ! */
+    {
+        PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+        pHdr->cbFrame  = cbFrame;
+        pHdr->offFrame = sizeof(INTNETHDR);
+
+        memcpy(pHdr + 1, pvFrame, cbFrame);
+
+        offWrite += cb + sizeof(INTNETHDR);
+        ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+        Log2(("WriteFrame: offWrite: %#x -> %#x (3)\n", pRingBuf->offWrite, offWrite));
+        return VINF_SUCCESS;
+    }
+
+    /* (it didn't fit) */
+    /** @todo stats */
+    return VERR_BUFFER_OVERFLOW;
+}
+
+
+/**
+ * Transmits one frame after appending the CRC.
+ *
+ * @param   hIf             The interface handle.
+ * @param   pSession        The session.
+ * @param   pBuf            The shared interface buffer.
+ * @param   pvFrame         The frame without a crc.
+ * @param   cbFrame         The size of it.
+ */
+static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, void *pvFrame, size_t cbFrame)
+{
+    /*
+     * Calcuate and append the checksum.
+     */
+    uint32_t u32Crc = RTCrc32(pvFrame, cbFrame);
+    u32Crc = RT_H2BE_U32(u32Crc);
+    memcpy(pvFrame, &u32Crc, sizeof(u32Crc));
+    cbFrame += sizeof(u32Crc);
+
+    /*
+     * Write the frame and push the queue.
+     *
+     * Don't bother with dealing with overflows like DrvIntNet does, because
+     * it's not supposed to happen here in this testcase.
+     */
+    int rc = tstIntNetWriteFrame(pBuf, &pBuf->Send, pvFrame, cbFrame);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstIntNet-1: tstIntNetWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
+        g_cErrors++;
+    }
+
+    INTNETIFSENDREQ SendReq;
+    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SendReq.Hdr.cbReq = sizeof(SendReq);
+    SendReq.pSession = pSession;
+    SendReq.hIf = hIf;
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstIntNet-1: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SEND,) failed, rc=%Rrc\n", rc);
+        g_cErrors++;
+    }
+}
+
+
+/**
+ * Does the transmit test.
+ *
+ * @param   hIf             The interface handle.
+ * @param   pSession        The session.
+ * @param   pBuf            The shared interface buffer.
+ * @param   pSrcMac         The mac address to use as source.
+ */
+static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac)
+{
+#pragma pack(1)
+    struct
+    {
+        PDMMAC      DstMac;
+        PDMMAC      SrcMac;
+        uint16_t    u16Type;
+
+        union
+        {
+            uint8_t     abData[4096];
+            struct
+            {
+
+                uint8_t     Op;
+                uint8_t     HType;
+                uint8_t     HLen;
+                uint8_t     Hops;
+                uint32_t    XID;
+                uint16_t    Secs;
+                uint16_t    Flags;
+                uint32_t    CIAddr;
+                uint32_t    YIAddr;
+                uint32_t    SIAddr;
+                uint32_t    GIAddr;
+                uint8_t     CHAddr[16];
+                uint8_t     SName[64];
+                uint8_t     File[128];
+                uint8_t     Options[64];
+                uint8_t     u8TheEnd;
+            } DhcpMsg;
+        } u;
+    } Frame;
+#pragma pack(0)
+
+    /*
+     * Create a simple DHCP broadcast request.
+     */
+    memset(&Frame, 0, sizeof(Frame));
+    memset(&Frame.DstMac, 0xff, sizeof(Frame.DstMac));
+    Frame.SrcMac = *pSrcMac;
+    Frame.u16Type = 0x0800;
+    Frame.u.DhcpMsg.Op = 1; /* request */
+    Frame.u.DhcpMsg.HType = 6;
+    Frame.u.DhcpMsg.HLen = sizeof(PDMMAC);
+    Frame.u.DhcpMsg.Hops = 0;
+    Frame.u.DhcpMsg.XID = RTRandU32();
+    Frame.u.DhcpMsg.Secs = 0;
+    Frame.u.DhcpMsg.Flags = 1; /* broadcast */
+    Frame.u.DhcpMsg.CIAddr = 0;
+    Frame.u.DhcpMsg.YIAddr = 0;
+    Frame.u.DhcpMsg.SIAddr = 0;
+    Frame.u.DhcpMsg.GIAddr = 0;
+    memset(&Frame.u.DhcpMsg.CHAddr[0], '\0', sizeof(Frame.u.DhcpMsg.CHAddr));
+    memcpy(&Frame.u.DhcpMsg.CHAddr[0], pSrcMac, sizeof(*pSrcMac));
+    memset(&Frame.u.DhcpMsg.SName[0], '\0', sizeof(Frame.u.DhcpMsg.SName));
+    memset(&Frame.u.DhcpMsg.File[0], '\0', sizeof(Frame.u.DhcpMsg.File));
+    memset(&Frame.u.DhcpMsg.Options[0], '\0', sizeof(Frame.u.DhcpMsg.Options));
+
+    doXmitFrame(hIf,pSession,pBuf, &Frame, &Frame.u.DhcpMsg.u8TheEnd - (uint8_t *)&Frame);
+}
 
 
 /**
@@ -169,6 +383,11 @@ int main(int argc, char **argv)
     bool        fSniffer = false;
     PRTSTREAM   pFileText = g_pStdOut;
     bool        fXmitTest = false;
+    PDMMAC      SrcMac;
+    SrcMac.au8[0] = 0x08;
+    SrcMac.au8[1] = 0x03;
+    SrcMac.au8[2] = 0x86;
+    RTRandBytes(&SrcMac.au8[3], sizeof(SrcMac) - 3);
 
     int rc;
     int ch;
@@ -357,6 +576,12 @@ int main(int argc, char **argv)
             }
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Do the transmit test first and so we can sniff for the response.
+                 */
+                if (fXmitTest)
+                    doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac);
+
                 /*
                  * Either enter sniffing mode or do a timeout thing.
                  */
