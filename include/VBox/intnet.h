@@ -675,6 +675,9 @@ typedef struct INTNETIFCLOSEREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** The handle to the network interface. */
     INTNETIFHANDLE  hIf;
 } INTNETIFCLOSEREQ;
@@ -691,9 +694,12 @@ INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PINTNETIFCLOSEREQ pReq);
 typedef struct INTNETIFGETRING3BUFFERREQ
 {
     /** The request header. */
-    SUPVMMR0REQHDR          Hdr;
+    SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** Handle to the interface. */
-    INTNETIFHANDLE          hIf;
+    INTNETIFHANDLE  hIf;
     /** The pointer to the ring3 buffer. (output) */
     R3PTRTYPE(PINTNETBUF)   pRing3Buf;
 } INTNETIFGETRING3BUFFERREQ;
@@ -711,6 +717,9 @@ typedef struct INTNETIFSETPROMISCUOUSMODEREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
     /** The new promiscuous mode. */
@@ -730,6 +739,9 @@ typedef struct INTNETIFSENDREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
 } INTNETIFSENDREQ;
@@ -747,6 +759,9 @@ typedef struct INTNETIFWAITREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
     /** The number of milliseconds to wait. */
