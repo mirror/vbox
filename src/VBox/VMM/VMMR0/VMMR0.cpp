@@ -661,6 +661,26 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 
 
 /**
+ * Validates a session or VM session argument.
+ *
+ * @returns true / false accordingly.
+ * @param   pVM         The VM argument.
+ * @param   pSession    The session argument.
+ */
+DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pSession)
+{
+    /* Only one out of the two */
+    if (pVM && pSession)
+        return false;
+    if (pVM)
+        pSession = pVM->pSession;
+
+    /** @todo supdrv should validate it. */
+    return VALID_PTR(pSession);
+}
+
+
+/**
  * VMMR0EntryEx worker function, either called directly or when ever possible
  * called thru a longjmp so we can exit safely on failure.
  *
@@ -668,6 +688,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
  * @param   pVM             The VM to operate on.
  * @param   enmOperation    Which operation to execute.
  * @param   pReqHdr         This points to a SUPVMMR0REQHDR packet. Optional.
+ *                          The support driver validates this if it's present.
  * @param   u64Arg          Some simple constant argument.
  * @remarks Assume called with interrupts _enabled_.
  */
@@ -861,7 +882,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         case VMMR0_DO_INTNET_OPEN:
         {
             PINTNETOPENREQ pReq = (PINTNETOPENREQ)pReqHdr;
-            if (u64Arg || !pReq || (pVM ? pReq->pSession != NULL : !pReq->pSession))
+            if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
@@ -869,35 +890,35 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         }
 
         case VMMR0_DO_INTNET_IF_CLOSE:
-            if (!pVM || u64Arg)
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfCloseReq(g_pIntNet, (PINTNETIFCLOSEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-            if (!pVM || u64Arg)
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfGetRing3BufferReq(g_pIntNet, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
-            if (!pVM || u64Arg)
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SEND:
-            if (!pVM || u64Arg)
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSendReq(g_pIntNet, (PINTNETIFSENDREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_WAIT:
-            if (!pVM || u64Arg)
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;

@@ -236,6 +236,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         INTNETIFSENDREQ SendReq;
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.pSession = NULL;
         SendReq.hIf = pThis->hIf;
         pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
@@ -247,6 +248,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         INTNETIFSENDREQ SendReq;
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.pSession = NULL;
         SendReq.hIf = pThis->hIf;
         rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
     }
@@ -273,6 +275,7 @@ static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
     INTNETIFSETPROMISCUOUSMODEREQ Req;
     Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq       = sizeof(Req);
+    Req.pSession        = NULL;
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
     int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
@@ -427,6 +430,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
         INTNETIFWAITREQ WaitReq;
         WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         WaitReq.Hdr.cbReq    = sizeof(WaitReq);
+        WaitReq.pSession     = NULL;
         WaitReq.hIf          = pThis->hIf;
         WaitReq.cMillies     = 30000; /* 30s - don't wait forever, timeout now and then. */
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
@@ -614,6 +618,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
         INTNETIFCLOSEREQ CloseReq;
         CloseReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         CloseReq.Hdr.cbReq = sizeof(CloseReq);
+        CloseReq.pSession = NULL;
         CloseReq.hIf = pThis->hIf;
         pThis->hIf = INTNET_HANDLE_INVALID;
         int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
@@ -814,6 +819,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
     GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
+    GetRing3BufferReq.pSession = NULL;
     GetRing3BufferReq.hIf = pThis->hIf;
     GetRing3BufferReq.pRing3Buf = NULL;
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
