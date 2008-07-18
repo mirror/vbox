@@ -64,6 +64,31 @@ VBoxFilePathSelectorWidget::SelectorMode VBoxFilePathSelectorWidget::mode() cons
     return mMode;
 }
 
+void VBoxFilePathSelectorWidget::setResetEnabled (bool aEnabled)
+{
+#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
+    if (!aEnabled &&
+        mCbPath->count() - 1 == ResetId)
+        mCbPath->removeItem (ResetId);
+    else
+    if (aEnabled &&
+        mCbPath->count() - 1  == ResetId - 1)
+        mCbPath->insertItem (ResetId, "");
+    retranslateUi();
+#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    mTbReset->setVisible (aEnabled);
+#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+}
+
+bool VBoxFilePathSelectorWidget::isResetEnabled () const
+{
+#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
+    return (mCbPath->count() - 1  == ResetId);
+#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    return mTbReset->isVisible();
+#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+}
+
 void VBoxFilePathSelectorWidget::setLineEditWhatsThis (const QString &aText)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
@@ -134,7 +159,8 @@ void VBoxFilePathSelectorWidget::retranslateUi()
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     mNoneStr = tr ("None");
     mCbPath->setItemText (SelectId, tr ("Other..."));
-    mCbPath->setItemText (ResetId, tr ("Reset"));
+    if (mCbPath->count() - 1 == ResetId)
+        mCbPath->setItemText (ResetId, tr ("Reset"));
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
@@ -196,7 +222,11 @@ void VBoxFilePathSelectorWidget::init()
     layout->addWidget (mTbReset);
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 
+     /* Applying language settings */
     retranslateUi();
+
+    /* Set to none */
+    setPath ("");
 }
 
 QIcon VBoxFilePathSelectorWidget::defaultIcon() const
@@ -209,21 +239,25 @@ QIcon VBoxFilePathSelectorWidget::defaultIcon() const
 
 QString VBoxFilePathSelectorWidget::filePath (const QString &aName, bool bLast) const
 {
-    if (mMode == PathMode)
+    if (!aName.isEmpty())
     {
-        QDir dir (aName);
-        if (bLast)
-            return dir.dirName();
+        if (mMode == PathMode)
+        {
+            QDir dir (aName);
+            if (bLast)
+                return dir.dirName();
+            else
+                return dir.path();
+        }
         else
-            return dir.path();
+        {
+            QFileInfo fi (aName);
+            if (bLast)
+                return fi.fileName();
+            else
+                return fi.filePath();
+        }
     }
-    else
-    {
-        QFileInfo fi (aName);
-        if (bLast)
-            return fi.fileName();
-        else
-            return fi.filePath();
-    }
+    return "";
 }  
 
