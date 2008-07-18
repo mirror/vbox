@@ -43,10 +43,8 @@ void VBoxVMNetworkSettings::init()
 
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_Null));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_NAT));
-#ifndef Q_WS_MAC /* not yet on the Mac */
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_Internal));
-#endif
 
 #if defined Q_WS_X11
     leTAPDescriptor->setValidator (new QIntValidator (-1, std::numeric_limits <LONG>::max(), this));
@@ -82,7 +80,7 @@ void VBoxVMNetworkSettings::init()
      * (remove the relative code at all? -- just leave for some time...) */
     frmTAPDescriptor->setHidden (true);
 
-#if defined Q_WS_MAC
+#if defined Q_WS_MAC /** @todo hif on mac  */
     /* no Host Interface Networking on the Mac yet */
     grbTAP->setHidden (true);
 #endif
