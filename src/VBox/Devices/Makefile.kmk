@@ -793,7 +793,8 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstIntNet-1
  tstIntNet-1_TEMPLATE    = VBOXR3TSTEXE
  tstIntNet-1_SOURCES     = \
-	Network/testcase/tstIntNet-1.cpp
+	Network/testcase/tstIntNet-1.cpp \
+	Network/Pcap.cpp
 endif
 
 
