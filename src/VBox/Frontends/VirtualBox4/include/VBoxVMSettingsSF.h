@@ -26,14 +26,7 @@
 #include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsSF.gen.h"
 
-#include <QDialog>
-
 class SFTreeViewItem;
-class QIDialogButtonBox;
-
-class QLineEdit;
-class QPushButton;
-class QCheckBox;
 
 enum SFDialogType
 {
@@ -115,59 +108,6 @@ private:
     CConsole  mConsole;
     QString   mTrFull;
     QString   mTrReadOnly;
-};
-
-class VBoxAddSFDialog : public QIWithRetranslateUI<QDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    enum DialogType
-    {
-        AddDialogType,
-        EditDialogType
-    };
-
-    VBoxAddSFDialog (VBoxVMSettingsSF *aParent,
-                     VBoxAddSFDialog::DialogType aType,
-                     bool aEnableSelector /* for "permanent" checkbox */,
-                     const SFoldersNameList &aUsedNames);
-   ~VBoxAddSFDialog() {}
-
-    QString getPath();
-    QString getName();
-    bool getPermanent();
-    bool getWritable();
-
-    void setPath (const QString &aPath);
-    void setName (const QString &aName);
-    void setPermanent (bool aPermanent);
-    void setWritable (bool aWritable);
-
-protected:
-
-    void retranslateUi();
-
-private slots:
-
-    void validate();
-    void showFileDialog();
-
-private:
-
-    void showEvent (QShowEvent *aEvent);
-
-    VBoxAddSFDialog::DialogType  mType;
-    QIDialogButtonBox           *mButtonBox;
-    QLabel                      *mLbPath;
-    QLineEdit                   *mLePath;
-    QToolButton                 *mTbPath;
-    QLabel                      *mLbName;
-    QLineEdit                   *mLeName;
-    QCheckBox                   *mCbPermanent;
-    QCheckBox                   *mCbReadonly;
-    SFoldersNameList             mUsedNames;
 };
 
 #endif // __VBoxVMSettingsSF_h__
