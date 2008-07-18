@@ -485,7 +485,7 @@
     </message>
     <message>
         <source>One directory up</source>
-        <translation>상위 디렉토리로 이동</translation>
+        <translation>상위 디렉터리로 이동</translation>
     </message>
     <message>
         <source>Create New Folder</source>
@@ -529,7 +529,7 @@
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation>디렉토리로 향하는 심볼릭 링크</translation>
+        <translation>디렉터리로 향하는 심볼릭 링크</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
@@ -541,7 +541,7 @@
     </message>
     <message>
         <source>Dir</source>
-        <translation>디렉토리</translation>
+        <translation>디렉터리</translation>
     </message>
     <message>
         <source>Special</source>
@@ -605,7 +605,7 @@
     </message>
     <message>
         <source>the directory</source>
-        <translation>디렉토리</translation>
+        <translation>디렉터리</translation>
     </message>
     <message>
         <source>the symlink</source>
@@ -641,11 +641,11 @@
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>디렉토리 찾기</translation>
+        <translation>디렉터리 찾기</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>디렉토리</translation>
+        <translation>디렉터리</translation>
     </message>
     <message>
         <source>Save</source>
@@ -673,11 +673,11 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Select a Directory</source>
-        <translation>디렉토리 선택</translation>
+        <translation>디렉터리 선택</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>디렉토리:</translation>
+        <translation>디렉터리:</translation>
     </message>
 </context>
 <context>
@@ -979,13 +979,13 @@ Check path and filename.</source>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>디렉토리 목록 가져오기 실패:
+        <translation>디렉터리 목록 가져오기 실패:
 %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>디렉토리 변경 실패:
+        <translation>디렉터리 변경 실패:
 %1</translation>
     </message>
     <message>
@@ -1009,13 +1009,13 @@ Check path and filename.</source>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>디렉토리 생성 실패:
+        <translation>디렉터리 생성 실패:
 %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>디렉토리 삭제 실패:
+        <translation>디렉터리 삭제 실패:
 %1</translation>
     </message>
     <message>
@@ -1171,19 +1171,19 @@ to
         <source>Could not read directory
 %1</source>
         <translation>%1
-디렉토리를 읽을 수 없음</translation>
+디렉터리를 읽을 수 없음</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
         <translation>%1
-디렉토리를 생성할 수 없음</translation>
+디렉터리를 생성할 수 없음</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
         <translation>%1
-파일이나 디렉토리를 삭제할 수 없음</translation>
+파일이나 디렉터리를 삭제할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -1536,7 +1536,7 @@ to
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 룩어헤드 문법</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -1702,19 +1702,19 @@ to
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>프로토콜 `%1&apos;은(는) 디렉토리 목록 보기를 지원하지 않습니다</translation>
+        <translation>프로토콜 `%1&apos;은(는) 디렉터리 목록 보기를 지원하지 않습니다</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>프로토콜 `%1&apos;은(는) 새 디렉토리 생성을 지원하지 않습니다</translation>
+        <translation>프로토콜 `%1&apos;은(는) 새 디렉터리 생성을 지원하지 않습니다</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉토리 삭제를 지원하지 않습니다</translation>
+        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉터리 삭제를 지원하지 않습니다</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉토리 이름 바꾸기를 지원하지 않습니다</translation>
+        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉터리 이름 바꾸기를 지원하지 않습니다</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
@@ -1726,7 +1726,7 @@ to
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉토리를 복사하거나 삭제하는 것을 지원하지 않습니다</translation>
+        <translation>프로토콜 `%1&apos;은(는) 파일이나 디렉터리를 복사하거나 삭제하는 것을 지원하지 않습니다</translation>
     </message>
     <message>
         <source>(unknown)</source>

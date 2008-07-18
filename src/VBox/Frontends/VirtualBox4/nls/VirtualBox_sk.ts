@@ -1,28 +1,34 @@
-<!DOCTYPE TS><TS>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS><TS version="1.1">
 <context>
     <name>@@@</name>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2383"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Slovenčina</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2395"/>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation></translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2407"/>
         <source>English</source>
         <comment>Language name, in English</comment>
         <translation>Slovak</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2419"/>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation></translation>
     </message>
     <message>
-        <source>innotek</source>
+        <location filename="../src/VBoxGlobal.cpp" line="2431"/>
+        <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Ivan Masár &lt;helix84@centrum.sk&gt;</translation>
     </message>
@@ -30,238 +36,328 @@
 <context>
     <name>BootItemsList</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Presunúť hore (Ctrl-hore)</translation>
+        <translation type="obsolete">Presunúť hore (Ctrl-hore)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Presunúť dolu (Ctrl-dolu)</translation>
+        <translation type="obsolete">Presunúť dolu (Ctrl-dolu)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected boot device up.</source>
-        <translation>Presunie zvolené zavádzacie zariadenie vyššie.</translation>
+        <translation type="obsolete">Presunie zvolené zavádzacie zariadenie vyššie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected boot device down.</source>
-        <translation>Presunie zvolené zavádzacie zariadenie nižšie.</translation>
+        <translation type="obsolete">Presunie zvolené zavádzacie zariadenie nižšie.</translation>
     </message>
 </context>
 <context>
     <name>BootItemsTable</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Definuje poradie zavádzacích zariadení. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé zavádzacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
+        <translation type="obsolete">Definuje poradie zavádzacích zariadení. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé zavádzacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
+    </message>
+</context>
+<context>
+    <name>HDItemsModel</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
+        <source>Double-click to add a new attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
+        <source>Hard Disk</source>
+        <translation type="unfinished">Pevný disk</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
+        <source>Slot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
+        <location filename="../src/main.cpp" line="218"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Spustiteľný súbor &lt;b&gt;%1&lt;/b&gt; vyžaduje Qt %2.x, našlo sa Qt %3.</translation>
     </message>
     <message>
+        <location filename="../src/main.cpp" line="222"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Chyba - nekompatibilná knižnica Qt</translation>
     </message>
 </context>
 <context>
+    <name>QIHelpButton</name>
+    <message>
+        <location filename="../src/QIHelpButton.cpp" line="120"/>
+        <source>&amp;Help</source>
+        <translation type="unfinished">&amp;Pomocník</translation>
+    </message>
+</context>
+<context>
     <name>QIHotKeyEdit</name>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="425"/>
         <source>Left </source>
         <translation>vľavo</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="431"/>
         <source>Right </source>
         <translation>vpravo</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="340"/>
         <source>Left Shift</source>
         <translation>ľavý shift</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="341"/>
         <source>Right Shift</source>
         <translation>pravý shift</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="342"/>
         <source>Left Ctrl</source>
         <translation>ľavý ctrl</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="343"/>
         <source>Right Ctrl</source>
         <translation>pravý ctrl</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="344"/>
         <source>Left Alt</source>
         <translation>ľavý alt</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="345"/>
         <source>Right Alt</source>
         <translation>pravý alt</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="346"/>
         <source>Left WinKey</source>
         <translation>ľavý kláves Win</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="347"/>
         <source>Right WinKey</source>
         <translation>pravý kláves Win</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="348"/>
         <source>Menu key</source>
         <translation>kláves ponuky</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="349"/>
         <source>Alt Gr</source>
         <translation>alt gr</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="350"/>
         <source>Caps Lock</source>
         <translation>caps lock</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="351"/>
         <source>Scroll Lock</source>
         <translation>scroll lock</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="574"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;kláves_%1&gt;</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="298"/>
         <source>Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="299"/>
         <source>Print Screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="301"/>
         <source>F1</source>
         <translation type="unfinished">F1</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="302"/>
         <source>F2</source>
         <translation type="unfinished">F2</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="303"/>
         <source>F3</source>
         <translation type="unfinished">F3</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="304"/>
         <source>F4</source>
         <translation type="unfinished">F4</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="305"/>
         <source>F5</source>
         <translation type="unfinished">F5</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="306"/>
         <source>F6</source>
         <translation type="unfinished">F6</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="307"/>
         <source>F7</source>
         <translation type="unfinished">F7</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="308"/>
         <source>F8</source>
         <translation type="unfinished">F8</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="309"/>
         <source>F9</source>
         <translation type="unfinished">F9</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="310"/>
         <source>F10</source>
         <translation type="unfinished">F10</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="311"/>
         <source>F11</source>
         <translation type="unfinished">F11</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="312"/>
         <source>F12</source>
         <translation type="unfinished">F12</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="313"/>
         <source>F13</source>
         <translation type="unfinished">F13</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="314"/>
         <source>F14</source>
         <translation type="unfinished">F14</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="315"/>
         <source>F15</source>
         <translation type="unfinished">F15</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="316"/>
         <source>F16</source>
         <translation type="unfinished">F16</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="317"/>
         <source>F17</source>
         <translation type="unfinished">F17</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="318"/>
         <source>F18</source>
         <translation type="unfinished">F18</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="319"/>
         <source>F19</source>
         <translation type="unfinished">F19</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="320"/>
         <source>F20</source>
         <translation type="unfinished">F20</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="321"/>
         <source>F21</source>
         <translation type="unfinished">F21</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="322"/>
         <source>F22</source>
         <translation type="unfinished">F22</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="323"/>
         <source>F23</source>
         <translation type="unfinished">F23</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="324"/>
         <source>F24</source>
         <translation type="unfinished">F24</translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="326"/>
         <source>Num Lock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="327"/>
         <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/QIHotKeyEdit.cpp" line="328"/>
         <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QILabelPrivate</name>
+    <message>
+        <location filename="../src/QILabel.cpp" line="363"/>
+        <source>&amp;Copy</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIMessageBox</name>
     <message>
+        <location filename="../src/QIMessageBox.cpp" line="237"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
+        <location filename="../src/QIMessageBox.cpp" line="238"/>
         <source>Yes</source>
         <translation>Áno</translation>
     </message>
     <message>
+        <location filename="../src/QIMessageBox.cpp" line="239"/>
         <source>No</source>
         <translation>Nie</translation>
     </message>
     <message>
+        <location filename="../src/QIMessageBox.cpp" line="240"/>
         <source>Cancel</source>
         <translation>Zrušiť</translation>
     </message>
     <message>
+        <location filename="../src/QIMessageBox.cpp" line="241"/>
         <source>Ignore</source>
         <translation>Ignorovať</translation>
     </message>
@@ -269,27 +365,32 @@
 <context>
     <name>QIRichLabel</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Copy to clipboard</source>
-        <translation>Kopírovať do schránky</translation>
+        <translation type="obsolete">Kopírovať do schránky</translation>
     </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
     <message>
+        <location filename="../src/QIWidgetValidator.cpp" line="307"/>
         <source>not complete</source>
         <comment>value state</comment>
         <translation>neúplná</translation>
     </message>
     <message>
+        <location filename="../src/QIWidgetValidator.cpp" line="309"/>
         <source>invalid</source>
         <comment>value state</comment>
         <translation>neplatná</translation>
     </message>
     <message>
+        <location filename="../src/QIWidgetValidator.cpp" line="314"/>
         <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Hodnota poľa &lt;b&gt;%1&lt;/b&gt; na stránke &lt;b&gt;%2&lt;/b&gt; je %3.&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/QIWidgetValidator.cpp" line="318"/>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Jedna z hodnôt na stránke &lt;b&gt;%1&lt;/b&gt; je %2.&lt;/qt&gt;</translation>
     </message>
@@ -297,35 +398,61 @@
 <context>
     <name>VBoxAboutDlg</name>
     <message>
+        <location filename="../ui/VBoxAboutDlg.ui" line="30"/>
         <source>VirtualBox - About</source>
         <translation>O aplikácii VirtualBox</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Grafické používateľské rozhranie VirtualBox, verzia %1&lt;br&gt;
+        <translation type="obsolete">&lt;qt&gt;Grafické používateľské rozhranie VirtualBox, verzia %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
+        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxAboutNonOSEDlg</name>
+    <message>
+        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="37"/>
+        <source>VirtualBox - About</source>
+        <translation type="unfinished">O aplikácii VirtualBox</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="38"/>
+        <source>VirtualBox Graphical User Interface
+Version %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxAddNIDialog</name>
     <message>
+        <location filename="../include/VBoxSettingsUtils.h" line="118"/>
         <source>Add Host Interface</source>
         <translation>Pridať hostiteľské rozhranie</translation>
     </message>
     <message>
+        <location filename="../include/VBoxSettingsUtils.h" line="123"/>
         <source>Interface Name</source>
         <translation>Názov rozhrania</translation>
     </message>
     <message>
+        <location filename="../include/VBoxSettingsUtils.h" line="126"/>
         <source>Descriptive name of the new network interface</source>
         <translation>Popisný názov nového sieťového rozhrania</translation>
     </message>
     <message>
+        <location filename="../include/VBoxSettingsUtils.h" line="135"/>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
     </message>
     <message>
+        <location filename="../include/VBoxSettingsUtils.h" line="136"/>
         <source>Cancel</source>
         <translation>Zrušiť</translation>
     </message>
@@ -333,1471 +460,2331 @@
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add Share</source>
-        <translation>Pridať zdieľaný priečinok</translation>
+        <translation type="obsolete">Pridať zdieľaný priečinok</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Edit Share</source>
-        <translation>Upraviť zdieľaný priečinok</translation>
+        <translation type="obsolete">Upraviť zdieľaný priečinok</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Select a folder to share</source>
-        <translation>Zvoliť priečinok, ktorý sa bude zdieľať</translation>
+        <translation type="obsolete">Zvoliť priečinok, ktorý sa bude zdieľať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Folder Path</source>
-        <translation>Cesta k priečinku</translation>
+        <translation type="obsolete">Cesta k priečinku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Folder Name</source>
-        <translation>Názov priečinka</translation>
+        <translation type="obsolete">Názov priečinka</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation>Zobrazí cestu k existujúcemu priečinku na hostiteľskom PC.</translation>
+        <translation type="obsolete">Zobrazí cestu k existujúcemu priečinku na hostiteľskom PC.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Zobrazí názov zdieľaného priečinka (ako ho uvidí hosťovský OS).</translation>
+        <translation type="obsolete">Zobrazí názov zdieľaného priečinka (ako ho uvidí hosťovský OS).</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Opens the dialog to select a folder.</source>
-        <translation>Otvorí dialóg pre výber priečinka.</translation>
+        <translation type="obsolete">Otvorí dialóg pre výber priečinka.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="30"/>
         <source>Close Virtual Machine</source>
         <translation>Zatvoriť Virtuálny stroj</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="79"/>
         <source>You want to:</source>
         <translation>Chcete:</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="107"/>
         <source>&amp;Save the machine state</source>
         <translation>&amp;Uložiť stav virtuálneho stroja</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+S</source>
         <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="159"/>
         <source>&amp;Power off the machine</source>
         <translation>&amp;Vypnúť virtuálny stroj</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="210"/>
         <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;Vrátiť sa na poslednú snímku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="204"/>
         <source>Revert the machine state to the state stored in the current snapshot</source>
         <translation>Vráti stav stroja na stav uložený v poslednom snímku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation>Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation>F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
-&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
-&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="133"/>
         <source>S&amp;end the shutdown signal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
-&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
-&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
-&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxConsoleWnd</name>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1467"/>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>innotek VirtualBox</source>
-        <translation>innotek VirtualBox</translation>
+        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1487"/>
         <source>&amp;Fullscreen Mode</source>
         <translation>&amp;Režim na celú obrazovku</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1488"/>
         <source>Switch to fullscreen mode</source>
         <translation>Prepnúť na celú obrazovku</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1494"/>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
         <translation>Integrácia myši</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1496"/>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
         <translation>Automatická zmena veľkosti hosťovskej obrazovky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1497"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>Automatická zmena veľkosti &amp;hosťovskej obrazovky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1501"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
         <translation>Automaticky zmeniť veľkosť hosťovskej obrazovky pri zmene veľkosti okna (vyžaduje Hosťovské doplnky)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1503"/>
         <source>&amp;Adjust Window Size</source>
         <translation>&amp;Prispôsobiť veľkosť okna</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1505"/>
         <source>Adjust window size and position to best fit the guest display</source>
         <translation>Prispôsobiť veľkosť a polohu okna tak, aby najlepšie zodpovedalo obrazovke hosťa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1507"/>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>&amp;Poslať Ctrl-Alt-Del</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1509"/>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>Pošle virtuálnemu stroju klávesovú sekvenciu Ctrl-Alt-Del</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1512"/>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
         <translation>&amp;Poslať Ctrl-Alt-Backspace</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1515"/>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
         <translation>Pošle virtuálnemu stroju klávesovú sekvenciu Ctrl-Alt-Backspace</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1518"/>
         <source>&amp;Reset</source>
         <translation>&amp;Reštartovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1519"/>
         <source>Reset the virtual machine</source>
         <translation>Reštartuje virtuálny stroj</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1523"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>&amp;Vypnutie ACPI</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1525"/>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
         <translation>Pošle virtuálnemu stroju udalosť stlačenia ACPI vypínača</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1527"/>
         <source>&amp;Close...</source>
         <translation>&amp;Zatvoriť...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1528"/>
         <source>Close the virtual machine</source>
         <translation>Zatvorí virtuálny stroj</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1530"/>
         <source>Take &amp;Snapshot...</source>
         <translation>Urobiť &amp;snímku...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1531"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>Urobí snímku stavu virtuálneho stroja</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1541"/>
         <source>&amp;Floppy Image...</source>
         <translation>Obraz &amp;diskety...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1542"/>
         <source>Mount a floppy image file</source>
         <translation>Pripojí obraz diskety</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
         <source>Unmount F&amp;loppy</source>
         <translation>&amp;Odpojiť obraz diskety</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1546"/>
         <source>Unmount the currently mounted floppy media</source>
         <translation>Odpojí momentálne pripojený obraz diskety</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1548"/>
         <source>&amp;CD/DVD-ROM Image...</source>
         <translation>Obraz &amp;CD/DVD-ROM...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1550"/>
         <source>Mount a CD/DVD-ROM image file</source>
         <translation>Pripojí obraz CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1552"/>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation>Odpojiť obraz C&amp;D/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1554"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
         <translation>Odpojí momentálne pripojený obraz nosiča CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Server Vzdialenej plochy (RDP)</translation>
+        <translation type="obsolete">Server Vzdialenej plochy (RDP)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1558"/>
         <source>Remote Dis&amp;play</source>
         <translation>&amp;Vzdialená obrazovka</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1560"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
         <translation>Zapne alebo vypne spojenia Vzdialenej plochy (RDP) k tomuto stroju</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1562"/>
         <source>&amp;Shared Folders...</source>
         <translation>&amp;Zdieľané priečinky...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1564"/>
         <source>Open the dialog to operate on shared folders</source>
         <translation>Otvorí dialóg operácií so zdieľanými priečinkami</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1566"/>
         <source>&amp;Install Guest Additions...</source>
         <translation>&amp;Nainštalovať Hosťovské doplnky...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1568"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Pripojí inštalačný obraz Hosťovských doplnkov</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Statistics...</source>
-        <translation>&amp;Štatistika...</translation>
+        <translation type="obsolete">&amp;Štatistika...</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Command line...</source>
-        <translation>&amp;Príkazový riadok...</translation>
+        <translation type="obsolete">&amp;Príkazový riadok...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1585"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>&amp;Webstrínka VirtualBox...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1587"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation>Otvorí webový prehliadač a prejde na stránku produktu VirtualBox</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1597"/>
         <source>&amp;About VirtualBox...</source>
         <translation>&amp;O aplikácii VirtualBox...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Show a dialog with product information</source>
         <translation>Zobrazí dialóg s informáciami o produkte</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1600"/>
         <source>&amp;Reset All Warnings</source>
         <translation>&amp;Zabudnúť všetky upozornenia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1602"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
         <translation>Sposobí, že všetky potlačené upozornenia a správy sa budú znova zobrazovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1606"/>
         <source>Mount &amp;Floppy</source>
         <translation>Pripojiť &amp;disketu</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1607"/>
         <source>Mount &amp;CD/DVD-ROM</source>
         <translation>Pripojiť &amp;CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1609"/>
         <source>&amp;USB Devices</source>
         <translation>&amp;USB zariadenia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1616"/>
         <source>&amp;Devices</source>
         <translation>&amp;Zariadenia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1621"/>
         <source>De&amp;bug</source>
         <translation>&amp;Ladenie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1623"/>
         <source>&amp;Help</source>
         <translation>&amp;Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indikuje, či je funkcia automatickej zmeny veľkosti hosťovskej obrazovky Zapnutá (&lt;img src=auto_resize_on_16px.png/&gt;) alebo Vypnutá (&lt;img src=auto_resize_off_16px.png/&gt;). Pamätajte, že táto funkcia vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
+        <translation type="obsolete">Indikuje, či je funkcia automatickej zmeny veľkosti hosťovskej obrazovky Zapnutá (&lt;img src=auto_resize_on_16px.png/&gt;) alebo Vypnutá (&lt;img src=auto_resize_off_16px.png/&gt;). Pamätajte, že táto funkcia vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indikuje, či hosťovský OS zachytáva hostiteľský ukazovateľ myši.&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrácia myš (MI) je Zapnutá&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;Pamätajte, že integrácia myši vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
+        <translation type="obsolete">Indikuje, či hosťovský OS zachytáva hostiteľský ukazovateľ myši.&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrácia myš (MI) je Zapnutá&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;Pamätajte, že integrácia myši vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1649"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>Zobrazí momentálne priradený kláves hostiteľa&lt;br&gt;Tento kláves, keď sa stlačí samostatne, prepína stav zachytávania klávesnice a myši. Tiež je ho možné použiť v kombinácii s inými klávesmi na rýchle vykonávanie operácií z hlavnej ponuky.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1891"/>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDP server počúva na porte %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1949"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pozastaviť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1951"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Pozastaví vykonávanie virtuálneho stroja</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1955"/>
         <source>R&amp;esume</source>
         <translation>P&amp;okračovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1957"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>Pokračuje vo vykonávaní virtuálneho stroja</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1965"/>
         <source>Disable &amp;Mouse Integration</source>
         <translation>Vypnúť Integráciu &amp;myši</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1968"/>
         <source>Temporarily disable host mouse pointer integration</source>
         <translation>Dočasne vypne hostiteľskú integráciu ukazovateľa myši</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1972"/>
         <source>Enable &amp;Mouse Integration</source>
         <translation>Zapnúť Integráciu &amp;myši</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1975"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
         <translation>Dočasne zapne hostiteľskú integráciu ukazovateľa myši</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2513"/>
         <source>Snapshot %1</source>
         <translation>Snímka %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2910"/>
         <source>Host Drive </source>
         <translation>Hostiteľská jednotka </translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1613"/>
         <source>&amp;Machine</source>
         <translation>&amp;Stroj</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1608"/>
         <source>&amp;Network Adapters</source>
         <translation>&amp;Sieťové adaptéry</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2943"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Adaptér %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2864"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
         <translation>Pripojí zvolenú fyzickú jednotku hostiteľského PC</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2912"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
         <translation>Pripojí zvolenú fyzickú jednotku hostiteľského PC</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2958"/>
         <source>Disconnect the cable from the selected virtual network adapter</source>
         <translation>Odpojiť kábel zo zvoleného sieťového adaptéra</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2959"/>
         <source>Connect the cable to the selected virtual network adapter</source>
         <translation>Pripojiť kábel k zvolenému sieťovému adaptéru</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1490"/>
         <source>Seam&amp;less Mode</source>
         <translation>Režim &amp;plynulého prechodu</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1491"/>
         <source>Switch to seamless desktop integration mode</source>
         <translation>Prepnúť režim plynulého prechodu medzi plochami</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation>Indikuje, či klávesnicu zachytáva hosťovský OS (&lt;img src=hostkey_captured_16px.png/&gt;) alebo nie (&lt;img src=hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indikuje, či klávesnicu zachytáva hosťovský OS (&lt;img src=hostkey_captured_16px.png/&gt;) alebo nie (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1694"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu disketovej mechaniky:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1707"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostiteľská jednotka&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1714"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Obraz&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1720"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nie je pripojený nosič&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1738"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu CD/DVD-ROM nosiča:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1751"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostiteľská jednotka&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1758"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Obraz&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1764"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nie je pripojený nosič&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1776"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu virtuálnych pevných diskov:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1793"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nie sú pripojené žiadne pevné disky&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1814"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu sieťových rozhraní:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1823"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptér %1 (%2)&lt;/b&gt;: kábel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1826"/>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
         <translation>pripojený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1827"/>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
         <translation>odpojený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1832"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Všetky sieťové adaptéry sú vypnuté&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1844"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu pripojených USB zariadení:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1861"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nie sú pripojené žiadne USB zariadenia&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1868"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB ovládač je vypnutý&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indikuje, či je Vzdialený displej (VRDP server) zapnutý (&lt;img src=vrdp_16px.png/&gt;) alebo nie (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indikuje, či je Vzdialený displej (VRDP server) zapnutý (&lt;img src=vrdp_16px.png/&gt;) alebo nie (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1900"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu zdieľaných priečinkov:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1938"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Zdieľané priečinky nie sú dostupné&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
         <source>&amp;Contents...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1583"/>
         <source>Show the online help contents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1589"/>
         <source>R&amp;egister VirtualBox...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1591"/>
         <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1469"/>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1533"/>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1535"/>
+        <source>Show Session Information Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1574"/>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">&amp;Štatistika...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1576"/>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
+        <source>C&amp;heck for a new version...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1595"/>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1632"/>
+        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1641"/>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
+        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1889"/>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="177"/>
         <source>Name</source>
         <translation>Názov</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="85"/>
         <source>Virtual Size</source>
         <translation>Virtuálna veľkosť</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="90"/>
         <source>Actual Size</source>
         <translation>Skutočná veľkosť</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="182"/>
         <source>Size</source>
         <translation>Veľkosť</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="36"/>
         <source>Virtual Disk Manager</source>
         <translation>Správca virtuálnych diskov</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>&amp;Hard Disks</source>
         <translation>&amp;Pevné disky</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="109"/>
         <source>&amp;CD/DVD Images</source>
         <translation>Obrazy &amp;CD/DVD</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="155"/>
         <source>&amp;Floppy Images</source>
         <translation>Obrazy &amp;diskiet</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation>Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation>F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Invoke dialog&apos;s help</source>
-        <translation>Vyvolať Pomocníka dialógu</translation>
+        <translation type="obsolete">Vyvolať Pomocníka dialógu</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Accept dialog</source>
-        <translation>Prijať dialóg</translation>
+        <translation type="obsolete">Prijať dialóg</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel dialog</source>
-        <translation>Zrušiť dialóg</translation>
+        <translation type="obsolete">Zrušiť dialóg</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
         <source>--</source>
         <comment>no info</comment>
         <translation>--</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;New...</source>
-        <translation>&amp;Nový...</translation>
+        <translation type="obsolete">&amp;Nový...</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Add...</source>
-        <translation>&amp;Pridať...</translation>
+        <translation type="obsolete">&amp;Pridať...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="821"/>
         <source>R&amp;emove</source>
         <translation>&amp;Odstrániť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="822"/>
         <source>Re&amp;lease</source>
         <translation>&amp;Uvoľniť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="823"/>
         <source>Re&amp;fresh</source>
         <translation>O&amp;bnoviť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>New</source>
-        <translation>Nový</translation>
+        <translation type="obsolete">Nový</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add</source>
-        <translation>Pridať</translation>
+        <translation type="obsolete">Pridať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Remove</source>
-        <translation>Odstrániť</translation>
+        <translation type="obsolete">Odstrániť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Release</source>
-        <translation>Uvoľniť</translation>
+        <translation type="obsolete">Uvoľniť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Refresh</source>
-        <translation>Obnoviť</translation>
+        <translation type="obsolete">Obnoviť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="825"/>
         <source>Ctrl+N</source>
         <translation>Ctrl+N</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="826"/>
         <source>Ctrl+A</source>
         <translation>Ctrl+A</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="828"/>
         <source>Ctrl+D</source>
         <translation>Ctrl+D</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="829"/>
         <source>Ctrl+L</source>
         <translation>Ctrl+L</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="830"/>
         <source>Ctrl+R</source>
         <translation>Ctrl+R</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="816"/>
         <source>&amp;Actions</source>
         <translation>Č&amp;innosti</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="846"/>
         <source>Location</source>
         <translation>Umiestnenie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="840"/>
         <source>Disk Type</source>
         <translation>Typ disku</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="841"/>
         <source>Storage Type</source>
         <translation>Typ úložiska</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="847"/>
         <source>Attached to</source>
         <translation>Pripojený k</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="843"/>
         <source>Snapshot</source>
         <translation>Snímka</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="849"/>
         <source>Checking accessibility</source>
         <translation>Kontroluje sa prístupnosť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="628"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Kontroluje sa prístupnosť...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="636"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ disku:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ úložiska:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="642"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Pripojený k:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="645"/>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
         <comment>HDD</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Snímka:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="654"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Chyba pri kontrole prístupnosti nosiča</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="660"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="766"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>CD/DVD/Floppy</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Kontroluje sa prístupnosť...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="772"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="777"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Pripojený k:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="786"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Chyba pri kontrole prístupnosti nosiča</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="794"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="796"/>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
         <translation>Súbor s obrazom nie je prístupný</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="471"/>
         <source>&amp;Select</source>
         <translation>&amp;Vybrať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
-        <translation>Všetky obrazy pevných diskov (*.vdi; *.vmdk);;Obrazy virtuálnych diskov (*.vdi);;Obrazy VMDK (*.vmdk);;Všetky súbory (*)</translation>
+        <translation type="obsolete">Všetky obrazy pevných diskov (*.vdi; *.vmdk);;Obrazy virtuálnych diskov (*.vdi);;Obrazy VMDK (*.vmdk);;Všetky súbory (*)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1151"/>
         <source>Select a hard disk image file</source>
         <translation>Vyberte súbor s obrazom pevného disku</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1158"/>
         <source>Select a CD/DVD-ROM disk image file</source>
         <translation>Vyberte súbor s obrazom CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1165"/>
         <source>Select a floppy disk image file</source>
         <translation>Vyberte súbor s obrazom diskety</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="832"/>
         <source>Create a new virtual hard disk</source>
         <translation>Vytvoriť nový virtuálny pevný disk</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="833"/>
         <source>Add (register) an existing image file</source>
         <translation>Pridať (zaregistrovať) existujúci súbor s obrazom</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="835"/>
         <source>Remove (unregister) the selected media</source>
         <translation>Odstrániť (odregistrovať) zvolený nosič</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="836"/>
         <source>Release the selected media by detaching it from the machine</source>
         <translation>Uvoľniť zvolené médium odpojením zo stroja</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="837"/>
         <source>Refresh the media list</source>
         <translation>Obnoviť zoznam nosičov</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1157"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
         <translation>Obrazy CD/DVD-ROM (*.iso);;Všetky súbory (*)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1164"/>
         <source>Floppy images (*.img);;All files (*)</source>
         <translation>Obrazy diskiet (*.img);;Všetky súbory (*)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="818"/>
+        <source>&amp;New</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="819"/>
+        <source>&amp;Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1150"/>
+        <source>All hard disk images (*.vdi *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxDownloaderWgt</name>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
         <source>Cancel</source>
         <translation>Zrušiť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Sťahuje sa obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
         <translation>Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBox</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
         <source>Could not locate the file on the server (response: %1).</source>
         <translation>Nepodarilo sa nájsť súbor na serveri (odpoveď: %1).</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Could not determine the file size.</source>
         <translation type="obsolete">Nepodarilo sa zistiť veľkosť súbrou.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Could not connect to the server (%1).</source>
         <translation type="obsolete">Nepodarilo sa pripojiť sa k serveru (%1).</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Could not download the file (%1).</source>
         <translation type="obsolete">Nepodarilo sa stiahnuť súbor (%1).</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="278"/>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="191"/>
         <source>Connection timed out.</source>
         <translation>Čas spojenia vypršal.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="198"/>
         <source>The download process has been cancelled by the user.</source>
         <translation>Používateľ prerušil proces sťahovania.</translation>
     </message>
 </context>
 <context>
+    <name>VBoxFilePathSelectorWidget</name>
+    <message>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="160"/>
+        <source>None</source>
+        <translation type="unfinished">Žiadne</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="161"/>
+        <source>Other...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="163"/>
+        <source>Reset</source>
+        <translation type="unfinished">Reštartovať</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxGLSettingsDlg</name>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
+        <source>General</source>
+        <translation type="unfinished">Všeobecné</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
+        <source>Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
+        <source>Language</source>
+        <translation type="unfinished">Jazyk</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxGLSettingsGeneral</name>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="78"/>
+        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="unfinished">Zobrazí cestu k štandardnému priečinku VDI. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
+        <source>Opens a dialog to select the default VDI folder.</source>
+        <translation type="unfinished">Otvorí dialóg pre výber štandardného VDI priečinka.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
+        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished">Obnoví štandardnú cestu k VDI na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="82"/>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation type="unfinished">Zobrazí cestu k štandardnému priečinku s virtuálnymi strojmi. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
+        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <translation type="unfinished">Otvorí dialóg pre výber štandardného priečinka k virtuálnym strojom.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="84"/>
+        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished">Obnoví štandardnú cestu k virtuálnym strojom na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="86"/>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation type="unfinished">Zobrazí cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="87"/>
+        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <translation type="unfinished">Otvorí dialóg pre výber autentifikačnej knižnice VRDP.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="88"/>
+        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished">Obnoví súbor autentifikačnej knižnice na štandardnú hodnotu. Skutočná štandardný súbor autentifikačnej knižnice sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
+        <source>&amp;VDI files path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsGeneral.ui" line="61"/>
+        <source>&amp;Machines files path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsGeneral.ui" line="84"/>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxGLSettingsInput</name>
+    <message>
+        <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <translation type="unfinished">Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">Ak je voľba začiarknutá, klávesnica sa automaticky zachytí pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako Alt-Tab) sú presmerované do okna virtuálneho stroja.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
+        <source>&amp;Auto capture keyboard</source>
+        <translation type="unfinished">&amp;Automaticky zachytávať klávesnicu</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxGLSettingsLanguage</name>
+    <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation type="unfinished"> (vstavaný)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation type="unfinished">&lt;nedostupný&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation type="unfinished">&lt;neznámy&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation type="unfinished">Štandardný</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="61"/>
+        <source>&amp;Interface Language:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="106"/>
+        <source>Name</source>
+        <translation type="unfinished">Názov</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="111"/>
+        <source>Id</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="116"/>
+        <source>Language</source>
+        <translation type="unfinished">Jazyk</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="121"/>
+        <source>Author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="137"/>
+        <source>Language:</source>
+        <translation type="unfinished">Jazyk:</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsLanguage.ui" line="175"/>
+        <source>Author(s):</source>
+        <translation type="unfinished">Autor(i):</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxGLSettingsUpdate</name>
+    <message>
+        <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
+        <source>&amp;Check for a new version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsUpdate.ui" line="92"/>
+        <source>&amp;Once per</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsUpdate.ui" line="147"/>
+        <source>Next check:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobal</name>
     <message>
+        <location filename="../include/VBoxGlobal.h" line="364"/>
         <source>Differencing</source>
         <comment>hard disk</comment>
         <translation>diferenčný</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1348"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Neznáme zariadenie %1:%2</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1374"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;nobr&gt;ID dodávateľa: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID produktu: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revízia: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1380"/>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Sériové č. %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1387"/>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Stav: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1500"/>
         <source>Name</source>
         <comment>details report</comment>
         <translation>Názov</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1501"/>
         <source>OS Type</source>
         <comment>details report</comment>
         <translation>Typ OS</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1502"/>
         <source>Base Memory</source>
         <comment>details report</comment>
         <translation>Základná pamäť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1503"/>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1536"/>
         <source>General</source>
         <comment>details report</comment>
         <translation>Všeobecné</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1518"/>
         <source>Video Memory</source>
         <comment>details report</comment>
         <translation>Videopamäť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1519"/>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1520"/>
         <source>Boot Order</source>
         <comment>details report</comment>
         <translation>Poradie zavádzania</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1521"/>
         <source>ACPI</source>
         <comment>details report</comment>
         <translation>ACPI</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1522"/>
         <source>IO APIC</source>
         <comment>details report</comment>
         <translation>IO APIC</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1579"/>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
         <translation>Nepripojený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1587"/>
         <source>Hard Disks</source>
         <comment>details report</comment>
         <translation>Pevné disky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1633"/>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Zapnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1633"/>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1638"/>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Zapnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1638"/>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1710"/>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
         <translation>Nepripojená</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1715"/>
         <source>Image</source>
         <comment>details report (floppy)</comment>
         <translation>Obraz</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1727"/>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
         <translation>Hostiteľská jednotka</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1738"/>
         <source>Floppy</source>
         <comment>details report</comment>
         <translation>Disketa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1673"/>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
         <translation>Nepripojená</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1678"/>
         <source>Image</source>
         <comment>details report (DVD)</comment>
         <translation>Obraz</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1690"/>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
         <translation>Hostiteľská jednotka</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1701"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
-        <translation>Adaptér</translation>
+        <translation type="obsolete">Adaptér</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1754"/>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1760"/>
         <source>Audio</source>
         <comment>details report</comment>
         <translation>Audio</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="538"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
         <translation>Adaptér %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1798"/>
         <source>Disabled</source>
         <comment>details report (network)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1806"/>
         <source>Network</source>
         <comment>details report</comment>
         <translation>Sieť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1905"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
         <translation>Filtre zariadení</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1907"/>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
         <translation>%1 (%2 aktívnych)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1911"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1951"/>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
         <translation>Port servera VRDP</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1953"/>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
         <translation>%1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1956"/>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1962"/>
         <source>Remote Display</source>
         <comment>details report</comment>
         <translation>Vzdialený displej</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="3962"/>
         <source>Opening URLs is not implemented yet.</source>
         <translation>Otváranie URL nie je zatiaľ implementované.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2440"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>Vypnutý</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2441"/>
         <source>Saved</source>
         <comment>MachineState</comment>
         <translation>Uložený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2442"/>
         <source>Aborted</source>
         <comment>MachineState</comment>
         <translation>Zrušený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2443"/>
         <source>Running</source>
         <comment>MachineState</comment>
         <translation>Bežiaci</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2444"/>
         <source>Paused</source>
         <comment>MachineState</comment>
         <translation>Pozastavený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2446"/>
         <source>Starting</source>
         <comment>MachineState</comment>
         <translation>Spúšťa sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2447"/>
         <source>Stopping</source>
         <comment>MachineState</comment>
         <translation>Zastavuje sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2448"/>
         <source>Saving</source>
         <comment>MachineState</comment>
         <translation>Ukladá sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2449"/>
         <source>Restoring</source>
         <comment>MachineState</comment>
         <translation>Obnovuje sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2450"/>
         <source>Discarding</source>
         <comment>MachineState</comment>
         <translation>Maže sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2452"/>
         <source>Closed</source>
         <comment>SessionState</comment>
         <translation>Zatvorený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2453"/>
         <source>Open</source>
         <comment>SessionState</comment>
         <translation>Otvorený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2454"/>
         <source>Spawning</source>
         <comment>SessionState</comment>
         <translation>Spúšťa sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2455"/>
         <source>Closing</source>
         <comment>SessionState</comment>
         <translation>Zatvára sa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2457"/>
         <source>None</source>
         <comment>DeviceType</comment>
         <translation>Žiadne</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2458"/>
         <source>Floppy</source>
         <comment>DeviceType</comment>
         <translation>Disketa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2459"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2460"/>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
         <translation>Pevný disk</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2461"/>
         <source>Network</source>
         <comment>DeviceType</comment>
         <translation>Sieť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
-        <translation>Primárny</translation>
+        <translation type="obsolete">Primárny</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
-        <translation>Sekundárny</translation>
+        <translation type="obsolete">Sekundárny</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2483"/>
         <source>Normal</source>
         <comment>DiskType</comment>
         <translation>Normálny</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2485"/>
         <source>Immutable</source>
         <comment>DiskType</comment>
         <translation>Len na čítanie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2487"/>
         <source>Writethrough</source>
         <comment>DiskType</comment>
         <translation>Na zápis</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2490"/>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
         <translation>Obraz virtuálneho disku</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2492"/>
         <source>iSCSI</source>
         <comment>DiskStorageType</comment>
         <translation>iSCSI</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2494"/>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
         <translation>Obraz VMDK</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2501"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
         <translation>žiadna</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2503"/>
         <source>External</source>
         <comment>VRDPAuthType</comment>
         <translation>externá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2505"/>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
         <translation>hosť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2515"/>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
         <translation>Ignorovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2517"/>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
         <translation>Podržať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Master</translation>
+        <translation type="obsolete">Master</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Slave</translation>
+        <translation type="obsolete">Slave</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Zariadenie&amp;nbsp;%1</translation>
+        <translation type="obsolete">Zariadenie&amp;nbsp;%1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2520"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Žiadny audio ovládač</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2522"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Windows Multimedia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2526"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Ovládač OSS audio</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2528"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Ovládač ALSA audio</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2530"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2532"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2551"/>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Nepripojená</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2553"/>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2555"/>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Hostiteľské rozhranie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2557"/>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Vnútorná sieť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2574"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>Nepodporované</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2576"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>Nedostupné</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2578"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>Zaneprázdnené</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2580"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>Dostupné</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2582"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>Podržané</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2584"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>Zachytené</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1322"/>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation>&lt;i&gt;Kontroluje sa...&lt;/i&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1329"/>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation>&lt;i&gt;Neprístupné&lt;/i&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2560"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Vypnuté</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2562"/>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
         <translation>Hostiteľ -&gt; hosť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2564"/>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
         <translation>Hosť -&gt; hostiteľ</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2566"/>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
         <translation>Obojstranná</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="3366"/>
         <source>Select a directory</source>
         <translation>Zvoľte adresár</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="3520"/>
         <source>Select a file</source>
         <translation>Zvoľte súbor</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1832"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation>Port %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1840"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
         <translation>Vypnutá</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1848"/>
         <source>Serial Ports</source>
         <comment>details report</comment>
         <translation>Sériové porty</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1917"/>
         <source>USB</source>
         <comment>details report</comment>
         <translation>USB</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1927"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation>Zdieľané priečinky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1929"/>
         <source>%1</source>
         <comment>details report (shadef folders)</comment>
         <translation>%1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1933"/>
         <source>None</source>
         <comment>details report (shared folders)</comment>
         <translation>Žiadne</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1939"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
         <translation>Zdieľané priečinky</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2445"/>
         <source>Stuck</source>
         <comment>MachineState</comment>
         <translation>Uviaznutý</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2508"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>Odpojený</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2510"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>Rúra hostiteľa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2512"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>Zariadenie hostiteľa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2586"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Definované používateľom</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2496"/>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="422"/>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1524"/>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="406"/>
+        <source>Enabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished">Zapnutá</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="407"/>
+        <source>Disabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1649"/>
+        <source>Enabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished">Zapnutá</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1649"/>
+        <source>Disabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1747"/>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1750"/>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1868"/>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1876"/>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1885"/>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2462"/>
+        <source>USB</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2463"/>
+        <source>Shared Folder</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2466"/>
+        <source>IDE</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2468"/>
+        <source>SATA</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2472"/>
+        <source>Primary</source>
+        <comment>StorageBusChannel</comment>
+        <translation type="unfinished">Primárny</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2474"/>
+        <source>Secondary</source>
+        <comment>StorageBusChannel</comment>
+        <translation type="unfinished">Sekundárny</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2479"/>
+        <source>Master</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished">Master</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2480"/>
+        <source>Slave</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished">Slave</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2476"/>
+        <source>Port %1</source>
+        <comment>StorageBusChannel</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2498"/>
+        <source>VHD Image</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2524"/>
+        <source>Solaris Audio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2534"/>
+        <source>PulseAudio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2537"/>
+        <source>ICH AC97</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2539"/>
+        <source>SoundBlaster 16</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2542"/>
+        <source>PCnet-PCI II (Am79C970A)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2544"/>
+        <source>PCnet-FAST III (Am79C973)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2546"/>
+        <source>Intel PRO/1000 MT Desktop (82540EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2569"/>
+        <source>PIIX3</source>
+        <comment>IDEControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2571"/>
+        <source>PIIX4</source>
+        <comment>IDEControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2548"/>
+        <source>Intel PRO/1000 T Server (82543GC)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1404"/>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1409"/>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1414"/>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1419"/>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1424"/>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1429"/>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1434"/>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1441"/>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1781"/>
+        <source>host interface, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1784"/>
+        <source>internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="176"/>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished">Adaptér %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="117"/>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
         <translation>„%1 (0x%2)“ je neplatný kľúč hostiteľa.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="248"/>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
         <translation>Hodnota „%1“ kľúča „%2“ nezodpovedá obmedzeniu regulárneho výrazu „%3“.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="238"/>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Nie je možné zmazať kľúč „%1“.</translation>
     </message>
@@ -1805,389 +2792,499 @@
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Category</source>
-        <translation>Kategória</translation>
+        <translation type="obsolete">Kategória</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[id]</source>
-        <translation>[id]</translation>
+        <translation type="obsolete">[id]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[link]</source>
-        <translation>[odkaz]</translation>
+        <translation type="obsolete">[odkaz]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[name]</source>
-        <translation>[názov]</translation>
+        <translation type="obsolete">[názov]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> General </source>
-        <translation> Všeobecné </translation>
+        <translation type="obsolete"> Všeobecné </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>0</source>
-        <translation>0</translation>
+        <translation type="obsolete">0</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>#general</source>
-        <translation>#všeobecné</translation>
+        <translation type="obsolete">#všeobecné</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> Input </source>
-        <translation> Vstup </translation>
+        <translation type="obsolete"> Vstup </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>1</source>
-        <translation>1</translation>
+        <translation type="obsolete">1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>#input</source>
-        <translation>#vstup</translation>
+        <translation type="obsolete">#vstup</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> USB </source>
-        <translation> USB </translation>
+        <translation type="obsolete"> USB </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>2</source>
-        <translation>2</translation>
+        <translation type="obsolete">2</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation type="obsolete">#usb</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Default &amp;Folders</source>
-        <translation>Štandardné &amp;priečinky</translation>
+        <translation type="obsolete">Štandardné &amp;priečinky</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Machines</source>
-        <translation>Stroje</translation>
+        <translation type="obsolete">Stroje</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>VDI files</source>
-        <translation>VDI súbory</translation>
+        <translation type="obsolete">VDI súbory</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Select</source>
-        <translation>Vybrať</translation>
+        <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Keyboard</source>
-        <translation>&amp;Klávesnica</translation>
+        <translation type="obsolete">&amp;Klávesnica</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Host Key</source>
-        <translation>&amp;Kláves hostiteľa</translation>
+        <translation type="obsolete">&amp;Kláves hostiteľa</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Auto capture keyboard</source>
-        <translation>&amp;Automaticky zachytávať klávesnicu</translation>
+        <translation type="obsolete">&amp;Automaticky zachytávať klávesnicu</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+A</source>
         <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;USB Device Filters</source>
-        <translation>Filtre &amp;USB zariadení</translation>
+        <translation type="obsolete">Filtre &amp;USB zariadení</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ins</source>
-        <translation>Ins</translation>
+        <translation type="obsolete">Ins</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add Empty (Ins)</source>
-        <translation>Pridať prázdny (Ins)</translation>
+        <translation type="obsolete">Pridať prázdny (Ins)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+Ins</source>
-        <translation>Alt+Ins</translation>
+        <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add From (Alt+Ins)</source>
-        <translation>Pridať z  (Alt+Ins)</translation>
+        <translation type="obsolete">Pridať z  (Alt+Ins)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Del</source>
-        <translation>Del</translation>
+        <translation type="obsolete">Del</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Remove (Del)</source>
-        <translation>Odstrániť (Del)</translation>
+        <translation type="obsolete">Odstrániť (Del)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Removes the selected USB filter.</source>
-        <translation>Odstráni zvolený USB filter.</translation>
+        <translation type="obsolete">Odstráni zvolený USB filter.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ctrl+Up</source>
-        <translation>Ctrl+hore</translation>
+        <translation type="obsolete">Ctrl+hore</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Presunúť hore (Ctrl-hore)</translation>
+        <translation type="obsolete">Presunúť hore (Ctrl-hore)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected USB filter up.</source>
-        <translation>Presunie zvolený USB filter vyššie.</translation>
+        <translation type="obsolete">Presunie zvolený USB filter vyššie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ctrl+Down</source>
-        <translation>Ctrl+dolu</translation>
+        <translation type="obsolete">Ctrl+dolu</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Presunúť dolu (Ctrl+dolu)</translation>
+        <translation type="obsolete">Presunúť dolu (Ctrl+dolu)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected USB filter down.</source>
-        <translation>Presunie zvolený USB filter nižšie.</translation>
+        <translation type="obsolete">Presunie zvolený USB filter nižšie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation>Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation>F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the dialog help.</source>
-        <translation>Zobrazí dialóg pomocníka.</translation>
+        <translation type="obsolete">Zobrazí dialóg pomocníka.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Invalid settings detected</source>
-        <translation>Boli zistené neplatné nastavenia</translation>
+        <translation type="obsolete">Boli zistené neplatné nastavenia</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation>Prijme (uloží) zmeny a zatvorí dialóg.</translation>
+        <translation type="obsolete">Prijme (uloží) zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>Zruší zmeny a zatvorí dialóg.</translation>
+        <translation type="obsolete">Zruší zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>VirtualBox Preferences</source>
-        <translation>Nastavenia VirtualBox</translation>
+        <translation type="obsolete">Nastavenia VirtualBox</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
+        <translation type="obsolete">Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>Nový filter %1</translation>
+        <translation type="obsolete">Nový filter %1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Language</source>
-        <translation>Jazyk</translation>
+        <translation type="obsolete">Jazyk</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> Language </source>
-        <translation> Jazyk </translation>
+        <translation type="obsolete"> Jazyk </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>3</source>
-        <translation>3</translation>
+        <translation type="obsolete">3</translation>
     </message>
     <message>
-        <source>#language</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Interface Language</source>
-        <translation>&amp;Jazyk rozhrania</translation>
+        <translation type="obsolete">&amp;Jazyk rozhrania</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Author(s):</source>
-        <translation>Autor(i):</translation>
+        <translation type="obsolete">Autor(i):</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Language:</source>
-        <translation>Jazyk:</translation>
+        <translation type="obsolete">Jazyk:</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation> (vstavaný)</translation>
+        <translation type="obsolete"> (vstavaný)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;nedostupný&gt;</translation>
+        <translation type="obsolete">&lt;nedostupný&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation>&lt;neznámy&gt;</translation>
+        <translation type="obsolete">&lt;neznámy&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation>
+        <translation type="obsolete">
 &lt;qt&gt;Zobrazuje dostupné jazyky používateľského rozhrania. Momentálne účinný jazyk
 je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný&lt;/i&gt; obnovíte
 štandardný jazyk systému.&lt;/qt&gt;
                                     </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>Štandardný</translation>
+        <translation type="obsolete">Štandardný</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Zobrazí cestu k štandardnému priečinku VDI. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
+        <translation type="obsolete">Zobrazí cestu k štandardnému priečinku VDI. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Obnoví štandardnú cestu k virtuálnym strojom na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+        <translation type="obsolete">Obnoví štandardnú cestu k virtuálnym strojom na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Obnoví štandardnú cestu k VDI na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+        <translation type="obsolete">Obnoví štandardnú cestu k VDI na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Zobrazí cestu k štandardnému priečinku s virtuálnymi strojmi. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
+        <translation type="obsolete">Zobrazí cestu k štandardnému priečinku s virtuálnymi strojmi. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation>Otvorí dialóg pre výber štandardného VDI priečinka.</translation>
+        <translation type="obsolete">Otvorí dialóg pre výber štandardného VDI priečinka.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation>Otvorí dialóg pre výber štandardného priečinka k virtuálnym strojom.</translation>
+        <translation type="obsolete">Otvorí dialóg pre výber štandardného priečinka k virtuálnym strojom.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Ak je voľba začiarknutá, klávesnica sa automaticky zachytí pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako Alt-Tab) sú presmerované do okna virtuálneho stroja.</translation>
+        <translation type="obsolete">Ak je voľba začiarknutá, klávesnica sa automaticky zachytí pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako Alt-Tab) sú presmerované do okna virtuálneho stroja.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Vypíše zoznam všetkých globálnych filtrov USB. Začiarkovacie pole vľavo určije, či sa konkrétny filter použije alebo nie.</translation>
+        <translation type="obsolete">Vypíše zoznam všetkých globálnych filtrov USB. Začiarkovacie pole vľavo určije, či sa konkrétny filter použije alebo nie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
+        <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
+        <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>V&amp;RDP Authentication Library</source>
-        <translation>Autentifikačná knižnica V&amp;RDP</translation>
+        <translation type="obsolete">Autentifikačná knižnica V&amp;RDP</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Zobrazí cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
+        <translation type="obsolete">Zobrazí cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
-        <translation>Otvorí dialóg pre výber autentifikačnej knižnice VRDP.</translation>
+        <translation type="obsolete">Otvorí dialóg pre výber autentifikačnej knižnice VRDP.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Obnoví súbor autentifikačnej knižnice na štandardnú hodnotu. Skutočná štandardný súbor autentifikačnej knižnice sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
+        <translation type="obsolete">Obnoví súbor autentifikačnej knižnice na štandardnú hodnotu. Skutočná štandardný súbor autentifikačnej knižnice sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Extended Features</source>
-        <translation>&amp;Rozšírené možnosti</translation>
+        <translation type="obsolete">&amp;Rozšírené možnosti</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Zapnúť &amp;VT-x/AMD-V</translation>
+        <translation type="obsolete">Zapnúť &amp;VT-x/AMD-V</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
-        <translation>Určuje, či sa štandardne majú virtuálne stroje pokúšať využiť virtualizačné rozšírenia hostiteľského CPU ako Intel VT-x a AMD-V alebo nie.</translation>
+        <translation type="obsolete">Určuje, či sa štandardne majú virtuálne stroje pokúšať využiť virtualizačné rozšírenia hostiteľského CPU ako Intel VT-x a AMD-V alebo nie.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxHardDiskSettings</name>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Hard Disk</source>
+        <translation type="obsolete">Pevný disk</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>&amp;Hard Disks</source>
+        <translation type="obsolete">&amp;Pevné disky</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Ins</source>
+        <translation type="obsolete">Ins</translation>
     </message>
 </context>
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="420"/>
         <source>Close the search panel</source>
         <translation>Zatvoriť panel vyhľadávania</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="422"/>
         <source>Find </source>
         <translation>Nájsť </translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="423"/>
         <source>Enter a search string here</source>
         <translation>Sem zadajte vyhľadávací reťazec</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="425"/>
         <source>&amp;Previous</source>
         <translation>&amp;Predošlý</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="427"/>
         <source>Search for the previous occurrence of the string</source>
         <translation>Vyhľadá predošlý výskyt reťazca</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
         <source>&amp;Next</source>
         <translation>&amp;Ďalší</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="431"/>
         <source>Search for the next occurrence of the string</source>
         <translation>Vyhľadá ďalší výskyt reťazca</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="433"/>
         <source>C&amp;ase Sensitive</source>
         <translation>&amp;Rozlišovať veľkosť písmen</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="435"/>
         <source>Perform case sensitive search (when checked)</source>
         <translation>Pri vyhľadávaní rozlišuje malé a veľké písmená (ak je voľba začiarknutá)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="437"/>
         <source>String not found</source>
         <translation>Reťazec nebol nájdený</translation>
     </message>
@@ -2195,201 +3292,334 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
+        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
         <source>&lt;no hard disk&gt;</source>
         <translation>&lt;žiadny pevný disk&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
         <source>No hard disk</source>
         <translation>Žiadny pevný disk</translation>
     </message>
 </context>
 <context>
+    <name>VBoxNIList</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="536"/>
+        <source>VirtualBox Host Interface %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="595"/>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="626"/>
+        <source>Host &amp;Interfaces</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="628"/>
+        <source>Lists all available host interfaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="630"/>
+        <source>A&amp;dd New Host Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="631"/>
+        <source>&amp;Remove Selected Host Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="632"/>
+        <source>Adds a new host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="633"/>
+        <source>Removes the selected host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxNewHDWzd</name>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="30"/>
         <source>Create New Virtual Disk</source>
         <translation>Vytvoriť nový virtuálny disk</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový obraz virtuálneho disku pre váš virtuálny stroj.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; 
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový obraz virtuálneho disku pre váš virtuálny stroj.&lt;/p&gt;
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
 a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
         <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho disku!</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ obrazu virtuálneho disku, ktorý chcete vytvoriť.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Vyberte typ obrazu virtuálneho disku, ktorý chcete vytvoriť.&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;Dynamicky expandujúci obraz&lt;/b&gt; na začiatku zaberá veľmi málo miesta
-na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej 
+na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej
 veľkosti) postupne ako bude hosťovský OS vyžadovať miesto na disku.&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;Obraz s pevnou veľkosťou&lt;/b&gt; nerastie. Uloží sa ako súbor približne
 rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Image Type</source>
         <translation>Typ obrazu</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding image</source>
         <translation>&amp;Dynamicky expandujúci obraz</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size image</source>
         <translation>&amp;Obraz s pevnou veľkosťou</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Virtual Disk Image Type</source>
         <translation>Typ obrazu virtuálneho disku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stlačením tlačidla &lt;b&gt;Vybrať&lt;/b&gt; vyberiete umiestnenie a názov súboru
+        <translation type="obsolete">&lt;p&gt;Stlačením tlačidla &lt;b&gt;Vybrať&lt;/b&gt; vyberiete umiestnenie a názov súboru
 s obrazom pevného disku alebo môžete názov súboru napísať do vstupného poľa.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Image File Name</source>
         <translation>&amp;Názov súboru s obrazom pevného disku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Select</source>
-        <translation>Vybrať</translation>
+        <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte veľkosť obrazu pevného disku v megabajtoch. Táto veľkosť sa oznámi hosťovskémuOS
+        <translation type="obsolete">&lt;p&gt;Vyberte veľkosť obrazu pevného disku v megabajtoch. Táto veľkosť sa oznámi hosťovskémuOS
 ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>Image &amp;Size</source>
         <translation>&amp;Veľkosť obrazu</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="435"/>
         <source>Virtual Disk Location and Size</source>
         <translation>Umiestnenie a veľkosť virtuálneho disku</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
         <translation>Chystáte sa vytvoriť nový virtuálny pevný disk s nasledovnými parametrami:</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
+        <translation type="obsolete">Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
                             Keď ho stlačíte, vytvorí sa obraz pevného disku.
                             </translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
         <source>Summary</source>
         <translation>Zhrnutie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="366"/>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;%1 bajtov&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Umiestnenie:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Veľkosť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;bajtov)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Umiestnenie:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Veľkosť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;bajtov)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="265"/>
         <source>Hard disk images (*.vdi)</source>
         <translation>Obrazy pevných diskov (*.vdi)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="263"/>
         <source>Select a file for the new hard disk image file</source>
         <translation>Vyberte súbor pre obraz nového pevného disku</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
+        <source>&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Location:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Size:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
+        <source>&lt; &amp;Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
+        <source>&amp;Next &gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
+        <source>&amp;Finish</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="30"/>
         <source>Create New Virtual Machine</source>
         <translation>Vytvoriť nový virtuálny stroj</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny stroj VirtualBox.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; 
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny stroj VirtualBox.&lt;/p&gt;
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
 a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="63"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
         <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho stroja!</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovského operačného
+        <translation type="obsolete">&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovského operačného
 systému, ktorý plánujete na virtuálny stroj nainštalovať.&lt;/p&gt;
 &lt;p&gt;Názov virtuálneho stroja označuje jeho hardvérovú a softvérovú konfiguráciu.
 Všetky súčasti VirtualBox ho použijú na označenie vášho virtuálneho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="298"/>
         <source>N&amp;ame</source>
         <translation>&amp;Názov</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="331"/>
         <source>OS &amp;Type</source>
         <translation>&amp;Typ OS</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="224"/>
         <source>VM Name and OS Type</source>
         <translation>Názov virtuálneho stroja a typ úložiska</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="547"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Zvoľte veľkosť základnej pamäte (RAM) v megabajtoch, ktorá sa alokuje pre virtuálny stroj.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="585"/>
         <source>Base &amp;Memory Size</source>
         <translation>Veľkosť &amp;základnej pamäte</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;</source>
-        <translation>&lt;</translation>
+        <translation type="obsolete">&lt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>=</source>
-        <translation>=</translation>
+        <translation type="obsolete">=</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&gt;</source>
-        <translation>&gt;</translation>
+        <translation type="obsolete">&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="632"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="489"/>
         <source>Memory</source>
         <translation>Pamäť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -2397,7 +3627,7 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte obraz pevného disku, ktorý sa má použiť ako
+        <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, ktorý sa má použiť ako
 zavádzací disk virtuálneho stroja. Môžete byť vytvoriť nový pevný disk
 pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo zvoliť existujúci obraz pevného
 disku z roletovej ponuky alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt;
@@ -2406,29 +3636,34 @@ disku z roletovej ponuky alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&
 preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuálneho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="873"/>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
         <translation>&amp;Zavádzací pevný disk (Primary Master)</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="882"/>
         <source>N&amp;ew...</source>
         <translation>&amp;Nový...</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="889"/>
         <source>E&amp;xisting...</source>
         <translation>&amp;Existújúci...</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="777"/>
         <source>Virtual Hard Disk</source>
         <translation>Virtuálny pevný disk</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
                             with the following parameters:
                             &lt;/p&gt;
                             </source>
-        <translation>
+        <translation type="obsolete">
                             &lt;p&gt;
                             Chystáte sa vytvoriť nový virtuálny stroj
                             s nasledovnými parametrami:
@@ -2436,6 +3671,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
                             </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -2447,12 +3683,12 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
                             the menu of the main window.
                             &lt;/p&gt;
                             </source>
-        <translation>
+        <translation type="obsolete">
                             &lt;p&gt;
                             Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
                             Keď ho stlačíte, vytvorí sa virtuálny stroj.
                             &lt;/p&gt;&lt;p&gt;
-                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného 
+                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného
                             virtuálneho stroja môžete kedykoľvek zmeniť pomocou
                             dialógu &lt;b&gt;Nastavenia&lt;/b&gt;, ktorý je dostupný
                             z ponuky hlavného okna.
@@ -2460,1219 +3696,1600 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
                             </translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1012"/>
         <source>Summary</source>
         <translation>Zhrnutie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Názov:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Typ OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Základná pamäť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Názov:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Typ OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Základná pamäť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Zavádzací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Zavádzací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Odporúčaná veľkosť základnej pamäťe je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="155"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Odporúčaná veľkosť zavádzacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="172"/>
+        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;OS Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Base Memory:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
+        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Boot Hard Disk:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
+        <source>&lt; &amp;Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
+        <source>&amp;Next &gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
+        <source>&amp;Finish</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxProblemReporter</name>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="331"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Informácia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="335"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Otázka</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="339"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Upozornenie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="343"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Chyba</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="347"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Kritická chyba</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="374"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
         <translation>Túto správu viac nezobrazovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="501"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Nepodarilo sa otvoriť &lt;tt&gt;%1&lt;/tt&gt;. Uistite sa, že vaše pracovné prostredie dokáže korektne zaobchádzať s URL tohto typu.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="552"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nepodarilo sa inicializovať COM alebo nájsť VirtualBox COM server. Pravdepodobne VirtualBox server nebeží alebo sa ho nepodarilo spustiť.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="560"/>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nepodarilo sa vytvoriť VirtualBox COM objekt.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodarilo sa načítať globálnu konfiguráciu GUI.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepodarilo sa načítať globálnu konfiguráciu GUI.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation>&lt;p&gt;Nepodarilo sa uložiť globálnu konfiguráciu GUI.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepodarilo sa uložiť globálnu konfiguráciu GUI.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="608"/>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Nepodarilo sa nastaviť globálne vlastnosti VirtualBox.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="622"/>
         <source>Failed to access the USB subsystem.</source>
         <translation>Nepodaril sa prístup k USB subsystému.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="633"/>
         <source>Failed to create a new virtual machine.</source>
         <translation>Nepodarilo sa vytvoriť nový virtuálny stroj.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="646"/>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa vytvoriť nový virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="658"/>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa použiť nastavenia na nový virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodarilo sa uložiť nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodarilo sa uložiť nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodarilo sa načítať nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodarilo sa načítať nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="719"/>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa spustiť virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="731"/>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa pozastaviť virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="742"/>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa obnoviť beh virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="779"/>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa uložiť stav virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="805"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa vytvoriť snímku virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="817"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zastaviť virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="829"/>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa odstrániť virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="840"/>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zahodiť uložený stav virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="880"/>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zahodiť snímku &lt;b&gt;%1&lt;/b&gt; virtuálneho stroja &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="905"/>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zahodiť aktuálny stav virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="929"/>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zahodiť aktuálnu snímku a aktuálny stav virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="940"/>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Neexistuje virtuálny stroj s názvom &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="988"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ste si istý, že chcete natrvalo zmazať virtuálny stroj &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Túto operáciu nie je možné vrátiť.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1001"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ste si istý že chcete odregistrovať neprístupný virtuálny stroj &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Už ho viac nebudete môcť z používateľského rozhrania zaregistrovať.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1017"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ste si istý že chcete zahodiť uložený stav virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Táto operácia je ekvivalentná reštartovaniu alebo vypnutiu stroja bez korektného vypnutia hosťovského OS.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1029"/>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uvoľnenie tohto obrazu nosiča ho odpojí z nasledovných virtuálnych strojov: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Pokračovať?&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1042"/>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Súbor s obrazom &lt;b&gt;%1&lt;/b&gt; už existuje. Nemôžete vytvoriť nový virtuálny pevný disk, ktorý používa tento súbor, pretože ho už zrejme používa iný virtuálny pevný disk.&lt;/p&gt;&lt;p&gt;Prosím, zadajte iný názov súboru s obrazom.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chcete zmazať súbor s obrazom &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; tohto pevého disku?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Nie&lt;/b&gt;, virtuálny disk sa odregistruje a odstráni zo zoznamu, ale súbor s obrazom zostane na vašom fyzickom pevnom disku.&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Áno&lt;/b&gt;, súbor s obrazom sa po odregistrovaní pevného disku natrvalo zmaže. Túto operáciu nie je možné vrátiť.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Chcete zmazať súbor s obrazom &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; tohto pevého disku?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Nie&lt;/b&gt;, virtuálny disk sa odregistruje a odstráni zo zoznamu, ale súbor s obrazom zostane na vašom fyzickom pevnom disku.&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Áno&lt;/b&gt;, súbor s obrazom sa po odregistrovaní pevného disku natrvalo zmaže. Túto operáciu nie je možné vrátiť.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1074"/>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa zmazať obraz virtuálneho pevného disku &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1084"/>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Chcete odstrániť (odregistrovať) virtuálny pevný disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1124"/>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
         <translation>Nepodarilo sa vytvoriť obraz virtuálneho pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>Nepodarilo sa pripojiť pevný disk s UUID %1 do slotu zariadenia %2 ovládača %3 stroja &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodarilo sa pripojiť pevný disk s UUID %1 do slotu zariadenia %2 ovládača %3 stroja &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodarilo sa odpojiť pevný disk zo slotu zariadenia %1 ovládača %2 stroja &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodarilo sa odpojiť pevný disk zo slotu zariadenia %1 ovládača %2 stroja &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1181"/>
         <source>hard disk</source>
         <translation>pevný disk</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1182"/>
         <source>CD/DVD image</source>
         <translation>obraz CD/DVD</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1183"/>
         <source>floppy image</source>
         <translation>obraz diskety</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1172"/>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nepodarilo sa zaregistrovať %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1190"/>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nepodarilo sa odregistrovať %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1202"/>
         <source>Failed to create a new session.</source>
         <translation>Nepodarilo sa vytvoriť novú relácu.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1221"/>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa otvoriť reláciu pre virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1249"/>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
         <translation>Nepodarilo sa zistiť stav prístupnosti nosiča &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Niektoré z registrovaných nosiov môžu byť neprístupné.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1269"/>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa vytvoriť sieťové rozhranie hostiteľa &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1287"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodarilo sa odstrániť sieťové rozhranie hostiteľa &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1314"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodarilo sa pripojiť zariadenie USB &lt;b&gt;%1&lt;/b&gt; k virtuálnemu stroju &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1340"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodarilo sa odpojiť zariadenie USB &lt;b&gt;%1&lt;/b&gt; od virtuálneho stroja &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1393"/>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Nepodarilo sa vytvoriť zdieľaný priečinok &lt;b&gt;%1&lt;/b&gt; (ukazujúci na &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pre virtuálny stroj &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1375"/>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Nepodarilo sa odstrániť zdieľaný priečinok &lt;b&gt;%1&lt;/b&gt; (ukazujúci na &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálneho stroja &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1686"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1705"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1923"/>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1951"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1957"/>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1963"/>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1984"/>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1986"/>
         <source>Severity: </source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2000"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2012"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2022"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2088"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2094"/>
         <source>Component: </source>
         <comment>error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2102"/>
         <source>Interface: </source>
         <comment>error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2111"/>
         <source>Callee: </source>
         <comment>error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2137"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="531"/>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="543"/>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1482"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1498"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1514"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="852"/>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1413"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1427"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1439"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1449"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1464"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1844"/>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1877"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1909"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="481"/>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="491"/>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="754"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1529"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1540"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1543"/>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="573"/>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="587"/>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="601"/>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="672"/>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="694"/>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="989"/>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1002"/>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1019"/>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1031"/>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1057"/>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1062"/>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1086"/>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1096"/>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1098"/>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1137"/>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1152"/>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1451"/>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1466"/>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1633"/>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1605"/>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1721"/>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1726"/>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1763"/>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1769"/>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1770"/>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1771"/>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished">Zrušiť</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1793"/>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1815"/>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1895"/>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation type="unfinished">Reštartovať</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1914"/>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1915"/>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="517"/>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1109"/>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1114"/>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1115"/>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished">Vybrať</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="955"/>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="970"/>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1556"/>
+        <source>&lt;p&gt;VirtualBox New Version Notifier has found VirtualBox %1 version.&lt;/p&gt;&lt;p&gt;If you would like to download and install it please proceed to the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1565"/>
+        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1572"/>
+        <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1598"/>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1631"/>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1676"/>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1812"/>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="30"/>
         <source>VirtualBox Registration Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="143"/>
         <source>&amp;Name</source>
         <translation type="unfinished">&amp;Názov</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="153"/>
         <source>Enter your full name using Latin characters.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="160"/>
         <source>&amp;E-mail</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="170"/>
         <source>Enter your valid e-mail address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="180"/>
         <source>&amp;Please do not use this information to contact me</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="66"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="366"/>
         <source>Connection timed out.</source>
         <translation type="unfinished">Čas spojenia vypršal.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="376"/>
         <source>Could not locate the registration form on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="400"/>
+        <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="115"/>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
+        <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
+        <source>C&amp;onfirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
+        <source>&amp;Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3561"/>
         <source>Shared Folders</source>
         <translation type="unfinished">Zdieľané priečinky</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation type="unfinished">Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
 </context>
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1139"/>
         <source>VirtualBox OSE</source>
         <translation type="unfinished">VirtualBox OSE</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>innotek VirtualBox</source>
-        <translation type="unfinished">innotek VirtualBox</translation>
+        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1144"/>
         <source>&amp;Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1151"/>
         <source>Virtual &amp;Disk Manager...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1152"/>
         <source>Ctrl+D</source>
         <translation type="unfinished">Ctrl+D</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1153"/>
         <source>Display the Virtual Disk Manager dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1173"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1175"/>
         <source>Ctrl+G</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1176"/>
         <source>Display the global settings dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1178"/>
         <source>E&amp;xit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1179"/>
         <source>Ctrl+Q</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1180"/>
         <source>Close application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1182"/>
         <source>&amp;New...</source>
         <translation type="unfinished">&amp;Nový...</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>New</source>
-        <translation type="unfinished">Nový</translation>
+        <translation type="obsolete">Nový</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1183"/>
         <source>Ctrl+N</source>
         <translation type="unfinished">Ctrl+N</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1184"/>
         <source>Create a new virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1186"/>
         <source>&amp;Settings...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1187"/>
         <source>Ctrl+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1188"/>
         <source>Configure the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1190"/>
         <source>&amp;Delete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1191"/>
         <source>Delete the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1195"/>
         <source>D&amp;iscard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1197"/>
         <source>Discard the saved state of the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1199"/>
         <source>&amp;Refresh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Refresh</source>
-        <translation type="unfinished">Obnoviť</translation>
+        <translation type="obsolete">Obnoviť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1200"/>
         <source>Ctrl+R</source>
         <translation type="unfinished">Ctrl+R</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1202"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1209"/>
         <source>&amp;Contents...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1211"/>
         <source>Show the online help contents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1213"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation type="unfinished">&amp;Webstrínka VirtualBox...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1215"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="unfinished">Otvorí webový prehliadač a prejde na stránku produktu VirtualBox</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1225"/>
         <source>&amp;About VirtualBox...</source>
         <translation type="unfinished">&amp;O aplikácii VirtualBox...</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1226"/>
         <source>Show a dialog with product information</source>
         <translation type="unfinished">Zobrazí dialóg s informáciami o produkte</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1228"/>
         <source>&amp;Reset All Warnings</source>
         <translation type="unfinished">&amp;Zabudnúť všetky upozornenia</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1230"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
         <translation type="unfinished">Sposobí, že všetky potlačené upozornenia a správy sa budú znova zobrazovať</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1232"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1234"/>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Pomocník</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1381"/>
         <source>&amp;Snapshots</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1385"/>
         <source>D&amp;escription</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1282"/>
         <source>D&amp;escription *</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1300"/>
         <source>S&amp;how</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1302"/>
         <source>Switch to the window of the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1395"/>
         <source>S&amp;tart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1397"/>
         <source>Start the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1233"/>
         <source>&amp;Machine</source>
         <translation type="unfinished">&amp;Stroj</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1204"/>
         <source>Show &amp;Log...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Log...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1205"/>
         <source>Ctrl+L</source>
         <translation type="unfinished">Ctrl+L</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1207"/>
         <source>Show the log files of the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1217"/>
         <source>R&amp;egister VirtualBox...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1219"/>
         <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1141"/>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1318"/>
+        <source>R&amp;esume</source>
+        <translation type="unfinished">P&amp;okračovať</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
+        <source>Ctrl+P</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1321"/>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="unfinished">Pokračuje vo vykonávaní virtuálneho stroja</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1328"/>
+        <source>&amp;Pause</source>
+        <translation type="unfinished">&amp;Pozastaviť</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1331"/>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="unfinished">Pozastaví vykonávanie virtuálneho stroja</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1221"/>
+        <source>C&amp;heck for a new version...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1223"/>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1374"/>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSettingsDialog</name>
+    <message>
+        <location filename="../src/VBoxSettingsDialog.cpp" line="190"/>
+        <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
+        <translation type="obsolete">Názov</translation>
     </message>
     <message>
-        <source>Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared &amp;Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
-Use
-&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
-to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
-&lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VBoxSharedFoldersSettings</source>
-        <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>Ins</source>
-        <translation type="unfinished">Ins</translation>
+        <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <source>Add a new shared folder (Ins)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Space</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Edit the selected shared folder (Space)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>Del</source>
-        <translation type="unfinished">Del</translation>
-    </message>
-    <message>
-        <source>Remove the selected shared folder (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Del</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
+        <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="30"/>
         <source>VBoxSnapshotDetailsDlg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source> Snapshot Details </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="50"/>
         <source>&amp;Name</source>
         <translation type="unfinished">&amp;Názov</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="67"/>
         <source>&amp;Description</source>
         <translation type="unfinished">&amp;Popis</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="98"/>
         <source>&amp;Machine Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation type="unfinished">Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotDetailsDlg.cpp" line="81"/>
         <source>Details of %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
+        <source>Snapshot Details</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
     <message>
+        <location filename="../ui/VBoxSnapshotsWgt.ui" line="55"/>
         <source>[snapshot]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxSnapshotsWgt.ui" line="30"/>
         <source>VBoxSnapshotsWgt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Discard Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+D</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>curStateActionGroup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Take Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Discard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Space</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="127"/>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="130"/>
         <source>The current state differs from the state stored in the current snapshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="133"/>
         <source>The current state is identical to the state stored in the current snapshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="177"/>
         <source> (current, </source>
         <comment>Snapshot details</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="181"/>
         <source>online)</source>
         <comment>Snapshot details</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="181"/>
         <source>offline)</source>
         <comment>Snapshot details</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="185"/>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="188"/>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="193"/>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="487"/>
         <source>Snapshot %1</source>
         <translation type="unfinished">Snímka %1</translation>
-    </message>
-    <message>
-        <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Revert to Current Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+R</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show details of the selected snapshot</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="4573"/>
         <source>Disable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="4573"/>
         <source>Enable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>%1 %2</source>
-        <translation type="unfinished">%1 %2</translation>
+        <translation type="obsolete">%1 %2</translation>
     </message>
 </context>
 <context>
     <name>VBoxTakeSnapshotDlg</name>
     <message>
+        <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="30"/>
         <source>Take Snapshot of Virtual Machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="78"/>
         <source>Snapshot &amp;Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="98"/>
         <source>Snapshot &amp;Description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation type="unfinished">Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
 </context>
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <source>VBoxUSBFilterSettings</source>
-        <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Názov</translation>
+        <translation type="obsolete">&amp;Názov</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>R&amp;emote</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Action</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Product ID</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Revision</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Por&amp;t</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Áno</translation>
+        <translation type="obsolete">Áno</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Nie</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines whether this filter applies
-to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
-to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
-or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines an action performed by the host
-computer when a matching device is attached: give it up to the host OS
-(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
-(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the vendor ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the product ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the revision number filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
-&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nie</translation>
     </message>
 </context>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="4503"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="4506"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
+    <name>VBoxUpdateDlg</name>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
+        <source>1 day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
+        <source>2 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
+        <source>3 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
+        <source>4 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
+        <source>5 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
+        <source>6 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
+        <source>1 week</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
+        <source>2 weeks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
+        <source>3 weeks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
+        <source>1 month</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
+        <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="311"/>
+        <source>Connection timed out.</source>
+        <translation type="unfinished">Čas spojenia vypršal.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="321"/>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
+        <source>VirtualBox New Version Notifier</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
+        <source>Check for a new version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
+        <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="189"/>
+        <source>Chec&amp;k</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="215"/>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="236"/>
+        <source>Check Results</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="290"/>
+        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="312"/>
+        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="334"/>
+        <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="388"/>
+        <source>&amp;Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMDescriptionPage</name>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="330"/>
         <source>No description. Press the Edit button below to add it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="332"/>
         <source>Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="334"/>
         <source>Edit (Ctrl+E)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="333"/>
         <source>Ctrl+E</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3680,6 +5297,7 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="194"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3687,162 +5305,407 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxVMFirstRunWzd</name>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="30"/>
         <source>First Run Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="348"/>
         <source>Media Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="363"/>
         <source>&amp;CD/DVD-ROM Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="379"/>
         <source>&amp;Floppy Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="439"/>
         <source>Media Source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="450"/>
         <source>&amp;Host Drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="479"/>
         <source>&amp;Image File</source>
         <translation type="unfinished">&amp;Súbor s obrazom</translation>
     </message>
     <message>
-        <source>VDM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="249"/>
         <source>Select Installation Media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="651"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
         <source>Summary</source>
         <translation type="unfinished">Zhrnutie</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="94"/>
         <source>CD/DVD-ROM Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
         <source>Floppy Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="98"/>
         <source>Host Drive %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="423"/>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="676"/>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
+        <source>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
+        <source>&lt; &amp;Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
+        <source>&amp;Next &gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
+        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
+        <source>&amp;Finish</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
+    <name>VBoxVMInformationDlg</name>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="149"/>
+        <source>%1 - Session Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMInformationDlg.ui" line="44"/>
+        <source>&amp;Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMInformationDlg.ui" line="79"/>
+        <source>&amp;Runtime</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="197"/>
+        <source>DMA Transfers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="168"/>
+        <source>PIO Transfers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="199"/>
+        <source>Data Read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="201"/>
+        <source>Data Written</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="237"/>
+        <source>Data Transmitted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="239"/>
+        <source>Data Received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="606"/>
+        <source>Enabled</source>
+        <translation type="unfinished">Zapnutá</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="608"/>
+        <source>Runtime Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="609"/>
+        <source>Screen Resolution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="476"/>
+        <source>CD/DVD-ROM Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="628"/>
+        <source>Network Adapter Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Not attached</source>
+        <translation type="obsolete">Nepripojená</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="412"/>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="413"/>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="416"/>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="423"/>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="424"/>
+        <source>Guest OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="432"/>
+        <source>Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="469"/>
+        <source>No Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="503"/>
+        <source>No Network Adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="606"/>
+        <source>Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="610"/>
+        <source>Hardware Virtualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="615"/>
+        <source>Hard Disks Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="617"/>
+        <source>Primary Master</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="617"/>
+        <source>Primary Slave</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="622"/>
+        <source>Secondary Master</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="622"/>
+        <source>Secondary Slave</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="629"/>
+        <source>Adapter 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="629"/>
+        <source>Adapter 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
+        <source>VBoxVMInformationDlg</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMListBox</name>
+</context>
+<context>
     <name>VBoxVMListView</name>
     <message>
+        <location filename="../src/VBoxVMListView.cpp" line="151"/>
+        <source>Inaccessible</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMListView.cpp" line="171"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMListView.cpp" line="182"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Inaccessible</source>
+        <location filename="../src/VBoxVMListView.cpp" line="533"/>
+        <source>%1 (%2)
+ %3</source>
+        <comment>Accessible string of the list view item</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMListView.cpp" line="583"/>
+        <source>VM</source>
+        <comment>Horizontal header description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMLogViewer</name>
     <message>
+        <location filename="../ui/VBoxVMLogViewer.ui" line="30"/>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="265"/>
         <source>&amp;Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="264"/>
         <source>&amp;Refresh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="261"/>
         <source>%1 - VirtualBox Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="193"/>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="225"/>
         <source>Save VirtualBox Log As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation type="unfinished">Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="263"/>
         <source>&amp;Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="266"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3850,871 +5713,1886 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <source>VBoxVMNetworkSettings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Attached to</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Generate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host Interface Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Interface Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File Descriptor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Setup Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>Select</source>
-        <translation type="unfinished">Vybrať</translation>
+        <translation type="obsolete">Vybrať</translation>
     </message>
+</context>
+<context>
+    <name>VBoxVMParallelPortSettings</name>
+</context>
+<context>
+    <name>VBoxVMSerialPortSettings</name>
+</context>
+<context>
+    <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>&amp;Terminate Application</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
+        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select TAP setup application</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
+        <source>Enable &amp;Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select TAP terminate application</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
+        <source>Host Audio &amp;Driver:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
+        <source>Audio &amp;Controller:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSerialPortSettings</name>
+    <name>VBoxVMSettingsCD</name>
     <message>
-        <source>VBoxVMSerialPortSettings</source>
+        <location filename="../src/VBoxVMSettingsCD.cpp" line="168"/>
+        <source>Host CD/DVD drive is not selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable Serial Port</source>
+        <location filename="../src/VBoxVMSettingsCD.cpp" line="170"/>
+        <source>CD/DVD image file is not selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
+        <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
+        <translation type="unfinished">Keď je pole začiarknuté, pripojí uvedený nosič do CD/DVD mechaniky virtuálneho stroja. Majte na pamäti, že CD/DVD jednotka sa vždy pripája na sekundárny master radič IDE stroja.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
+        <source>&amp;Mount CD/DVD Drive</source>
+        <translation type="unfinished">&amp;Pripojiť obraz C&amp;D/DVD-ROM</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
+        <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
+        <translation type="unfinished">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
+        <source>Host CD/DVD &amp;Drive</source>
+        <translation type="unfinished">Hostiteľská jednotka C&amp;D/DVD</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
+        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Port &amp;Number</source>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
+        <source>Enable &amp;Passthrough</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;IRQ</source>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
+        <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
+        <translation type="unfinished">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
+        <source>&amp;ISO Image File</source>
+        <translation type="unfinished">Súbor s obrazom &amp;ISO</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
+        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Port &amp;Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
+        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Category</source>
-        <translation>Kategória</translation>
+        <translation type="obsolete">Kategória</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[id]</source>
-        <translation>[id]</translation>
+        <translation type="obsolete">[id]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[link]</source>
-        <translation>[odkaz]</translation>
+        <translation type="obsolete">[odkaz]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>[name]</source>
-        <translation>[názov]</translation>
+        <translation type="obsolete">[názov]</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>VBoxVMSettingsDlg</source>
-        <translation>VBoxVMSettingsDlg</translation>
+        <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> General </source>
-        <translation> Všeobecné </translation>
+        <translation type="obsolete"> Všeobecné </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>0</source>
-        <translation>0</translation>
+        <translation type="obsolete">0</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>#general</source>
-        <translation>#všeobecné</translation>
+        <translation type="obsolete">#všeobecné</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> Hard Disks </source>
-        <translation> Pevné disky </translation>
+        <translation type="obsolete"> Pevné disky </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>1</source>
-        <translation>1</translation>
+        <translation type="obsolete">1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>#hdds</source>
-        <translation>#hdds</translation>
+        <translation type="obsolete">#hdds</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source> Floppy </source>
-        <translation> Disketa </translation>
+        <translation type="obsolete"> Disketa </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>2</source>
-        <translation>2</translation>
+        <translation type="obsolete">2</translation>
     </message>
     <message>
-        <source>#floppy</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> CD/DVD-ROM </source>
-        <translation> CD/DVD-ROM </translation>
+        <translation type="obsolete"> CD/DVD-ROM </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>3</source>
-        <translation>3</translation>
+        <translation type="obsolete">3</translation>
     </message>
     <message>
-        <source>#dvd</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> Audio </source>
-        <translation> Zvuk </translation>
+        <translation type="obsolete"> Zvuk </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>4</source>
-        <translation>4</translation>
+        <translation type="obsolete">4</translation>
     </message>
     <message>
-        <source>#audio</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> Network </source>
-        <translation> Sieť </translation>
+        <translation type="obsolete"> Sieť </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>5</source>
-        <translation>5</translation>
+        <translation type="obsolete">5</translation>
     </message>
     <message>
-        <source>#network</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> USB </source>
-        <translation> USB </translation>
+        <translation type="obsolete"> USB </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>6</source>
-        <translation>6</translation>
+        <translation type="obsolete">6</translation>
     </message>
     <message>
-        <source>#usb</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> Remote Display </source>
-        <translation> Vzdialený displej </translation>
+        <translation type="obsolete"> Vzdialený displej </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>7</source>
-        <translation>7</translation>
+        <translation type="obsolete">7</translation>
     </message>
     <message>
-        <source>#vrdp</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source> Shared Folders </source>
-        <translation> Zdieľané priečinky </translation>
+        <translation type="obsolete"> Zdieľané priečinky </translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>8</source>
-        <translation>8</translation>
+        <translation type="obsolete">8</translation>
     </message>
     <message>
-        <source>#sfolders</source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Identification</source>
-        <translation>&amp;Identifikácia</translation>
+        <translation type="obsolete">&amp;Identifikácia</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Name</source>
-        <translation>&amp;Názov</translation>
+        <translation type="obsolete">&amp;Názov</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation>Žobrazí názov virtuálneho stroja.</translation>
+        <translation type="obsolete">Žobrazí názov virtuálneho stroja.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>OS &amp;Type</source>
-        <translation>&amp;Typ OS</translation>
+        <translation type="obsolete">&amp;Typ OS</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Base &amp;Memory Size</source>
-        <translation>Veľkosť &amp;základnej pamäte</translation>
+        <translation type="obsolete">Veľkosť &amp;základnej pamäte</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj možno nenaštartuje.</translation>
+        <translation type="obsolete">Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj možno nenaštartuje.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;</source>
-        <translation>&lt;</translation>
+        <translation type="obsolete">&lt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>=</source>
-        <translation>=</translation>
+        <translation type="obsolete">=</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&gt;</source>
-        <translation>&gt;</translation>
+        <translation type="obsolete">&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Video Memory Size</source>
-        <translation>Veľkosť &amp;videopamäte</translation>
+        <translation type="obsolete">Veľkosť &amp;videopamäte</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Ovláda množstvo videopamäte poskytnutej virtuálnemu stroju.</translation>
+        <translation type="obsolete">Ovláda množstvo videopamäte poskytnutej virtuálnemu stroju.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Basic</source>
-        <translation>&amp;Základné</translation>
+        <translation type="obsolete">&amp;Základné</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Select</source>
-        <translation>Vybrať</translation>
+        <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Selects the snapshot folder path.</source>
-        <translation>Vyberie cestu k priečinku snímky.</translation>
+        <translation type="obsolete">Vyberie cestu k priečinku snímky.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Reset</source>
-        <translation>Reštartovať</translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Extended Features</source>
-        <translation>Rozšírené možnosti</translation>
+        <translation type="obsolete">Rozšírené možnosti</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Enable A&amp;CPI</source>
-        <translation>Zapnúť A&amp;CPI</translation>
+        <translation type="obsolete">Zapnúť A&amp;CPI</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Enable IO A&amp;PIC</source>
-        <translation>Zapnúť IO A&amp;PIC</translation>
+        <translation type="obsolete">Zapnúť IO A&amp;PIC</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Boo&amp;t Order</source>
-        <translation>&amp;Poradie zavádzania</translation>
+        <translation type="obsolete">&amp;Poradie zavádzania</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Advanced</source>
-        <translation>&amp;Rozšírené</translation>
+        <translation type="obsolete">&amp;Rozšírené</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Description</source>
-        <translation>&amp;Popis</translation>
+        <translation type="obsolete">&amp;Popis</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Primary Master</source>
-        <translation>&amp;Primary master</translation>
+        <translation type="obsolete">&amp;Primary master</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&lt;not selected&gt;</source>
-        <translation>&lt;nevybrané&gt;</translation>
+        <translation type="obsolete">&lt;nevybrané&gt;</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>P&amp;rimary Slave</source>
-        <translation>P&amp;rimary slave</translation>
+        <translation type="obsolete">P&amp;rimary slave</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>&amp;Secondary (IDE 1) slave</translation>
+        <translation type="obsolete">&amp;Secondary (IDE 1) slave</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Pripojiť disketovú mechaniku</translation>
+        <translation type="obsolete">&amp;Pripojiť disketovú mechaniku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Hostiteľská disketová mechanika</translation>
+        <translation type="obsolete">&amp;Hostiteľská disketová mechanika</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Pripojí uvedenú hostiteľskú disketovú mechaniku ako virtuálnu disketovú mechaniku.</translation>
+        <translation type="obsolete">Pripojí uvedenú hostiteľskú disketovú mechaniku ako virtuálnu disketovú mechaniku.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Image File</source>
-        <translation>&amp;Súbor s obrazom</translation>
+        <translation type="obsolete">&amp;Súbor s obrazom</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Pripojí obraz diskety do disketovej mechaniky.</translation>
+        <translation type="obsolete">Pripojí obraz diskety do disketovej mechaniky.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Pripojiť obraz C&amp;D/DVD-ROM</translation>
+        <translation type="obsolete">&amp;Pripojiť obraz C&amp;D/DVD-ROM</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>Hostiteľská jednotka C&amp;D/DVD</translation>
+        <translation type="obsolete">Hostiteľská jednotka C&amp;D/DVD</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
+        <translation type="obsolete">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;ISO Image File</source>
-        <translation>Súbor s obrazom &amp;ISO</translation>
+        <translation type="obsolete">Súbor s obrazom &amp;ISO</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
+        <translation type="obsolete">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Enable Audio</source>
-        <translation>&amp;Zapnúť zvuk</translation>
+        <translation type="obsolete">&amp;Zapnúť zvuk</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Host Audio &amp;Driver</source>
-        <translation>Hostiteľský &amp;ovládač zvuku</translation>
+        <translation type="obsolete">Hostiteľský &amp;ovládač zvuku</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Enable &amp;USB Controller</source>
-        <translation>Zapnúť ovládač &amp;USB</translation>
+        <translation type="obsolete">Zapnúť ovládač &amp;USB</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+U</source>
         <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>USB Device &amp;Filters</source>
-        <translation>&amp;Filtre zariadení USB</translation>
+        <translation type="obsolete">&amp;Filtre zariadení USB</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ins</source>
-        <translation>Ins</translation>
+        <translation type="obsolete">Ins</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add Empty (Ins)</source>
-        <translation>Pridať prázdny (Ins)</translation>
+        <translation type="obsolete">Pridať prázdny (Ins)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+Ins</source>
-        <translation>Alt+Ins</translation>
+        <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Add From (Alt+Ins)</source>
-        <translation>Pridať z (Alt+Ins)</translation>
+        <translation type="obsolete">Pridať z (Alt+Ins)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Del</source>
-        <translation>Del</translation>
+        <translation type="obsolete">Del</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Remove (Del)</source>
-        <translation>Odstrániť (Del)</translation>
+        <translation type="obsolete">Odstrániť (Del)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Removes the selected USB filter.</source>
-        <translation>Odstráni zvolený filter USB.</translation>
+        <translation type="obsolete">Odstráni zvolený filter USB.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ctrl+Up</source>
-        <translation>Ctrl+hore</translation>
+        <translation type="obsolete">Ctrl+hore</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Presunúť hore (Ctrl+hore)</translation>
+        <translation type="obsolete">Presunúť hore (Ctrl+hore)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected USB filter up.</source>
-        <translation>Presunie zvolený filter USB vyššie.</translation>
+        <translation type="obsolete">Presunie zvolený filter USB vyššie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Ctrl+Down</source>
-        <translation>Ctrl+dolu</translation>
+        <translation type="obsolete">Ctrl+dolu</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Presunúť dolu (Ctrl+dolu)</translation>
+        <translation type="obsolete">Presunúť dolu (Ctrl+dolu)</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Moves the selected USB filter down.</source>
-        <translation>Presunie zvolený filter USB nižšie.</translation>
+        <translation type="obsolete">Presunie zvolený filter USB nižšie.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation>&amp;Zapnúť server VRDP</translation>
+        <translation type="obsolete">&amp;Zapnúť server VRDP</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation>Určuje autentifikačnú metódu VRDP.</translation>
+        <translation type="obsolete">Určuje autentifikačnú metódu VRDP.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Uvádza expiračnú dobu autentifikácie hosťa, v milisekundách.</translation>
+        <translation type="obsolete">Uvádza expiračnú dobu autentifikácie hosťa, v milisekundách.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Help</source>
-        <translation>Pomocník</translation>
+        <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>F1</source>
-        <translation>F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the dialog help.</source>
-        <translation>Zobrazí dialóg Pomocníka.</translation>
+        <translation type="obsolete">Zobrazí dialóg Pomocníka.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Invalid settings detected</source>
-        <translation>Boli zistené neplatné nastavenia</translation>
+        <translation type="obsolete">Boli zistené neplatné nastavenia</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation>Prijme (uloží) zmeny a zatvorí dialóg.</translation>
+        <translation type="obsolete">Prijme (uloží) zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>Zruší zmeny a zatvorí dialóg.</translation>
+        <translation type="obsolete">Zruší zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do master slotu primárneho radiča IDE.</translation>
+        <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do master slotu primárneho radiča IDE.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation>Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu primárneho radiča IDE.</translation>
+        <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu primárneho radiča IDE.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu sekundárneho radiča IDE.</translation>
+        <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu sekundárneho radiča IDE.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation>Zobrazí virtuálny disk, ktorý sa pripojí do tohto slotu IDE a umožní rýchly výber iného pevného disku.</translation>
+        <translation type="obsolete">Zobrazí virtuálny disk, ktorý sa pripojí do tohto slotu IDE a umožní rýchly výber iného pevného disku.</translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Keď je pole začiarknuté, pripojí uvedený nosič do CD/DVD mechaniky virtuálneho stroja. Majte na pamäti, že CD/DVD jednotka sa vždy pripája na sekundárny master radič IDE stroja.</translation>
+        <translation type="obsolete">Keď je pole začiarknuté, pripojí uvedený nosič do CD/DVD mechaniky virtuálneho stroja. Majte na pamäti, že CD/DVD jednotka sa vždy pripája na sekundárny master radič IDE stroja.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <location filename="" line="1953391981"/>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation type="obsolete">Nový filter %1</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="obsolete">Adaptér %1</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Add</source>
+        <translation type="obsolete">Pridať</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Remove</source>
+        <translation type="obsolete">Odstrániť</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>9</source>
+        <translation type="obsolete">9</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="obsolete">Zapnúť &amp;VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="365"/>
+        <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="" line="1953391981"/>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation type="obsolete">Port %1</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>00</source>
+        <translation type="obsolete">00</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>01</source>
+        <translation type="obsolete">01</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>02</source>
+        <translation type="obsolete">02</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>03</source>
+        <translation type="obsolete">03</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>04</source>
+        <translation type="obsolete">04</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>05</source>
+        <translation type="obsolete">05</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>08</source>
+        <translation type="obsolete">08</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>10</source>
+        <translation type="obsolete">10</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>09</source>
+        <translation type="obsolete">09</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>06</source>
+        <translation type="obsolete">06</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>07</source>
+        <translation type="obsolete">07</translation>
+    </message>
+    <message>
+        <location filename="" line="1953391981"/>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation type="obsolete">Port %1</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="406"/>
+        <source>General</source>
+        <translation type="unfinished">Všeobecné</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="409"/>
+        <source>Storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="412"/>
+        <source>Hard Disks</source>
+        <translation type="unfinished">Pevné disky</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="415"/>
+        <source>CD/DVD-ROM</source>
+        <translation type="unfinished">CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="418"/>
+        <source>Floppy</source>
+        <translation type="unfinished">Disketa</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="421"/>
+        <source>Audio</source>
+        <translation type="unfinished">Audio</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="424"/>
+        <source>Network</source>
+        <translation type="unfinished">Sieť</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
+        <source>Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="432"/>
+        <source>Serial Ports</source>
+        <translation type="unfinished">Sériové porty</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
+        <source>Parallel Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="445"/>
+        <source>Shared Folders</source>
+        <translation type="unfinished">Zdieľané priečinky</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="448"/>
+        <source>Remote Display</source>
+        <translation type="unfinished">Vzdialený displej</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="469"/>
+        <source>%1 - %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsFD</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsFD.cpp" line="166"/>
+        <source>Host floppy drive is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsFD.cpp" line="168"/>
+        <source>Floppy image file is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
+        <source>&amp;Mount Floppy Drive</source>
+        <translation type="unfinished">&amp;Pripojiť disketovú mechaniku</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
+        <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
+        <translation type="unfinished">Pripojí uvedenú hostiteľskú disketovú mechaniku ako virtuálnu disketovú mechaniku.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
+        <source>Host Floppy &amp;Drive</source>
+        <translation type="unfinished">&amp;Hostiteľská disketová mechanika</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
+        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
+        <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
+        <translation type="unfinished">Pripojí obraz diskety do disketovej mechaniky.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
+        <source>&amp;Image File</source>
+        <translation type="unfinished">&amp;Súbor s obrazom</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
+        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>VBoxVMSettingsGeneral</name>
     <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="354"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>&lt;not attached&gt;</source>
-        <comment>hard disk</comment>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source> - Settings</source>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="380"/>
+        <source>Selects the snapshot folder path.</source>
+        <translation type="unfinished">Vyberie cestu k priečinku snímky.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="381"/>
+        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
+        <source>&amp;Basic</source>
+        <translation type="unfinished">&amp;Základné</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
+        <source>&amp;Identification</source>
+        <translation type="unfinished">&amp;Identifikácia</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="77"/>
+        <source>Displays the name of the virtual machine.</source>
+        <translation type="unfinished">Žobrazí názov virtuálneho stroja.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="84"/>
+        <source>&amp;Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="100"/>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="107"/>
+        <source>OS &amp;Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="160"/>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished">Veľkosť &amp;základnej pamäte</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="286"/>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="unfinished">Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj možno nenaštartuje.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="408"/>
+        <source>&lt;</source>
+        <translation type="unfinished">&lt;</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="434"/>
+        <source>&gt;</source>
+        <translation type="unfinished">&gt;</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="477"/>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="338"/>
+        <source>&amp;Video Memory Size</source>
+        <translation type="unfinished">Veľkosť &amp;videopamäte</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="464"/>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="unfinished">Ovláda množstvo videopamäte poskytnutej virtuálnemu stroju.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="524"/>
+        <source>&amp;Advanced</source>
+        <translation type="unfinished">&amp;Rozšírené</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="530"/>
+        <source>Boo&amp;t Order:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="584"/>
+        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="unfinished">Definuje poradie zavádzacích zariadení. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé zavádzacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="603"/>
+        <source>[device]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="624"/>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="unfinished">Presunúť hore (Ctrl-hore)</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="627"/>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished">Presunie zvolené zavádzacie zariadenie vyššie.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="646"/>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="unfinished">Presunúť dolu (Ctrl-dolu)</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="649"/>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished">Presunie zvolené zavádzacie zariadenie nižšie.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="686"/>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="707"/>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="710"/>
+        <source>Enable A&amp;CPI</source>
+        <translation type="unfinished">Zapnúť A&amp;CPI</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="723"/>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
+        <source>Enable IO A&amp;PIC</source>
+        <translation type="unfinished">Zapnúť IO A&amp;PIC</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="739"/>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="742"/>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished">Zapnúť &amp;VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="755"/>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="758"/>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="767"/>
+        <source>&amp;Shared Clipboard:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="790"/>
+        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="803"/>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="830"/>
+        <source>&amp;IDE Controller Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="843"/>
+        <source>S&amp;napshot Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="873"/>
+        <source>&amp;Description</source>
+        <translation type="unfinished">&amp;Popis</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="879"/>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="890"/>
+        <source>&amp;Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="912"/>
+        <source>R&amp;untime:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="925"/>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="928"/>
+        <source>&amp;Remember Mounted Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsHD</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="574"/>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="586"/>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="606"/>
+        <source>&amp;Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="607"/>
+        <source>&amp;Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="608"/>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="617"/>
+        <source>Adds a new hard disk attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="618"/>
+        <source>Removes the highlighted hard disk attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="621"/>
+        <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
+        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
+        <source>&amp;Attachments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
+        <source>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsNetwork</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="286"/>
+        <source>Select TAP setup application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="295"/>
+        <source>Select TAP terminate application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
+        <source>&amp;Enable Network Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
+        <source>A&amp;dapter Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
+        <source>&amp;Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
+        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
+        <source>&amp;Network Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
+        <source>&amp;MAC Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="166"/>
+        <source>Generates a new random MAC address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="169"/>
+        <source>&amp;Generate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
+        <source>Alt+G</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="182"/>
+        <source>Ca&amp;ble Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="189"/>
+        <source>&amp;Host Interface Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="199"/>
+        <source>&amp;Interface Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="218"/>
+        <source>Displays the TAP interface name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="225"/>
+        <source>&amp;Setup Application:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="244"/>
+        <source>Displays the command executed to set up the TAP interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="251"/>
+        <source>Selects the setup application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="261"/>
+        <source>&amp;Terminate Application:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="280"/>
+        <source>Displays the command executed to terminate the TAP interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="287"/>
+        <source>Selects the terminate application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsNetworkPage</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="780"/>
+        <source>No host network interface is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="787"/>
+        <source>Internal network name is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsParallel</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
+        <source>&amp;Enable Parallel Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
+        <source>Port &amp;Number:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
+        <source>&amp;IRQ:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
+        <source>I/O Po&amp;rt:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
+        <source>Port &amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
+        <source>Displays the host parallel device name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsParallelPage</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
+        <source>Duplicate port number is selected </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
+        <source>Port path is not specified </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
+        <source>Duplicate port path is entered </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSF</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
+        <source>&amp;Add New Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
+        <source>&amp;Edit Selected Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
+        <source>&amp;Remove Selected Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
+        <source>Adds a new shared folder definition.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
+        <source>Edits the selected shared folder definition.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
+        <source>Removes the selected shared folder definition.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="254"/>
+        <source> Machine Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="261"/>
+        <source> Transient Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="361"/>
+        <source>Full</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="362"/>
+        <source>Read-only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
+        <source>Name</source>
+        <translation type="unfinished">Názov</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
+        <source>Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
+        <source>Access</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSFDetails</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
+        <source>Add Share</source>
+        <translation type="unfinished">Pridať zdieľaný priečinok</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
+        <source>Edit Share</source>
+        <translation type="unfinished">Upraviť zdieľaný priečinok</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="148"/>
+        <source>Select a folder to share</source>
+        <translation type="unfinished">Zvoliť priečinok, ktorý sa bude zdieľať</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
+        <source>Folder Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="46"/>
+        <source>Displays the path to an existing folder on the host PC.</source>
+        <translation type="unfinished">Zobrazí cestu k existujúcemu priečinku na hostiteľskom PC.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="53"/>
+        <source>Folder Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="63"/>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation type="unfinished">Zobrazí názov zdieľaného priečinka (ako ho uvidí hosťovský OS).</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="70"/>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="73"/>
+        <source>&amp;Read-only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="80"/>
+        <source>&amp;Make Permanent</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSerial</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
+        <source>&amp;Enable Serial Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
+        <source>Port &amp;Number:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
+        <source>&amp;IRQ:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
+        <source>I/O Po&amp;rt:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
+        <source>Port &amp;Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
+        <source>&amp;Create Pipe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
+        <source>Port &amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSerialPage</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="258"/>
+        <source>Duplicate port number is selected </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="276"/>
+        <source>Port path is not specified </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="277"/>
+        <source>Duplicate port path is entered </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsUSB</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
+        <source>&amp;Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
+        <source>A&amp;dd Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
+        <source>&amp;Edit Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
+        <source>&amp;Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
+        <source>&amp;Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
+        <source>M&amp;ove Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
+        <source>Edit the selected filter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
+        <source>Removes the selected USB filter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
+        <source>Moves the selected USB filter up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
+        <source>Moves the selected USB filter down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="unfinished">Nový filter %1</translation>
     </message>
     <message>
-        <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
-makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
+        <source>Enable &amp;USB Controller</source>
+        <translation type="unfinished">Zapnúť ovládač &amp;USB</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
-    </message>
-    <message>
-        <source>Adapter %1</source>
-        <comment>network</comment>
-        <translation type="unfinished">Adaptér %1</translation>
-    </message>
-    <message>
-        <source>Host &amp;Interfaces</source>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
+        <source>Enable USB E&amp;HCI Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Lists all available host interfaces.</source>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
+        <source>USB Device &amp;Filters</source>
+        <translation type="unfinished">&amp;Filtre zariadení USB</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adds a new host interface.</source>
+        <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
+        <source>[filter]</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="66"/>
+        <source>Any</source>
+        <comment>remote</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Removes the selected host interface.</source>
+        <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="67"/>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation type="unfinished">Áno</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="68"/>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation type="unfinished">Nie</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
+        <source>Filter details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;No suitable interfaces&gt;</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
+        <source>&amp;Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add</source>
-        <translation type="unfinished">Pridať</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">Odstrániť</translation>
-    </message>
-    <message>
-        <source>VirtualBox Host Interface %1</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
+        <source>Displays the filter name.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
+        <source>&amp;Vendor ID:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>9</source>
-        <translation type="unfinished">9</translation>
-    </message>
-    <message>
-        <source> Serial Ports </source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>#serialPorts</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
+        <source>&amp;Product ID:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Zapnúť &amp;VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Other &amp;Settings</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
+        <source>&amp;Revision:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Remember Media Mounted at Runtime</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
+        <source>&amp;Manufacturer:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>O&amp;ther</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable Passthrough</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
+        <source>Pro&amp;duct:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Server Port </source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
+        <source>&amp;Serial No.:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Authentication &amp;Method </source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Authentication &amp;Timeout </source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
+        <source>Por&amp;t:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Master hard disk is not selected</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
+        <source>R&amp;emote:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Slave hard disk is not selected</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary Slave hard disk is already attached to a different slot</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
+        <source>&amp;Action:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Slave hard disk is not selected</source>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsVRDP</name>
+    <message>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Secondary Slave hard disk is already attached to a different slot</source>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
+        <source>&amp;Enable VRDP Server</source>
+        <translation type="unfinished">&amp;Zapnúť server VRDP</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
+        <source>Server &amp;Port:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>CD/DVD image file is not selected</source>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Floppy image file is not selected</source>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
+        <source>Authentication &amp;Method:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Incorrect host network interface is selected</source>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
+        <source>Defines the VRDP authentication method.</source>
+        <translation type="unfinished">Určuje autentifikačnú metódu VRDP.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
+        <source>Authentication &amp;Timeout:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Duplicate port path is entered </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>Port %1</translation>
+        <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation type="unfinished">Uvádza expiračnú dobu autentifikácie hosťa, v milisekundách.</translation>
     </message>
 </context>
 </TS>
