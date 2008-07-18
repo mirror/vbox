@@ -603,10 +603,11 @@ typedef INTNETETHERHDR const *PCINTNETETHERHDR;
 /**
  * Sends a frame to a specific interface.
  *
- * @param   pIf         The interface.
- * @param   pSG         The gather buffer which data is being sent to the interface.
+ * @param   pIf             The interface.
+ * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
+ * @param   pSG             The gather buffer which data is being sent to the interface.
  */
-static void intnetR0IfSend(PINTNETIF pIf, PINTNETSG pSG)
+static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
 {
     LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
     int rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG);
@@ -619,15 +620,27 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETSG pSG)
         return;
     }
 
-/** @todo we'll have to drop this I'm afraid since it'll screw up the host networking otherwise... */
+#if 0 /* This is bad stuff now as we're blocking while locking down the network.
+         we really shouldn't delay the network traffic on the host just because
+         some bugger isn't responding. Will have to deal with this in a different
+         manner if required. */
     /*
      * Retry a few times, yielding the CPU in between.
-     * But don't let a unresponsive VM harm performance, so give up after a short while.
+     * But don't let a unresponsive VM harm performance, so give up after a couple of tries.
      */
     if (pIf->cYields < 100)
     {
         unsigned cYields = 10;
-        do
+#else
+    /*
+     * Scheduling hack, for unicore machines primarily.
+     */
+    if (    pIf->cYields < 4 /* just twice */
+        &&  pIfSender /* but not if it's from the trunk */)
+    {
+        unsigned cYields = 2;
+#endif
+        while (--cYields > 0)
         {
             RTSemEventSignal(pIf->Event);
             RTThreadYield();
@@ -641,7 +654,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETSG pSG)
                 return;
             }
             pIf->cYields++;
-        } while (--cYields > 0);
+        }
         STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsNok);
     }
 
@@ -750,7 +763,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
     Log2(("Broadcast\n"));
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
-            intnetR0IfSend(pIf, pSG);
+            intnetR0IfSend(pIf, pIfSender, pSG);
 
     /*
      * Unless the trunk is the origin, broadcast it to both the wire
@@ -815,7 +828,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
                  && pIf != pIfSender /* promiscuous mode: omit the sender */))
         {
             fExactIntNetRecipient |= fIt;
-            intnetR0IfSend(pIf, pSG);
+            intnetR0IfSend(pIf, pIfSender, pSG);
         }
     }
 
