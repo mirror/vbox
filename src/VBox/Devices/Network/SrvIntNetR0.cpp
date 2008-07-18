@@ -757,7 +757,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
      * and the host as well.
      */
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    pIfSender
+    if (    !pIfSender
         &&  pTrunkIf)
         intnetR0TrunkIfSend(pTrunkIf, pNetwork, INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked);
     return false; /* broadcast frames are never dropped */
@@ -825,7 +825,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
      * frame will hit the wire.
      */
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    pIfSender
+    if (    !pIfSender
         &&  pTrunkIf
         &&  pTrunkIf->pIfPort)
     {
@@ -881,7 +881,7 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     AssertPtr(pNetwork);
     AssertPtrNull(pIfSender);
     Assert(pIfSender ? fSrc == 0 : fSrc != 0);
-    Assert(pNetwork == pIfSender->pNetwork);
+    Assert(!pIfSender || pNetwork == pIfSender->pNetwork);
     AssertPtr(pSG);
     Assert(pSG->cSegsUsed >= 1);
     Assert(pSG->cSegsUsed <= pSG->cSegsAlloc);
@@ -891,8 +891,11 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     /*
      * Send statistics.
      */
-    STAM_REL_COUNTER_INC(&pIfSender->pIntBuf->cStatSends);
-    STAM_REL_COUNTER_ADD(&pIfSender->pIntBuf->cbStatSend, pSG->cbTotal);
+    if (pIfSender)
+    {
+        STAM_REL_COUNTER_INC(&pIfSender->pIntBuf->cStatSends);
+        STAM_REL_COUNTER_ADD(&pIfSender->pIntBuf->cbStatSend, pSG->cbTotal);
+    }
 
     /*
      * Get the ethernet header (might theoretically involve multiple segments).
