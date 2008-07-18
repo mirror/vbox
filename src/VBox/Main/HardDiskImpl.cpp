@@ -4934,16 +4934,13 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
             break;
 
         vrc = VDGetUuid (mContainer, 0, id.ptr());
-        if (VBOX_FAILURE (vrc))
-            break;
-        vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
-        if (VBOX_FAILURE (vrc))
+        if (VBOX_FAILURE (vrc) && vrc != VERR_NOT_SUPPORTED)
             break;
 
         if (!mId.isEmpty())
         {
             /* check that the actual UUID of the image matches the stored UUID */
-            if (mId != id)
+            if (VBOX_SUCCESS(vrc) && (mId != id))
             {
                 errMsg = Utf8StrFmt (
                     tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
@@ -4954,9 +4951,22 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
         }
         else
         {
-            /* assgn an UUID read from the image file */
-            mId = id;
+            /* assign an UUID read from the image file */
+            if (VBOX_SUCCESS(vrc))
+                mId = id;
+            else
+            {
+                /* Create a UUID on our own. */
+                vrc = RTUuidCreate(mId.ptr());
+                if (VBOX_FAILURE(vrc))
+                    break;
+            }
         }
+
+
+        vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
 
         if (mParent)
         {
