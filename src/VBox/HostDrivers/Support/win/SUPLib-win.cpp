@@ -643,9 +643,9 @@ int suplibOsIOCtlFast(uintptr_t uFunction)
     /*
      * Issue device I/O control.
      */
-    int rc = VERR_INTERNAL_ERROR;
-    if (DeviceIoControl(g_hDevice, uFunction, NULL, 0, NULL, 0, NULL, NULL))
-        return rc;
+    DWORD cbReturned = 0;
+    if (DeviceIoControl(g_hDevice, uFunction, NULL, 0, NULL, 0, &cbReturned, NULL))
+        return VINF_SUCCESS;
     return suplibConvertWin32Err(GetLastError());
 }
 
