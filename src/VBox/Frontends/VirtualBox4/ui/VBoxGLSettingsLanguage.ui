@@ -23,22 +23,10 @@
     <x>0</x>
     <y>0</y>
     <width>346</width>
-    <height>282</height>
+    <height>342</height>
    </rect>
   </property>
   <layout class="QGridLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>0</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
    <item row="0" column="0" >
     <spacer>
      <property name="orientation" >
@@ -187,6 +175,12 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize" >
+        <size>
+         <width>0</width>
+         <height>48</height>
+        </size>
+       </property>
        <property name="alignment" >
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
        </property>
@@ -201,12 +195,6 @@
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" >
-      <size>
-       <width>20</width>
-       <height>0</height>
-      </size>
      </property>
     </spacer>
    </item>

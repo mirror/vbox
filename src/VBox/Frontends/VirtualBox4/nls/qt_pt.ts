@@ -175,7 +175,7 @@
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>Parar reprodução multimédia</translation>
+        <translation>Parar Reprodução</translation>
     </message>
     <message>
         <source>Media Previous</source>
@@ -187,7 +187,7 @@
     </message>
     <message>
         <source>Media Record</source>
-        <translation>Gravar Multimédia</translation>
+        <translation>Gravação Multimédia</translation>
     </message>
     <message>
         <source>Favorites</source>
@@ -589,7 +589,7 @@
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>D&amp;esordenar</translation>
+        <translation>D&amp;esordenado</translation>
     </message>
     <message>
         <source>Sort</source>
@@ -597,7 +597,7 @@
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Mostrar fic&amp;heiros ocultos</translation>
+        <translation>Mostrar fic&amp;heiros escondidos</translation>
     </message>
     <message>
         <source>the file</source>
@@ -946,7 +946,7 @@ Verifique a localização e o nome do ficheiro.</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Conexão a %1 fechada</translation>
+        <translation>Conexão em %1 fechada</translation>
     </message>
     <message>
         <source>Connection closed</source>
