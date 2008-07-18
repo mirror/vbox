@@ -284,9 +284,9 @@ typedef INTNETSG const *PCINTNETSG;
 /** @name Direction (packet source or destination)
  * @{ */
 /** To/From the wire. */
-#define INTNETTRUNKDIR_WIRE             RT_BIT_32(1)
+#define INTNETTRUNKDIR_WIRE             RT_BIT_32(0)
 /** To/From the host. */
-#define INTNETTRUNKDIR_HOST             RT_BIT_32(2)
+#define INTNETTRUNKDIR_HOST             RT_BIT_32(1)
 /** Mask of valid bits. */
 #define INTNETTRUNKDIR_VALID_MASK       UINT32_C(0x3)
 /** @} */
