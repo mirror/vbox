@@ -22,6 +22,9 @@
  */
 
 #include <stdio.h>
+#include <iprt/alloc.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
 #include "Performance.h"
 
 namespace pm {
