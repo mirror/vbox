@@ -42,6 +42,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/asm.h>
+#include <iprt/getopt.h>
 
 
 /*******************************************************************************
@@ -380,14 +381,50 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-
     /*
-     * Init runtime and create an INTNET instance.
+     * Init the runtime and parse arguments.
      */
     RTR3Init();
-    RTPrintf("tstIntNetR0: TESTING...\n");
+
+    static RTOPTIONDEF const s_aOptions[] =
+    {
+        { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
+        { "--send-buffer",  's', RTGETOPT_REQ_UINT32 },
+    };
+
+    uint32_t cbRecv = 32 * _1K;
+    uint32_t cbSend = 1536*2;
+
+    int ch;
+    int iArg = 1;
+    RTOPTIONUNION Value;
+    while ((ch = RTGetOpt(argc,argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+        switch (ch)
+        {
+            case 'r':
+                cbRecv = Value.u32;
+                break;
+
+            case 's':
+                cbSend = Value.u32;
+                break;
+
+            default:
+                RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
+                return 1;
+        }
+    if (iArg < argc)
+    {
+        RTPrintf("tstIntNetR0: invalid argument: %s\n", argv[iArg]);
+        return 1;
+    }
+
+    /*
+     * Create an INTNET instance.
+     */
+    RTPrintf("tstIntNetR0: TESTING cbSend=%d cbRecv=%d ...\n", cbSend, cbRecv);
     PINTNET pIntNet;
     int rc = INTNETR0Create(&pIntNet);
     if (VBOX_FAILURE(rc))
