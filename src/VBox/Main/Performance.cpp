@@ -60,27 +60,6 @@ BaseMetric *MetricFactory::createMachineRamUsage(ComPtr<IUnknown> object, RTPROC
     return new MachineRamUsage(mHAL, object, process, used);
 }
 
-// Linux factory
-
-MetricFactoryLinux::MetricFactoryLinux()
-{
-    mHAL = new CollectorLinux();
-    Assert(mHAL);
-}
-
-BaseMetric *MetricFactoryLinux::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-{
-    Assert(mHAL);
-    return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
-}
-
-BaseMetric *MetricFactoryLinux::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
-{
-    Assert(mHAL);
-    return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
-}
-
-
 // Stubs for non-pure virtual methods
 
 int CollectorHAL::getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
@@ -99,108 +78,6 @@ int CollectorHAL::getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, 
 }
 
 int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
-{
-    return E_NOTIMPL;
-}
-
-// Collector HAL for Linux
-#include <stdio.h>
-
-int CollectorLinux::getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
-{
-#ifdef RT_OS_LINUX
-    int rc = VINF_SUCCESS;
-    unsigned long nice;
-    FILE *f = fopen("/proc/stat", "r");
-
-    if (f)
-    {
-        if (fscanf(f, "cpu %lu %lu %lu %lu", user, &nice, kernel, idle) == 4)
-            *user += nice;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
-    }
-    else
-        rc = VERR_ACCESS_DENIED;
-
-    return rc;
-#else
-    return E_NOTIMPL;
-#endif
-}
-
-int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
-{
-#ifdef RT_OS_LINUX
-    int rc = VINF_SUCCESS;
-    char *pszName;
-    pid_t pid2;
-    char c;
-    int iTmp;
-    unsigned uTmp;
-    unsigned long ulTmp;
-    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
-
-    RTStrAPrintf(&pszName, "/proc/%d/stat", process);
-    //printf("Opening %s...\n", pszName);
-    FILE *f = fopen(pszName, "r");
-    RTMemFree(pszName);
-
-    if (f)
-    {
-        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
-                   &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
-                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, user, kernel) == 15)
-        {
-            Assert((pid_t)process == pid2);
-        }
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
-    }
-    else
-        rc = VERR_ACCESS_DENIED;
-
-    return rc;
-#else
-    return E_NOTIMPL;
-#endif
-}
-
-int CollectorLinux::getHostCpuMHz(unsigned long *mhz)
-{
-    return E_NOTIMPL;
-}
-
-int CollectorLinux::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
-{
-#ifdef RT_OS_LINUX
-    int rc = VINF_SUCCESS;
-    unsigned long buffers, cached;
-    FILE *f = fopen("/proc/meminfo", "r");
-
-    if (f)
-    {
-        int processed = fscanf(f, "MemTotal: %lu kB", total);
-        processed    += fscanf(f, "MemFree: %lu kB", available);
-        processed    += fscanf(f, "Buffers: %lu kB", &buffers);
-        processed    += fscanf(f, "Cached: %lu kB", &cached);
-        if (processed == 4)
-            *available += buffers + cached;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
-    }
-    else
-        rc = VERR_ACCESS_DENIED;
-
-    return rc;
-#else
-    return E_NOTIMPL;
-#endif
-}
-int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
 {
     return E_NOTIMPL;
 }
@@ -229,10 +106,13 @@ void HostCpuLoad::init(unsigned long period, unsigned long length)
 void HostCpuLoad::collect()
 {
     unsigned long user, kernel, idle;
-    mHAL->getHostCpuLoad(&user, &kernel, &idle);
-    mUser->put(user);
-    mKernel->put(kernel);
-    mIdle->put(idle);
+    int rc = mHAL->getHostCpuLoad(&user, &kernel, &idle);
+    if (RT_SUCCESS(rc))
+    {
+        mUser->put(user);
+        mKernel->put(kernel);
+        mIdle->put(idle);
+    }
 }
 
 void HostCpuLoadRaw::collect()
@@ -241,7 +121,6 @@ void HostCpuLoadRaw::collect()
     unsigned long userDiff, kernelDiff, idleDiff, totalDiff;
 
     int rc = mHAL->getRawHostCpuLoad(&user, &kernel, &idle);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         userDiff   = user   - mUserPrev;
@@ -270,7 +149,6 @@ void HostCpuMhz::collect()
 {
     unsigned long mhz;
     int rc = mHAL->getHostCpuMHz(&mhz);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
         mMHz->put(mhz);
 }
@@ -288,7 +166,6 @@ void HostRamUsage::collect()
 {
     unsigned long total, used, available;
     int rc = mHAL->getHostMemoryUsage(&total, &used, &available);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         mTotal->put(total);
@@ -311,7 +188,6 @@ void MachineCpuLoad::collect()
 {
     unsigned long user, kernel;
     int rc = mHAL->getProcessCpuLoad(mProcess, &user, &kernel);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         mUser->put(user);
@@ -325,7 +201,6 @@ void MachineCpuLoadRaw::collect()
     unsigned long processUser, processKernel;
 
     int rc = mHAL->getRawHostCpuLoad(&hostUser, &hostKernel, &hostIdle);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         hostTotal = hostUser + hostKernel + hostIdle;
@@ -355,7 +230,6 @@ void MachineRamUsage::collect()
 {
     unsigned long used;
     int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
         mUsed->put(used);
 }
@@ -441,7 +315,7 @@ unsigned long AggregateAvg::compute(unsigned long *data, unsigned long length)
     uint64_t tmp = 0;
     for (unsigned long i = 0; i < length; ++i)
         tmp += data[i];
-    return tmp / length;
+    return (unsigned long)(tmp / length);
 }
 
 const char * AggregateAvg::getName()

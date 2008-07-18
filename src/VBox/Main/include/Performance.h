@@ -24,11 +24,13 @@
 
 #include <iprt/types.h>
 #include <VBox/com/defs.h>
+#include <VBox/com/ptr.h>
 #include <list>
 #include <string>
 
 namespace pm {
-    const uint64_t PM_CPU_LOAD_MULTIPLIER = UINT64_C(100000000);
+    /* CPU load is measured in 1/1000 of per cent. */
+    const uint64_t PM_CPU_LOAD_MULTIPLIER = UINT64_C(100000);
 
     /* Sub Metrics **********************************************************/
     class CircularBuffer
@@ -67,17 +69,6 @@ namespace pm {
         virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available) = 0;
         virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
         virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used) = 0;
-
-        virtual int getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-        virtual int getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
-    };
-
-    class CollectorLinux : public CollectorHAL
-    {
-    public:
-        virtual int getHostCpuMHz(unsigned long *mhz);
-        virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-        virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
 
         virtual int getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
         virtual int getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
@@ -308,13 +299,41 @@ namespace pm {
         CollectorHAL *mHAL;
     };
 
-    // @todo Move implementation to linux/PerformanceLinux.cpp
+    class MetricFactorySolaris : public MetricFactory
+    {
+    public:
+        MetricFactorySolaris();
+        virtual BaseMetric   *createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
+        virtual BaseMetric   *createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
+    };
+
     class MetricFactoryLinux : public MetricFactory
     {
     public:
         MetricFactoryLinux();
         virtual BaseMetric   *createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
         virtual BaseMetric   *createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
+    };
+
+    class MetricFactoryWin : public MetricFactory
+    {
+    public:
+        MetricFactoryWin();
+        // Nothing else to do here (yet)
+    };
+
+    class MetricFactoryOS2 : public MetricFactory
+    {
+    public:
+        MetricFactoryOS2();
+        // Nothing else to do here (yet)
+    };
+
+    class MetricFactoryDarwin : public MetricFactory
+    {
+    public:
+        MetricFactoryDarwin();
+        // Nothing else to do here (yet)
     };
 
     class Filter

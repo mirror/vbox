@@ -2710,8 +2710,8 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
     pm::BaseMetric *ramUsage =
-        metricFactory->createHostCpuLoad (objptr, ramUsageTotal, ramUsageUsed,
-                                          ramUsageFree);
+        metricFactory->createHostRamUsage (objptr, ramUsageTotal, ramUsageUsed,
+                                           ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));

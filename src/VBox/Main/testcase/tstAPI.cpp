@@ -1055,7 +1055,7 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         printf("%ls", metricName.raw());
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
-            printf(", %d %s", retData[retIndices[i] + j], metricUnit.raw());
+            printf(", %d %ls", retData[retIndices[i] + j] / (strcmp((const char *)metricUnit.raw(), "%")?1:1000), metricUnit.raw());
         }
         printf("\n");
     }
