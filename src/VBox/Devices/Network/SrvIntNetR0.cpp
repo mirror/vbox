@@ -770,7 +770,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
      * and the host as well.
      */
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    !pIfSender
+    if (    pIfSender
         &&  pTrunkIf)
         intnetR0TrunkIfSend(pTrunkIf, pNetwork, INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked);
     return false; /* broadcast frames are never dropped */
@@ -838,7 +838,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
      * frame will hit the wire.
      */
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    !pIfSender
+    if (    pIfSender
         &&  pTrunkIf
         &&  pTrunkIf->pIfPort)
     {
@@ -1667,6 +1667,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
         /*
          * Create the default buffer.
          */
+        /** @todo adjust with minimums and apply defaults here. */
         cbRecv = RT_ALIGN(RT_MAX(cbRecv, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
         cbSend = RT_ALIGN(RT_MAX(cbSend, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
         const unsigned cbBuf = RT_ALIGN(sizeof(*pIf->pIntBuf), sizeof(INTNETHDR)) + cbRecv + cbSend;
