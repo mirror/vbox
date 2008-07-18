@@ -536,7 +536,8 @@ Drivers_SOURCES    = \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvVD.cpp \
 	Storage/VBoxHDD.cpp \
-	Network/DrvNetSniffer.cpp
+	Network/DrvNetSniffer.cpp \
+	Network/Pcap.cpp
 ifndef VBOX_USE_NAT
 Drivers_SOURCES += \
 	Network/DrvNAT.cpp \
@@ -630,6 +631,7 @@ Drivers_SOURCES       = \
 	PC/DrvACPI.cpp \
 	Network/DrvIntNet.cpp \
 	Network/DrvNetSniffer.cpp \
+	Network/Pcap.cpp \
 	Audio/audio.c \
 	Audio/mixeng.c \
 	Audio/noaudio.c \
