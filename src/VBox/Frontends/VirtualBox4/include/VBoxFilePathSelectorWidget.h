@@ -56,6 +56,9 @@ public:
     void setMode (SelectorMode aMode);
     SelectorMode mode() const;
 
+    void setResetEnabled (bool aEnabled);
+    bool isResetEnabled () const;
+
     void setLineEditWhatsThis (const QString &aText);
     void setSelectorWhatsThis (const QString &aText);
     void setResetWhatsThis (const QString &aText);
