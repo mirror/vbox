@@ -592,8 +592,9 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
 #pragma pack(1)
 typedef struct INTNETETHERHDR
 {
-    PDMMAC  MacDst;
-    PDMMAC  MacSrc;
+    PDMMAC      MacDst;
+    PDMMAC      MacSrc;
+    uint16_t    EtherType;
 } INTNETETHERHDR;
 #pragma pack()
 typedef INTNETETHERHDR *PINTNETETHERHDR;
@@ -609,7 +610,7 @@ typedef INTNETETHERHDR const *PCINTNETETHERHDR;
  */
 static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
 {
-    LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
+//    LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
     int rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG);
     if (RT_SUCCESS(rc))
     {
@@ -619,6 +620,8 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
         RTSemEventSignal(pIf->Event);
         return;
     }
+
+    Log(("intnetR0IfSend: overflow cb=%d hIf=%#x\n", pSG->cbTotal, pIf->hIf));
 
 #if 0 /* This is bad stuff now as we're blocking while locking down the network.
          we really shouldn't delay the network traffic on the host just because
@@ -736,6 +739,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, u
     }
 
     /** @todo failure statistics? */
+    Log2(("intnetR0TrunkIfSend: %Rrc fDst=%d\n", rc, fDst));
 }
 
 
@@ -760,7 +764,6 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
      *
      * Write the packet to all the interfaces and signal them.
      */
-    Log2(("Broadcast\n"));
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
             intnetR0IfSend(pIf, pIfSender, pSG);
@@ -815,11 +818,9 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
     /*
      * Only send to the interfaces with matching a MAC address.
      */
-    Log2(("Dst=%.6Rhxs\n", &pEthHdr->MacDst));
     bool fExactIntNetRecipient = false;
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
     {
-        Log2(("Dst=%.6Rhxs ?==? %.6Rhxs\n", &pEthHdr->MacDst, &pIf->Mac));
         bool fIt = false;
         if (    (   !pIf->fMacSet
                  || (fIt = !memcmp(&pIf->Mac, &pEthHdr->MacDst, sizeof(pIf->Mac))) )
@@ -827,6 +828,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
                  && !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC))
                  && pIf != pIfSender /* promiscuous mode: omit the sender */))
         {
+            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->MacDst, &pIf->Mac));
             fExactIntNetRecipient |= fIt;
             intnetR0IfSend(pIf, pIfSender, pSG);
         }
@@ -837,13 +839,12 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
      * If we didn't find the recipient on the internal network the
      * frame will hit the wire.
      */
+    uint32_t fDst = 0;
     PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
     if (    pIfSender
         &&  pTrunkIf
         &&  pTrunkIf->pIfPort)
     {
-        uint32_t fDst = 0;
-
         /* promiscuous checks first as they are cheaper than pfnIsHostMac. */
         if (    pTrunkIf->fPromiscuousWire
             &&  !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE)) )
@@ -864,6 +865,13 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
         if (fDst)
             intnetR0TrunkIfSend(pTrunkIf, pNetwork, fDst, pSG, fTrunkLocked);
     }
+
+    /* log it */
+    if (    !fExactIntNetRecipient
+        &&  !fDst
+        &&  (   (pEthHdr->MacDst.au8[0] == 0x08 && pEthHdr->MacDst.au8[1] == 0x00 && pEthHdr->MacDst.au8[2] == 0x27)
+             || (pEthHdr->MacSrc.au8[0] == 0x08 && pEthHdr->MacSrc.au8[1] == 0x00 && pEthHdr->MacSrc.au8[2] == 0x27)))
+        Log2(("Dst=%.6Rhxs ??\n", &pEthHdr->MacDst));
 
     return fExactIntNetRecipient;
 }
@@ -929,6 +937,14 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
         }
         AssertReturn(!cbLeft, false);
     }
+    if (    (EthHdr.MacDst.au8[0] == 0x08 && EthHdr.MacDst.au8[1] == 0x00 && EthHdr.MacDst.au8[2] == 0x27)
+        ||  (EthHdr.MacSrc.au8[0] == 0x08 && EthHdr.MacSrc.au8[1] == 0x00 && EthHdr.MacSrc.au8[2] == 0x27)
+        ||  (EthHdr.MacDst.au8[0] == 0x00 && EthHdr.MacDst.au8[1] == 0x16 && EthHdr.MacDst.au8[2] == 0xcb)
+        ||  (EthHdr.MacSrc.au8[0] == 0x00 && EthHdr.MacSrc.au8[1] == 0x16 && EthHdr.MacSrc.au8[2] == 0xcb)
+        ||  EthHdr.MacDst.au8[0] == 0xff
+        ||  EthHdr.MacSrc.au8[0] == 0xff)
+        Log2(("D=%.6Rhxs  S=%.6Rhxs  T=%04x f=%x z=%x\n",
+              &EthHdr.MacDst, &EthHdr.MacSrc, RT_BE2H_U16(EthHdr.EtherType), fSrc, pSG->cbTotal));
 
     /*
      * Inspect the header updating the mac address of the sender in the process.
@@ -973,7 +989,7 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
  */
 INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void *pvFrame, unsigned cbFrame)
 {
-    LogFlow(("INTNETR0IfSend: pIntNet=%p hIf=%RX32 pvFrame=%p cbFrame=%u\n", pIntNet, hIf, pvFrame, cbFrame));
+//    LogFlow(("INTNETR0IfSend: pIntNet=%p hIf=%RX32 pvFrame=%p cbFrame=%u\n", pIntNet, hIf, pvFrame, cbFrame));
 
     /*
      * Validate input and translate the handle.
@@ -1385,7 +1401,7 @@ static int intnetR0IfSetActive(PINTNETIF pIf, bool fActive)
  */
 INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t cMillies)
 {
-    LogFlow(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
+//    LogFlow(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
 
     /*
      * Get and validate essential handles.
@@ -1428,7 +1444,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t c
     }
     else
         rc = VERR_SEM_DESTROYED;
-    LogFlow(("INTNETR0IfWait: returns %Rrc\n", rc));
+//    LogFlow(("INTNETR0IfWait: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1502,9 +1518,9 @@ INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PINTNETIFCLOSEREQ pReq)
  */
 static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *pvUser2)
 {
-    LogFlow(("intnetR0IfDestruct: pvObj=%p pvUser1=%p pvUser2=%p\n", pvObj, pvUser1, pvUser2));
     PINTNETIF pIf = (PINTNETIF)pvUser1;
     PINTNET   pIntNet = (PINTNET)pvUser2;
+    Log(("intnetR0IfDestruct: pvObj=%p pIf=%p pIntNet=%p hIf=%#x\n", pvObj, pIf, pIntNet, pIf->hIf));
 
     RTSemFastMutexRequest(pIntNet->FastMutex);
 
@@ -1716,7 +1732,8 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                         AssertRC(rc);
 
                         *phIf = pIf->hIf;
-                        LogFlow(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%p\n", *phIf));
+                        Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%p cbSend=%u cbRecv=%u cbBuf=%u\n",
+                             *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
                         return VINF_SUCCESS;
                     }
                     rc = VERR_NO_MEMORY;
@@ -2107,9 +2124,9 @@ static int intnetR0NetworkClose(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession
  */
 static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, void *pvUser2)
 {
-    LogFlow(("intnetR0NetworkDestruct: pvObj=%p pvUser1=%p pvUser2=%p\n", pvObj, pvUser1, pvUser2));
     PINTNETNETWORK  pNetwork = (PINTNETNETWORK)pvUser1;
     PINTNET         pIntNet = (PINTNET)pvUser2;
+    Log(("intnetR0NetworkDestruct: pvObj=%p pNetwork=%p pIntNet=%p %s\n", pvObj, pNetwork, pIntNet, pNetwork->szName));
     Assert(pNetwork->pIntNet == pIntNet);
 
     /* take the create/destroy sem. */
