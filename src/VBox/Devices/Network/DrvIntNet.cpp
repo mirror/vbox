@@ -37,6 +37,9 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#ifdef RT_OS_DARWIN
+# include <iprt/ctype.h>
+#endif
 
 #include "Builtins.h"
 
@@ -236,7 +239,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         INTNETIFSENDREQ SendReq;
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         SendReq.Hdr.cbReq = sizeof(SendReq);
-        SendReq.pSession = NULL;
+        SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
         pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
@@ -248,7 +251,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         INTNETIFSENDREQ SendReq;
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         SendReq.Hdr.cbReq = sizeof(SendReq);
-        SendReq.pSession = NULL;
+        SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
         rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
     }
@@ -275,7 +278,7 @@ static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
     INTNETIFSETPROMISCUOUSMODEREQ Req;
     Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq       = sizeof(Req);
-    Req.pSession        = NULL;
+    Req.pSession        = NIL_RTR0PTR;
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
     int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
@@ -430,7 +433,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
         INTNETIFWAITREQ WaitReq;
         WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         WaitReq.Hdr.cbReq    = sizeof(WaitReq);
-        WaitReq.pSession     = NULL;
+        WaitReq.pSession     = NIL_RTR0PTR;
         WaitReq.hIf          = pThis->hIf;
         WaitReq.cMillies     = 30000; /* 30s - don't wait forever, timeout now and then. */
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
@@ -618,7 +621,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
         INTNETIFCLOSEREQ CloseReq;
         CloseReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         CloseReq.Hdr.cbReq = sizeof(CloseReq);
-        CloseReq.pSession = NULL;
+        CloseReq.pSession = NIL_RTR0PTR;
         CloseReq.hIf = pThis->hIf;
         pThis->hIf = INTNET_HANDLE_INVALID;
         int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
@@ -708,7 +711,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     memset(&OpenReq, 0, sizeof(OpenReq));
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    OpenReq.pSession = NULL;
+    OpenReq.pSession = NIL_RTR0PTR;
 
     /** @cfgm{Network, string}
      * The name of the internal network to connect to.
@@ -754,30 +757,30 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
     OpenReq.fFlags = fRestrictAccess ? 0 : INTNET_OPEN_FLAGS_PUBLIC;
 
-    /** @cfgm{ReceiveBufferSize, uint32_t, 256 KB}
+    /** @cfgm{ReceiveBufferSize, uint32_t, 234 KB}
      * The size of the receive buffer.
      */
     rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbRecv = _256K;
+        OpenReq.cbRecv = 234 * _1K ;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
-    /** @cfgm{SendBufferSize, uint32_t, 4 KB}
+    /** @cfgm{SendBufferSize, uint32_t, 17 KB}
      * The size of the send (transmit) buffer.
      */
     rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbSend = _4K;
+        OpenReq.cbSend = 17*_1K;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
-    if (OpenReq.cbSend < 16)
+    if (OpenReq.cbSend < 32)
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: The \"SendBufferSize\" value is too small"));
-    if (OpenReq.cbSend < 1536*2 + 4)
-        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 4));
+    if (OpenReq.cbSend < 1536*2 + 64)
+        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 64));
 
     /** @cfgm{IsService, boolean, true}
      * This alterns the way the thread is suspended and resumed. When it's being used by
@@ -793,6 +796,19 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     LogRel(("IntNet#%u: szNetwork={%s} enmTrunkType=%d szTrunk={%s} fFlags=%#x cbRecv=%u cbSend=%u\n",
             pDrvIns->iInstance, OpenReq.szNetwork, OpenReq.enmTrunkType, OpenReq.szTrunk, OpenReq.fFlags,
             OpenReq.cbRecv, OpenReq.cbSend));
+
+#ifdef RT_OS_DARWIN
+    /* Temporary hack: attach to a network with the name 'if=en0' and you're hitting the wire. */
+    if (    !OpenReq.szTrunk[0]
+        &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
+        &&  !strncmp(pThis->szNetwork, "if=en", sizeof("if=en") - 1)
+        &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("if=en") - 1])
+        &&  !pThis->szNetwork[sizeof("if=en")])
+    {
+        OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
+        strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("if=") - 1]);
+    }
+#endif
 
     /*
      * Create the event semaphores
@@ -819,7 +835,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
     GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
-    GetRing3BufferReq.pSession = NULL;
+    GetRing3BufferReq.pSession = NIL_RTR0PTR;
     GetRing3BufferReq.hIf = pThis->hIf;
     GetRing3BufferReq.pRing3Buf = NULL;
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
