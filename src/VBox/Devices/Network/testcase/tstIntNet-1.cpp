@@ -582,6 +582,7 @@ int main(int argc, char **argv)
     {
         { "--duration",     'd', RTGETOPT_REQ_UINT32 },
         { "--file",         'f', RTGETOPT_REQ_STRING },
+        { "--network",      'n', RTGETOPT_REQ_STRING },
         { "--promiscuous",  'p', RTGETOPT_REQ_NOTHING },
         { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
         { "--send-buffer",  's', RTGETOPT_REQ_UINT32 },
