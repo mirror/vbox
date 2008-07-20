@@ -46,6 +46,10 @@
 #define RTHEAPSIMPLE_MAGIC          0x19590105
 /** The magic value for RTLDRMODINTERNAL::u32Magic. (Alan Moore) */
 #define RTLDRMOD_MAGIC              0x19531118
+/** Magic number for RTMEMCACHEINT::u32Magic. (Joseph Weizenbaum) */
+#define RTMEMCACHE_MAGIC            0x19230108
+/** Dead magic number for RTMEMCACHEINT::u32Magic. */
+#define RTMEMCACHE_MAGIC_DEAD       0x20080305
 /** Magic number for heap blocks. (Edgar Allan Poe) */
 #define RTMEMHDR_MAGIC              0x18090119
 /** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
@@ -74,8 +78,6 @@
 #define RTTHREADINT_MAGIC_DEAD      0x19360614
 /** Magic number for timer handles. (Jared Mason Diamond) */
 #define RTTIMER_MAGIC               0x19370910
-/** Magic number for cache object headers. (Joseph Weizenbaum) */
-#define RTOBJCACHE_MAGIC            0x19230108
 
 /** @} */
 
