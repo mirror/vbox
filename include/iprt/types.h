@@ -908,12 +908,12 @@ typedef uint32_t        RTRCPTR;
 typedef RTRCPTR        *PRTRCPTR;
 /** Pointer to a const raw mode context pointer. */
 typedef const RTRCPTR  *PCRTRCPTR;
-/** @def NIL_RTGCPTR 
+/** @def NIL_RTGCPTR
  * NIL RC pointer.
  */
 #define NIL_RTRCPTR    ((RTRCPTR)0)
 
-/** @def RTRCPTR_MAX 
+/** @def RTRCPTR_MAX
  * The maximum value a RTRCPTR can have. Mostly used as INVALID value.
  */
 #define RTRCPTR_MAX    ((RTRCPTR)~0)
@@ -1129,6 +1129,14 @@ typedef uint64_t                                    RTCPUSET;
 typedef RTCPUSET                                   *PRTCPUSET;
 /** Pointer to a const CPU set. */
 typedef RTCPUSET const                             *PCRTCPUSET;
+
+/** A handle table handle. */
+typedef struct RTHANDLETABLEINT                    *RTHANDLETABLE;
+/** A pointer to a handle table handle. */
+typedef RTHANDLETABLE                              *PRTHANDLETABLE;
+/** @def NIL_RTHANDLETABLE
+ * NIL handle table handle. */
+#define NIL_RTHANDLETABLE                           ((RTHANDLETABLE)0)
 
 
 /**
