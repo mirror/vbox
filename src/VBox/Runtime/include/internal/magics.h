@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Internal Header Defining The Magic Numbers.
+ * IPRT - Internal header defining The Magic Numbers.
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,6 +40,8 @@
 #define RTDIR_MAGIC                 0x19291112
 /** The value of RTDIR::u32Magic after RTDirClose().  */
 #define RTDIR_MAGIC_DEAD            0x19950829
+/** Magic number for RTHANDLETABLEINT::u32Magic. (Hitomi Kanehara) */
+#define RTHANDLETABLE_MAGIC         0x19830808
 /** Magic number for RTHEAPSIMPLEINTERNAL::u32Magic. (Kyoichi Katayama) */
 #define RTHEAPSIMPLE_MAGIC          0x19590105
 /** The magic value for RTLDRMODINTERNAL::u32Magic. (Alan Moore) */
