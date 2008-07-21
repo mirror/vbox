@@ -75,15 +75,15 @@ void VBoxGLSettingsGeneral::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
 
-    mPsVdi->setLineEditWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
+    mPsVdi->setPathWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
     mPsVdi->setSelectorWhatsThis (tr ("Opens a dialog to select the default VDI folder."));
     mPsVdi->setResetWhatsThis (tr ("Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
 
-    mPsMach->setLineEditWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
+    mPsMach->setPathWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
     mPsMach->setSelectorWhatsThis (tr ("Opens a dialog to select the default virtual machine folder."));
     mPsMach->setResetWhatsThis (tr ("Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
 
-    mPsVRDP->setLineEditWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
+    mPsVRDP->setPathWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
     mPsVRDP->setSelectorWhatsThis (tr ("Opens a dialog to select the VRDP authentication library file."));
     mPsVRDP->setResetWhatsThis (tr ("Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again."));
 }
