@@ -230,14 +230,14 @@ __END_DECLS
 #if defined(__GNUC__) && defined(__cplusplus)
 # if __GNUC__ >= 4
 #  define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(!(__builtin_offsetof(type, member) == (off)))
+    AssertCompile(__builtin_offsetof(type, member) == (off))
 # else
 #  define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(!(RT_OFFSETOF(type, member) == (off)))
+    AssertCompile(RT_OFFSETOF(type, member) == (off))
 # endif
 #else
 # define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(!(RT_OFFSETOF(type, member) & (off)))
+    AssertCompile(RT_OFFSETOF(type, member) == (off))
 #endif
 
 
