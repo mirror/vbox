@@ -200,22 +200,24 @@ QWidget *VBoxSettingsTreeViewSelector::widget() const
     return mTwSelector;
 }
 
-QWidget *VBoxSettingsTreeViewSelector::addItem (const QIcon &aIcon, 
+QWidget *VBoxSettingsTreeViewSelector::addItem (const QString &aBigIcon, 
+                                                const QString &aSmallIcon, 
                                                 int aId, 
                                                 const QString &aLink,
                                                 VBoxSettingsPage* aPage /* = NULL */,
                                                 int aParentId /* = -1 */)
 {
+    NOREF (aBigIcon);
     QWidget *result = NULL;
     if (aPage != NULL)
     {
-        SelectorItem *item = new SelectorItem (aIcon, "", aId, aLink, aPage, aParentId);
+        SelectorItem *item = new SelectorItem (QIcon (aSmallIcon), "", aId, aLink, aPage, aParentId);
         mItemList.append (item);
 
         QTreeWidgetItem *twitem = new QTreeWidgetItem (mTwSelector, QStringList() << QString ("")
                                                                                   << idToString (aId)
                                                                                   << aLink);
-        twitem->setIcon (treeWidget_Category, aIcon);
+        twitem->setIcon (treeWidget_Category, item->icon());
         aPage->setContentsMargins (9, 2, 9, 2);
         VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
         result = aPage;
@@ -376,14 +378,15 @@ QWidget *VBoxSettingsToolBarSelector::widget() const
     return mTbSelector;
 }
 
-QWidget *VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon, 
+QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon, 
+                                               const QString &aSmallIcon, 
                                                int aId, 
                                                const QString &aLink,
                                                VBoxSettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
 {
     QWidget *result = NULL;
-    SelectorActionItem *item = new SelectorActionItem (aIcon, "", aId, aLink, aPage, aParentId, this);
+    SelectorActionItem *item = new SelectorActionItem (QIcon (aBigIcon), "", aId, aLink, aPage, aParentId, this);
     mItemList.append (item);
 
     if (aParentId == -1 &&
@@ -415,7 +418,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QIcon &aIcon,
             aPage->setContentsMargins (9, 5, 9, 9);
             VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
             if (tabWidget)
-                tabWidget->addTab (aPage, aIcon, "");
+                tabWidget->addTab (aPage, QIcon (aSmallIcon), "");
         }
     }
     return result;
