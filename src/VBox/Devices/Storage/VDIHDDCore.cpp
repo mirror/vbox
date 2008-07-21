@@ -128,7 +128,7 @@ static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
     pHeader->u.v1.u32Type = (uint32_t)(  enmType == VD_IMAGE_TYPE_NORMAL
                                        ? VDI_IMAGE_TYPE_NORMAL
                                        : VDI_IMAGE_TYPE_DIFF);
-    pHeader->u.v1.fFlags = uImageFlags;
+    pHeader->u.v1.fFlags = (uImageFlags & VD_VDI_IMAGE_FLAGS_ZERO_EXPAND) ? 1 : 0;
 #ifdef VBOX_STRICT
     char achZero[VDI_IMAGE_COMMENT_SIZE] = {0};
     Assert(!memcmp(pHeader->u.v1.szComment, achZero, VDI_IMAGE_COMMENT_SIZE));
@@ -1318,7 +1318,7 @@ static unsigned vdiGetImageFlags(void *pBackendData)
     Assert(VALID_PTR(pImage));
 
     if (pImage)
-        uImageFlags = getImageFlags(&pImage->Header);
+        uImageFlags = pImage->uImageFlags;
     else
         uImageFlags = 0;
 
