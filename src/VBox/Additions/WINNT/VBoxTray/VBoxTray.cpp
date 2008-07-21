@@ -232,7 +232,7 @@ void WINAPI VBoxServiceStart(void)
                              NULL);
     if (gVBoxDriver == INVALID_HANDLE_VALUE)
     {
-        Log(("VBoxTray: Could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
+        LogRel(("VBoxTray: Could not open VirtualBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
         status = ERROR_GEN_FAILURE;
     }
 
@@ -507,12 +507,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (RT_FAILURE(rc))
         return rc;
 
-    Log(("VBoxTray: Started.\n"));
+    LogRel(("VBoxTray: Started.\n"));
 
     gInstance = hInstance;
     VBoxServiceStart();
 
-    Log(("VBoxTray: Ended.\n"));
+    LogRel(("VBoxTray: Ended.\n"));
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL) {
