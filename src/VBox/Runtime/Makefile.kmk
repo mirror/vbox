@@ -603,6 +603,7 @@ RuntimeGuestR3Mini_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET)
 RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_SOURCES = \
 	common/err/errmsg.cpp \
+	common/err/errmsgxpcom.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
