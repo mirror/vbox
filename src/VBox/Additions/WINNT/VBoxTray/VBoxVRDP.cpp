@@ -97,7 +97,7 @@ static void vboxExperienceSet (uint32_t level)
             /*
              * The parameter has to be disabled.
              */
-            dprintf(("Saving %s\n", parameters[i].name));
+            Log(("VBoxTray: vboxExperienceSet: Saving %s\n", parameters[i].name));
             
             /* Save the current value. */
             switch (parameters[i].type)
@@ -131,7 +131,7 @@ static void vboxExperienceSet (uint32_t level)
                      */
                     if (parameters[i].cbSavedValue > sizeof (parameters[i].achSavedValue))
                     {
-                        dprintf(("not enough space %d > %d\n", parameters[i].cbSavedValue, sizeof (parameters[i].achSavedValue)));
+                        Log(("VBoxTray: vboxExperienceSet: Not enough space %d > %d\n", parameters[i].cbSavedValue, sizeof (parameters[i].achSavedValue)));
                         break;
                     }
                     
@@ -147,7 +147,7 @@ static void vboxExperienceSet (uint32_t level)
                     break;
             }
             
-            dprintf(("Disabling %s\n", parameters[i].name));
+            Log(("VBoxTray: vboxExperienceSet: Disabling %s\n", parameters[i].name));
             
             /* Disable the feature. */
             switch (parameters[i].type)
@@ -202,7 +202,7 @@ static void vboxExperienceRestore (uint32_t level)
     {
         if (parameters[i].level > level)
         {
-            dprintf(("Restoring %s\n", parameters[i].name));
+            Log(("VBoxTray: vboxExperienceRestore: Restoring %s\n", parameters[i].name));
             
             /* Restore the feature. */
             switch (parameters[i].type)
@@ -272,7 +272,7 @@ static VBOXVRDPCONTEXT gCtx = {0};
 
 int VBoxVRDPInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    dprintf(("VBoxVRDPInit\n"));
+    Log(("VBoxTray: VBoxVRDPInit\n"));
 
     gCtx.pEnv      = pEnv;
     gCtx.level     = VRDP_EXPERIENCE_LEVEL_FULL;
@@ -298,7 +298,7 @@ int VBoxVRDPInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThr
 
 void VBoxVRDPDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    dprintf(("VBoxVRDPDestroy\n"));
+    Log(("VBoxTray: VBoxVRDPDestroy\n"));
     VBOXVRDPCONTEXT *pCtx = (VBOXVRDPCONTEXT *)pInstance;
     vboxExperienceRestore (pCtx->level);
     if (gCtx.hModule)
@@ -322,11 +322,11 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl(CtlMask) failed\n"));
         return 0;
     }
 
@@ -338,13 +338,13 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_VRDP;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxVRDPThread: DeviceIOControl succeded\n"));
+            Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxVRDPThread: checking event\n"));
+            Log(("VBoxTray: VBoxVRDPThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_VRDP)
@@ -366,7 +366,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                                      sizeof(VMMDevVRDPChangeRequest),
                                      &cbReturned, NULL))
                 {
-                    dprintf(("VBoxVRDPThread: u8VRDPActive = %d, level %d\n", vrdpChangeRequest.u8VRDPActive, vrdpChangeRequest.u32VRDPExperienceLevel));
+                    Log(("VBoxTray: VBoxVRDPThread: u8VRDPActive = %d, level %d\n", vrdpChangeRequest.u8VRDPActive, vrdpChangeRequest.u32VRDPExperienceLevel));
                     
                     if (vrdpChangeRequest.u8VRDPActive)
                     {
@@ -379,7 +379,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                         {
                             pCtx->fSavedThemeEnabled = pCtx->pfnIsThemeActive ();
                             
-                            dprintf(("VBoxVRDPThread: pCtx->fSavedThemeEnabled = %d\n", pCtx->fSavedThemeEnabled));
+                            Log(("VBoxTray: VBoxVRDPThread: pCtx->fSavedThemeEnabled = %d\n", pCtx->fSavedThemeEnabled));
                             
                             if (pCtx->fSavedThemeEnabled)
                             {
@@ -397,7 +397,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                             {
                                 /* @todo the call returns S_OK but theming remains disabled. */
                                 HRESULT hrc = pCtx->pfnEnableTheming (TRUE);
-                                dprintf(("VBoxVRDPThread: enabling theme rc = 0x%08X\n", hrc));
+                                Log(("VBoxTray: VBoxVRDPThread: enabling theme rc = 0x%08X\n", hrc));
                                 pCtx->fSavedThemeEnabled = FALSE;
                             }
                         }
@@ -409,7 +409,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
                 }
                 else
                 {
-                    dprintf(("VBoxTray: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                    Log(("VBoxTray: VBoxVRDPThread: Error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
 
                     /* sleep a bit to not eat too much CPU in case the above call always fails */
                     if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -422,7 +422,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxTray: error from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxTray: VBoxVRDPThread: Error from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -437,14 +437,14 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_VRDP;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxVRDPThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxVRDPThread: finished VRDP change request thread\n"));
+    Log(("VBoxTray: VBoxVRDPThread: Finished VRDP change request thread\n"));
     return 0;
 }
 

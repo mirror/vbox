@@ -56,16 +56,16 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
     if (NULL == hUser)
     {
-        dprintf(("VBoxTray: Could not get module handle of USER32.DLL!\n"));
+        Log(("VBoxTray: Could not get module handle of USER32.DLL!\n"));
         return VERR_NOT_IMPLEMENTED; 
     }
     else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up! */
     {
         *(uintptr_t *)&gCtx.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA"); 
-        dprintf(("VBoxTray: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+        Log(("VBoxTray: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
 
         *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA"); 
-        dprintf(("VBoxTray: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
+        Log(("VBoxTray: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
     }
     else if (OSinfo.dwMajorVersion <= 4)            /* Windows NT 4.0 */
     {
@@ -73,11 +73,11 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     }
     else                                /* Unsupported platform */
     {
-        dprintf(("VBoxTray: Warning, display for platform not handled yet!\n"));
+        Log(("VBoxTray: Warning, display for platform not handled yet!\n"));
         return VERR_NOT_IMPLEMENTED; 
     }
 
-    dprintf(("VBoxTray: Display init successful.\n"));
+    Log(("VBoxTray: Display init successful.\n"));
 
     *pfStartThread = true;
     *ppInstance = (void *)&gCtx;
@@ -100,14 +100,14 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
         FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
         dispDevice.cb = sizeof(DISPLAY_DEVICE);
 
-        dprintf(("Checking for active VBox display driver (W2K+)...\n"));
+        Log(("Checking for active VBox display driver (W2K+)...\n"));
 
         while (EnumDisplayDevices(NULL,
                                   devNum,
                                   &dispDevice,
                                   0))
         {
-            dprintf(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
+            Log(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
                           devNum,
                           &dispDevice.DeviceName[0],
                           &dispDevice.DeviceString[0],
@@ -117,7 +117,7 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
     
             if (dispDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
             {
-                dprintf(("Primary device.\n"));
+                Log(("Primary device.\n"));
     
                 if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
                     result = true;
@@ -134,7 +134,7 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
     }
     else    /* This must be NT 4 or something really old, so don't use EnumDisplayDevices() here  ... */
     {       
-        dprintf(("Checking for active VBox display driver (NT or older)...\n"));
+        Log(("Checking for active VBox display driver (NT or older)...\n"));
 
         DEVMODE tempDevMode;
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
@@ -164,17 +164,17 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     DWORD i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     { 
-        dprintf(("[%d] %s\n", i, DisplayDevice.DeviceName));
+        Log(("[%d] %s\n", i, DisplayDevice.DeviceName));
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            dprintf(("Found primary device. err %d\n", GetLastError ()));
+            Log(("Found primary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
             
-            dprintf(("Found secondary device. err %d\n", GetLastError ()));
+            Log(("Found secondary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
         
@@ -183,11 +183,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         i++;
     }
     
-    dprintf(("Found total %d devices. err %d\n", NumDevices, GetLastError ()));
+    Log(("Found total %d devices. err %d\n", NumDevices, GetLastError ()));
     
     if (NumDevices == 0 || Id >= NumDevices)
     {
-        dprintf(("Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
+        Log(("Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
         return FALSE;
     }
     
@@ -205,20 +205,20 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     { 
-        dprintf(("[%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
+        Log(("[%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
         
         BOOL bFetchDevice = FALSE;
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            dprintf(("Found primary device. err %d\n", GetLastError ()));
+            Log(("Found primary device. err %d\n", GetLastError ()));
             DevPrimaryNum = DevNum;
             bFetchDevice = TRUE;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
             
-            dprintf(("Found secondary device. err %d\n", GetLastError ()));
+            Log(("Found secondary device. err %d\n", GetLastError ()));
             bFetchDevice = TRUE;
         }
         
@@ -226,7 +226,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         {
             if (DevNum >= NumDevices)
             {
-                dprintf(("%d >= %d\n", NumDevices, DevNum));
+                Log(("%d >= %d\n", NumDevices, DevNum));
                 return FALSE;
             }
         
@@ -237,11 +237,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
                  ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
             {
-                dprintf(("EnumDisplaySettings err %d\n", GetLastError ()));
+                Log(("EnumDisplaySettings err %d\n", GetLastError ()));
                 return FALSE;
             }
             
-            dprintf(("%dx%d at %d,%d\n",
+            Log(("%dx%d at %d,%d\n",
                     paDeviceModes[DevNum].dmPelsWidth,
                     paDeviceModes[DevNum].dmPelsHeight,
                     paDeviceModes[DevNum].dmPosition.x,
@@ -280,20 +280,20 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
-        dprintf(("VBoxDisplayThread : already at desired resolution.\n"));
+        Log(("VBoxDisplayThread : already at desired resolution.\n"));
         return FALSE;
     }
 
     resizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
-#ifdef dprintf
+#ifdef Log
     for (i = 0; i < NumDevices; i++)
     {
-        dprintf(("[%d]: %d,%d %dx%d\n",
+        Log(("[%d]: %d,%d %dx%d\n",
                 i, paRects[i].left, paRects[i].top,
                 paRects[i].right - paRects[i].left,
                 paRects[i].bottom - paRects[i].top));
     }
-#endif /* dprintf */
+#endif /* Log */
     
     /* Without this, Windows will not ask the miniport for its
      * mode table but uses an internal cache instead.
@@ -320,17 +320,17 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
 
-        dprintf(("calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));     
+        Log(("calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));     
 
         gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
                                         &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
 
-        dprintf(("ChangeDisplaySettings position err %d\n", GetLastError ()));
+        Log(("ChangeDisplaySettings position err %d\n", GetLastError ()));
     }
     
     /* A second call to ChangeDisplaySettings updates the monitor. */
     LONG status = ChangeDisplaySettings(NULL, 0); 
-    dprintf(("ChangeDisplaySettings update status %d\n", status));
+    Log(("ChangeDisplaySettings update status %d\n", status));
     if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
     {
         /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
@@ -357,11 +357,11 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxDisplayThread : DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
+        Log(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
         return -1;
     }
 
@@ -373,15 +373,15 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxDisplayThread : DeviceIOControl succeded\n"));
+            Log(("VBoxDisplayThread : DeviceIOControl succeded\n"));
 
             if (NULL == pCtx) {
-                dprintf(("VBoxDisplayThread : Invalid context detected!\n"));
+                Log(("VBoxDisplayThread : Invalid context detected!\n"));
                 break;
             }
 
             if (NULL == pCtx->pEnv) {
-                dprintf(("VBoxDisplayThread : Invalid context environment detected!\n"));
+                Log(("VBoxDisplayThread : Invalid context environment detected!\n"));
                 break;
             }
 
@@ -389,12 +389,12 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxDisplayThread : checking event\n"));
+            Log(("VBoxDisplayThread : checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {
-                dprintf(("VBoxDisplayThread : going to get display change information.\n"));
+                Log(("VBoxDisplayThread : going to get display change information.\n"));
 
                 /* We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
@@ -424,7 +424,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
                     if (fDisplayChangeQueried)
                     {
-                        dprintf(("VBoxDisplayThread : VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
+                        Log(("VBoxDisplayThread : VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
                         /* Horizontal resolution must be a multiple of 8, round down. */
                         displayChangeRequest.xres &= 0xfff8;
@@ -434,11 +434,11 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                          */
                         if (isVBoxDisplayDriverActive (pCtx))
                         {
-                            dprintf(("VBoxDisplayThread : Display driver is active!\n"));
+                            Log(("VBoxDisplayThread : Display driver is active!\n"));
 
                             if (pCtx->pfnChangeDisplaySettingsEx != 0)
                             {
-                                dprintf(("VBoxDisplayThread : Detected W2K or later."));
+                                Log(("VBoxDisplayThread : Detected W2K or later."));
 
                                 /* W2K or later. */
                                 if (!ResizeDisplayDevice(displayChangeRequest.display,
@@ -451,7 +451,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                             }
                             else
                             {
-                                dprintf(("VBoxDisplayThread : Detected NT.\n"));
+                                Log(("VBoxDisplayThread : Detected NT.\n"));
 
                                 /* Single monitor NT. */
                                 DEVMODE devMode;
@@ -461,7 +461,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 /* get the current screen setup */
                                 if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
                                 {
-                                    dprintf(("VBoxDisplayThread : Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
+                                    Log(("VBoxDisplayThread : Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
 
                                     /* Check whether a mode reset or a change is requested. */
                                     if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
@@ -479,7 +479,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     else
                                     {
                                         /* All zero values means a forced mode reset. Do nothing. */
-                                        dprintf(("VBoxDisplayThread : Forced mode reset.\n"));
+                                        Log(("VBoxDisplayThread : Forced mode reset.\n"));
                                     }
 
                                     /* Verify that the mode is indeed changed. */
@@ -487,7 +487,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                         && devMode.dmPelsHeight == displayChangeRequest.yres
                                         && devMode.dmBitsPerPel == displayChangeRequest.bpp)
                                     {
-                                        dprintf(("VBoxDisplayThread : already at desired resolution.\n"));
+                                        Log(("VBoxDisplayThread : already at desired resolution.\n"));
                                         break;
                                     }
 
@@ -505,13 +505,13 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     if (displayChangeRequest.bpp)
                                         devMode.dmBitsPerPel = displayChangeRequest.bpp;
 
-                                    dprintf(("VBoxDisplayThread : setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
+                                    Log(("VBoxDisplayThread : setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
 
                                     /* set the new mode */
                                     LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
                                     if (status != DISP_CHANGE_SUCCESSFUL)
                                     {
-                                        dprintf(("VBoxDisplayThread : error from ChangeDisplaySettings: %d\n", status));
+                                        Log(("VBoxDisplayThread : error from ChangeDisplaySettings: %d\n", status));
 
                                         if (status == DISP_CHANGE_BADMODE)
                                         {
@@ -527,14 +527,14 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 }
                                 else
                                 {
-                                    dprintf(("VBoxDisplayThread : error from EnumDisplaySettings: %d\n", GetLastError ()));
+                                    Log(("VBoxDisplayThread : error from EnumDisplaySettings: %d\n", GetLastError ()));
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            dprintf(("VBoxDisplayThread : vboxDisplayDriver is not active.\n"));
+                            Log(("VBoxDisplayThread : vboxDisplayDriver is not active.\n"));
                         }
 
                         /* Retry the change a bit later. */
@@ -547,7 +547,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     }
                     else
                     {
-                        dprintf(("VBoxDisplayThread : error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                        Log(("VBoxDisplayThread : error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                         /* sleep a bit to not eat too much CPU while retrying */
                         /* are we supposed to stop? */
                         if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
@@ -560,7 +560,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             }
         } else
         {
-            dprintf(("VBoxDisplayThread : error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxDisplayThread : error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -574,13 +574,13 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxDisplayThread : finished display change request thread\n"));
+    Log(("VBoxDisplayThread : finished display change request thread\n"));
     return 0;
 }

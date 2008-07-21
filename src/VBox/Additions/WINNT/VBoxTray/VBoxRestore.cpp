@@ -42,7 +42,7 @@ static VBOXRESTORECONTEXT gCtx = {0};
 
 int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    dprintf(("VBoxRestoreInit\n"));
+    Log(("VBoxRestoreInit\n"));
 
     gCtx.pEnv      = pEnv;
     gCtx.fRDPState = FALSE;
@@ -57,7 +57,7 @@ int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
 void VBoxRestoreDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    dprintf(("VBoxRestoreDestroy\n"));
+    Log(("VBoxRestoreDestroy\n"));
     return;
 }
 
@@ -76,7 +76,7 @@ void VBoxRestoreCheckVRDP()
 
     /* send to display driver */
     ret = ExtEscape(hdc, VBOXESC_ISVRDPACTIVE, 0, NULL, 0, NULL);
-    dprintf(("VBoxRestoreSession -> VRDP activate state = %d\n", ret));
+    Log(("VBoxRestoreSession -> VRDP activate state = %d\n", ret));
     ReleaseDC(HWND_DESKTOP, hdc);
 
     if (ret != gCtx.fRDPState)
@@ -85,7 +85,7 @@ void VBoxRestoreCheckVRDP()
 
         if (!DeviceIoControl (gCtx.pEnv->hDriver, (ret) ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
         {
-            dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+            Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         }
         gCtx.fRDPState = ret;
     }
@@ -107,11 +107,11 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -123,13 +123,13 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_RESTORED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxRestoreThread: DeviceIOControl succeded\n"));
+            Log(("VBoxRestoreThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxRestoreThread: checking event\n"));
+            Log(("VBoxRestoreThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_RESTORED)
@@ -140,7 +140,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -156,14 +156,14 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_RESTORED;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxRestoreThread: finished seamless change request thread\n"));
+    Log(("VBoxRestoreThread: finished seamless change request thread\n"));
     return 0;
 }
 

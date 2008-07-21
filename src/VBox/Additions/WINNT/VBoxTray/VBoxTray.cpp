@@ -30,7 +30,6 @@
 #include "resource.h"
 #include <malloc.h>
 #include <VBoxGuestInternal.h>
-#include <iprt/string.h>
 
 #include "helpers.h"
 #include <sddl.h>
@@ -44,54 +43,9 @@ SERVICE_STATUS_HANDLE gVBoxServiceStatusHandle;
 HINSTANCE             gInstance;
 HWND                  gToolWindow;
 
-
-/* prototypes */
+/* Prototypes */
 VOID DisplayChangeThread(void *dummy);
 LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-
-#ifdef DEBUG
-/**
- * Helper function to send a message to WinDbg
- *
- * @param String message string
- */
-void WriteLog(char *String, ...)
-{
-    DWORD cbReturned;
-    CHAR Buffer[1024];
-    VMMDevReqLogString *pReq = (VMMDevReqLogString *)Buffer;
-
-    va_list va;
-
-    va_start(va, String);
-
-    vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
-    RTStrPrintfV(pReq->szString, sizeof(Buffer)-sizeof(*pReq), String, va);
-    OutputDebugStringA(pReq->szString);
-    pReq->header.size += strlen(pReq->szString);
-
-    printf("%s\n", pReq->szString);
-
-    FILE* pFh = fopen("c:\\VBoxTrayDebug.txt", "at");
-
-    /* Does maybe not work on Vista (write protection when starting without admin rights), 
-       so do this check! */
-    if (NULL != pFh)        
-    {
-        fprintf(pFh, "%s", pReq->szString);
-        fclose(pFh);
-    }
-
-    DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(pReq->header.size), pReq, pReq->header.size,
-                    pReq, pReq->header.size, &cbReturned, NULL);
-
-    va_end (va);
-    return;
-}
-#endif
-
-
 
 /* The service table. */
 static VBOXSERVICEINFO vboxServiceTable[] =
@@ -149,7 +103,7 @@ static VBOXSERVICEINFO vboxServiceTable[] =
 
 static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
-    dprintf(("VBoxTray: Starting services...\n"));
+    Log(("VBoxTray: Starting services...\n"));
 
     pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -161,7 +115,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
     while (pTable->pszName)
     {
-        dprintf(("Starting %s...\n", pTable->pszName));
+        Log(("Starting %s...\n", pTable->pszName));
 
         int rc = VINF_SUCCESS;
 
@@ -178,7 +132,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
         if (VBOX_FAILURE (rc))
         {
-            dprintf(("Failed to initialize rc = %Vrc.\n", rc));
+            Log(("Failed to initialize rc = %Vrc.\n", rc));
         }
         else
         {
@@ -201,7 +155,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
             if (VBOX_FAILURE (rc))
             {
-                dprintf(("Failed to start the thread.\n"));
+                Log(("Failed to start the thread.\n"));
 
                 if (pTable->pfnDestroy)
                 {
@@ -262,7 +216,7 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
 void WINAPI VBoxServiceStart(void)
 {
-    dprintf(("VBoxTray: Start\n"));
+    Log(("VBoxTray: Leaving service main function"));
 
     VBOXSERVICEENV svcEnv;
 
@@ -278,11 +232,11 @@ void WINAPI VBoxServiceStart(void)
                              NULL);
     if (gVBoxDriver == INVALID_HANDLE_VALUE)
     {
-        dprintf(("VBoxTray: could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
+        Log(("VBoxTray: Could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
         status = ERROR_GEN_FAILURE;
     }
 
-    dprintf(("VBoxTray: Driver h %p, st %p\n", gVBoxDriver, status));
+    Log(("VBoxTray: Driver Handle = %p, Status = %p\n", gVBoxDriver, status));
 
     if (status == NO_ERROR)
     {
@@ -297,7 +251,7 @@ void WINAPI VBoxServiceStart(void)
             status = GetLastError();
     }
 
-    dprintf(("VBoxTray: Class st %p\n", status));
+    Log(("VBoxTray: Class st %p\n", status));
 
     if (status == NO_ERROR)
     {
@@ -324,14 +278,14 @@ void WINAPI VBoxServiceStart(void)
         }
     }
 
-    dprintf(("VBoxTray: Window h %p, st %p\n", gToolWindow, status));
+    Log(("VBoxTray: Window Handle = %p, Status = %p\n", gToolWindow, status));
 
     if (status == NO_ERROR)
     {
         gStopSem = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (gStopSem == NULL)
         {
-            dprintf(("VBoxTray: CreateEvent for Stopping failed: rc = %d\n", GetLastError()));
+            Log(("VBoxTray: CreateEvent for Stopping failed: rc = %d\n", GetLastError()));
             return;
         }
 
@@ -348,12 +302,12 @@ void WINAPI VBoxServiceStart(void)
         InitializeSecurityDescriptor(SecAttr.lpSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION);
         ret = SetSecurityDescriptorDacl(SecAttr.lpSecurityDescriptor, TRUE, 0, FALSE);
         if (!ret)
-            dprintf(("SetSecurityDescriptorDacl failed with %d\n", GetLastError()));
+            Log(("VBoxTray: SetSecurityDescriptorDacl failed with %d\n", GetLastError()));
 
         info.dwOSVersionInfoSize = sizeof(info);
         if (GetVersionEx(&info))
         {
-            dprintf(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
+            Log(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
             dwMajorVersion = info.dwMajorVersion;
         }
 
@@ -374,21 +328,21 @@ void WINAPI VBoxServiceStart(void)
 
                 *(uintptr_t *)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA = (uintptr_t)GetProcAddress(hModule, "ConvertStringSecurityDescriptorToSecurityDescriptorA");
 
-                dprintf(("pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
+                Log(("VBoxTray: pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
                 if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
                 {
                     ret = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", /* this means "low integrity" */
                                                                                   SDDL_REVISION_1, &pSD, NULL);
                     if (!ret)
-                        dprintf(("ConvertStringSecurityDescriptorToSecurityDescriptorA failed with %d\n", GetLastError()));
+                        Log(("VBoxTray: ConvertStringSecurityDescriptorToSecurityDescriptorA failed with %d\n", GetLastError()));
 
                     ret = GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted);
                     if (!ret)
-                        dprintf(("GetSecurityDescriptorSacl failed with %d\n", GetLastError()));
+                        Log(("VBoxTray: GetSecurityDescriptorSacl failed with %d\n", GetLastError()));
 
                     ret = SetSecurityDescriptorSacl(SecAttr.lpSecurityDescriptor, TRUE, pSacl, FALSE);
                     if (!ret)
-                        dprintf(("SetSecurityDescriptorSacl failed with %d\n", GetLastError()));
+                        Log(("VBoxTray: SetSecurityDescriptorSacl failed with %d\n", GetLastError()));
                 }
             }
         }
@@ -398,7 +352,7 @@ void WINAPI VBoxServiceStart(void)
             ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
             if (ghSeamlessNotifyEvent == NULL)
             {
-                dprintf(("VBoxTray: CreateEvent for Seamless failed: rc = %d\n", GetLastError()));
+                Log(("VBoxTray: CreateEvent for Seamless failed: rc = %d\n", GetLastError()));
                 return;
             }
         }
@@ -440,7 +394,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     sprintf(ndata.szTip, "Sun xVM VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
-    dprintf(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
+    Log(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
@@ -456,24 +410,24 @@ void WINAPI VBoxServiceStart(void)
     if (0 == ghSeamlessNotifyEvent)         /* If seamless mode is not active / supported, reduce event array count */
         dwEventCount = 1;                       
 
-    dprintf(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
+    Log(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
 
     while(true)
     {
         DWORD waitResult = MsgWaitForMultipleObjectsEx(dwEventCount, hWaitEvent, 500, QS_ALLINPUT, 0);
         waitResult = waitResult - WAIT_OBJECT_0;
 
-        dprintf(("VBoxTray: Wait result  = %ld.\n", waitResult));
+        Log(("VBoxTray: Wait result  = %ld.\n", waitResult));
 
         if (waitResult == 0)
         {
-            dprintf(("VBoxTray: Event 'Exit' triggered.\n"));
+            Log(("VBoxTray: Event 'Exit' triggered.\n"));
             /* exit */
             break;
         }
         else if ((waitResult == 1) && (ghSeamlessNotifyEvent!=0))       /* Only jump in, if seamless is active! */
         {
-            dprintf(("VBoxTray: Event 'Seamless' triggered.\n"));
+            Log(("VBoxTray: Event 'Seamless' triggered.\n"));
 
             /* seamless window notification */
             VBoxSeamlessCheckWindows();
@@ -484,10 +438,10 @@ void WINAPI VBoxServiceStart(void)
             MSG msg;
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
-                dprintf(("VBoxTray: msg %p\n", msg.message));
+                Log(("VBoxTray: msg %p\n", msg.message));
                 if (msg.message == WM_QUIT)
                 {
-                    dprintf(("VBoxTray: WM_QUIT!\n"));
+                    Log(("VBoxTray: WM_QUIT!\n"));
                     SetEvent(gStopSem);
                     continue;
                 }
@@ -498,21 +452,21 @@ void WINAPI VBoxServiceStart(void)
             if (!fTrayIconCreated)
             {
                 fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-                dprintf(("VBoxTray: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
+                Log(("VBoxTray: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
             }
         }
     }
 
-    dprintf(("VBoxTray: returned from main loop, exiting...\n"));
+    Log(("VBoxTray: Returned from main loop, exiting ...\n"));
 
     /* remove the system tray icon */
     Shell_NotifyIcon(NIM_DELETE, &ndata);
 
-    dprintf(("VBoxTray: waiting for display change thread...\n"));
+    Log(("VBoxTray: waiting for display change thread ...\n"));
 
     vboxStopServices (&svcEnv, vboxServiceTable);
 
-    dprintf(("VBoxTray: destroying tool window...\n"));
+    Log(("VBoxTray: Destroying tool window ...\n"));
 
     /* destroy the tool window */
     DestroyWindow(gToolWindow);
@@ -523,7 +477,7 @@ void WINAPI VBoxServiceStart(void)
     CloseHandle(gStopSem);
     CloseHandle(ghSeamlessNotifyEvent);
 
-    dprintf(("VBoxTray: leaving service main function\n"));
+    Log(("VBoxTray: Leaving service main function\n"));
 
     return;
 }
@@ -538,19 +492,27 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, "VBoxTray");
     if (   (hMutexAppRunning != NULL) 
         && (GetLastError() == ERROR_ALREADY_EXISTS))
-   {
+    {
       /* Close the mutex for this application instance. */
       CloseHandle (hMutexAppRunning);
       hMutexAppRunning = NULL;
       return 0;
-   }
+    }
 
-    dprintf(("VBoxTray: Started.\n"));
+    int rc = RTR3Init(false);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = VbglR3Init();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Log(("VBoxTray: Started.\n"));
 
     gInstance = hInstance;
     VBoxServiceStart();
 
-    dprintf(("VBoxTray: Ended.\n"));
+    Log(("VBoxTray: Ended.\n"));
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL) {
@@ -558,6 +520,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         hMutexAppRunning = NULL;
     }
 
+    VbglR3Term();
     return 0;
 }
 

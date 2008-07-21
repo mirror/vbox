@@ -56,7 +56,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     HANDLE gVBoxDriver = pEnv->hDriver;
     DWORD  cbReturned;
 
-    dprintf(("VBoxStatsInit\n"));
+    Log(("VBoxStatsInit\n"));
 
     gCtx.pEnv                   = pEnv;
     gCtx.uStatInterval          = 0;     /* default */
@@ -70,11 +70,11 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
 
     if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
-        dprintf(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
+        Log(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
         gCtx.uStatInterval = req.u32StatInterval * 1000;
     }
     else
-        dprintf(("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError()));
+        Log(("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError()));
 
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
@@ -82,10 +82,10 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnNtQuerySystemInformation = (uintptr_t)GetProcAddress(hMod, "NtQuerySystemInformation");
         if (gCtx.pfnNtQuerySystemInformation)
-            dprintf(("gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation));
+            Log(("gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation));
         else
         {
-            dprintf(("NTDLL.NtQuerySystemInformation not found!!\n"));
+            Log(("NTDLL.NtQuerySystemInformation not found!!\n"));
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -96,11 +96,11 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatusEx");
         if (gCtx.pfnGlobalMemoryStatusEx)
-            dprintf(("gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx));
+            Log(("gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx));
         else
         {
             /** @todo now fails in NT4; do we care? */
-            dprintf(("KERNEL32.GlobalMemoryStatusEx not found!!\n"));
+            Log(("KERNEL32.GlobalMemoryStatusEx not found!!\n"));
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -110,7 +110,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnGetPerformanceInfo = (uintptr_t)GetProcAddress(hMod, "GetPerformanceInfo");
         if (gCtx.pfnGetPerformanceInfo)
-            dprintf(("gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo));
+            Log(("gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo));
         /* failure is not fatal */
     }
 
@@ -122,7 +122,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
 
 void VBoxStatsDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    dprintf(("VBoxStatsDestroy\n"));
+    Log(("VBoxStatsDestroy\n"));
     return;
 }
 
@@ -175,7 +175,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
             req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_HANDLES | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
         }
         else
-            dprintf(("GetPerformanceInfo failed with %d\n", GetLastError()));
+            Log(("GetPerformanceInfo failed with %d\n", GetLastError()));
     }
 
     /* Query CPU load information */
@@ -226,10 +226,10 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
         {
-            dprintf(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
+            Log(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
         }
         else
-            dprintf(("VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
+            Log(("VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
     }
 
     free(pProcInfo);
@@ -251,11 +251,11 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxStatsThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        Log(("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -267,13 +267,13 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxStatsThread: DeviceIOControl succeded\n"));
+            Log(("VBoxStatsThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxStatsThread: checking event\n"));
+            Log(("VBoxStatsThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
@@ -284,16 +284,16 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
 
                 if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
                 {
-                    dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
+                    Log(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
                     pCtx->uStatInterval = req.u32StatInterval * 1000;
                 }
                 else
-                    dprintf(("VBoxStatsThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
+                    Log(("VBoxStatsThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
             }
         } 
         else
         {
-            dprintf(("VBoxStatsThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxStatsThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -315,14 +315,14 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxStatsThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxStatsThread: finished statistics change request thread\n"));
+    Log(("VBoxStatsThread: finished statistics change request thread\n"));
     return 0;
 }
 
