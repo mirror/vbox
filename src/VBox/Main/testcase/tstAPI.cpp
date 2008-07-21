@@ -925,7 +925,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 0
+#if 1
     do {
         // Get collector
         ComPtr <IPerformanceCollector> collector;
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[])
     return rc;
 }
 
-#if 0
+#if 1
 void queryMetrics (ComPtr <IPerformanceCollector> collector,
                    ComSafeArrayIn (IUnknown *, objects))
 {
@@ -1052,7 +1052,7 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
         Bstr metricUnit(metricUnitBSTR);
         Bstr metricName(retNames[i]);
-        printf("%ls", metricName.raw());
+        printf("obj(%p) %ls", anObject[0], metricName.raw());
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
             printf(", %d %ls", retData[retIndices[i] + j] / (strcmp((const char *)metricUnit.raw(), "%")?1:1000), metricUnit.raw());
