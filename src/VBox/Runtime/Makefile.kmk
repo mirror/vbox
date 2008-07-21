@@ -184,6 +184,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/cache.cpp \
 	common/misc/cidr.cpp \
 	common/misc/getopt.cpp \
+	common/misc/handletable.cpp \
 	common/misc/rand.cpp \
 	common/misc/req.cpp \
 	common/misc/sanity-c.c \
@@ -797,6 +798,7 @@ RuntimeR0_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/handletable.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/string/memchr.cpp \
@@ -898,6 +900,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/handletable.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
