@@ -1041,7 +1041,8 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
     {
         // Get info for the metric
         com::SafeArray<BSTR> nameOfMetric(1);
-        Bstr (retNames[i]).cloneTo (&nameOfMetric[0]);
+        Bstr tmpName(retNames[i]);
+        tmpName.detachTo (&nameOfMetric[0]);
         com::SafeIfaceArray<IUnknown> anObject(1);
         ComPtr<IUnknown>(retObjects[i]).queryInterfaceTo(&anObject[0]);
         com::SafeIfaceArray <IPerformanceMetric> metricInfo;
