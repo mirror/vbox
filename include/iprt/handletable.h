@@ -97,6 +97,8 @@ typedef FNRTHANDLETABLEDELETE *PFNRTHANDLETABLEDELETE;
 /** Whether the handle table should take care of the serialization.
  * If not specfied the caller will have to take care of that. */
 #define RTHANDLETABLE_FLAGS_LOCKED      RT_BIT_32(1)
+/** The mask of valid flags. */
+#define RTHANDLETABLE_FLAGS_MASK        UINT32_C(0x00000003)
 /* @} */
 
 
@@ -115,7 +117,9 @@ typedef FNRTHANDLETABLEDELETE *PFNRTHANDLETABLEDELETE;
  * @param   uBase           The handle base value. This is the value of the
  *                          first handle to be returned.
  * @param   cMax            The max number of handles. When exceeded the RTHandleTableAlloc
- *                          or RTHandleTableAllocWithCtx calls will fail.
+ *                          or RTHandleTableAllocWithCtx calls will fail. Note that this
+ *                          number will be rounded up to a multiple of the sub-table size,
+ *                          or if it's too close to UINT32_MAX it will be rounded down.
  * @param   pfnRetain       Optional retain callback that will be called from behind the
  *                          lock (if any) during lookup.
  * @param   pvUser          The user argument to the retain callback.
@@ -126,8 +130,8 @@ RTDECL(int)     RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFl
 /**
  * A simplified version of the RTHandleTableCreateEx API.
  *
- * It assumes a max of 65534 handles with 1 being the base. The table
- * serialized (RTHANDLETABLE_FLAGS_LOCKED).
+ * It assumes a max of about 64K handles with 1 being the base. The table
+ * access will serialized (RTHANDLETABLE_FLAGS_LOCKED).
  *
  * @returns IPRT status code and *phHandleTable.
  *
