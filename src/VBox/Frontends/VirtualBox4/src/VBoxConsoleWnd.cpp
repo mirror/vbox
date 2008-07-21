@@ -1520,12 +1520,18 @@ void VBoxConsoleWnd::retranslateUi()
 
     /* vmPauseAction is set up in updateAppearanceOf() */
 
+#ifdef Q_WS_MAC
+    /* Host+H is Hide on the mac */
+    vmACPIShutdownAction->setText (VBoxGlobal::insertKeyToActionText (tr ("ACPI S&hutdown"), "U"));
+#else /* Q_WS_MAC */
     vmACPIShutdownAction->setText (VBoxGlobal::insertKeyToActionText (tr ("ACPI S&hutdown"), "H"));
+#endif /* !Q_WS_MAC */
     vmACPIShutdownAction->setStatusTip (
         tr ("Send the ACPI Power Button press event to the virtual machine"));
 
     vmCloseAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Close..." ), "Q"));
     vmCloseAction->setStatusTip (tr ("Close the virtual machine"));
+    vmCloseAction->setMenuRole (QAction::QuitRole);
 
     vmTakeSnapshotAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Take &Snapshot..."), "S"));
     vmTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the virtual machine"));
