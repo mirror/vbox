@@ -228,8 +228,8 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-    //
-    pm::MetricFactory *getMetricFactory() { return m.mFactory; };
+
+    pm::MetricFactory *getMetricFactory() { return m.factory; };
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"PerformanceCollector"; }
@@ -249,14 +249,17 @@ private:
 
     unsigned int mMagic;
 
-    struct Data {
-        Data() : mFactory(0) {};
+    struct Data
+    {
+        Data() : factory(0) {};
 
-        BaseMetricList     mBaseMetrics;
-        MetricList         mMetrics;
-        PRTTIMER           mSampler;
-        pm::MetricFactory *mFactory;
-    } m;
+        BaseMetricList     baseMetrics;
+        MetricList         metrics;
+        PRTTIMER           sampler;
+        pm::MetricFactory *factory;
+    };
+
+    Data m;
 };
 
 #endif //!____H_PERFORMANCEIMPL
