@@ -42,7 +42,7 @@
    <item row="0" column="0" >
     <widget class="QLabel" name="mLbVdi" >
      <property name="text" >
-      <string>&amp;VDI files path:</string>
+      <string>Default &amp;Hard Disk Folder:</string>
      </property>
      <property name="alignment" >
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -58,7 +58,7 @@
    <item row="1" column="0" >
     <widget class="QLabel" name="mLbMach" >
      <property name="text" >
-      <string>&amp;Machines files path:</string>
+      <string>Default &amp;Machine Folder:</string>
      </property>
      <property name="alignment" >
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

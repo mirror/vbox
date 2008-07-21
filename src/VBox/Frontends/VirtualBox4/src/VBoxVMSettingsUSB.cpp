@@ -259,7 +259,7 @@ void VBoxVMSettingsUSB::retranslateUi()
     mAddAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
                                   "set to the values of the selected USB "
                                   "device attached to the host PC."));
-    mEdtAction->setWhatsThis (tr ("Edit the selected filter."));
+    mEdtAction->setWhatsThis (tr ("Edits the selected USB filter."));
     mDelAction->setWhatsThis (tr ("Removes the selected USB filter."));
     mMupAction->setWhatsThis (tr ("Moves the selected USB filter up."));
     mMdnAction->setWhatsThis (tr ("Moves the selected USB filter down."));
