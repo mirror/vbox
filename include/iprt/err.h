@@ -481,6 +481,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_OUT_OF_RESOURCES              (-80)
 /** Generic out of resources warning. */
 #define VWRN_OUT_OF_RESOURCES               80
+/** No more handles available, too many open handles. */
+#define VERR_NO_MORE_HANDLES               (-81)
 /** @} */
 
 
