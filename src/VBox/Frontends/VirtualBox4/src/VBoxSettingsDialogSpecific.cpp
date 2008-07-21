@@ -61,7 +61,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* General page */
     prefPage = new VBoxGLSettingsGeneral();
-    page = mSelector->addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+    page = mSelector->addItem (":/machine_32px.png", ":/machine_16px.png",
                                GeneralId, "#general",
                                prefPage);
     if (page)
@@ -70,7 +70,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Input page */
     prefPage = new VBoxGLSettingsInput();
-    page = mSelector->addItem (VBoxGlobal::iconSet (":/hostkey_16px.png"),
+    page = mSelector->addItem (":/hostkey_32px.png", ":/hostkey_16px.png",
                                InputId, "#input",
                                prefPage);
     if (page)
@@ -79,7 +79,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Update page */
     prefPage = new VBoxGLSettingsUpdate();
-    page = mSelector->addItem (VBoxGlobal::iconSet (":/refresh_16px.png"),
+    page = mSelector->addItem (":/refresh_16px.png", ":/refresh_16px.png",
                                UpdateId, "#update",
                                prefPage);
     if (page)
@@ -88,7 +88,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Language page */
     prefPage = new VBoxGLSettingsLanguage();
-    page = mSelector->addItem (VBoxGlobal::iconSet (":/site_16px.png"),
+    page = mSelector->addItem (":/site_32px.png", ":/site_16px.png",
                                LanguageId, "#language",
                                prefPage);
     if (page)
@@ -98,7 +98,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
     prefPage = VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
-    page = mSelector->addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+    page = mSelector->addItem (":/usb_32px.png", ":/usb_16px.png",
                                USBId, "#usb",
                                prefPage);
     if (page)
@@ -223,78 +223,78 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* General page */
     prefPage = new VBoxVMSettingsGeneral();
     connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (VBoxGlobal::iconSet (":/machine_16px.png"),
+    addItem (":/machine_32px.png", ":/machine_16px.png",
              GeneralId, "#general", 
              prefPage);
 
     /* Storage page */
-    addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
+    addItem (":/hd_32px.png", ":/hd_16px.png",
              StorageId, "#storage");
 
     /* HD page */
     prefPage = new VBoxVMSettingsHD();
     connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (VBoxGlobal::iconSet (":/hd_16px.png"),
+    addItem (":/hd_32px.png", ":/hd_16px.png",
              HDId, "#hdds", 
              prefPage, StorageId);
 
     /* CD page */
     prefPage = new VBoxVMSettingsCD();
     connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (VBoxGlobal::iconSet (":/cd_16px.png"),
+    addItem (":/cd_32px.png", ":/cd_16px.png",
              CDId, "#dvd",
              prefPage, StorageId);
 
     /* FD page */
     prefPage = new VBoxVMSettingsFD();
     connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (VBoxGlobal::iconSet (":/fd_16px.png"),
+    addItem (":/fd_32px.png", ":/fd_16px.png",
              FDId, "#floppy",
              prefPage, StorageId);
 
     /* Audio page */
     prefPage = new VBoxVMSettingsAudio();
-    addItem (VBoxGlobal::iconSet (":/sound_16px.png"),
+    addItem (":/sound_32px.png", ":/sound_16px.png",
              AudioId, "#audio",
              prefPage);
 
     /* Network page */
     prefPage = new VBoxVMSettingsNetworkPage();
-    addItem (VBoxGlobal::iconSet (":/nw_16px.png"),
+    addItem (":/nw_32px.png", ":/nw_16px.png",
              NetworkId, "#network",
              prefPage);
 
     /* Ports page */
-    addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
+    addItem (":/serial_port_32px.png", ":/serial_port_16px.png",
              PortsId, "#ports");
 
     /* USB page */
     prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
-    addItem (VBoxGlobal::iconSet (":/usb_16px.png"),
+    addItem (":/usb_32px.png", ":/usb_16px.png",
              USBId, "#usb",
              prefPage, PortsId);
 
     /* Serial page */
     prefPage = new VBoxVMSettingsSerialPage();
-    addItem (VBoxGlobal::iconSet (":/serial_port_16px.png"),
+    addItem (":/serial_port_32px.png", ":/serial_port_16px.png",
              SerialId, "#serialPorts",
              prefPage, PortsId);
 
     /* Parallel page */
     prefPage = new VBoxVMSettingsParallelPage();
-    addItem (VBoxGlobal::iconSet (":/parallel_port_16px.png"),
+    addItem (":/parallel_port_32px.png", ":/parallel_port_16px.png",
              ParallelId, "#parallelPorts",
              prefPage, PortsId);
 
     /* SFolders page */
     prefPage = new VBoxVMSettingsSF (MachineType);
-    addItem (VBoxGlobal::iconSet (":/shared_folder_16px.png"),
+    addItem (":/shared_folder_32px.png", ":/shared_folder_16px.png",
              SFId, "#sfolders",
              prefPage);
 
     /* VRDP page */
     prefPage = new VBoxVMSettingsVRDP();
-    addItem (VBoxGlobal::iconSet (":/vrdp_16px.png"),
+    addItem (":/vrdp_32px.png", ":/vrdp_16px.png",
              VRDPId, "#vrdp",
              prefPage);
 
@@ -336,9 +336,9 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
         mSelector->selectById (0);
 }
 
-void VBoxVMSettingsDlg::addItem (const QIcon &aIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage /* = NULL*/, int aParentId /* = -1 */)
+void VBoxVMSettingsDlg::addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage /* = NULL*/, int aParentId /* = -1 */)
 {
-    QWidget *page = mSelector->addItem (aIcon,
+    QWidget *page = mSelector->addItem (aBigIcon, aSmallIcon,
                                         aId, aLink,
                                         aPrefPage, aParentId);
     if (page)
