@@ -36,6 +36,10 @@
 #include <iprt/initterm.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
+#include <iprt/mem.h>
+#include <iprt/alloca.h>
+#include <iprt/thread.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -296,6 +300,153 @@ static int tstHandleTableTest1(uint32_t uBase, uint32_t cMax, uint32_t cDelta, u
     return 0;
 }
 
+
+typedef struct TSTHTTEST2ARGS
+{
+    /** The handle table. */
+    RTHANDLETABLE hHT;
+    /** The thread handle. */
+    RTTHREAD hThread;
+    /** Thread index. */
+    uint32_t iThread;
+    /** the max number of handles the thread should allocate. */
+    uint32_t cMax;
+} TSTHTTEST2ARGS, *PTSTHTTEST2ARGS;
+
+
+static DECLCALLBACK(int) tstHandleTableTest2Thread(RTTHREAD hThread, void *pvUser)
+{
+    RTHANDLETABLE const hHT = ((PTSTHTTEST2ARGS)pvUser)->hHT;
+    uint32_t const iThread = ((PTSTHTTEST2ARGS)pvUser)->iThread;
+    uint32_t const cMax = ((PTSTHTTEST2ARGS)pvUser)->cMax;
+    uint32_t *pah = (uint32_t *)RTMemAllocZ(sizeof(uint32_t) * cMax);
+    if (!pah)
+    {
+        RTPrintf("tstHandleTable: FAILURE (%d) - failed to allocate %zu bytes\n", __LINE__, sizeof(uint32_t) * cMax);
+        return VERR_NO_MEMORY;
+    }
+
+    /*
+     * Allocate our quota.
+     */
+    for (uint32_t i = 0; i < cMax; i++)
+    {
+        int rc = RTHandleTableAllocWithCtx(hHT, pvUser, hThread, &pah[i]);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstHandleTable: FAILURE (%d) - t=%d i=%d: RTHandleTableAllocWithCtx failed, rc=%Rrc\n",
+                     __LINE__, iThread, i, rc);
+            return rc;
+        }
+    }
+
+    /*
+     * Look them up.
+     */
+    for (uint32_t i = 0; i < cMax; i++)
+    {
+        void *pvObj = RTHandleTableLookupWithCtx(hHT, pah[i], hThread);
+        if (pvObj != pvUser)
+        {
+            RTPrintf("tstHandleTable: FAILURE (%d) - t=%d i=%d: RTHandleTableLookupWithCtx failed, pvObj=%p\n",
+                     __LINE__, iThread, i, pvObj);
+            return VERR_INTERNAL_ERROR;
+        }
+    }
+
+    /*
+     * Free them all.
+     */
+    for (uint32_t i = 0; i < cMax; i++)
+    {
+        void *pvObj = RTHandleTableFreeWithCtx(hHT, pah[i], hThread);
+        if (pvObj != pvUser)
+        {
+            RTPrintf("tstHandleTable: FAILURE (%d) - t=%d i=%d: RTHandleTableFreeWithCtx failed, pvObj=%p\n",
+                     __LINE__, iThread, i, pvObj);
+            return VERR_INTERNAL_ERROR;
+        }
+    }
+
+    RTMemFree(pah);
+    return VINF_SUCCESS;
+}
+
+static int tstHandleTableTest2(uint32_t uBase, uint32_t cMax, uint32_t cThreads)
+{
+    /*
+     * Create the table.
+     */
+    RTPrintf("tstHandleTable: TESTING %u threads: uBase=%u, cMax=%u\n", cThreads, uBase, cMax);
+    RTHANDLETABLE hHT;
+    int rc = RTHandleTableCreateEx(&hHT, RTHANDLETABLE_FLAGS_LOCKED | RTHANDLETABLE_FLAGS_CONTEXT, uBase, cMax, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstHandleTable: FAILURE - RTHandleTableCreateEx failed, %Rrc!\n", rc);
+        return 1;
+    }
+    /// @todo there must be a race somewhere in the thread code, I keep hitting a duplicate insert id here...
+    // Or perhaps it just barcelona B2 bugs?
+    RTThreadSleep(50);
+
+    /*
+     * Spawn the threads.
+     */
+    PTSTHTTEST2ARGS paThread = (PTSTHTTEST2ARGS)alloca(sizeof(*paThread) * cThreads);
+    for (uint32_t i = 0; i < cThreads; i++)
+    {
+        paThread[i].hHT = hHT;
+        paThread[i].hThread = NIL_RTTHREAD;
+        paThread[i].iThread = i;
+        paThread[i].cMax = cMax / cThreads;
+    }
+    for (uint32_t i = 0; i < cThreads; i++)
+    {
+        char szName[32];
+        RTStrPrintf(szName, sizeof(szName), "TEST2-%x/%x", i, cMax);
+        rc = RTThreadCreate(&paThread[i].hThread, tstHandleTableTest2Thread, &paThread[i], 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szName);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstHandleTable: FAILURE - RTThreadCreate failed, %Rrc!\n", rc);
+            g_cErrors++;
+            break;
+        }
+    }
+
+    /*
+     * Wait for them to complete.
+     */
+    uint32_t cRunning;
+    do /** @todo Remove when RTSemEventWait (linux) has been fixed. */
+    {
+        if (cRunning != cThreads)
+            RTThreadSleep(10);
+        cRunning = 0;
+        for (uint32_t i = 0; i < cThreads; i++)
+            if (paThread[i].hThread != NIL_RTTHREAD)
+            {
+                rc = RTThreadWait(paThread[i].hThread, RT_INDEFINITE_WAIT, NULL);
+                if (RT_SUCCESS(rc))
+                    paThread[i].hThread = NIL_RTTHREAD;
+                else
+                    cRunning++;
+            }
+    } while (cRunning);
+
+    /*
+     * Destroy the handle table.
+     */
+    rc = RTHandleTableDestroy(hHT, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstHandleTable: FAILURE (%d) - RTHandleTableDestroy failed, %Rrc!\n", __LINE__, rc);
+        g_cErrors++;
+    }
+
+    return 0;
+}
+
+
 int main(int argc, char **argv)
 {
     /*
@@ -307,10 +458,14 @@ int main(int argc, char **argv)
     {
         { "--base",         'b', RTGETOPT_REQ_UINT32 },
         { "--max",          'm', RTGETOPT_REQ_UINT32 },
+        { "--threads",      't', RTGETOPT_REQ_UINT32 },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING },
+        { "--?",            '?', RTGETOPT_REQ_NOTHING },
     };
 
-    uint32_t uBase = 0;
-    uint32_t cMax = 0;
+    uint32_t uBase    = 0;
+    uint32_t cMax     = 0;
+    uint32_t cThreads = 0;
 
     int ch;
     int iArg = 1;
@@ -326,9 +481,15 @@ int main(int argc, char **argv)
                 cMax = Value.u32;
                 break;
 
+            case 't':
+                cThreads = Value.u32;
+                if (!cThreads)
+                    cThreads = 1;
+                break;
+
             case '?':
             case 'h':
-                RTPrintf("syntax: tstIntNet-1 [-pSt] [-d <secs>] [-f <file>] [-r <size>] [-s <size>]\n");
+                RTPrintf("syntax: tstHandleTable [-b <base>] [-m <max>] [-t <threads>]\n");
                 return 1;
 
             default:
@@ -345,28 +506,49 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Do a simple warmup / smoke test first.
+     * If any argument was specified, run the requested test setup.
+     * Otherwise run a bunch of default tests.
      */
-    tstHandleTableTest1(1,          65534,  128,           2048, false, 0);
-    tstHandleTableTest1(1,          65534,  128,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT);
-    tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_LOCKED);
-    tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    /* Test that the retain and delete functions work. */
-    tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_LOCKED);
-    tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    /* check that the base works. */
-    tstHandleTableTest1(0x7ffff000, 65534,   4,            2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    tstHandleTableTest1(0xeffff000, 65534,   4,            2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    tstHandleTableTest1(0,           4097,   4,             256, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    tstHandleTableTest1(0,           1024,   4,             128, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
-    /* For testing 1st level expansion / reallocation. */
-    tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, 0);
-    tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, RTHANDLETABLE_FLAGS_CONTEXT);
+    if (cThreads || cMax || uBase)
+    {
+        if (!cMax)
+            cMax = 65535;
+        if (!cThreads)
+            tstHandleTableTest1(uBase, cMax,  128, cMax / 32, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        else
+            tstHandleTableTest2(uBase, cMax,  128);
+    }
+    else
+    {
+        /*
+         * Do a simple warmup / smoke test first.
+         */
+#if 0
+        tstHandleTableTest1(1,          65534,  128,           2048, false, 0);
+        tstHandleTableTest1(1,          65534,  128,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT);
+        tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_LOCKED);
+        tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        /* Test that the retain and delete functions work. */
+        tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_LOCKED);
+        tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        /* check that the base works. */
+        tstHandleTableTest1(0x7ffff000, 65534,    4,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        tstHandleTableTest1(0xeffff000, 65534,    4,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        tstHandleTableTest1(0,           4097,    4,            256, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        tstHandleTableTest1(0,           1024,    4,            128, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+        /* For testing 1st level expansion / reallocation. */
+        tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, 0);
+#endif
+        tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, RTHANDLETABLE_FLAGS_CONTEXT);
 
-    /*
-     * Threaded tests.
-     */
-    /** @todo threaded test for checking out the locking and expansion races. */
+        /*
+         * Threaded tests.
+         */
+        tstHandleTableTest2(0x80000000,       32768, 2);
+        tstHandleTableTest2(0x00010000,        2048, 4);
+        tstHandleTableTest2(0x00010000,        3072, 8);
+        tstHandleTableTest2(0x00000000, 1024*1024*8, 3);
+    }
 
     /*
      * Summary.
