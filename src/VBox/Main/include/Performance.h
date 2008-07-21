@@ -28,7 +28,8 @@
 #include <list>
 #include <string>
 
-namespace pm {
+namespace pm
+{
     /* CPU load is measured in 1/1000 of per cent. */
     const uint64_t PM_CPU_LOAD_MULTIPLIER = UINT64_C(100000);
 
@@ -108,7 +109,7 @@ namespace pm {
         uint64_t         mLastSampleTaken;
         bool             mEnabled;
     };
-    
+
     class HostCpuLoad : public BaseMetric
     {
     public:
@@ -126,7 +127,7 @@ namespace pm {
         SubMetric *mKernel;
         SubMetric *mIdle;
     };
-    
+
     class HostCpuLoadRaw : public HostCpuLoad
     {
     public:
@@ -154,7 +155,7 @@ namespace pm {
     private:
         SubMetric *mMHz;
     };
-    
+
     class HostRamUsage : public BaseMetric
     {
     public:
@@ -171,7 +172,7 @@ namespace pm {
         SubMetric *mUsed;
         SubMetric *mAvailable;
     };
-    
+
     class MachineCpuLoad : public BaseMetric
     {
     public:
@@ -188,7 +189,7 @@ namespace pm {
         SubMetric *mUser;
         SubMetric *mKernel;
     };
-    
+
     class MachineCpuLoadRaw : public MachineCpuLoad
     {
     public:
@@ -260,7 +261,7 @@ namespace pm {
                 mName += mAggregate->getName();
             }
         }
-    
+
         ~Metric()
         {
             delete mAggregate;
@@ -275,7 +276,7 @@ namespace pm {
         unsigned long getPeriod() { return mBaseMetric->getPeriod(); };
         unsigned long getLength() { return mAggregate ? 1 : mBaseMetric->getLength(); };
         void query(unsigned long **data, unsigned long *count);
-    
+
     private:
         std::string mName;
         BaseMetric *mBaseMetric;
