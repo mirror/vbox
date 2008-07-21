@@ -2682,6 +2682,15 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
     if (aButtons & Qt::MidButton)
         state |= KMouseButtonState_MiddleButton;
 
+#ifdef Q_WS_MAC
+    /* Simulate the right click on 
+     * Host+Left Mouse */
+    if (mIsHostkeyPressed &&
+        mIsHostkeyAlone &&
+        state == KMouseButtonState_LeftButton)
+        state = KMouseButtonState_RightButton;
+#endif /* Q_WS_MAC */
+
     int wheel = 0;
     if (aWheelDir == Qt::Vertical)
     {
