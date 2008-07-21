@@ -82,6 +82,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     mSelector = new VBoxSettingsTreeViewSelector (this);
     mainLayout->addWidget (mSelector->widget(), 0, 0, 3, 1);
     mSelector->widget()->setFocus();
+    mainLayout->setSpacing (10);
 #endif
 
     /* Creating stack of pages */
