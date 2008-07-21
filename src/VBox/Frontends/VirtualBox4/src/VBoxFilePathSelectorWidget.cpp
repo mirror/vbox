@@ -22,6 +22,7 @@
 
 #include "VBoxFilePathSelectorWidget.h"
 #include "VBoxGlobal.h"
+#include "QILabel.h"
 
 /* Qt includes */
 #include <QFileIconProvider>
@@ -31,7 +32,6 @@
 # include <QComboBox>
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
 # include <QLabel>
-# include <QLineEdit>
 # include <QToolButton>
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 
@@ -89,12 +89,12 @@ bool VBoxFilePathSelectorWidget::isResetEnabled () const
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
-void VBoxFilePathSelectorWidget::setLineEditWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setPathWhatsThis (const QString &aText)
 {
 #ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     NOREF (aText);
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mLePath->setWhatsThis (aText);
+    mLbPath->setWhatsThis (aText);
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
@@ -118,11 +118,7 @@ void VBoxFilePathSelectorWidget::setResetWhatsThis (const QString &aText)
 
 bool VBoxFilePathSelectorWidget::isModified() const
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
     return true;
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    return mLePath->isModified();
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
 void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
@@ -141,10 +137,7 @@ void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
     mCbPath->setItemText (PathId, filePath (tmpPath, true));
     mCbPath->setItemIcon (PathId, icon);
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    /* Do this instead of le->setText (folder) to cause
-     * isModified() return true */
-    mLePath->selectAll();
-    mLePath->insert (filePath (tmpPath, false));
+    mLbPath->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (tmpPath));
     mLbIcon->setPixmap (icon.pixmap (16, 16));
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
@@ -202,9 +195,10 @@ void VBoxFilePathSelectorWidget::init()
     layout->addWidget (mCbPath);
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
     mLbIcon = new QLabel();
-    mLePath = new QLineEdit();
-    mLePath->setMinimumWidth (180);
-    mLePath->setReadOnly (true);
+    mLbPath = new QILabel();
+    mLbPath->setSizePolicy (QSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed));
+    mLbPath->setMinimumWidth (180);
+    mLbPath->setFullSizeSelection (true);
     mTbSelect = new QToolButton();
     mTbSelect->setIcon (QIcon (":/select_file_16px.png"));
     mTbSelect->setAutoRaise (true);
@@ -217,7 +211,7 @@ void VBoxFilePathSelectorWidget::init()
              this, SIGNAL (resetPath()));
     
     layout->addWidget (mLbIcon);
-    layout->addWidget (mLePath);
+    layout->addWidget (mLbPath);
     layout->addWidget (mTbSelect);
     layout->addWidget (mTbReset);
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */

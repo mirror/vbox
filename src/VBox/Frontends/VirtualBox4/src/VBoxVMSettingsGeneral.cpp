@@ -376,7 +376,7 @@ void VBoxVMSettingsGeneral::retranslateUi()
     mCbIDEController->setItemText (1, vboxGlobal().toString (KIDEControllerType_PIIX4));
 
     /* Path selector */
-    mPsSnapshot->setLineEditWhatsThis (tr ("Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space."));
+    mPsSnapshot->setPathWhatsThis (tr ("Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space."));
     mPsSnapshot->setSelectorWhatsThis (tr ("Selects the snapshot folder path."));
     mPsSnapshot->setResetWhatsThis (tr ("Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
 }

@@ -33,10 +33,10 @@
 #endif /* Q_WS_MAC */
 
 class QLabel;
-class QLineEdit;
 class QToolButton;
 class QFileIconProvider;
 class QComboBox;
+class QILabel;
 
 class VBoxFilePathSelectorWidget: public QIWithRetranslateUI<QWidget>
 {
@@ -59,7 +59,7 @@ public:
     void setResetEnabled (bool aEnabled);
     bool isResetEnabled () const;
 
-    void setLineEditWhatsThis (const QString &aText);
+    void setPathWhatsThis (const QString &aText);
     void setSelectorWhatsThis (const QString &aText);
     void setResetWhatsThis (const QString &aText);
 
@@ -98,7 +98,7 @@ private:
     QComboBox   *mCbPath;
 #else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
     QLabel      *mLbIcon;
-    QLineEdit   *mLePath;
+    QILabel     *mLbPath;
     QToolButton *mTbSelect;
     QToolButton *mTbReset;
 #endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */

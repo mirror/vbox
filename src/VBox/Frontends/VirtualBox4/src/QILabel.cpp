@@ -267,7 +267,7 @@ void QILabel::setText (const QString &aText)
 
 /* Some constant predefines */
 const QRegExp QILabelPrivate::mCopyRegExp = QRegExp ("<[^>]*>");
-QRegExp QILabelPrivate::mElideRegExp = QRegExp ("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]+)</compact>)");
+QRegExp QILabelPrivate::mElideRegExp = QRegExp ("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
 
 #define HOR_PADDING 1
 
@@ -424,7 +424,7 @@ void QILabelPrivate::updateText()
     QLabel::setText (comp);
     /* Only set the tooltip if the text is shortened in any way. */
     if (removeHtmlTags (comp) != removeHtmlTags (mText))
-        setToolTip (mText);
+        setToolTip (removeHtmlTags (mText));
     else
         setToolTip ("");
 }
