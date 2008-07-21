@@ -29,9 +29,12 @@
 #include <stdarg.h>
 #include <process.h>
 
-#include <VBox/VBoxGuest.h>
-#include <VBox/version.h>
+#include <iprt/initterm.h>
+#include <iprt/string.h>
 
+#include <VBox/version.h>
+#include <VBox/VBoxGuest.h>
+#include <VBox/Log.h>
 
 #define WM_VBOX_RESTORED                     0x2005
 #define WM_VBOX_CHECK_VRDP                   0x2006
