@@ -56,13 +56,13 @@ static DECLCALLBACK(int) tstHandleTableTest1Retain(RTHANDLETABLE hHandleTable, v
     return VINF_SUCCESS;
 }
 
-static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, uint32_t cDelta, uint32_t cUnitsPerDot, bool fCallbacks)
+static int tstHandleTableTest1(uint32_t uBase, uint32_t cMax, uint32_t cDelta, uint32_t cUnitsPerDot, bool fCallbacks, uint32_t fFlags)
 {
-    int rc;
+    const char *pszWithCtx = fFlags & RTHANDLETABLE_FLAGS_CONTEXT ? "WithCtx" : "";
     uint32_t cRetainerCalls = 0;
+    int rc;
 
     RTPrintf("tstHandleTable: TESTING RTHandleTableCreateEx(, 0");
-    fFlags |= RTHANDLETABLE_FLAGS_CONTEXT;
     if (fFlags & RTHANDLETABLE_FLAGS_LOCKED)    RTPrintf(" | LOCKED");
     if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)   RTPrintf(" | CONTEXT");
     RTPrintf(", %#x, %#x,,)...\n", uBase, cMax);
@@ -78,12 +78,15 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
     }
 
     /* fill it */
-    RTPrintf("tstHandleTable: TESTING   RTHandleTableAllocWithCtx.."); RTStrmFlush(g_pStdOut);
+    RTPrintf("tstHandleTable: TESTING   RTHandleTableAlloc%s..", pszWithCtx); RTStrmFlush(g_pStdOut);
     uint32_t i = uBase;
     for (;; i++)
     {
         uint32_t h;
-        rc = RTHandleTableAllocWithCtx(hHT, (void *)((uintptr_t)&i + (uintptr_t)i * 4), NULL, &h);
+        if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+            rc = RTHandleTableAllocWithCtx(hHT, (void *)((uintptr_t)&i + (uintptr_t)i * 4), NULL, &h);
+        else
+            rc = RTHandleTableAlloc(hHT, (void *)((uintptr_t)&i + (uintptr_t)i * 4), &h);
         if (RT_SUCCESS(rc))
         {
             if (h != i)
@@ -121,15 +124,19 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
     }
 
     /* look up all the entries */
-    RTPrintf("tstHandleTable: TESTING   RTHandleTableLookupWithCtx.."); RTStrmFlush(g_pStdOut);
+    RTPrintf("tstHandleTable: TESTING   RTHandleTableLookup%s..", pszWithCtx); RTStrmFlush(g_pStdOut);
     cRetainerCalls = 0;
     for (i = uBase; i < c; i++)
     {
         void *pvExpect = (void *)((uintptr_t)&i + (uintptr_t)i * 4);
-        void *pvObj = RTHandleTableLookupWithCtx(hHT, i, NULL);
+        void *pvObj;
+        if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+            pvObj = RTHandleTableLookupWithCtx(hHT, i, NULL);
+        else
+            pvObj = RTHandleTableLookup(hHT, i);
         if (!pvObj)
         {
-            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookupWithCtx failed!\n", __LINE__, i);
+            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookup%s failed!\n", __LINE__, i, pszWithCtx);
             g_cErrors++;
         }
         else if (pvObj != pvExpect)
@@ -151,15 +158,19 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
     }
 
     /* remove all the entries (in order) */
-    RTPrintf("tstHandleTable: TESTING   RTHandleTableFreeWithCtx.."); RTStrmFlush(g_pStdOut);
+    RTPrintf("tstHandleTable: TESTING   RTHandleTableFree%s..", pszWithCtx); RTStrmFlush(g_pStdOut);
     cRetainerCalls = 0;
-    for (i = 1; i < c; i++)
+    for (i = uBase; i < c; i++)
     {
         void *pvExpect = (void *)((uintptr_t)&i + (uintptr_t)i * 4);
-        void *pvObj = RTHandleTableFreeWithCtx(hHT, i, NULL);
+        void *pvObj;
+        if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+            pvObj = RTHandleTableFreeWithCtx(hHT, i, NULL);
+        else
+            pvObj = RTHandleTableFree(hHT, i);
         if (!pvObj)
         {
-            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookupWithCtx failed!\n", __LINE__, i);
+            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookup%s failed!\n", __LINE__, i, pszWithCtx);
             g_cErrors++;
         }
         else if (pvObj != pvExpect)
@@ -167,9 +178,11 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
             RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, pvObj=%p expected %p\n", __LINE__, i, pvObj, pvExpect);
             g_cErrors++;
         }
-        else if (RTHandleTableLookupWithCtx(hHT, i, NULL))
+        else if (   fFlags & RTHANDLETABLE_FLAGS_CONTEXT
+                 ?  RTHandleTableLookupWithCtx(hHT, i, NULL)
+                 :  RTHandleTableLookup(hHT, i))
         {
-            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookupWithCtx succeeded after free!\n", __LINE__, i);
+            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookup%s succeeded after free!\n", __LINE__, i, pszWithCtx);
             g_cErrors++;
         }
         if (!(i % cUnitsPerDot))
@@ -187,38 +200,47 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
 
     /* do a mix of alloc, lookup and free where there is a constant of cDelta handles in the table. */
     RTPrintf("tstHandleTable: TESTING   Alloc,Lookup,Free mix [cDelta=%#x]..", cDelta); RTStrmFlush(g_pStdOut);
-    for (i = 1; i < c * 2; i++)
+    for (i = uBase; i < c * 2; i++)
     {
         /* alloc */
-        uint32_t hExpect = ((i - 1) % (c - 1)) + 1;
+        uint32_t hExpect = ((i - uBase) % (c - uBase)) + uBase;
         uint32_t h;
-        rc = RTHandleTableAllocWithCtx(hHT, (void *)((uintptr_t)&i + (uintptr_t)hExpect * 4), NULL, &h);
+        if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+            rc = RTHandleTableAllocWithCtx(hHT, (void *)((uintptr_t)&i + (uintptr_t)hExpect * 4), NULL, &h);
+        else
+            rc = RTHandleTableAlloc(hHT, (void *)((uintptr_t)&i + (uintptr_t)hExpect * 4), &h);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableAllocWithCtx: rc=%Rrc!\n", __LINE__, i, rc);
+            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableAlloc%s: rc=%Rrc!\n", __LINE__, i, pszWithCtx, rc);
             g_cErrors++;
         }
         else if (h != hExpect)
         {
-            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableAllocWithCtx: rc=%Rrc!\n", __LINE__, i, rc);
+            RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableAlloc%s: h=%u hExpect=%u! - abort sub-test\n", __LINE__, i, pszWithCtx, h, hExpect);
             g_cErrors++;
+            break;
         }
 
-        if (i > cDelta)
+        if (i >= cDelta + uBase)
         {
             /* lookup */
             for (uint32_t j = i - cDelta; j <= i; j++)
             {
-                uint32_t hLookup = ((j - 1) % (c - 1)) + 1;
+                uint32_t hLookup = ((j - uBase) % (c - uBase)) + uBase;
                 void *pvExpect = (void *)((uintptr_t)&i + (uintptr_t)hLookup * 4);
-                void *pvObj = RTHandleTableLookupWithCtx(hHT, hLookup, NULL);
+                void *pvObj;
+                if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+                    pvObj = RTHandleTableLookupWithCtx(hHT, hLookup, NULL);
+                else
+                    pvObj = RTHandleTableLookup(hHT, hLookup);
                 if (pvObj != pvExpect)
                 {
-                    RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, j=%d, RTHandleTableLookupWithCtx(,%u,): pvObj=%p expected %p!\n",
-                             __LINE__, i, j, hLookup, pvObj, pvExpect);
+                    RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, j=%d, RTHandleTableLookup%s(,%u,): pvObj=%p expected %p!\n",
+                             __LINE__, i, j, pszWithCtx, hLookup, pvObj, pvExpect);
                     g_cErrors++;
                 }
-                else if (RTHandleTableLookupWithCtx(hHT, hLookup, &i))
+                else if (   (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+                         &&  RTHandleTableLookupWithCtx(hHT, hLookup, &i))
                 {
                     RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, j=%d, RTHandleTableLookupWithCtx: succeeded with bad context\n",
                              __LINE__, i, j, pvObj, pvExpect);
@@ -227,20 +249,27 @@ static int tstHandleTableTest1(uint32_t fFlags, uint32_t uBase, uint32_t cMax, u
             }
 
             /* free */
-            uint32_t hFree = ((i - 1 - cDelta) % (c - 1)) + 1;
+            uint32_t hFree = ((i - uBase - cDelta) % (c - uBase)) + uBase;
             void *pvExpect = (void *)((uintptr_t)&i + (uintptr_t)hFree * 4);
-            void *pvObj = RTHandleTableFreeWithCtx(hHT, hFree, NULL);
+            void *pvObj;
+            if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+                pvObj = RTHandleTableFreeWithCtx(hHT, hFree, NULL);
+            else
+                pvObj = RTHandleTableFree(hHT, hFree);
             if (pvObj != pvExpect)
             {
-                RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableFreeWithCtx: pvObj=%p expected %p!\n",
-                         __LINE__, i, pvObj, pvExpect);
+                RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableFree%s: pvObj=%p expected %p!\n",
+                         __LINE__, i, pszWithCtx, pvObj, pvExpect);
                 g_cErrors++;
             }
-            else if (   RTHandleTableLookupWithCtx(hHT, hFree, NULL)
-                     || RTHandleTableFreeWithCtx(hHT, hFree, NULL))
+            else if (fFlags & RTHANDLETABLE_FLAGS_CONTEXT
+                     ?      RTHandleTableLookupWithCtx(hHT, hFree, NULL)
+                        ||  RTHandleTableFreeWithCtx(hHT, hFree, NULL)
+                     :      RTHandleTableLookup(hHT, hFree)
+                        ||  RTHandleTableFree(hHT, hFree))
             {
-                RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookup/FreeWithCtx: succeeded after free\n",
-                         __LINE__, i);
+                RTPrintf("\ntstHandleTable: FAILURE (%d) - i=%d, RTHandleTableLookup/Free%s: succeeded after free\n",
+                         __LINE__, i, pszWithCtx);
                 g_cErrors++;
             }
         }
@@ -318,18 +347,26 @@ int main(int argc, char **argv)
     /*
      * Do a simple warmup / smoke test first.
      */
-    /* these two are for the default case. */
-    tstHandleTableTest1(0,                              1,       65534,  128,           2048, false);
-    tstHandleTableTest1(RTHANDLETABLE_FLAGS_LOCKED,     1,       65534,   63,           2048, false);
+    tstHandleTableTest1(1,          65534,  128,           2048, false, 0);
+    tstHandleTableTest1(1,          65534,  128,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT);
+    tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_LOCKED);
+    tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
     /* Test that the retain and delete functions work. */
-    tstHandleTableTest1(RTHANDLETABLE_FLAGS_LOCKED,     1,       1024,   256,            256,  true);
+    tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_LOCKED);
+    tstHandleTableTest1(1,           1024,  256,            256,  true, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+    /* check that the base works. */
+    tstHandleTableTest1(0x7ffff000, 65534,   4,            2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+    tstHandleTableTest1(0xeffff000, 65534,   4,            2048, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+    tstHandleTableTest1(0,           4097,   4,             256, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
+    tstHandleTableTest1(0,           1024,   4,             128, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
     /* For testing 1st level expansion / reallocation. */
-    tstHandleTableTest1(0,                              1, 1024*1024*8,   3,          150000, false);
+    tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, 0);
+    tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, RTHANDLETABLE_FLAGS_CONTEXT);
 
     /*
      * Threaded tests.
      */
-
+    /** @todo threaded test for checking out the locking and expansion races. */
 
     /*
      * Summary.
