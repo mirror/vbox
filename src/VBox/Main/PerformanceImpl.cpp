@@ -230,7 +230,7 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
         AssertComRCReturnRC (rc);
         LogFlow (("PerformanceCollector::GetMetrics() store a metric at "
                   "retMetrics[%d]...\n", i));
-        metric.queryInterfaceTo (&retMetrics [++ i]);
+        metric.queryInterfaceTo (&retMetrics [i++]);
     }
     retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
     return rc;
@@ -273,6 +273,9 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
     /// @todo (r=dmik) why read lock below? individual elements get modified!
 
     AutoReadLock alock (this); /* Need a read lock to access mBaseMetrics */
+                               /* Write lock is not needed since we are */
+                               /* fiddling with enable bit only. No harm */
+                               /* the readers may see it differently. */
 
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
@@ -294,7 +297,10 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 
     /// @todo (r=dmik) why read lock below? individual elements get modified!
 
-    AutoReadLock alock (this);
+    AutoReadLock alock (this); /* Need a read lock to access mBaseMetrics */
+                               /* Write lock is not needed since we are */
+                               /* fiddling with enable bit only. No harm */
+                               /* the readers may see it differently. */
 
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
@@ -364,8 +370,8 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
 
 void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 {
-    /// @todo (r=dmik) better always use AutoCaller unless you are 100% sure
-    /// the object is not uninitialized while you are doing something here
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
     m.baseMetrics.push_back (baseMetric);
@@ -373,8 +379,8 @@ void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 
 void PerformanceCollector::registerMetric (pm::Metric *metric)
 {
-    /// @todo (r=dmik) better always use AutoCaller unless you are 100% sure
-    /// the object is not uninitialized while you are doing something here
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
     m.metrics.push_back (metric);
@@ -382,8 +388,8 @@ void PerformanceCollector::registerMetric (pm::Metric *metric)
 
 void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    /// @todo (r=dmik) better always use AutoCaller unless you are 100% sure
-    /// the object is not uninitialized while you are doing something here
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
     std::remove_if (m.baseMetrics.begin(), m.baseMetrics.end(),
@@ -393,8 +399,8 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
 
 void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    /// @todo (r=dmik) better always use AutoCaller unless you are 100% sure
-    /// the object is not uninitialized while you are doing something here
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
     std::remove_if (m.metrics.begin(), m.metrics.end(),
@@ -435,7 +441,7 @@ void PerformanceCollector::samplerCallback()
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-PerformanceMetric::PerformanceMetric() : mMetric(0)
+PerformanceMetric::PerformanceMetric()
 {
 }
 
@@ -462,7 +468,13 @@ void PerformanceMetric::FinalRelease()
 
 HRESULT PerformanceMetric::init (pm::Metric *aMetric)
 {
-    mMetric = aMetric;
+    m.name   = aMetric->getName();
+    m.object = aMetric->getObject();
+    m.period = aMetric->getPeriod();
+    m.count  = aMetric->getLength();
+    m.unit   = aMetric->getUnit();
+    m.min    = aMetric->getMinValue();
+    m.max    = aMetric->getMaxValue();
     return S_OK;
 }
 
@@ -475,45 +487,43 @@ STDMETHODIMP PerformanceMetric::COMGETTER(MetricName) (BSTR *aMetricName)
     /// @todo (r=dmik) why do all these getters not do AutoCaller and
     /// AutoReadLock? Is the underlying metric a constant object?
 
-    Bstr tmp (mMetric->getName());
-    tmp.detachTo (aMetricName);
+    m.name.cloneTo (aMetricName);
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(Object) (IUnknown **anObject)
 {
-    *anObject = mMetric->getObject();
+    m.object.queryInterfaceTo(anObject);
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(Period) (ULONG *aPeriod)
 {
-    *aPeriod = mMetric->getPeriod();
+    *aPeriod = m.period;
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(Count) (ULONG *aCount)
 {
-    *aCount = mMetric->getLength();
+    *aCount = m.count;
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(Unit) (BSTR *aUnit)
 {
-    Bstr tmp (mMetric->getUnit());
-    tmp.detachTo(aUnit);
+    m.unit.cloneTo(aUnit);
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(MinimumValue) (LONG *aMinValue)
 {
-    *aMinValue = mMetric->getMinValue();
+    *aMinValue = m.min;
     return S_OK;
 }
 
 STDMETHODIMP PerformanceMetric::COMGETTER(MaximumValue) (LONG *aMaxValue)
 {
-    *aMaxValue = mMetric->getMaxValue();
+    *aMaxValue = m.max;
     return S_OK;
 }
 
