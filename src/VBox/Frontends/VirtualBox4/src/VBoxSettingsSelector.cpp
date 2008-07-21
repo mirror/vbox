@@ -218,7 +218,7 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QString &aBigIcon,
                                                                                   << idToString (aId)
                                                                                   << aLink);
         twitem->setIcon (treeWidget_Category, item->icon());
-        aPage->setContentsMargins (9, 2, 9, 2);
+        aPage->setContentsMargins (0, 0, 0, 0);
         VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
         result = aPage;
     }
