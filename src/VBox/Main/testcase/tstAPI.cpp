@@ -1044,7 +1044,8 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         Bstr tmpName(retNames[i]);
         tmpName.detachTo (&nameOfMetric[0]);
         com::SafeIfaceArray<IUnknown> anObject(1);
-        ComPtr<IUnknown>(retObjects[i]).queryInterfaceTo(&anObject[0]);
+        ComPtr<IUnknown> tmpObject(retObjects[i]);
+        tmpObject.queryInterfaceTo(&anObject[0]);
         com::SafeIfaceArray <IPerformanceMetric> metricInfo;
         CHECK_RC_BREAK (collector->GetMetrics( ComSafeArrayAsInParam(nameOfMetric),
                                                ComSafeArrayAsInParam(anObject),
