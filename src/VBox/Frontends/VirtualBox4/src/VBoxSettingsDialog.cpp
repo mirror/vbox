@@ -96,6 +96,10 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     qApp->installEventFilter (this);
     mWhatsThisTimer->setSingleShot (true);
     connect (mWhatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
+    mLbWhatsThis->setAutoFillBackground (true);
+    QPalette pal = mLbWhatsThis->palette();
+    pal.setBrush (QPalette::Window, pal.brush (QPalette::Base));
+    mLbWhatsThis->setPalette (pal);
     mLbWhatsThis->setFixedHeight (mLbWhatsThis->frameWidth() * 2 +
                                   mLbWhatsThis->margin() * 2 +
                                   mLbWhatsThis->fontMetrics().lineSpacing() * 4);
