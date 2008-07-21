@@ -38,6 +38,7 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 #include "internal/magics.h"
 
 
@@ -58,7 +59,7 @@
 /** Sets RTHTENTRYFREE::iNext. */
 #define RTHT_SET_FREE_IDX(pFree, idx) \
     do { \
-        (pFree)->iNext = ((uintptr_t)(idx) << 2) | 3; \
+        (pFree)->iNext = ((uintptr_t)((uint32_t)(idx)) << 2) | 3U; \
     } while (0)
 
 /** Gets the index part of RTHTENTRYFREE::iNext. */
@@ -98,10 +99,10 @@ typedef RTHTENTRY *PRTHTENTRY;
  */
 typedef struct RTHTENTRYCTX
 {
-    /** The context. */
-    void *pvCtx;
     /** The object. */
     void *pvObj;
+    /** The context. */
+    void *pvCtx;
 } RTHTENTRYCTX;
 /** Pointer to a handle table entry, context variant. */
 typedef RTHTENTRYCTX *PRTHTENTRYCTX;
@@ -125,6 +126,9 @@ typedef RTHTENTRYFREE *PRTHTENTRYFREE;
 
 AssertCompile(sizeof(RTHTENTRYFREE) <= sizeof(RTHTENTRY));
 AssertCompile(sizeof(RTHTENTRYFREE) <= sizeof(RTHTENTRYCTX));
+AssertCompileMemberOffset(RTHTENTRYFREE, iNext, 0);
+AssertCompileMemberOffset(RTHTENTRY,     pvObj, 0);
+AssertCompileMemberOffset(RTHTENTRYCTX,  pvObj, 0);
 
 
 /**
@@ -138,8 +142,7 @@ typedef struct RTHANDLETABLEINT
     uint32_t fFlags;
     /** The base handle value (i.e. the first handle). */
     uint32_t uBase;
-    /** The current number of handles.
-     * This indirectly gives the size of the first level lookup table. */
+    /** The current number of handle table entries. */
     uint32_t cCur;
     /** The spinlock handle (NIL if RTHANDLETABLE_FLAGS_LOCKED wasn't used). */
     RTSPINLOCK hSpinlock;
@@ -164,6 +167,24 @@ typedef struct RTHANDLETABLEINT
 typedef RTHANDLETABLEINT *PRTHANDLETABLEINT;
 
 
+/**
+ * Looks up a simple index.
+ *
+ * @returns Pointer to the handle table entry on success, NULL on failure.
+ * @param   pThis           The handle table structure.
+ * @param   i               The index to look up.
+ */
+DECLINLINE(PRTHTENTRY) rtHandleTableLookupSimpleIdx(PRTHANDLETABLEINT pThis, uint32_t i)
+{
+    if (i < pThis->cCur)
+    {
+        PRTHTENTRY paTable = (PRTHTENTRY)pThis->papvLevel1[i / RTHT_LEVEL2_ENTRIES];
+        if (paTable)
+            return &paTable[i % RTHT_LEVEL2_ENTRIES];
+    }
+    return NULL;
+}
+
 
 /**
  * Looks up a simple handle.
@@ -174,14 +195,25 @@ typedef RTHANDLETABLEINT *PRTHANDLETABLEINT;
  */
 DECLINLINE(PRTHTENTRY) rtHandleTableLookupSimple(PRTHANDLETABLEINT pThis, uint32_t h)
 {
-    uint32_t i = h - pThis->uBase;
+    return rtHandleTableLookupSimpleIdx(pThis, h - pThis->uBase);
+}
+
+
+/**
+ * Looks up a context index.
+ *
+ * @returns Pointer to the handle table entry on success, NULL on failure.
+ * @param   pThis           The handle table structure.
+ * @param   i               The index to look up.
+ */
+DECLINLINE(PRTHTENTRYCTX) rtHandleTableLookupWithCtxIdx(PRTHANDLETABLEINT pThis, uint32_t i)
+{
     if (i < pThis->cCur)
     {
-        PRTHTENTRY paTable = (PRTHTENTRY)pThis->papvLevel1[i / RTHT_LEVEL2_ENTRIES];
+        PRTHTENTRYCTX paTable = (PRTHTENTRYCTX)pThis->papvLevel1[i / RTHT_LEVEL2_ENTRIES];
         if (paTable)
             return &paTable[i % RTHT_LEVEL2_ENTRIES];
     }
-
     return NULL;
 }
 
@@ -195,48 +227,201 @@ DECLINLINE(PRTHTENTRY) rtHandleTableLookupSimple(PRTHANDLETABLEINT pThis, uint32
  */
 DECLINLINE(PRTHTENTRYCTX) rtHandleTableLookupWithCtx(PRTHANDLETABLEINT pThis, uint32_t h)
 {
-    uint32_t i = h - pThis->uBase;
-    if (i < pThis->cCur)
-    {
-        PRTHTENTRYCTX paTable = (PRTHTENTRYCTX)pThis->papvLevel1[i / RTHT_LEVEL2_ENTRIES];
-        if (paTable)
-            return &paTable[i % RTHT_LEVEL2_ENTRIES];
-    }
-
-    return NULL;
+    return rtHandleTableLookupWithCtxIdx(pThis, h - pThis->uBase);
 }
 
 
+/**
+ * Locks the handle table.
+ *
+ * @param   pThis           The handle table structure.
+ * @param   pTmp            The spinlock temp variable.
+ */
 DECLINLINE(void) rtHandleTableLock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
+{
+    if (pThis->hSpinlock != NIL_RTSPINLOCK)
+    {
+        RTSPINLOCKTMP const Tmp = RTSPINLOCKTMP_INITIALIZER;
+        *pTmp = Tmp;
+        RTSpinlockAcquire(pThis->hSpinlock, pTmp);
+    }
+}
+
+
+/**
+ * Locks the handle table.
+ *
+ * @param   pThis           The handle table structure.
+ * @param   pTmp            The spinlock temp variable.
+ */
+DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
 {
     if (pThis->hSpinlock != NIL_RTSPINLOCK)
         RTSpinlockRelease(pThis->hSpinlock, pTmp);
 }
 
 
-DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
+RTDECL(int) RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags, uint32_t uBase, uint32_t cMax,
+                                  PFNRTHANDLETABLERETAIN pfnRetain, void *pvUser)
 {
-    if (pThis->hSpinlock != NIL_RTSPINLOCK)
-        RTSpinlockAcquire(pThis->hSpinlock, pTmp);
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phHandleTable, VERR_INVALID_POINTER);
+    *phHandleTable = NIL_RTHANDLETABLE;
+    AssertPtrNullReturn(pfnRetain, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTHANDLETABLE_FLAGS_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cMax > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(UINT32_MAX - cMax >= uBase, VERR_INVALID_PARAMETER);
+
+    /*
+     * Adjust the cMax value so it is a multiple of the 2nd level tables.
+     */
+    if (cMax >= UINT32_MAX - RTHT_LEVEL2_ENTRIES)
+        cMax = UINT32_MAX - RTHT_LEVEL2_ENTRIES + 1;
+    cMax = ((cMax + RTHT_LEVEL2_ENTRIES - 1) / RTHT_LEVEL2_ENTRIES) * RTHT_LEVEL2_ENTRIES;
+
+    uint32_t const cLevel1 = cMax / RTHT_LEVEL2_ENTRIES;
+    Assert(cLevel1 * RTHT_LEVEL2_ENTRIES == cMax);
+
+    /*
+     * Allocate the structure, include the 1st level lookup table
+     * if it's below the threshold size.
+     */
+    size_t cb = sizeof(RTHANDLETABLEINT);
+    if (cLevel1 < RTHT_LEVEL1_DYN_ALLOC_THRESHOLD)
+        cb = RT_ALIGN(cb, sizeof(void *)) + cLevel1 * sizeof(void *);
+    PRTHANDLETABLEINT pThis = (PRTHANDLETABLEINT)RTMemAllocZ(cb);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Initialize it.
+     */
+    pThis->u32Magic = RTHANDLETABLE_MAGIC;
+    pThis->fFlags = fFlags;
+    pThis->uBase = uBase;
+    pThis->cCur = 0;
+    pThis->hSpinlock = NIL_RTSPINLOCK;
+    if (cLevel1 < RTHT_LEVEL1_DYN_ALLOC_THRESHOLD)
+        pThis->papvLevel1 = (void **)((uint8_t *)pThis + RT_ALIGN(sizeof(*pThis), sizeof(void *)));
+    else
+        pThis->papvLevel1 = NULL;
+    pThis->pfnRetain = pfnRetain;
+    pThis->pvRetainUser = pvUser;
+    pThis->cMax = cMax;
+    pThis->cCurAllocated = 0;
+    pThis->cLevel1 = cLevel1 < RTHT_LEVEL1_DYN_ALLOC_THRESHOLD ? cLevel1 : 0;
+    pThis->iFreeHead = NIL_RTHT_INDEX;
+    pThis->iFreeTail = NIL_RTHT_INDEX;
+    if (fFlags & RTHANDLETABLE_FLAGS_LOCKED)
+    {
+        int rc = RTSpinlockCreate(&pThis->hSpinlock);
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pThis);
+            return rc;
+        }
+    }
+
+    *phHandleTable = pThis;
+    return VINF_SUCCESS;
 }
 
 
-RTDECL(int)     RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags, uint32_t uBase, uint32_t cMax,
-                                      PFNRTHANDLETABLERETAIN pfnRetain, void *pvUser)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-RTDECL(int)     RTHandleTableCreate(PRTHANDLETABLE phHandleTable)
+RTDECL(int) RTHandleTableCreate(PRTHANDLETABLE phHandleTable)
 {
     return RTHandleTableCreateEx(phHandleTable, RTHANDLETABLE_FLAGS_LOCKED, 1, 65534, NULL, NULL);
 }
 
 
-RTDECL(int)     RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDELETE pfnDelete, void *pvUser)
+RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDELETE pfnDelete, void *pvUser)
 {
-    return -1;
+    /*
+     * Validate input, quitely ignore the NIL handle.
+     */
+    if (hHandleTable == NIL_RTHANDLETABLE)
+        return VINF_SUCCESS;
+    PRTHANDLETABLEINT pThis = (PRTHANDLETABLEINT)hHandleTable;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTHANDLETABLE_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pfnDelete, VERR_INVALID_POINTER);
+
+    /*
+     * Mark the thing as invalid / deleted.
+     * Then kill the lock.
+     */
+    RTSPINLOCKTMP Tmp;
+    rtHandleTableLock(pThis, &Tmp);
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTHANDLETABLE_MAGIC);
+    rtHandleTableUnlock(pThis, &Tmp);
+
+    if (pThis->hSpinlock != NIL_RTSPINLOCK)
+    {
+        rtHandleTableLock(pThis, &Tmp);
+        rtHandleTableUnlock(pThis, &Tmp);
+
+        RTSpinlockDestroy(pThis->hSpinlock);
+        pThis->hSpinlock = NIL_RTSPINLOCK;
+    }
+
+    if (pfnDelete)
+    {
+        /*
+         * Walk all the tables looking for used handles.
+         */
+        uint32_t cLeft = pThis->cCurAllocated;
+        if (pThis->fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
+        {
+            for (uint32_t i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
+            {
+                PRTHTENTRYCTX paTable = (PRTHTENTRYCTX)pThis->papvLevel1[i1];
+                if (paTable)
+                    for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
+                        if (!RTHT_IS_FREE(paTable[i].pvObj))
+                        {
+                            pfnDelete(hHandleTable, pThis->uBase + i + i1 * RTHT_LEVEL2_ENTRIES,
+                                      paTable[i].pvObj, paTable[i].pvCtx, pvUser);
+                            Assert(cLeft > 0);
+                            cLeft--;
+                        }
+            }
+        }
+        else
+        {
+            for (uint32_t i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
+            {
+                PRTHTENTRY paTable = (PRTHTENTRY)pThis->papvLevel1[i1];
+                if (paTable)
+                    for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
+                        if (!RTHT_IS_FREE(paTable[i].pvObj))
+                        {
+                            pfnDelete(hHandleTable, pThis->uBase + i + i1 * RTHT_LEVEL2_ENTRIES,
+                                      paTable[i].pvObj, NULL, pvUser);
+                            Assert(cLeft > 0);
+                            cLeft--;
+                        }
+            }
+        }
+        Assert(!cLeft);
+    }
+
+    /*
+     * Free the memory.
+     */
+    for (uint32_t i1 = 0; i1 < pThis->cLevel1; i1++)
+        if (pThis->papvLevel1[i1])
+        {
+            RTMemFree(pThis->papvLevel1[i1]);
+            pThis->papvLevel1[i1] = NULL;
+        }
+
+    if (pThis->cMax / RTHT_LEVEL2_ENTRIES >= RTHT_LEVEL1_DYN_ALLOC_THRESHOLD)
+        RTMemFree(pThis->papvLevel1);
+
+    RTMemFree(pThis);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -288,14 +473,14 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTHANDLETABLE_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fFlags & RTHANDLETABLE_FLAGS_CONTEXT, VERR_INVALID_FUNCTION);
-    AssertReturn(RTHT_IS_FREE(pvObj), VERR_INVALID_PARAMETER);
+    AssertReturn(!RTHT_IS_FREE(pvObj), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ph, VERR_INVALID_POINTER);
     *ph = pThis->uBase - 1;
 
     /*
      * Allocation loop.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCKTMP Tmp;
     rtHandleTableLock(pThis, &Tmp);
 
     int rc;
@@ -307,7 +492,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
         uint32_t i = pThis->iFreeHead;
         if (i != NIL_RTHT_INDEX)
         {
-            PRTHTENTRYFREE pFree = (PRTHTENTRYFREE)rtHandleTableLookupWithCtx(pThis, i + pThis->uBase);
+            PRTHTENTRYFREE pFree = (PRTHTENTRYFREE)rtHandleTableLookupWithCtxIdx(pThis, i);
             Assert(pFree);
             if (i == pThis->iFreeTail)
                 pThis->iFreeTail = pThis->iFreeHead = NIL_RTHT_INDEX;
@@ -339,11 +524,12 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
              * Do we have to expand the 1st level table too?
              */
             uint32_t const iLevel1 = pThis->cCur / RTHT_LEVEL2_ENTRIES;
-            uint32_t cLevel1 = iLevel1 + 1 >= pThis->cLevel1
+            uint32_t cLevel1 = iLevel1 >= pThis->cLevel1
                              ? pThis->cLevel1 + PAGE_SIZE / sizeof(void *)
                              : 0;
             if (cLevel1 > pThis->cMax / RTHT_LEVEL2_ENTRIES)
                 cLevel1 = pThis->cMax / RTHT_LEVEL2_ENTRIES;
+            Assert(!cLevel1 || pThis->cMax / RTHT_LEVEL2_ENTRIES >= RTHT_LEVEL1_DYN_ALLOC_THRESHOLD);
 
             /* leave the lock (never do fancy stuff from behind a spinlock). */
             rtHandleTableUnlock(pThis, &Tmp);
@@ -374,23 +560,25 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
              * Insert the new bits, but be a bit careful as someone might have
              * raced us expanding the table.
              */
-
+            /* deal with the 1st level lookup expansion first */
             if (cLevel1)
             {
+                Assert(papvLevel1);
                 if (cLevel1 > pThis->cLevel1)
                 {
                     /* Replace the 1st level table. */
                     memcpy(papvLevel1, pThis->papvLevel1, sizeof(void *) * pThis->cLevel1);
                     memset(&papvLevel1[pThis->cLevel1], 0, sizeof(void *) * (cLevel1 - pThis->cLevel1));
+                    pThis->cLevel1 = cLevel1;
                     void **papvTmp = pThis->papvLevel1;
                     pThis->papvLevel1 = papvLevel1;
                     papvLevel1 = papvTmp;
                 }
 
                 /* free the obsolete one (outside the lock of course) */
-                rtHandleTableLock(pThis, &Tmp);
-                RTMemFree(papvLevel1);
                 rtHandleTableUnlock(pThis, &Tmp);
+                RTMemFree(papvLevel1);
+                rtHandleTableLock(pThis, &Tmp);
             }
 
             /* insert the table we allocated */
@@ -403,7 +591,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
                 Assert(!(pThis->cCur % RTHT_LEVEL2_ENTRIES));
                 for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES - 1; i++)
                 {
-                    RTHT_SET_FREE_IDX((PRTHTENTRYFREE)&paTable[i], i + 1);
+                    RTHT_SET_FREE_IDX((PRTHTENTRYFREE)&paTable[i], i + 1 + pThis->cCur);
                     paTable[i].pvCtx = (void *)~(uintptr_t)7;
                 }
                 RTHT_SET_FREE_IDX((PRTHTENTRYFREE)&paTable[RTHT_LEVEL2_ENTRIES - 1], NIL_RTHT_INDEX);
@@ -414,7 +602,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
                     pThis->iFreeHead = pThis->cCur;
                 else
                 {
-                    PRTHTENTRYFREE pPrev = (PRTHTENTRYFREE)rtHandleTableLookupWithCtx(pThis, pThis->iFreeTail);
+                    PRTHTENTRYFREE pPrev = (PRTHTENTRYFREE)rtHandleTableLookupWithCtxIdx(pThis, pThis->iFreeTail);
                     Assert(pPrev);
                     RTHT_SET_FREE_IDX(pPrev, pThis->cCur);
                 }
@@ -425,9 +613,9 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
             else
             {
                 /* free the table (raced someone, and we lost). */
-                rtHandleTableLock(pThis, &Tmp);
-                RTMemFree(paTable);
                 rtHandleTableUnlock(pThis, &Tmp);
+                RTMemFree(paTable);
+                rtHandleTableLock(pThis, &Tmp);
             }
 
             rc = VERR_TRY_AGAIN;
@@ -451,7 +639,7 @@ RTDECL(void *)  RTHandleTableLookupWithCtx(RTHANDLETABLE hHandleTable, uint32_t 
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCKTMP Tmp;
     rtHandleTableLock(pThis, &Tmp);
 
     /*
@@ -491,7 +679,7 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCKTMP Tmp;
     rtHandleTableLock(pThis, &Tmp);
 
     /*
@@ -525,7 +713,7 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
                     pThis->iFreeHead = pThis->iFreeTail = i;
                 else
                 {
-                    PRTHTENTRYFREE pPrev = (PRTHTENTRYFREE)rtHandleTableLookupWithCtx(pThis, pThis->iFreeTail + pThis->uBase);
+                    PRTHTENTRYFREE pPrev = (PRTHTENTRYFREE)rtHandleTableLookupWithCtxIdx(pThis, pThis->iFreeTail);
                     Assert(pPrev);
                     RTHT_SET_FREE_IDX(pPrev, i);
                     pThis->iFreeTail = i;

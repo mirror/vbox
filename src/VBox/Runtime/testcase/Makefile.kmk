@@ -62,6 +62,7 @@ PROGRAMS += \
 	tstFile \
 	tstFileLock \
 	tstGetOpt \
+	tstHandleTable \
 	tstHeapSimple \
 	tstInlineAsm \
 	tstLdr \
@@ -151,6 +152,8 @@ tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 tstFileLock_SOURCES = tstFileLock.cpp
 
 tstGetOpt_SOURCES = tstGetOpt.cpp
+
+tstHandleTable_SOURCES = tstHandleTable.cpp
 
 tstHeapSimple_SOURCES = tstHeapSimple.cpp
 
