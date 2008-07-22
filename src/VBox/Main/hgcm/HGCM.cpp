@@ -1019,6 +1019,7 @@ void HGCMService::UnloadService (void)
 
     if (pSvc == NULL)
     {
+        *ppSvc = NULL;
         return VERR_HGCM_SERVICE_NOT_FOUND;
     }
 
