@@ -341,7 +341,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type>&amp;Copier</translation>
+        <translation>&amp;Copier</translation>
     </message>
 </context>
 <context>
