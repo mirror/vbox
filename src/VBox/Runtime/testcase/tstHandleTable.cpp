@@ -523,7 +523,6 @@ int main(int argc, char **argv)
         /*
          * Do a simple warmup / smoke test first.
          */
-#if 0
         tstHandleTableTest1(1,          65534,  128,           2048, false, 0);
         tstHandleTableTest1(1,          65534,  128,           2048, false, RTHANDLETABLE_FLAGS_CONTEXT);
         tstHandleTableTest1(1,          65534,   63,           2048, false, RTHANDLETABLE_FLAGS_LOCKED);
@@ -538,7 +537,6 @@ int main(int argc, char **argv)
         tstHandleTableTest1(0,           1024,    4,            128, false, RTHANDLETABLE_FLAGS_CONTEXT | RTHANDLETABLE_FLAGS_LOCKED);
         /* For testing 1st level expansion / reallocation. */
         tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, 0);
-#endif
         tstHandleTableTest1(1,    1024*1024*8,    3,         150000, false, RTHANDLETABLE_FLAGS_CONTEXT);
 
         /*
