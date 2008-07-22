@@ -331,6 +331,24 @@ protected:
 };
 
 template<>
+struct SafeArrayTraits <LONG64>
+{
+protected:
+
+    static VARTYPE VarType() { return VT_I8; }
+    static void Copy (LONG64 aFrom, LONG64 &aTo) { aTo = aFrom; }
+};
+
+template<>
+struct SafeArrayTraits <ULONG64>
+{
+protected:
+
+    static VARTYPE VarType() { return VT_UI8; }
+    static void Copy (ULONG64 aFrom, ULONG64 &aTo) { aTo = aFrom; }
+};
+
+template<>
 struct SafeArrayTraits <BSTR>
 {
 protected:
