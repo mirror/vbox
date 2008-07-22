@@ -90,7 +90,7 @@ VBGLR3DECL(int) VbglR3GuestPropDisconnect(uint32_t u32ClientId)
  *                          the property will be removed.
  * @param   pszFlags        The flags for the property
  */
-VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, char *pszName, char *pszValue, char *pszFlags)
+VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags)
 {
     int rc;
 
@@ -102,9 +102,9 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, char *pszName, char *
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 2;
-        VbglHGCMParmPtrSet(&Msg.name, pszName, strlen(pszName) + 1);
-        VbglHGCMParmPtrSet(&Msg.value, pszValue, strlen(pszValue) + 1);
-        VbglHGCMParmPtrSet(&Msg.flags, pszFlags, strlen(pszFlags) + 1);
+        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
+        VbglHGCMParmPtrSet(&Msg.value, const_cast<char *>(pszValue), strlen(pszValue) + 1);
+        VbglHGCMParmPtrSet(&Msg.flags, const_cast<char *>(pszFlags), strlen(pszFlags) + 1);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -117,7 +117,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, char *pszName, char *
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
-        VbglHGCMParmPtrSet(&Msg.name, pszName, strlen(pszName) + 1);
+        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -137,7 +137,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, char *pszName, char *
  * @note  if the property already exists and pszValue is not NULL then the
  *        property's flags field will be left unchanged
  */
-VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, char *pszName, char *pszValue)
+VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszName, const char *pszValue)
 {
     int rc;
 
@@ -149,8 +149,8 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, char *pszName, c
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 2;
-        VbglHGCMParmPtrSet(&Msg.name, pszName, strlen(pszName) + 1);
-        VbglHGCMParmPtrSet(&Msg.value, pszValue, strlen(pszValue) + 1);
+        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
+        VbglHGCMParmPtrSet(&Msg.value, const_cast<char *>(pszValue), strlen(pszValue) + 1);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -163,7 +163,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, char *pszName, c
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
-        VbglHGCMParmPtrSet(&Msg.name, pszName, strlen(pszName) + 1);
+        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -227,17 +227,11 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
         *ppszValue = reinterpret_cast<char *>(pvBuf);
     if (RT_SUCCESS(rc) && (ppszFlags != NULL))
     {
-        bool found = false;
-        size_t i = 0;
-        char *pcBuf = reinterpret_cast<char *>(pvBuf);
-        for (; i < cbBuf && !found; ++i)
-            if (0 == pcBuf[i])
-                found = true;
-        if (!found)
-            /* To my mind this is an internal error, but whatever */
-            rc = VERR_TOO_MUCH_DATA;
+        char *pszEos = reinterpret_cast<char *>(memchr(pvBuf, '\0', cbBuf));
+        if (pszEos)
+            *ppszFlags = pszEos + 1;
         else
-            *ppszFlags = pcBuf + i;
+            rc = VERR_TOO_MUCH_DATA;
     }
     return rc;
 }
@@ -247,8 +241,12 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
  * Retrieve a property value, allocating space for it.
  *
  * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, pszValue containing valid data.
- * @retval  VERR_NOT_FOUND if the key wasn't found.
+ * @retval  VINF_SUCCESS on success, *ppszValue containing valid data.
+ * @retval  VERR_NOT_FOUND if the key wasn't found and *ppszValue set to NULL.
+ * @retval  VERR_TOO_MUCH_DATA if we were unable to determine the right size
+ *          to allocate for the buffer.  This can happen as the result of a
+ *          race between our allocating space and the host changing the
+ *          property value.
  *
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pszName         The value to read.  Utf8
@@ -262,26 +260,32 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
     uint32_t cchBuf = 1024;
     void *pvBuf = RTMemAlloc(cchBuf);
     char *pszValue = NULL;
+    *ppszValue = NULL;
     if (NULL == pvBuf)
         rc = VERR_NO_MEMORY;
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
-                                 &pszValue, NULL, NULL, &cchBuf);
-        if (VERR_BUFFER_OVERFLOW == rc)
+        /* There is a race here between our reading the property size and the
+         * host changing the value before we read it.  Try up to ten times and
+         * report the problem if that fails. */
+        bool finish = false;
+        for (unsigned i = 0; (i < 10) && !finish; ++i)
         {
-            /** @todo how should we handle the race condition here? */
-            pvBuf = RTMemRealloc(pvBuf, cchBuf);
-            if (pvBuf != NULL)
-                rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
-                                         &pszValue, NULL, NULL, NULL);
-            else
-                rc = VERR_NO_MEMORY;
+            rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
+                                     &pszValue, NULL, NULL, &cchBuf);
             if (VERR_BUFFER_OVERFLOW == rc)
-                /* VERR_BUFFER_OVERFLOW has a different meaning here as a
-                 * return code */
-                rc = VERR_TOO_MUCH_DATA;
+            {
+                pvBuf = RTMemRealloc(pvBuf, cchBuf);
+                if (NULL == pvBuf)
+                    rc = VERR_NO_MEMORY;
+            }
+            if (rc != VERR_BUFFER_OVERFLOW)
+                finish = true;
         }
+        if (VERR_BUFFER_OVERFLOW == rc)
+            /* VERR_BUFFER_OVERFLOW has a different meaning here as a
+             * return code, but we need to report the race. */
+            rc = VERR_TOO_MUCH_DATA;
     }
     if (RT_SUCCESS(rc))
         *ppszValue = pszValue;

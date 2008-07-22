@@ -1532,8 +1532,8 @@ VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, 
  * @{ */
 VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestPropDisconnect(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t u32ClientId, char *pszName, char *pszValue, char *pszFlags);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t u32ClientId, char *pszName, char *pszValue);
+VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszName, const char *pszValue);
 VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
 VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue, uint32_t *pcchValueActual);
 VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId, const char *pszName, char **ppszValue);
