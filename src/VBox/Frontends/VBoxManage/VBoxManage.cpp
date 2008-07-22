@@ -651,7 +651,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
-#ifdef VBOX_WITH_INFO_SVC
+#ifdef VBOX_WITH_GUEST_PROPS
     if (u64Cmd & USAGE_GETGUESTPROPERTY)
     {
         RTPrintf("VBoxManage getguestproperty <vmname>|<uuid> <key>\n"
@@ -664,7 +664,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [<value>] (no value deletes key)\n"
                  "\n");
     }
-#endif /* VBOX_WITH_INFO_SVC defined */
+#endif /* VBOX_WITH_GUEST_PROPS defined */
 
 }
 
@@ -7590,7 +7590,7 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#ifdef VBOX_WITH_INFO_SVC
+#ifdef VBOX_WITH_GUEST_PROPS
 static int handleGetGuestProperty(int argc, char *argv[],
                                   ComPtr<IVirtualBox> virtualBox,
                                   ComPtr<ISession> session)
@@ -7611,7 +7611,7 @@ static int handleGetGuestProperty(int argc, char *argv[],
     if (machine)
     {
         Bstr value;
-        CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam()));
+        CHECK_ERROR(machine, GetGuestPropertyValue(Bstr(argv[1]), value.asOutParam()));
         if (value)
             RTPrintf("Value: %lS\n", value.raw());
         else
@@ -7640,15 +7640,15 @@ static int handleSetGuestProperty(int argc, char *argv[],
     if (machine)
     {
         if (argc < 3)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), NULL));
+            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(argv[1]), NULL));
         else if (argc == 3)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(argv[1]), Bstr(argv[2])));
+            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(argv[1]), Bstr(argv[2])));
         else
             return errorSyntax(USAGE_SETGUESTPROPERTY, "Too many parameters");
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
-#endif /* VBOX_WITH_INFO_SVC defined */
+#endif /* VBOX_WITH_GUEST_PROPS defined */
 
 enum ConvertSettings
 {
@@ -7984,10 +7984,10 @@ int main(int argc, char *argv[])
         { "usbfilter",        handleUSBFilter },
         { "sharedfolder",     handleSharedFolder },
         { "vmstatistics",     handleVMStatistics },
-#ifdef VBOX_WITH_INFO_SVC
+#ifdef VBOX_WITH_GUEST_PROPS
         { "getguestproperty", handleGetGuestProperty },
         { "setguestproperty", handleSetGuestProperty },
-#endif /* VBOX_WITH_INFO_SVC defined */
+#endif /* VBOX_WITH_GUEST_PROPS defined */
         { NULL,               NULL }
     };
 

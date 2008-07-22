@@ -132,7 +132,7 @@ LINUXSTRIPBIN += \
 
 # Shared Info Services
 LINUXSTRIPBIN += \
-	$(if $(VBOX_WITH_INFO_SVC),VBoxSharedInfoSvc.so)
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so)
 
 ifdef VBOX_WITH_DOCS
  LINUXNOSTRIP += \

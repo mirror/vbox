@@ -69,10 +69,10 @@
 #define USAGE_MODINSTALL            RT_BIT_64(37)
 #define USAGE_MODUNINSTALL          RT_BIT_64(38)
 #define USAGE_RENAMEVMDK            RT_BIT_64(39)
-#ifdef VBOX_WITH_INFO_SVC
+#ifdef VBOX_WITH_GUEST_PROPS
 #define USAGE_GETGUESTPROPERTY      RT_BIT_64(40)
 #define USAGE_SETGUESTPROPERTY      RT_BIT_64(41)
-#endif  /* VBOX_WITH_INFO_SVC defined */
+#endif  /* VBOX_WITH_GUEST_PROPS defined */
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 

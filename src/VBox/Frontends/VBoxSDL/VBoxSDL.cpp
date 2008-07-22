@@ -360,6 +360,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnGuestPropertyChange)(INPTR GUIDPARAM machineId, INPTR BSTR key, INPTR BSTR value, INPTR BSTR flags)
+    {
+        return S_OK;
+    }
+
 private:
 #ifdef RT_OS_WINDOWS
     long refcnt;

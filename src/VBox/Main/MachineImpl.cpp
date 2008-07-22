@@ -73,8 +73,8 @@
 
 #include <VBox/err.h>
 #include <VBox/param.h>
-#ifdef VBOX_WITH_INFO_SVC
-# include <VBox/HostServices/VBoxInfoSvc.h>
+#ifdef VBOX_WITH_GUEST_PROPS
+# include <VBox/HostServices/GuestPropertySvc.h>
 #endif
 
 #include <algorithm>
@@ -2688,9 +2688,24 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
 
-STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
 {
-#if !defined (VBOX_WITH_INFO_SVC)
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if (!VALID_PTR (aValue))
+        return E_POINTER;
+    if (!VALID_PTR (aTimestamp))
+        return E_POINTER;
+    if (!VALID_PTR (aFlags))
+        return E_POINTER;
+    *aTimestamp = 0;
+    Bstr().cloneTo(aFlags);
+    return GetGuestPropertyValue (aKey, aValue);
+}
+
+STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aKey, BSTR *aValue)
+{
+#if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
     if (!VALID_PTR (aKey))
@@ -2703,7 +2718,7 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 
     AutoReadLock alock (this);
 
-    using namespace svcInfo;
+    using namespace guestProp;
     HRESULT rc = E_FAIL;
 
     switch (mData->mSession.mState)
@@ -2752,12 +2767,28 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue)
                 mData->mSession.mState);
     }
     return rc;
-#endif /* else !defined (VBOX_WITH_INFO_SVC) */
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
-STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
+STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aKey, ULONG64 *aTimestamp)
 {
-#if !defined (VBOX_WITH_INFO_SVC)
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPTR BSTR aFlags)
+{
+    if (!VALID_PTR (aKey))
+        return E_INVALIDARG;
+    if ((aValue != NULL) && !VALID_PTR (aValue))
+        return E_INVALIDARG;
+    if ((aFlags != NULL) && !VALID_PTR (aFlags))
+        return E_INVALIDARG;
+    return SetGuestPropertyValue (aKey, aValue);
+}
+
+STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aKey, INPTR BSTR aValue)
+{
+#if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
     if (!VALID_PTR (aKey))
@@ -2771,7 +2802,7 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
     /* SetExtraData() needs a write lock */
     AutoWriteLock alock (this);
 
-    using namespace svcInfo;
+    using namespace guestProp;
     HRESULT rc = E_FAIL;
 
     switch (mData->mSession.mState)
@@ -2821,7 +2852,12 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
                 mData->mSession.mState);
     }
     return rc;
-#endif /* else !defined (VBOX_WITH_INFO_SVC) */
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
+}
+
+STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPattern, ComSafeArrayOut(BSTR, aKeys), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+{
+    return E_NOTIMPL;
 }
 
 

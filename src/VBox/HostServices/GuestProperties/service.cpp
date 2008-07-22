@@ -1,6 +1,6 @@
 /** @file
  *
- * Shared Information Services:
+ * Guest Property Service:
  * Host service entry points.
  */
 
@@ -21,22 +21,23 @@
  */
 
 /**
- * An HGCM service for passing requests which do not need any persistant state
- * to handle.  We currently only support three types of request - set guest
- * property (SET_CONFIG_KEY and SET_CONFIG_KEY_HOST), get guest property
- * (GET_CONFIG_KEY and GET_CONFIG_KEY_HOST) and remove guest property
- * (DEL_CONFIG_KEY and DEL_CONFIG_KEY_HOST).  These may be used to read, to
- * write and to remove configuration information which is available to
- * both guest and host.  This configuration information is stored in a CFGM
- * node using the CFGM APIs.  It is the responsibility of whoever creates the
- * service to create this node and to tell the service about it using the
- * SET_CFGM_NODE host call.  It is also the responsibility of the service
- * creator to save this information to disk and to retrieve it when needed.
- * Since the CFGM APIs are single threaded, the creator must also ensure that
- * no-one else accesses the configuration node while the service is running.
+ * This HGCM service allows the guest to set and query values in a property
+ * store on the host.  The service proxies the guest requests to the service
+ * owner on the host using a request callback provided by the owner, and is
+ * notified of changes to properties made by the host.  It forwards these
+ * notifications to clients in the guest which have expressed interest and
+ * are waiting for notification.
  *
- * If this service is extended to deal with new requests it would probably be a
- * good idea to split it up into several files.
+ * The service currently consists of two threads.  One of these is the main
+ * HGCM service thread which waits for requests from the guest and schedules
+ * these to the second thread.  The second thread deals with the requests
+ * sequentially by calling the callback provided by the service owner,
+ * notifying the guest clients when it has finished dealing with a given
+ * request.
+ *
+ * Guest requests to wait for notification are dealt with differently.  They
+ * are added to a list of open notification requests but do not schedule
+ * anything in the request thread except for a possible timeout.
  */
 
 #define LOG_GROUP LOG_GROUP_HGCM
@@ -44,7 +45,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/HostServices/VBoxInfoSvc.h>
+#include <VBox/HostServices/GuestPropertySvc.h>
 
 #include <memory>  /* for auto_ptr */
 
@@ -81,7 +82,15 @@ static void VBoxHGCMParmUInt32Set (VBOXHGCMSVCPARM *pParm, uint32_t u32)
 }
 
 
-namespace svcInfo {
+/** Set a uint64_t value to an HGCM parameter structure */
+static void VBoxHGCMParmUInt64Set (VBOXHGCMSVCPARM *pParm, uint64_t u64)
+{
+    pParm->type = VBOX_HGCM_SVC_PARM_64BIT;
+    pParm->u.uint64 = u64;
+}
+
+
+namespace guestProp {
 
 /**
  * Class containing the shared information service functionality.
@@ -157,6 +166,7 @@ private:
     int validateKey(const char *pszKey, uint32_t cbKey);
     int validateValue(char *pszValue, uint32_t cbValue);
     int getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
@@ -189,7 +199,7 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
     if (RT_SUCCESS(rc))
         /* We want the byte length, not the Utf8 length */
         count = strlen(pszKey);
-    if (RT_SUCCESS(rc) && (count > KEY_MAX_LEN))
+    if (RT_SUCCESS(rc) && (count > MAX_NAME_LEN))
         rc = VERR_INVALID_PARAMETER;
 
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -219,7 +229,7 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
     if (RT_SUCCESS(rc))
         /* We want the byte length, not the Utf8 length */
         count = strlen(pszValue);
-    if (RT_SUCCESS(rc) && (count > KEY_MAX_VALUE_LEN))
+    if (RT_SUCCESS(rc) && (count > MAX_VALUE_LEN))
         rc = VERR_INVALID_PARAMETER;
 
     if (RT_SUCCESS(rc))
@@ -266,10 +276,69 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         VBoxHGCMParmUInt32Set(&paParms[2], cbValueActual);
     if (RT_SUCCESS(rc) && (cbValueActual > cbValue))
         rc = VERR_BUFFER_OVERFLOW;
-    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+    if (RT_SUCCESS(rc))
         rc = CFGMR3QueryString(mpNode, pszKey, pszValue, cbValue);
-    if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+    if (RT_SUCCESS(rc))
         Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pszValue));
+    else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
+        rc = VERR_NOT_FOUND;
+    LogFlowThisFunc(("rc = %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Retrieve a value from the guest registry by key, checking the validity
+ * of the arguments passed.  If the guest has not allocated enough buffer
+ * space for the value then we return VERR_OVERFLOW and set the size of the
+ * buffer needed in the "size" HGCM parameter.  If the key was not found at
+ * all, we return VERR_NOT_FOUND.
+ *
+ * @returns iprt status value
+ * @param   cParms  the number of HGCM parameters supplied
+ * @param   paParms the array of HGCM parameters
+ * @thread  HGCM
+ */
+int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    int rc = VINF_SUCCESS;
+    char *pszName, *pchBuf;
+    uint32_t cbName, cbBuf;
+    size_t cbValueActual;
+
+    LogFlowThisFunc(("\n"));
+    if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
+        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)    /* name */
+        || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)    /* buffer */
+       )
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cbName);
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cbBuf);
+    if (RT_SUCCESS(rc))
+        rc = validateKey(pszName, cbName);
+    if (RT_SUCCESS(rc))
+        rc = CFGMR3QuerySize(mpNode, pszName, &cbValueActual);
+    if (RT_SUCCESS(rc))
+    {
+        /* Temporary hack for an empty flags string */
+        cbValueActual += 1;
+        VBoxHGCMParmUInt32Set(&paParms[3], cbValueActual);
+    }
+    if (RT_SUCCESS(rc) && (cbValueActual > cbBuf))
+        rc = VERR_BUFFER_OVERFLOW;
+    if (RT_SUCCESS(rc))
+        rc = CFGMR3QueryString(mpNode, pszName, pchBuf, cbBuf);
+    if (RT_SUCCESS(rc))
+    {
+        /* No timestamp */
+        VBoxHGCMParmUInt64Set(&paParms[2], 0);
+        /* No flags */
+        pchBuf[cbValueActual - 1] = 0;
+    }
+    if (RT_SUCCESS(rc))
+        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszName, rc, cbBuf, pchBuf));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
         rc = VERR_NOT_FOUND;
     LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -312,7 +381,7 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         unsigned cChildren = 0;
         for (PCFGMNODE pChild = CFGMR3GetFirstChild(mpNode); pChild != 0; pChild = CFGMR3GetNextChild(pChild))
             ++cChildren;
-        if (cChildren >= KEY_MAX_KEYS)
+        if (cChildren >= MAX_KEYS)
             rc = VERR_TOO_MUCH_DATA;
     }
     if (RT_SUCCESS(rc))
@@ -380,21 +449,27 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
 
     switch (eFunction)
     {
-        /* The guest wishes to read a configuration value */
-        case GET_CONFIG_KEY:
-            LogFlowFunc(("GET_CONFIG_KEY\n"));
-            rc = getKey(cParms, paParms);
+        /* The guest wishes to read a property */
+        case GET_PROP:
+            LogFlowFunc(("GET_PROP\n"));
+            rc = getProperty(cParms, paParms);
             break;
 
-        /* The guest wishes to set a configuration value */
-        case SET_CONFIG_KEY:
-            LogFlowFunc(("SET_CONFIG_KEY\n"));
+        /* The guest wishes to set a property */
+        case SET_PROP:
+            LogFlowFunc(("SET_PROP\n"));
+            rc = setKey(cParms - 1, paParms);
+            break;
+
+        /* The guest wishes to set a property value */
+        case SET_PROP_VALUE:
+            LogFlowFunc(("SET_PROP_VALUE\n"));
             rc = setKey(cParms, paParms);
             break;
 
         /* The guest wishes to remove a configuration value */
-        case DEL_CONFIG_KEY:
-            LogFlowFunc(("DEL_CONFIG_KEY\n"));
+        case DEL_PROP:
+            LogFlowFunc(("DEL_PROP\n"));
             rc = delKey(cParms, paParms);
             break;
 
@@ -475,9 +550,9 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
     return rc;
 }
 
-} /* namespace svcInfo */
+} /* namespace guestProp */
 
-using svcInfo::Service;
+using guestProp::Service;
 
 /**
  * @copydoc VBOXHGCMSVCLOAD

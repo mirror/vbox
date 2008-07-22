@@ -55,6 +55,24 @@ DECLINLINE(int) VbglHGCMParmUInt32Get(HGCMFunctionParameter *pParm, uint32_t *pu
 }
 
 
+DECLINLINE(void) VbglHGCMParmUInt64Set(HGCMFunctionParameter *pParm, uint64_t u64)
+{
+    pParm->type      = VMMDevHGCMParmType_64bit;
+    pParm->u.value64 = u64;
+}
+
+
+DECLINLINE(int) VbglHGCMParmUInt64Get(HGCMFunctionParameter *pParm, uint64_t *pu64)
+{
+    if (pParm->type == VMMDevHGCMParmType_64bit)
+    {
+        *pu64 = pParm->u.value64;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_PARAMETER;
+}
+
+
 DECLINLINE(void) VbglHGCMParmPtrSet(HGCMFunctionParameter *pParm, void *pv, uint32_t cb)
 {
     pParm->type                    = VMMDevHGCMParmType_LinAddr;

@@ -41,8 +41,8 @@ if1of ($(KBUILD_TARGET), win linux solaris darwin)
   include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
  endif
 endif
-ifdef VBOX_WITH_INFO_SVC
- include $(PATH_SUB_CURRENT)/SharedInfoServices/Makefile.kmk
+ifdef VBOX_WITH_GUEST_PROPS
+ include $(PATH_SUB_CURRENT)/GuestProperties/Makefile.kmk
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
