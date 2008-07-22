@@ -388,20 +388,28 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL *must* be set\n"));
 
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
             {
                 LogRel(("HWACCM: MSR_IA32_VMX_PROCBASED_CTLS2  = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.u));
                 val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT\n"));
 
                 val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT *must* be set\n"));
             }
 
             LogRel(("HWACCM: MSR_IA32_VMX_ENTRY_CTLS       = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_entry.u));
