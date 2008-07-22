@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * helpers - Guest Additions Service helper functions header
  */
@@ -18,17 +19,18 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBOXSERVICEHELPERS__H
-#define __VBOXSERVICEHELPERS__H
+#ifndef ___VBOXSERVICEHELPERS_H
+#define ___VBOXSERVICEHELPERS_H
 
 // #define DEBUG_DISPLAY_CHANGE
 
 #ifdef DEBUG_DISPLAY_CHANGE
-    #define DDCLOG(a) Log(a)
+#   define DDCLOG(a) Log(a)
 #else
-    #define DDCLOG(a) do {} while (0)
-#endif /* DEBUG_DISPLAY_CHANGE */
+#   define DDCLOG(a) do {} while (0)
+#endif /* !DEBUG_DISPLAY_CHANGE */
 
 void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight);
 
-#endif /* __VBOXSERVICEHELPERS__H */
+#endif /* !___VBOXSERVICEHELPERS_H */
+
