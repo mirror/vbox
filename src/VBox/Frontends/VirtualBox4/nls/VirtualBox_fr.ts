@@ -79,17 +79,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Double clic pour ajouter un attachement</translation>
+        <translation>Double clic pour ajouter un attachement</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Disque dur</translation>
+        <translation>Disque dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation type="unfinished">Emplacement</translation>
+        <translation>Emplacement</translation>
     </message>
 </context>
 <context>
@@ -110,7 +110,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Aide</translation>
+        <translation>&amp;Aide</translation>
     </message>
 </context>
 <context>
@@ -341,7 +341,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type>&amp;Copier</translation>
     </message>
 </context>
 <context>
@@ -671,17 +671,18 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sauvegarde l&apos;état d&apos;exécution actuel de la machine virtuelle sur le disque dur réel de l&apos;ordinateur.&lt;/p&gt;&lt;p&gt;Au prochain lancement de cette machine. il sera lut et l&apos;exécution reprendra à l&apos;endroit exact de la sauvegarde, ce qui permet de continuer les travaux immédiatement.&lt;/p&gt;
+&lt;p&gt;Noter que la sauvegarde de l&apos;état de la machine peu prendre du temps et dépend du système d&apos;exploitation client et de la quantité de mémoire vive assignée a la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Envoie le signal ACPI Touche d&apos;arrêt à la machine virtuelle.&lt;/p&gt;&lt;p&gt;Normalement, le système d&apos;exploitation client fonctionnant sous la machine virtuelle détecte ce signal et appelle une procédure d&apos;extinction contrôlée.  Ces la procédure recommandée car cela permet  aux logiciels de sauvegarder leurs données et état.&lt;/p&gt;&lt;p&gt;Si la machine virtuelle ne traite cette signalisation, il est possible que le système d&apos;exploitation client ne soit pas configuré correctement ou que le traitement de cette signalisation ne soit pas implémentée sur celui ci. Dans ce cas sélectionner &lt;b&gt;Eteindre la machine&lt;/b&gt; afin s_arrêter la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Éteindre la machine virtuelle&lt;/p&gt;&lt;p&gt;Noter que cette action arrêtera immédiatement la machine virtuelle et que de ce fait le système d&apos;exploitation client ne sera pas en mesure d&apos;effectuer la procédure d&apos;arrêt contrôlée. Ceci peu entrainer  la &lt;i&gt;perte de données&lt;/i&gt;. Choisissez cette action seulement si  la machine virtuelle ne répond pas à l&apos;action &lt;b&gt;Envoie du signal d&apos;extinction&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -829,7 +830,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
         <source>Unmount F&amp;loppy</source>
-        <translation type="unfinished">Éjecter la d&amp;isquette</translation>
+        <translation>Éjecter la d&amp;isquette</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1546"/>
@@ -950,7 +951,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1609"/>
         <source>&amp;USB Devices</source>
-        <translation type="unfinished">&amp;Périphériques USB</translation>
+        <translation>&amp;Périphériques USB</translation>
     </message>
     <message>
         <location filename="" line="7340129"/>
@@ -1364,13 +1365,13 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1574"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Statistiques...</translation>
+        <translation>&amp;Statistiques...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1576"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ligne de &amp;commande...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
@@ -1385,12 +1386,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1632"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indique si la fonction d&apos;auto-ajustement de la taille de l&apos;écran du client est en service (&lt;img src=auto_resize_on_16px.png/&gt;) où hors service (&lt;img src=auto_resize_off_16px.png/&gt;). Noter que cette fonction nécessite l&apos;installation des additions pour le système d&apos;exploitation client.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1641"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation client :&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions client sur le système d&apos;exploitation client.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
