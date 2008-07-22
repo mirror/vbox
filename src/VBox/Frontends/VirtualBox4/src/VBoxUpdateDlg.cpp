@@ -141,7 +141,7 @@ int VBoxUpdateData::index() const
 
 QString VBoxUpdateData::date() const
 {
-    return mIndex == NeverCheck ? VBoxUpdateDlg::tr ("never") :
+    return mIndex == NeverCheck ? VBoxUpdateDlg::tr ("Never") :
            mDate.toString ("yyyy.MM.dd");
 }
 
