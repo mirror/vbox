@@ -538,10 +538,14 @@ typedef const VTXEPTE *PCVTXEPTE;
 /** VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
  * @{
  */
+/** Virtualize APIC access. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC                      RT_BIT(0)
 /** EPT supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
 /** VPID supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
+/** VM Exit when executing the WBINVD instruction. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
 /** @} */
 
 
