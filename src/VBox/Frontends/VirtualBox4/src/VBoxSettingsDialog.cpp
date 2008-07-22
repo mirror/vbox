@@ -338,6 +338,7 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 
     mPolished = true;
 
+    int minWidth = mSelector->minWidth();
 #ifdef Q_WS_MAC
     /* Set all size policies to ignored */
     for (int i = 0; i < mStack->count(); ++i)
@@ -348,14 +349,16 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
         mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
         mStack->setCurrentIndex (i);
         layout()->activate();
-        mSizeList.insert (0, minimumSize());
+        QSize s = minimumSize();
+        if (minWidth > s.width())
+            s.setWidth (minWidth);
+        mSizeList.insert (0, s);
         mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
     }
 
     categoryChanged (mSelector->currentId());
 #else /* Q_WS_MAC */
     /* Resize to the minimum possible size */
-    int minWidth = mSelector->minWidth();
     QSize s = minimumSize();
     if (minWidth > s.width())
         s.setWidth (minWidth);
