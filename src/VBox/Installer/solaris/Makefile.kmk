@@ -83,7 +83,7 @@ SOLARIS_STRIP_BINS = \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
-	$(if $(VBOX_WITH_INFO_SVC),VBoxSharedInfoSvc.so,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
 	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard3.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox3,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
@@ -234,7 +234,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSVC                                                          $(SOLARIS_INST_DIR)/VBoxSVC
 	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedFolders.so            $(SOLARIS_INST_DIR)/VBoxSharedFolders.so,)
 	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedClipboard.so        $(SOLARIS_INST_DIR)/VBoxSharedClipboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_INFO_SVC),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedInfoSvc.so                  $(SOLARIS_INST_DIR)/VBoxSharedInfoSvc.so,)
+	$(QUIET)$(if $(VBOX_WITH_GUEST_PROPS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxGuestPropSvc.so                $(SOLARIS_INST_DIR)/VBoxGuestPropSvc.so,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSDL                                $(SOLARIS_INST_DIR)/VBoxSDL,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARIS_INST_DIR)/VBoxRT.so
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard3.so                         $(SOLARIS_INST_DIR)/VBoxKeyboard3.so,)
@@ -373,7 +373,7 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxXPCOMIPCD                                                      $(SOLARIS_DBG_DIR)/VBoxXPCOMIPCD
 	$(QUIET)$(if $(VBOX_WITH_SHARED_FOLDERS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedFolders.so              $(SOLARIS_DBG_DIR)/VBoxSharedFolders.so,)
 	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedClipboard.so          $(SOLARIS_DBG_DIR)/VBoxSharedClipboard.so,)
-	$(QUIET)$(if $(VBOX_WITH_INFO_SVC),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedInfoSvc.so                    $(SOLARIS_DBG_DIR)/VBoxSharedInfoSvc.so,)
+	$(QUIET)$(if $(VBOX_WITH_GUEST_PROPS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxGuestPropSvc.so                  $(SOLARIS_DBG_DIR)/VBoxGuestPropSvc.so,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxKeyboard3.so                           $(SOLARIS_DBG_DIR)/VBoxKeyboard3.so,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox3                                $(SOLARIS_DBG_DIR)/VirtualBox3,)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so

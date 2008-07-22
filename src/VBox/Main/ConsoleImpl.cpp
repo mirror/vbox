@@ -81,8 +81,8 @@
 #include <VBox/VBoxDev.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-#ifdef VBOX_WITH_INFO_SVC
-# include <VBox/HostServices/VBoxInfoSvc.h>
+#ifdef VBOX_WITH_GUEST_PROPS
+# include <VBox/HostServices/GuestPropertySvc.h>
 #endif
 
 #include <set>
@@ -3537,7 +3537,7 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
  */
 HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 {
-#if !defined (VBOX_WITH_INFO_SVC)
+#if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
     if (!VALID_PTR (aKey))
@@ -3556,11 +3556,11 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
      * autoVMCaller, so there is no need to hold a lock of this */
 
     HRESULT rc = E_UNEXPECTED;
-    using namespace svcInfo;
+    using namespace guestProp;
 
     VBOXHGCMSVCPARM parm[3];
     Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value (KEY_MAX_VALUE_LEN);
+    Utf8Str Utf8Value (MAX_VALUE_LEN);
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
@@ -3569,8 +3569,8 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     parm[0].u.pointer.size = Utf8Key.length() + 1;
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-    parm[1].u.pointer.size = KEY_MAX_VALUE_LEN;
-    int vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", GET_CONFIG_KEY_HOST,
+    parm[1].u.pointer.size = MAX_VALUE_LEN;
+    int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_CONFIG_KEY_HOST,
                                      3, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
     AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
@@ -3584,9 +3584,9 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     }
     else
         rc = setError (E_UNEXPECTED,
-            tr ("Failed to call the VBoxSharedInfoSvc service (%Rrc)"), vrc);
+            tr ("Failed to call the VBoxGuestPropSvc service (%Rrc)"), vrc);
     return rc;
-#endif /* else !defined (VBOX_WITH_INFO_SVC) */
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
 /**
@@ -3594,7 +3594,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
  */
 HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-#if !defined (VBOX_WITH_INFO_SVC)
+#if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
     if (!VALID_PTR (aKey))
@@ -3613,7 +3613,7 @@ HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
      * autoVMCaller, so there is no need to hold a lock of this */
 
     HRESULT rc = E_UNEXPECTED;
-    using namespace svcInfo;
+    using namespace guestProp;
 
     VBOXHGCMSVCPARM parm[2];
     Utf8Str Utf8Key = aKey;
@@ -3632,19 +3632,19 @@ HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
         parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = Utf8Value.length() + 1;
-        vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", SET_CONFIG_KEY_HOST,
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", SET_CONFIG_KEY_HOST,
                                      2, &parm[0]);
     }
     else
-        vrc = mVMMDev->hgcmHostCall ("VBoxSharedInfoSvc", DEL_CONFIG_KEY_HOST,
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", DEL_CONFIG_KEY_HOST,
                                      1, &parm[0]);
     if (RT_SUCCESS (vrc))
         rc = S_OK;
     else
         rc = setError (E_UNEXPECTED,
-            tr ("Failed to call the VBoxSharedInfoSvc service (%Rrc)"), vrc);
+            tr ("Failed to call the VBoxGuestPropSvc service (%Rrc)"), vrc);
     return rc;
-#endif /* else !defined (VBOX_WITH_INFO_SVC) */
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
 /**
@@ -4170,7 +4170,7 @@ HRESULT Console::powerDown()
 
         alock.enter();
     }
-# ifdef VBOX_WITH_INFO_SVC
+# ifdef VBOX_WITH_GUEST_PROPS
     /* Save all guest/host property store entries to the machine XML
      * file as extra data. */
     PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "Guest/Registry/");
@@ -4178,11 +4178,11 @@ HRESULT Console::powerDown()
     vrc = VINF_SUCCESS;
     while (pValue != NULL && RT_SUCCESS(vrc))
     {
-        using namespace svcInfo;
-        char szKeyName[KEY_MAX_LEN];
-        char szKeyValue[KEY_MAX_VALUE_LEN];
-        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + KEY_MAX_LEN];
-        vrc = CFGMR3GetValueName (pValue, szKeyName, KEY_MAX_LEN);
+        using namespace guestProp;
+        char szKeyName[MAX_NAME_LEN];
+        char szKeyValue[MAX_VALUE_LEN];
+        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + MAX_NAME_LEN];
+        vrc = CFGMR3GetValueName (pValue, szKeyName, MAX_NAME_LEN);
         if (RT_SUCCESS(vrc))
             vrc = CFGMR3QueryString (pRegistry, szKeyName, szKeyValue, sizeof(szKeyValue));
         if (RT_SUCCESS(vrc))
@@ -4202,7 +4202,7 @@ HRESULT Console::powerDown()
     Bstr strExtraDataKey;
     for (;;)
     {
-        using namespace svcInfo;
+        using namespace guestProp;
         Bstr strNextExtraDataKey;
         Bstr strExtraDataValue;
 
@@ -4223,13 +4223,13 @@ HRESULT Console::powerDown()
         char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
 
         /* Now see if a lookup of the name in the CFGM node succeeds. */
-        char szKeyValue[KEY_MAX_VALUE_LEN];
+        char szKeyValue[MAX_VALUE_LEN];
         vrc = CFGMR3QueryString (pRegistry, pszCFGMValueName, szKeyValue, sizeof(szKeyValue));
         /* And delete it from the extra data if it failed. */
         if (VERR_CFGM_VALUE_NOT_FOUND == vrc)
             mMachine->SetExtraData(strExtraDataKey, NULL);
     }
-# endif /* VBOX_WITH_INFO_SVC defined */
+# endif /* VBOX_WITH_GUEST_PROPS defined */
 #endif /* VBOX_HGCM */
 
     /* First, wait for all mpVM callers to finish their work if necessary */

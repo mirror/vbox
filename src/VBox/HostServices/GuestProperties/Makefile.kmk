@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for VBoxControl.
+# Sub-Makefile for the Shared Info Services Host Service.
 #
 
 #
@@ -20,30 +20,32 @@
 #
 
 ifdef VBOX_KBUILD_HACKING
-SUB_DEPTH = ../../../../..
+SUB_DEPTH = ../../../..
 else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
+DEPTH    ?= ../../../..
+SUB_DEPTH = ..
 endif
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxControl
-VBoxControl_TEMPLATE = VBOXGUESTR3EXE
-ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
- VBoxControl_NOINST  = true
-endif
-VBoxControl_SOURCES  = \
-	VBoxControl.cpp \
-	VBoxControl.rc
-VBoxControl_LIBS    += \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
+#
+# The shared folder service DLL.
+#
+DLLS += VBoxGuestPropSvc
+VBoxGuestPropSvc_TEMPLATE  = VBOXR3
+VBoxGuestPropSvc_NAME.os2  = VBoxSIS
+VBoxGuestPropSvc_DEFS      = VBOX_HGCM
+VBoxGuestPropSvc_INCS      = $(PATH_ROOT)/src/VBox/Main/include
+VBoxGuestPropSvc_INCS.win  = \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
+	$(VBOX_PATH_SDK)
 
-# VBoxControl.cpp uses VBOX_SVN_REV.
-VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxControl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
-VBoxControl_DEFS     += \
-	$(if $(VBOX_WITH_INFO_SVC),VBOX_WITH_INFO_SVC VBOX_HGCM,)
+VBoxGuestPropSvc_SOURCES = \
+	service.cpp
 
-include	$(KBUILD_PATH)/subfooter.kmk
+VBoxGuestPropSvc_LIBS = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME) \
+	$(LIB_REM)
+
+include $(KBUILD_PATH)/subfooter.kmk
 

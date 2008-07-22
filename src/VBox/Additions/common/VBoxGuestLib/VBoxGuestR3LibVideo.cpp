@@ -27,10 +27,11 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
-#include <VBox/HostServices/VBoxInfoSvc.h>  /* For Save and RetrieveVideoMode */
+#include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
 
 #include "VBGLR3Internal.h"
 
+#define VIDEO_PROP_PREFIX "/VirtualBox/GuestAdd/Vbgl/Video/"
 
 /**
  * Enable or disable video acceleration.
@@ -227,9 +228,6 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
     rc = vbglR3GRPerform(&req.header);
     if (RT_SUCCESS(rc) && RT_SUCCESS(req.header.rc))
         fRc = req.fSupported;
-    else
-        LogRelFunc(("error querying video mode supported status from VMMDev."
-                    "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req.header.rc));
     return fRc;
 }
 
@@ -244,28 +242,28 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
  */
 VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
 {
-#ifdef VBOX_WITH_INFO_SVC
-    using namespace svcInfo;
+#ifdef VBOX_WITH_GUEST_PROPS
+    using namespace guestProp;
 
-    char szModeName[KEY_MAX_LEN];
-    char szModeParms[KEY_MAX_VALUE_LEN];
+    char szModeName[MAX_NAME_LEN];
+    char szModeParms[MAX_VALUE_LEN];
     uint32_t u32ClientId = 0;
-    RTStrPrintf(szModeName, sizeof(szModeName), "VideoMode/%s", pszName);
+    RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
     RTStrPrintf(szModeParms, sizeof(szModeParms), "%dx%dx%d", cx, cy, cBits);
-    int rc = VbglR3InfoSvcConnect(&u32ClientId);
+    int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
-        rc = VbglR3InfoSvcWriteKey(u32ClientId, szModeName, szModeParms);
+        rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
     if (u32ClientId != 0)
-        VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     return rc;
-#else /* VBOX_WITH_INFO_SVC not defined */
+#else /* VBOX_WITH_GUEST_PROPS not defined */
     return VERR_NOT_IMPLEMENTED;
-#endif /* VBOX_WITH_INFO_SVC not defined */
+#endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
 
 /**
- * Retrieve video mode parameters from the registry.
+ * Retrieve video mode parameters from the guest property store.
  *
  * @returns iprt status value
  * @param   pszName the name under which the mode parameters are saved
@@ -275,22 +273,33 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
  */
 VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
 {
-#ifdef VBOX_WITH_INFO_SVC
-    using namespace svcInfo;
+#ifdef VBOX_WITH_GUEST_PROPS
+    using namespace guestProp;
 
-    char szModeParms[KEY_MAX_VALUE_LEN];
-    char *pszNext;
+/*
+ * First we retreive the video mode which is saved as a string in the
+ * guest property store.
+ */
+    /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
+     * something is wrong with the data stored in the property. */
+    char szModeParms[1024];
     uint32_t u32ClientId = 0;
     uint32_t cx, cy, cBits;
 
-    int rc = VbglR3InfoSvcConnect(&u32ClientId);
+    int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        char szModeName[KEY_MAX_LEN];
-        RTStrPrintf(szModeName, sizeof(szModeName), "VideoMode/%s", pszName);
-        rc = VbglR3InfoSvcReadKey(u32ClientId, szModeName, szModeParms,
-                                  sizeof(szModeParms), NULL); /** @todo add a VbglR3InfoSvcReadKeyF/FV that does the RTStrPrintf for you. */
+        char szModeName[MAX_NAME_LEN];
+        RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
+        /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
+        rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
+                                      sizeof(szModeParms), NULL);
     }
+
+/*
+ * Now we convert the string returned to numeric values.
+ */
+    char *pszNext;
     if (RT_SUCCESS(rc))
         /* Extract the width from the string */
         rc = RTStrToUInt32Ex(szModeParms, &pszNext, 10, &cx);
@@ -298,6 +307,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         rc = VERR_PARSE_ERROR;
     if (RT_SUCCESS(rc))
     {
+        /* Extract the height from the string */
         ++pszNext;
         rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cy);
     }
@@ -305,13 +315,18 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         rc = VERR_PARSE_ERROR;
     if (RT_SUCCESS(rc))
     {
+        /* Extract the bpp from the string */
         ++pszNext;
         rc = RTStrToUInt32Full(pszNext, 10, &cBits);
     }
     if (rc != VINF_SUCCESS)
         rc = VERR_PARSE_ERROR;
+
+/*
+ * And clean up and return the values if we successfully obtained them.
+ */
     if (u32ClientId != 0)
-        VbglR3InfoSvcDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     if (RT_SUCCESS(rc))
     {
         *pcx = cx;
@@ -319,7 +334,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         *pcBits = cBits;
     }
     return rc;
-#else /* VBOX_WITH_INFO_SVC not defined */
+#else /* VBOX_WITH_GUEST_PROPS not defined */
     return VERR_NOT_IMPLEMENTED;
-#endif /* VBOX_WITH_INFO_SVC not defined */
+#endif /* VBOX_WITH_GUEST_PROPS not defined */
 }

@@ -656,7 +656,7 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
 STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
                                            BOOL aIsSetter, BSTR *aRetValue)
 {
-#ifdef VBOX_WITH_INFO_SVC
+#ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -676,9 +676,9 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
         return mConsole->getGuestProperty (aKey, aRetValue);
     else
         return mConsole->setGuestProperty (aKey, aValue);
-#else
+#else /* VBOX_WITH_GUEST_PROPS not defined */
     return E_NOTIMPL;
-#endif
+#endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
 // private methods

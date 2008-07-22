@@ -85,13 +85,13 @@ VBoxGuestR0LibBase_SOURCES  = \
 VBoxGuestR3Lib_TEMPLATE    = VBOXGUESTR3LIB
 VBoxGuestR3Lib_DEFS        = \
 	VBOX_HGCM \
-	$(if $(VBOX_WITH_INFO_SVC),VBOX_WITH_INFO_SVC,)
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibDaemonize.cpp \
 	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_INFO_SVC),VBoxGuestR3LibInfoSvc.cpp,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibSeamless.cpp \
@@ -101,7 +101,7 @@ ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all i
  VBoxGuestR3Lib_SOURCES   = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_INFO_SVC),VBoxGuestR3LibInfoSvc.cpp,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
 	VBoxGuestR3LibMisc.cpp	
 endif
 
@@ -123,11 +123,11 @@ VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
 VBoxGuestR3LibXFree86_DEFS     = \
 	VBOX_HGCM VBOX_VBGLR3_XFREE86 \
-	$(if $(VBOX_WITH_INFO_SVC),VBOX_WITH_INFO_SVC,)
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_INFO_SVC),VBoxGuestR3LibInfoSvc.cpp,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibVideo.cpp

@@ -32,12 +32,18 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 PROGRAMS += VBoxControl
 VBoxControl_TEMPLATE = VBOXGUESTR3EXE
-ifdef VBOX_WITH_INFO_SVC
- VBoxControl_DEFS += VBOX_HGCM VBOX_WITH_INFO_SVC
+ifeq ($(KBUILD_TARGET),win)
+ ifdef VBOX_SIGN_ADDITIONS # (See the main Windows Additions makefile.)
+  VBoxControl_NOINST  = true
+ endif
 endif
+VBoxControl_DEFS     += \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_HGCM,)
 VBoxControl_SOURCES = \
 	VBoxControl.cpp \
 	VBoxControlSVN.cpp
+VBoxControl_SOURCES.win = \
+	VBoxControl.rc
 VBoxControl_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)

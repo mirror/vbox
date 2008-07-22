@@ -19,10 +19,10 @@
  * additional information or have any questions.
  */
 
-#ifndef ___svcinfo_noncopyable_h
-# define ___svcinfo_noncopyable_h
+#ifndef ___guestprop_noncopyable_h
+# define ___guestprop_noncopyable_h
 
-namespace svcInfo {
+namespace guestProp {
 
 class noncopyable
 {
@@ -34,8 +34,8 @@ private:
     noncopyable const &operator=(noncopyable const&);
 };
 
-} /* namespace svcInfo */
+} /* namespace guestProp */
 
-typedef svcInfo::noncopyable noncopyable;
+typedef guestProp::noncopyable noncopyable;
 
-#endif /* ___svcinfo_noncopyable_h not defined */
+#endif /* ___guestprop_noncopyable_h not defined */

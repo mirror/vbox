@@ -341,6 +341,14 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnGuestPropertyChange) (IN_GUIDPARAM /* id */,
+                                      IN_BSTRPARAM /* key */,
+                                      IN_BSTRPARAM /* value */,
+                                      IN_BSTRPARAM /* flags */)
+    {
+        return S_OK;
+    }
+
 private:
 
     void postEvent (QEvent *e)
