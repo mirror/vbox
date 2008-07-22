@@ -42,7 +42,7 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
         windowFlags() == Qt::Sheet)
     {
         adjustSize();
-        setFixedSize (sizeHint());
+        setFixedSize (size());
 #ifdef Q_WS_MAC
         ChangeWindowAttributes (::darwinToWindowRef (this), kWindowNoAttributes, kWindowResizableAttribute);
 #endif /* Q_WS_MAC */
