@@ -239,6 +239,7 @@ typedef struct HWACCM
             uint64_t                vmx_basic_info;
             VMX_CAPABILITY          vmx_pin_ctls;
             VMX_CAPABILITY          vmx_proc_ctls;
+            VMX_CAPABILITY          vmx_proc_ctls2;
             VMX_CAPABILITY          vmx_exit;
             VMX_CAPABILITY          vmx_entry;
             uint64_t                vmx_misc;
@@ -247,6 +248,7 @@ typedef struct HWACCM
             uint64_t                vmx_cr4_fixed0;
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
+            uint64_t                vmx_eptcaps;
         } msr;
 
         /* Last instruction error */

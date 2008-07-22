@@ -349,6 +349,8 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT\n"));
+            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL\n"));
 
             val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT)
@@ -383,6 +385,24 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT *must* be set\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT *must* be set\n"));
+            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL *must* be set\n"));
+
+            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            {
+                LogRel(("HWACCM: MSR_IA32_VMX_PROCBASED_CTLS2  = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.u));
+                val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
+
+                val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID *must* be set\n"));
+            }
 
             LogRel(("HWACCM: MSR_IA32_VMX_ENTRY_CTLS       = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_entry.u));
             val = pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1;
@@ -411,6 +431,64 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64 *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ *must* be set\n"));
+
+            if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps)
+            {
+                LogRel(("HWACCM: MSR_IA32_VMX_EPT_VPID_CAPS    = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_eptcaps));
+                
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_RWX_X_ONLY)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_RWX_X_ONLY\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_RWX_W_ONLY)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_RWX_W_ONLY\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_RWX_WX_ONLY)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_RWX_WX_ONLY\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_GAW_21_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_GAW_21_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_GAW_30_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_GAW_30_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_GAW_39_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_GAW_39_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_GAW_48_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_GAW_48_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_GAW_57_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_GAW_57_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_EMT_UC)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_EMT_UC\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_EMT_WC)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_EMT_WC\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_EMT_WT)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_EMT_WT\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_EMT_WP)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_EMT_WP\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_EMT_WB)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_EMT_WB\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_SP_21_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_SP_21_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_SP_30_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_SP_30_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_SP_39_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_SP_39_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_SP_48_BITS)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_SP_48_BITS\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVEPT)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVEPT\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_INDIV)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_INDIV\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVVPID)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVVPID\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT_GLOBAL)
+                    LogRel(("HWACCM:    MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT_GLOBAL\n"));
+            }
 
             LogRel(("HWACCM: MSR_IA32_VMX_MISC             = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_misc));
             LogRel(("HWACCM:    MSR_IA32_VMX_MISC_ACTIVITY_STATES %x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hwaccm.s.vmx.msr.vmx_misc)));
