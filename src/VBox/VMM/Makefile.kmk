@@ -429,7 +429,7 @@ endif
 #
 # For vmmGetSvnRev.
 #
-VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV
+VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
