@@ -789,7 +789,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_VMX_CR4_FIXED1             0x489
 /** Information for enumerating fields in the VMCS. */
 #define MSR_IA32_VMX_VMCS_ENUM              0x48A
-
+/** Allowed settings for secondary proc-based VM execution controls */
+#define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
+/** EPT capabilities. */
+#define MSR_IA32_VMX_EPT_CAPS               0x48C
 
 /** K6 EFER - Extended Feature Enable Register. */
 #define MSR_K6_EFER                         0xc0000080

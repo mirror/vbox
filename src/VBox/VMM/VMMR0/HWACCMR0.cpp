@@ -88,6 +88,7 @@ static struct
             uint64_t                vmx_basic_info;
             VMX_CAPABILITY          vmx_pin_ctls;
             VMX_CAPABILITY          vmx_proc_ctls;
+            VMX_CAPABILITY          vmx_proc_ctls2;
             VMX_CAPABILITY          vmx_exit;
             VMX_CAPABILITY          vmx_entry;
             uint64_t                vmx_misc;
@@ -96,6 +97,7 @@ static struct
             uint64_t                vmx_cr4_fixed0;
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
+            uint64_t                vmx_eptcaps;
         } msr;
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
@@ -221,6 +223,14 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
                         HWACCMR0Globals.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+
+                        if (HWACCMR0Globals.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                        {
+                            HWACCMR0Globals.vmx.msr.vmx_proc_ctls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                            if (HWACCMR0Globals.vmx.msr.vmx_proc_ctls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT|VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                                HWACCMR0Globals.vmx.msr.vmx_eptcaps = ASMRdMsr(MSR_IA32_VMX_EPT_CAPS);
+                        }
+
                         HWACCMR0Globals.vmx.hostCR4             = ASMGetCR4();
 
                         rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -654,6 +664,7 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.msr.vmx_basic_info    = HWACCMR0Globals.vmx.msr.vmx_basic_info;
     pVM->hwaccm.s.vmx.msr.vmx_pin_ctls      = HWACCMR0Globals.vmx.msr.vmx_pin_ctls;
     pVM->hwaccm.s.vmx.msr.vmx_proc_ctls     = HWACCMR0Globals.vmx.msr.vmx_proc_ctls;
+    pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2    = HWACCMR0Globals.vmx.msr.vmx_proc_ctls2;
     pVM->hwaccm.s.vmx.msr.vmx_exit          = HWACCMR0Globals.vmx.msr.vmx_exit;
     pVM->hwaccm.s.vmx.msr.vmx_entry         = HWACCMR0Globals.vmx.msr.vmx_entry;
     pVM->hwaccm.s.vmx.msr.vmx_misc          = HWACCMR0Globals.vmx.msr.vmx_misc;
@@ -662,6 +673,7 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0    = HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0;
     pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1    = HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1;
     pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = HWACCMR0Globals.vmx.msr.vmx_vmcs_enum;
+    pVM->hwaccm.s.vmx.msr.vmx_eptcaps       = HWACCMR0Globals.vmx.msr.vmx_eptcaps;
     pVM->hwaccm.s.svm.u32Rev                = HWACCMR0Globals.svm.u32Rev;
     pVM->hwaccm.s.svm.u32MaxASID            = HWACCMR0Globals.svm.u32MaxASID;
     pVM->hwaccm.s.svm.u32Features           = HWACCMR0Globals.svm.u32Features;

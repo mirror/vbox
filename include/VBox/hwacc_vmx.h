@@ -40,6 +40,93 @@
  * @{
  */
 
+/**
+ * Extended Page Directory Pointer. Bit view.
+ */
+#pragma pack(1)
+typedef struct VTXEPTPBITS
+{
+    /** EPT Table Memory Type. */
+    uint64_t    u3ETMT          : 3;
+    /** Guest Address Width. */
+    uint64_t    u3GAW           : 3;
+    /** Reserved. */
+    uint64_t    u6Reserved      : 6;
+    /** Address Space Root; page frame address of the first level EPT page. Actual width depends on the maximum physical address width of the CPU. */
+    uint64_t    u52ASR          : 52;
+} VTXEPTPBITS;
+#pragma pack()
+/** Pointer to an extended page directory pointer. */
+typedef VTXEPTPBITS *PVTXEPTPBITS;
+/** Pointer to a const extended page directory pointer. */
+typedef const VTXEPTPBITS *PCVTXEPTPBITS;
+
+/**
+ * Extended Page Directory Pointer.
+ */
+#pragma pack(1)
+typedef union VTXEPTP
+{
+    VTXEPTPBITS n;
+    /** 64 bit unsigned integer view. */
+    uint64_t    au64[1];
+} VTXEPTP;
+#pragma pack()
+/** Pointer to an extended page directory pointer. */
+typedef VTXEPTP *PVTXEPTP;
+/** Pointer to a const extended page directory pointer. */
+typedef const VTXEPTP *PCVTXEPTP;
+
+
+/**
+ * Extended Page Directory Table Entry. Bit view.
+ */
+#pragma pack(1)
+typedef union VTXEPTEBITS
+{
+    /** Readable bit. */
+    uint64_t    u1Readable      : 1;
+    /** Writable bit. */
+    uint64_t    u1Writable      : 1;
+    /** Executable bit. */
+    uint64_t    u1Executable    : 1;
+    /** EPT Table Memory Type. MBZ for non-leaf nodes. */
+    uint64_t    u3EMT           : 3;
+    /** IGMT (Ignore Guest Memory Type) (leaf nodes). MBZ for non-leaf nodes. */
+    uint64_t    u1IGMT          : 1;
+    /** Super page (non-leaf) / available (leaf). */
+    uint64_t    u1SP            : 1;
+    /** Available for software. */
+    uint64_t    u4Available     : 4;
+    /** Physical address of next leaf/super page. Restricted by maximum physical address width of the cpu. */
+    uint64_t    u45PhysAddr     : 45;
+    /** Reserved (MBZ). */
+    uint64_t    u5Reserved      : 5;
+    /** Availabe for software. */
+    uint64_t    u2Available     : 2;
+} VTXEPTEBITS;
+#pragma pack()
+/** Pointer to an extended page table entry. */
+typedef VTXEPTEBITS *PVTXEPTEBITS;
+/** Pointer to a const extended table entry. */
+typedef const VTXEPTEBITS *PCVTXEPTEBITS;
+
+/**
+ * Extended Page Directory Table Entry.
+ */
+#pragma pack(1)
+typedef union VTXEPTE
+{
+    VTXEPTEBITS n;
+    /** 64 bit unsigned integer view. */
+    uint64_t    au64[1];
+} VTXEPTE;
+#pragma pack()
+/** Pointer to an extended page table entry. */
+typedef VTXEPTE *PVTXEPTE;
+/** Pointer to a const extended table entry. */
+typedef const VTXEPTE *PCVTXEPTE;
+
 /** VMX Basic Exit Reasons.
  * @{
  */
@@ -233,6 +320,39 @@
 
 /** @} */
 
+
+/** MSR_IA32_VMX_EPT_CAPS; EPT capabilities MSR
+ * @{
+ */
+#define MSRVAL_IA32_VMX_EPT_CAPS_RWX_X_ONLY                     RT_BIT_64(0)
+#define MSRVAL_IA32_VMX_EPT_CAPS_RWX_W_ONLY                     RT_BIT_64(1)
+#define MSRVAL_IA32_VMX_EPT_CAPS_RWX_WX_ONLY                    RT_BIT_64(2)
+#define MSRVAL_IA32_VMX_EPT_CAPS_GAW_21_BITS                    RT_BIT_64(3)
+#define MSRVAL_IA32_VMX_EPT_CAPS_GAW_30_BITS                    RT_BIT_64(4)
+#define MSRVAL_IA32_VMX_EPT_CAPS_GAW_39_BITS                    RT_BIT_64(5)
+#define MSRVAL_IA32_VMX_EPT_CAPS_GAW_48_BITS                    RT_BIT_64(6)
+#define MSRVAL_IA32_VMX_EPT_CAPS_GAW_57_BITS                    RT_BIT_64(7)
+#define MSRVAL_IA32_VMX_EPT_CAPS_EMT_UC                         RT_BIT_64(8)
+#define MSRVAL_IA32_VMX_EPT_CAPS_EMT_WC                         RT_BIT_64(9)
+#define MSRVAL_IA32_VMX_EPT_CAPS_EMT_WT                         RT_BIT_64(12)
+#define MSRVAL_IA32_VMX_EPT_CAPS_EMT_WP                         RT_BIT_64(13)
+#define MSRVAL_IA32_VMX_EPT_CAPS_EMT_WB                         RT_BIT_64(14)
+#define MSRVAL_IA32_VMX_EPT_CAPS_SP_21_BITS                     RT_BIT_64(16)
+#define MSRVAL_IA32_VMX_EPT_CAPS_SP_30_BITS                     RT_BIT_64(17)
+#define MSRVAL_IA32_VMX_EPT_CAPS_SP_39_BITS                     RT_BIT_64(18)
+#define MSRVAL_IA32_VMX_EPT_CAPS_SP_48_BITS                     RT_BIT_64(19)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVEPT                         RT_BIT_64(20)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_INDIV              RT_BIT_64(24)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT            RT_BIT_64(25)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL                RT_BIT_64(26)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVVPID                        RT_BIT_64(32)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV             RT_BIT_64(40)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT           RT_BIT_64(41)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL               RT_BIT_64(42)
+#define MSRVAL_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT_GLOBAL    RT_BIT_64(43)
+
+/** @} */
+
 /** @} */
 
 
@@ -243,6 +363,7 @@
 /* 16 bits guest fields
  * @{
  */
+#define VMX_VMCS_GUEST_FIELD_VPID                               0x0
 #define VMX_VMCS_GUEST_FIELD_ES                                 0x800
 #define VMX_VMCS_GUEST_FIELD_CS                                 0x802
 #define VMX_VMCS_GUEST_FIELD_SS                                 0x804
@@ -264,6 +385,18 @@
 #define VMX_VMCS_HOST_FIELD_GS                                  0xC0A
 #define VMX_VMCS_HOST_FIELD_TR                                  0xC0C
 /** @}          */
+
+/** 64 bits host fields
+ * @{
+ */
+#define VMX_VMCS_HOST_FIELD_PAT_FULL                            0x2C00
+#define VMX_VMCS_HOST_FIELD_PAT_HIGH                            0x2C01
+#define VMX_VMCS_HOST_FIELD_EFER_FULL                           0x2C02
+#define VMX_VMCS_HOST_FIELD_EFER_HIGH                           0x2C03
+#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /* MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /* MSR IA32_PERF_GLOBAL_CTRL */
+/** @}          */
+
 
 /** 64 Bits control fields
  * @{
@@ -294,6 +427,14 @@
 /* Optional */
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
+
+/** Extended page table pointer. */
+#define VMX_VMCS_CTRL_EPTP_FULL                                 0x201a
+#define VMX_VMCS_CTRL_EPTP_HIGH                                 0x201b
+
+/** VM-exit phyiscal address. */
+#define VMX_VMCS_EXIT_PHYS_ADDR_FULL                            0x2400
+#define VMX_VMCS_EXIT_PHYS_ADDR_HIGH                            0x2401
 /** @} */
 
 
@@ -302,8 +443,22 @@
  */
 #define VMX_VMCS_GUEST_LINK_PTR_FULL                            0x2800
 #define VMX_VMCS_GUEST_LINK_PTR_HIGH                            0x2801
-#define VMX_VMCS_GUEST_DEBUGCTL_FULL                            0x2802   /* MSR IA32_DEBUGCTL */
-#define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            0x2803   /* MSR IA32_DEBUGCTL */
+#define VMX_VMCS_GUEST_DEBUGCTL_FULL                            0x2802      /* MSR IA32_DEBUGCTL */
+#define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            0x2803      /* MSR IA32_DEBUGCTL */
+#define VMX_VMCS_GUEST_PAT_FULL                                 0x2804
+#define VMX_VMCS_GUEST_PAT_HIGH                                 0x2805
+#define VMX_VMCS_GUEST_EFER_FULL                                0x2806
+#define VMX_VMCS_GUEST_EFER_HIGH                                0x2807
+#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_FULL                    0x2808      /* MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_HIGH                    0x2809      /* MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_GUEST_PDPTR0_FULL                              0x280A
+#define VMX_VMCS_GUEST_PDPTR0_HIGH                              0x280B
+#define VMX_VMCS_GUEST_PDPTR1_FULL                              0x280C
+#define VMX_VMCS_GUEST_PDPTR1_HIGH                              0x280D
+#define VMX_VMCS_GUEST_PDPTR2_FULL                              0x280E
+#define VMX_VMCS_GUEST_PDPTR2_HIGH                              0x280F
+#define VMX_VMCS_GUEST_PDPTR3_FULL                              0x2810
+#define VMX_VMCS_GUEST_PDPTR3_HIGH                              0x2811
 /** @} */
 
 
@@ -324,8 +479,10 @@
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO                            0x4016
 #define VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE                   0x4018
 #define VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH                        0x401A
-/* Optional */
+/** This field exists only on processors that support the 1-setting of the “use TPR shadow” VM-execution control. */
 #define VMX_VMCS_CTRL_TPR_THRESHOLD                             0x401C
+/** This field exists only on processors that support the 1-setting of the “activate secondary controls” VM-execution control. */
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2                       0x401E
 /** @} */
 
 
@@ -338,7 +495,6 @@
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                RT_BIT(3)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
-
 
 /** VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
  * @{
@@ -375,6 +531,17 @@
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT           RT_BIT(29)
 /* VM Exit when executing the PAUSE instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT             RT_BIT(30)
+/* Determines whether the secondary processor based VM-execution controls are used. */
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
+/** @} */
+
+/** VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
+ * @{
+ */
+/** EPT supported/enabled. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
+/** VPID supported/enabled. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
 /** @} */
 
 
@@ -517,7 +684,7 @@
 #define VMX_VMCS_RO_IO_RSX                                      0x6404
 #define VMX_VMCS_RO_IO_RDI                                      0x6406
 #define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_GUEST_LINEAR_ADDR                              0x640A
+#define VMX_VMCS_EXIT_GUEST_LINEAR_ADDR                         0x640A
 /** @} */
 
 
