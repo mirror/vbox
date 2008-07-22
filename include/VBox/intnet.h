@@ -827,17 +827,18 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSE
  *
  * @returns VBox status code.
  * @param   pIntNet     The instance data.
- * @param   hIF         The interface handle.
+ * @param   hIf         The interface handle.
+ * @param   pSession        The caller's session.
  * @param   ppRing0Buf  Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PINTNETBUF *ppRing0Buf);
+INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf);
 
 /**
  * Maps the default buffer into ring 3.
  *
  * @returns VBox status code.
  * @param   pIntNet         The instance data.
- * @param   hIF             The interface handle.
+ * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   ppRing3Buf      Where to store the address of the ring-3 mapping.
  */
@@ -864,7 +865,7 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
  *
  * @returns VBox status code.
  * @param   pIntNet     The instance data.
- * @param   hIF         The interface handle.
+ * @param   hIf         The interface handle.
  * @param   pSession    The caller's session.
  * @param   pvFrame     Pointer to the frame. Optional, please don't use.
  * @param   cbFrame     Size of the frame. Optional, please don't use.

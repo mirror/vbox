@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/handletable.h>
 
 
 /*******************************************************************************
@@ -60,6 +61,8 @@ typedef struct INTNETIF
     bool                    fPromiscuous;
     /** Whether the interface is active or not. */
     bool                    fActive;
+    /** Whether someone is currently in the destructor. */
+    bool volatile           fDestroying;
     /** Number of yields done to try make the interface read pending data.
      * We will stop yeilding when this reaches a threshold assuming that the VM is paused or
      * that it simply isn't worth all the delay. It is cleared when a successful send has been done.
@@ -74,13 +77,13 @@ typedef struct INTNETIF
     /** Pointer to ring-3 mapping of the default exchange buffer. */
     R3PTRTYPE(PINTNETBUF)   pIntBufDefaultR3;
     /** Event semaphore which a receiver thread will sleep on while waiting for data to arrive. */
-    RTSEMEVENT              Event;
+    RTSEMEVENT volatile     Event;
     /** Number of threads sleeping on the Event semaphore. */
     uint32_t                cSleepers;
     /** The interface handle.
      * When this is INTNET_HANDLE_INVALID a sleeper which is waking up
      * should return with the appropriate error condition. */
-    INTNETIFHANDLE          hIf;
+    INTNETIFHANDLE volatile hIf;
     /** Pointer to the network this interface is connected to.
      * This is protected by the INTNET::FastMutex. */
     struct INTNETNETWORK   *pNetwork;
@@ -159,44 +162,6 @@ typedef INTNETNETWORK *PINTNETNETWORK;
 
 
 /**
- * Handle table entry.
- * @todo move to IPRT.
- */
-typedef union INTNETHTE
-{
-    /** Pointer to the object we're a handle for. */
-    PINTNETIF               pIF;
-    /** Index to the next free entry. */
-    uintptr_t               iNext;
-} INTNETHTE;
-/** Pointer to a handle table entry. */
-typedef INTNETHTE *PINTNETHTE;
-
-
-/**
- * Handle table.
- * @todo move to IPRT (RTHandleTableCreate/Destroy/Add/Delete/Lookup).
- */
-typedef struct INTNETHT
-{
-    /** Spinlock protecting all access. */
-    RTSPINLOCK              Spinlock;
-    /** Pointer to the handle table. */
-    PINTNETHTE              paEntries;
-    /** The number of allocated handles. */
-    uint32_t                cAllocated;
-    /** The index of the first free handle entry.
-     * UINT32_MAX means empty list. */
-    uint32_t volatile       iHead;
-    /** The index of the last free handle entry.
-     * UINT32_MAX means empty list. */
-    uint32_t volatile       iTail;
-} INTNETHT;
-/** Pointer to a handle table. */
-typedef INTNETHT *PINTNETHT;
-
-
-/**
  * Internal networking instance.
  */
 typedef struct INTNET
@@ -207,7 +172,7 @@ typedef struct INTNET
     /** List of networks. Protected by INTNET::Spinlock. */
     PINTNETNETWORK volatile pNetworks;
     /** Handle table for the interfaces. */
-    INTNETHT                IfHandles;
+    RTHANDLETABLE           hHtIfs;
 } INTNET;
 
 
@@ -222,171 +187,55 @@ static void intnetR0TrunkIfOutUnlock(PINTNETTRUNKIF pThis);
 
 
 /**
- * Validates and translates an interface handle to a interface pointer.
+ * Retain an interface.
  *
- * The caller already owns the spinlock, which means this is
- * for internal use only.
- *
- * @returns Pointer to interface.
- * @returns NULL if the handle is invalid.
- * @param   pHT         Pointer to the handle table.
- * @param   hIF         The interface handle to validate and translate.
- *
- * @internal
+ * @returns VBox status code, can assume success in most situations.
+ * @param   pIf                 The interface instance.
+ * @param   pSession            The current session.
  */
-DECLINLINE(PINTNETIF) intnetR0Handle2IFPtrLocked(PINTNETHT pHT, INTNETIFHANDLE hIF)
+DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
-    if (RT_LIKELY((hIF & INTNET_HANDLE_MAGIC) == INTNET_HANDLE_MAGIC))
-    {
-        const uint32_t i = hIF & INTNET_HANDLE_INDEX_MASK;
-        if (RT_LIKELY(   i < pHT->cAllocated
-                      && pHT->paEntries[i].iNext >= INTNET_HANDLE_MAX
-                      && pHT->paEntries[i].iNext != UINT32_MAX))
-            return pHT->paEntries[i].pIF;
-    }
-    return NULL;
+    int rc = SUPR0ObjAddRef(pIf->pvObj, pSession);
+    AssertRCReturn(rc, rc);
+    return VINF_SUCCESS;
 }
 
 
 /**
- * Validates and translates an interface handle to a interface pointer.
+ * Release an interface previously retained by intnetR0IfRetain or
+ * by handle lookup/freeing.
  *
- * @returns Pointer to interface.
- * @returns NULL if the handle is invalid.
- * @param   pHT         Pointer to the handle table.
- * @param   hIF         The interface handle to validate and translate.
+ * @returns VBox status code, can assume success in most situations.
+ * @param   pIf                 The interface instance.
+ * @param   pSession            The current session.
  */
-DECLINLINE(PINTNETIF) intnetR0Handle2IFPtr(PINTNETHT pHT, INTNETIFHANDLE hIF)
+DECLINLINE(void) intnetR0IfRelease(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
-    AssertPtr(pHT);
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pHT->Spinlock, &Tmp);
-    PINTNETIF pIF = intnetR0Handle2IFPtrLocked(pHT, hIF);
-    RTSpinlockRelease(pHT->Spinlock, &Tmp);
-
-    return pIF;
+    int rc = SUPR0ObjRelease(pIf->pvObj, pSession);
+    AssertRC(rc);
 }
 
 
 /**
- * Allocates a handle for an interface.
+ * RTHandleCreateEx callback that retains an object in the
+ * handle table before returning it.
  *
- * @returns Handle on success.
- * @returns Invalid handle on failure.
- * @param   pIntNet     Pointer to the instance data.
- * @param   pIF         The interface which we're allocating a handle for.
- */
-static INTNETIFHANDLE intnetR0HandleAllocate(PINTNET pIntNet, PINTNETIF pIF)
-{
-    Assert(pIF);
-    Assert(pIntNet);
-    unsigned    cTries = 10;
-    PINTNETHT   pHT = &pIntNet->IfHandles;
-    PINTNETHTE  paNew = NULL;
-
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pHT->Spinlock, &Tmp);
-    for (;;)
-    {
-        /*
-         * Check the free list.
-         */
-        uint32_t i = pHT->iHead;
-        if (i != UINT32_MAX)
-        {
-            pHT->iHead = pHT->paEntries[i].iNext;
-            if (pHT->iHead == UINT32_MAX)
-                pHT->iTail = UINT32_MAX;
-
-            pHT->paEntries[i].pIF = pIF;
-            RTSpinlockRelease(pHT->Spinlock, &Tmp);
-            if (paNew)
-                RTMemFree(paNew);
-            return i | INTNET_HANDLE_MAGIC;
-        }
-
-        /*
-         * Leave the spinlock and allocate a new array.
-         */
-        const unsigned cNew = pHT->cAllocated + 128;
-        RTSpinlockRelease(pHT->Spinlock, &Tmp);
-        if (--cTries <= 0)
-        {
-            AssertMsgFailed(("Giving up!\n"));
-            break;
-        }
-        paNew = (PINTNETHTE)RTMemAlloc(sizeof(*paNew) * cNew);
-        if (!paNew)
-            break;
-
-        /*
-         * Acquire the spinlock and check if someone raced us.
-         */
-        RTSpinlockAcquire(pHT->Spinlock, &Tmp);
-        if (pHT->cAllocated < cNew)
-        {
-            /* copy the current table. */
-            memcpy(paNew, pHT->paEntries, pHT->cAllocated * sizeof(*paNew));
-
-            /* link the new entries into the free chain. */
-            i = pHT->cAllocated;
-            uint32_t iTail = pHT->iTail;
-            if (iTail == UINT32_MAX)
-                pHT->iHead = iTail = i++;
-            while (i < cNew)
-            {
-                paNew[iTail].iNext = i;
-                iTail = i++;
-            }
-            paNew[iTail].iNext = UINT32_MAX;
-            pHT->iTail = iTail;
-
-            /* update the handle table. */
-            pHT->cAllocated = cNew;
-            paNew = (PINTNETHTE)ASMAtomicXchgPtr((void * volatile *)&pHT->paEntries, paNew);
-        }
-    }
-
-    if (paNew)
-        RTMemFree(paNew);
-    return INTNET_HANDLE_INVALID;
-}
-
-
-/**
- * Validates and frees a handle.
+ * (Avoids racing the freeing of the handle.)
  *
- * @returns Pointer to interface.
- * @returns NULL if the handle is invalid.
- * @param   pHT         Pointer to the handle table.
- * @param   h           The handle we're freeing.
+ * @returns VBox status code.
+ * @param   hHandleTable        The handle table (ignored).
+ * @param   pvObj               The object (INTNETIF).
+ * @param   pvCtx               The context (SUPDRVSESSION).
+ * @param   pvUser              The user context (ignored).
  */
-static PINTNETIF intnetR0HandleFree(PINTNETHT pHT, INTNETIFHANDLE h)
+static DECLCALLBACK(int) intnetR0IfRetainHandle(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser)
 {
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pHT->Spinlock, &Tmp);
-
-    /*
-     * Validate and get it, then insert the handle table entry
-     * at the end of the free list.
-     */
-    PINTNETIF pIF = intnetR0Handle2IFPtrLocked(pHT, h);
-    if (pIF)
-    {
-        const uint32_t i = h & INTNET_HANDLE_INDEX_MASK;
-        pHT->paEntries[i].iNext = UINT32_MAX;
-        const uint32_t iTail = pHT->iTail;
-        if (iTail != UINT32_MAX)
-            pHT->paEntries[iTail].iNext = i;
-        else
-            pHT->iHead = i;
-        pHT->iTail = i;
-    }
-
-    RTSpinlockRelease(pHT->Spinlock, &Tmp);
-
-    AssertMsg(pIF, ("%d >= %d\n", h & INTNET_HANDLE_INDEX_MASK, pHT->cAllocated));
-    return pIF;
+    NOREF(pvUser);
+    NOREF(hHandleTable);
+    PINTNETIF pIf = (PINTNETIF)pvObj;
+    if (pIf->hIf != INTNET_HANDLE_INVALID) /* Don't try retain it if called from intnetR0IfDestruct. */
+        return intnetR0IfRetain(pIf, (PSUPDRVSESSION)pvCtx);
+    return VINF_SUCCESS;
 }
 
 
@@ -990,16 +839,12 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
  */
 INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, const void *pvFrame, unsigned cbFrame)
 {
-//    LogFlow(("INTNETR0IfSend: pIntNet=%p hIf=%RX32 pvFrame=%p cbFrame=%u\n", pIntNet, hIf, pvFrame, cbFrame));
+    Log5(("INTNETR0IfSend: pIntNet=%p hIf=%RX32 pvFrame=%p cbFrame=%u\n", pIntNet, hIf, pvFrame, cbFrame));
 
     /*
      * Validate input and translate the handle.
      */
-    /** @todo add an exctra reference to the interface! */
     AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
-    if (!pIf)
-        return VERR_INVALID_HANDLE;
     if (pvFrame && cbFrame)
     {
         AssertReturn(cbFrame < 0x8000, VERR_INVALID_PARAMETER);
@@ -1009,6 +854,9 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         /* This is the better place to crash, probe the buffer. */
         ASMProbeReadBuffer(pvFrame, cbFrame);
     }
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
+    if (!pIf)
+        return VERR_INVALID_HANDLE;
 
     /*
      * Lock the network. If there is a trunk retain it and grab its
@@ -1020,7 +868,10 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     int rc = RTSemFastMutexRequest(pNetwork->FastMutex);
     if (RT_FAILURE(rc))
+    {
+        intnetR0IfRelease(pIf, pSession);
         return rc;
+    }
     PINTNETTRUNKIF pTrunkIf = intnetR0TrunkIfRetain(pNetwork->pTrunkIF);
     if (pTrunkIf)
     {
@@ -1029,6 +880,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         if (!intnetR0TrunkIfOutLock(pTrunkIf))
         {
             intnetR0TrunkIfRelease(pTrunkIf);
+            intnetR0IfRelease(pIf, pSession);
             return VERR_SEM_DESTROYED;
         }
 
@@ -1037,6 +889,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         {
             intnetR0TrunkIfOutUnlock(pTrunkIf);
             intnetR0TrunkIfRelease(pTrunkIf);
+            intnetR0IfRelease(pIf, pSession);
             return rc;
         }
     }
@@ -1086,6 +939,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         intnetR0TrunkIfRelease(pTrunkIf);
     }
 
+    intnetR0IfRelease(pIf, pSession);
     return rc;
 }
 
@@ -1123,10 +977,11 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * Validate input.
      */
     AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
+    AssertPtrReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
+    *ppRing3Buf = 0;
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
-    AssertPtrReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
 
     /*
      * ASSUMES that only the process that created an interface can use it.
@@ -1134,12 +989,13 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * allocating the buffer.
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+    {
+        *ppRing3Buf = pIf->pIntBufR3;
+        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+    }
 
-    *ppRing3Buf = pIf->pIntBufR3;
-
-    rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+    intnetR0IfRelease(pIf, pSession);
     LogFlow(("INTNETR0IfGetRing3Buffer: returns %Rrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
     return rc;
 }
@@ -1165,11 +1021,12 @@ INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PSUPDRVSESSION pS
  * Gets the ring-0 address of the current buffer.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   hIf         The interface handle.
- * @param   ppRing0Buf  Where to store the address of the ring-3 mapping.
+ * @param   pIntNet         The instance data.
+ * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   ppRing0Buf      Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PINTNETBUF *ppRing0Buf)
+INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf)
 {
     LogFlow(("INTNETR0IfGetRing0Buffer: pIntNet=%p hIf=%RX32 ppRing0Buf=%p\n", pIntNet, hIf, ppRing0Buf));
 
@@ -1179,7 +1036,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     AssertPtrReturn(ppRing0Buf, VERR_INVALID_PARAMETER);
     *ppRing0Buf = NULL;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
 
@@ -1188,12 +1045,13 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * ASSUMES that the handle isn't closed while we're here.
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+    {
+        *ppRing0Buf = pIf->pIntBuf;
 
-    *ppRing0Buf = pIf->pIntBuf;
-
-    rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+    }
+    intnetR0IfRelease(pIf, pSession);
     LogFlow(("INTNETR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
     return rc;
 }
@@ -1215,26 +1073,25 @@ INTNETR0DECL(int) INTNETR0IfGetPhysBuffer(PINTNET pIntNet, INTNETIFHANDLE hIf, P
      * Validate input.
      */
     AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
-    if (!pIf)
-        return VERR_INVALID_HANDLE;
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertPtrReturn((uint8_t *)&paPages[cPages] - 1, VERR_INVALID_PARAMETER);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
+    if (!pIf)
+        return VERR_INVALID_HANDLE;
 
     /*
      * Grab the lock and get the data.
      * ASSUMES that the handle isn't closed while we're here.
      */
     int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo make a SUPR0 api for obtaining the array. SUPR0/IPRT is keeping track of everything, there
+         * is no need for any extra bookkeeping here.. */
 
-    /** @todo make a SUPR0 api for obtaining the array. SUPR0/IPRT is keeping track of everything, there
-     * is no need for any extra bookkeeping here.. */
-    //*ppRing0Buf = pIf->pIntBuf;
-
-    //return RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
-    RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+    }
+    intnetR0IfRelease(pIf, pSession);
     return VERR_NOT_IMPLEMENTED;
 }
 #endif
@@ -1257,32 +1114,38 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
      * Validate & translate input.
      */
     AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        LogFlow(("INTNETR0IfSetPromiscuousMode: returns VERR_INVALID_HANDLE\n"));
+        Log(("INTNETR0IfSetPromiscuousMode: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
 
     /*
      * Grab the network semaphore and make the change.
      */
+    int rc;
     PINTNETNETWORK pNetwork = pIf->pNetwork;
-    if (!pNetwork)
-        return VERR_WRONG_ORDER;
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pIf->fPromiscuous != fPromiscuous)
+    if (pNetwork)
     {
-        Log(("INTNETR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
-             hIf, !fPromiscuous, !!fPromiscuous));
-        ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
-    }
+        rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+        if (RT_SUCCESS(rc))
+        {
+            if (pIf->fPromiscuous != fPromiscuous)
+            {
+                Log(("INTNETR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
+                     hIf, !fPromiscuous, !!fPromiscuous));
+                ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
+            }
 
-    RTSemFastMutexRelease(pNetwork->FastMutex);
-    return VINF_SUCCESS;
+            rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+        }
+    }
+    else
+        rc = VERR_WRONG_ORDER;
+
+    intnetR0IfRelease(pIf, pSession);
+    return rc;
 }
 
 
@@ -1408,24 +1271,24 @@ static int intnetR0IfSetActive(PINTNETIF pIf, bool fActive)
  */
 INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies)
 {
-//    LogFlow(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
+    Log4(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
 
     /*
      * Get and validate essential handles.
      */
-    AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0Handle2IFPtr(&pIntNet->IfHandles, hIf);
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        LogFlow(("INTNETR0IfWait: returns VERR_INVALID_HANDLE\n"));
+        Log(("INTNETR0IfWait: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
     const INTNETIFHANDLE    hIfSelf = pIf->hIf;
     const RTSEMEVENT        Event = pIf->Event;
-    if (    hIfSelf != hIf
+    if (    hIfSelf != hIf              /* paranoia */
         &&  Event != NIL_RTSEMEVENT)
     {
-        LogFlow(("INTNETR0IfWait: returns VERR_SEM_DESTROYED\n"));
+        Log(("INTNETR0IfWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
     }
 
@@ -1438,20 +1301,27 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
 
     /*
      * Increment the number of waiters before starting the wait.
-     * Upon wakeup we must assert reality checking that we're not
-     * already destroyed or in the process of being destroyed.
+     * Upon wakeup we must assert reality, checking that we're not
+     * already destroyed or in the process of being destroyed. This
+     * code must be aligned with the waiting code in intnetR0IfDestruct.
      */
     ASMAtomicIncU32(&pIf->cSleepers);
     int rc = RTSemEventWaitNoResume(Event, cMillies);
     if (pIf->Event == Event)
     {
         ASMAtomicDecU32(&pIf->cSleepers);
-        if (pIf->hIf != hIf)
+        if (!pIf->fDestroying)
+        {
+            intnetR0IfRelease(pIf, pSession);
+            if (pIf->hIf != hIf)
+                rc = VERR_SEM_DESTROYED;
+        }
+        else
             rc = VERR_SEM_DESTROYED;
     }
     else
         rc = VERR_SEM_DESTROYED;
-//    LogFlow(("INTNETR0IfWait: returns %Rrc\n", rc));
+    Log4(("INTNETR0IfWait: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1485,18 +1355,28 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSE
     LogFlow(("INTNETR0IfClose: pIntNet=%p hIf=%RX32\n", pIntNet, hIf));
 
     /*
-     * Validate, get and free the handle.
+     * Validate and free the handle.
      */
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
-    PINTNETIF pIf = intnetR0HandleFree(&pIntNet->IfHandles, hIf);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableFreeWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
+
+    /* mark the handle as freed so intnetR0IfDestruct won't free it again. */
     ASMAtomicWriteU32(&pIf->hIf, INTNET_HANDLE_INVALID);
 
+
     /*
-     * Release our reference to the interface object.
+     * Release the references to the interface object (handle + free lookup).
+     * But signal the event semaphore first so any waiter holding a reference
+     * will wake up too (he'll see hIf == invalid and return correctly).
      */
-    int rc = SUPR0ObjRelease(pIf->pvObj, pIf->pSession);
+    RTSemEventSignal(pIf->Event);
+
+    void *pvObj = pIf->pvObj;
+    intnetR0IfRelease(pIf, pSession); /* (RTHandleTableFreeWithCtx) */
+
+    int rc = SUPR0ObjRelease(pvObj, pSession);
     LogFlow(("INTNETR0IfClose: returns %Rrc\n", rc));
     return rc;
 }
@@ -1535,11 +1415,21 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     RTSemFastMutexRequest(pIntNet->FastMutex);
 
     /*
-     * Delete the interface handle so the object no longer can be opened.
+     * Mark the interface as being destroyed so the waiter
+     * can behave appropriately (theoretical case).
+     */
+    ASMAtomicWriteBool(&pIf->fDestroying, true);
+
+    /*
+     * Delete the interface handle so the object no longer can be used.
+     * (Can happen if the client didn't close its session.)
      */
     INTNETIFHANDLE hIf = ASMAtomicXchgU32(&pIf->hIf, INTNET_HANDLE_INVALID);
     if (hIf != INTNET_HANDLE_INVALID)
-        intnetR0HandleFree(&pIntNet->IfHandles, hIf);
+    {
+        void *pvObj2 = RTHandleTableFreeWithCtx(pIntNet->hHtIfs, hIf, pIf->pSession);
+        AssertMsg(pvObj2 == pIf, ("%p, %p, hIf=%#x pSession=%p\n", pvObj2, pIf, hIf, pIf->pSession));
+    }
 
     /*
      * If we've got a network deactivate and unlink ourselves from it.
@@ -1588,7 +1478,6 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     if (pIf->Event != NIL_RTSEMEVENT)
     {
         RTSEMEVENT Event = pIf->Event;
-        ASMAtomicXchgSize(&pIf->Event, NIL_RTSEMEVENT);
         unsigned cMaxWait = 0x1000;
         while (pIf->cSleepers && cMaxWait-- > 0)
         {
@@ -1606,7 +1495,9 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
                 RTThreadSleep(10);
             }
         }
+
         RTSemEventDestroy(Event);
+        pIf->Event = NIL_RTSEMEVENT;
     }
 
     /*
@@ -1676,6 +1567,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     //pIf->fMacSet = false;
     //pIf->fPromiscuous = false;
     //pIf->fActive = false;
+    //pIf->fDestroying = false;
     //pIf->pIntBuf = 0;
     //pIf->pIntBufR3 = NIL_RTR3PTR;
     //pIf->pIntBufDefault = 0;
@@ -1687,7 +1579,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     pIf->pNetwork = pNetwork;
     pIf->pSession = pSession;
     //pIf->pvObj = NULL;
-    int rc = RTSemEventCreate(&pIf->Event);
+    int rc = RTSemEventCreate((PRTSEMEVENT)&pIf->Event);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1734,8 +1626,8 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                 pIf->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE, intnetR0IfDestruct, pIf, pNetwork->pIntNet);
                 if (pIf->pvObj)
                 {
-                    pIf->hIf = intnetR0HandleAllocate(pNetwork->pIntNet, pIf);
-                    if (pIf->hIf != INTNET_HANDLE_INVALID)
+                    rc = RTHandleTableAllocWithCtx(pNetwork->pIntNet->hHtIfs, pIf, pSession, (uint32_t *)&pIf->hIf);
+                    if (RT_SUCCESS(rc))
                     {
                         /* auto activation */ /** @todo do this manually in the future, ditto for setting the MAC address. */
                         rc = intnetR0IfSetActive(pIf, true /* activate */);
@@ -1746,14 +1638,12 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                              *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
                         return VINF_SUCCESS;
                     }
-                    rc = VERR_NO_MEMORY;
 
                     SUPR0ObjRelease(pIf->pvObj, pSession);
                     LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
                     return rc;
                 }
 
-                rc = VERR_NO_MEMORY;
                 RTSemFastMutexDestroy(pNetwork->FastMutex);
                 pNetwork->FastMutex = NIL_RTSEMFASTMUTEX;
             }
@@ -2546,10 +2436,11 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet)
         RTSemFastMutexDestroy(pIntNet->FastMutex);
         pIntNet->FastMutex = NIL_RTSEMFASTMUTEX;
     }
-    if (pIntNet->IfHandles.Spinlock != NIL_RTSPINLOCK)
+    if (pIntNet->hHtIfs != NIL_RTHANDLETABLE)
     {
-        RTSpinlockDestroy(pIntNet->IfHandles.Spinlock);
-        pIntNet->IfHandles.Spinlock = NIL_RTSPINLOCK;
+        /** @todo does it make sense to have a deleter here? */
+        RTHandleTableDestroy(pIntNet->hHtIfs, NULL, NULL);
+        pIntNet->hHtIfs = NIL_RTHANDLETABLE;
     }
 
     RTMemFree(pIntNet);
@@ -2570,21 +2461,19 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
     if (pIntNet)
     {
         //pIntNet->pNetworks              = NULL;
-        //pIntNet->IfHandles.paEntries    = NULL;
-        //pIntNet->IfHandles.cAllocated   = 0;
-        pIntNet->IfHandles.iHead        = UINT32_MAX;
-        pIntNet->IfHandles.iTail        = UINT32_MAX;
 
         rc = RTSemFastMutexCreate(&pIntNet->FastMutex);
         if (RT_SUCCESS(rc))
         {
-            rc = RTSpinlockCreate(&pIntNet->IfHandles.Spinlock);
+            rc = RTHandleTableCreateEx(&pIntNet->hHtIfs, RTHANDLETABLE_FLAGS_LOCKED | RTHANDLETABLE_FLAGS_CONTEXT,
+                                       UINT32_C(0x8ffe0000), 4096, intnetR0IfRetainHandle, NULL);
             if (RT_SUCCESS(rc))
             {
                 *ppIntNet = pIntNet;
                 LogFlow(("INTNETR0Create: returns VINF_SUCCESS *ppIntNet=%p\n", pIntNet));
                 return VINF_SUCCESS;
             }
+
             RTSemFastMutexDestroy(pIntNet->FastMutex);
         }
         RTMemFree(pIntNet);

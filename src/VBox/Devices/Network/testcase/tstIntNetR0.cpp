@@ -33,6 +33,10 @@
 #define INTNETR0DECL INTNETR3DECL
 #undef DECLR0CALLBACKMEMBER
 #define DECLR0CALLBACKMEMBER(type, name, args) DECLR3CALLBACKMEMBER(type, name, args)
+#include <VBox/types.h>
+typedef void *MYPSUPDRVSESSION;
+#define PSUPDRVSESSION  MYPSUPDRVSESSION
+
 #include <VBox/intnet.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
@@ -88,6 +92,7 @@ typedef struct OBJREF
     void *pvUser2;
     uint32_t volatile cRefs;
 } OBJREF, *POBJREF;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -449,14 +454,14 @@ int main(int argc, char **argv)
                 if (hIf1 != INTNET_HANDLE_INVALID)
                 {
                     PINTNETBUF pBuf0;
-                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf0, &pBuf0);
+                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf0, g_pSession, &pBuf0);
                     if (VBOX_FAILURE(rc) || !pBuf0)
                     {
                         RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf0=%p rc=%Vrc\n", pBuf0, rc);
                         g_cErrors++;
                     }
                     PINTNETBUF pBuf1;
-                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf1, &pBuf1);
+                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf1, g_pSession, &pBuf1);
                     if (VBOX_FAILURE(rc))
                     {
                         RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf1=%p rc=%Vrc\n", pBuf1, rc);
