@@ -49,13 +49,9 @@ VBoxVMSettingsUSBFilterDetails::VBoxVMSettingsUSBFilterDetails (VBoxVMSettingsUS
 
     /* Applying language settings */
     retranslateUi();
-    
-    adjustSize();
 
-#ifdef Q_WS_MAC
+    resize (minimumSize());
     setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setFixedSize (minimumSize());
-#endif /* Q_WS_MAC */
 }
 
 void VBoxVMSettingsUSBFilterDetails::retranslateUi()
