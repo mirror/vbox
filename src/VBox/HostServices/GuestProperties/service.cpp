@@ -195,7 +195,7 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
 
     /* Validate the format of the key. */
     /* Only accept names in valid Utf8. */
-    rc = RTStrValidateEncodingEx(pszKey, cbKey, 0);
+    rc = RTStrValidateEncodingEx(pszKey, cbKey - 1, 0);
     if (RT_SUCCESS(rc))
         /* We want the byte length, not the Utf8 length */
         count = strlen(pszKey);
@@ -225,7 +225,7 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
 
     /* Validate the format of the value. */
     /* Only accept values in valid Utf8 */
-    rc = RTStrValidateEncodingEx(pszValue, cbValue, 0);
+    rc = RTStrValidateEncodingEx(pszValue, cbValue - 1, 0);
     if (RT_SUCCESS(rc))
         /* We want the byte length, not the Utf8 length */
         count = strlen(pszValue);

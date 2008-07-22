@@ -3560,7 +3560,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 
     VBOXHGCMSVCPARM parm[3];
     Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value (MAX_VALUE_LEN);
+    Utf8Str Utf8Value (MAX_VALUE_LEN + 1);
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
@@ -3569,7 +3569,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     parm[0].u.pointer.size = Utf8Key.length() + 1;
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-    parm[1].u.pointer.size = MAX_VALUE_LEN;
+    parm[1].u.pointer.size = MAX_VALUE_LEN + 1;
     int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_CONFIG_KEY_HOST,
                                      3, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
@@ -4179,10 +4179,10 @@ HRESULT Console::powerDown()
     while (pValue != NULL && RT_SUCCESS(vrc))
     {
         using namespace guestProp;
-        char szKeyName[MAX_NAME_LEN];
-        char szKeyValue[MAX_VALUE_LEN];
-        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + MAX_NAME_LEN];
-        vrc = CFGMR3GetValueName (pValue, szKeyName, MAX_NAME_LEN);
+        char szKeyName[MAX_NAME_LEN + 1];
+        char szKeyValue[MAX_VALUE_LEN + 1];
+        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + MAX_NAME_LEN + 1];
+        vrc = CFGMR3GetValueName (pValue, szKeyName, sizeof(szKeyName));
         if (RT_SUCCESS(vrc))
             vrc = CFGMR3QueryString (pRegistry, szKeyName, szKeyValue, sizeof(szKeyValue));
         if (RT_SUCCESS(vrc))
@@ -4223,7 +4223,7 @@ HRESULT Console::powerDown()
         char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
 
         /* Now see if a lookup of the name in the CFGM node succeeds. */
-        char szKeyValue[MAX_VALUE_LEN];
+        char szKeyValue[MAX_VALUE_LEN + 1];
         vrc = CFGMR3QueryString (pRegistry, pszCFGMValueName, szKeyValue, sizeof(szKeyValue));
         /* And delete it from the extra data if it failed. */
         if (VERR_CFGM_VALUE_NOT_FOUND == vrc)
