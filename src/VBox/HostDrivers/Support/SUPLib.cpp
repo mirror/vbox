@@ -211,9 +211,9 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00080000
+        const uint32_t MinVersion = /*(SUPDRV_IOC_VERSION & 0xffff0000) == 0x00080000
                                   ? 0x00080001
-                                  : SUPDRV_IOC_VERSION & 0xffff0000;
+                                  : */ SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)

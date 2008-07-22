@@ -482,7 +482,7 @@ typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
  * @param   pVM             The VM to operate on.
  * @param   enmOperation    Which operation to execute.
  * @param   pvArg           Argument to the operation.
- * @remarks Assume called with interrupts disabled.
+ * @remarks Assume called with interrupts or preemption disabled.
  */
 VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
 
@@ -504,9 +504,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
  * @param   enmOperation    Which operation to execute.
  * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
+ * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg);
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 
 /**
  * Calls the ring-3 host code.

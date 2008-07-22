@@ -667,16 +667,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
  * @param   pVM         The VM argument.
  * @param   pSession    The session argument.
  */
-DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pSession)
+DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
 {
     /* Only one out of the two */
     if (pVM && pSession)
         return false;
     if (pVM)
-        pSession = pVM->pSession;
-
-    /** @todo supdrv should validate it. */
-    return VALID_PTR(pSession);
+        pClaimedSession = pVM->pSession;
+    return pClaimedSession == pSession;
 }
 
 
@@ -690,9 +688,10 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pSession)
  * @param   pReqHdr         This points to a SUPVMMR0REQHDR packet. Optional.
  *                          The support driver validates this if it's present.
  * @param   u64Arg          Some simple constant argument.
+ * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg)
+static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Common VM pointer validation.
@@ -882,43 +881,43 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         case VMMR0_DO_INTNET_OPEN:
         {
             PINTNETOPENREQ pReq = (PINTNETOPENREQ)pReqHdr;
-            if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession))
+            if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0OpenReq(g_pIntNet, pVM ? pVM->pSession : pReq->pSession, pReq);
+            return INTNETR0OpenReq(g_pIntNet, pSession, pReq);
         }
 
         case VMMR0_DO_INTNET_IF_CLOSE:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfCloseReq(g_pIntNet, (PINTNETIFCLOSEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfGetRing3BufferReq(g_pIntNet, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SEND:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSendReq(g_pIntNet, (PINTNETIFSENDREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_WAIT:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
@@ -960,6 +959,7 @@ typedef struct VMMR0ENTRYEXARGS
     VMMR0OPERATION      enmOperation;
     PSUPVMMR0REQHDR     pReq;
     uint64_t            u64Arg;
+    PSUPDRVSESSION      pSession;
 } VMMR0ENTRYEXARGS;
 /** Pointer to a vmmR0EntryExWrapper argument package. */
 typedef VMMR0ENTRYEXARGS *PVMMR0ENTRYEXARGS;
@@ -975,7 +975,8 @@ static int vmmR0EntryExWrapper(void *pvArgs)
     return vmmR0EntryExWorker(((PVMMR0ENTRYEXARGS)pvArgs)->pVM,
                               ((PVMMR0ENTRYEXARGS)pvArgs)->enmOperation,
                               ((PVMMR0ENTRYEXARGS)pvArgs)->pReq,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->u64Arg);
+                              ((PVMMR0ENTRYEXARGS)pvArgs)->u64Arg,
+                              ((PVMMR0ENTRYEXARGS)pvArgs)->pSession);
 }
 
 
@@ -987,9 +988,10 @@ static int vmmR0EntryExWrapper(void *pvArgs)
  * @param   enmOperation    Which operation to execute.
  * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
+ * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Requests that should only happen on the EMT thread will be
@@ -1024,7 +1026,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
                 break;
         }
     }
-    return vmmR0EntryExWorker(pVM, enmOperation, pReq, u64Arg);
+    return vmmR0EntryExWorker(pVM, enmOperation, pReq, u64Arg, pSession);
 }
 
 
