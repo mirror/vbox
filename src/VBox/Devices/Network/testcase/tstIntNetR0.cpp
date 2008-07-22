@@ -101,9 +101,9 @@ const PSUPDRVSESSION g_pSession = (PSUPDRVSESSION)0xdeadface;
 /** Testframe 0 */
 struct TESTFRAME
 {
-    uint16_t    au16[6];
-} g_TestFrame0 = { { /* dst:*/ 0xffff, 0xffff, 0xffff, /*src:*/0x8086, 0, 0} },
-  g_TestFrame1 = { { /* dst:*/0, 0, 0,                /*src:*/0x8086, 0, 1} };
+    uint16_t    au16[7];
+} g_TestFrame0 = { { /* dst:*/ 0xffff, 0xffff, 0xffff, /*src:*/0x8086, 0, 0, 0x0800 } },
+  g_TestFrame1 = { { /* dst:*/ 0, 0, 0,                /*src:*/0x8086, 0, 1, 0x0800 } };
 
 
 INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
@@ -239,13 +239,13 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         const unsigned cb = iFrame % 1519 + 12 + sizeof(unsigned);
         *puFrame = iFrame;
 #if 0
-        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, abBuf, cb);
+        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, cb);
 #else
         INTNETSG Sg;
         intnetR0SgInitTemp(&Sg, abBuf, cb);
         int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, &Sg);
         if (RT_SUCCESS(rc))
-            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, NULL, 0);
+            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, NULL, 0);
 #endif
         if (VBOX_FAILURE(rc))
         {
@@ -264,7 +264,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     puFrame[3] = 0xffffdead;
     for (unsigned c = 0; c < 20; c++)
     {
-        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, abBuf, sizeof(PDMMAC) * 2 + sizeof(unsigned) * 4);
+        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, sizeof(PDMMAC) * 2 + sizeof(unsigned) * 4);
         if (VBOX_FAILURE(rc))
         {
             g_cErrors++;
@@ -296,7 +296,7 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         /*
          * Wait for data.
          */
-        int rc = INTNETR0IfWait(pArgs->pIntNet, pArgs->hIf, RT_INDEFINITE_WAIT);
+        int rc = INTNETR0IfWait(pArgs->pIntNet, pArgs->hIf, g_pSession, RT_INDEFINITE_WAIT);
         switch (rc)
         {
             case VERR_INTERRUPTED:
@@ -466,13 +466,13 @@ int main(int argc, char **argv)
                     /*
                      * Test basic waiting.
                      */
-                    rc = INTNETR0IfWait(pIntNet, hIf0, 1);
+                    rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
                     if (rc != VERR_TIMEOUT)
                     {
                         RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf0)\n", rc);
                         g_cErrors++;
                     }
-                    rc = INTNETR0IfWait(pIntNet, hIf1, 0);
+                    rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
                     if (rc != VERR_TIMEOUT)
                     {
                         RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf1)\n", rc);
@@ -482,16 +482,16 @@ int main(int argc, char **argv)
                     /*
                      * Send and receive.
                      */
-                    rc = INTNETR0IfSend(pIntNet, hIf0, &g_TestFrame0, sizeof(g_TestFrame0));
+                    rc = INTNETR0IfSend(pIntNet, hIf0, g_pSession, &g_TestFrame0, sizeof(g_TestFrame0));
                     if (VBOX_SUCCESS(rc))
                     {
-                        rc = INTNETR0IfWait(pIntNet, hIf0, 1);
+                        rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
                         if (rc != VERR_TIMEOUT)
                         {
                             RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf0, 2nd)\n", rc);
                             g_cErrors++;
                         }
-                        rc = INTNETR0IfWait(pIntNet, hIf1, 0);
+                        rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
                         if (rc == VINF_SUCCESS)
                         {
                             /* receive it */
@@ -520,7 +520,7 @@ int main(int argc, char **argv)
                             /*
                              * Send a packet from If1 just to set its MAC address.
                              */
-                            rc = INTNETR0IfSend(pIntNet, hIf1, &g_TestFrame1, sizeof(g_TestFrame1));
+                            rc = INTNETR0IfSend(pIntNet, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
                             if (VBOX_FAILURE(rc))
                             {
                                 RTPrintf("tstIntNetR0: INTNETIfSend returned %Vrc! (hIf1)\n", rc);
@@ -626,7 +626,7 @@ int main(int argc, char **argv)
                                             g_cErrors++;
                                         }
 
-                                        rc = INTNETR0IfClose(pIntNet, hIf0);
+                                        rc = INTNETR0IfClose(pIntNet, hIf0, g_pSession);
                                         if (VBOX_SUCCESS(rc))
                                         {
                                             hIf0 = INTNET_HANDLE_INVALID;
@@ -638,7 +638,7 @@ int main(int argc, char **argv)
                                             g_cErrors++;
                                         }
 
-                                        rc = INTNETR0IfClose(pIntNet, hIf1);
+                                        rc = INTNETR0IfClose(pIntNet, hIf1, g_pSession);
                                         if (VBOX_SUCCESS(rc))
                                         {
                                             hIf1 = INTNET_HANDLE_INVALID;
@@ -699,7 +699,7 @@ int main(int argc, char **argv)
                 }
 
                 if (hIf1 != INTNET_HANDLE_INVALID)
-                    rc = INTNETR0IfClose(pIntNet, hIf1);
+                    rc = INTNETR0IfClose(pIntNet, hIf1, g_pSession);
             }
             else
             {
@@ -708,7 +708,7 @@ int main(int argc, char **argv)
             }
 
             if (hIf0 != INTNET_HANDLE_INVALID)
-                rc = INTNETR0IfClose(pIntNet, hIf0);
+                rc = INTNETR0IfClose(pIntNet, hIf0, g_pSession);
         }
         else
         {

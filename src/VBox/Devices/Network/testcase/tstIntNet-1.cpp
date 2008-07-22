@@ -582,6 +582,7 @@ int main(int argc, char **argv)
     {
         { "--duration",     'd', RTGETOPT_REQ_UINT32 },
         { "--file",         'f', RTGETOPT_REQ_STRING },
+        { "--interface",    'i', RTGETOPT_REQ_STRING },
         { "--network",      'n', RTGETOPT_REQ_STRING },
         { "--promiscuous",  'p', RTGETOPT_REQ_NOTHING },
         { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
@@ -589,6 +590,8 @@ int main(int argc, char **argv)
         { "--sniffer",      'S', RTGETOPT_REQ_NOTHING },
         { "--text-file",    't', RTGETOPT_REQ_STRING },
         { "--xmit-test",    'x', RTGETOPT_REQ_NOTHING },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING },
+        { "--?",            '?', RTGETOPT_REQ_NOTHING },
     };
 
     uint32_t    cMillies = 1000;
@@ -696,14 +699,16 @@ int main(int argc, char **argv)
 
             case '?':
             case 'h':
-                RTPrintf("syntax: tstIntNet-1 [-pSt] [-d <secs>] [-f <file>] [-r <size>] [-s <size>]\n");
+                RTPrintf("syntax: tstIntNet-1 [-pStx-] [-d <secs>] [-f <file>] [-r <size>] [-s <size>]\n");
                 return 1;
 
             default:
                 if (RT_SUCCESS(ch))
                     RTPrintf("tstIntNetR0: invalid argument (%#x): %s\n", ch, Value.psz);
+                else if (Value.pDef)
+                    RTPrintf("tstIntNetR0: invalid argument: %Rrc - %s\n", ch, Value.pDef->pszLong);
                 else
-                    RTPrintf("tstIntNetR0: invalid argument: %Rrc - \n", ch, Value.pDef->pszLong);
+                    RTPrintf("tstIntNetR0: invalid argument: %Rrc - %s\n", ch, argv[iArg]);
                 return 1;
         }
     if (iArg < argc)
