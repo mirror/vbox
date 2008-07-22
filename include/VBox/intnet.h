@@ -684,7 +684,7 @@ typedef struct INTNETIFCLOSEREQ
 /** Pointer to an INTNETR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE request buffer. */
 typedef INTNETIFCLOSEREQ *PINTNETIFCLOSEREQ;
 
-INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PINTNETIFCLOSEREQ pReq);
+INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ pReq);
 
 
 /**
@@ -706,7 +706,7 @@ typedef struct INTNETIFGETRING3BUFFERREQ
 /** Pointer to an INTNETR0IfGetRing3BufferReq / VMMR0_DO_INTNET_IF_GET_RING3_BUFFER request buffer. */
 typedef INTNETIFGETRING3BUFFERREQ *PINTNETIFGETRING3BUFFERREQ;
 
-INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PINTNETIFGETRING3BUFFERREQ pReq);
+INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq);
 
 
 /**
@@ -728,7 +728,7 @@ typedef struct INTNETIFSETPROMISCUOUSMODEREQ
 /** Pointer to an INTNETR0IfSetPromiscuousModeReq / VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE request buffer. */
 typedef INTNETIFSETPROMISCUOUSMODEREQ *PINTNETIFSETPROMISCUOUSMODEREQ;
 
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PINTNETIFSETPROMISCUOUSMODEREQ pReq);
+INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETPROMISCUOUSMODEREQ pReq);
 
 
 /**
@@ -748,7 +748,7 @@ typedef struct INTNETIFSENDREQ
 /** Pointer to an INTNETR0IfSend() argument package. */
 typedef INTNETIFSENDREQ *PINTNETIFSENDREQ;
 
-INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PINTNETIFSENDREQ pReq);
+INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSENDREQ pReq);
 
 
 /**
@@ -770,7 +770,7 @@ typedef struct INTNETIFWAITREQ
 /** Pointer to an INTNETR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT request buffer. */
 typedef INTNETIFWAITREQ *PINTNETIFWAITREQ;
 
-INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PINTNETIFWAITREQ pReq);
+INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq);
 
 
 #if defined(IN_RING0) || defined(IN_INTNET_TESTCASE)
@@ -818,8 +818,9 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * @returns VBox status code.
  * @param   pIntNet     The instance handle.
  * @param   hIf         The interface handle.
+ * @param   pSession        The caller's session.
  */
-INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf);
+INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
 
 /**
  * Gets the ring-0 address of the current buffer.
@@ -835,11 +836,12 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * Maps the default buffer into ring 3.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   hIF         The interface handle.
- * @param   ppRing3Buf  Where to store the address of the ring-3 mapping.
+ * @param   pIntNet         The instance data.
+ * @param   hIF             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   ppRing3Buf      Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
+INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
 
 /**
  * Sets the promiscuous mode property of an interface.
@@ -847,9 +849,10 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * @returns VBox status code.
  * @param   pIntNet         The instance handle.
  * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
  * @param   fPromiscuous    Set if the interface should be in promiscuous mode, clear if not.
  */
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE hIf, bool fPromiscuous);
+INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
 
 /**
  * Sends one or more frames.
@@ -862,22 +865,24 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
  * @returns VBox status code.
  * @param   pIntNet     The instance data.
  * @param   hIF         The interface handle.
+ * @param   pSession    The caller's session.
  * @param   pvFrame     Pointer to the frame. Optional, please don't use.
  * @param   cbFrame     Size of the frame. Optional, please don't use.
  */
-INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void *pvFrame, unsigned cbFrame);
+INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, const void *pvFrame, unsigned cbFrame);
 
 /**
  * Wait for the interface to get signaled.
  * The interface will be signaled when is put into the receive buffer.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance handle.
- * @param   hIf         The interface handle.
- * @param   cMillies    Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
- *                      used if indefinite wait is desired.
+ * @param   pIntNet         The instance handle.
+ * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   cMillies        Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
+ *                          used if indefinite wait is desired.
  */
-INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t cMillies);
+INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
 
 /** @} */
 #endif /* IN_RING0 */

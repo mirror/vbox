@@ -893,35 +893,35 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0IfCloseReq(g_pIntNet, (PINTNETIFCLOSEREQ)pReqHdr);
+            return INTNETR0IfCloseReq(g_pIntNet, pSession, (PINTNETIFCLOSEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0IfGetRing3BufferReq(g_pIntNet, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
+            return INTNETR0IfGetRing3BufferReq(g_pIntNet, pSession, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
+            return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, pSession, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SEND:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSendReq(g_pIntNet, (PINTNETIFSENDREQ)pReqHdr);
+            return INTNETR0IfSendReq(g_pIntNet, pSession, (PINTNETIFSENDREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_WAIT:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession))
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
-            return INTNETR0IfWaitReq(g_pIntNet, (PINTNETIFWAITREQ)pReqHdr);
+            return INTNETR0IfWaitReq(g_pIntNet, pSession, (PINTNETIFWAITREQ)pReqHdr);
 #endif /* VBOX_WITH_INTERNAL_NETWORKING */
 
         /*
