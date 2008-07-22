@@ -279,7 +279,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
                 if (NULL == pvBuf)
                     rc = VERR_NO_MEMORY;
             }
-            if (rc != VERR_BUFFER_OVERFLOW)
+            else
                 finish = true;
         }
         if (VERR_BUFFER_OVERFLOW == rc)
