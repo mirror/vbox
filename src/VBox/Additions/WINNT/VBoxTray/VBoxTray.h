@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBoxService - Guest Additions Service
- *
+ * VBoxService - Guest Additions Service, Internal Header.
  */
 
 /*
@@ -19,9 +18,9 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
- 
-#ifndef __VBOXSERVICE__H
-#define __VBOXSERVICE__H
+
+#ifndef ___VBOXSERVICE_H
+#define ___VBOXSERVICE_H
 
 #include <windows.h>
 #include <tchar.h>
@@ -60,10 +59,11 @@ typedef struct _VBOXSERVICEINFO
     HANDLE hThread;
     void  *pInstance;
     bool   fStarted;
-        
+
 } VBOXSERVICEINFO;
 
 
 extern HWND  gToolWindow;
 
-#endif /* __VBOXSERVICE__H */
+#endif /* !___VBOXSERVICE_H */
+
