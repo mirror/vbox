@@ -279,17 +279,6 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     /** @note VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
-#if HC_ARCH_BITS == 64
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
-    {
-        /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
-        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
-        Assert(pVM->hwaccm.s.vmx.pAPIC);
-    }
-    else
-        /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
-        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
-#endif
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
     val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
@@ -1001,9 +990,37 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         AssertRC(rc);
         rc = VMXWriteVMCS(VMX_VMCS_GUEST_GS_BASE, pCtx->gsHid.u64Base);
         AssertRC(rc);
+
+#if HC_ARCH_BITS == 64
+        if (!(pVM->hwaccm.s.vmx.proc_ctls & (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT)))
+        {
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+            {
+                /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
+                pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+                Assert(pVM->hwaccm.s.vmx.pAPIC);
+            }
+            else
+                /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
+                pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
+
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+        }
+#endif
+
     }
     else
     {
+#if HC_ARCH_BITS == 64
+        if (pVM->hwaccm.s.vmx.proc_ctls & (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT))
+        {
+            pVM->hwaccm.s.vmx.proc_ctls &= ~(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT);
+
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+        }
+#endif
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
 
