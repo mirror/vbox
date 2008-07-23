@@ -906,16 +906,20 @@ int getGuestProperty(int argc, char **argv)
         uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
         for (unsigned i = 0; (i < 10) && !finish; ++i)
         {
-            pvBuf = RTMemRealloc(pvBuf, cbBuf);
-            if (NULL == pvBuf)
+            void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
+            if (NULL == pvTmpBuf)
             {
+                RTMemFree(pvBuf);
                 rc = VERR_NO_MEMORY;
                 VBoxControlError("Out of memory\n");
             }
             else
+            {
+                pvBuf = pvTmpBuf;
                 rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cbBuf,
                                          &pszValue, &u64Timestamp, &pszFlags,
                                          &cbBuf);
+            }
             if (VERR_BUFFER_OVERFLOW == rc)
                 /* Leave a bit of extra space to be safe */
                 cbBuf += 1024;
@@ -942,7 +946,6 @@ int getGuestProperty(int argc, char **argv)
 
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);
-    VbglR3GuestPropReadValueFree(pszValue);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 
