@@ -437,6 +437,10 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,
     /** Call INTNETR0IfSetPromiscuousMode(). */
     VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,
+    /** Call INTNETR0IfSetMacAddress(). */
+    VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
+    /** Call INTNETR0IfSetActive(). */
+    VMMR0_DO_INTNET_IF_SET_ACTIVE,
     /** Call INTNETR0IfSend(). */
     VMMR0_DO_INTNET_IF_SEND,
     /** Call INTNETR0IfWait(). */

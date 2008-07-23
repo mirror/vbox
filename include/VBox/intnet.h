@@ -732,6 +732,50 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSIO
 
 
 /**
+ * Request buffer for INTNETR0IfSetMacAddressReq / VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS.
+ * @see INTNETR0IfSetMacAddress.
+ */
+typedef struct INTNETIFSETMACADDRESSREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
+    /** Handle to the interface. */
+    INTNETIFHANDLE  hIf;
+    /** The new MAC address. */
+    PDMMAC          Mac;
+} INTNETIFSETMACADDRESSREQ;
+/** Pointer to an INTNETR0IfSetMacAddressReq / VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS request buffer. */
+typedef INTNETIFSETMACADDRESSREQ *PINTNETIFSETMACADDRESSREQ;
+
+INTNETR0DECL(int) INTNETR0IfSetMacAddressReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq);
+
+
+/**
+ * Request buffer for INTNETR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE.
+ * @see INTNETR0IfSetActive.
+ */
+typedef struct INTNETIFSETACTIVEREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
+    /** Handle to the interface. */
+    INTNETIFHANDLE  hIf;
+    /** The new state. */
+    bool            fActive;
+} INTNETIFSETACTIVEREQ;
+/** Pointer to an INTNETR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE request buffer. */
+typedef INTNETIFSETACTIVEREQ *PINTNETIFSETACTIVEREQ;
+
+INTNETR0DECL(int) INTNETR0IfSetActiveReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq);
+
+
+/**
  * Request buffer for INTNETR0IfSendReq / VMMR0_DO_INTNET_IF_SEND.
  * @see INTNETR0IfSend.
  */
@@ -853,7 +897,9 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * @param   pSession        The caller's session.
  * @param   fPromiscuous    Set if the interface should be in promiscuous mode, clear if not.
  */
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
+INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode( PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
+INTNETR0DECL(int) INTNETR0IfSetMacAddress(      PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCPDMMAC pMac);
+INTNETR0DECL(int) INTNETR0IfSetActive(          PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
 
 /**
  * Sends one or more frames.
