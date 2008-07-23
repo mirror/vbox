@@ -3111,50 +3111,6 @@ if (getenv("VBOX_32BIT"))
     return enmShadowMode;
 }
 
-#ifdef LOG_ENABLED
-/**
- * Return the string corresponding to the guest mode
- *
- * @returns string
- * @param   enmGuestMode    The guest mode.
- */
-const char *pgmr3GuestModeString(PGMMODE enmGuestMode)
-{
-    switch(enmGuestMode)
-    {
-        case PGMMODE_REAL:
-            return "Real mode";
-
-        case PGMMODE_PROTECTED:
-            return "Protected mode without paging";
-
-        case PGMMODE_32_BIT:
-            return "32 bits protected mode";
-
-        case PGMMODE_PAE:
-            return "PAE";
-
-        case PGMMODE_PAE_NX:
-            return "PAE + NX";
-
-        case PGMMODE_AMD64:
-            return "AMD64";
-
-        case PGMMODE_AMD64_NX:
-            return "AMD64 + NX";
-
-        case PGMMODE_NESTED:
-            return "Nested";
-
-        case PGMMODE_EPT:
-            return "EPT";
-
-        default:
-            return "Unknown";
-    }
-}
-#endif
-
 /**
  * Performs the actual mode change.
  * This is called by PGMChangeMode and pgmR3InitPaging().
@@ -3166,7 +3122,7 @@ const char *pgmr3GuestModeString(PGMMODE enmGuestMode)
  */
 PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 {
-    LogFlow(("PGMR3ChangeMode: Guest mode: %s -> %s\n", pgmr3GuestModeString(pVM->pgm.s.enmGuestMode), pgmr3GuestModeString(enmGuestMode)));
+    LogFlow(("PGMR3ChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVM->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cGuestModeChanges);
 
     /*
@@ -3193,7 +3149,7 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     /* shadow */
     if (enmShadowMode != pVM->pgm.s.enmShadowMode)
     {
-        LogFlow(("PGMR3ChangeMode: Shadow mode: %s -> %s\n",  pgmr3GuestModeString(pVM->pgm.s.enmShadowMode), pgmr3GuestModeString(enmShadowMode)));
+        LogFlow(("PGMR3ChangeMode: Shadow mode: %s -> %s\n",  PGMGetModeName(pVM->pgm.s.enmShadowMode), PGMGetModeName(enmShadowMode)));
         if (PGM_SHW_PFN(Exit, pVM))
         {
             int rc = PGM_SHW_PFN(Exit, pVM)(pVM);
