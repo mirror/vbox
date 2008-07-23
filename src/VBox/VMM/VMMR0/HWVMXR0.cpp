@@ -1173,7 +1173,7 @@ ResumeExecution:
     /*
      * @todo reduce overhead
      */
-    if (    pCtx->msrEFER & MSR_K6_EFER_LMA
+    if (   (pCtx->msrEFER & MSR_K6_EFER_LMA)
         &&  pVM->hwaccm.s.vmx.pAPIC)
     {
         /* TPR caching in CR8 */
