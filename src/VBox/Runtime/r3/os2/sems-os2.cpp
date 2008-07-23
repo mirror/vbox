@@ -65,6 +65,9 @@ RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
 
 RTDECL(int)   RTSemEventDestroy(RTSEMEVENT EventSem)
 {
+    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
+
     /*
      * Close semaphore handle.
      */

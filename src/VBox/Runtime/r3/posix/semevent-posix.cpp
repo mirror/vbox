@@ -166,6 +166,8 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Validate handle.
      */
+    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
     if (!rtsemEventValid(EventSem))
     {
         AssertMsgFailed(("Invalid handle %p!\n", EventSem));
