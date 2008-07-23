@@ -5708,9 +5708,14 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
     va_end(va2);
 
     /* For now, this may be called only once. Ignore subsequent calls. */
-    AssertMsgReturnVoid (task->mErrorMsg.isNull(),
-                         ("Cannot set error to '%s': it is already set to '%s'",
-                         errorMsg.raw(), task->mErrorMsg.raw()));
+    if (!task->mErrorMsg.isNull())
+    {
+#if !defined(DEBUG_bird)
+        AssertMsgFailed (("Cannot set error to '%s': it is already set to '%s'",
+                          errorMsg.raw(), task->mErrorMsg.raw()));
+#endif
+        return;
+    }
 
     task->mErrorMsg = errorMsg;
 }
