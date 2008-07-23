@@ -480,14 +480,16 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
      * Retry a few times, yielding the CPU in between.
      * But don't let a unresponsive VM harm performance, so give up after a couple of tries.
      */
-    if (pIf->cYields < 100)
+    if (    pIf->fActive
+        &&  pIf->cYields < 100)
     {
         unsigned cYields = 10;
 #else
     /*
      * Scheduling hack, for unicore machines primarily.
      */
-    if (    pIf->cYields < 4 /* just twice */
+    if (    pIf->fActive
+        &&  pIf->cYields < 4 /* just twice */
         &&  pIfSender /* but not if it's from the trunk */)
     {
         unsigned cYields = 2;
