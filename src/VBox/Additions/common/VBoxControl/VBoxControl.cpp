@@ -76,8 +76,7 @@ enum g_eUsage
     SET_VIDEO_MODE,
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    GET_GUEST_PROP,
-    SET_GUEST_PROP,
+    GUEST_PROP,
 #endif
     USAGE_ALL = UINT32_MAX
 };
@@ -85,8 +84,8 @@ enum g_eUsage
 static void usage(g_eUsage eWhich = USAGE_ALL)
 {
     RTPrintf("Usage:\n\n");
-    RTPrintf("%s [-v|--version]       print version number and exit\n", g_pszProgName);
-    RTPrintf("%s --nologo ...         suppress the logo\n\n", g_pszProgName);
+    RTPrintf("%s [-v|-version]        print version number and exit\n", g_pszProgName);
+    RTPrintf("%s -nologo ...          suppress the logo\n\n", g_pszProgName);
 
 #ifdef RT_OS_WINDOWS
     if ((GET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
@@ -103,10 +102,11 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
         doUsage("<width> <height> <bpp> <screen>\n", g_pszProgName, "setvideomode");
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    if ((GET_GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<name>\n", g_pszProgName, "getguestproperty");
-    if ((SET_GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<name> [<value>] (no value deletes property)\n", g_pszProgName, "setguestproperty");
+    if ((GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
+    {
+        doUsage("get <property> [-verbose]\n", g_pszProgName, "guestproperty");
+        doUsage("set <property> [<value>] [--flags <flags>]\n", g_pszProgName, "guestproperty");
+    }
 #endif
 }
 /** @} */
@@ -865,38 +865,87 @@ int handleRemoveCustomMode(int argc, char *argv[])
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
  * @returns 0 on success, 1 on failure
- * @param   name  (string) the name of the property.
+ * @note see the command line API description for parameters
  */
 int getGuestProperty(int argc, char **argv)
 {
     using namespace guestProp;
 
-    if (argc != 1)
+    bool verbose = false;
+    if ((2 == argc) && (0 == strcmp(argv[1], "-verbose")))
+        verbose = true;
+    else if (argc != 1)
     {
-        usage(GET_GUEST_PROP);
+        usage(GUEST_PROP);
         return 1;
     }
 
-    uint32_t u32ClientID = 0;
+    uint32_t u32ClientId = 0;
     int rc = VINF_SUCCESS;
-    char *pszName = argv[0];
-    char *pszValue = NULL;
 
-    rc = VbglR3GuestPropConnect(&u32ClientID);
-    if (!RT_SUCCESS(rc))
-        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+    /* We leave a bit of space here in case the maximum values are raised. */
+    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
+    void *pvBuf = RTMemAlloc(cbBuf);
+    if (NULL == pvBuf)
+    {
+        rc = VERR_NO_MEMORY;
+        VBoxControlError("Out of memory\n");
+    }
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GuestPropReadValueAlloc(u32ClientID, pszName, &pszValue);
-        if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
+        rc = VbglR3GuestPropConnect(&u32ClientId);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+    }
+
+/*
+ * Here we actually retrieve the value from the host.
+ */
+    const char *pszName = argv[0];
+    char *pszValue = NULL;
+    uint64_t u64Timestamp = 0;
+    char *pszFlags = NULL;
+    if (RT_SUCCESS(rc))
+    {
+        /* Because there is a race condition between our reading the size of a
+         * property and the guest updating it, we loop a few times here and
+         * hope.  Actually this should never go wrong, as we are generous
+         * enough with buffer space. */
+        bool finish = false;
+        for (int i = 0; (i < 10) && !finish; ++i)
+        {
+            rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cbBuf,
+                                     &pszValue, &u64Timestamp, &pszFlags,
+                                     &cbBuf);
+            if (VERR_BUFFER_OVERFLOW == rc)
+            {
+                pvBuf = RTMemRealloc(pvBuf, cbBuf);
+                if (NULL == pvBuf)
+                    rc = VERR_NO_MEMORY;
+            }
+            if (rc != VERR_BUFFER_OVERFLOW)
+                finish = true;
+        }
+        if (VERR_TOO_MUCH_DATA == rc)
+            VBoxControlError("Temporarily unable to retrieve the property\n");
+        else if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
             VBoxControlError("Failed to retrieve the property value, error %Rrc\n", rc);
     }
+/*
+ * And display it on the guest console.
+ */
     if (VERR_NOT_FOUND == rc)
         RTPrintf("No value set!\n");
     if (RT_SUCCESS(rc))
         RTPrintf("Value: %S\n", pszValue);
-    if (u32ClientID != 0)
-        VbglR3GuestPropDisconnect(u32ClientID);
+    if (RT_SUCCESS(rc) && verbose)
+    {
+        RTPrintf("Timestamp: %lld ns\n", u64Timestamp);
+        RTPrintf("Flags: %S\n", pszFlags);
+    }
+
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);
     VbglR3GuestPropReadValueFree(pszValue);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
@@ -907,38 +956,93 @@ int getGuestProperty(int argc, char **argv)
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
  * @returns 0 on success, 1 on failure
- * @param   name  (string) the name of the property.
- * @param   value (string) the value to write.  If empty, the property will be
- *                removed.
+ * @note see the command line API description for parameters
  */
 static int setGuestProperty(int argc, char *argv[])
 {
-    if (argc != 1 && argc != 2)
+/*
+ * Check the syntax.  We can deduce the correct syntax from the number of
+ * arguments.
+ */
+    bool usageOK = true;
+    const char *pszName = NULL;
+    const char *pszValue = NULL;
+    const char *pszFlags = NULL;
+    if (2 == argc)
     {
-        usage(SET_GUEST_PROP);
+        pszName = argv[0];
+        pszValue = argv[1];
+    }
+    else if (3 == argc)
+    {
+        pszName = argv[0];
+        if (strcmp(argv[1], "-flags") != 0)
+            usageOK = false;
+        pszFlags = argv[2];
+    }
+    else if (4 == argc)
+    {
+        pszName = argv[0];
+        pszValue = argv[1];
+        if (strcmp(argv[2], "-flags") != 0)
+            usageOK = false;
+        pszFlags = argv[3];
+    }
+    else if (argc != 1)
+        usageOK = false;
+    if (!usageOK)
+    {
+        usage(GUEST_PROP);
         return 1;
     }
 
-    uint32_t u32ClientID = 0;
+/*
+ * Do the actual setting.
+ */
+    uint32_t u32ClientId = 0;
     int rc = VINF_SUCCESS;
-    char *pszName = argv[0];
-    char *pszValue = NULL;
-    if (2 == argc)
-        pszValue = argv[1];
-
-    rc = VbglR3GuestPropConnect(&u32ClientID);
+    rc = VbglR3GuestPropConnect(&u32ClientId);
     if (!RT_SUCCESS(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GuestPropWriteValue(u32ClientID, pszName, pszValue);
+        if (pszFlags != NULL)
+            rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, pszFlags);
+        else
+            rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
         if (!RT_SUCCESS(rc))
             VBoxControlError("Failed to store the property value, error %Rrc\n", rc);
     }
-    if (u32ClientID != 0)
-        VbglR3GuestPropDisconnect(u32ClientID);
+
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
+
+
+/**
+ * Access the guest property store through the "VBoxGuestPropSvc" HGCM
+ * service.
+ *
+ * @returns 0 on success, 1 on failure
+ * @note see the command line API description for parameters
+ */
+static int handleGuestProperty(int argc, char *argv[])
+{
+    if (0 == argc)
+    {
+        usage(GUEST_PROP);
+        return 1;
+    }
+    if (0 == strcmp(argv[0], "get"))
+        return getGuestProperty(argc - 1, argv + 1);
+    else if (0 == strcmp(argv[0], "set"))
+        return setGuestProperty(argc - 1, argv + 1);
+    /* else */
+    usage(GUEST_PROP);
+    return 1;
+}
+
 #endif
 
 /** command handler type */
@@ -961,8 +1065,7 @@ struct COMMANDHANDLER
     { "setvideomode", handleSetVideoMode },
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    { "getguestproperty", getGuestProperty },
-    { "setguestproperty", setGuestProperty },
+    { "guestproperty", handleGuestProperty },
 #endif
     { NULL, NULL }  /* terminator */
 };
@@ -978,7 +1081,7 @@ int main(int argc, char **argv)
     int iArg = 1;
     /** Should we show the logo text? */
     bool showlogo = true;
-    /** Should we print the usage after the logo?  For the --help switch. */
+    /** Should we print the usage after the logo?  For the -help switch. */
     bool dohelp = false;
     /** Will we be executing a command or just printing information? */
     bool onlyinfo = false;
@@ -1003,9 +1106,9 @@ int main(int argc, char **argv)
                 showlogo = false;
                 done = true;
             }
-        else if (0 == strcmp(argv[iArg], "--nologo"))
+        else if (0 == strcmp(argv[iArg], "-nologo"))
             showlogo = false;
-        else if (0 == strcmp(argv[iArg], "--help"))
+        else if (0 == strcmp(argv[iArg], "-help"))
         {
             onlyinfo = true;
             dohelp = true;
