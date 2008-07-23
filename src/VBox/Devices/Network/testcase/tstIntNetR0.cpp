@@ -468,6 +468,20 @@ int main(int argc, char **argv)
                         g_cErrors++;
                     }
 
+                    rc = INTNETR0IfSetActive(pIntNet, hIf0, g_pSession, true);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
+                        g_cErrors++;
+                    }
+                    rc = INTNETR0IfSetActive(pIntNet, hIf1, g_pSession, true);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
+                        g_cErrors++;
+                    }
+
+
                     /*
                      * Test basic waiting.
                      */
