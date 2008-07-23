@@ -1637,8 +1637,8 @@ PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 {
     switch (enmMode)
     {
-        case PGMMODE_REAL:      return "real";
-        case PGMMODE_PROTECTED: return "protected";
+        case PGMMODE_REAL:      return "Real";
+        case PGMMODE_PROTECTED: return "Protected";
         case PGMMODE_32_BIT:    return "32-bit";
         case PGMMODE_PAE:       return "PAE";
         case PGMMODE_PAE_NX:    return "PAE+NX";
