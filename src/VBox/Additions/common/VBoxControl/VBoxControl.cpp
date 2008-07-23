@@ -883,20 +883,9 @@ int getGuestProperty(int argc, char **argv)
     uint32_t u32ClientId = 0;
     int rc = VINF_SUCCESS;
 
-    /* We leave a bit of space here in case the maximum values are raised. */
-    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
-    void *pvBuf = RTMemAlloc(cbBuf);
-    if (NULL == pvBuf)
-    {
-        rc = VERR_NO_MEMORY;
-        VBoxControlError("Out of memory\n");
-    }
-    if (RT_SUCCESS(rc))
-    {
-        rc = VbglR3GuestPropConnect(&u32ClientId);
-        if (!RT_SUCCESS(rc))
-            VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
-    }
+    rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (!RT_SUCCESS(rc))
+        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
 
 /*
  * Here we actually retrieve the value from the host.
@@ -912,18 +901,25 @@ int getGuestProperty(int argc, char **argv)
          * hope.  Actually this should never go wrong, as we are generous
          * enough with buffer space. */
         bool finish = false;
-        for (int i = 0; (i < 10) && !finish; ++i)
+        /* We leave a bit of space here in case the maximum values are raised. */
+        void *pvBuf = NULL;
+        uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
+        for (unsigned i = 0; (i < 10) && !finish; ++i)
         {
-            rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cbBuf,
-                                     &pszValue, &u64Timestamp, &pszFlags,
-                                     &cbBuf);
-            if (VERR_BUFFER_OVERFLOW == rc)
+            pvBuf = RTMemRealloc(pvBuf, cbBuf);
+            if (NULL == pvBuf)
             {
-                pvBuf = RTMemRealloc(pvBuf, cbBuf);
-                if (NULL == pvBuf)
-                    rc = VERR_NO_MEMORY;
+                rc = VERR_NO_MEMORY;
+                VBoxControlError("Out of memory\n");
             }
-            if (rc != VERR_BUFFER_OVERFLOW)
+            else
+                rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cbBuf,
+                                         &pszValue, &u64Timestamp, &pszFlags,
+                                         &cbBuf);
+            if (VERR_BUFFER_OVERFLOW == rc)
+                /* Leave a bit of extra space to be safe */
+                cbBuf += 1024;
+            else
                 finish = true;
         }
         if (VERR_TOO_MUCH_DATA == rc)

@@ -257,36 +257,34 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
                                               char **ppszValue)
 {
     int rc = VINF_SUCCESS;
-    uint32_t cchBuf = 1024;
-    void *pvBuf = RTMemAlloc(cchBuf);
     char *pszValue = NULL;
     *ppszValue = NULL;
-    if (NULL == pvBuf)
-        rc = VERR_NO_MEMORY;
-    if (RT_SUCCESS(rc))
+
+    /* There is a race here between our reading the property size and the
+     * host changing the value before we read it.  Try up to ten times and
+     * report the problem if that fails. */
+    bool finish = false;
+    /* We leave a bit of space here in case the maximum value is raised. */
+    uint32_t cchBuf = MAX_VALUE_LEN + 1024;
+    void *pvBuf = NULL;
+    for (unsigned i = 0; (i < 10) && !finish; ++i)
     {
-        /* There is a race here between our reading the property size and the
-         * host changing the value before we read it.  Try up to ten times and
-         * report the problem if that fails. */
-        bool finish = false;
-        for (unsigned i = 0; (i < 10) && !finish; ++i)
-        {
+        pvBuf = RTMemRealloc(pvBuf, cchBuf);
+        if (NULL == pvBuf)
+            rc = VERR_NO_MEMORY;
+        else
             rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
                                      &pszValue, NULL, NULL, &cchBuf);
-            if (VERR_BUFFER_OVERFLOW == rc)
-            {
-                pvBuf = RTMemRealloc(pvBuf, cchBuf);
-                if (NULL == pvBuf)
-                    rc = VERR_NO_MEMORY;
-            }
-            if (rc != VERR_BUFFER_OVERFLOW)
-                finish = true;
-        }
         if (VERR_BUFFER_OVERFLOW == rc)
-            /* VERR_BUFFER_OVERFLOW has a different meaning here as a
-             * return code, but we need to report the race. */
-            rc = VERR_TOO_MUCH_DATA;
+            /* Leave a bit of extra space to be safe */
+            cchBuf += 1024;
+        else
+            finish = true;
     }
+    if (VERR_BUFFER_OVERFLOW == rc)
+        /* VERR_BUFFER_OVERFLOW has a different meaning here as a
+         * return code, but we need to report the race. */
+        rc = VERR_TOO_MUCH_DATA;
     if (RT_SUCCESS(rc))
         *ppszValue = pszValue;
     return rc;
