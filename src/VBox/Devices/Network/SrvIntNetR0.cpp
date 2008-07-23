@@ -1166,6 +1166,76 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSIO
 
 
 /**
+ * Sets the MAC address of an interface.
+ *
+ * @returns VBox status code.
+ * @param   pIntNet         The instance handle.
+ * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   pMAC            The new MAC address.
+ */
+INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCPDMMAC pMac)
+{
+    LogFlow(("INTNETR0IfSetMacAddress: pIntNet=%p hIf=%RX32 pMac=%p:{%.6Rhxs}\n", pIntNet, hIf, pMac, pMac));
+
+    /*
+     * Validate & translate input.
+     */
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pMac, VERR_INVALID_PARAMETER);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
+    if (!pIf)
+    {
+        Log(("INTNETR0IfSetMacAddress: returns VERR_INVALID_HANDLE\n"));
+        return VERR_INVALID_HANDLE;
+    }
+
+    /*
+     * Grab the network semaphore and make the change.
+     */
+    int rc;
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
+    if (pNetwork)
+    {
+        rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+        if (RT_SUCCESS(rc))
+        {
+            if (memcmp(&pIf->Mac, pMac, sizeof(pIf->Mac)))
+            {
+                Log(("INTNETR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
+                     hIf, &pIf->Mac, pMac));
+                pIf->Mac = *pMac;
+                pIf->fMacSet = true;
+            }
+
+            rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+        }
+    }
+    else
+        rc = VERR_WRONG_ORDER;
+
+    intnetR0IfRelease(pIf, pSession);
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfSetMacAddress.
+ *
+ * @returns see INTNETR0IfSetMacAddress.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pSession        The caller's session.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfSetMacAddressReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfSetMacAddress(pIntNet, pReq->hIf, pSession, &pReq->Mac);
+}
+
+
+/**
  * Worker for intnetR0IfSetActive.
  *
  * This function will update the active interface count on the network and
@@ -1255,6 +1325,62 @@ static int intnetR0IfSetActive(PINTNETIF pIf, bool fActive)
     if (!pNetwork)
         return VERR_WRONG_ORDER;
     return intnetR0NetworkSetIfActive(pNetwork, pIf, fActive);
+}
+
+
+/**
+ * Sets the active property of an interface.
+ *
+ * @returns VBox status code.
+ * @param   pIntNet         The instance handle.
+ * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   fActive         The new state.
+ */
+INTNETR0DECL(int) INTNETR0IfSetActive(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive)
+{
+    LogFlow(("INTNETR0IfSetActive: pIntNet=%p hIf=%RX32 fActive=%RTbool\n", pIntNet, hIf, fActive));
+
+    /*
+     * Validate & translate input.
+     */
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
+    if (!pIf)
+    {
+        Log(("INTNETR0IfSetActive: returns VERR_INVALID_HANDLE\n"));
+        return VERR_INVALID_HANDLE;
+    }
+
+    /*
+     * Hand it to the network since it might involve the trunk
+     * and things are tricky there wrt to locking order.
+     */
+    int rc;
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
+    if (pNetwork)
+        rc = intnetR0NetworkSetIfActive(pNetwork, pIf, fActive);
+    else
+        rc = VERR_WRONG_ORDER;
+
+    intnetR0IfRelease(pIf, pSession);
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfSetActive.
+ *
+ * @returns see INTNETR0IfSetActive.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pSession        The caller's session.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfSetActiveReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfSetActive(pIntNet, pReq->hIf, pSession, pReq->fActive);
 }
 
 

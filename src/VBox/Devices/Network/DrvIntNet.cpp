@@ -71,6 +71,9 @@ typedef struct DRVINTNET
     PDMINETWORKCONNECTOR    INetworkConnector;
     /** The network interface. */
     PPDMINETWORKPORT        pPort;
+    /** The network config interface.
+     * Can (in theory at least) be NULL. */
+    PPDMINETWORKCONFIG      pConfigIf;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** Interface handle. */
@@ -110,6 +113,61 @@ typedef struct DRVINTNET
 
 /** Converts a pointer to DRVINTNET::INetworkConnector to a PDRVINTNET. */
 #define PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface) ( (PDRVINTNET)((uintptr_t)pInterface - RT_OFFSETOF(DRVINTNET, INetworkConnector)) )
+
+
+/**
+ * Updates the MAC address on the kernel side.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The driver instance.
+ */
+static int drvIntNetUpdateMacAddress(PDRVINTNET pThis)
+{
+    if (!pThis->pConfigIf)
+        return VINF_SUCCESS;
+
+    INTNETIFSETMACADDRESSREQ SetMacAddressReq;
+    SetMacAddressReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SetMacAddressReq.Hdr.cbReq = sizeof(SetMacAddressReq);
+    SetMacAddressReq.pSession = NIL_RTR0PTR;
+    SetMacAddressReq.hIf = pThis->hIf;
+    int rc = pThis->pConfigIf->pfnGetMac(pThis->pConfigIf, &SetMacAddressReq.Mac);
+    if (RT_SUCCESS(rc))
+        rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
+                                                        &SetMacAddressReq, sizeof(SetMacAddressReq));
+
+    Log(("drvIntNetUpdateMacAddress: %.*Rhxs rc=%Rrc\n", sizeof(SetMacAddressReq.Mac), &SetMacAddressReq.Mac, rc));
+    return rc;
+}
+
+
+/**
+ * Sets the kernel interface active or inactive.
+ *
+ * Worker for poweron, poweroff, suspend and resume.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The driver instance.
+ * @param   fActive     The new state.
+ */
+static int drvIntNetSetActive(PDRVINTNET pThis, bool fActive)
+{
+    if (!pThis->pConfigIf)
+        return VINF_SUCCESS;
+
+    INTNETIFSETACTIVEREQ SetActiveReq;
+    SetActiveReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SetActiveReq.Hdr.cbReq = sizeof(SetActiveReq);
+    SetActiveReq.pSession = NIL_RTR0PTR;
+    SetActiveReq.hIf = pThis->hIf;
+    SetActiveReq.fActive = fActive;
+    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_ACTIVE,
+                                                        &SetActiveReq, sizeof(SetActiveReq));
+
+    Log(("drvIntNetUpdateMacAddress: fActive=%d rc=%Rrc\n", fActive, rc));
+    AssertRC(rc);
+    return rc;
+}
 
 
 /**
@@ -540,7 +598,10 @@ static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
     LogFlow(("drvIntNetPowerOff\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
+    {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
+        drvIntNetSetActive(pThis, false /* fActive */);
+    }
 }
 
 
@@ -557,6 +618,8 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
+        drvIntNetUpdateMacAddress(pThis); /* (could be a state restore) */
+        drvIntNetSetActive(pThis, true /* fActive */);
     }
 }
 
@@ -571,7 +634,10 @@ static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
     LogFlow(("drvIntNetPowerSuspend\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
+    {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
+        drvIntNetSetActive(pThis, false /* fActive */);
+    }
 }
 
 
@@ -588,6 +654,8 @@ static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
+        drvIntNetUpdateMacAddress(pThis);
+        drvIntNetSetActive(pThis, true /* fActive */);
     }
 }
 
@@ -703,6 +771,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
+    pThis->pConfigIf = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
 
     /*
      * Read the configuration.
@@ -886,6 +955,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
+        drvIntNetUpdateMacAddress(pThis);
+        drvIntNetSetActive(pThis, true /* fActive */);
     }
 
     return rc;
