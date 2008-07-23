@@ -264,6 +264,8 @@ typedef enum PGMMODE
     PGMMODE_AMD64_NX,
     /** Nested paging mode (shadow only; guest physical to host physical). */
     PGMMODE_NESTED,
+    /** Extended paging (Intel) mode. */
+    PGMMODE_EPT,
     /** The max number of modes */
     PGMMODE_MAX,
     /** 32bit hackishness. */

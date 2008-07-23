@@ -89,6 +89,20 @@ HWACCMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
     return HWACCMIsEnabled(pVM) && pVM->hwaccm.s.fNestedPaging;
 }
 
+/**
+ * Return the shadow paging mode for nested paging/ept
+ *
+ * @returns shadow paging mode
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM)
+{
+    Assert(HWACCMIsNestedPagingActive(pVM));
+    if (pVM->hwaccm.s.svm.fSupported)
+        return PGMMODE_NESTED;
+    Assert(pVM->hwaccm.s.vmx.fSupported);
+    return PGMMODE_EPT;
+}
 
 /**
  * Invalidates a guest page by physical address

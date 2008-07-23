@@ -285,6 +285,81 @@ typedef struct PGMHVUSTATE
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
+
+
+#ifdef PGM_WITH_EPT
+/*
+ * Shadow - EPT
+ */
+#define PGM_SHW_TYPE                PGM_TYPE_EPT
+#define PGM_SHW_NAME(name)          PGM_SHW_NAME_EPT(name)
+#include "PGMAllShw.h"
+
+/* Guest - real mode */
+#define PGM_GST_TYPE                PGM_TYPE_REAL
+#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_REAL(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - protected mode */
+#define PGM_GST_TYPE                PGM_TYPE_PROT
+#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - 32-bit mode */
+#define PGM_GST_TYPE                PGM_TYPE_32BIT
+#define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_32BIT(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_32BIT_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - PAE mode */
+#define PGM_GST_TYPE                PGM_TYPE_PAE
+#define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PAE(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+/* Guest - AMD64 mode */
+#define PGM_GST_TYPE                PGM_TYPE_AMD64
+#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_AMD64(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
+#undef PGM_GST_NAME
+
+#undef PGM_SHW_TYPE
+#undef PGM_SHW_NAME
+#endif /* PGM_WITH_EPT */
+
 #endif
 
 /**
@@ -1077,6 +1152,9 @@ PGMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
         case PGMMODE_AMD64_NX:
             return pVM->pgm.s.HCPhysPaePML4;
 
+        case PGMMODE_EPT:
+            return pVM->pgm.s.HCPhysNestedRoot;
+
         case PGMMODE_NESTED:
             return PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
 
@@ -1198,6 +1276,7 @@ PGMDECL(RTHCPHYS) PGMGetInterGCCR3(PVM pVM)
         case PGMMODE_AMD64_NX:
             return pVM->pgm.s.HCPhysInterPaePML4;
 
+        case PGMMODE_EPT:
         case PGMMODE_NESTED:
             return 0; /* not relevant */
 
@@ -1331,7 +1410,7 @@ PGMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
     /* We assume we're only called in nested paging mode. */
     Assert(pVM->pgm.s.fMappingsFixed);
     Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
-    Assert(pVM->pgm.s.enmShadowMode == PGMMODE_NESTED);
+    Assert(pVM->pgm.s.enmShadowMode == PGMMODE_NESTED || pVM->pgm.s.enmShadowMode == PGMMODE_EPT);
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -1566,6 +1645,7 @@ PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
         case PGMMODE_AMD64:     return "AMD64";
         case PGMMODE_AMD64_NX:  return "AMD64+NX";
         case PGMMODE_NESTED:    return "Nested";
+        case PGMMODE_EPT:       return "EPT";
         default:                return "unknown mode value";
     }
 }

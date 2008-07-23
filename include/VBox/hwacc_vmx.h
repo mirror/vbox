@@ -127,6 +127,25 @@ typedef VTXEPTE *PVTXEPTE;
 /** Pointer to a const extended table entry. */
 typedef const VTXEPTE *PCVTXEPTE;
 
+/**
+ * Number of page table entries in the EPT.
+ */
+#define VTX_PT_ENTRIES                  512
+
+/**
+ * Extended Page Directory Table.
+ */
+#pragma pack(1)
+typedef union VTXEPT
+{
+    VTXEPTE     a[VTX_PT_ENTRIES];
+} VTXEPT;
+#pragma pack()
+/** Pointer to an extended page table. */
+typedef VTXEPT *PVTXEPT;
+/** Pointer to a const extended table. */
+typedef const VTXEPT *PCVTXEPT;
+
 /** VMX Basic Exit Reasons.
  * @{
  */

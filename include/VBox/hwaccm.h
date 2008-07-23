@@ -102,6 +102,14 @@ HWACCMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
  */
 HWACCMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM);
 
+/**
+ * Return the shadow paging mode for nested paging/ept
+ *
+ * @returns shadow paging mode
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
+
 #else
 /* Nop in GC */
 #define HWACCMFlushTLB(pVM)                     do { } while (0)
