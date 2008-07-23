@@ -806,32 +806,50 @@ int main(int argc, char **argv)
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Start the stop watch, init the pcap file.
+                 * Activate the interface.
                  */
-                g_StartTS = RTTimeNanoTS();
-                if (pFileRaw)
-                    PcapStreamHdr(pFileRaw, g_StartTS);
-
-                /*
-                 * Do the transmit test first and so we can sniff for the response.
-                 */
-                if (fXmitTest)
-                    doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw);
-
-                /*
-                 * Either enter sniffing mode or do a timeout thing.
-                 */
-                if (fSniffer)
+                INTNETIFSETACTIVEREQ ActiveReq;
+                ActiveReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+                ActiveReq.Hdr.cbReq = sizeof(ActiveReq);
+                ActiveReq.pSession = pSession;
+                ActiveReq.hIf = OpenReq.hIf;
+                ActiveReq.fActive = true;
+                rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
+                if (RT_SUCCESS(rc))
                 {
-                    doPacketSniffing(OpenReq.hIf, pSession, pBuf, cMillies, pFileRaw, pFileText, &SrcMac);
-                    if (fXmitTest != g_fDhcpReply)
+                    /*
+                     * Start the stop watch, init the pcap file.
+                     */
+                    g_StartTS = RTTimeNanoTS();
+                    if (pFileRaw)
+                        PcapStreamHdr(pFileRaw, g_StartTS);
+
+                    /*
+                     * Do the transmit test first and so we can sniff for the response.
+                     */
+                    if (fXmitTest)
+                        doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw);
+
+                    /*
+                     * Either enter sniffing mode or do a timeout thing.
+                     */
+                    if (fSniffer)
                     {
-                        RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
-                        g_cErrors++;
+                        doPacketSniffing(OpenReq.hIf, pSession, pBuf, cMillies, pFileRaw, pFileText, &SrcMac);
+                        if (fXmitTest != g_fDhcpReply)
+                        {
+                            RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
+                            g_cErrors++;
+                        }
                     }
+                    else
+                        RTThreadSleep(cMillies);
                 }
                 else
-                    RTThreadSleep(cMillies);
+                {
+                    RTPrintf("tstIntNet-1: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc);
+                    g_cErrors++;
+                }
             }
             else
             {
