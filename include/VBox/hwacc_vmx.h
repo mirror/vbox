@@ -443,9 +443,13 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_CTRL_TSC_OFFSET_FULL                           0x2010
 #define VMX_VMCS_CTRL_TSC_OFFSET_HIGH                           0x2011
 
-/* Optional */
+/* Optional (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW) */
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
+
+/* Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
+#define VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL                      0x2014
+#define VMX_VMCS_CTRL_APIC_ACCESSADDR_HIGH                      0x2015
 
 /** Extended page table pointer. */
 #define VMX_VMCS_CTRL_EPTP_FULL                                 0x201a
