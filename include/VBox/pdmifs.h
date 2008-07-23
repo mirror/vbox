@@ -1425,7 +1425,7 @@ typedef struct PDMITRANSPORTASYNC
      * @param   cbRead         How many bytes to read.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (PPDMITRANSPORTASYNC pInterface, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (PPDMITRANSPORTASYNC pInterface, void *pStorage, uint64_t uOffset,
                                                void *pvBuf, size_t cbRead, void **ppTask));
 
     /**
@@ -1439,7 +1439,7 @@ typedef struct PDMITRANSPORTASYNC
      * @param   cbWrite        How many bytes to write.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (PPDMITRANSPORTASYNC pInterface, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (PPDMITRANSPORTASYNC pInterface, void *pStorage, uint64_t uOffset,
                                                 void *pvBuf, size_t cbWrite, void **ppTask));
 
     /**
@@ -2170,6 +2170,8 @@ typedef struct PDMINETWORKCONNECTOR
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyLinkChanged,(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState));
+
+    /** @todo Add a callback that informs the driver chain about MAC address changes if we ever implement that.  */
 
 } PDMINETWORKCONNECTOR;
 
