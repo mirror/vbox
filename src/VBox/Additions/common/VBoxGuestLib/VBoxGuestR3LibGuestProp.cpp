@@ -269,12 +269,18 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
     void *pvBuf = NULL;
     for (unsigned i = 0; (i < 10) && !finish; ++i)
     {
-        pvBuf = RTMemRealloc(pvBuf, cchBuf);
-        if (NULL == pvBuf)
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cchBuf);
+        if (NULL == pvTmpBuf)
+        {
+            RTMemFree(pvBuf);
             rc = VERR_NO_MEMORY;
+        }
         else
+        {
+            pvBuf = pvTmpBuf;
             rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
                                      &pszValue, NULL, NULL, &cchBuf);
+        }
         if (VERR_BUFFER_OVERFLOW == rc)
             /* Leave a bit of extra space to be safe */
             cchBuf += 1024;
