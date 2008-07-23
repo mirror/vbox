@@ -800,7 +800,8 @@ PDMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             /* we're leaking hyper memory here if done at runtime. */
             Assert(   VMR3GetState(pVM) == VMSTATE_OFF
                    || VMR3GetState(pVM) == VMSTATE_DESTROYING
-                   || VMR3GetState(pVM) == VMSTATE_TERMINATED);
+                   || VMR3GetState(pVM) == VMSTATE_TERMINATED
+                   || VMR3GetState(pVM) == VMSTATE_CREATING);
             /*rc = MMHyperFree(pVM, pCur);
             AssertRCReturn(rc, rc); - not safe, see the alloc call. */
 
