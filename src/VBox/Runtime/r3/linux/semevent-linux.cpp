@@ -110,9 +110,11 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Validate input.
      */
+    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
     struct RTSEMEVENTINTERNAL *pThis = EventSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.

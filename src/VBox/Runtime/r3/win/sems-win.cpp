@@ -60,6 +60,7 @@ RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
     if (hev)
     {
         *pEventSem = (RTSEMEVENT)(void *)hev;
+        Assert(*pEventSem != NIL_RTSEMEVENT);
         return VINF_SUCCESS;
     }
     return RTErrConvertFromWin32(GetLastError());
@@ -68,6 +69,9 @@ RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
 
 RTDECL(int)   RTSemEventDestroy(RTSEMEVENT EventSem)
 {
+    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
+
     /*
      * Close semaphore handle.
      */
