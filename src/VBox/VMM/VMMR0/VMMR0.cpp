@@ -1037,6 +1037,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
                 Args.enmOperation = enmOperation;
                 Args.pReq = pReq;
                 Args.u64Arg = u64Arg;
+                Args.pSession = pSession;
                 return vmmR0CallHostSetJmpEx(&pVM->vmm.s.CallHostR0JmpBuf, vmmR0EntryExWrapper, &Args);
             }
 
