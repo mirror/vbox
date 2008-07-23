@@ -564,6 +564,12 @@ typedef struct SUPDRVSESSION
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                 R0Process;
+#if defined(RT_OS_DARWIN)
+    /** Pointer to the associated org_virtualbox_SupDrvClient object. */
+    void                       *pvSupDrvClient;
+    /** Whether this session has been opened or not. */
+    bool                        fOpened;
+#endif
 #if defined(RT_OS_OS2)
     /** The system file number of this session. */
     uint16_t                    sfn;
