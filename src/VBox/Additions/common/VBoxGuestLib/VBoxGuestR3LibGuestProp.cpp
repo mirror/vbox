@@ -130,10 +130,12 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
  * Write a property value.
  *
  * @returns VBox status code.
+ *
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
- * @param   pszName         The property to save to.  Utf8
- * @param   pszValue        The value to store.  Utf8.  If this is NULL then
- *                          the property will be removed.
+ * @param   pszName         The property to save to.  Must be valid UTF-8.
+ * @param   pszValue        The value to store.  Must be valid UTF-8.
+ *                          If this is NULL then the property will be removed.
+ *
  * @note  if the property already exists and pszValue is not NULL then the
  *        property's flags field will be left unchanged
  */
@@ -168,6 +170,52 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
     }
+    return rc;
+}
+
+
+/**
+ * Write a property value where the value is in RTStrPrintfV fashion.
+ *
+ * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
+ *
+ * @param   u32ClientId     The client ID returned by VbglR3InvsSvcConnect().
+ * @param   pszName         The property to save to.  Must be valid UTF-8.
+ * @param   pszValueFormat  The value format. This must be valid UTF-8 when fully formatted.
+ * @param   va              The format arguments.
+ */
+VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, va_list va)
+{
+    /*
+     * Format the value and pass it on to the setter.
+     */
+    int rc = VERR_NO_STR_MEMORY;
+    char *pszValue;
+    if (RTStrAPrintfV(&pszValue, pszValueFormat, va) < 0)
+    {
+        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
+        RTStrFree(pszValue);
+    }
+    return rc;
+}
+
+
+/**
+ * Write a property value where the value is in RTStrPrintf fashion.
+ *
+ * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
+ *
+ * @param   u32ClientId     The client ID returned by VbglR3InvsSvcConnect().
+ * @param   pszName         The property to save to.  Must be valid UTF-8.
+ * @param   pszValueFormat  The value format. This must be valid UTF-8 when fully formatted.
+ * @param   ...             The format arguments.
+ */
+VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
+{
+    va_list va;
+    va_start(va, pszValueFormat);
+    int rc = VbglR3GuestPropWriteValueV(u32ClientId, pszName, pszValueFormat, va);
+    va_end(va);
     return rc;
 }
 
