@@ -487,7 +487,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pData->VDIErrorCallbacks.pfnError     = drvvdErrorCallback;
 
     rc = VDInterfaceCreate(&pData->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
-                           &pData->VDIErrorCallbacks, pData, NULL);
+                           &pData->VDIErrorCallbacks, pDrvIns, NULL);
     AssertRC(rc);
 
     pData->VDIAsyncIOCallbacks.cbSize                  = sizeof(VDINTERFACEASYNCIO);
@@ -539,7 +539,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 /* Whoops. */
                 AssertMsgFailed(("Configuration error: No async transport interface below!\n"));
                 return VERR_PDM_MISSING_INTERFACE_ABOVE;
-
             }
         }
     }
