@@ -729,6 +729,12 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
 {
     Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
 
+    /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
+     * CPU_RAW_HWACC makes sure we never execute interrupt handlers in the recompiler.
+     */
+    if (HWACCMIsEnabled(pVM))
+        pVM->rem.s.Env.state |= CPU_RAW_HWACC;
+
     /*
      * Sync the state and enable single instruction / single stepping.
      */
