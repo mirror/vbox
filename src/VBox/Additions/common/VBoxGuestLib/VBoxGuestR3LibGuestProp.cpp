@@ -242,64 +242,73 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success, *ppszValue containing valid data.
- * @retval  VERR_NOT_FOUND if the key wasn't found and *ppszValue set to NULL.
+ * @retval  VERR_NOT_FOUND if the key wasn't found.
  * @retval  VERR_TOO_MUCH_DATA if we were unable to determine the right size
  *          to allocate for the buffer.  This can happen as the result of a
  *          race between our allocating space and the host changing the
  *          property value.
  *
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
- * @param   pszName         The value to read.  Utf8
+ * @param   pszName         The value to read. Must be valid UTF-8.
  * @param   ppszValue       Where to store the pointer to the value returned.
+ *                          This is always set to NULL or to the result, even
+ *                          on failure.
  */
 VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
                                               const char *pszName,
                                               char **ppszValue)
 {
-    int rc = VINF_SUCCESS;
-    char *pszValue = NULL;
+    /*
+     * Quick input validation.
+     */
+    AssertPtr(ppszValue);
     *ppszValue = NULL;
+    AssertPtrReturn(pszName, VERR_INVALID_PARAMETER);
 
-    /* There is a race here between our reading the property size and the
+    /*
+     * There is a race here between our reading the property size and the
      * host changing the value before we read it.  Try up to ten times and
-     * report the problem if that fails. */
-    bool finish = false;
-    /* We leave a bit of space here in case the maximum value is raised. */
-    uint32_t cchBuf = MAX_VALUE_LEN + 1024;
-    void *pvBuf = NULL;
-    for (unsigned i = 0; (i < 10) && !finish; ++i)
+     * report the problem if that fails.
+     */
+    char       *pszValue = NULL;
+    void       *pvBuf    = NULL;
+    uint32_t    cchBuf   = MAX_VALUE_LEN;
+    int         rc       = VERR_BUFFER_OVERFLOW;
+    for (unsigned i = 0; i < 10 && rc == VERR_BUFFER_OVERFLOW; ++i)
     {
+        /* We leave a bit of space here in case the maximum value is raised. */
+        cchBuf += 1024;
         void *pvTmpBuf = RTMemRealloc(pvBuf, cchBuf);
-        if (NULL == pvTmpBuf)
-        {
-            RTMemFree(pvBuf);
-            rc = VERR_NO_MEMORY;
-        }
-        else
+        if (pvTmpBuf)
         {
             pvBuf = pvTmpBuf;
             rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
                                      &pszValue, NULL, NULL, &cchBuf);
         }
-        if (VERR_BUFFER_OVERFLOW == rc)
-            /* Leave a bit of extra space to be safe */
-            cchBuf += 1024;
         else
-            finish = true;
+            rc = VERR_NO_MEMORY;
     }
-    if (VERR_BUFFER_OVERFLOW == rc)
-        /* VERR_BUFFER_OVERFLOW has a different meaning here as a
-         * return code, but we need to report the race. */
-        rc = VERR_TOO_MUCH_DATA;
     if (RT_SUCCESS(rc))
+    {
+        Assert(pszValue == (char *)pvBuf);
         *ppszValue = pszValue;
+    }
+    else
+    {
+        RTMemFree(pvBuf);
+        if (rc == VERR_BUFFER_OVERFLOW)
+            /* VERR_BUFFER_OVERFLOW has a different meaning here as a
+             * return code, but we need to report the race. */
+            rc = VERR_TOO_MUCH_DATA;
+    }
+
     return rc;
 }
 
 /**
  * Free the memory used by VbglR3GuestPropReadValueAlloc for returning a
  * value.
- * 
+ *
  * @param pszValue   the memory to be freed.  NULL pointers will be ignored.
  */
 VBGLR3DECL(void) VbglR3GuestPropReadValueFree(char *pszValue)
