@@ -331,8 +331,6 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
  */
 static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
-    int                 rc;
-    PSUPDRVSESSION      pSession;
 #ifdef DEBUG_DARWIN_GIP
     char szName[128];
     szName[0] = '\0';
@@ -345,7 +343,9 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
      * if no such session, and mark it as opened. We set the uid & gid
      * here too, since that is more straight forward at this point.
      */
-    struct ucred *pCred = proc_ucred(pProcess);
+    int             rc;
+    PSUPDRVSESSION  pSession;
+    struct ucred   *pCred = proc_ucred(pProcess);
     if (pCred)
     {
         RTUID           Uid = pCred->cr_uid;
