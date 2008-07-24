@@ -72,10 +72,10 @@ public:
         : QProgressDialog (aCreator,
                            Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
         , mProgress (aProgress)
-        , mCalcelEnabled (true)
+        , mEventLoop (new QEventLoop (this))
+        , mCalcelEnabled (false)
         , mOpCount (mProgress.GetOperationCount())
         , mCurOp (mProgress.GetOperation() + 1)
-        , mLoopLevel (-1)
         , mEnded (false)
     {
         setModal (true);
@@ -91,124 +91,101 @@ public:
         setWindowTitle (QString ("%1: %2")
                     .arg (aTitle, mProgress.GetDescription()));
         setMinimumDuration (aMinDuration);
-        setCancelEnabled (false);
         setValue (0);
     }
 
-    int run (int aRefreshInterval);
+    int run (int aRefreshInterval)
+    {
+        if (mProgress.isOk())
+        {
+            /* Start refresh timer */
+            int id = startTimer (aRefreshInterval);
 
-    bool cancelEnabled() const { return mCalcelEnabled; }
-    void setCancelEnabled (bool aEnabled) { mCalcelEnabled = aEnabled; }
+            /* Show the progress dialog */
+            show();
+
+            /* Enter the modal loop */
+            mEventLoop->exec();
+
+            /* Kill refresh timer */
+            killTimer (id);
+
+            return result();
+        }
+        return Rejected;
+    }
+
+    /* These methods disabled for now as not used anywhere */
+    // bool cancelEnabled() const { return mCalcelEnabled; }
+    // void setCancelEnabled (bool aEnabled) { mCalcelEnabled = aEnabled; }
 
 protected:
 
-    virtual void timerEvent (QTimerEvent *e);
+    virtual void timerEvent (QTimerEvent * /* aEvent */)
+    {
+        if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted()))
+        {
+            /* Progress finished */
+            if (mProgress.isOk())
+            {
+                setValue (100);
+                setResult (Accepted);
+            }
+            /* Progress is not valid */
+            else
+                setResult (Rejected);
 
-    virtual void reject() { if (mCalcelEnabled) QProgressDialog::reject(); };
+            /* Request to exit loop */
+            mEnded = true;
 
-    virtual void closeEvent (QCloseEvent *e)
+            /* The progress will be finalized
+             * on next timer iteration. */
+            return;
+        }
+
+        if (mEnded)
+        {
+            /* Exit loop if it is running */
+            if (mEventLoop->isRunning())
+                mEventLoop->quit();
+            return;
+        }
+
+        /* Update the progress dialog */
+        ulong newOp = mProgress.GetOperation() + 1;
+        if (newOp != mCurOp)
+        {
+            mCurOp = newOp;
+            setLabelText (QString (sOpDescTpl)
+                .arg (mProgress.GetOperationDescription())
+                .arg (mCurOp).arg (mOpCount));
+        }
+        setValue (mProgress.GetPercent());
+    }
+
+    virtual void reject() { if (mCalcelEnabled) QProgressDialog::reject(); }
+
+    virtual void closeEvent (QCloseEvent *aEvent)
     {
         if (mCalcelEnabled)
-            QProgressDialog::closeEvent (e);
+            QProgressDialog::closeEvent (aEvent);
         else
-            e->ignore();
+            aEvent->ignore();
     }
 
 private:
 
     CProgress &mProgress;
+    QEventLoop *mEventLoop;
     bool mCalcelEnabled;
     const ulong mOpCount;
     ulong mCurOp;
-    int mLoopLevel;
     bool mEnded;
 
     static const char *sOpDescTpl;
 };
 
-//static
 const char *VBoxProgressDialog::sOpDescTpl = "%1... (%2/%3)";
-
-int VBoxProgressDialog::run (int aRefreshInterval)
-{
-    if (mProgress.isOk())
-    {
-//#warning port me
-        /* start a refresh timer */
-        startTimer (aRefreshInterval);
-        // todo: Ok here I have no clue what this mean.
-        // I never saw someone calling the eventloop directly.
-        // Very inconventient. I will investigate this later.
-        // For now it seems to working correctly.
-//        mLoopLevel = qApp->eventLoop()->loopLevel();
-//        /* enter the modal loop */
-//        qApp->eventLoop()->enterLoop();
-//        killTimers();
-//        mLoopLevel = -1;
-//        mEnded = false;
-        return exec();
-    }
-    return Rejected;
-}
-
-//virtual
-void VBoxProgressDialog::timerEvent (QTimerEvent *e)
-{
-    bool justEnded = false;
-
-    if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted()))
-    {
-        /* dismiss the dialog -- the progress is no more valid */
-        killTimer (e->timerId());
-        if (mProgress.isOk())
-        {
-            setValue (100);
-            accepted();
-//            setResult (Accepted);
-        }
-        else
-            rejected();
-//            setResult (Rejected);
-        //
-//        mEnded = justEnded = true;
-        return;
-    }
-
-    if (mEnded)
-    {
-        if (mLoopLevel != -1)
-        {
-//#warning port me
-//            /* we've entered the loop in run() */
-//            if (mLoopLevel + 1 == qApp->eventLoop()->loopLevel())
-//            {
-//                /* it's our loop, exit it */
-//                qApp->eventLoop()->exitLoop();
-//            }
-//            else
-//            {
-//                Assert (mLoopLevel + 1 < qApp->eventLoop()->loopLevel());
-//                /* restart the timer to watch for the loop level to drop */
-//                if (justEnded)
-//                    startTimer (50);
-//            }
-        }
-        else
-            Assert (justEnded);
-        return;
-    }
-
-    /* update the progress dialog */
-    ulong newOp = mProgress.GetOperation() + 1;
-    if (newOp != mCurOp)
-    {
-        mCurOp = newOp;
-        setLabelText (QString (sOpDescTpl)
-            .arg (mProgress.GetOperationDescription())
-            .arg (mCurOp).arg (mOpCount));
-    }
-    setValue (mProgress.GetPercent());
-}
 
 
 /** @class VBoxProblemReporter
