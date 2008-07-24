@@ -368,6 +368,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
                 pSession->fOpened = true;
                 pSession->Uid = Uid;
                 pSession->Gid = Gid;
+                rc = VINF_SUCCESS;
             }
             else
                 rc = VERR_ALREADY_LOADED;
