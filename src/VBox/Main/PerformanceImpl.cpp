@@ -376,7 +376,7 @@ void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p name=%s\n", baseMetric->getObject(), baseMetric->getName()));
+    LogFlowThisFunc (("obj=%p name=%s\n", (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back (baseMetric);
     LogFlowThisFuncLeave();
 }
@@ -388,7 +388,7 @@ void PerformanceCollector::registerMetric (pm::Metric *metric)
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p name=%s\n", metric->getObject(), metric->getName()));
+    LogFlowThisFunc (("obj=%p name=%s\n", (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back (metric);
     LogFlowThisFuncLeave();
 }
@@ -400,7 +400,7 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("before remove_if: m.baseMetrics.size()=%d, obj=%p\n", m.baseMetrics.size(), aObject));
+    LogFlowThisFunc (("before remove_if: m.baseMetrics.size()=%d, obj=%p\n", m.baseMetrics.size(), (void *)aObject));
     BaseMetricList::iterator it = std::remove_if (
         m.baseMetrics.begin(), m.baseMetrics.end(), std::bind2nd (
             std::mem_fun (&pm::BaseMetric::associatedWith), aObject));
@@ -416,7 +416,7 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p\n", aObject));
+    LogFlowThisFunc (("obj=%p\n", (void *)aObject));
     MetricList::iterator it = std::remove_if (
         m.metrics.begin(), m.metrics.end(), std::bind2nd (
             std::mem_fun (&pm::Metric::associatedWith), aObject));
