@@ -175,7 +175,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
 
 
 /**
- * Write a property value where the value is in RTStrPrintfV fashion.
+ * Write a property value where the value is formatted in RTStrPrintfV fashion.
  *
  * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
  *
@@ -201,7 +201,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *psz
 
 
 /**
- * Write a property value where the value is in RTStrPrintf fashion.
+ * Write a property value where the value is formatted in RTStrPrintf fashion.
  *
  * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
  *
