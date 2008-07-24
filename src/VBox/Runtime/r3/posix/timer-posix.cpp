@@ -32,7 +32,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Enables the use of POSIX RT timers. */
+#ifndef RT_OS_SOLARIS /* Solaris 10 doesn't have SIGEV_THREAD */
 #define IPRT_WITH_POSIX_TIMERS
+#endif /* !RT_OS_SOLARIS */
 
 
 /*******************************************************************************
