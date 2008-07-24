@@ -36,8 +36,8 @@ public:
     virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
 
-    virtual int getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-    virtual int getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
+    virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+    virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 };
 
 // Linux Metric factory
@@ -48,30 +48,22 @@ MetricFactoryLinux::MetricFactoryLinux()
     Assert(mHAL);
 }
 
-BaseMetric *MetricFactoryLinux::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-{
-    Assert(mHAL);
-    return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
-}
-
-BaseMetric *MetricFactoryLinux::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
-{
-    Assert(mHAL);
-    return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
-}
-
 // Collector HAL for Linux
 
-int CollectorLinux::getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
     int rc = VINF_SUCCESS;
-    unsigned long nice;
+    unsigned long u32user, u32nice, u32kernel, u32idle;
     FILE *f = fopen("/proc/stat", "r");
 
     if (f)
     {
-        if (fscanf(f, "cpu %lu %lu %lu %lu", user, &nice, kernel, idle) == 4)
-            *user += nice;
+        if (fscanf(f, "cpu %lu %lu %lu %lu", &u32user, &u32nice, &u32kernel, &u32idle) == 4)
+        {
+            *user   = (uint64_t)u32user + u32nice;
+            *kernel = u32kernel;
+            *idle   = u32idle;
+        }
         else
             rc = VERR_FILE_IO_ERROR;
         fclose(f);
@@ -82,7 +74,7 @@ int CollectorLinux::getRawHostCpuLoad(unsigned long *user, unsigned long *kernel
     return rc;
 }
 
-int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
     int rc = VINF_SUCCESS;
     char *pszName;
@@ -90,8 +82,14 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user,
     char c;
     int iTmp;
     unsigned uTmp;
-    unsigned long ulTmp;
+    unsigned long ulTmp, u32user, u32kernel;
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+
+    uint64_t uHostUser, uHostKernel, uHostIdle;
+    rc = getRawHostCpuLoad(uHostUser, uHostKernel, uHostIdle);
+    if (RT_FAILURE(rc))
+        return rc;
+    *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
 
     RTStrAPrintf(&pszName, "/proc/%d/stat", process);
     //printf("Opening %s...\n", pszName);
@@ -102,9 +100,11 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user,
     {
         if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
                    &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
-                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, user, kernel) == 15)
+                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u32user, &u32kernel) == 15)
         {
             Assert((pid_t)process == pid2);
+            *user = u32user;
+            *kernel = u32kernel;
         }
         else
             rc = VERR_FILE_IO_ERROR;

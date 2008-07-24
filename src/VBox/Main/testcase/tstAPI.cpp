@@ -925,7 +925,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
     do {
         // Get collector
         ComPtr <IPerformanceCollector> collector;
@@ -948,13 +948,6 @@ int main(int argc, char *argv[])
         printf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
 
-        // Setup base metrics
-        com::SafeIfaceArray<IUnknown> objects(2);
-        host.queryInterfaceTo(&objects[0]);
-        machine.queryInterfaceTo(&objects[1]);
-        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
-                                                   ComSafeArrayAsInParam(objects), 1u, 10u) );
-
         // Open session
         Guid guid;
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
@@ -967,6 +960,14 @@ int main(int argc, char *argv[])
         ComPtr <IMachine> sessionMachine;
         printf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
+
+        // Setup base metrics
+        // Note that one needs to set up metrics after a session is open for a machine.
+        com::SafeIfaceArray<IUnknown> objects(2);
+        host.queryInterfaceTo(&objects[0]);
+        sessionMachine.queryInterfaceTo(&objects[1]);
+        CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
+                                                   ComSafeArrayAsInParam(objects), 1u, 10u) );
 
         // Get console
         ComPtr <IConsole> console;
@@ -983,7 +984,7 @@ int main(int argc, char *argv[])
         getchar();
         CHECK_RC (console->Pause());
 
-        RTThreadSleep(3000); // Sleep for 10 seconds
+        RTThreadSleep(10000); // Sleep for 10 seconds
 
         printf("Metrics collected with DSL machine paused: ---------------------\n");
         queryMetrics(collector, ComSafeArrayAsInParam(objects));
@@ -996,7 +997,7 @@ int main(int argc, char *argv[])
         getchar();
         session->Close();
     } while (false);
-#endif
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     printf ("Press enter to release Session and VirtualBox instances...");
     getchar();
@@ -1016,13 +1017,14 @@ int main(int argc, char *argv[])
     return rc;
 }
 
-#if 1
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
 void queryMetrics (ComPtr <IPerformanceCollector> collector,
                    ComSafeArrayIn (IUnknown *, objects))
 {
     HRESULT rc;
 
-    Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total,RAM/Usage/Used:avg" };
+    //Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total,RAM/Usage/Used:avg" };
+    Bstr metricNames[] = { L"*" };
     com::SafeArray<BSTR> metrics (1);
     metricNames[0].cloneTo (&metrics [0]);
     com::SafeArray<BSTR>          retNames;
@@ -1062,4 +1064,4 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         printf("\n");
     }
 }
-#endif
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */

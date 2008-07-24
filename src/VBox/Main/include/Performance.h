@@ -71,8 +71,8 @@ namespace pm
         virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
         virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used) = 0;
 
-        virtual int getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-        virtual int getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
+        virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+        virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
 
     /* Base Metrics *********************************************************/
@@ -136,9 +136,9 @@ namespace pm
 
         void collect();
     private:
-        unsigned long mUserPrev;
-        unsigned long mKernelPrev;
-        unsigned long mIdlePrev;
+        uint64_t mUserPrev;
+        uint64_t mKernelPrev;
+        uint64_t mIdlePrev;
     };
 
     class HostCpuMhz : public BaseMetric
@@ -198,9 +198,9 @@ namespace pm
 
         void collect();
     private:
-        unsigned long mHostTotalPrev;
-        unsigned long mProcessUserPrev;
-        unsigned long mProcessKernelPrev;
+        uint64_t mHostTotalPrev;
+        uint64_t mProcessUserPrev;
+        uint64_t mProcessKernelPrev;
     };
 
     class MachineRamUsage : public BaseMetric
@@ -304,16 +304,14 @@ namespace pm
     {
     public:
         MetricFactorySolaris();
-        virtual BaseMetric   *createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
-        virtual BaseMetric   *createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
+        // Nothing else to do here (yet)
     };
 
     class MetricFactoryLinux : public MetricFactory
     {
     public:
         MetricFactoryLinux();
-        virtual BaseMetric   *createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
-        virtual BaseMetric   *createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
+        // Nothing else to do here (yet)
     };
 
     class MetricFactoryWin : public MetricFactory

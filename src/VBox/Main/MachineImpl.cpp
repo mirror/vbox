@@ -7360,21 +7360,25 @@ void Machine::copyFrom (Machine *aThat)
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Machine::registerMetrics (PerformanceCollector *aCollector)
+void Machine::registerMetrics (PerformanceCollector *aCollector, RTPROCESS pid)
 {
     pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
     /* Create sub metrics */
     pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User");
     pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used");
     /* Create and register base metrics */
     IUnknown *objptr;
 
     ComObjPtr<Machine> tmp = this;
     tmp.queryInterfaceTo (&objptr);
     pm::BaseMetric *cpuLoad =
-        metricFactory->createMachineCpuLoad (objptr, mData->mSession.mPid,
+        metricFactory->createMachineCpuLoad (objptr, pid,
                                              cpuLoadUser, cpuLoadKernel);
     aCollector->registerBaseMetric (cpuLoad);
+    pm::BaseMetric *ramUsage =
+        metricFactory->createMachineRamUsage (objptr, pid, ramUsageUsed);
+    aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
@@ -7390,6 +7394,14 @@ void Machine::registerMetrics (PerformanceCollector *aCollector)
                                                 new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateMax()));
+
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed, 0));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
+                                               new pm::AggregateMax()));
 };
 
 void Machine::unregisterMetrics (PerformanceCollector *aCollector)
@@ -7613,6 +7625,10 @@ HRESULT SessionMachine::init (Machine *aMachine)
         mNetworkAdapters [slot]->init (this, aMachine->mNetworkAdapters [slot]);
     }
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    registerMetrics (mParent->performanceCollector(), mData->mSession.mPid);
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -7685,6 +7701,10 @@ void SessionMachine::uninit (Uninit::Reason aReason)
      * with mPeer (as well as data we modify below). mParent->addProcessToReap()
      * and others need mParent lock. */
     AutoMultiWriteLock2 alock (mParent, this);
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    unregisterMetrics (mParent->performanceCollector());
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     MachineState_T lastState = mData->mMachineState;
 

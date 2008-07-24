@@ -21,6 +21,17 @@
  * additional information or have any questions.
  */
 
+/*
+ * @todo list:
+ *
+ * 1) Solaris backend
+ * 2) Linux backend
+ * 3) Detection of erroneous metric names
+ * 4) Min/max ranges for metrics
+ * 5) Darwin backend
+ * 6) [OS/2 backend]
+ */
+
 #include <VBox/com/array.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
@@ -28,6 +39,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 
+#include "Logging.h"
 #include "Performance.h"
 
 using namespace pm;
@@ -37,7 +49,7 @@ using namespace pm;
 BaseMetric *MetricFactory::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
 {
     Assert(mHAL);
-    return new HostCpuLoad(mHAL, object, user, kernel, idle);
+    return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
 }
 BaseMetric *MetricFactory::createHostCpuMHz(ComPtr<IUnknown> object, SubMetric *mhz)
 {
@@ -52,7 +64,7 @@ BaseMetric *MetricFactory::createHostRamUsage(ComPtr<IUnknown> object, SubMetric
 BaseMetric *MetricFactory::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
 {
     Assert(mHAL);
-    return new MachineCpuLoad(mHAL, object, process, user, kernel);
+    return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
 }
 BaseMetric *MetricFactory::createMachineRamUsage(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used)
 {
@@ -72,12 +84,12 @@ int CollectorHAL::getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsi
     return E_NOTIMPL;
 }
 
-int CollectorHAL::getRawHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorHAL::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
     return E_NOTIMPL;
 }
 
-int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
     return E_NOTIMPL;
 }
@@ -89,10 +101,17 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
         if (nowAt - mLastSampleTaken >= mPeriod * 1000)
         {
             mLastSampleTaken = nowAt;
+            LogFlowThisFunc (("Collecting data for obj(%p)...\n", mObject));
             collect();
         }
     }
 }
+
+/*bool BaseMetric::associatedWith(ComPtr<IUnknown> object)
+{
+    LogFlowThisFunc (("mObject(%p) == object(%p) is %s.\n", mObject, object, mObject == object ? "true" : "false"));
+    return mObject == object;
+}*/
 
 void HostCpuLoad::init(unsigned long period, unsigned long length)
 {
@@ -117,8 +136,8 @@ void HostCpuLoad::collect()
 
 void HostCpuLoadRaw::collect()
 {
-    unsigned long user, kernel, idle;
-    unsigned long userDiff, kernelDiff, idleDiff, totalDiff;
+    uint64_t user, kernel, idle;
+    uint64_t userDiff, kernelDiff, idleDiff, totalDiff;
 
     int rc = mHAL->getRawHostCpuLoad(&user, &kernel, &idle);
     if (RT_SUCCESS(rc))
@@ -127,10 +146,22 @@ void HostCpuLoadRaw::collect()
         kernelDiff = kernel - mKernelPrev;
         idleDiff   = idle   - mIdlePrev;
         totalDiff  = userDiff + kernelDiff + idleDiff;
-    
-        mUser->put(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff);
-        mKernel->put(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff);
-        mIdle->put(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff);
+
+        if (totalDiff == 0)
+        {
+            /* This is only possible if none of counters has changed! */
+            LogFlowThisFunc (("Impossible! User, kernel and idle raw "
+                "counters has not changed since last sample.\n" ));
+            mUser->put(0);
+            mKernel->put(0);
+            mIdle->put(0);
+        }
+        else
+        {
+            mUser->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff));
+            mKernel->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff));
+            mIdle->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff));
+        }
     
         mUserPrev   = user;
         mKernelPrev = kernel;
@@ -197,25 +228,26 @@ void MachineCpuLoad::collect()
 
 void MachineCpuLoadRaw::collect()
 {
-    unsigned long hostUser, hostKernel, hostIdle, hostTotal;
-    unsigned long processUser, processKernel;
+    uint64_t processUser, processKernel, hostTotal;
 
-    int rc = mHAL->getRawHostCpuLoad(&hostUser, &hostKernel, &hostIdle);
+    int rc = mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel, &hostTotal);
     if (RT_SUCCESS(rc))
     {
-        hostTotal = hostUser + hostKernel + hostIdle;
-    
-        rc = mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
+        if (hostTotal == mHostTotalPrev)
         {
-            mUser->put(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev));
-            mUser->put(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev));
-        
-            mHostTotalPrev     = hostTotal;
-            mProcessUserPrev   = processUser;
-            mProcessKernelPrev = processKernel;
+            /* Nearly impossible, but... */
+            mUser->put(0);
+            mKernel->put(0);
         }
+        else
+        {
+            mUser->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
+            mKernel->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
+        }
+    
+        mHostTotalPrev     = hostTotal;
+        mProcessUserPrev   = processUser;
+        mProcessKernelPrev = processKernel;
     }
 }
 
@@ -269,7 +301,7 @@ void CircularBuffer::copyTo(unsigned long *data)
         memcpy(data, mData + mEnd, (mLength - mEnd) * sizeof(unsigned long));
         // Copy the wrapped part
         if (mEnd)
-            memcpy(data + mEnd, mData, mEnd * sizeof(unsigned long));
+            memcpy(data + (mLength - mEnd), mData, mEnd * sizeof(unsigned long));
     }
     else
         memcpy(data, mData, mEnd * sizeof(unsigned long));
