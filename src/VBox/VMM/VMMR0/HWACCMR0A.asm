@@ -1092,7 +1092,11 @@ BEGINPROC SVMInvlpgA
     movzx   rax, edi
     mov     ecx, esi
  %else
-    movzx   rax, ecx
+    ; from http://www.cs.cmu.edu/~fp/courses/15213-s06/misc/asm64-handout.pdf:
+    ; ``Perhaps unexpectedly, instructions that move or generate 32-bit register
+    ;   values also set the upper 32 bits of the register to zero. Consequently
+    ;   there is no need for an instruction movzlq.''
+    mov     eax, ecx
     mov     ecx, edx
  %endif
 %else
