@@ -343,8 +343,8 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
      * if no such session, and mark it as opened. We set the uid & gid
      * here too, since that is more straight forward at this point.
      */
-    int             rc;
-    PSUPDRVSESSION  pSession;
+    int             rc = VINF_SUCCESS;
+    PSUPDRVSESSION  pSession = NULL;
     struct ucred   *pCred = proc_ucred(pProcess);
     if (pCred)
     {
@@ -368,7 +368,6 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
                 pSession->fOpened = true;
                 pSession->Uid = Uid;
                 pSession->Gid = Gid;
-                rc = VINF_SUCCESS;
             }
             else
                 rc = VERR_ALREADY_LOADED;
