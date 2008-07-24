@@ -120,7 +120,7 @@ namespace pm
         void collect();
         const char *getUnit() { return "%"; };
         unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return 100000000; };
+        unsigned long getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
 
     protected:
         SubMetric *mUser;
@@ -183,7 +183,7 @@ namespace pm
         void collect();
         const char *getUnit() { return "%"; };
         unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return 100000000; };
+        unsigned long getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
     protected:
         RTPROCESS  mProcess;
         SubMetric *mUser;
