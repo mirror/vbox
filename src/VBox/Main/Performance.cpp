@@ -101,7 +101,7 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
         if (nowAt - mLastSampleTaken >= mPeriod * 1000)
         {
             mLastSampleTaken = nowAt;
-            LogFlowThisFunc (("Collecting data for obj(%p)...\n", mObject));
+            LogFlowThisFunc (("Collecting data for obj(%p)...\n", (void *)mObject));
             collect();
         }
     }
