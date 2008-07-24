@@ -195,9 +195,11 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     rc = on_each_cpu(rtmpLinuxWrapper, &Args, 1 /* wait */);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     rc = on_each_cpu(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
+
 #else /* older kernels */
+
 # ifdef preempt_disable
     preempt_disable();
 # endif
@@ -225,17 +227,17 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
 
-# ifdef preempt_disable
+#ifdef preempt_disable
     preempt_disable();
-# endif
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     rc = smp_call_function(rtmpLinuxWrapper, &Args, 1 /* wait */);
 #else /* older kernels */
     rc = smp_call_function(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
 #endif /* older kernels */
-# ifdef preempt_enable
+#ifdef preempt_enable
     preempt_enable();
-# endif
+#endif
 
     Assert(rc == 0); NOREF(rc);
     return VINF_SUCCESS;
