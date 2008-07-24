@@ -162,6 +162,36 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
     default:
         break;
     }
+
+#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
+    uint64_t oldMsrEFERHost;
+ 	uint32_t oldCR0 = ASMGetCR0(); 
+
+    /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+    if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+    {
+        /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
+        oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
+
+        if (oldMsrEFERHost & MSR_K6_EFER_FFXSR)
+        {
+            ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
+            pVM->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+        }
+    }
+
+    /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */ 
+    int rc = CPUMHandleLazyFPU(pVM);
+    AssertRC(rc);
+    Assert(CPUMIsGuestFPUStateActive(pVM)); 
+
+    /* Restore EFER MSR */
+    if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
+
+ 	/* CPUMHandleLazyFPU could have changed CR0; restore it. */ 
+    ASMSetCR0(oldCR0); 
+#else
     /* Save the FPU control word and MXCSR, so we can restore the properly afterwards. 
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
@@ -187,6 +217,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
             pVM->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
         }
     }
+#endif
 
     pVM->cpum.s.fUseFlags |= CPUM_USED_FPU;
     return VINF_SUCCESS;
@@ -206,6 +237,22 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
     AssertReturn((pVM->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
 
+#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
+    uint64_t oldMsrEFERHost;
+
+    /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+    if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+    {
+        oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
+        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
+    }
+    CPUMRestoreHostFPUState(pVM);
+
+    /* Restore EFER MSR */
+    if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
+
+#else
     CPUMSaveFPUAsm(pCtx);
     if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
     {
@@ -218,6 +265,7 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
     CPUMSetFCW(pVM->cpum.s.Host.fpu.FCW);
     if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
         CPUMSetMXCSR(pVM->cpum.s.Host.fpu.MXCSR);
+#endif
 
     pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU|CPUM_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
