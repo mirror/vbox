@@ -142,7 +142,7 @@ int VBoxUpdateData::index() const
 QString VBoxUpdateData::date() const
 {
     return mIndex == NeverCheck ? VBoxUpdateDlg::tr ("Never") :
-           mDate.toString ("yyyy.MM.dd");
+           mDate.toString (Qt::LocaleDate);
 }
 
 void VBoxUpdateData::decode (const QString &aData)

@@ -93,6 +93,8 @@ void VBoxGLSettingsUpdate::toggleUpdater (bool aOn)
     /* Enable/disable the sub widget */
     mLbOncePer->setEnabled (aOn);
     mCbOncePer->setEnabled (aOn);
+    mLbDate->setEnabled (aOn);
+    mTxDate->setEnabled (aOn);
 
     /* Update 'check for new version' time */
     if (aOn)
