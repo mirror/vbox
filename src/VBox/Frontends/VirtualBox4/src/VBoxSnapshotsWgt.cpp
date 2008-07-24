@@ -139,7 +139,9 @@ public:
 
     void updateCurrentState (KMachineState aState)
     {
-        AssertReturn (!mMachine.isNull(), (void) 0);
+        if (mMachine.isNull())
+            return;
+
         setIcon (0, vboxGlobal().toIcon (aState));
         mMachineState = aState;
         mTimestamp.setTime_t (mMachine.GetLastStateChange() / 1000);
@@ -324,8 +326,10 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
              this, SLOT (machineStateChanged (const VBoxMachineStateChangeEvent&)));
     connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent&)),
              this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent&)));
+#if 0
     connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent&)),
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent&)));
+#endif
 
     retranslateUi();
 }
@@ -442,8 +446,8 @@ void VBoxSnapshotsWgt::onItemChanged (QTreeWidgetItem *aItem, int)
 
 void VBoxSnapshotsWgt::discardSnapshot()
 {
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().count() ?
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
+        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
     QUuid snapId = item->snapshotId();
@@ -473,8 +477,8 @@ void VBoxSnapshotsWgt::discardSnapshot()
 
 void VBoxSnapshotsWgt::takeSnapshot()
 {
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().count() ?
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
+        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
     VBoxTakeSnapshotDlg dlg (this);
@@ -527,8 +531,8 @@ void VBoxSnapshotsWgt::takeSnapshot()
 
 void VBoxSnapshotsWgt::discardCurState()
 {
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().count() ?
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
+        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
     /* Open a direct session (this call will handle all errors) */
@@ -555,8 +559,8 @@ void VBoxSnapshotsWgt::discardCurState()
 
 void VBoxSnapshotsWgt::discardCurSnapAndState()
 {
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().count() ?
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
+        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
     /* Open a direct session (this call will handle all errors) */
@@ -583,8 +587,8 @@ void VBoxSnapshotsWgt::discardCurSnapAndState()
 
 void VBoxSnapshotsWgt::showSnapshotDetails()
 {
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().count() ?
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
+        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
     CSnapshot snap = item->snapshot();
@@ -629,10 +633,11 @@ void VBoxSnapshotsWgt::sessionStateChanged (const VBoxSessionStateChangeEvent &a
         return; /* not interested in other machines */
 
     mSessionState = aE.state;
-    onCurrentChanged (mTreeWidget->selectedItems().count() ?
-                      mTreeWidget->selectedItems() [0] : 0);
+    onCurrentChanged (mTreeWidget->selectedItems().isEmpty() ? 0 :
+                      mTreeWidget->selectedItems() [0]);
 }
 
+#if 0
 void VBoxSnapshotsWgt::snapshotChanged (const VBoxSnapshotEvent &aE)
 {
     SnapshotEditBlocker guardBlock (mEditProtector);
@@ -659,6 +664,7 @@ void VBoxSnapshotsWgt::snapshotChanged (const VBoxSnapshotEvent &aE)
         }
     }
 }
+#endif
 
 void VBoxSnapshotsWgt::retranslateUi()
 {
@@ -685,8 +691,8 @@ void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
     QUuid selected, selectedFirstChild;
     if (aKeepSelected)
     {
-        SnapshotWgtItem *cur = mTreeWidget->selectedItems().count() ?
-            static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]) : 0;
+        SnapshotWgtItem *cur = mTreeWidget->selectedItems().isEmpty() ? 0 :
+            static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
         if (cur)
         {
             selected = cur->snapshotId();

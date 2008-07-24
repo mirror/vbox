@@ -65,7 +65,9 @@ private slots:
     void machineDataChanged (const VBoxMachineDataChangeEvent &aE);
     void machineStateChanged (const VBoxMachineStateChangeEvent &aE);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &aE);
+#if 0
     void snapshotChanged (const VBoxSnapshotEvent &aE);
+#endif
 
 private:
 
