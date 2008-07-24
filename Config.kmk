@@ -321,7 +321,9 @@ endif
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
 # Enable performance API.
+ifeq ($(KBUILD_TARGET),solaris)
 VBOX_WITH_RESOURCE_USAGE_API = 1
+endif
 
 
 #
