@@ -203,9 +203,11 @@ include $(KBUILD_PATH)/subfooter.kmk
 # Generate documentation.
 # (This should be converted into a separate pass or merged with an existing one later.)
 #
-docs: docs.Core
+docs: $(if $(VBOX_WITH_ALL_DOXYGEN_TARGET),docs.Core)
 	$(KMK) -C src/VBox/Main docs
+ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
 	$(KMK) -C src/VBox/Runtime docs
+endif
 
 docs.Core: $(PATH_TARGET)/docs.Core
 
