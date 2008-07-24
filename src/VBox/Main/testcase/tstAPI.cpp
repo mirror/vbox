@@ -1056,7 +1056,10 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
         Bstr metricUnit(metricUnitBSTR);
         Bstr metricName(retNames[i]);
-        printf("obj(%p) %ls", anObject[0], metricName.raw());
+        LONG minVal, maxVal;
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
+        printf("obj(%p) %ls (min=%lu max=%lu)", anObject[0], metricName.raw(), minVal, maxVal);
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
             printf(", %d %ls", retData[retIndices[i] + j] / (strcmp((const char *)metricUnit.raw(), "%")?1:1000), metricUnit.raw());
