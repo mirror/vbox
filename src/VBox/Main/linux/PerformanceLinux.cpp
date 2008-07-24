@@ -86,7 +86,7 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
 
     uint64_t uHostUser, uHostKernel, uHostIdle;
-    rc = getRawHostCpuLoad(uHostUser, uHostKernel, uHostIdle);
+    rc = getRawHostCpuLoad(&uHostUser, &uHostKernel, &uHostIdle);
     if (RT_FAILURE(rc))
         return rc;
     *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
