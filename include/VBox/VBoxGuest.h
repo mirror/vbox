@@ -32,6 +32,9 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#ifdef IN_RING3
+# include <iprt/stdarg.h>
+#endif
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
 
