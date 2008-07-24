@@ -46,7 +46,8 @@ VBoxControl_SOURCES.win = \
 	VBoxControl.rc
 VBoxControl_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 # VBoxControlSVN.cpp uses VBOX_SVN_REV.
 VBoxControlSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
