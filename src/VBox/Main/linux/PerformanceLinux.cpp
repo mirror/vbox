@@ -27,6 +27,10 @@
 #include <iprt/string.h>
 #include "Performance.h"
 
+#ifndef PAGESIZE
+#define PAGESIZE _SC_PAGESIZE
+#endif
+
 namespace pm {
 
 class CollectorLinux : public CollectorHAL
@@ -40,7 +44,7 @@ public:
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed);
-    long getPageSize() { return sysconf(_SC_PAGESIZE); };
+    long getPageSize() { return sysconf(PAGESIZE); };
 };
 
 // Linux Metric factory
