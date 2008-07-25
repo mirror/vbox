@@ -40,6 +40,7 @@ public:
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed);
+    long getPageSize() { return sysconf(_SC_PAGESIZE); };
 };
 
 // Linux Metric factory
@@ -128,8 +129,8 @@ int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used
     int rc = getRawProcessStats(process, &u64Tmp, &u64Tmp, &nPagesUsed);
     if (RT_SUCCESS(rc))
     {
-        Assert(getpagesize() >= 1024);
-        *used = nPagesUsed * (getpagesize() / 1024);
+        Assert(getPageSize() >= 1024);
+        *used = nPagesUsed * (getPageSize() / 1024);
     }
     return rc;
 }
