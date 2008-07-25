@@ -50,6 +50,7 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
+#include <iprt/uuid.h>
 #ifdef STANDALONE_TESTCASE
 # include <iprt/initterm.h>
 # include <iprt/stream.h>
@@ -101,6 +102,41 @@ static bool darwinOpenMasterPort(void)
 
 
 #ifdef VBOX_WITH_USB
+
+/**
+ * Checks whether the value exists.
+ *
+ * @returns true / false accordingly.
+ * @param   DictRef     The dictionary.
+ * @param   KeyStrRef   The key name.
+ */
+static bool darwinDictIsPresent(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef)
+{
+    return !!CFDictionaryGetValue(DictRef, KeyStrRef);
+}
+
+
+/**
+ * Gets a boolean value.
+ *
+ * @returns Success indicator (true/false).
+ * @param   DictRef     The dictionary.
+ * @param   KeyStrRef   The key name.
+ * @param   pf          Where to store the key value.
+ */
+static bool darwinDictGetBool(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, bool *pf)
+{
+    CFTypeRef BoolRef = CFDictionaryGetValue(DictRef, KeyStrRef);
+    if (    BoolRef
+        &&  CFGetTypeID(BoolRef) == CFBooleanGetTypeID())
+    {
+        *pf = CFBooleanGetValue((CFBooleanRef)BoolRef);
+        return true;
+    }
+    *pf = false;
+    return false;
+}
+
 
 /**
  * Gets an unsigned 8-bit integer value.
@@ -208,6 +244,29 @@ static bool darwinDictGetProccess(CFMutableDictionaryRef DictRef, CFStringRef Ke
 
 
 /**
+ * Gets string value, converted to UTF-8 and put in user buffer.
+ *
+ * @returns Success indicator (true/false).
+ * @param   DictRef     The dictionary.
+ * @param   KeyStrRef   The key name.
+ * @param   psz         The string buffer. On failure this will be an empty string ("").
+ * @param   cch         The size of the buffer.
+ */
+static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, char *psz, size_t cch)
+{
+    CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
+    if (ValRef)
+    {
+        if (CFStringGetCString((CFStringRef)ValRef, psz, cch, kCFStringEncodingUTF8))
+            return true;
+    }
+    Assert(cch > 0);
+    *psz = '\0';
+    return false;
+}
+
+
+/**
  * Gets string value, converted to UTF-8 and put in a IPRT string buffer.
  *
  * @returns Success indicator (true/false).
@@ -215,20 +274,42 @@ static bool darwinDictGetProccess(CFMutableDictionaryRef DictRef, CFStringRef Ke
  * @param   KeyStrRef   The key name.
  * @param   ppsz        Where to store the key value. Free with RTStrFree. Set to NULL on failure.
  */
-static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, char **ppsz)
+static bool darwinDictDupString(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, char **ppsz)
+{
+    char szBuf[512];
+    if (darwinDictGetString(DictRef, KeyStrRef, szBuf, sizeof(szBuf)))
+    {
+        *ppsz = RTStrDup(RTStrStrip(szBuf));
+        if (*ppsz)
+            return true;
+    }
+    *ppsz = NULL;
+    return false;
+}
+
+
+/**
+ * Gets a byte string (data) of a specific size.
+ *
+ * @returns Success indicator (true/false).
+ * @param   DictRef     The dictionary.
+ * @param   KeyStrRef   The key name.
+ * @param   pvBuf       The buffer to store the bytes in.
+ * @param   cbBuf       The size of the buffer. This must exactly match the data size.
+ */
+static bool darwinDictGetData(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, void *pvBuf, size_t cbBuf)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
     {
-        char szBuf[512];
-        if (CFStringGetCString((CFStringRef)ValRef, szBuf, sizeof(szBuf), kCFStringEncodingUTF8))
+        CFIndex cbActual = CFDataGetLength((CFDataRef)ValRef);
+        if (cbActual >= 0 && cbBuf == (size_t)cbActual)
         {
-            *ppsz = RTStrDup(RTStrStrip(szBuf));
-            if (*ppsz)
-                return true;
+            CFDataGetBytes((CFDataRef)ValRef, CFRangeMake(0, cbBuf), (uint8_t *)pvBuf);
+            return true;
         }
     }
-    *ppsz = NULL;
+    memset(pvBuf, '\0', cbBuf);
     return false;
 }
 
@@ -276,6 +357,8 @@ static void darwinDumpDictCallback(const void *pvKey, const void *pvValue, void 
         CFDictionaryApplyFunction((CFDictionaryRef)pvValue, darwinDumpDictCallback, (void *)((uintptr_t)pvUser + 4));
         DARWIN_IOKIT_LOG(("%-*s}\n", (int)(uintptr_t)pvUser, ""));
     }
+    else if (Type == CFBooleanGetTypeID())
+        DARWIN_IOKIT_LOG(("bool] = %s\n", CFBooleanGetValue((CFBooleanRef)pvValue) ? "true" : "false"));
     else if (Type == CFNumberGetTypeID())
     {
         union
@@ -332,6 +415,20 @@ static void darwinDumpDictCallback(const void *pvKey, const void *pvValue, void 
             strcpy(pszValue, "CFStringGetCString failure");
         DARWIN_IOKIT_LOG(("\"%s\"\n", pszValue));
         RTMemTmpFree(pszValue);
+    }
+    else if (Type == CFDataGetTypeID())
+    {
+        CFIndex cb = CFDataGetLength((CFDataRef)pvValue);
+        DARWIN_IOKIT_LOG(("%zu bytes] =", (size_t)cb));
+        void *pvData = RTMemTmpAlloc(cb + 8);
+        CFDataGetBytes((CFDataRef)pvValue, CFRangeMake(0, cb), (uint8_t *)pvData);
+        if (!cb)
+            DARWIN_IOKIT_LOG((" \n"));
+        else if (cb <= 32)
+            DARWIN_IOKIT_LOG((" %.*Rhxs\n", cb, pvData));
+        else
+            DARWIN_IOKIT_LOG(("\n%.*Rhxd\n", cb, pvData));
+        RTMemTmpFree(pvData);
     }
     else
         DARWIN_IOKIT_LOG(("??] = %p\n", pvValue));
@@ -872,17 +969,17 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                  * Optional.
                  * There are some nameless device in the iMac, apply names to them.
                  */
-                darwinDictGetString(PropsRef, CFSTR("USB Vendor Name"),     (char **)&pCur->pszManufacturer);
+                darwinDictDupString(PropsRef, CFSTR("USB Vendor Name"),     (char **)&pCur->pszManufacturer);
                 if (    !pCur->pszManufacturer
                     &&  pCur->idVendor == kIOUSBVendorIDAppleComputer)
                     pCur->pszManufacturer = RTStrDup("Apple Computer, Inc.");
-                darwinDictGetString(PropsRef, CFSTR("USB Product Name"),    (char **)&pCur->pszProduct);
+                darwinDictDupString(PropsRef, CFSTR("USB Product Name"),    (char **)&pCur->pszProduct);
                 if (    !pCur->pszProduct
                     &&  pCur->bDeviceClass == 224 /* Wireless */
                     &&  pCur->bDeviceSubClass == 1 /* Radio Frequency */
                     &&  pCur->bDeviceProtocol == 1 /* Bluetooth */)
                     pCur->pszProduct = RTStrDup("Bluetooth");
-                darwinDictGetString(PropsRef, CFSTR("USB Serial Number"),   (char **)&pCur->pszSerialNumber);
+                darwinDictDupString(PropsRef, CFSTR("USB Serial Number"),   (char **)&pCur->pszSerialNumber);
 
 #if 0           /* leave the remainder as zero for now. */
                 /*
@@ -1301,122 +1398,208 @@ PDARWINDVD DarwinGetDVDDrives(void)
  *
  * @returns Pointer to the head.
  */
-void *DarwinGetNetworkControllers(void)
+PDARWINETHERNIC DarwinGetEthernetControllers(void)
 {
+    AssertReturn(darwinOpenMasterPort(), NULL);
+
     /*
      * Create a matching dictionary for searching for ethernet controller
      * services in the IOKit.
+     *
+     * For some really stupid reason I don't get all the controllers if I look for
+     * objects that are instances of IOEthernetController or its decendants (only
+     * get the  AirPort on my mac pro). But fortunately using IOEthernetInterface
+     * seems to work. Weird s**t!
      */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOEthernetController");
+    //CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOEthernetController"); - this doesn't work :-(
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOEthernetInterface");
     AssertReturn(RefMatchingDict, NULL);
 
     /*
      * Perform the search and get a collection of ethernet controller services.
      */
-    io_iterator_t EthNICServices = NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EthNICServices);
+    io_iterator_t EtherIfServices = NULL;
+    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EtherIfServices);
     AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
      * Enumerate the ethernet controller services.
      */
-//    PDARWINDVD pHead = NULL;
-//    PDARWINDVD pTail = NULL;
-    unsigned i = 0;
-    io_object_t EthNICService;
-    while ((EthNICService = IOIteratorNext(EthNICServices)) != 0)
+    PDARWINETHERNIC pHead = NULL;
+    PDARWINETHERNIC pTail = NULL;
+    unsigned acCategories[8] = { 0,0,0,0, 0,0,0,0 };
+    io_object_t EtherIfService;
+    while ((EtherIfService = IOIteratorNext(EtherIfServices)) != 0)
     {
-        DARWIN_IOKIT_DUMP_OBJ(EthNICService);
-#if 0
         /*
-         * Get the properties we use to identify the DVD drive.
-         *
-         * While there is a (weird 12 byte) GUID, it isn't persistent
-         * accross boots. So, we have to use a combination of the
-         * vendor name and product name properties with an optional
-         * sequence number for identification.
+         * Dig up the parent, meaning the IOEthernetController.
          */
-        CFMutableDictionaryRef PropsRef = 0;
-        kern_return_t krc = IORegistryEntryCreateCFProperties(EthNICService, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        io_object_t EtherNICService;
+        kern_return_t krc = IORegistryEntryGetParentEntry(EtherIfService, kIOServicePlane, &EtherNICService);
+        /*krc = IORegistryEntryGetChildEntry(EtherNICService, kIOServicePlane, &EtherIfService); */
         if (krc == KERN_SUCCESS)
         {
-            /* Get the Device Characteristics dictionary. */
-            CFDictionaryRef DevCharRef = (CFDictionaryRef)CFDictionaryGetValue(PropsRef, CFSTR(kIOPropertyDeviceCharacteristicsKey));
-            if (DevCharRef)
+            DARWIN_IOKIT_DUMP_OBJ(EtherNICService);
+            /*
+             * Get the properties we use to identify and name the Ethernet NIC.
+             * We need the both the IOEthernetController and it's IONetworkInterface child.
+             */
+            CFMutableDictionaryRef PropsRef = 0;
+            krc = IORegistryEntryCreateCFProperties(EtherNICService, &PropsRef, kCFAllocatorDefault, kNilOptions);
+            if (krc == KERN_SUCCESS)
             {
-                /* The vendor name. */
-                char szVendor[128];
-                char *pszVendor = &szVendor[0];
-                CFTypeRef ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyVendorNameKey));
-                if (    ValueRef
-                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
-                    &&  CFStringGetCString((CFStringRef)ValueRef, szVendor, sizeof(szVendor), kCFStringEncodingUTF8))
-                    pszVendor = RTStrStrip(szVendor);
-                else
-                    *pszVendor = '\0';
-
-                /* The product name. */
-                char szProduct[128];
-                char *pszProduct = &szProduct[0];
-                ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyProductNameKey));
-                if (    ValueRef
-                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
-                    &&  CFStringGetCString((CFStringRef)ValueRef, szProduct, sizeof(szProduct), kCFStringEncodingUTF8))
-                    pszProduct = RTStrStrip(szProduct);
-                else
-                    *pszProduct = '\0';
-
-                /* Construct the name and check for duplicates. */
-                char szName[256 + 32];
-                if (*pszVendor || *pszProduct)
+                CFMutableDictionaryRef IfPropsRef = 0;
+                kern_return_t krc = IORegistryEntryCreateCFProperties(EtherIfService, &IfPropsRef, kCFAllocatorDefault, kNilOptions);
+                if (krc == KERN_SUCCESS)
                 {
-                    if (*pszVendor && *pszProduct)
-                        RTStrPrintf(szName, sizeof(szName), "%s %s", pszVendor, pszProduct);
-                    else
-                        strcpy(szName, *pszVendor ? pszVendor : pszProduct);
-
-                    for (PDARWINDVD pCur = pHead; pCur; pCur = pCur->pNext)
+                    /*
+                     * Gather the required data.
+                     * We'll create a UUID from the MAC address and the BSD name.
+                     */
+                    char szTmp[256];
+                    do
                     {
-                        if (!strcmp(szName, pCur->szName))
-                        {
-                            if (*pszVendor && *pszProduct)
-                                RTStrPrintf(szName, sizeof(szName), "%s %s (#%u)", pszVendor, pszProduct, i);
-                            else
-                                RTStrPrintf(szName, sizeof(szName), "%s %s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
-                            break;
-                        }
-                    }
-                }
-                else
-                    RTStrPrintf(szName, sizeof(szName), "(#%u)", i);
+                        /* Check if airport (a bit heuristical - it's com.apple.driver.AirPortBrcm43xx here). */
+                        AssertBreak(darwinDictGetString(PropsRef, CFSTR("CFBundleIdentifier"), szTmp, sizeof(szTmp)));
+                        bool fWireless;
+                        bool fAirPort = fWireless = strstr(szTmp, ".AirPort") != NULL;
 
-                /* Create the device. */
-                size_t cbName = strlen(szName) + 1;
-                PDARWINDVD pNew = (PDARWINDVD)RTMemAlloc(RT_OFFSETOF(DARWINDVD, szName[cbName]));
-                if (pNew)
-                {
-                    pNew->pNext = NULL;
-                    memcpy(pNew->szName, szName, cbName);
-                    if (pTail)
-                        pTail = pTail->pNext = pNew;
-                    else
-                        pTail = pHead = pNew;
+                        /* Check if it's USB. */
+                        AssertBreak(darwinDictGetString(PropsRef, CFSTR("IOProviderClass"), szTmp, sizeof(szTmp)));
+                        bool fUSB = strstr(szTmp, "USB") != NULL;
+
+                        /* Get the MAC address. */
+                        PDMMAC Mac;
+                        AssertBreak(darwinDictGetData(PropsRef, CFSTR("IOMACAddress"), &Mac, sizeof(Mac)));
+
+                        /* Is it builtin? */
+                        bool fBuiltin;
+                        AssertBreak(darwinDictGetBool(IfPropsRef, CFSTR("IOBuiltin"), &fBuiltin));
+
+                        /* Is it the primary interface  */
+                        bool fPrimaryIf;
+                        AssertBreak(darwinDictGetBool(IfPropsRef, CFSTR("IOPrimaryInterface"), &fPrimaryIf));
+
+                        /* The BSD Name from the interface dictionary. */
+                        char szBSDName[RT_SIZEOFMEMB(DARWINETHERNIC, szBSDName)];
+                        AssertBreak(darwinDictGetString(IfPropsRef, CFSTR("BSD Name"), szBSDName, sizeof(szBSDName)));
+
+                        /* Check if it's really wireless. */
+                        if (    darwinDictIsPresent(IfPropsRef, CFSTR("IO80211CountryCode"))
+                            ||  darwinDictIsPresent(IfPropsRef, CFSTR("IO80211DriverVersion"))
+                            ||  darwinDictIsPresent(IfPropsRef, CFSTR("IO80211HardwareVersion"))
+                            ||  darwinDictIsPresent(IfPropsRef, CFSTR("IO80211Locale")))
+                            fWireless = true;
+                        else
+                            fAirPort = fWireless = false;
+
+                        /** @todo IOPacketFilters / IONetworkFilterGroup?  */
+
+                        /*
+                         * Create a base name for it, we'll sort it later and add numbers where required.
+                         */
+                        /** @todo not sure about "Wireless" here, none of my wireless sticks work on the mac. */
+                        size_t cchName = RTStrPrintf(szTmp, sizeof(szTmp), "%s: %s%s",
+                                                     szBSDName,
+                                                     fUSB ? "USB " : "",
+                                                     fWireless ? fAirPort ? "AirPort " : "Wireless" : "Ethernet");
+                        int iCat = fUSB * 4 | fWireless * 2 | fAirPort;
+                        acCategories[iCat]++;
+
+                        /*
+                         * Create the list entry.
+                         */
+                        DARWIN_IOKIT_LOG(("Found: if=%s mac=%.6Rhxs fWireless=%RTbool fAirPort=%RTbool fBuiltin=%RTbool fPrimaryIf=%RTbool fUSB=%RTbool\n",
+                                          szBSDName, &Mac, fWireless, fAirPort, fBuiltin, fPrimaryIf, fUSB));
+
+                        PDARWINETHERNIC pNew = (PDARWINETHERNIC)RTMemAlloc(RT_OFFSETOF(DARWINETHERNIC, szName[cchName + 8])); /* extra for the number */
+                        if (pNew)
+                        {
+                            strncpy(pNew->szBSDName, szBSDName, sizeof(pNew->szBSDName)); /* the '\0' padding is intentional! */
+
+                            RTUuidClear(&pNew->Uuid);
+                            memcpy(&pNew->Uuid, pNew->szBSDName, RT_MIN(sizeof(pNew->szBSDName), sizeof(pNew->Uuid)));
+                            pNew->Uuid.Gen.u16ClockSeq = (pNew->Uuid.Gen.u16ClockSeq & 0x3fff) | 0x8000;
+                            pNew->Uuid.Gen.u16TimeHiAndVersion = (pNew->Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+                            pNew->Uuid.Gen.au8Node[0] = Mac.au8[0];
+                            pNew->Uuid.Gen.au8Node[1] = Mac.au8[1];
+                            pNew->Uuid.Gen.au8Node[2] = Mac.au8[2];
+                            pNew->Uuid.Gen.au8Node[3] = Mac.au8[3];
+                            pNew->Uuid.Gen.au8Node[4] = Mac.au8[4];
+                            pNew->Uuid.Gen.au8Node[5] = Mac.au8[5];
+
+                            pNew->Mac = Mac;
+                            pNew->iCat = iCat;
+                            pNew->fWireless = fWireless;
+                            pNew->fAirPort = fAirPort;
+                            pNew->fBuiltin = fBuiltin;
+                            pNew->fUSB = fUSB;
+                            pNew->fPrimaryIf = fPrimaryIf;
+                            memcpy(pNew->szName, szTmp, cchName + 1);
+
+                            /*
+                             * Link it into the list, keep the list sorted by the BSD name.
+                             */
+                            if (pTail)
+                            {
+                                PDARWINETHERNIC pPrev = pTail;
+                                if (strcmp(pNew->szBSDName, pPrev->szBSDName) < 0)
+                                {
+                                    pPrev = NULL;
+                                    for (PDARWINETHERNIC pCur = pHead; pCur; pPrev = pCur, pCur = pCur->pNext)
+                                        if (strcmp(pNew->szBSDName, pCur->szBSDName) >= 0)
+                                            break;
+                                    Assert(pPrev);
+                                }
+                                pNew->pNext = pPrev->pNext;
+                                pPrev->pNext = pNew;
+                                if (pPrev == pTail)
+                                    pTail = pNew;
+                            }
+                            else
+                            {
+                                pNew->pNext = NULL;
+                                pTail = pHead = pNew;
+                            }
+                        }
+                    } while (0);
+
+                    CFRelease(IfPropsRef);
                 }
+                CFRelease(PropsRef);
             }
-            CFRelease(PropsRef);
+            IOObjectRelease(EtherNICService);
         }
         else
             AssertMsgFailed(("krc=%#x\n", krc));
-
-#endif
-        IOObjectRelease(EthNICService);
-        i++;
+        IOObjectRelease(EtherIfService);
     }
 
-    IOObjectRelease(EthNICServices);
+    IOObjectRelease(EtherIfServices);
 
-    return NULL;//return pHead;
+    /*
+     * Add numbers if required.
+     */
+    if (    acCategories[0] > 1
+        ||  acCategories[1] > 1
+        ||  acCategories[2] > 1
+        ||  acCategories[3] > 1
+        ||  acCategories[4] > 1
+        ||  acCategories[5] > 1
+        ||  acCategories[6] > 1
+        ||  acCategories[7] > 1)
+    {
+        unsigned aiCategories[8] = { 0,0,0,0, 0,0,0,0 };
+        for (PDARWINETHERNIC pCur = pHead; pCur; pCur = pCur->pNext)
+        {
+            aiCategories[pCur->iCat]++;
+            if (acCategories[pCur->iCat] > 1)
+                RTStrPrintf(strchr(pCur->szName, '\0'), 7, " %u", aiCategories[pCur->iCat]);
+        }
+    }
+
+    return pHead;
 }
 
 #ifdef STANDALONE_TESTCASE
@@ -1429,8 +1612,25 @@ int main(int argc, char **argv)
 {
     RTR3Init(false);
 
-    DarwinGetNetworkControllers();
-    //DarwinGetDVDDrives();
+    /*
+     * Get and display the ethernet controllers.
+     */
+    RTPrintf("Ethernet controllers:\n");
+    PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
+    for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
+    {
+        RTPrintf("%s\n", pCur->szName);
+        RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
+        RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
+        RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
+        RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
+        RTPrintf("     fAirPort=%RTbool\n", pCur->fAirPort);
+        RTPrintf("     fBuiltin=%RTbool\n", pCur->fBuiltin);
+        RTPrintf("         fUSB=%RTbool\n", pCur->fUSB);
+        RTPrintf("   fPrimaryIf=%RTbool\n", pCur->fPrimaryIf);
+    }
+
+
 
     return 0;
 }
