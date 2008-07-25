@@ -1476,6 +1476,16 @@ ResumeExecution:
     VMX_READ_SELREG(FS, fs);
     VMX_READ_SELREG(GS, gs);
 
+    /*
+     * System MSRs
+     */
+    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      &val);
+    pCtx->SysEnter.cs       = val;
+    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     &val);
+    pCtx->SysEnter.eip      = val;
+    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
+    pCtx->SysEnter.esp      = val;
+
     /** @note NOW IT'S SAFE FOR LOGGING! */
     Log2(("Raw exit reason %08x\n", exitReason));
 
@@ -2168,16 +2178,6 @@ end:
         pCtx->idtr.cbIdt        = val;
         VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
         pCtx->idtr.pIdt         = val;
-
-        /*
-         * System MSRs
-         */
-        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      &val);
-        pCtx->SysEnter.cs       = val;
-        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     &val);
-        pCtx->SysEnter.eip      = val;
-        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
-        pCtx->SysEnter.esp      = val;
     }
 
     /* Signal changes for the recompiler. */
