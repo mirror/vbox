@@ -216,6 +216,7 @@ VBoxSVC_SOURCES = \
 	HostImpl.cpp \
 	HostDVDDriveImpl.cpp \
 	HostFloppyDriveImpl.cpp \
+	HostNetworkInterfaceImpl.cpp \
 	GuestOSTypeImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \
@@ -235,7 +236,6 @@ VBoxSVC_SOURCES.darwin = \
 	darwin/iokit.cpp
 
 VBoxSVC_SOURCES.win = \
-	HostNetworkInterfaceImpl.cpp \
 	win/svcmain.cpp \
 	win/svchlp.cpp \
 	win/VBoxSVC.rc

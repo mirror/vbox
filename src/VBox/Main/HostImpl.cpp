@@ -80,6 +80,7 @@ extern "C" char *getfullrawname(char *);
 #include "HostImpl.h"
 #include "HostDVDDriveImpl.h"
 #include "HostFloppyDriveImpl.h"
+#include "HostNetworkInterfaceImpl.h"
 #ifdef VBOX_WITH_USB
 # include "HostUSBDeviceImpl.h"
 # include "USBDeviceFilterImpl.h"
@@ -93,9 +94,6 @@ extern "C" char *getfullrawname(char *);
 # include "darwin/iokit.h"
 #endif
 
-#ifdef RT_OS_WINDOWS
-# include "HostNetworkInterfaceImpl.h"
-#endif
 
 #include <VBox/usb.h>
 #include <VBox/err.h>
@@ -453,7 +451,13 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
 }
 
 #ifdef RT_OS_WINDOWS
-
+/**
+ * Windows helper function for Host::COMGETTER(NetworkInterfaces).
+ *
+ * @returns true / false.
+ *
+ * @param   guid        The GUID.
+ */
 static bool IsTAPDevice(const char *guid)
 {
     HKEY hNetcard;
@@ -466,7 +470,7 @@ static bool IsTAPDevice(const char *guid)
     if (status != ERROR_SUCCESS)
         return false;
 
-    while(true)
+    for (;;)
     {
         char szEnumName[256];
         char szNetCfgInstanceId[256];
@@ -481,7 +485,7 @@ static bool IsTAPDevice(const char *guid)
         status = RegOpenKeyExA(hNetcard, szEnumName, 0, KEY_READ, &hNetCardGUID);
         if (status == ERROR_SUCCESS)
         {
-            len = sizeof (szNetCfgInstanceId);
+            len = sizeof(szNetCfgInstanceId);
             status = RegQueryValueExA(hNetCardGUID, "NetCfgInstanceId", NULL, &dwKeyType, (LPBYTE)szNetCfgInstanceId, &len);
             if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
             {
@@ -498,7 +502,8 @@ static bool IsTAPDevice(const char *guid)
 
                 if (   !strcmp(szNetCfgInstanceId, guid)
                     && !strcmp(szNetProductName, "VirtualBox TAP Adapter")
-                    && (!strcmp(szNetProviderName, "innotek GmbH") || !strcmp(szNetProviderName, "Sun Microsystems, Inc.")))
+                    && (   !strcmp(szNetProviderName, "innotek GmbH")
+                        || !strcmp(szNetProviderName, "Sun Microsystems, Inc.")))
                 {
                     ret = true;
                     RegCloseKey(hNetCardGUID);
@@ -510,9 +515,10 @@ static bool IsTAPDevice(const char *guid)
         ++i;
     }
 
-    RegCloseKey (hNetcard);
+    RegCloseKey(hNetcard);
     return ret;
 }
+#endif /* RT_OS_WINDOWS */
 
 /**
  * Returns a list of host network interfaces.
@@ -522,6 +528,7 @@ static bool IsTAPDevice(const char *guid)
  */
 STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection **networkInterfaces)
 {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) /*|| defined(RT_OS_SOLARIS)*/ /*|| defined(RT_OS_OS2)*/
     if (!networkInterfaces)
         return E_POINTER;
     AutoWriteLock alock (this);
@@ -529,6 +536,22 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
     std::list <ComObjPtr <HostNetworkInterface> > list;
 
+# if defined(RT_OS_DARWIN)
+    PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
+    while (pEtherNICs)
+    {
+        ComObjPtr<HostNetworkInterface> IfObj;
+        IfObj.createObject();
+        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid))))
+            list.push_back(IfObj);
+
+        /* next, free current */
+        void *pvFree = pEtherNICs;
+        pEtherNICs = pEtherNICs->pNext;
+        RTMemFree(pvFree);
+    }
+
+# elif defined RT_OS_WINDOWS
     static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
                                     "{4D36E972-E325-11CE-BFC1-08002BE10318}";
     HKEY hCtrlNet;
@@ -584,14 +607,19 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         }
     }
     RegCloseKey (hCtrlNet);
+# endif /* RT_OS_WINDOWS */
 
     ComObjPtr <HostNetworkInterfaceCollection> collection;
     collection.createObject();
     collection->init (list);
     collection.queryInterfaceTo (networkInterfaces);
     return S_OK;
+
+#else
+    /* Not implemented / supported on this platform. */
+    return E_NOTIMPL;
+#endif
 }
-#endif /* RT_OS_WINDOWS */
 
 STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 {

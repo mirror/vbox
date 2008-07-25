@@ -2762,7 +2762,7 @@
     <attribute name="HWVirtExNestedPagingEnabled" type="boolean" default="true">
       <desc>
         This setting determines whether VirtualBox will try to make use of
-        the nested paging extension of Intel VT-x and AMD-V. Note that in case 
+        the nested paging extension of Intel VT-x and AMD-V. Note that in case
         such extensions are not available, they will not be used.
       </desc>
     </attribute>
@@ -4852,7 +4852,6 @@
     </method>
   </collection>
 
-<if target="midl">
   <interface
      name="IHostNetworkInterface" extends="$unknown"
      uuid="F4512D7C-B074-4e97-99B8-6D2BD27C3F5A"
@@ -4909,11 +4908,10 @@
       </param>
     </method>
   </collection>
-</if>
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="3d864057-ae6b-4d05-9cf7-c341139b6062"
+     uuid="D56DC1AF-8D1B-4A06-86D7-26016E0E2B74"
      wsmap="managed"
      >
     <desc>
@@ -4977,11 +4975,9 @@
       </desc>
     </attribute>
 
-<if target="midl">
     <attribute name="networkInterfaces" type="IHostNetworkInterfaceCollection" readonly="yes">
       <desc>List of host network interfaces currently defined on the host.</desc>
     </attribute>
-</if>
 
     <attribute name="processorCount" type="unsigned long" readonly="yes">
       <desc>Number of (logical) CPUs installed in the host system.</desc>
@@ -10339,13 +10335,13 @@
       </param>
       <param name="period" type="unsigned long" dir="in">
         <desc>
-          Time interval in seconds between two consecutive samples of performace 
+          Time interval in seconds between two consecutive samples of performace
           data.
         </desc>
       </param>
       <param name="count" type="unsigned long" dir="in">
         <desc>
-          Number of samples to retain in performance data history. Older samples 
+          Number of samples to retain in performance data history. Older samples
           get discarded.
         </desc>
       </param>
@@ -10396,11 +10392,11 @@
     <method name="queryMetricsData">
       <desc>
         Queries collected metrics data for a set of objects.
-        
+
         The data itself and related metric information are returned in four
         parallel and one flattened array of arrays. Elements of @c
-        returnMetricNames, @c returnObjects, @c returnDataIndices and @ 
-        returnDataLengths with the same index describe one set of values 
+        returnMetricNames, @c returnObjects, @c returnDataIndices and @
+        returnDataLengths with the same index describe one set of values
         corresponding to a single metric.
 
         The @a returnData parameter is a flattened array of arrays. Each start
@@ -10447,7 +10443,7 @@
       </param>
       <param name="returnData" type="long" dir="return" safearray="yes">
         <desc>
-          Flattened array of all metric data containing sequences of values for 
+          Flattened array of all metric data containing sequences of values for
           each metric.
         </desc>
       </param>

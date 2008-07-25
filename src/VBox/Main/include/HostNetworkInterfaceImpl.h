@@ -22,10 +22,6 @@
 #ifndef ____H_HOSTNETWORKINTERFACEIMPL
 #define ____H_HOSTNETWORKINTERFACEIMPL
 
-#ifndef RT_OS_WINDOWS
-#error This is Windows only stuff!
-#endif
-
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 

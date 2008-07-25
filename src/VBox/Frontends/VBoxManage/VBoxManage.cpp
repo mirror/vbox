@@ -283,11 +283,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_LIST)
     {
-        RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n");
-        RTPrintf("                            ");
-        if (fWin)
-            RTPrintf(                         "hostifs|");
-        RTPrintf(                             "hostinfo|hdds|dvds|floppies|\n"
+        RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
+                 "                            hostifs|hostinfo|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }
@@ -2671,7 +2668,6 @@ static int handleList(int argc, char *argv[],
             }
         }
     }
-#ifdef RT_OS_WINDOWS
     else
     if (strcmp(argv[0], "hostifs") == 0)
     {
@@ -2693,11 +2689,10 @@ static int handleList(int argc, char *argv[],
                 RTPrintf("Name:        %lS\n", interfaceName.raw());
                 Guid interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
-                RTPrintf("GUID:        %lS\n\n", Bstr(interfaceGuid.toString()));
+                RTPrintf("GUID:        %lS\n\n", Bstr(interfaceGuid.toString()).raw());
             }
         }
     }
-#endif /* RT_OS_WINDOWS */
     else
     if (strcmp(argv[0], "hostinfo") == 0)
     {
