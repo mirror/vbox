@@ -32,8 +32,17 @@ fi
 
 # create links
 echo "Creating links..."
-if test -f /opt/VirtualBox/VirtualBox; then
-    /usr/sbin/installf -c none $PKGINST /usr/bin/VirtualBox=/opt/VirtualBox/VBox.sh s
+# @todo desctivated, needs to be redone for the QT4 GUI
+#if test -f /opt/VirtualBox/VirtualBox; then
+#    /usr/sbin/installf -c none $PKGINST /usr/bin/VirtualBox=/opt/VirtualBox/VBox.sh s
+#    # Qt links
+#    /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxQtconfig=/opt/VirtualBox/VBox.sh s
+#    /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/qtgcc/lib/libqt-mt.so=/opt/VirtualBox/qtgcc/lib/libqt-mt.so.3 s
+#    /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/qtgcc/lib/libqt-mt.so.3.3=/opt/VirtualBox/qtgcc/lib/libqt-mt.so.3 s
+#    /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/qtgcc/lib/libqt-mt.so.3.3.8=/opt/VirtualBox/qtgcc/lib/libqt-mt.so.3 s
+#fi
+if test -f /opt/VirtualBox/VirtualBox3; then
+    /usr/sbin/installf -c none $PKGINST /usr/bin/VirtualBox3=/opt/VirtualBox/VBox.sh s
     # Qt links
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxQtconfig=/opt/VirtualBox/VBox.sh s
     /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/qtgcc/lib/libqt-mt.so=/opt/VirtualBox/qtgcc/lib/libqt-mt.so.3 s
