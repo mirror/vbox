@@ -93,13 +93,7 @@ private slots:
 
     void gotLinkClicked (const QUrl &aURL)
     {
-//#warning is this still necessary?
-        QTextDocument* text = mDetailsText->document();
         emit linkClicked (aURL.toString());
-        /* QTextBrowser will try to get the URL from the mime source factory
-         * and show an empty "page" after a failure. Reset the text to avoid
-         * this. */
-        mDetailsText->setDocument (text);
     }
 
 private:
@@ -132,9 +126,10 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
     /* make "transparent" */
     mDetailsText->setFrameShape (QFrame::NoFrame);
     mDetailsText->viewport()->setAutoFillBackground (false);
+    mDetailsText->setOpenLinks (false);
 
     connect (mDetailsText, SIGNAL (anchorClicked (const QUrl &)),
-            this, SLOT (gotLinkClicked (const QUrl &)));
+             this, SLOT (gotLinkClicked (const QUrl &)));
 
     addWidget (mDetailsText);
 }
