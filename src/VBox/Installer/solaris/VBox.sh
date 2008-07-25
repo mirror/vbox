@@ -24,6 +24,9 @@ case "$APP" in
   VirtualBox)
     exec "$INSTALL_DIR/VirtualBox" "$@"
   ;;
+  VirtualBox3)
+    exec "$INSTALL_DIR/VirtualBox3" "$@"
+  ;;
   VBoxManage)
     exec "$INSTALL_DIR/VBoxManage" "$@"
   ;;
