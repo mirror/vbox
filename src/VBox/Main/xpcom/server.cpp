@@ -101,6 +101,7 @@
 #include <HostImpl.h>
 #include <HostDVDDriveImpl.h>
 #include <HostFloppyDriveImpl.h>
+#include <HostNetworkInterfaceImpl.h>
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
 #include <SerialPortImpl.h>
@@ -164,6 +165,8 @@ NS_DECL_CLASSINFO(HostDVDDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostDVDDrive, IHostDVDDrive)
 NS_DECL_CLASSINFO(HostFloppyDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostFloppyDrive, IHostFloppyDrive)
+NS_DECL_CLASSINFO(HostNetworkInterface)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)
 NS_DECL_CLASSINFO(GuestOSType)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestOSType, IGuestOSType)
 NS_DECL_CLASSINFO(NetworkAdapter)
@@ -204,6 +207,7 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDiskAttachment)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(GuestOSType)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostDVDDrive)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostFloppyDrive)
+COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostNetworkInterface)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDisk)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(DVDImage)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(FloppyImage)
