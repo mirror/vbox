@@ -3404,52 +3404,24 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
  */
 void VBoxConsoleWnd::tryClose()
 {
-//#warning "port me"
     /* First close any open modal & popup widgets. Use a single shot with
      * timeout 0 to allow the widgets to cleany close and test then again. If
      * all open widgets are closed destroy ourself. */
-    QWidget *widget = QApplication::activeModalWidget();
+
+    /// #warning "port me":
+    /// @todo (r=dsen) we have to test this on windows
+
+    QWidget *widget = QApplication::activeModalWidget() ?
+                      QApplication::activeModalWidget() :
+                      QApplication::activePopupWidget() ?
+                      QApplication::activePopupWidget() : 0;
     if (widget)
     {
         widget->close();
         QTimer::singleShot (0, this, SLOT (tryClose()));
     }
     else
-    {
-        widget = QApplication::activePopupWidget();
-        if (widget)
-        {
-            widget->close();
-            QTimer::singleShot (0, this, SLOT (tryClose()));
-        }
-        else
-            close();
-    }
-
-    /* We have this to test on Windows or maybe I forgot something, so we keep
-     * this as a reference: */
-//    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
-//
-//    if (qApp->eventLoop()->loopLevel() > 1)
-//    {
-//        if (QApplication::activeModalWidget())
-//            QApplication::activeModalWidget()->close();
-//        else if (QApplication::activePopupWidget())
-//            QApplication::activePopupWidget()->close();
-//        else
-//        {
-            /// @todo (r=dmik) in general, the following is not that correct
-            //  because some custom modal event loop may not expect to be
-            //  exited externally (e.g., it might want to set some internal
-            //  flags before calling exitLoop()). The alternative is to do
-            //  nothing but wait keeping to post singleShot timers.
-//            qApp->eventLoop()->exitLoop();
-//        }
-//
-//        QTimer::singleShot (0, this, SLOT (tryClose()));
-//    }
-//    else
-//     close();
+        close();
 }
 
 /**
