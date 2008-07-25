@@ -811,7 +811,10 @@ void vboxClipboardDestroy (void)
         ++count;
         Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
     } while ((VERR_TIMEOUT == rc) && (count < 300));
-    AssertRC(rcThread);
+    if (RT_SUCCESS(rc))
+        AssertRC(rcThread);
+    else
+        LogRel(("vboxClipboardDestroy: rc=%Rrc\n", rc));
     XtCloseDisplay(XtDisplay(g_ctx.widget));
     LogFlowFunc(("returning.\n"));
 }
