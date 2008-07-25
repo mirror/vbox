@@ -28,6 +28,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
+#ifdef STANDALONE_TESTCASE
+# define VBOX_WITH_USB
+#endif
 
 #include <mach/mach.h>
 #include <Carbon/Carbon.h>
@@ -47,8 +50,17 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
+#ifdef STANDALONE_TESTCASE
+# include <iprt/initterm.h>
+# include <iprt/stream.h>
+#endif
 
 #include "iokit.h"
+
+/* A small hack... */
+#ifdef STANDALONE_TESTCASE
+# define DarwinFreeUSBDeviceFromIOKit(a) do { } while (0)
+#endif
 
 
 /*******************************************************************************
@@ -221,20 +233,20 @@ static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
 }
 
 
-#if 1 /* dumping disabled */
+#if 1 && !defined(STANDALONE_TESTCASE) /* dumping disabled */
 # define DARWIN_IOKIT_LOG(a)         Log(a)
 # define DARWIN_IOKIT_LOG_FLUSH()    do {} while (0)
 # define DARWIN_IOKIT_DUMP_OBJ(o)    do {} while (0)
 #else
-# if 0
+# if defined(STANDALONE_TESTCASE)
 #  include <iprt/stream.h>
-#  define DARWIN_IOKIT_LOG(a) RTPrintf a
-#  define DARWIN_IOKIT_LOG_FLUSH() RTStrmFlush(g_pStdOut)
+#  define DARWIN_IOKIT_LOG(a)       RTPrintf a
+#  define DARWIN_IOKIT_LOG_FLUSH()  RTStrmFlush(g_pStdOut)
 # else
-#  define DARWIN_IOKIT_LOG(a) RTLogPrintf a
-#  define DARWIN_IOKIT_LOG(a) RTLogFlush()
+#  define DARWIN_IOKIT_LOG(a)       RTLogPrintf a
+#  define DARWIN_IOKIT_LOG(a)       RTLogFlush()
 # endif
-# define DARWIN_IOKIT_DUMP_OBJ(o)    darwinDumpObj(o)
+# define DARWIN_IOKIT_DUMP_OBJ(o)   darwinDumpObj(o)
 
 /**
  * Callback for dumping a dictionary key.
@@ -387,7 +399,7 @@ static void darwinDumpObj(io_object_t Object)
     darwinDumpObjInt(Object, 0);
 }
 
-#endif
+#endif /* helpers for dumping registry dictionaries */
 
 
 /**
@@ -803,7 +815,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     io_object_t USBDevice;
     while ((USBDevice = IOIteratorNext(USBDevices)) != 0)
     {
-        //DARWIN_IOKIT_DUMP_OBJ(USBDevice);
+        DARWIN_IOKIT_DUMP_OBJ(USBDevice);
 
         /*
          * Query the device properties from the registry.
@@ -1192,6 +1204,8 @@ PDARWINDVD DarwinGetDVDDrives(void)
     io_object_t DVDService;
     while ((DVDService = IOIteratorNext(DVDServices)) != 0)
     {
+        DARWIN_IOKIT_DUMP_OBJ(DVDService);
+
         /*
          * Get the properties we use to identify the DVD drive.
          *
@@ -1280,4 +1294,146 @@ PDARWINDVD DarwinGetDVDDrives(void)
 
     return pHead;
 }
+
+
+/**
+ * Enumerate the ethernet capable network devices returning a FIFO of them.
+ *
+ * @returns Pointer to the head.
+ */
+void *DarwinGetNetworkControllers(void)
+{
+    /*
+     * Create a matching dictionary for searching for ethernet controller
+     * services in the IOKit.
+     */
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOEthernetController");
+    AssertReturn(RefMatchingDict, NULL);
+
+    /*
+     * Perform the search and get a collection of ethernet controller services.
+     */
+    io_iterator_t EthNICServices = NULL;
+    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EthNICServices);
+    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /*
+     * Enumerate the ethernet controller services.
+     */
+//    PDARWINDVD pHead = NULL;
+//    PDARWINDVD pTail = NULL;
+    unsigned i = 0;
+    io_object_t EthNICService;
+    while ((EthNICService = IOIteratorNext(EthNICServices)) != 0)
+    {
+        DARWIN_IOKIT_DUMP_OBJ(EthNICService);
+#if 0
+        /*
+         * Get the properties we use to identify the DVD drive.
+         *
+         * While there is a (weird 12 byte) GUID, it isn't persistent
+         * accross boots. So, we have to use a combination of the
+         * vendor name and product name properties with an optional
+         * sequence number for identification.
+         */
+        CFMutableDictionaryRef PropsRef = 0;
+        kern_return_t krc = IORegistryEntryCreateCFProperties(EthNICService, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        if (krc == KERN_SUCCESS)
+        {
+            /* Get the Device Characteristics dictionary. */
+            CFDictionaryRef DevCharRef = (CFDictionaryRef)CFDictionaryGetValue(PropsRef, CFSTR(kIOPropertyDeviceCharacteristicsKey));
+            if (DevCharRef)
+            {
+                /* The vendor name. */
+                char szVendor[128];
+                char *pszVendor = &szVendor[0];
+                CFTypeRef ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyVendorNameKey));
+                if (    ValueRef
+                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
+                    &&  CFStringGetCString((CFStringRef)ValueRef, szVendor, sizeof(szVendor), kCFStringEncodingUTF8))
+                    pszVendor = RTStrStrip(szVendor);
+                else
+                    *pszVendor = '\0';
+
+                /* The product name. */
+                char szProduct[128];
+                char *pszProduct = &szProduct[0];
+                ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyProductNameKey));
+                if (    ValueRef
+                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
+                    &&  CFStringGetCString((CFStringRef)ValueRef, szProduct, sizeof(szProduct), kCFStringEncodingUTF8))
+                    pszProduct = RTStrStrip(szProduct);
+                else
+                    *pszProduct = '\0';
+
+                /* Construct the name and check for duplicates. */
+                char szName[256 + 32];
+                if (*pszVendor || *pszProduct)
+                {
+                    if (*pszVendor && *pszProduct)
+                        RTStrPrintf(szName, sizeof(szName), "%s %s", pszVendor, pszProduct);
+                    else
+                        strcpy(szName, *pszVendor ? pszVendor : pszProduct);
+
+                    for (PDARWINDVD pCur = pHead; pCur; pCur = pCur->pNext)
+                    {
+                        if (!strcmp(szName, pCur->szName))
+                        {
+                            if (*pszVendor && *pszProduct)
+                                RTStrPrintf(szName, sizeof(szName), "%s %s (#%u)", pszVendor, pszProduct, i);
+                            else
+                                RTStrPrintf(szName, sizeof(szName), "%s %s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
+                            break;
+                        }
+                    }
+                }
+                else
+                    RTStrPrintf(szName, sizeof(szName), "(#%u)", i);
+
+                /* Create the device. */
+                size_t cbName = strlen(szName) + 1;
+                PDARWINDVD pNew = (PDARWINDVD)RTMemAlloc(RT_OFFSETOF(DARWINDVD, szName[cbName]));
+                if (pNew)
+                {
+                    pNew->pNext = NULL;
+                    memcpy(pNew->szName, szName, cbName);
+                    if (pTail)
+                        pTail = pTail->pNext = pNew;
+                    else
+                        pTail = pHead = pNew;
+                }
+            }
+            CFRelease(PropsRef);
+        }
+        else
+            AssertMsgFailed(("krc=%#x\n", krc));
+
+#endif
+        IOObjectRelease(EthNICService);
+        i++;
+    }
+
+    IOObjectRelease(EthNICServices);
+
+    return NULL;//return pHead;
+}
+
+#ifdef STANDALONE_TESTCASE
+/**
+ * This file can optionally be compiled into a testcase, this is the main function.
+ * To build:
+ *      g++ -I ../../../../include -D IN_RING3 iokit.cpp   ../../../../out/darwin.x86/debug/lib/RuntimeR3.a  ../../../../out/darwin.x86/debug/lib/SUPR3.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a ../../../../out/darwin.x86/debug/lib/VBox-kStuff.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a -framework CoreFoundation -framework IOKit -liconv -D STANDALONE_TESTCASE
+ */
+int main(int argc, char **argv)
+{
+    RTR3Init(false);
+
+    DarwinGetNetworkControllers();
+    //DarwinGetDVDDrives();
+
+    return 0;
+}
+#endif
+
 
