@@ -1354,7 +1354,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                         success = true;
 
                         /* discard the current state if requested */
-                        if (dlg.mCbDiscardCurState->isChecked())
+                        if (dlg.mCbDiscardCurState->isChecked() &&
+                            dlg.mCbDiscardCurState->isVisibleTo (&dlg))
                         {
                             CProgress progress = cconsole.DiscardCurrentState();
                             if (cconsole.isOk())
