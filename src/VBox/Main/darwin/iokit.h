@@ -37,21 +37,57 @@ typedef struct DARWINDVD
     struct DARWINDVD *pNext;
     /** Variable length name / identifier. */
     char szName[1];
-} DARWINDVD, *PDARWINDVD;
+} DARWINDVD;
+/** Pointer to a Darwin DVD descriptor. */
+typedef DARWINDVD *PDARWINDVD;
+
+
+/**
+ * Darwin ethernet controler descriptor as returned by DarwinGetEthernetControllers().
+ */
+typedef struct DARWINETHERNIC
+{
+    /** Pointer to the next NIC. */
+    struct DARWINETHERNIC *pNext;
+    /** The BSD name. (like en0)*/
+    char szBSDName[8];
+    /** The fake unique identifier. */
+    RTUUID Uuid;
+    /** The MAC address. */
+    PDMMAC Mac;
+    /** Internal category number (0..7). */
+    int iCat;
+    /** Whether it's wireless (true) or wired (false). */
+    bool fWireless;
+    /** Whether it is an AirPort device. */
+    bool fAirPort;
+    /** Whether it's built in or not. */
+    bool fBuiltin;
+    /** Whether it's a USB device or not. */
+    bool fUSB;
+    /** Whether it's the primary interface. */
+    bool fPrimaryIf;
+    /** A variable length descriptive name if possible. */
+    char szName[1];
+} DARWINETHERNIC;
+/** Pointer to a Darwin ethernet controller descriptor.  */
+typedef DARWINETHERNIC *PDARWINETHERNIC;
+
 
 /** The run loop mode string used by iokit.cpp when it registers
  * notifications events. */
 #define VBOX_IOKIT_MODE_STRING "VBoxIOKitMode"
 
 __BEGIN_DECLS
-PDARWINDVD  DarwinGetDVDDrives(void);
 #ifdef VBOX_WITH_USB
-void *      DarwinSubscribeUSBNotifications(void);
-void        DarwinUnsubscribeUSBNotifications(void *pvOpaque);
-PUSBDEVICE  DarwinGetUSBDevices(void);
-void        DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur);
-int         DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur);
-#endif
+void *          DarwinSubscribeUSBNotifications(void);
+void            DarwinUnsubscribeUSBNotifications(void *pvOpaque);
+PUSBDEVICE      DarwinGetUSBDevices(void);
+void            DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur);
+int             DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur);
+#endif /* VBOX_WITH_USB */
+PDARWINDVD      DarwinGetDVDDrives(void);
+PDARWINETHERNIC DarwinGetEthernetControllers(void);
 __END_DECLS
 
 #endif
