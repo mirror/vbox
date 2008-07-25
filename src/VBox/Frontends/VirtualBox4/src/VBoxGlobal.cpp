@@ -590,12 +590,11 @@ private:
 
     bool event (QEvent *aEvent)
     {
-//#warning check me!
         if (aEvent->type() == mType)
         {
             OpenNativeDialogEvent *ev = (OpenNativeDialogEvent*) aEvent;
             mResult = ev->result();
-            mLoop.exit();
+            mLoop.quit();
             return true;
         }
         return QObject::event (aEvent);
@@ -873,13 +872,13 @@ QStringList VBoxGlobal::vmGuestOSTypeDescriptions() const
 QList<QPixmap> VBoxGlobal::vmGuestOSTypeIcons (int aHorizonalMargin, int aVerticalMargin) const
 {
     static QList<QPixmap> list;
-    if (list.empty()) 
+    if (list.empty())
     {
-        for (int i = 0; i < vm_os_types.count(); i++) 
+        for (int i = 0; i < vm_os_types.count(); i++)
         {
-            QPixmap image(32 + 2*aHorizonalMargin, 32 + 2*aVerticalMargin);
+            QPixmap image (32 + 2 * aHorizonalMargin, 32 + 2 * aVerticalMargin);
             image.fill (Qt::transparent);
-            QPainter p(&image);
+            QPainter p (&image);
             p.drawPixmap (aHorizonalMargin, aVerticalMargin, *vm_os_type_icons.value (vm_os_types [i].GetId()));
             p.end();
             list << image;
@@ -3427,8 +3426,6 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         QString mCaption;
     };
 
-//#warning check me!
-
     /* Local event loop to run while waiting for the result from another
      * thread */
     QEventLoop loop;
@@ -3579,8 +3576,6 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
     if (aSelectedFilter)
         *aSelectedFilter = QString::null;
-
-//#warning check me!
 
     /* Local event loop to run while waiting for the result from another
      * thread */
