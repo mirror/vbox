@@ -974,17 +974,17 @@ int main(int argc, char *argv[])
         printf ("Getting console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
 
-        RTThreadSleep(3000); // Sleep for 10 seconds
+        RTThreadSleep(5000); // Sleep for 5 seconds
 
         printf("Metrics collected with DSL machine running: --------------------\n");
         queryMetrics(collector, ComSafeArrayAsInParam(objects));
 
         // Pause
-        printf ("Press enter to pause the VM execution in the remote session...");
-        getchar();
+        //printf ("Press enter to pause the VM execution in the remote session...");
+        //getchar();
         CHECK_RC (console->Pause());
 
-        RTThreadSleep(10000); // Sleep for 10 seconds
+        RTThreadSleep(5000); // Sleep for 5 seconds
 
         printf("Metrics collected with DSL machine paused: ---------------------\n");
         queryMetrics(collector, ComSafeArrayAsInParam(objects));
