@@ -38,6 +38,8 @@ public:
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
+private:
+    int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed);
 };
 
 // Linux Metric factory
@@ -77,41 +79,15 @@ int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t
 int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
     int rc = VINF_SUCCESS;
-    char *pszName;
-    pid_t pid2;
-    char c;
-    int iTmp;
-    unsigned uTmp;
-    unsigned long ulTmp, u32user, u32kernel;
-    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
-
     uint64_t uHostUser, uHostKernel, uHostIdle;
+
     rc = getRawHostCpuLoad(&uHostUser, &uHostKernel, &uHostIdle);
-    if (RT_FAILURE(rc))
-        return rc;
-    *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
-
-    RTStrAPrintf(&pszName, "/proc/%d/stat", process);
-    //printf("Opening %s...\n", pszName);
-    FILE *f = fopen(pszName, "r");
-    RTMemFree(pszName);
-
-    if (f)
+    if (RT_SUCCESS(rc))
     {
-        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
-                   &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
-                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u32user, &u32kernel) == 15)
-        {
-            Assert((pid_t)process == pid2);
-            *user = u32user;
-            *kernel = u32kernel;
-        }
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
+        unsigned long ulTmp;
+        *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
+        rc = getRawProcessStats(process, user, kernel, &ulTmp);
     }
-    else
-        rc = VERR_ACCESS_DENIED;
 
     return rc;
 }
@@ -144,9 +120,59 @@ int CollectorLinux::getHostMemoryUsage(unsigned long *total, unsigned long *used
 
     return rc;
 }
+
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
 {
-    return E_NOTIMPL;
+    uint64_t u64Tmp;
+    unsigned long nPagesUsed;
+    int rc = getRawProcessStats(process, &u64Tmp, &u64Tmp, &nPagesUsed);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(getpagesize() >= 1024);
+        *used = nPagesUsed * (getpagesize() / 1024);
+    }
+    return rc;
+}
+
+int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed)
+{
+    int rc = VINF_SUCCESS;
+    char *pszName;
+    pid_t pid2;
+    char c;
+    int iTmp;
+    uint64_t u64Tmp;
+    unsigned uTmp;
+    unsigned long ulTmp, u32user, u32kernel;
+    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+
+    RTStrAPrintf(&pszName, "/proc/%d/stat", process);
+    //printf("Opening %s...\n", pszName);
+    FILE *f = fopen(pszName, "r");
+    RTMemFree(pszName);
+
+    if (f)
+    {
+        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu "
+                      "%ld %ld %ld %ld %ld %ld %llu %lu %ld",
+                   &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
+                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u32user, &u32kernel,
+                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u64Tmp,
+                   &ulTmp, memPagesUsed) == 24)
+        {
+            Assert((pid_t)process == pid2);
+            *cpuUser   = u32user;
+            *cpuKernel = u32kernel;
+        }
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
 }
 
 }
+
