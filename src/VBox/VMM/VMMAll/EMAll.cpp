@@ -2407,7 +2407,7 @@ EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_IA32_SYSENTER_CS:
-        pCtx->SysEnter.cs = val;
+        pCtx->SysEnter.cs = val & 0xffff; /* 16 bits selector */
         break;
 
     case MSR_IA32_SYSENTER_EIP:
