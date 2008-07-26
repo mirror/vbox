@@ -749,7 +749,14 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Network\0ReceiveBufferSize\0SendBufferSize\0RestrictAccess\0IsService\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle,
+                              "Network\0"
+                              "Trunk\0"
+                              "TrunkType\0"
+                              "ReceiveBufferSize\0"
+                              "SendBufferSize\0"
+                              "RestrictAccess\0"
+                              "IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
