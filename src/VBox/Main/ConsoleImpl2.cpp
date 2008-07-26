@@ -45,8 +45,9 @@
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
-#include <VBox/HostServices/GuestPropertySvc.h>
+# include <VBox/HostServices/GuestPropertySvc.h>
 #endif /* VBOX_WITH_GUEST_PROPS */
+#include <VBox/intnet.h>
 
 
 /*
@@ -1200,9 +1201,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     /* The name is on the form 'ifX: long name', chop it off at the colon. */
                     Bstr hostInterfaceName;
                     hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
-                    char szTrunkName[8];
-                    strncpy(szTrunkName, Utf8Str(hostInterfaceName).raw(), sizeof(szTrunkName));
-                    char *pszColon = (char *)memchr(szTrunkName, ':', sizeof(szTrunkName));
+                    char szTrunk[8];
+                    strncpy(szTrunk, Utf8Str(hostInterfaceName).raw(), sizeof(szTrunk));
+                    char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
                     if (!pszColon)
                     {
                         hrc = networkAdapter->Detach();                              H();
@@ -1214,9 +1215,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                     rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                     rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "TrunkName", szTrunkName);        RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "Trunk", szTrunk);                RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                     char szNetwork[80];
-                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", szTrunkName);
+                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", szTrunk);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
 
 #elif defined(RT_OS_WINDOWS)
