@@ -43,10 +43,9 @@ public:
             : mSlot (0), mEnabled (FALSE)
             , mAttachmentType (NetworkAttachmentType_Null)
             ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
-#ifdef RT_OS_WINDOWS
+#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
             , mHostInterface ("") // cannot be null
-#endif
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+#else
             , mTAPFD (NIL_RTFILE)
 #endif
         {}
@@ -125,7 +124,7 @@ public:
     STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
     STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
     STDMETHOD(COMSETTER(HostInterface)) (INPTR BSTR aHostInterface);
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+#ifndef RT_OS_WINDOWS /** @todo ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: need to find a way to exclude this in the xidl... */
     STDMETHOD(COMGETTER(TAPFileDescriptor)) (LONG *aTAPFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor)) (LONG aTAPFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication)) (BSTR *aTAPSetupApplication);

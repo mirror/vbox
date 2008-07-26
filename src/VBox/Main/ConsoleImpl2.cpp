@@ -854,7 +854,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 STR_FREE();
                 rc = CFGMR3InsertString(pCfg,   "Format",           "VMDK");                RC_CHECK();
 
-                /* 
+                /*
                  * Create cfgm nodes for async transport driver because VMDK is currently the only
                  * one which may support async I/O. This has to be made generic based on the capabiliy flags
                  * when the new HardDisk interface is merged.
@@ -1187,6 +1187,38 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
 # endif
                     }
+
+#elif defined(RT_OS_DARWIN)
+                    if (fSniffer)
+                    {
+                        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
+                    }
+                    else
+                    {
+                        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
+                    }
+                    /* The name is on the form 'ifX: long name', chop it off at the colon. */
+                    Bstr hostInterfaceName;
+                    hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
+                    char szTrunkName[8];
+                    strncpy(szTrunkName, Utf8Str(hostInterfaceName).raw(), sizeof(szTrunkName));
+                    char *pszColon = (char *)memchr(szTrunkName, ':', sizeof(szTrunkName));
+                    if (!pszColon)
+                    {
+                        hrc = networkAdapter->Detach();                              H();
+                        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                          N_("Malformed host interface networking name '%ls'"),
+                                          hostInterfaceName.raw());
+                    }
+                    *pszColon = '\0';
+
+                    rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
+                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "TrunkName", szTrunkName);        RC_CHECK();
+                    char szNetwork[80];
+                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", szTrunkName);
+                    rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+
 #elif defined(RT_OS_WINDOWS)
                     if (fSniffer)
                     {
@@ -1686,23 +1718,23 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 Bstr strNextExtraDataKey;
                 Bstr strExtraDataValue;
-        
+
                 /* get the next key */
                 hrc = pMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
                                                     strExtraDataValue.asOutParam());
-        
+
                 /* stop if for some reason there's nothing more to request */
                 if (FAILED(hrc) || !strNextExtraDataKey)
                     break;
-        
+
                 strExtraDataKey = strNextExtraDataKey;
                 Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
-        
+
                 /* we only care about keys starting with VBOX_SHARED_INFO_KEY_PREFIX */
                 if (strncmp(strExtraDataKeyUtf8.raw(), VBOX_SHARED_INFO_KEY_PREFIX, VBOX_SHARED_INFO_PREFIX_LEN) != 0)
                     continue;
                 char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
-        
+
                 /* now let's have a look at the value */
                 Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
                 const char *pszCFGMValue = strCFGMValueUtf8.raw();

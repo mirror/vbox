@@ -416,14 +416,13 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
-#ifdef RT_OS_WINDOWS
+#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
     // we don't allow null strings for the host interface on Win32
-    // (because the @name attribute of <HostInerface> must be always present,
+    // (because the @name attribute of <HostInterface> must be always present,
     // but can be empty).
     if (!aHostInterface)
         return E_INVALIDARG;
-#endif
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+#else
     // empty strings are not allowed as path names
     if (aHostInterface && !(*aHostInterface))
         return E_INVALIDARG;
@@ -452,10 +451,11 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
     return S_OK;
 }
 
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+#ifndef RT_OS_WINDOWS /** @todo ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: need to find a way to exclude this in the xidl... */
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescriptor)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     if (!aTAPFileDescriptor)
         return E_POINTER;
 
@@ -467,10 +467,15 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescript
     *aTAPFileDescriptor = mData->mTAPFD;
 
     return S_OK;
+
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG aTAPFileDescriptor)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     /*
      * Validate input.
      */
@@ -503,11 +508,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG aTAPFileDescripto
     }
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
     BSTR *aTAPSetupApplication)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     if (!aTAPSetupApplication)
         return E_POINTER;
 
@@ -520,11 +529,15 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
     mData->mTAPSetupApplication.cloneTo (aTAPSetupApplication);
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
     INPTR BSTR aTAPSetupApplication)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     /* empty strings are not allowed as path names */
     if (aTAPSetupApplication && !(*aTAPSetupApplication))
         return E_INVALIDARG;
@@ -550,11 +563,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
     }
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
     BSTR *aTAPTerminateApplication)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     if (!aTAPTerminateApplication)
         return E_POINTER;
 
@@ -567,11 +584,15 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
     mData->mTAPTerminateApplication.cloneTo(aTAPTerminateApplication);
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
     INPTR BSTR aTAPTerminateApplication)
 {
+# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     /* empty strings are not allowed as path names */
     if (aTAPTerminateApplication && !(*aTAPTerminateApplication))
         return E_INVALIDARG;
@@ -597,6 +618,9 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
     }
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 #endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
@@ -1056,8 +1080,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         /* Host Interface Networking */
 
         Bstr name = attachmentNode.stringValue ("name");
-#ifdef RT_OS_WINDOWS
-        /* name can be empty on Win32, but not null */
+#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
+        /* name can be empty, but not null */
         ComAssertRet (!name.isNull(), E_FAIL);
 #endif
         rc = COMSETTER(HostInterface) (name);
@@ -1165,10 +1189,9 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_HostInterface:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostInterface");
-#ifdef RT_OS_WINDOWS
+#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
             Assert (!mData->mHostInterface.isNull());
-#endif
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+#else
             if (!mData->mHostInterface.isEmpty())
 #endif
                 attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
@@ -1301,7 +1324,7 @@ void NetworkAdapter::detach()
         case NetworkAttachmentType_HostInterface:
         {
             /* reset handle and device name */
-#ifdef RT_OS_WINDOWS
+#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
             mData->mHostInterface = "";
 #endif
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
