@@ -27,7 +27,7 @@
 #include "VBoxVMSettingsNetwork.gen.h"
 #include "COMDefs.h"
 
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
 class QTreeWidget;
 class QTreeWidgetItem;
 #endif
@@ -56,7 +56,7 @@ public:
 
     void setNetworksList (const QStringList &aList);
 
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
     void setInterfaceName (const QString &);
     QString interfaceName() const;
 #endif
@@ -85,13 +85,13 @@ private:
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
 
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
     QString mInterfaceName;
 #endif
 };
 
 
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC) || defined(__APPLE__) /// @todo fix stupid stupid moc.
 /*
  * QGroupBox sub-class which represents network interface list.
  */
@@ -128,10 +128,12 @@ private:
     QILabelSeparator *mLbTitle;
     QTreeWidget      *mList;
 
+# if defined (Q_WS_WIN)
     QAction *mAddAction;
     QAction *mDelAction;
+# endif
 };
-#endif
+#endif /* Q_WS_WIN || Q_OS_MAC */
 
 
 /*
@@ -158,7 +160,7 @@ protected:
 private slots:
 
     void updateNetworksList();
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC) || defined (__APPLE__) /// @todo fix stupid stupid moc.
     void onCurrentPageChanged (int);
     void onCurrentInterfaceChanged (const QString &);
 #endif
@@ -169,7 +171,7 @@ private:
 
     /* Widgets */
     QTabWidget *mTwAdapters;
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
     VBoxNIList *mNIList;
 #endif
 
