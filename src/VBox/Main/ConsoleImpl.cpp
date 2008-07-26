@@ -5327,20 +5327,30 @@ HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapD
  */
 HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 {
+#if !defined(RT_OS_LINUX)
+    /*
+     * Nothing to do here.
+     *
+     * Note, the reason for this method in the first place a memory / fork
+     * bug on linux. All this code belongs in DrvTAP and similar places.
+     */
+    NOREF(networkAdapter);
+    return S_OK;
+
+#else /* RT_OS_LINUX */
     LogFlowThisFunc(("\n"));
     /* sanity check */
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
-#ifdef DEBUG
+# ifdef VBOX_STRICT
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
     Assert(attachment == NetworkAttachmentType_HostInterface);
-#endif /* DEBUG */
+# endif /* VBOX_STRICT */
 
     HRESULT rc = S_OK;
 
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     ULONG slot = 0;
     rc = networkAdapter->COMGETTER(Slot)(&slot);
     AssertComRC(rc);
@@ -5366,15 +5376,10 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
         rc = S_OK;
     }
     else
-#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
     {
         /*
          * Allocate a host interface device
          */
-#ifdef RT_OS_WINDOWS
-        /* nothing to do */
-        int rcVBox = VINF_SUCCESS;
-#elif defined(RT_OS_LINUX)
         int rcVBox = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
                                 RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
         if (VBOX_SUCCESS(rcVBox))
@@ -5487,23 +5492,6 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     break;
             }
         }
-#elif defined(RT_OS_DARWIN)
-        /** @todo Implement tap networking for Darwin. */
-        int rcVBox = VERR_NOT_IMPLEMENTED;
-#elif defined(RT_OS_FREEBSD)
-        /** @todo Implement tap networking for FreeBSD. */
-        int rcVBox = VERR_NOT_IMPLEMENTED;
-#elif defined(RT_OS_OS2)
-        /** @todo Implement tap networking for OS/2. */
-        int rcVBox = VERR_NOT_IMPLEMENTED;
-#elif defined(RT_OS_SOLARIS)
-        /* nothing to do */
-        int rcVBox = VINF_SUCCESS;
-#elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
-# error "PORTME: Implement OS specific TAP interface open/creation."
-#else
-# error "Unknown host OS"
-#endif
         /* in case of failure, cleanup. */
         if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
         {
@@ -5513,6 +5501,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     }
     LogFlowThisFunc(("rc=%d\n", rc));
     return rc;
+#endif /* RT_OS_LINUX */
 }
 
 /**
@@ -5525,19 +5514,28 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
  */
 HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
 {
+#if !defined(RT_OS_LINUX) && !defined(RT_OS_SOLARIS)
+    /*
+     * Nothing to do here.
+     */
+    NOREF(networkAdapter);
+    return S_OK;
+
+#else /* RT_LINUX || RT_OS_SOLARIS */
+
     /* sanity check */
     LogFlowThisFunc(("\n"));
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     HRESULT rc = S_OK;
-#ifdef DEBUG
+# ifdef VBOX_STRICT
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
     Assert(attachment == NetworkAttachmentType_HostInterface);
-#endif /* DEBUG */
+# endif /* VBOX_STRICT */
 
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+/** @todo # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: why wasn't this !defined(RT_OS_SOLARIS)? */
 
     ULONG slot = 0;
     rc = networkAdapter->COMGETTER(Slot)(&slot);
@@ -5575,6 +5573,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
             char szCommand[4096];
             RTStrPrintf(szCommand, sizeof(szCommand), "%s %d %s", tapTermAppUtf8.raw(),
                         isStatic ? maTapFD[slot] : 0, maTAPDeviceName[slot].raw());
+            /** @todo check for overflow or use RTStrAPrintf! */
 
             /*
              * Create the process and wait for it to complete.
@@ -5609,9 +5608,9 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
         maTapFD[slot] = NIL_RTFILE;
         maTAPDeviceName[slot] = "";
     }
-#endif
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
+#endif /* RT_OS_LINUX || RT_OS_SOLARIS */
 }
 
 
