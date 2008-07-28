@@ -49,6 +49,7 @@ static const char  *g_apszExclude[] =
 #if 1 // slow stuff
     "testcase/tstFile",
     "testcase/tstAvl",
+    "testcase/tstVD",
 #endif
     "testcase/tstFileLock",
     "testcase/tstCritSect",
