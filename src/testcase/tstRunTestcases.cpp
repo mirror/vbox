@@ -54,6 +54,7 @@ static const char  *g_apszExclude[] =
     "testcase/tstCritSect",
     "testcase/tstCritSectW32",
     "testcase/tstDeadlock",
+    "testcase/tstDisasm-2",
     "testcase/tstLdr-2",
     "testcase/tstLdr-3",
     "testcase/tstLdr",
