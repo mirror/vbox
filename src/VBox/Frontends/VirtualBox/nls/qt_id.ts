@@ -135,7 +135,7 @@
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Revresh</translation>
+        <translation>Refresh</translation>
     </message>
     <message>
         <source>Volume Down</source>
@@ -302,7 +302,7 @@
     <name>QAquaStyle</name>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -337,7 +337,7 @@
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>Kanal A&amp;fa:</translation>
+        <translation>Kanal Al&amp;fa:</translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
@@ -353,7 +353,7 @@
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -406,7 +406,7 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation>&amp;Baik</translation>
     </message>
     <message>
         <source>Debug Message:</source>
@@ -736,7 +736,7 @@ Periksa path dan nama file.</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation>Gurmurkhi</translation>
+        <translation>Gurmurkh</translation>
     </message>
     <message>
         <source>Gujarati</source>
@@ -907,7 +907,7 @@ Periksa path dan nama file.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -1086,7 +1086,7 @@ Periksa path dan nama file.</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation>Tidak ada server ditetapkan untuk mlakukan hubungan pada</translation>
+        <translation>Tidak ada server ditetapkan untuk melakukan hubungan pada</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
@@ -1105,7 +1105,7 @@ Periksa path dan nama file.</translation>
     <name>QInputDialog</name>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1236,7 +1236,7 @@ menjadi
     <name>QMessageBox</name>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1294,11 +1294,11 @@ menjadi
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Thaana</translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Printer settings</source>
@@ -1536,7 +1536,7 @@ menjadi
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>sintaks pencaria ke depan buruk</translation>
+        <translation>sintaks pencarian ke depan buruk</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -1606,7 +1606,7 @@ menjadi
     <name>QTabDialog</name>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Baik</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -1629,7 +1629,7 @@ menjadi
     <name>QTextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Undo&amp;Undo</translation>
+        <translation>&amp;Undo</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
@@ -1702,19 +1702,19 @@ menjadi
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>Protokol `%1&apos; tidak mendukung menampilkan daftar direktori</translation>
+        <translation>Protokol `%1&apos; tidak mendukung penampilan daftar direktori</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>Protokol `%1&apos; tidak mendukung menciptakan direktori baru</translation>
+        <translation>Protokol `%1&apos; tidak mendukung penciptaan direktori baru</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>Protokol `%1&apos; tidak mendukung membuang file atau direktori</translation>
+        <translation>Protokol `%1&apos; tidak mendukung pembuangan file atau direktori</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>Protokol `%1&apos; tidak mendukung mengganti nama file atau direktori</translation>
+        <translation>Protokol `%1&apos; tidak mendukung penggantian nama file atau direktori</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
@@ -1726,7 +1726,7 @@ menjadi
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>Protokol `%1&apos; tidak mendukung mengcopy atau memindahkan file atau direktori</translation>
+        <translation>Protokol `%1&apos; tidak mendukung pengcopyan atau pemindahan file atau direktori</translation>
     </message>
     <message>
         <source>(unknown)</source>
@@ -1909,7 +1909,7 @@ menjadi
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>version diharapkan saat membaca deklarasi XML</translation>
+        <translation>versi diharapkan saat membaca deklarasi XML</translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
@@ -1953,7 +1953,7 @@ menjadi
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation>referensi entitas yang belum diparse dalam konteks yang sakah</translation>
+        <translation>referensi entitas yang belum diparse dalam konteks yang salah</translation>
     </message>
     <message>
         <source>recursive entities</source>

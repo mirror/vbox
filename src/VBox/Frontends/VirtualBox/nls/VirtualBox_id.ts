@@ -311,12 +311,13 @@
     <name>VBoxAboutNonOSEDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">VirtualBox - Keterangan</translation>
+        <translation>VirtualBox - Keterangan</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Antarmuka Grafik VirtualBox
+Versi %1</translation>
     </message>
 </context>
 <context>
@@ -386,15 +387,15 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation>&amp;Jadikan Permanen</translation>
+        <translation>Jadikan Per&amp;manen</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca sa&amp;ja</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saat ditandai, Operating System guest tidak akan dapat menulis pada folder yang dishare yang telah ditetapkan.</translation>
     </message>
 </context>
 <context>
@@ -576,7 +577,7 @@ Version %1</source>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Lepas floppy media yang sedang terpasang</translation>
+        <translation>Lepas media floppy yang sedang terpasang</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
@@ -904,30 +905,30 @@ Version %1</source>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog I&amp;nformasi Sesi </translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Tampilkan Dialog Informasi Sesi </translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Statistik...</translation>
+        <translation>&amp;Statistik...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Command Line...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pencatatan &amp;Log...</translation>
     </message>
 </context>
 <context>
@@ -1809,157 +1810,157 @@ Version %1</source>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Menyala</translation>
+        <translation>Menyala</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Mati</translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Menyala</translation>
+        <translation>Menyala</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Mati</translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Driver Host</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pengendali</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Mati</translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port Paralel</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Folder yang di Share</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Utama</translation>
+        <translation>Utama</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Sekunder</translation>
+        <translation>Sekunder</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Master</translation>
+        <translation>Master</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Slave</translation>
+        <translation>Slave</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Image VHD</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Suara Solaris</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
 </context>
 <context>
@@ -2009,7 +2010,7 @@ Version %1</source>
     </message>
     <message>
         <source>#general</source>
-        <translation></translation>
+        <translation>#general</translation>
     </message>
     <message>
         <source> Input </source>
@@ -2021,7 +2022,7 @@ Version %1</source>
     </message>
     <message>
         <source>#input</source>
-        <translation></translation>
+        <translation>#input</translation>
     </message>
     <message>
         <source> USB </source>
@@ -2033,7 +2034,7 @@ Version %1</source>
     </message>
     <message>
         <source>#usb</source>
-        <translation></translation>
+        <translation>#usb</translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -2178,7 +2179,7 @@ Version %1</source>
     </message>
     <message>
         <source>#language</source>
-        <translation></translation>
+        <translation>#language</translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -2216,25 +2217,25 @@ to the system default language.&lt;/qt&gt;
         <translation>
 &lt;qt&gt;Menampilkan daftar semua antarmuka bahasa yang tersedia. Bahasa yang efektif
 tertulis dalam &lt;b&gt;tebal&lt;/b&gt;. Pilih &lt;i&gt;Default&lt;/i&gt; untuk me-reset
-ke bahasa default sistem.&lt;/qt&gt;
+ke nilai awal bahasa sistem.&lt;/qt&gt;
                                     </translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>Default</translation>
+        <translation>Nilai awal</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Menampilkan path ke folder default VDI. Folder ini digunakan, bila tidak disebutkan sebaliknya secara eksplisit, saat menambahkan atau menciptakan hard disk virtual baru.</translation>
+        <translation>Menampilkan path ke nilai awal folder VDI. Folder ini digunakan, bila tidak disebutkan sebaliknya secara eksplisit, saat menambahkan atau menciptakan hard disk virtual baru.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Me-reset path folder mesin virtual pada nilai default. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
+        <translation>Me-reset path folder mesin virtual pada nilai awal. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Me-reset path folder VDI pada nilai default. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
+        <translation>Me-reset path folder VDI pada nilai awal. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
@@ -2242,15 +2243,15 @@ ke bahasa default sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation>Buka dialog untuk memilih folder default VDI.</translation>
+        <translation>Buka dialog untuk memilih nilai awal folder VDI.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation>Buka dialog untuk memilih folder default mesin virtual.</translation>
+        <translation>Buka dialog untuk memilih nilai awal folder mesin virtual.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Saat tertandai, keyboard secara otomatos tertangkap setiap kali window Mesin VIrtual diaktifkan. Saat keyboard ditangkap, semua tekanan tombol (termasuk untuk sistem seperti Alt+Tab) ditujukan ke Mesin Virtual.</translation>
+        <translation>Saat tertandai, keyboard secara otomatis tertangkap setiap kali window Mesin VIrtual diaktifkan. Saat keyboard ditangkap, semua tekanan tombol (termasuk untuk sistem seperti Alt+Tab) ditujukan ke Mesin Virtual.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
@@ -2278,7 +2279,7 @@ ke bahasa default sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Me-reset file authentication library pada nilai default. Path file library aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
+        <translation>Me-reset file authentication library pada nilai awal. Path file library aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
     </message>
     <message>
         <source>&amp;Extended Features</source>
@@ -2290,7 +2291,7 @@ ke bahasa default sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
-        <translation>Mendefinisikan apakah mesin virtual harus mencoba untuk menggunakan ekstensi virtualisasi hardware pada CPU host seperti Intel VT-x and AMD-V secara default atau tidak.</translation>
+        <translation>Mendefinisikan apakah mesin virtual harus mencoba untuk menggunakan ekstensi virtualisasi hardware pada CPU host seperti Intel VT-x and AMD-V sesuai nilai awal atau tidak.</translation>
     </message>
     <message>
         <source>
@@ -2302,15 +2303,23 @@ ke bahasa default sistem.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+                                              &lt;qt&gt;Menampilkan semua filter USB 
+                                              global. Checkbox di sebelah kiri
+                                              mendefinisikan apakah filter tertentu
+                                             diaktifkan atau tidak. Gunakan
+                                             menu atau tombol context di sebelah
+                                             kanan untuk menambahkan atau menghapus 
+                                             filter USB.&lt;/qt&gt;
+                                            </translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter Kosong</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;ambahkan Filter Kosong</translation>
     </message>
     <message>
         <source>
@@ -2318,87 +2327,98 @@ ke bahasa default sistem.&lt;/qt&gt;
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Menambahkan sebuah filter USB baru dengan semua field awal diset  sebagai
+              string kosong. Perhatikan bahwa filter semacam itu akan match dengan device USB terpasang 
+              apapun.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter dari Device</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter &amp;dari Device</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>              &lt;qt&gt;Menambahkan sebuah filter USB baru dengan semua field diset sebagai 
+              nilai dari pemilihan USB device terpasang pada PC
+              host.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus Filter</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus Filte&amp;r</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>              &lt;qt&gt;Menghapus filter USB yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Naikkan Filter</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Naikkan Filter</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Naikkan filter USB yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Turunkan Filter</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;urunkan Filter</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Turunkan filter USB yang tersorot.&lt;/qt&gt;
+</translation>
     </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Slot</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Hard Disk</translation>
+        <translation>Hard Disk</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxHardDiskSettings</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Hard Disk</translation>
+        <translation>&amp;Hard Disk</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nyalakan Pengendali SATA</translation>
     </message>
     <message>
         <source>
@@ -2407,11 +2427,16 @@ ke bahasa default sistem.&lt;/qt&gt;
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="unfinished"></translation>
+        <translation>
+                          &lt;qt&gt;Saat ditandai, menyalakan pengendali SATA
+                          virtual dari mesin ini. Perhatikan bahwa anda tidak dapat
+                          memasang hard disk pada port SATA saat pengendali SATA
+                          virtual dimatikan.&lt;/qt&gt;
+                        </translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemas&amp;angan Hard Disk</translation>
     </message>
     <message>
         <source>
@@ -2424,74 +2449,90 @@ ke bahasa default sistem.&lt;/qt&gt;
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>
+                                  Menampilkan semua hard disk terpasang pada
+                                  mesin ini. Gunakan klik ganda mouse atau tombol
+                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Spasi&lt;/tt&gt;
+                                  item yang tersorot untuk mengaktifkan 
+                                  daftar drop-down dan memilih nilai yang diinginkan.
+                                  Gunakan menu atau tombol context di sebelah kanan
+                                  untuk menambah atau menghapus pemasangan
+                                  hard disk.&lt;/qt&gt;
+                                </translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Pemasangan</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;ambahkan Pemasangan</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished">Ins</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Menambahkan sebuah pemasangan hard disk baru.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus Pemasangan</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus &amp;Pemasangan</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Hapus</translation>
+        <translation>Hapus</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Menghapus pemasangan hard disk yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih hard Disk</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih hard Di&amp;sk</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spasi</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Mengijinkan Virtual Disk Manager untuk memilih sebuah hard disk
+              untuk dipasang pada slot yang sedang disorot.&lt;/qt&gt;(new line)
+            </translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; menggunakan hard disk that yang sudah terpasang pada &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik ganda untuk menambahkan pemasangan baru</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak ada hard disk terpilih pada &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -2569,9 +2610,9 @@ ke bahasa default sistem.&lt;/qt&gt;
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wizard ini akan membimbing anda untuk menciptakanimage virtual hard disk baru untuk mesin virtual ada.&lt;/p&gt;
+        <translation>&lt;p&gt;Wizard ini akan membimbing anda untuk menciptakan image virtual hard disk baru untuk mesin virtual ada.&lt;/p&gt;
 &lt;p&gt;Gunakan tombol &lt;b&gt;Berikut&lt;/b&gt; untuk menuju halaman wizard berikutnya
-dan tombol &lt;b&gt;Kembali&lt;/b&gt; untuk kembali ke halaman wizard sebelimnya.&lt;/p&gt;</translation>
+dan tombol &lt;b&gt;Kembali&lt;/b&gt; untuk kembali ke halaman wizard sebelumnya.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -2675,7 +2716,13 @@ the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
 time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Pilih tipe image hard disk virtual yang ingin anda ciptakan.&lt;/p&gt;
+&lt;p&gt;Sebuah &lt;b&gt;image yang mengembang secara dinamis&lt;/b&gt; mula-mula menempati sejumlah kecil
+ruang pada hard disk fisik anda. Ia akan mengembang secara dinamis (hingga
+ukuran yang ditetapkan) seiring dengan Operating SystemGuest mengambil ruang disk.&lt;/p&gt;
+&lt;p&gt;Sebuah &lt;b&gt;image berukuran tetap&lt;/b&gt; tidak mengembang. Ia disimpan pada file kurang lebih
+dengan ukuran yang sama dari hard disk virtual. Penciptaan image berukuran tetap dapat memakan waktu lama
+bergantung pada ukuran image dan performa tulis harddisk anda.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2759,7 +2806,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;Pilih sebuah image hard disk untuk digunakan
 sebagai boot hard disk dari mesin virtual. Anda dapat menciptakan sebuah hard
 disk baru menggunakan tombol &lt;b&gt;Baru&lt;/b&gt; atau pilih image hard disk yang
-sudah ada dari drop-down list atau dengan menekan tombol &lt;b&gt;Telah Ada&lt;/b&gt;
+sudah ada dari daftar drop-down atau dengan menekan tombol &lt;b&gt;Telah Ada&lt;/b&gt;
 (untuk memanggil dialog Virtual Disk Manager).&lt;/p&gt;
 &lt;p&gt;Bila anda membutuhkan setup hard disk yang lebih rumit, anda juga dapat melewati
 langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Mesin Virtual.&lt;/p&gt;</translation>
@@ -2972,11 +3019,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda yakin anda ingin menghapus mesin vistual&lt;b&gt;%1&lt;/b&gt; secara permanen?&lt;/p&gt;&lt;p&gt;Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Anda yakin anda ingin menghapus mesin virtual&lt;b&gt;%1&lt;/b&gt; secara permanen?&lt;/p&gt;&lt;p&gt;Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apakah anda yakin anda ingin meng-unregister virtual mesin &lt;b&gt;%1&lt;/b&gt; yang tidak dapat diakses?&lt;/p&gt;&lt;p&gt;Anda tidak dapat meregisterkannya kembali melalui GUI.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Apakah anda yakin anda ingin meng-unregister mesin virtual &lt;b&gt;%1&lt;/b&gt; yang tidak dapat diakses?&lt;/p&gt;&lt;p&gt;Anda tidak dapat meregisterkannya kembali melalui GUI.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
@@ -3072,7 +3119,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda telah &lt;b&gt;meng-click mouse&lt;/b&gt; dalam tampilan Mesin Virtual Machine atau menekan &lt;b&gt; tombol host &lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual Machine untuk &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama denfan ikon mouse yang ditempatkan didekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Anda telah &lt;b&gt;meng-klik mouse&lt;/b&gt; dalam tampilan Mesin Virtual Machine atau menekan &lt;b&gt; tombol host &lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual Machine untuk &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang ditempatkan didekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -3080,7 +3127,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt;. Hal ini menunjukkan bahwa anda tidak perlu &lt;i&gt;meng-capture&lt;/i&gt; pointer mouse untuk dapat menggunakannya pada OS guest -- semua tindakan mouse yang anda lakukan saat pointer mouse berada pada tampilan Mesin Virtual akan langsung dikirim pada OS guest. Bila mouse sedang ter-capture,Ia akan secara otomatis terbebas.&lt;/p&gt;&lt;p&gt;Ikon mouse pada status bar akan terlihat seperti&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;untuk menunjukkan anda bahwa integrasi pointer mouse didukung olehOS  guest dan saat ini sedang menyala.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;: Beberapa aplikasi mungkin berperilaku tidak semestinya pada mode integrasi pointer mouse. Anda dapat selalu mematikannya pada sesi tersebut  (dan menyalakannya lagi) dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt;. Hal ini menunjukkan bahwa anda tidak perlu &lt;i&gt;meng-capture&lt;/i&gt; pointer mouse untuk dapat menggunakannya pada OS guest -- semua tindakan mouse yang anda lakukan saat pointer mouse berada pada tampilan Mesin Virtual akan langsung dikirim pada OS guest. Bila mouse sedang ter-capture, ia akan secara otomatis terbebas.&lt;/p&gt;&lt;p&gt;Ikon mouse pada status bar akan terlihat seperti&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;untuk menunjukkan anda bahwa integrasi pointer mouse didukung oleh OS  guest dan saat ini sedang menyala.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;: Beberapa aplikasi mungkin berperilaku tidak semestinya pada mode integrasi pointer mouse. Anda dapat selalu mematikannya pada sesi tersebut  (dan menyalakannya lagi) dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -3096,7 +3143,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menjalankan VirtualBox pada mode &lt;i&gt;Pemilih Mesin VIrtual&lt;/i&gt; dikarenakan restriksi lokal.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan sekarang.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tidak dapat menjalankan VirtualBox pada mode &lt;i&gt;Pemilih Mesin Virtual&lt;/i&gt; dikarenakan restriksi lokal.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan sekarang.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
@@ -3125,11 +3172,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sebuah kesalahan fatal telah terjadi selama eksekusi mesin virtual! Mesin virtual akan dimatikan. Anda disarankan menggunakan clipboard untuk meng-copy pesan kesalaha berikut untuk pemeriksaan lebih lanjut:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sebuah kesalahan fatal telah terjadi selama eksekusi mesin virtual! Mesin virtual akan dimatikan. Anda disarankan menggunakan clipboard untuk meng-copy pesan kesalahan berikut untuk pemeriksaan lebih lanjut:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sebuah kesalahan telah terjadi selama eksekusi mesin virtual! Detail dari kesalahan ditunjukkan di bawah ini. Anda dapat mencoba membenahi kesalahan yang tertulis dan melanjutkan eksekusi mesin virtual machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sebuah kesalahan telah terjadi selama eksekusi mesin virtual! Detail dari kesalahan ditunjukkan di bawah ini. Anda dapat mencoba membenahi kesalahan yang tertulis dan melanjutkan eksekusi mesin virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
@@ -3162,11 +3209,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menemukan file bahasa untuk bahasa &lt;b&gt;%1&lt;/b&gt; dalam direktori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bahasa akan sementara di-reset pada bahasa default sistem. Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tidak dapat menemukan file bahasa untuk bahasa &lt;b&gt;%1&lt;/b&gt; dalam direktori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bahasa akan sementara di-reset pada nilai awal bahasa sistem. Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat memuar file bahasa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Bahasa akan sementara di-reset pada bahasa Inggris (built-in). Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman, &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tidak dapat memuat file bahasa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Bahasa akan sementara di-reset pada bahasa Inggris (built-in). Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman, &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -3210,23 +3257,23 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jendela mesin virtual dioptimalkan untuk bekerja pada mode warna &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; tapi kualitas warna tampilan virtual saat ini di-set pada &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahakn buka dialog properti tampilan pada Sistem Operasi guest dan pilih sebuah mode warna &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, bila tersedia, untuk performa terbaik yang memungkinkan pada subsistem video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;. Beberapa sistem operasi, seperti OS/2, dapat bekerja secara aktual pda mode 32&amp;nbsp;bit namun melaporkannya sebagai 24&amp;nbsp;bit (16 juta warna). Anda dapat mencoba memilih kualitas warna yang berbeda untuk melihat apakah pesan ini menghilang atau anda dapat dengan mudah mematikan pesan sekarang bila anda yakin kualitas warna yang dibutuhkan (%4&amp;nbsp;bit) tidak tersedia pada Sistem Operasi guest.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Jendela mesin virtual dioptimalkan untuk bekerja pada mode warna &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; tapi kualitas warna tampilan virtual saat ini di-set pada &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan buka dialog properti tampilan pada Sistem Operasi guest dan pilih sebuah mode warna &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, bila tersedia, untuk performa terbaik yang memungkinkan pada subsistem video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;. Beberapa sistem operasi, seperti OS/2, dapat bekerja secara aktual pada mode 32&amp;nbsp;bit namun melaporkannya sebagai 24&amp;nbsp;bit (16 juta warna). Anda dapat mencoba memilih kualitas warna yang berbeda untuk melihat apakah pesan ini menghilang atau anda dapat dengan mudah mematikan pesan sekarang bila anda yakin kualitas warna yang dibutuhkan (%4&amp;nbsp;bit) tidak tersedia pada Sistem Operasi guest.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;OK&lt;/b&gt; bila abda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila anda inginmembiarkannua untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;OK&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Baik&lt;/b&gt; bila anda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila anda ingin membiarkannya untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;Baik&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda tidak memasang sebuah hard diskpada mesin virtual yang baru. Mesin tersebut tidak akan dapat di-boot kecuali anda memasang sebuah hard disk dengan sistem operasi guest atau media bootable lainnya pada waktu lain menggunakan dialog setting mesin atau First Run Wizard.&lt;/p&gt;&lt;p&gt;Anda ingin melanjutkan?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Anda tidak memasang sebuah hard disk pada mesin virtual yang baru. Mesin tersebut tidak akan dapat di-boot kecuali anda memasang sebuah hard disk dengan sistem operasi guest atau media bootable lainnya pada waktu lain menggunakan dialog setting mesin atau First Run Wizard.&lt;/p&gt;&lt;p&gt;Anda ingin melanjutkan?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3246,7 +3293,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selamat! Anda telah berhasil ter-registered sebagai seorang pengguna VirtualBox.&lt;/p&gt;&lt;p&gt;Terima kasih atas kesedian anda untuk mengisi form registrasi!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selamat! Anda telah berhasil terdaftar sebagai seorang pengguna VirtualBox.&lt;/p&gt;&lt;p&gt;Terima kasih atas kesedian anda untuk mengisi form registrasi!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -3254,177 +3301,177 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gagal menyimpan setting global VirtualBox pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gagal memuat konfigurasi global GUI dari &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gagal menyimpan konfigurasi global GUI pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal menyimpan setting mesin virtual &lt;b&gt;%1&lt;/b&gt; pada&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal memuat setting mesin virtual &lt;b&gt;%1&lt;/b&gt; dari &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Hapus</translation>
+        <translation>Hapus</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unregister</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished">Abaikan</translation>
+        <translation>Abaikan</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lanjutkan</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Apakah anda ingin menghapus file image hard disk ini &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Hapus&lt;/b&gt; maka file image akan terhapus secara permanen setelah melakukan unregister hard disk. Tindakan ini tidak dapat dibatalkan.&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Unregister&lt;/b&gt; maka hard disk virtual akan di-unregister dan hilang dari koleksi, namun file image akan tetap berada pada disk fisik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Hapus</translation>
+        <translation>Hapus</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unregister</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ada hard disk terpasang pada port SATA pada mesin virtual ini. Bila anda menonaktifkan pengendali SATA , semua hard disk tersebut akan secara otomatis terlepas.&lt;/p&gt;&lt;p&gt;Apakah anda yakin bahwa anda ingin menonaktifkan pengendali SATA?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Matikan</translation>
+        <translation>Matikan</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal memasang image hard disk dengan UUID %1 pada slot device %2 pada kanal %3 dari bus %4 mesin tersebut &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal melepas image hard disk dengan dari slot device %1 pada kanal %2 dari bus %3 mesin tersebut &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Download</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pasang</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kunci host saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tangkap</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Satu atau lebih hard disk virtual, CD/DVD or media floppy yang ter-register tidak dapat diakses saat ini. Akibatnya, anda tidak akan dapat mengoperasikan mesin virtual machines yang menggunakan media berikut hingga nantinya mereka tersedia untuk diakses.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Cek&lt;/b&gt; untuk membuka jendela Virtual Disk Manager dan melihat media apa saja yang tidak dapat diakses, atau tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk mengabaikan pesan ini.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cek</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;File setting VirtualBox berikut telah dikonversi secara otomatis ke versi format file setting yang baru  &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Adapun, hasil dari konversi saat ini belum disimpan ke dalam disk. Silahkan tekan:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Simpan&lt;/b&gt; untuk segera menyimpan semua file konversi otomatis (tidak memungkinkan untuk menggunakan file setting tersebut dengan versi VirtualBox yang lebih lama di masa datang);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; untuk menciptakan copy backup dari file settings pada format lama sebelum menyimpan mereka dalam format baru;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Batal&lt;/b&gt; untuk tidak menyimpan file setting yang dikonversi secara otomatis.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Perhatikan bila anda memilih &lt;b&gt;Batal&lt;/b&gt;, File setting yang dikonversi secara otomatis akan tetap saja disimpan secara implisit ke dalam format baru seketika anda mengubah setting atau menjalankan mesin virtual, namun &lt;b&gt;tidak ada&lt;/b&gt; copy backup tercipta pada kasus ini.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Simpan</translation>
+        <translation>&amp;Simpan</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Backup</translation>
     </message>
     <message>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Batal</translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Beralih</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Beralih</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Apakah anda benar-benar yakin ingin me-reset mesin virtual tersebut?&lt;/p&gt;&lt;p&gt;Saat mesin di-reset, data dari semua aplikasi berjalan yang belum disave akan hilang.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Reset</translation>
+        <translation>Reset</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lanjutkan</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kembali</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal meng-copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; pada &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ada hard disk yang belum digunakan tersedia untuk pemasangan yang baru diciptakan.&lt;/p&gt;&lt;p&gt;Tekan tombol &lt;b&gt;Ciptakan&lt;/b&gt; untuk menjalankan wizard &lt;i&gt;Disk Virtual Baru&lt;/i&gt; dan menciptakan sebuah hard disk baru, atau tekan tombol &lt;b&gt;Pilih&lt;/b&gt; untuk membuka &lt;i&gt;Virtual Disk Manager&lt;/i&gt; dan pilih yang ingin dilakukan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ciptakan</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Pilih</translation>
+        <translation>Pilih</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tidak dapat masuk ke mode seamless karena ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual machine agar setidaknya memiliki video memori sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tidak dapat mengubah tampilan guest display menjadi mode fullscreen dikarenakan ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual agar memiliki setidaknya memori video sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk tetap beralih ke mode fullscreen atau tekan &lt;b&gt;Batal&lt;/b&gt; untuk membatalkan tindakan.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3463,11 +3510,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Selamat datand di Form Registrasi VirtualBox!</translation>
+        <translation>Selamat datang di Form Registrasi VirtualBox!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation>&amp;Konfirm</translation>
+        <translation>&amp;Setuju</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
@@ -3479,15 +3526,15 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dapat melakukan handshake koneksi.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Silahkan mengisi formulir registration ini agar dapat memberi tahu kami bahwa anda menggunakan VirtualBox dan, secara opsional, untuk menjaga anda tetap memperoleh informasi tentang berita seputar VirtualBox dan update.&lt;/p&gt;&lt;p&gt;Masukkan nama lengkap anda menggunakan karakter Latin dan alamat  e-mail anda pada field dibawah ini. Perhatikan bahwa Sun Microsystems akan menggunakan informasi ini hanya untuk mengumpulkan statistik penggunaan produk dan untuk mengirimkan newsletter VirtualBox pada anda. Secara khusus, Sun Microsystems tidak akan pernah memberikan data anda pada pihak ketiga. Informasi secara detail mengenai bagaimana kami menggunakan data pribadi anda bisa ditemukan pada bagian &lt;b&gt;Privacy Policy&lt;/b&gt; pada Manual VirtualBox atau pada halaman &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; dalam website VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandai kotak ini bila anda tidak ingin menerima e-mail dari Sun Microsystems pada alamat e-mail yang disebutkan di atas.</translation>
     </message>
 </context>
 <context>
@@ -3590,7 +3637,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation>Meng-konfigur mesin virtual terpilih</translation>
+        <translation>Mengkonfigurasi mesin virtual terpilih</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -3714,7 +3761,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Selamat datang di VirtualBox!&lt;/h3&gt;&lt;p&gt;Bagian kiri dari jendela ini ditujukan untuk menampilkan daftar dari semua mesin vertual dalam komputer anda. Daftar ini saat ini kosong karena anda belum menciptakan mesin virtual apapun.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Untuk menciptakan mesin virtual baru, tekan tombol &lt;b&gt;Baru&lt;/b&gt; pada toolbar utama yang terletak di bagian atas jendela.&lt;/p&gt;&lt;p&gt;Anda dapat menekan tombol &lt;b&gt;F1&lt;/b&gt; untuk memperoleh bantuan langsung, atau kunjungi &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; untuk informasi dan berita terbaru.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Selamat datang di VirtualBox!&lt;/h3&gt;&lt;p&gt;Bagian kiri dari jendela ini ditujukan untuk menampilkan daftar dari semua mesin virtual dalam komputer anda. Daftar ini saat ini kosong karena anda belum menciptakan mesin virtual apapun.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Untuk menciptakan mesin virtual baru, tekan tombol &lt;b&gt;Baru&lt;/b&gt; pada toolbar utama yang terletak di bagian atas jendela.&lt;/p&gt;&lt;p&gt;Anda dapat menekan tombol &lt;b&gt;F1&lt;/b&gt; untuk memperoleh bantuan langsung, atau kunjungi &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; untuk informasi dan berita terbaru.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -3746,35 +3793,35 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation type="unfinished">&amp;Lanjutkan</translation>
+        <translation>&amp;Lanjutkan</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Lanjutkan</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+P</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Lanjutkan eksekusi mesin virtual</translation>
+        <translation>Lanjutkan eksekusi mesin virtual</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pause</translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished">Pause</translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Tahan eksekusi mesin virtual</translation>
+        <translation>Tahan eksekusi mesin virtual</translation>
     </message>
 </context>
 <context>
@@ -3803,7 +3850,7 @@ Menggunakan
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 untuk mengakses sebuah folder yang di share dengan nama &lt;i&gt;share&lt;/i&gt; dari Sistem Operasi serupa DOS atau
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;(new line)
-untuk mengaksesnya dari sebuah SIstem Operasi Linux\. Fitur ini membutuhkan Guest Additions.&lt;/qt&gt;</translation>
+untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
@@ -3811,7 +3858,7 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux\. Fitur ini membutuhkan Gues
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation>Hapus definisi folder ynag di share terpilih.</translation>
+        <translation>Hapus definisi folder yang di share terpilih.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -3860,23 +3907,23 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux\. Fitur ini membutuhkan Gues
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Akses</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spasi</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Edit folder yang di share terpilih (Ctrl+Spasi)</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Penuh</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca saja</translation>
     </message>
 </context>
 <context>
@@ -4074,7 +4121,7 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux\. Fitur ini membutuhkan Gues
     </message>
     <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Spasi</translation>
     </message>
 </context>
 <context>
@@ -4220,7 +4267,7 @@ to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Mendefinisikan apakah filter ini berlaku
 pada device USB terpasang secara lokal pada komputer host (&lt;i&gt;Tidak&lt;/i&gt;),
-[ada server VRDP komputer klien (&lt;i&gt;Ya&lt;/i&gt;),
+pada server VRDP komputer klien (&lt;i&gt;Ya&lt;/i&gt;),
 atau keduanya (&lt;i&gt;Apapun&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4240,7 +4287,7 @@ host saat device yang cocok terpasang: memberikannya pada Sistem Operasi host
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Mendefinisikan filter ID vendor.
 Format string yang &lt;i&gt;cocok&lt;/i&gt; adalah &lt;tt&gt;XXXX&lt;/tt&gt; dimana
-&lt;tt&gt;X&lt;/tt&gt; adalah digit hexadesimal. Sebuah string kosong akan cocok
+&lt;tt&gt;X&lt;/tt&gt; adalah digit heksadesimal. Sebuah string kosong akan cocok
 dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4250,7 +4297,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Mendefinisikan filter ID produk.
 Format string yang &lt;i&gt;cocok&lt;/i&gt; adalah &lt;tt&gt;XXXX&lt;/tt&gt; dimana
-&lt;tt&gt;X&lt;/tt&gt; adalah digit hexadesimal. Sebuah string kosong akan cocok
+&lt;tt&gt;X&lt;/tt&gt; adalah digit heksadesimal. Sebuah string kosong akan cocok
 dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4373,7 +4420,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bila yang ditampilkan di atas sudah tepat, tekan tombol &lt;b&gt;Selesai&lt;/b&gt;. Setelah anda menekannya, media yang terpilih akan terpasang sementara pada mesin virtual dan mesin tersebut akan memulai eksekusi.&lt;/p&gt;&lt;p&gt;Mohon perhatikan bahwa saat anda menutup mesin virtual, media tersebut akan secara otomatis terlepas dan device boot akan di-set kembali pada hard disk awal.&lt;/p&gt;&lt;p?BErgantung pada program setup, anda mungkin perlu melepas (eject) media tersebut setelah program set-up me-reboot mesin virtual, untuk mencegah agar proses instalasi tidak berjalan kembali. Anda dapat melakukan ini dengan memilih tindakan &lt;b&gt;Lepas...&lt;/b&gt; yang bersangkutan oada menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bila yang ditampilkan di atas sudah tepat, tekan tombol &lt;b&gt;Selesai&lt;/b&gt;. Setelah anda menekannya, media yang terpilih akan terpasang sementara pada mesin virtual dan mesin tersebut akan memulai eksekusi.&lt;/p&gt;&lt;p&gt;Mohon perhatikan bahwa saat anda menutup mesin virtual, media tersebut akan secara otomatis terlepas dan device boot akan di-set kembali pada hard disk awal.&lt;/p&gt;&lt;p?BErgantung pada program setup, anda mungkin perlu melepas (eject) media tersebut setelah program set-up me-reboot mesin virtual, untuk mencegah agar proses instalasi tidak berjalan kembali. Anda dapat melakukan ini dengan memilih tindakan &lt;b&gt;Lepas...&lt;/b&gt; yang bersangkutan pada menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -4420,47 +4467,47 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog Informasi Sesi</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tutup</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Informasi Sesi</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detail</translation>
+        <translation>&amp;Detail</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Runtime</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transfer DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Transfer PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Data Terbaca</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished"></translation>
+        <translation>Data Tertulis</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished"></translation>
+        <translation>Data Terkirim</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished"></translation>
+        <translation>Data Diterima</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -4472,19 +4519,19 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Atribut Runtime</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolusi Layar</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistik CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistik Adapter Jaringan</translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -4493,37 +4540,37 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tidak Terdeteksi</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tidak Terdeteksi</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipe Sistem Operasi Guest</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistik Hard Disk</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak Ada Hard Disk</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak Ada Adapter Jaringan</translation>
     </message>
 </context>
 <context>
@@ -4567,7 +4614,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Simpan Log VIrtualBox Sebagai</translation>
+        <translation>Simpan Log VirtualBox Sebagai</translation>
     </message>
     <message>
         <source>Help</source>
@@ -4690,66 +4737,66 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nama Jaringan</translation>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipe Adapter</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memilih tipe adapter jaringan virtual. Bergantung pada nilai tersebut, VirtualBox akan menyediakan hardware jaringan yang berbeda pada mesin virtual.</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan nama dari jaringan internal terpilih untuk adapter ini.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
         <source>VBoxVMParallelPortSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMParallelPortSettings</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyalakan Port Paral&amp;el</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saat ditandai, menyalakan port paralel yang diberikan pada mesin virtual.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
-        <translation type="unfinished">&amp;Nomor Port</translation>
+        <translation>&amp;Nomor Port</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan nomor port paralel. Anda dapat memilih satu dari port paralel standar atau pilih &lt;b&gt;Didefinisikan Pengguna&lt;/b&gt; dan tentukan parameter port secara manual.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
-        <translation type="unfinished">&amp;IRQ</translation>
+        <translation>&amp;IRQ</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan nomer IRQ pada port parallelberikut. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya bisa digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan untuk mesin virtual ini.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
-        <translation type="unfinished">Po&amp;rt I/O</translation>
+        <translation>Po&amp;rt I/O</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan alamat port I/O dasar dari port paralel ini. Nilai yang valid adalah angka integer numbers dalam jangkauan &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="unfinished">&amp;Path Port</translation>
+        <translation>&amp;Path Port</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan nama host paralel device.</translation>
     </message>
 </context>
 <context>
@@ -4772,7 +4819,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Menampilkan nomor port serial. Anda dapat memilih satu dari port serial standar atau pilih &lt;b&gt;Didefinisikan oleh Pengguna&lt;/b&gt; dan sebutkan parameter port parameters secara manual.</translation>
+        <translation>Menampilkan nomor port serial. Anda dapat memilih satu dari port serial standar atau pilih &lt;b&gt;Didefinisikan oleh Pengguna&lt;/b&gt; dan sebutkan parameter port secara manual.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
@@ -4780,7 +4827,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Menampilkan nomor IRQ dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; ke &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya dapat digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan pada mesin virtual ini.</translation>
+        <translation>Menampilkan nomor IRQ dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya dapat digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan pada mesin virtual ini.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -5163,15 +5210,15 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>Nyalakan S&amp;erver VRDP</translation>
+        <translation>Menyalakan S&amp;erver VRDP</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>Definisikan metode otentikasi VRDP.</translation>
+        <translation>Mendefinisikan metode otentikasi VRDP.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Tetapkan timeout untuk otentikasi guest, dalam milidetik.</translation>
+        <translation>Menetapkan timeout untuk otentikasi guest, dalam milidetik.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -5183,7 +5230,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>Tampilkan bantuan dialog.</translation>
+        <translation>Menampilkan bantuan dialog.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -5239,7 +5286,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Saat tertandai, Kartu suara PCI virtuak akan tertancap pada mesin virtual yang menggunakan driver yang dijelaskan untuk berkomunikan pada kartu suara host.</translation>
+        <translation>Saat tertandai, Kartu suara PCI virtual akan tertancap pada mesin virtual yang menggunakan driver yang dijelaskan untuk berkomunikan pada kartu suara host.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
@@ -5301,7 +5348,7 @@ fitur ini setelah menginstall sebuah sistem operasi guest Windows!&lt;/qt&gt;</t
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Me-reset patf folder snapshot pada nilai default. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
+        <translation>Me-reset path folder snapshot pada nilai awal. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
@@ -5404,7 +5451,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Nyalakan &amp;VT-x/AMD-V</translation>
+        <translation>Menyalakan &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
@@ -5428,7 +5475,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation>&amp;Nyalakan Passthrough</translation>
+        <translation>&amp;Menyalakan Passthrough</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
@@ -5448,7 +5495,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Menampilkan nomor port Server VRDP. Anda dapat menetapkan &lt;tt&gt;0&lt;/tt&gt; (nol) untuk me-reset port pada nilai default.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Menampilkan nomor port Server VRDP. Anda dapat menetapkan &lt;tt&gt;0&lt;/tt&gt; (nol) untuk me-reset port pada nilai awal.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
@@ -5501,59 +5548,59 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>00</source>
-        <translation type="unfinished">00</translation>
+        <translation>00</translation>
     </message>
     <message>
         <source>01</source>
-        <translation type="unfinished">01</translation>
+        <translation>01</translation>
     </message>
     <message>
         <source>02</source>
-        <translation type="unfinished">02</translation>
+        <translation>02</translation>
     </message>
     <message>
         <source>03</source>
-        <translation type="unfinished">03</translation>
+        <translation>03</translation>
     </message>
     <message>
         <source>04</source>
-        <translation type="unfinished">04</translation>
+        <translation>04</translation>
     </message>
     <message>
         <source>05</source>
-        <translation type="unfinished">05</translation>
+        <translation>05</translation>
     </message>
     <message>
         <source>08</source>
-        <translation type="unfinished">08</translation>
+        <translation>08</translation>
     </message>
     <message>
         <source>10</source>
-        <translation type="unfinished">10</translation>
+        <translation>10</translation>
     </message>
     <message>
         <source>09</source>
-        <translation type="unfinished">09</translation>
+        <translation>09</translation>
     </message>
     <message>
         <source>06</source>
-        <translation type="unfinished">06</translation>
+        <translation>06</translation>
     </message>
     <message>
         <source> Parallel Ports </source>
-        <translation type="unfinished"></translation>
+        <translation> Port Paralel </translation>
     </message>
     <message>
         <source>07</source>
-        <translation type="unfinished">07</translation>
+        <translation>07</translation>
     </message>
     <message>
         <source>#parallelPorts</source>
-        <translation type="unfinished"></translation>
+        <translation>#parallelPorts</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyalakan PA&amp;E/NX</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When
@@ -5564,31 +5611,38 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Saat
+                                                          ditandai, fitur Physical
+                                                          Address Extension
+                                                          (PAE) pada
+                                                          CPU host akan
+                                                          terekspos pada mesin
+                                                          virtual.&lt;/qt&gt;
+                                                        </translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipe Pengendali &amp;IDE</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mendefinisikan tipe pengendali IDE virtual. Bergantung pada nilai tersebut, VirtualBox akan menyediakan hardware IDE virtual yang berbeda pada Sistem Operasi guest.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pengendali Audio</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memilih tipe kartu suara virtual. Bergantung pada nilai ini, VirtualBox akan menyediakan hardware suara yang berbeda pada mesin virtual.</translation>
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyalakan Pengendali USB &amp;2.0</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saat tertandai, menyalakan pengendali EHCI USB virtual pada mesin ini. Pengendali EHCI USB menyediakan dukungan USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -5600,15 +5654,23 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+                                              &lt;qt&gt;Menampilkan semua filter USB 
+                                              global. Checkbox di sebelah kiri
+                                              mendefinisikan apakah filter tertentu
+                                             diaktifkan atau tidak. Gunakan
+                                             menu atau tombol context di sebelah
+                                             kanan untuk menambahkan atau menghapus 
+                                             filter USB.&lt;/qt&gt;
+                                            </translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter Kosong</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;ambahkan Filter Kosong</translation>
     </message>
     <message>
         <source>
@@ -5616,81 +5678,92 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Menambahkan sebuah filter USB baru dengan semua field awal diset  sebagai
+              string kosong. Perhatikan bahwa filter semacam itu akan match dengan device USB terpasang 
+              apapun.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter dari Device</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan Filter &amp;dari Device</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>              &lt;qt&gt;Menambahkan sebuah filter USB baru dengan semua field diset sebagai 
+              nilai dari pemilihan USB device terpasang pada PC
+              host.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus Filter</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus Filte&amp;r</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>              &lt;qt&gt;Menghapus filter USB yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Naikkan Filter</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Naikkan Filter</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>
+              &lt;qt&gt;Naikkan filter USB yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Turunkan Filter</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;urunkan Filter</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>               &lt;qt&gt;Turunkan filter USB yang tersorot.&lt;/qt&gt;
+            </translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama jaringan internal belum di-set</translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>Path port tidak dijelaskan</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>USBActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>USBActionGroup</translation>
     </message>
 </context>
 </TS>

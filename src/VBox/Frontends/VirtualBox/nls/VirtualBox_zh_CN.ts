@@ -271,7 +271,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation>跳过</translation>
+        <translation>忽略</translation>
     </message>
 </context>
 <context>
@@ -1019,17 +1019,17 @@ Version %1</translation>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">统计信息(&amp;S)...</translation>
+        <translation>统计信息(&amp;S)...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>命令行(&amp;C)...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>记录日志(&amp;L)...</translation>
     </message>
 </context>
 <context>
@@ -2987,7 +2987,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘.。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的硬盘映像，
 也可以在下拉列表中选择一个现有的硬盘映像，或者单击&lt;b&gt;现有&lt;/b&gt;
 按钮 (打开虚拟介质管理器).&lt;/p&gt;
-&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以跳过这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
+&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
@@ -3310,7 +3310,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;一个或多个注册的虚拟硬盘、光盘或软盘当前不可访问. 因此使用了它们的虚拟电脑当前已不能工作，只有等到它们能再次访问时才能继续工作.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;确定&lt;/b&gt; 打开虚拟介质管理器看看是哪些虚拟介质不能访问, 或者按 &lt;b&gt;跳过&lt;/b&gt; 忽略这个信息.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;一个或多个注册的虚拟硬盘、光盘或软盘当前不可访问. 因此使用了它们的虚拟电脑当前已不能工作，只有等到它们能再次访问时才能继续工作.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;确定&lt;/b&gt; 打开虚拟介质管理器看看是哪些虚拟介质不能访问, 或者按 &lt;b&gt;忽略&lt;/b&gt; 忽略这个信息.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3432,11 +3432,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在全屏模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在全屏模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;无缝&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在无缝模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;无缝&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在无缝模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
@@ -3567,7 +3567,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;有一个或多个已注册的虚拟硬盘、光盘或软盘当前无法访问.。因此，你可能无法打开那些要使用这些介质的虚拟电脑直到它可以再次访问为止.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;检测&lt;/b&gt; 打开虚拟介质管理器可以查看那些无法访问的介质，或按 &lt;b&gt;忽略&lt;/b&gt; 跳过这个提示.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;有一个或多个已注册的虚拟硬盘、光盘或软盘当前无法访问.。因此，你可能无法打开那些要使用这些介质的虚拟电脑直到它可以再次访问为止.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;检测&lt;/b&gt; 打开虚拟介质管理器可以查看那些无法访问的介质，或按 &lt;b&gt;忽略&lt;/b&gt; 忽略这个提示.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check</source>
@@ -3642,11 +3642,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;无法进入无缝模式，因为虚拟电脑上没有足够的显存.&lt;/p&gt;&lt;p&gt;你应该重新设置虚拟电脑让它至少拥有 &lt;b&gt;%1&lt;/b&gt; 的显存.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;无法切换到全屏模式，因为虚拟电脑上没有足够的显存.&lt;/p&gt;&lt;p&gt;你应该重新设置虚拟电脑让它至少拥有 &lt;b&gt;%1&lt;/b&gt; 的显存.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;忽略&lt;/b&gt; 强制切换到全屏模式或按 &lt;b&gt;取消&lt;/b&gt; 撤消该操作.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4804,37 +4804,37 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>版本 %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>未检测到</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>未检测到</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>增强功能</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑操作系统类型</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>硬盘统计信息</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>没有硬盘</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>没有网络连接</translation>
     </message>
 </context>
 <context>
