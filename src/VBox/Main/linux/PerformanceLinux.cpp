@@ -129,7 +129,7 @@ int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used
     int rc = getRawProcessStats(process, &u64Tmp, &u64Tmp, &nPagesUsed);
     if (RT_SUCCESS(rc))
     {
-        Assert(getpagesize() >= 1024);
+        Assert(PAGE_SIZE >= 1024);
         *used = nPagesUsed * (PAGE_SIZE / 1024);
     }
     return rc;
