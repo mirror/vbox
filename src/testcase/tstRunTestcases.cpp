@@ -256,6 +256,20 @@ int main(int argc, char **argv)
 
     if (argc == 1)
     {
+        char szPath[RTPATH_MAX];
+        int rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/.."));
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("fatal error: RTPathProgram -> %Rrc\n", rc);
+            return 1;
+        }
+        rc = RTPathSetCurrent(strcat(szPath, "/.."));
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("fatal error: RTPathSetCurrent -> %Rrc\n", rc);
+            return 1;
+        }
+
         Process("testcase/tst*", "testcase");
         Process("tst*", ".");
     }
