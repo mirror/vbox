@@ -28,11 +28,17 @@
 
 class QIDialog: public QDialog
 {
+    Q_OBJECT;
+
 public:
+
     QIDialog (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
 
 protected:
+
     void showEvent (QShowEvent *aEvent);
+
+    bool mPolished;
 };
 
 #endif /* __QIDialog_h__ */

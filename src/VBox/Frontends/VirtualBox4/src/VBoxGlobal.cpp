@@ -685,9 +685,11 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL), mConsoleWnd (NULL)
+    , mMainWindow (NULL)
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
 #endif
+    , mUpdDlg (NULL)
     , media_enum_thread (NULL)
     , verString ("1.0")
     , vm_state_color (KMachineState_COUNT)
