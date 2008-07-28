@@ -22,12 +22,14 @@
 
 
 #include "QIDialog.h"
+#include "VBoxGlobal.h"
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
 QIDialog::QIDialog (QWidget *aParent, Qt::WindowFlags aFlags)
-    : QDialog (aParent, aFlags) 
+    : QDialog (aParent, aFlags)
+    , mPolished (false)
 {
 }
 
@@ -47,5 +49,14 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
         ChangeWindowAttributes (::darwinToWindowRef (this), kWindowNoAttributes, kWindowResizableAttribute);
 #endif /* Q_WS_MAC */
     }
+
+    /* Polishing border */
+    if (mPolished)
+        return;
+    mPolished = true;
+
+    /* Explicit widget centering relatively to it's parent
+     * if any or desktop if parent is missed. */
+    vboxGlobal().centerWidget (this, parentWidget(), false);
 }
 

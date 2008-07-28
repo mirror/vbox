@@ -367,7 +367,7 @@ void VBoxUpdateDlg::searchAbort (const QString &aReason)
     {
         /* For background update */
         if (mForceRun)
-            vboxProblem().showUpdateFailure (this, aReason);
+            vboxProblem().showUpdateFailure (vboxGlobal().mainWindow(), aReason);
         QTimer::singleShot (0, this, SLOT (accept()));
     }
     else
@@ -405,7 +405,7 @@ void VBoxUpdateDlg::searchComplete (const QString &aFullList)
                 if (isHidden())
                 {
                     /* For background update */
-                    vboxProblem().showUpdateSuccess (this,
+                    vboxProblem().showUpdateSuccess (vboxGlobal().mainWindow(),
                         lv.toString(), platformInfo [1]);
                     QTimer::singleShot (0, this, SLOT (accept()));
                 }
@@ -427,7 +427,7 @@ void VBoxUpdateDlg::searchComplete (const QString &aFullList)
     {
         /* For background update */
         if (mForceRun)
-            vboxProblem().showUpdateNotFound (this);
+            vboxProblem().showUpdateNotFound (vboxGlobal().mainWindow());
         QTimer::singleShot (0, this, SLOT (accept()));
     }
     else
