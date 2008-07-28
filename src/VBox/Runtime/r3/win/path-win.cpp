@@ -39,6 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/log.h>
 #include <iprt/err.h>
@@ -494,5 +495,66 @@ RTDECL(bool) RTPathExists(const char *pszPath)
 #endif
 
     return RT_SUCCESS(rc);
+}
+
+
+RTDECL(int) RTPathSetCurrent(const char *pszPath)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+
+    /*
+     * This interface is almost identical to the Windows API.
+     */
+#ifndef RT_DONT_CONVERT_FILENAMES
+    PRTUTF16 pwszPath;
+    int rc = RTStrToUtf16(pszPath, &pwszPath);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo improove the slash stripping a bit? */
+        size_t cwc = RTUtf16Len(pwszPath);
+        if (    cwc >= 2
+            &&  (   pwszPath[cwc - 1] == L'/'
+                 || pwszPath[cwc - 1] == L'\\')
+            &&  pwszPath[cwc - 2] != ':')
+            pwszPath[cwc - 1] = L'\0';
+
+        if (!SetCurrentDirectoryW(pwszPath))
+            rc = RTErrConvertFromWin32(GetLastError());
+
+        RTUtf16Free(pwszPath);
+    }
+#else
+    int rc = VINF_SUCCESS;
+    /** @todo improove the slash stripping a bit? */
+    char const *pszEnd = strchr(pszPath, '\0');
+    size_t const cchPath = pszPath - pszEnd;
+    if (    cchPath >= 2
+        &&  (   pszEnd[-1] == '/'
+             || pszEnd[-1] == '\\')
+        &&  pszEnd[-2] == ':')
+    {
+        char *pszCopy = (char *)RTMemTmpAlloc(cchPath);
+        if (pszCopy)
+        {
+            memcpy(pszCopy, pszPath, cchPath - 1);
+            pszCopy[cchPath - 1] = '\0';
+            if (!SetCurrentDirectory(pszCopy))
+                rc = RTErrConvertFromWin32(GetLastError());
+            RTMemTmpFree(pszCopy);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        if (!SetCurrentDirectory(pszPath))
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+#endif
+    return rc;
 }
 
