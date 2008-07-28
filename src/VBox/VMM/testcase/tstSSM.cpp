@@ -25,13 +25,17 @@
 *******************************************************************************/
 #include <VBox/ssm.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
+#include <VBox/mm.h>
+#include <VBox/stam.h>
 
 #include <VBox/log.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <iprt/runtime.h>
 #include <iprt/assert.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -553,6 +557,56 @@ DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Ve
 }
 
 
+/**
+ * Creates a mockup VM structure for testing SSM.
+ *
+ * @returns 0 on success, 1 on failure.
+ * @param   ppVM    Where to store the VM handle.
+ */
+static int createFakeVM(PVM *ppVM)
+{
+    /*
+     * Allocate and init the UVM structure.
+     */
+    PUVM pUVM = (PUVM)RTMemAllocZ(sizeof(*pUVM));
+    AssertReturn(pUVM, 1);
+    pUVM->u32Magic = UVM_MAGIC;
+
+    int rc = STAMR3InitUVM(pUVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = MMR3InitUVM(pUVM);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Allocate and init the VM structure.
+             */
+            PVM pVM;
+            rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
+            if (RT_SUCCESS(rc))
+            {
+                pVM->enmVMState = VMSTATE_CREATED;
+                pVM->pVMR3 = pVM;
+                pVM->pUVM = pUVM;
+
+                pUVM->pVM = pVM;
+                *ppVM = pVM;
+                return 0;
+            }
+
+            RTPrintf("Fatal error: failed to allocated pages for the VM structure, rc=%Rrc\n", rc);
+        }
+        else
+            RTPrintf("Fatal error: MMR3InitUVM failed, rc=%Rrc\n", rc);
+    }
+    else
+        RTPrintf("Fatal error: SSMR3InitUVM failed, rc=%Rrc\n", rc);
+
+    *ppVM = NULL;
+    return 1;
+}
+
+
 int main(int argc, char **argv)
 {
     /*
@@ -564,33 +618,17 @@ int main(int argc, char **argv)
     const char *pszFilename = "SSMTestSave#1";
 
     /*
-     * Create empty VM structure and init SSM.
+     * Create an fake VM structure and init SSM.
      */
-    PVM         pVM;
     int rc = SUPInit(NULL);
-    if (VBOX_SUCCESS(rc))
-        rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Vrc\n", rc);
         return 1;
     }
-
-///@todo    rc = STAMR3Init(pVM);
-    if (VBOX_FAILURE(rc))
-    {
-        RTPrintf("Fatal error: STAMR3Init failed! rc=%Vrc\n", rc);
+    PVM pVM;
+    if (createFakeVM(&pVM))
         return 1;
-    }
-
-/*
-    rc = SSMR3Init(pVM);
-    if (VBOX_FAILURE(rc))
-    {
-        RTPrintf("Fatal error: SSMR3Init failed! rc=%Vrc\n", rc);
-        return 1;
-    }
-*/
 
     /*
      * Register a few callbacks.
