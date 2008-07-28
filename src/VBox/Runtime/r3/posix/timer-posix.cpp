@@ -36,6 +36,7 @@
 #define IPRT_WITH_POSIX_TIMERS
 #endif /* !RT_OS_SOLARIS */
 
+#define LOG_GROUP          RTLOGGROUP_TIMER
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -64,6 +65,24 @@
 # include <pthread.h>
 #endif
 
+#ifdef IPRT_WITH_POSIX_TIMERS
+#define RT_TIMER_SIGNAL SIGALRM
+
+/** 
+ * Global counter of RTTimer instances. The signal thread is 
+ * started when it changes from 0 to 1. The signal thread 
+ * terminates when it becomes 0 again. 
+ */ 
+uint32_t   g_cTimerInstances;
+/** The signal handling thread. */
+RTTHREAD   g_Thread;
+/** 
+ * Event semaphore on which the calling thread is blocked until 
+ * the signal thread has been initialized. 
+ */
+RTSEMEVENT g_Event;
+
+#endif /* IPRT_WITH_POSIX_TIMERS */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -92,7 +111,7 @@ typedef struct RTTIMER
     RTTHREAD                Thread;
     /** Event semaphore on which the thread is blocked. */
     RTSEMEVENT              Event;
-#endif
+#endif /* !IPRT_WITH_POSIX_TIMERS */
     /** User argument. */
     void                   *pvUser;
     /** Callback. */
@@ -110,13 +129,11 @@ typedef struct RTTIMER
      * Initially -1, set to 0 when the timer have been successfully started, and
      * to errno on failure in starting the timer. */
     int volatile            iError;
-#else /* !IPRT_WITH_POSIX_TIMERS */
+#else /* IPRT_WITH_POSIX_TIMERS */
     timer_t                 timer;
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+#endif /* IPRT_WITH_POSIX_TIMERS */
 
 } RTTIMER;
-
-#ifndef IPRT_WITH_POSIX_TIMERS
 
 /**
  * Signal handler which ignore everything it gets.
@@ -134,9 +151,11 @@ static void rttimerSignalIgnore(int iSignal)
  */
 static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 {
+#ifndef IPRT_WITH_POSIX_TIMERS
     PRTTIMER pTimer = (PRTTIMER)(void *)pvArg;
     RTTIMER Timer = *pTimer;
     Assert(pTimer->u32Magic == RTTIMER_MAGIC);
+#endif /* !IPRT_WITH_POSIX_TIMERS */
 
     /*
      * Install signal handler.
@@ -169,7 +188,11 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 #endif
     if (sigprocmask(SIG_SETMASK, &SigSet, NULL))
     {
+#ifndef IPRT_WITH_POSIX_TIMERS
         int rc = pTimer->iError = RTErrConvertFromErrno(errno);
+#else /* IPRT_WITH_POSIX_TIMERS */
+        int rc = RTErrConvertFromErrno(errno);
+#endif /* IPRT_WITH_POSIX_TIMERS */
         AssertMsgFailed(("sigprocmask -> errno=%d\n", errno));
         return rc;
     }
@@ -178,6 +201,8 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
      * The work loop.
      */
     RTThreadUserSignal(Thread);
+
+#ifndef IPRT_WITH_POSIX_TIMERS
     while (     !pTimer->fDestroyed
            &&   pTimer->u32Magic == RTTIMER_MAGIC)
     {
@@ -304,19 +329,56 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 
     return VINF_SUCCESS;
 }
-#else /* !IPRT_WITH_POSIX_TIMERS */
-void rttimerCallback(union sigval SigVal)
-{
-    PRTTIMER pTimer = (PRTTIMER)SigVal.sival_ptr;
-    /* Is the timer being destoyed/suspended at this very moment? */
-    if (RT_LIKELY(pTimer->u32Magic == RTTIMER_MAGIC
-                  && !pTimer->fSuspended
-                  && !pTimer->fDestroyed))
+#else /* IPRT_WITH_POSIX_TIMERS */
+    sigemptyset(&SigSet);
+    sigaddset(&SigSet, RT_TIMER_SIGNAL);
+    while (g_cTimerInstances)
     {
-        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
+        siginfo_t SigInfo = {0};
+        if (RT_LIKELY(sigwaitinfo(&SigSet, &SigInfo) >= 0))
+        {
+            LogFlow(("rttimerThread: signo=%d pTimer=%p\n", SigInfo.si_signo, SigInfo._sifields._timer.si_sigval.sival_ptr));
+            if (RT_LIKELY(SigInfo.si_signo == RT_TIMER_SIGNAL))
+            {
+                PRTTIMER pTimer = (PRTTIMER)SigInfo._sifields._timer.si_sigval.sival_ptr;
+                if (RT_UNLIKELY(    pTimer == NULL
+                                ||  pTimer->fSuspended
+                                ||  pTimer->fDestroyed
+                                ||  pTimer->u32Magic != RTTIMER_MAGIC))
+                    continue;
+                pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pTimer->iTick);
+                /* auto suspend one-shot timers. */
+                if (RT_UNLIKELY(!pTimer->u64NanoInterval))
+                {
+                    ASMAtomicXchgU8(&pTimer->fSuspended, true); /* @todo Can't we do a simple assigment here? */
+                    //break;
+                }
+            }
+        }
     }
+
+    return VINF_SUCCESS;
 }
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+
+/**
+ * Create the SIGALRM handling thread and wait for it to get 
+ * ready. 
+ */
+static int rttimerCreateSignalThread()
+{
+    int rc = RTThreadCreate(&g_Thread, rttimerThread, NULL, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "Timer");
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        /* Let's wait for the thread to get ready to handle signals. */
+        rc = RTThreadUserWait(g_Thread, 5000); /* @todo 5 sec is enough? or is it too much? */
+    }
+    LogFlow(("rttimerCreateSignalThread: rc=%Vrc\n", rc));
+
+    return rc;
+
+}
+#endif /* IPRT_WITH_POSIX_TIMERS */
 
 
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
@@ -327,7 +389,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         return VERR_NOT_SUPPORTED;
 
-#ifndef IPRT_WITH_POSIX_TIMERS /** @todo the signal blocking applies to the new code too, see comment in the struct. */
+#ifndef IPRT_WITH_POSIX_TIMERS
     /*
      * Check if timer is busy.
      */
@@ -344,6 +406,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         AssertMsgFailed(("A timer is running. System limit is one timer per process!\n"));
         return VERR_TIMER_BUSY;
     }
+#endif /* !IPRT_WITH_POSIX_TIMERS */
 
     /*
      * Block SIGALRM from calling thread.
@@ -353,6 +416,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     sigaddset(&SigSet, SIGALRM);
     sigprocmask(SIG_BLOCK, &SigSet, NULL);
 
+#ifndef IPRT_WITH_POSIX_TIMERS
     /** @todo Move this RTC hack else where... */
     static bool fDoneRTC;
     if (!fDoneRTC)
@@ -451,11 +515,13 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     }
     else
         rc = VERR_NO_MEMORY;
-#else /* !IPRT_WITH_POSIX_TIMERS */
+#else /* IPRT_WITH_POSIX_TIMERS */
     /*
      * Create a new timer.
      */
-    int rc;
+    LogFlow(("RTTimerCreateEx: u64NanoInterval=%llu fFlags=%lu\n", u64NanoInterval, fFlags));
+
+    int rc = VINF_SUCCESS;
     PRTTIMER pTimer = (PRTTIMER)RTMemAlloc(sizeof(*pTimer));
     if (pTimer)
     {
@@ -470,24 +536,37 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->u64NanoInterval = u64NanoInterval;
         pTimer->iTick           = 0;
 
-        /* Ask to call rttimerCallback in a separate thread context upon timer expiration. */
-        memset(&evt, 0, sizeof(evt));
-        evt.sigev_notify = SIGEV_THREAD;
-        evt.sigev_value.sival_ptr = pTimer;
-        evt.sigev_notify_function = rttimerCallback;
+        /* Create the signal handling thread if it is the first instance. */
+        if (ASMAtomicIncU32(&g_cTimerInstances) == 1)
+            rc = rttimerCreateSignalThread();
 
-        rc = RTErrConvertFromErrno(timer_create(CLOCK_REALTIME, &evt, &pTimer->timer));
         if (RT_SUCCESS(rc))
         {
-            *ppTimer = pTimer;
-            return VINF_SUCCESS;
+            /* Ask to deliver RT_TIMER_SIGNAL upon timer expiration. */
+            evt.sigev_notify = SIGEV_SIGNAL;
+            evt.sigev_signo  = RT_TIMER_SIGNAL;
+            evt.sigev_value.sival_ptr = pTimer; /* sigev_value gets copied to siginfo. */
+
+            rc = RTErrConvertFromErrno(timer_create(CLOCK_REALTIME, &evt, &pTimer->timer));
+            LogFlow(("RTTimerCreateEx: rc=%Vrc pTimer=%p\n", rc, pTimer));
+            if (RT_SUCCESS(rc))
+            {
+                *ppTimer = pTimer;
+                return VINF_SUCCESS;
+            }
         }
+        /** 
+         * Roll back the timer instance counter. This will cause 
+         * termination of the signal handling thread if it is the only 
+         * timer. 
+         */ 
+        ASMAtomicDecU32(&g_cTimerInstances);
         RTMemFree(pTimer);
     }
     else
         rc = VERR_NO_MEMORY;
 
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+#endif /* IPRT_WITH_POSIX_TIMERS */
     return rc;
 }
 
@@ -526,14 +605,24 @@ RTR3DECL(int)     RTTimerDestroy(PRTTIMER pTimer)
 
     RTSemEventDestroy(pTimer->Event);
     pTimer->Event = NIL_RTSEMEVENT;
-#else /* !IPRT_WITH_POSIX_TIMERS */
+#else /* IPRT_WITH_POSIX_TIMERS */
     if (ASMAtomicXchgU8(&pTimer->fDestroyed, true))
     {
         /* It is already being destroyed by another thread. */
         return VINF_SUCCESS;
     }
     rc = RTErrConvertFromErrno(timer_delete(pTimer->timer));
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+    /** 
+     * Decrement the timer instance counter. This will cause 
+     * termination of the signal handling thread if it is the last 
+     * remaining timer. 
+     */ 
+    if (ASMAtomicDecU32(&g_cTimerInstances) == 0)
+    {
+        /* Wake up the timer thread so it can exit. */
+        kill(getpid(), RT_TIMER_SIGNAL);
+    }
+#endif /* IPRT_WITH_POSIX_TIMERS */
     if (RT_SUCCESS(rc))
         RTMemFree(pTimer);
     return rc;
@@ -574,18 +663,20 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         AssertRC(rc);
     if (RT_FAILURE(rc))
         ASMAtomicXchgU8(&pTimer->fSuspended, false);
-#else /* !IPRT_WITH_POSIX_TIMERS */
+#else /* IPRT_WITH_POSIX_TIMERS */
+    LogFlow(("RTTimerStart: pTimer=%p u64First=%llu u64NanoInterval=%llu\n", pTimer, u64First, pTimer->u64NanoInterval));
+
     struct itimerspec ts;
 
     if (!ASMAtomicXchgU8(&pTimer->fSuspended, false))
         return VERR_TIMER_ACTIVE;
 
     ts.it_value.tv_sec     = u64First / 1000000000; /* nanosec => sec */
-    ts.it_value.tv_nsec    = u64First ? u64First % 1000000000 : 1; /* 0 means disable, replace it with 1. */
+    ts.it_value.tv_nsec    = u64First ? u64First % 1000000000 : 10; /* 0 means disable, replace it with 10. */
     ts.it_interval.tv_sec  = pTimer->u64NanoInterval / 1000000000;
     ts.it_interval.tv_nsec = pTimer->u64NanoInterval % 1000000000;
     int rc = RTErrConvertFromErrno(timer_settime(pTimer->timer, 0, &ts, NULL));
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+#endif /* IPRT_WITH_POSIX_TIMERS */
 
     return rc;
 }
@@ -621,7 +712,9 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
         AssertRC(rc);
         RTThreadUserReset(pTimer->Thread);
     }
-#else /* !IPRT_WITH_POSIX_TIMERS */
+#else /* IPRT_WITH_POSIX_TIMERS */
+    LogFlow(("RTTimerStop: pTimer=%p\n", pTimer));
+
     struct itimerspec ts;
 
     if (ASMAtomicXchgU8(&pTimer->fSuspended, true))
@@ -630,7 +723,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     ts.it_value.tv_sec     = 0;
     ts.it_value.tv_nsec    = 0;
     int rc = RTErrConvertFromErrno(timer_settime(pTimer->timer, 0, &ts, NULL));
-#endif /* !IPRT_WITH_POSIX_TIMERS */
+#endif /* IPRT_WITH_POSIX_TIMERS */
 
     return rc;
 }
