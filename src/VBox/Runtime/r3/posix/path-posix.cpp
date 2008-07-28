@@ -981,3 +981,26 @@ RTDECL(bool) RTPathExists(const char *pszPath)
     return RT_SUCCESS(rc);
 }
 
+
+RTDECL(int) RTPathSetCurrent(const char *pszPath)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+
+    /*
+     * Change the directory.
+     */
+    char *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (chdir(pszNativePath))
+            rc = RTErrConvertFromErrno(errno);
+        RTStrFree(pszNativePath);
+    }
+    return rc;
+}
+

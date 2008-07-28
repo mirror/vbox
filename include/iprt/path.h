@@ -128,6 +128,23 @@ __BEGIN_DECLS
 RTDECL(bool) RTPathExists(const char *pszPath);
 
 /**
+ * Sets the current working directory of the process.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath         The path to the new working directory.
+ */
+RTDECL(int)  RTPathSetCurrent(const char *pszPath);
+
+/**
+ * Gets the current working directory of the process.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath         Where to store the path.
+ * @param   cchPath         The size of the buffer pszPath points to.
+ */
+RTDECL(int)  RTPathGetCurrent(char *pszPath, size_t cchPath);
+
+/**
  * Get the real path (no symlinks, no . or .. components), must exist.
  *
  * @returns iprt status code.
