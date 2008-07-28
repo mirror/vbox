@@ -50,6 +50,10 @@ DECLCALLBACK(int) CFGMConstructor(PVM pVM, void *pvUser)
      */
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
     int rc = CFGMR3InsertInteger(pRoot, "RamSize", 32*1024*1024);
+    AssertRC(rc);
+
+    /* rc = CFGMR3InsertInteger(pRoot, "EnableNestedPaging", false);
+    AssertRC(rc); */
 
     PCFGMNODE pHWVirtExt;
     rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);
@@ -65,6 +69,16 @@ int main(int argc, char **argv)
     int     rcRet = 0;                  /* error count. */
 
     RTR3Init();
+
+    /*
+     * Doesn't work and I'm sick of rebooting the machine to try figure out
+     * what the heck is going wrong. (Linux sucks at this)
+     */
+    RTPrintf(TESTCASE ": This testcase hits a bunch of breakpoint assertions which\n"
+             TESTCASE ": causes kernel panics on linux regardless of what\n"
+             TESTCASE ": RTAssertDoBreakpoint returns. Only checked AMD-V on linux.\n");
+    /** @todo Make tstVMM-HwAccm to cause kernel panics. */
+    return 1;
 
     /*
      * Create empty VM.
