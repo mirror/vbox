@@ -72,6 +72,7 @@ static const char  *g_apszExclude[] =
     "./tstAnimate",
     "./tstAPI",
     "./tstHeadless",
+    "./tstHeadless-2",
     "./tstMicro",
     "./tstMicroGC",
     "./tstVBoxDbg",
