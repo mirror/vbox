@@ -21,10 +21,10 @@
  * additional information or have any questions.
  */
 
-#include <unistd.h>
 #include <stdio.h>
 #include <iprt/alloc.h>
 #include <iprt/err.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
 #include "Performance.h"
 
@@ -130,7 +130,7 @@ int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used
     if (RT_SUCCESS(rc))
     {
         Assert(getpagesize() >= 1024);
-        *used = nPagesUsed * (getpagesize() / 1024);
+        *used = nPagesUsed * (PAGE_SIZE / 1024);
     }
     return rc;
 }
