@@ -621,14 +621,6 @@ Version %1</translation>
         <translation>Montera installationsavbildningen för Guest Additions</translation>
     </message>
     <message>
-        <source>&amp;Statistics...</source>
-        <translation type="obsolete">&amp;Statistik...</translation>
-    </message>
-    <message>
-        <source>&amp;Command line...</source>
-        <translation type="obsolete">&amp;Kommandorad...</translation>
-    </message>
-    <message>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>&amp;VirtualBox webbplats...</translation>
     </message>
@@ -910,17 +902,17 @@ Version %1</translation>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Statistik...</translation>
+        <translation>&amp;Statistik...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kommandorad...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Loggning...</translation>
     </message>
 </context>
 <context>
@@ -3107,10 +3099,6 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
         <translation>Misslyckades med att ändra mappsökväg för ögonblicksfiler för den virtuella maskinen &lt;b&gt;%1&lt;b&gt; till &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Kunde inte använda sömlöst läge på grund av otillräckligt grafikminne i gästoperativsystemet.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att minst använda &lt;b&gt;%1&lt;/b&gt; grafikminne.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Misslyckades med att ta bort den delade mappen &lt;b&gt;%1&lt;/b&gt; (som pekar till &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) från den virtuella maskinen &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Stäng alla program i gästoperativsystemet som kan använda den här delade mappen och försök igen.&lt;/p&gt;</translation>
     </message>
@@ -3342,11 +3330,11 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kunde inte gå in i sömlöst läge på grund av otillräckligt videominne.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att ha minst &lt;b&gt;%1&lt;/b&gt; videominne.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kunde inte växla gästskärmen till helskärmsläge på grund av otillräckligt videominne.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att ha minst &lt;b&gt;%1&lt;/b&gt; videominne.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att växla till helskärmsläge ändå eller tryck &lt;b&gt;Avbryt&lt;/b&gt; för att avbryta åtgärden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4358,28 +4346,12 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Data mottagen</translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <translation type="obsolete">Aktiverat</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation type="obsolete">Inaktiverat</translation>
-    </message>
-    <message>
         <source>Runtime Attributes</source>
         <translation>Körtidsattribut</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
         <translation>Skärmupplösning</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">Hårdvaruvirtualisering</translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
-        <translation type="obsolete">Statistik för IDE-hårddisk</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
@@ -4390,79 +4362,39 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Statistik för nätverksadapter</translation>
     </message>
     <message>
-        <source>Adapter 1</source>
-        <translation type="obsolete">Adapter 1</translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="obsolete">Adapter 2</translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="obsolete">Adapter 3</translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="obsolete">Adapter 4</translation>
-    </message>
-    <message>
-        <source>Not attached</source>
-        <translation type="obsolete">Inte ansluten</translation>
-    </message>
-    <message>
-        <source>Hard Disks Statistics</source>
-        <translation type="obsolete">Statistik för hårddiskar</translation>
-    </message>
-    <message>
-        <source>Primary Master</source>
-        <translation type="obsolete">Primär master</translation>
-    </message>
-    <message>
-        <source>Primary Slave</source>
-        <translation type="obsolete">Primär slave</translation>
-    </message>
-    <message>
-        <source>Secondary Master</source>
-        <translation type="obsolete">Sekundär master</translation>
-    </message>
-    <message>
-        <source>Secondary Slave</source>
-        <translation type="obsolete">Sekundär slave</translation>
-    </message>
-    <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Version %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inte identifierad</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inte identifierad</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Gästtillägg</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ av gästoperativsystem</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Hårddiskstatistik</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Inga hårddiskar</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Inga nätverksadaptrar</translation>
     </message>
 </context>
 <context>

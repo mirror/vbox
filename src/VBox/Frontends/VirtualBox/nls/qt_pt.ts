@@ -19,11 +19,11 @@
     </message>
     <message>
         <source>Backspace</source>
-        <translation>Retrocesso</translation>
+        <translation>Backspace</translation>
     </message>
     <message>
         <source>Return</source>
-        <translation>Return</translation>
+        <translation>Retroceder</translation>
     </message>
     <message>
         <source>Enter</source>
@@ -35,7 +35,7 @@
     </message>
     <message>
         <source>Del</source>
-        <translation>Del</translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <source>Pause</source>
@@ -63,7 +63,7 @@
     </message>
     <message>
         <source>Up</source>
-        <translation>Para cima</translation>
+        <translation>Cima</translation>
     </message>
     <message>
         <source>Right</source>
@@ -71,7 +71,7 @@
     </message>
     <message>
         <source>Down</source>
-        <translation>Para baixo</translation>
+        <translation>Baixo</translation>
     </message>
     <message>
         <source>PgUp</source>
@@ -83,7 +83,7 @@
     </message>
     <message>
         <source>CapsLock</source>
-        <translation>CapsLock</translation>
+        <translation>Maiúsculas</translation>
     </message>
     <message>
         <source>NumLock</source>
@@ -175,7 +175,7 @@
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>Parar Reprodução</translation>
+        <translation>Parar Reprodução Multimédia</translation>
     </message>
     <message>
         <source>Media Previous</source>
@@ -187,7 +187,7 @@
     </message>
     <message>
         <source>Media Record</source>
-        <translation>Gravação Multimédia</translation>
+        <translation>Gravar Multimédia</translation>
     </message>
     <message>
         <source>Favorites</source>
@@ -589,7 +589,7 @@
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>D&amp;esordenado</translation>
+        <translation>D&amp;esordenar</translation>
     </message>
     <message>
         <source>Sort</source>
@@ -597,7 +597,7 @@
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Mostrar fic&amp;heiros escondidos</translation>
+        <translation>Mostrar fic&amp;heiros ocultos</translation>
     </message>
     <message>
         <source>the file</source>
@@ -946,7 +946,7 @@ Verifique a localização e o nome do ficheiro.</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Conexão em %1 fechada</translation>
+        <translation>Conexão a %1 fechada</translation>
     </message>
     <message>
         <source>Connection closed</source>
