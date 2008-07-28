@@ -118,7 +118,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
     UInt32 eventClass = ::GetEventClass (inEvent);
     UInt32 eventKind = ::GetEventKind (inEvent);
     /* For debugging events */
-    /* 
+    /*
     if (!(eventClass == 'cute'))
         ::darwinDebugPrintEvent ("view: ", inEvent);
     */
@@ -162,7 +162,7 @@ bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
     UInt32 eventKind = ::GetEventKind (inEvent);
 
     /* For debugging events */
-    /* 
+    /*
     if (!(eventClass == 'cute'))
         ::darwinDebugPrintEvent ("view: ", inEvent);
     */
@@ -1156,8 +1156,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
-#if !defined (Q_WS_WIN) && !defined (Q_WS_PM)
-            /* see VBox[QImage|SDL]FrameBuffer::NotifyUpdate(). */
+            /* See VBox[QImage|SDL]FrameBuffer::NotifyUpdate(). */
             case VBoxDefs::RepaintEventType:
             {
                 VBoxRepaintEvent *re = (VBoxRepaintEvent *) e;
@@ -1167,7 +1166,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* mConsole.GetDisplay().UpdateCompleted(); - the event was acked already */
                 return true;
             }
-#endif
 
             case VBoxDefs::SetRegionEventType:
             {
@@ -2683,7 +2681,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
         state |= KMouseButtonState_MiddleButton;
 
 #ifdef Q_WS_MAC
-    /* Simulate the right click on 
+    /* Simulate the right click on
      * Host+Left Mouse */
     if (mIsHostkeyPressed &&
         mIsHostkeyAlone &&
