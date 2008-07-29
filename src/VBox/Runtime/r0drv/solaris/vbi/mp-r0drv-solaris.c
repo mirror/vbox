@@ -228,7 +228,7 @@ static int rtmpOnSpecificSolarisWrapper(void *uArg, void *uIgnored1, void *uIgno
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
 
-    Assert(idCpu != pArgs->idCpu);
+    Assert(idCpu == pArgs->idCpu);
     pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
     ASMAtomicIncU32(&pArgs->cHits);
 
