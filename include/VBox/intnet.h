@@ -622,8 +622,8 @@ typedef enum INTNETTRUNKTYPE
 #define INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST             RT_BIT_32(6)
 /** Ignore any requests for promiscuous mode on the trunk host connection, quietly applied/ignored on open. */
 #define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST     RT_BIT_32(7)
-/** The mask of flags which causes security incompatibilities. */
-#define INTNET_OPEN_FLAGS_SECURITY_XOR_MASK                     (RT_BIT_32(1) | RT_BIT_32(2) | RT_BIT_32(4) | RT_BIT_32(6))
+/** The mask of flags which causes flag incompatibilities. */
+#define INTNET_OPEN_FLAGS_COMPATIBILITY_XOR_MASK                (RT_BIT_32(0) | RT_BIT_32(1) | RT_BIT_32(2) | RT_BIT_32(4) | RT_BIT_32(6))
 /** The mask of flags is always ORed in, even on open. (the quiet stuff) */
 #define INTNET_OPEN_FLAGS_SECURITY_OR_MASK                      (RT_BIT_32(3) | RT_BIT_32(5) | RT_BIT_32(7))
 /** The mask of valid flags. */

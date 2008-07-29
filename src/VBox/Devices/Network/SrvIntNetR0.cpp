@@ -3121,7 +3121,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
                 ||  (   pCur->enmTrunkType == enmTrunkType
                      && !strcmp(pCur->szTrunk, pszTrunk)))
             {
-                if (!((pCur->fFlags ^ fFlags) & INTNET_OPEN_FLAGS_SECURITY_XOR_MASK))
+                if (!((pCur->fFlags ^ fFlags) & INTNET_OPEN_FLAGS_COMPATIBILITY_XOR_MASK))
                 {
 
                     /*
