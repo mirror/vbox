@@ -74,6 +74,7 @@ PROGRAMS += \
 	tstMove \
 	tstMp-1 \
 	tstNoCrt-1 \
+	tstOnce \
 	tstPath \
 	tstPrfRT \
 	tstRTFsQueries \
@@ -264,6 +265,8 @@ tstNoCrt-1_SOURCES = \
 	../common/string/strchr.asm \
 	../common/string/strcmp.asm \
 	../common/string/strlen.asm
+
+tstOnce_SOURCES = tstOnce.cpp
 
 tstPath_SOURCES = tstPath.cpp
 
