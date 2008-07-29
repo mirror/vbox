@@ -24,10 +24,12 @@
 #include <iprt/mem.h>
 
 /**
- * Wrapper class around RTAutoRes to provide reference semantics.  Certain
- * operations like constructing from AutoRes objects passed by value are only
- * possible if the object "transitions through" a wrapper struct.
- * See auto_ptr in the C++ <memory> header.
+ * Wrapper class around RTAutoRes to provide reference semantics.  This is
+ * needed to construct AutoRes objects from constant references to other
+ * AutoRes objects (such as temporary objects returned from functions) which
+ * can not be modified due to their const modifier, but are not actually
+ * constant objects.  See a discussion of auto_ptr and auto_ptr_ref for more
+ * details.
  */
 template <class T, void Destruct(T)>
 struct RTAutoResRef
@@ -37,15 +39,11 @@ struct RTAutoResRef
     explicit RTAutoResRef(T aValue) { mValue = aValue; }
 };
 
-/** Re-casting template to convert a void fn(void *) to a void fn(T) */
-template <class T, void fn(void *)>
-inline void RTAutoResRecastVoid(T aT) { fn(aT); }
-
 /** 
  * An auto pointer-type class for resources which take a C-style destructor
  * destructor (free() or equivalent).
  */
-template <class T, void Destruct(T) = RTAutoResRecastVoid<T, RTMemFree> >
+template <class T, void Destruct(T)>
 class RTAutoRes
 {
 private:
@@ -53,42 +51,21 @@ private:
     T mValue;
 public:
     /** Constructor */
-    RTAutoRes(T aValue = NULL) { mValue = aValue; }
+    RTAutoRes(T aValue = 0) { mValue = aValue; }
+
     /** Destructor */
-    ~RTAutoRes() { if (NULL != mValue) Destruct(mValue); }
-
-    /** release method to get the pointer's value and "reset" the pointer. */
-    T release(void) { T aTmp = mValue; mValue = NULL; return aTmp; }
-
-    /** reset the pointer value to zero or to another pointer. */
-    void reset(T aValue = NULL) { if (aValue != mValue) { Destruct(mValue); mValue = aValue; } }
-
-    /** 
-     * Reallocate the resource value.  Free the old value if allocation fails.
-     * @returns true if the new allocation succeeds, false otherwise
-     * @param   Reallocator  the function to be used for reallocating the
-     *                       resource.  It should have equivalent semantics to
-     *                       C realloc.
-     * @note We can overload this member for other reallocator signatures as
-     *       needed.
-     */
-    template <void *Reallocator(void *, size_t)>
-    bool realloc(size_t cchNewSize)
-    {
-        T aNewValue = reinterpret_cast<T>(Reallocator(mValue, cchNewSize));
-        if (aNewValue != NULL)
-            mValue = aNewValue;
-        else
-            Destruct(mValue);
-        return (aNewValue != NULL);
-    }
+    ~RTAutoRes() { if (mValue != 0) Destruct(mValue); }
 
     /** Copy constructor */
     RTAutoRes(RTAutoRes &orig) { mValue = orig.release(); }
 
     /** Copy from equivalent class */
     template <class T1>
-    RTAutoRes(RTAutoRes<T1, Destruct> &orig) { mValue = orig.release(); }
+    RTAutoRes(RTAutoRes<T1, Destruct> &orig)
+    { mValue = orig.release(); }
+
+    /** Convert a reference structure into an AutoRes pointer. */
+    RTAutoRes(RTAutoResRef<T, Destruct> ref) { mValue = ref.mValue; }
 
     /** Assignment operator. */
     RTAutoRes& operator=(RTAutoRes &orig)
@@ -108,33 +85,13 @@ public:
     /** Assignment from a value. */
     RTAutoRes& operator=(T aValue)
     {
-        if (NULL != mValue)
+        if (mValue != 0)
         {
             Destruct(mValue);
         }
         mValue = aValue;
         return *this;
     }
-
-#if 0
-    /**
-     * @todo I'm not sure how to express this now that our type is T and not
-     * T*.  Something like return type *T, which would only be valid for T a
-     * pointer type.  Or perhaps easiest to just leave it out.
-     */
-
-    /** Dereference with * operator. */
-    T &operator*() { return *mValue; }
-#endif
-
-    /** Dereference with -> operator.  Only makes sense for pointer values. */
-    T operator->() { return mValue; }
-
-    /** Accessing the value inside. */
-    T get(void) { return mValue; }
-
-    /** Convert a reference structure into an AutoRes pointer. */
-    RTAutoRes(RTAutoResRef<T, Destruct> ref) { mValue = ref.mValue; }
 
     /** Assign from a reference structure into an AutoRes pointer. */
     RTAutoRes& operator=(RTAutoResRef<T, Destruct> ref)
@@ -147,13 +104,76 @@ public:
         return *this;
     }
 
-    /** Typecast an AutoRes pointer to a reference structure. */
-    template <class T1>
-    operator RTAutoResRef<T1, Destruct>() { return RTAutoResRef<T1, Destruct>(release()); }
-
     /** Typecast an AutoRes pointer to an AutoRes pointer of a different type. */
     template <class T1>
-    operator RTAutoRes<T1, Destruct>() { return RTAutoRes<T1, Destruct>(release()); }
+    operator RTAutoRes<T1, Destruct>()
+    { return RTAutoRes<T1, Destruct>(release()); }
+
+    /** Typecast an AutoRes pointer to a reference structure. */
+    template <class T1>
+    operator RTAutoResRef<T1, Destruct>()
+    { return RTAutoResRef<T1, Destruct>(release()); }
+
+    /** release method to get the pointer's value and "reset" the pointer. */
+    T release(void) { T aTmp = mValue; mValue = 0; return aTmp; }
+
+    /** reset the pointer value to zero or to another pointer. */
+    void reset(T aValue = 0) { if (aValue != mValue) { Destruct(mValue); mValue = aValue; } }
+
+    /** Accessing the value inside. */
+    T get(void) { return mValue; }
+};
+
+/** Re-casting template to convert a void fn(void *) to a void fn(T *) */
+template <class T, void fn(void *)>
+inline void RTAutoResRecastVoid(T *aValue) { fn(aValue); }
+
+template <class T, void Destruct(T *) = RTAutoResRecastVoid <T, RTMemFree> >
+class RTAutoResPtr : public RTAutoRes <T *, Destruct>
+{
+public:
+    /** Constructor */
+    RTAutoResPtr(T *aValue = NULL) : RTAutoRes <T *, Destruct>(aValue) {}
+
+    /** Copy constructors */
+    RTAutoResPtr(RTAutoResPtr &orig) : RTAutoRes <T *, Destruct>(orig) {}
+    template <class T1>
+    RTAutoResPtr(RTAutoResPtr<T1, Destruct> &orig) : RTAutoRes<T1 *, Destruct>(orig) {}
+
+    /** Assignment operators */
+    RTAutoResPtr& operator=(RTAutoResPtr &orig)
+    { this->RTAutoRes <T *, Destruct>::operator=(orig); }
+    template <class T1>
+    RTAutoResPtr& operator=(RTAutoResPtr<T1, Destruct> &orig)
+    { this->RTAutoRes<T1 *, Destruct>::operator=(orig); return *this; }
+    RTAutoResPtr& operator=(T *aValue)
+    { this->RTAutoRes <T *, Destruct>::operator=(aValue); return *this; }
+    RTAutoResPtr& operator=(RTAutoResRef<T *, Destruct> ref)
+    { this->RTAutoRes <T *, Destruct>::operator=(ref); return *this; }
+
+    /** Dereference with * operator. */
+    T &operator*() { return *this->get(); }
+
+    /** Dereference with -> operator. */
+    T* operator->() { return this->get(); }
+
+    /**
+     * Reallocate the resource value.  Free the old value if allocation fails.
+     * @returns true if the new allocation succeeds, false otherwise
+     * @param   Reallocator  the function to be used for reallocating the
+     *                       resource.  It should have equivalent semantics to
+     *                       C realloc.
+     * @note We can overload this member for other reallocator signatures as
+     *       needed.
+     */
+    template <void *Reallocator(void *, size_t)>
+    bool realloc(size_t cchNewSize)
+    {
+        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->release(), cchNewSize));
+        if (aNewValue != NULL)  /* This line is technically not necessary */
+            this->reset(aNewValue);
+        return (aNewValue != NULL);
+    }
 };
 
 #endif /* ___iprt_autores___ not defined */
