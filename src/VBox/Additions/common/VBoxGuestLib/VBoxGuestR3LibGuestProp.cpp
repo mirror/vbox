@@ -27,22 +27,26 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#include <iprt/autores>
+#if 0 /** @todo this isn't work. As noted elsewhere, avoid complicated templates. */
+# include <iprt/autores>
+#endif
 #include <iprt/stdarg.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>
 
 #include "VBGLR3Internal.h"
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/** 
+/**
  * Structure containing information needed to enumerate through guest
  * properties.
  */
 struct VBGLR3GUESTPROPENUM
 {
+    /** @todo add a magic and validate the handle. */
     /** The buffer containing the raw enumeration data */
     char *pchBuf;
     /** The size of the buffer */
@@ -339,30 +343,41 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
      * host changing the value before we read it.  Try up to ten times and
      * report the problem if that fails.
      */
-    uint32_t cchBuf = MAX_VALUE_LEN;
-    RTMemAutoPtr<char> pcBuf;
-    int rc = VERR_BUFFER_OVERFLOW;
+    char       *pszValue = NULL;
+    void       *pvBuf    = NULL;
+    uint32_t    cchBuf   = MAX_VALUE_LEN;
+    int         rc       = VERR_BUFFER_OVERFLOW;
     for (unsigned i = 0; i < 10 && rc == VERR_BUFFER_OVERFLOW; ++i)
     {
         /* We leave a bit of space here in case the maximum value is raised. */
         cchBuf += 1024;
-        if (!pcBuf.realloc<RTMemRealloc>(cchBuf))
-            rc = VERR_NO_MEMORY;
-        if (RT_SUCCESS(rc))
-            rc = VbglR3GuestPropRead(u32ClientId, pszName, pcBuf.get(), cchBuf,
-                                     NULL, NULL, NULL, &cchBuf);
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cchBuf);
+        if (pvTmpBuf)
+        {
+            pvBuf = pvTmpBuf;
+            rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
+                                     &pszValue, NULL, NULL, &cchBuf);
+        }
         else
             rc = VERR_NO_MEMORY;
     }
     if (RT_SUCCESS(rc))
-        *ppszValue = pcBuf.release();
-    else if (rc == VERR_BUFFER_OVERFLOW)
-        /* VERR_BUFFER_OVERFLOW has a different meaning here as a
-         * return code, but we need to report the race. */
-        rc = VERR_TOO_MUCH_DATA;
+    {
+        Assert(pszValue == (char *)pvBuf);
+        *ppszValue = pszValue;
+    }
+    else
+    {
+        RTMemFree(pvBuf);
+        if (rc == VERR_BUFFER_OVERFLOW)
+            /* VERR_BUFFER_OVERFLOW has a different meaning here as a
+             * return code, but we need to report the race. */
+            rc = VERR_TOO_MUCH_DATA;
+    }
 
     return rc;
 }
+
 
 /**
  * Free the memory used by VbglR3GuestPropReadValueAlloc for returning a
@@ -420,7 +435,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
 
 /**
  * Raw API for enumerating guest properties which match a given pattern.
- * 
+ *
  * @returns VINF_SUCCESS on success and pcBuf points to a packed array
  *          of the form <name>, <value>, <timestamp string>, <flags>,
  *          terminated by four empty strings.  pcbBufActual will contain the
@@ -479,21 +494,22 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
 /**
  * Start enumerating guest properties which match a given pattern.
  * This function creates a handle which can be used to continue enumerating.
- * @returns VINF_SUCCESS on success, ppHandle points to a handle for continuing
- *          the enumeration and ppszName, ppszValue, pu64Timestamp and
- *          ppszFlags are set.
- * @returns VERR_NOT_FOUND if no matching properties were found.  In this case
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, *ppHandle points to a handle for continuing
+ *          the enumeration and *ppszName, *ppszValue, *pu64Timestamp and
+ *          *ppszFlags are set.
+ * @retval  VERR_NOT_FOUND if no matching properties were found.  In this case
  *          the return parameters are not initialised.
- * @returns VERR_TOO_MUCH_DATA if it was not possible to determine the amount
+ * @retval  VERR_TOO_MUCH_DATA if it was not possible to determine the amount
  *          of local space needed to store all the enumeration data.  This is
  *          due to a race between allocating space and the host adding new
  *          data, so retrying may help here.  Other parameters are left
  *          uninitialised
- * @returns IPRT status value otherwise.  Other parameters are left
- *          uninitialised.
- * @param   ppaszPatterns the patterns against which the properties are
+ *
+ * @param   papszPatterns The patterns against which the properties are
  *                        matched.  Pass NULL if everything should be matched.
- * @param   cPatterns     the number of patterns in @a ppaszPatterns.  0 means
+ * @param   cPatterns     The number of patterns in @a papszPatterns.  0 means
  *                        match everything.
  * @param   ppHandle      where the handle for continued enumeration is stored
  *                        on success.  This must be freed with
@@ -507,7 +523,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  *                        Should not be freed.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
-                                    char **ppaszPatterns,
+                                    char **papszPatterns,
                                     int cPatterns,
                                     PVBGLR3GUESTPROPENUM *ppHandle,
                                     char **ppszName,
@@ -515,6 +531,9 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     uint64_t *pu64Timestamp,
                                     char **ppszFlags)
 {
+#if 1 /* the RTMemAutoPtr doesn't compile */
+    return VERR_NOT_IMPLEMENTED;
+#else
     int rc = VINF_SUCCESS;
     RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> pHandle;
     pHandle = reinterpret_cast<PVBGLR3GUESTPROPENUM>(
@@ -526,14 +545,18 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     /* Get the length of the pattern string, including the final terminator. */
     uint32_t cchPatterns = 1;
     for (int i = 0; i < cPatterns; ++i)
-        cchPatterns += strlen(ppaszPatterns[i]) + 1;
+        cchPatterns += strlen(papszPatterns[i]) + 1;
     /* Pack the pattern array */
     RTMemAutoPtr<char> pPatterns;
     pPatterns = reinterpret_cast<char *>(RTMemAlloc(cchPatterns));
-    char *pPatternsRaw = pPatterns.get();
+    char *pchPatternsRaw = pPatterns.get();
     for (int i = 0; i < cPatterns; ++i)
-        pPatternsRaw = strcpy(pPatternsRaw, ppaszPatterns[i]) + strlen(ppaszPatterns[i]) + 1;
-    *pPatternsRaw = 0;
+    {
+        size_t cb = strlen(papszPatterns[i]) + 1;
+        memcpy(pchPatternsRaw, papszPatterns[i], cb);
+        pchPatternsRaw += cb;
+    }
+    *pchPatternsRaw = '\0';
 
     /* Randomly chosen initial size for the buffer to hold the enumeration
      * information. */
@@ -573,22 +596,26 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     if (RT_SUCCESS(rc))
         *ppHandle = pHandle.release();
     return rc;
+#endif
 }
 
 
 /**
  * Get the next guest property.  See @a VbglR3GuestPropEnum.
- * @param  pHandle       handle obtained from @a VbglR3GuestPropEnum.
- * @param  ppszName      where to store the next property name.  This will be
+ *
+ * @returns VBox status code.
+ *
+ * @param  pHandle       Handle obtained from @a VbglR3GuestPropEnum.
+ * @param  ppszName      Where to store the next property name.  This will be
  *                       set to NULL if there are no more properties to
  *                       enumerate.  This pointer should not be freed.
- * @param  ppszValue     where to store the next property value.  This will be
+ * @param  ppszValue     Where to store the next property value.  This will be
  *                       set to NULL if there are no more properties to
  *                       enumerate.  This pointer should not be freed.
- * @param  pu64Timestamp where to store the next property timestamp.  This
+ * @param  pu64Timestamp Where to store the next property timestamp.  This
  *                       will be set to zero if there are no more properties
  *                       to enumerate.
- * @param  ppszFlags     where to store the next property flags.  This will be
+ * @param  ppszFlags     Where to store the next property flags.  This will be
  *                       set to NULL if there are no more properties to
  *                       enumerate.  This pointer should not be freed.
  */
@@ -600,7 +627,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
 {
     uint32_t iBuf = pHandle->iBuf;
     char *pszName = pHandle->pchBuf + iBuf;
-    /** @todo replace these with safe strlen's and return an error if needed. */
+    /** @todo replace these with safe memchr's and return an error if needed. */
     iBuf += strlen(pszName) + 1;
     char *pszValue = pHandle->pchBuf + iBuf;
     iBuf += strlen(pszValue) + 1;
