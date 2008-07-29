@@ -129,26 +129,26 @@ template <class T, void fn(void *)>
 inline void RTAutoResRecastVoid(T *aValue) { fn(aValue); }
 
 template <class T, void Destruct(T *) = RTAutoResRecastVoid <T, RTMemFree> >
-class RTMemAuto : public RTAutoRes <T *, Destruct>
+class RTMemAutoPtr : public RTAutoRes <T *, Destruct>
 {
 public:
     /** Constructor */
-    RTMemAuto(T *aValue = NULL) : RTAutoRes <T *, Destruct>(aValue) {}
+    RTMemAutoPtr(T *aValue = NULL) : RTAutoRes <T *, Destruct>(aValue) {}
 
     /** Copy constructors */
-    RTMemAuto(RTMemAuto &orig) : RTAutoRes <T *, Destruct>(orig) {}
+    RTMemAutoPtr(RTMemAutoPtr &orig) : RTAutoRes <T *, Destruct>(orig) {}
     template <class T1>
-    RTMemAuto(RTMemAuto<T1, Destruct> &orig) : RTAutoRes<T1 *, Destruct>(orig) {}
+    RTMemAutoPtr(RTMemAutoPtr<T1, Destruct> &orig) : RTAutoRes<T1 *, Destruct>(orig) {}
 
     /** Assignment operators */
-    RTMemAuto& operator=(RTMemAuto &orig)
+    RTMemAutoPtr& operator=(RTMemAutoPtr &orig)
     { this->RTAutoRes <T *, Destruct>::operator=(orig); }
     template <class T1>
-    RTMemAuto& operator=(RTMemAuto<T1, Destruct> &orig)
+    RTMemAutoPtr& operator=(RTMemAutoPtr<T1, Destruct> &orig)
     { this->RTAutoRes<T1 *, Destruct>::operator=(orig); return *this; }
-    RTMemAuto& operator=(T *aValue)
+    RTMemAutoPtr& operator=(T *aValue)
     { this->RTAutoRes <T *, Destruct>::operator=(aValue); return *this; }
-    RTMemAuto& operator=(RTAutoResRef<T *, Destruct> ref)
+    RTMemAutoPtr& operator=(RTAutoResRef<T *, Destruct> ref)
     { this->RTAutoRes <T *, Destruct>::operator=(ref); return *this; }
 
     /** Dereference with * operator. */
