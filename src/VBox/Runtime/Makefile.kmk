@@ -187,6 +187,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
+	common/misc/once.cpp \
 	common/misc/rand.cpp \
 	common/misc/req.cpp \
 	common/misc/sanity-c.c \
