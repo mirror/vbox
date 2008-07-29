@@ -48,10 +48,12 @@
  * @returns IPRT status code.
  * @param   psz             Pointer to the UTF-8 string.
  * @param   cch             The max length of the string. (btw cch = cb)
- *                          Use RTSTR_MAX if all of the string is to be examined.s
+ *                          Use RTSTR_MAX if all of the string is to be examined.
  * @param   pcuc            Where to store the length in unicode code points.
+ * @param   pcchActual      Where to store the actual size of the UTF-8 string
+ *                          on success (cch = cb again). Optional.
  */
-static int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc)
+static int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchActual)
 {
     const unsigned char *puch = (const unsigned char *)psz;
     size_t cCodePoints = 0;
@@ -167,6 +169,8 @@ static int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc)
 
     /* done */
     *pcuc = cCodePoints;
+    if (pcchActual)
+        *pcchActual = puch - (unsigned char const *)psz;
     return VINF_SUCCESS;
 }
 
@@ -274,7 +278,7 @@ static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps
 RTDECL(size_t) RTStrUniLen(const char *psz)
 {
     size_t cCodePoints;
-    int rc = rtUtf8Length(psz, RTSTR_MAX, &cCodePoints);
+    int rc = rtUtf8Length(psz, RTSTR_MAX, &cCodePoints, NULL);
     return RT_SUCCESS(rc) ? cCodePoints : 0;
 }
 
@@ -282,7 +286,7 @@ RTDECL(size_t) RTStrUniLen(const char *psz)
 RTDECL(int) RTStrUniLenEx(const char *psz, size_t cch, size_t *pcCps)
 {
     size_t cCodePoints;
-    int rc = rtUtf8Length(psz, cch, &cCodePoints);
+    int rc = rtUtf8Length(psz, cch, &cCodePoints, NULL);
     if (pcCps)
         *pcCps = RT_SUCCESS(rc) ? cCodePoints : 0;
     return rc;
@@ -295,10 +299,26 @@ RTDECL(int) RTStrValidateEncoding(const char *psz)
 }
 
 
-RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, unsigned fFlags)
+RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags)
 {
-    NOREF(fFlags);
+    AssertReturn(!(fFlags & ~(RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)), VERR_INVALID_PARAMETER);
+    AssertPtr(psz);
+
+    /*
+     * Use rtUtf8Length for the job.
+     */
+    size_t cchActual;
     size_t cCpsIgnored;
+    int rc = rtUtf8Length(psz, cch, &cCpsIgnored, &cchActual);
+    if (RT_SUCCESS(rc))
+    {
+        if (    (fFlags & RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)
+            &&  cchActual >= cch)
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    return rc;
+
+
     return RTStrUniLenEx(psz, cch, &cCpsIgnored);
 }
 
@@ -323,7 +343,7 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
      * Validate the UTF-8 input and count its code points.
      */
     size_t cCps;
-    int rc = rtUtf8Length(pszString, RTSTR_MAX, &cCps);
+    int rc = rtUtf8Length(pszString, RTSTR_MAX, &cCps, NULL);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -363,7 +383,7 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
      * Validate the UTF-8 input and count the code points.
      */
     size_t cCpsResult;
-    int rc = rtUtf8Length(pszString, cchString, &cCpsResult);
+    int rc = rtUtf8Length(pszString, cchString, &cCpsResult, NULL);
     if (RT_SUCCESS(rc))
     {
         if (pcCps)

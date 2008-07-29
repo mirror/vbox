@@ -146,6 +146,13 @@ RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString);
  */
 RTDECL(int) RTStrValidateEncoding(const char *psz);
 
+/** @name Flags for RTStrValidateEncodingEx
+ */
+/** Check that the string is zero terminated within the given size.
+ * VERR_BUFFER_OVERFLOW will be returned if the check fails. */
+#define RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED     RT_BIT_32(0)
+/** @} */
+
 /**
  * Validates the UTF-8 encoding of the string.
  *
@@ -154,7 +161,7 @@ RTDECL(int) RTStrValidateEncoding(const char *psz);
  * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
  * @param   fFlags      Teserved for future. Pass 0.
  */
-RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, unsigned fFlags);
+RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags);
 
 /**
  * Checks if the UTF-8 encoding is valid.
