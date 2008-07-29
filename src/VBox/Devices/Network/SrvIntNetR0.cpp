@@ -37,6 +37,7 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/handletable.h>
+#include <iprt/net.h>
 
 
 /*******************************************************************************
@@ -60,63 +61,6 @@ typedef enum INTNETADDRTYPE
 /** Pointer to a network layer address type. */
 typedef INTNETADDRTYPE *PINTNETADDRTYPE;
 
-/**
- * IPv4 address.
- */
-typedef RTUINT32U INTNETADDRIPV4;
-/** Pointer to a IPv4 address. */
-typedef INTNETADDRIPV4 *PINTNETADDRIPV4;
-/** Pointer to a const IPv4 address. */
-typedef INTNETADDRIPV4 const *PCINTNETADDRIPV4;
-
-/**
- * IPv6 address.
- */
-typedef RTUINT128U INTNETADDRIPV6;
-/** Pointer to a IPv4 address. */
-typedef INTNETADDRIPV6 *PINTNETADDRIPV6;
-/** Pointer to a const IPv4 address. */
-typedef INTNETADDRIPV6 const *PCINTNETADDRIPV6;
-
-/**
- * IPX address.
- */
-typedef struct INTNETADDRIPX
-{
-    /** The network ID. */
-    uint32_t Network;
-    /** The node ID. (Defaults to the MAC address apparently.) */
-    PDMMAC Node;
-} INTNETADDRIPX;
-/** Pointer to an IPX address. */
-typedef INTNETADDRIPX *PINTNETADDRIPX;
-/** Pointer to a const IPX address. */
-typedef INTNETADDRIPX const *PCINTNETADDRIPX;
-
-/**
- * Address union.
- */
-typedef union INTNETADDRU
-{
-    /** 64-bit view. */
-    uint64_t au64[2];
-    /** 32-bit view. */
-    uint32_t au32[4];
-    /** 16-bit view. */
-    uint16_t au16[8];
-    /** 8-bit view. */
-    uint8_t  au8[16];
-    /** IPv4 view. */
-    INTNETADDRIPV4 IPv4;
-    /** IPv6 view. */
-    INTNETADDRIPV6 IPv6;
-    /** IPX view. */
-    INTNETADDRIPX Ipx;
-} INTNETADDRU;
-/** Pointer to an address union. */
-typedef INTNETADDRU *PINTNETADDRU;
-/** Pointer to a const address union. */
-typedef INTNETADDRU const *PCINTNETADDRU;
 
 /**
  * Address and type.
@@ -126,7 +70,7 @@ typedef struct INTNETADDR
     /** The address type. */
     INTNETADDRTYPE enmType;
     /** The address. */
-    INTNETADDRU Addr;
+    RTNETADDRU Addr;
 } INTNETADDR;
 /** Pointer to an address. */
 typedef INTNETADDR *PINTNETADDR;
@@ -292,177 +236,23 @@ typedef struct INTNET
 } INTNET;
 
 
-/**
- * Ethernet header.
- */
-#pragma pack(1)
-typedef struct INTNETETHERHDR
-{
-    PDMMAC      MacDst;
-    PDMMAC      MacSrc;
-    uint16_t    EtherType;
-} INTNETETHERHDR;
-#pragma pack()
-/** Pointer to an ethernet header. */
-typedef INTNETETHERHDR *PINTNETETHERHDR;
-/** Pointer to a const ethernet header. */
-typedef INTNETETHERHDR const *PCINTNETETHERHDR;
-
-/** @name EtherType
- * @{ */
-#define INTNET_ETHERTYPE_IPV4   UINT16_C(0x0800)
-#define INTNET_ETHERTYPE_ARP    UINT16_C(0x0806)
-#define INTNET_ETHERTYPE_IPV6   UINT16_C(0x86dd)
-/** @} */
-
-
-#pragma pack(1)
-typedef struct INTNETIPV4
-{
-#ifdef RT_BIG_ENDIAN
-    unsigned int    ip_v : 4;
-    unsigned int    ip_hl : 4;
-    unsigned int    ip_tos : 8;
-    unsigned int    ip_len : 16;
-#else
-    unsigned int    ip_hl : 4;
-    unsigned int    ip_v : 4;
-    unsigned int    ip_tos : 8;
-    unsigned int    ip_len : 16;
-#endif
-    uint16_t        ip_id;
-    uint16_t        ip_off;
-    uint8_t         ip_ttl;
-    uint8_t         ip_p;
-    uint16_t        ip_sum;
-    uint32_t        ip_src;
-    uint32_t        ip_dst;
-    /* more */
-    uint32_t        ip_options[1];
-} INTNETIPV4;
-typedef INTNETIPV4 *PINTNETIPV4;
-typedef INTNETIPV4 const *PCINTNETIPV4;
-
-
-typedef struct INTNETUDPV4
-{
-    uint16_t    uh_sport;
-    uint16_t    uh_dport;
-    uint16_t    uh_ulen;
-    uint16_t    uh_sum;
-} INTNETUDPV4;
-typedef INTNETUDPV4 *PINTNETUDPV4;
-typedef INTNETUDPV4 const *PCINTNETUDPV4;
-
-
-typedef struct INTNETDHCP
-{
-    uint8_t     Op;
-    uint8_t     HType;
-    uint8_t     HLen;
-    uint8_t     Hops;
-    uint32_t    XID;
-    uint16_t    Secs;
-    uint16_t    Flags;
-    uint32_t    CIAddr;
-    uint32_t    YIAddr;
-    uint32_t    SIAddr;
-    uint32_t    GIAddr;
-    uint8_t     CHAddr[16];
-    uint8_t     SName[64];
-    uint8_t     File[128];
-    uint8_t     abMagic[4];
-    uint8_t     DhcpOpt;
-    uint8_t     DhcpLen; /* 1 */
-    uint8_t     DhcpReq;
-    uint8_t     abOptions[57];
-} INTNETDHCP;
-typedef INTNETDHCP *PINTNETDHCP;
-typedef INTNETDHCP const *PCINTNETDHCP;
-
-#pragma pack(0)
-
-/** IPv4: UDP */
-#define INTNETIPV4_PROT_UDP         7
-
-
-/** ARP hardware type - ethernet. */
-#define INTNET_ARP_ETHER            UINT16_C(1)
-
-/** @name ARP operations
- * @{ */
-#define INTNET_ARPOP_REQUEST        UINT16_C(1) /**< Request hardward address given a protocol address (ARP). */
-#define INTNET_ARPOP_REPLY          UINT16_C(2)
-#define INTNET_ARPOP_REVREQUEST     UINT16_C(3) /**< Request protocol address given a hardware address (RARP). */
-#define INTNET_ARPOP_REVREPLY       UINT16_C(4)
-#define INTNET_ARPOP_INVREQUEST     UINT16_C(8) /**< Inverse ARP.  */
-#define INTNET_ARPOP_INVREPLY       UINT16_C(9)
-#define INTNET_ARPOP_IS_REQUEST(Op) ((Op) & 1)
-#define INTNET_ARPOP_IS_REPLY(Op)   (!INTNET_ARPOP_IS_REQUEST(Op))
-/** @} */
-
-#pragma pack(1)
-/**
- * Ethernet ARP header.
- */
-typedef struct INTNETARPHDR
-{
-    /** The hardware type. */
-    uint16_t    ar_htype;
-    /** The protocol type (ethertype). */
-    uint16_t    ar_ptype;
-    /** The hardware address length. */
-    uint8_t     ar_hlen;
-    /** The protocol address length. */
-    uint8_t     ar_plen;
-    /** The operation. */
-    uint16_t    ar_oper;
-} INTNETARPHDR;
-#pragma pack(0)
-/** Pointer to an ethernet ARP header. */
-typedef INTNETARPHDR *PINTNETARPHDR;
-/** Pointer to a const ethernet ARP header. */
-typedef INTNETARPHDR const *PCINTNETARPHDR;
-
-
-#pragma pack(1)
-/**
- * Ethernet IPv4 + 6-byte MAC ARP request packet.
- */
-typedef struct INTNETARPIPV4
-{
-    INTNETARPHDR    Hdr;
-    /** The sender hardware address. */
-    PDMMAC          ar_sha;
-    /** The sender protocol address. */
-    INTNETADDRIPV4  ar_spa;
-    /** The target hardware address. */
-    PDMMAC          ar_tha;
-    /** The arget protocol address. */
-    INTNETADDRIPV4  ar_tpa;
-} INTNETARPIPV4;
-#pragma pack(0)
-/** Pointer to an ethernet IPv4+MAC ARP request packet. */
-typedef INTNETARPIPV4 *PINTNETARPIPV4;
-/** Pointer to a const ethernet IPv4+MAC ARP request packet. */
-typedef INTNETARPIPV4 const *PCINTNETARPIPV4;
-
-
 #pragma pack(1)
 /**
  * Ethernet IPv6 + 6-byte MAC ARP request packet.
+ *
+ * @todo check if this exists and is actually used.
  */
 typedef struct INTNETARPIPV6
 {
-    INTNETARPHDR    Hdr;
+    RTNETARPHDR     Hdr;
     /** The sender hardware address. */
     PDMMAC          ar_sha;
     /** The sender protocol address. */
-    INTNETADDRIPV6  ar_spa;
+    RTNETADDRIPV6   ar_spa;
     /** The target hardware address. */
     PDMMAC          ar_tha;
     /** The arget protocol address. */
-    INTNETADDRIPV6  ar_tpa;
+    RTNETADDRIPV6   ar_tpa;
 } INTNETARPIPV6;
 #pragma pack(0)
 /** Pointer to an ethernet IPv6+MAC ARP request packet. */
@@ -560,7 +350,7 @@ DECLINLINE(uint8_t) intnetR0AddrSize(INTNETADDRTYPE enmType)
  * @param   pAddr2          The second address.
  * @param   cbAddr          The address size.
  */
-DECLINLINE(bool) intnetR0AddrUIsEqualEx(PCINTNETADDRU pAddr1, PCINTNETADDRU pAddr2, uint8_t const cbAddr)
+DECLINLINE(bool) intnetR0AddrUIsEqualEx(PCRTNETADDRU pAddr1, PCRTNETADDRU pAddr2, uint8_t const cbAddr)
 {
     switch (cbAddr)
     {
@@ -588,13 +378,13 @@ DECLINLINE(bool) intnetR0AddrUIsEqualEx(PCINTNETADDRU pAddr1, PCINTNETADDRU pAdd
  * @param   pAddr       The address.
  * @param   cbAddr      The address size (optimization).
  */
-static int intnetR0IfAddrCacheLookupSlow(PCINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+static int intnetR0IfAddrCacheLookupSlow(PCINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     unsigned i = pCache->cEntries - 2;
     uint8_t const *pbEntry = pCache->pbEntries + pCache->cbEntry * i;
     while (i >= 1)
     {
-        if (intnetR0AddrUIsEqualEx((PCINTNETADDRU)pbEntry, pAddr, cbAddr))
+        if (intnetR0AddrUIsEqualEx((PCRTNETADDRU)pbEntry, pAddr, cbAddr))
             return i;
         pbEntry -= pCache->cbEntry;
         i--;
@@ -611,7 +401,7 @@ static int intnetR0IfAddrCacheLookupSlow(PCINTNETADDRCACHE pCache, PCINTNETADDRU
  * @param   pAddr           The address.
  * @param   cbAddr          The address size (optimization).
  */
-DECLINLINE(int) intnetR0IfAddrCacheLookup(PCINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(int) intnetR0IfAddrCacheLookup(PCINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     Assert(pCache->cbAddress == cbAddr);
 
@@ -621,7 +411,7 @@ DECLINLINE(int) intnetR0IfAddrCacheLookup(PCINTNETADDRCACHE pCache, PCINTNETADDR
      */
     unsigned i = pCache->cEntries;
     if (    i > 0
-        &&  intnetR0AddrUIsEqualEx((PCINTNETADDRU)pCache->pbEntries, pAddr, cbAddr))
+        &&  intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr))
         return 0;
     if (i <= 1)
         return -1;
@@ -630,7 +420,7 @@ DECLINLINE(int) intnetR0IfAddrCacheLookup(PCINTNETADDRCACHE pCache, PCINTNETADDR
      * Check the last entry.
      */
     i--;
-    if (intnetR0AddrUIsEqualEx((PCINTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))
+    if (intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))
         return i;
     if (i <= 1)
         return -1;
@@ -638,8 +428,9 @@ DECLINLINE(int) intnetR0IfAddrCacheLookup(PCINTNETADDRCACHE pCache, PCINTNETADDR
     return intnetR0IfAddrCacheLookupSlow(pCache, pAddr, cbAddr);
 }
 
+
 /** Same as intnetR0IfAddrCacheLookup except we expect the address to be present already. */
-DECLINLINE(int) intnetR0IfAddrCacheLookupLikely(PCINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(int) intnetR0IfAddrCacheLookupLikely(PCINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     /** @todo implement this. */
     return intnetR0IfAddrCacheLookup(pCache, pAddr, cbAddr);
@@ -658,7 +449,7 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupLikely(PCINTNETADDRCACHE pCache, PCINTN
  * @param   pAddr       The address.
  * @param   cbAddr      The address size (optimization).
  */
-static int intnetR0IfAddrCacheInCacheUnlikelySlow(PCINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+static int intnetR0IfAddrCacheInCacheUnlikelySlow(PCINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     /*
      * Perform a full table lookup.
@@ -667,7 +458,7 @@ static int intnetR0IfAddrCacheInCacheUnlikelySlow(PCINTNETADDRCACHE pCache, PCIN
     uint8_t const *pbEntry = pCache->pbEntries + pCache->cbEntry * i;
     while (i >= 1)
     {
-        if (RT_UNLIKELY(intnetR0AddrUIsEqualEx((PCINTNETADDRU)pbEntry, pAddr, cbAddr)))
+        if (RT_UNLIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pbEntry, pAddr, cbAddr)))
             return i;
         pbEntry -= pCache->cbEntry;
         i--;
@@ -685,7 +476,7 @@ static int intnetR0IfAddrCacheInCacheUnlikelySlow(PCINTNETADDRCACHE pCache, PCIN
  * @param   pAddr           The address.
  * @param   cbAddr          The address size (optimization).
  */
-DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     Assert(pCache->cbAddress == cbAddr);
 
@@ -695,7 +486,7 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCIN
      */
     unsigned i = pCache->cEntries;
     if (RT_UNLIKELY(   i > 0
-                    && intnetR0AddrUIsEqualEx((PCINTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
+                    && intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
         return 0;
     if (RT_LIKELY(i <= 1))
         return -1;
@@ -704,7 +495,7 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCIN
      * Then check the last entry and return if there are just two cache entries.
      */
     i--;
-    if (RT_UNLIKELY(intnetR0AddrUIsEqualEx((PCINTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr)))
+    if (RT_UNLIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr)))
         return i;
     if (i <= 1)
         return -1;
@@ -743,7 +534,7 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
  * @param   pAddr           The address.
  * @param   cbAddr          The address size (optimization).
  */
-DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     int i = intnetR0IfAddrCacheLookup(pCache, pAddr, cbAddr);
     if (RT_UNLIKELY(i >= 0))
@@ -762,7 +553,7 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
  * @param   enmType         The address type.
  * @param   cbAddr          The address size (optimization).
  */
-DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCINTNETADDRU pAddr,
+DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr,
                                                 INTNETADDRTYPE const enmType, uint8_t const cbAddr)
 {
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
@@ -785,7 +576,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCINTNE
  * @param   enmType         The address type.
  * @param   cbAddr          The address size (optimization).
  */
-DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCINTNETADDRU pAddr,
+DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCRTNETADDRU pAddr,
                                                        INTNETADDRTYPE const enmType, uint8_t const cbAddr)
 {
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
@@ -806,7 +597,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
  * @param   pCache      The address cache.
  * @param   pAddr       The address.
  */
-static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCINTNETADDRU pAddr)
+static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr)
 {
     if (!pCache->cEntriesAlloc)
     {
@@ -860,7 +651,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCI
  * @param   pAddr       The address.
  * @param   cbAddr      The size of the address (optimization).
  */
-static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     /*
      * Check all but the first and last entries, the caller
@@ -870,7 +661,7 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
     uint8_t const *pbEntry = pCache->pbEntries + pCache->cbEntry;
     while (--cLeft > 1)
     {
-        if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCINTNETADDRU)pbEntry, pAddr, cbAddr)))
+        if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pbEntry, pAddr, cbAddr)))
         {
             /** @todo usage/ageing? */
             return;
@@ -894,7 +685,7 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
  * @param   pAddr       The address.
  * @param   cbAddr      The size of the address (optimization).
  */
-DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCINTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
 {
     Assert(pCache->cbAddress == cbAddr);
 
@@ -903,7 +694,7 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
      */
     unsigned i = pCache->cEntries;
     if (RT_LIKELY(   i > 0
-                  && intnetR0AddrUIsEqualEx((PCINTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
+                  && intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
     {
         /** @todo usage/ageing? */
         return;
@@ -915,7 +706,7 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
      * And the case where it's the last entry.
      */
     i--;
-    if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCINTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
+    if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
     {
         /** @todo usage/ageing? */
         return;
@@ -939,22 +730,22 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
  * @param   cbPacket        The size of the packet, or more correctly the
  *                          size of the frame without the ethernet header.
  */
-static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCINTNETIPV4 pHdr, uint32_t cbPacket)
+static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pHdr, uint32_t cbPacket)
 {
     /*
      * Check the header size.
      */
-    if (cbPacket < RT_UOFFSETOF(INTNETIPV4, ip_options)) /** @todo check minimum size requirements here. */
+    if (cbPacket < RT_UOFFSETOF(RTNETIPV4, ip_options)) /** @todo check minimum size requirements here. */
         return;
     uint32_t cbHdr = (uint32_t)pHdr->ip_hl * 4;
-    if (    cbHdr < RT_UOFFSETOF(INTNETIPV4, ip_options)
+    if (    cbHdr < RT_UOFFSETOF(RTNETIPV4, ip_options)
         ||  cbPacket < cbHdr)
         return;
 
     /*
      * Ignore 255.255.255.255 (broadcast), 0.0.0.0 (null) and already cached addresses.
      */
-    INTNETADDRU Addr;
+    RTNETADDRU Addr;
     Addr.au32[0] = pHdr->ip_src;
     if (Addr.au32[0] == UINT32_C(0xffffffff))
         return;
@@ -964,7 +755,7 @@ static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCINTNETIPV4 pHdr, uint
         || (i = intnetR0IfAddrCacheLookupLikely(&pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pHdr->ip_src))) >= 0)
     {
 #if 0 /** @todo quick DHCP check? */
-        if (pHdr->ip_p != INTNETIPV4_PROT_UDP)
+        if (pHdr->ip_p != RTNETIPV4_PROT_UDP)
             return;
 #endif
         return;
@@ -997,18 +788,18 @@ static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCINTNETIPV4 pHdr, uint
  * @param   cbPacket        The size of the packet (migth be larger than the ARP
  *                          request 'cause of min ethernet frame size).
  */
-static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCINTNETARPHDR pHdr, uint32_t cbPacket)
+static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket)
 {
     /*
      * Ignore malformed packets and packets which doesn't interrest us.
      */
     if (RT_UNLIKELY(    cbPacket <= sizeof(*pHdr)
                     ||  pHdr->ar_hlen != sizeof(PDMMAC)
-                    ||  pHdr->ar_htype != RT_H2BE_U16(INTNET_ARP_ETHER)
-                    ||  (   pHdr->ar_oper != RT_H2BE_U16(INTNET_ARPOP_REQUEST)
-                         && pHdr->ar_oper != RT_H2BE_U16(INTNET_ARPOP_REPLY)
-                         && pHdr->ar_oper != RT_H2BE_U16(INTNET_ARPOP_REVREQUEST)
-                         && pHdr->ar_oper != RT_H2BE_U16(INTNET_ARPOP_REVREPLY)
+                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)
+                    ||  (   pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REQUEST)
+                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REPLY)
+                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REVREQUEST)
+                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REVREPLY)
                          /** @todo Read up on inverse ARP. */
                         )
                    )
@@ -1018,20 +809,20 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCINTNETARPHDR pHdr, uin
     /*
      * Deal with the protocols.
      */
-    INTNETADDRU Addr;
-    if (pHdr->ar_ptype == RT_H2BE_U16(INTNET_ETHERTYPE_IPV4))
+    RTNETADDRU Addr;
+    if (pHdr->ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
     {
         /*
          * IPv4.
          */
-        PCINTNETARPIPV4 pReq = (PCINTNETARPIPV4)pHdr;
+        PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
         if (RT_UNLIKELY(    pHdr->ar_plen == sizeof(pReq->ar_spa)
                         ||  cbPacket < sizeof(*pReq)
                         ||  pReq->ar_spa.u == 0 /** @todo add an inline function for checking that an IP address is worth caching. */
                         ||  pReq->ar_spa.u == UINT32_C(0xffffffff)))
             return;
 
-        if (INTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
+        if (RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
         {
             Addr.IPv4 = pReq->ar_tpa;
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_tpa));
@@ -1039,7 +830,7 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCINTNETARPHDR pHdr, uin
         Addr.IPv4 = pReq->ar_spa;
         intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_spa));
     }
-    else if (pHdr->ar_ptype == RT_H2BE_U16(INTNET_ETHERTYPE_IPV6))
+    else if (pHdr->ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
     {
         /*
          * IPv6.
@@ -1051,7 +842,7 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCINTNETARPHDR pHdr, uin
                         ||  pReq->ar_spa.au32[0] == UINT32_C(0xffffffff)*/))
             return;
 
-        if (INTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
+        if (RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
         {
             Addr.IPv6 = pReq->ar_tpa;
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_tpa));
@@ -1078,26 +869,26 @@ static void intnetR0IfSniffSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uin
     /*
      * Fish out the ethertype and look for stuff we can handle.
      */
-    if (cbFrame <= sizeof(INTNETETHERHDR))
+    if (cbFrame <= sizeof(RTNETETHERHDR))
         return;
-    cbFrame -= sizeof(INTNETETHERHDR);
+    cbFrame -= sizeof(RTNETETHERHDR);
 
-    uint16_t EtherType = ((PCINTNETETHERHDR)pbFrame)->EtherType;
-    if (EtherType == RT_H2BE_U16(INTNET_ETHERTYPE_IPV4))
-        intnetR0IfSniffIPv4SourceAddr(pIf, (PCINTNETIPV4)((PCINTNETETHERHDR)pbFrame + 1), cbFrame);
+    uint16_t EtherType = ((PCRTNETETHERHDR)pbFrame)->EtherType;
+    if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
+        intnetR0IfSniffIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
-    else if (EtherType == RT_H2BE_U16(INTNET_ETHERTYPE_IPV6))
-        intnetR0IfSniffIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCINTNETETHERHDR)pbFrame + 1), cbFrame);
+    else if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+        intnetR0IfSniffIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #endif
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
     else if (   EtherType == RT_H2BE_U16(0x8037) //??
              || EtherType == RT_H2BE_U16(0x8137) //??
              || EtherType == RT_H2BE_U16(0x8138) //??
              )
-        intnetR0IfSniffIpxSourceAddr(pIf, (PCINTNETIPX)((PCINTNETETHERHDR)pbFrame + 1), cbFrame);
+        intnetR0IfSniffIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #endif
-    else if (EtherType == RT_H2BE_U16(INTNET_ETHERTYPE_ARP))
-        intnetR0IfSniffArpSourceAddr(pIf, (PCINTNETARPHDR)((PCINTNETETHERHDR)pbFrame + 1), cbFrame);
+    else if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
+        intnetR0IfSniffArpSourceAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 }
 
 
@@ -1491,7 +1282,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
  * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
  * @param   pEthHdr         Pointer to the ethernet header.
  */
-static bool intnetR0NetworkSendMulticast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCINTNETETHERHDR pEthHdr)
+static bool intnetR0NetworkSendMulticast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
 {
     /** @todo implement multicast */
     return intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked);
@@ -1511,7 +1302,7 @@ static bool intnetR0NetworkSendMulticast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
  * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
  * @param   pEthHdr         Pointer to the ethernet header.
  */
-static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCINTNETETHERHDR pEthHdr)
+static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
 {
     /*
      * Only send to the interfaces with matching a MAC address.
@@ -1604,7 +1395,7 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     AssertPtr(pSG);
     Assert(pSG->cSegsUsed >= 1);
     Assert(pSG->cSegsUsed <= pSG->cSegsAlloc);
-    if (pSG->cbTotal < sizeof(INTNETETHERHDR))
+    if (pSG->cbTotal < sizeof(RTNETETHERHDR))
         return fRc;
 
     /*
@@ -1619,9 +1410,9 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     /*
      * Get the ethernet header (might theoretically involve multiple segments).
      */
-    INTNETETHERHDR EthHdr;
+    RTNETETHERHDR EthHdr;
     if (RT_LIKELY(pSG->aSegs[0].cb >= sizeof(EthHdr)))
-        EthHdr = *(PCINTNETETHERHDR)pSG->aSegs[0].pv;
+        EthHdr = *(PCRTNETETHERHDR)pSG->aSegs[0].pv;
     else
     {
         uint8_t *pbDst = (uint8_t *)&EthHdr;
