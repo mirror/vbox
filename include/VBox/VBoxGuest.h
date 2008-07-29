@@ -1533,6 +1533,7 @@ VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, 
 #ifdef VBOX_WITH_GUEST_PROPS
 /** @name Guest properties
  * @{ */
+typedef struct VBGLR3GUESTPROPENUM VBGLR3GUESTPROPENUM, *PVBGLR3GUESTPROPENUM;
 VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestPropDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags);
@@ -1543,6 +1544,10 @@ VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszNam
 VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue, uint32_t *pcchValueActual);
 VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId, const char *pszName, char **ppszValue);
 VBGLR3DECL(void)    VbglR3GuestPropReadValueFree(char *pszValue);
+VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t u32ClientId, const char *paszPatterns, char *pcBuf, uint32_t cbBuf, uint32_t *pcbBufActual);
+VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char **ppaszPatterns, int cPatterns, PVBGLR3GUESTPROPENUM *ppHandle, char **ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags);
+VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char **ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags);
+VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
 /** @}  */
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
