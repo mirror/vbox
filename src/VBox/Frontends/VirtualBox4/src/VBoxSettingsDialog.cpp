@@ -219,7 +219,7 @@ void VBoxSettingsDialog::categoryChanged (int aId)
         if (cs.height() > ss.height())
             mStack->setCurrentIndex (mStack->indexOf (rootPage));
         /* Do the animation */
-        ::darwinWindowAnimateResize (this, QRect (x(), y(), 
+        ::darwinWindowAnimateResize (this, QRect (x(), y(),
                                                   ss.width(), ss.height()));
         /* Switch to the new page last if we are zooming */
         if (cs.height() <= ss.height())
@@ -279,7 +279,7 @@ bool VBoxSettingsDialog::eventFilter (QObject *aObject, QEvent *aEvent)
         return QIMainDialog::eventFilter (aObject, aEvent);
 
     QWidget *widget = static_cast<QWidget*> (aObject);
-    if (widget->topLevelWidget() != this)
+    if (widget->window() != this)
         return QIMainDialog::eventFilter (aObject, aEvent);
 
     switch (aEvent->type())
