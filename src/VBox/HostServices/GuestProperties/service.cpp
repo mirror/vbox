@@ -180,31 +180,6 @@ private:
 
 
 /**
- * Calculate the length of a string in bytes, excluding the terminator.
- * @returns VINF_SUCCESS on success and the length in @a pcch
- * @returns VERR_BUFFFER_OVERFLOW if no terminator is found in the first @a cch
- *          bytes of the string
- * @param   pszString  the string to count
- * @param   cch        the maximum length of the string, including terminator
- * @param   pcch       where to store the string length on success
- * @todo move this into IPRT
- */
-static int svcStrLenEx(const char *pszString, size_t cch, size_t *pcch)
-{
-    int rc = VINF_SUCCESS;
-    void *pvTerm = memchr(pszString, 0, cch);
-    if (NULL == pvTerm)
-    {
-        *pcch = 0;
-        rc = VERR_BUFFER_OVERFLOW;
-    }
-    else
-        *pcch = reinterpret_cast<char *>(pvTerm) - pszString;
-    return rc;
-}
-
-
-/**
  * Checking that the key passed by the guest fits our criteria for a
  * configuration key
  *
@@ -226,7 +201,7 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
     rc = RTStrValidateEncodingEx(pszKey, cbKey - 1, 0);
     if (RT_SUCCESS(rc))
         /* We want to check the byte length, not the Utf8 length */
-        rc = svcStrLenEx(pszKey, MAX_NAME_LEN + 1, &count);
+        rc = RTStrNLenEx(pszKey, MAX_NAME_LEN + 1, &count);
 
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -254,7 +229,7 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
     rc = RTStrValidateEncodingEx(pszValue, cbValue - 1, 0);
     if (RT_SUCCESS(rc))
         /* We want to check the byte length, not the Utf8 length */
-        rc = svcStrLenEx(pszValue, MAX_VALUE_LEN + 1, &count);
+        rc = RTStrNLenEx(pszValue, MAX_VALUE_LEN + 1, &count);
 
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
@@ -506,7 +481,7 @@ static bool matchesSinglePattern(const char *pszPat, const char *pszName)
 }
 
 
-/* Checks to see if the given string matches against one of the patterns in 
+/* Checks to see if the given string matches against one of the patterns in
  * the list. */
 static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
                            const char *pszString)
@@ -517,7 +492,7 @@ static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
     while ((iOffs < cchPatterns) && !matched)
     {
         size_t cchCurrent;
-        if (   RT_SUCCESS(svcStrLenEx(paszPatterns + iOffs,
+        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
                                       cchPatterns - iOffs, &cchCurrent))
             && (cchCurrent > 0)
            )
@@ -543,11 +518,11 @@ static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
  */
 int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    /* We reallocate the temporary buffer in which we build up our array in 
+    /* We reallocate the temporary buffer in which we build up our array in
      * increments of size BLOCK: */
     enum { BLOCKINCR = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048) % 1024 };
     int rc = VINF_SUCCESS;
-    
+
 /*
  * Get the HGCM function arguments.
  */
