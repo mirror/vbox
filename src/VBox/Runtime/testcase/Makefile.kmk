@@ -86,6 +86,7 @@ PROGRAMS += \
 	tstTime-3 \
 	tstTime-4 \
 	tstTimer \
+	tstTimerLR \
 	tstTimeSpec \
 	tstTSC \
 	tstUtf8 \
@@ -295,6 +296,8 @@ tstTime-3_SOURCES = tstTime-3.cpp
 tstTime-4_SOURCES = tstTime-4.cpp
 
 tstTimer_SOURCES = tstTimer.cpp
+
+tstTimerLR_SOURCES = tstTimerLR.cpp
 
 tstTimeSpec_SOURCES = tstTimeSpec.cpp
 
