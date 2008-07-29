@@ -327,10 +327,10 @@ void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mTwBootOrder, mTbBootItemUp);
     setTabOrder (mTbBootItemUp, mTbBootItemDown);
     setTabOrder (mTbBootItemDown, mCbAcpi);
-    setTabOrder (mCbAcpi, mCbPae);
-    setTabOrder (mCbPae, mCbApic);
+    setTabOrder (mCbAcpi, mCbApic);
     setTabOrder (mCbApic, mCbVirt);
-    setTabOrder (mCbVirt, mCbClipboard);
+    setTabOrder (mCbVirt, mCbPae);
+    setTabOrder (mCbPae, mCbClipboard);
     setTabOrder (mCbClipboard, mCbIDEController);
     setTabOrder (mCbIDEController, mPsSnapshot);
 
@@ -493,7 +493,7 @@ bool VBoxVMSettingsGeneral::eventFilter (QObject *aObject, QEvent *aEvent)
         return QWidget::eventFilter (aObject, aEvent);
 
     QWidget *widget = static_cast<QWidget*> (aObject);
-    if (widget->topLevelWidget() != topLevelWidget())
+    if (widget->window() != window())
         return QWidget::eventFilter (aObject, aEvent);
 
     switch (aEvent->type())
