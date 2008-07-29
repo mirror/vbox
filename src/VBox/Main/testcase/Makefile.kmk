@@ -33,6 +33,9 @@ ifdef VBOX_WITH_TESTCASES
  # That testcase is actually not linux specific, it's generic XPCOM.
  PROGRAMS.solaris += tstVBoxAPILinux
  PROGRAMS.win   += tstVBoxAPIWin
+ifdef VBOX_WITH_RESOURCE_USAGE_API
+ PROGRAMS       += tstCollector
+endif
 else ifeq ($(USERNAME),dmik)
  PROGRAMS       += tstAPI
  PROGRAMS.linux += tstVBoxAPILinux
@@ -99,6 +102,16 @@ tstVBoxAPIWin_SOURCES  = \
 	$(PATH_BIN)/sdk/lib/VirtualBox_i.c
 tstVBoxAPIWin_DEPS     = \
 	$(VBOX_PATH_SDK)/include/VirtualBox.h
+
+#
+# tstCollector
+#
+tstCollector_TEMPLATE = VBOXMAINCLIENTEXE
+tstCollector_SOURCES  = \
+	tstCollector.cpp \
+	../Performance.cpp
+tstCollector_INCS     = ../include
+
 
 # generate rules.
 include $(KBUILD_PATH)/subfooter.kmk
