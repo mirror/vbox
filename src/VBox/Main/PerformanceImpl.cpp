@@ -121,8 +121,8 @@ HRESULT PerformanceCollector::init()
     mMagic = MAGIC;
 
     /* Start resource usage sampler */
-    int vrc = RTTimerCreate (&m.sampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
-                             &PerformanceCollector::staticSamplerCallback, this);
+    int vrc = RTTimerLRCreate (&m.sampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
+                               &PerformanceCollector::staticSamplerCallback, this);
     AssertMsgRC (vrc, ("Failed to create resource usage "
                        "sampling timer(%Rra)\n", vrc));
     if (RT_FAILURE (vrc))
@@ -157,7 +157,7 @@ void PerformanceCollector::uninit()
     mMagic = 0;
 
     /* Destroy resource usage sampler */
-    int vrc = RTTimerDestroy (m.sampler);
+    int vrc = RTTimerLRDestroy (m.sampler);
     AssertMsgRC (vrc, ("Failed to destroy resource usage "
                        "sampling timer (%Rra)\n", vrc));
     m.sampler = NULL;
@@ -428,7 +428,7 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
 ///////////////////////////////////////////////////////////////////////////////
 
 /* static */
-void PerformanceCollector::staticSamplerCallback (PRTTIMER pTimer, void *pvUser,
+void PerformanceCollector::staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser,
                                                   uint64_t iTick)
 {
     AssertReturnVoid (pvUser != NULL);
@@ -438,6 +438,7 @@ void PerformanceCollector::staticSamplerCallback (PRTTIMER pTimer, void *pvUser,
     {
         collector->samplerCallback();
     }
+    NOREF (hTimerLR);
 }
 
 void PerformanceCollector::samplerCallback()

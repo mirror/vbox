@@ -237,7 +237,7 @@ public:
 
 private:
 
-    static void staticSamplerCallback (PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+    static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback();
 
     typedef std::list<pm::Metric*> MetricList;
@@ -256,7 +256,7 @@ private:
 
         BaseMetricList     baseMetrics;
         MetricList         metrics;
-        PRTTIMER           sampler;
+        RTTIMERLR          sampler;
         pm::MetricFactory *factory;
     };
 
