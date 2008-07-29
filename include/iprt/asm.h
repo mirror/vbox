@@ -3316,15 +3316,15 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t *pi32)
  *                  The memory pointed to must be writable.
  * @remark  This will fault if the memory is read-only!
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
 {
     uint64_t u64;
 # ifdef RT_ARCH_AMD64
-#  if RT_INLINE_ASM_GNU_STYLE
     Assert(!((uintptr_t)pu64 & 7));
+/*#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__(  "mfence\n\t"
                            "movq %1, %0\n\t"
                          : "=r" (u64)
@@ -3337,7 +3337,9 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
         mov     rax, [rdx]
         mov     [u64], rax
     }
-#  endif
+#  endif*/
+    ASMMemoryFence();
+    u64 = *pu64;
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
@@ -3388,14 +3390,15 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
  *                  The memory pointed to must be writable.
  * @remark  This will fault if the memory is read-only!
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
 {
     uint64_t u64;
 # ifdef RT_ARCH_AMD64
-#  if RT_INLINE_ASM_GNU_STYLE
+    Assert(!((uintptr_t)pu64 & 7));
+/*#  if RT_INLINE_ASM_GNU_STYLE
     Assert(!((uintptr_t)pu64 & 7));
     __asm__ __volatile__("movq %1, %0\n\t"
                          : "=r" (u64)
@@ -3407,7 +3410,8 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
         mov     rax, [rdx]
         mov     [u64], rax
     }
-#  endif
+#  endif */
+    u64 = *pu64;
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
