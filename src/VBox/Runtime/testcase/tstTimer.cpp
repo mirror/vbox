@@ -151,34 +151,41 @@ int main()
         gu64Max = 0;
         gu64Min = UINT64_MAX;
         gu64Prev = 0;
-        rc = RTTimerCreate(&pTimer, aTests[i].uMilliesInterval, TimerCallback, NULL);
+        rc = RTTimerCreateEx(&pTimer, aTests[i].uMilliesInterval * (uint64_t)1000000, 0, TimerCallback, NULL);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("RTTimerCreate(,%d,) -> %d\n", aTests[i].uMilliesInterval, rc);
+            RTPrintf("tstTimer: FAILURE - RTTimerCreateEx(,%u*1M,,,) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
             cErrors++;
             continue;
         }
 
         /*
-         * Active waiting for 2 seconds and then destroy it.
+         * Start the timer and active waiting for the requested test period.
          */
         uint64_t uTSBegin = RTTimeNanoTS();
+        rc = RTTimerStart(pTimer, 0);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
+            cErrors++;
+        }
+
         while (RTTimeNanoTS() - uTSBegin < (uint64_t)aTests[i].uMilliesWait * 1000000)
             /* nothing */;
+
+        /* destroy the timer */
         uint64_t uTSEnd = RTTimeNanoTS();
         uint64_t uTSDiff = uTSEnd - uTSBegin;
-        RTPrintf("uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
-        if (RT_FAILURE(rc))
-            RTPrintf("warning: RTThreadSleep ended prematurely with %d\n", rc);
         rc = RTTimerDestroy(pTimer);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstTimer: FAILURE - RTTimerDestroy() -> %d gcTicks=%d\n", rc, gcTicks);
             cErrors++;
-            continue;
         }
+
+        RTPrintf("tstTimer: uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
         unsigned cTicks = gcTicks;
-        RTThreadSleep(100);
+        RTThreadSleep(aTests[i].uMilliesInterval * 3);
         if (gcTicks != cTicks)
         {
             RTPrintf("tstTimer: FAILURE - RTTimerDestroy() didn't really stop the timer! gcTicks=%d cTicks=%d\n", gcTicks, cTicks);
