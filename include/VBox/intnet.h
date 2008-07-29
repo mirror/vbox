@@ -605,6 +605,9 @@ typedef enum INTNETTRUNKTYPE
 
 /** @name INTNETR0Open flags.
  * @{ */
+/** Share the MAC address with the host when sending something to the wire via the trunk.
+ * This is typically used when the trunk is a NetFlt for a wireless interface. */
+#define INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE                    RT_BIT_32(0)
 /** Whether new participants should be subjected to access check or not. */
 #define INTNET_OPEN_FLAGS_PUBLIC                                RT_BIT_32(1)
 /** Ignore any requests for promiscuous mode. */
@@ -624,7 +627,7 @@ typedef enum INTNETTRUNKTYPE
 /** The mask of flags is always ORed in, even on open. (the quiet stuff) */
 #define INTNET_OPEN_FLAGS_SECURITY_OR_MASK                      (RT_BIT_32(3) | RT_BIT_32(5) | RT_BIT_32(7))
 /** The mask of valid flags. */
-#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x000000fe)
+#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x000000ff)
 /** @} */
 
 /** The maximum length of a network name. */
