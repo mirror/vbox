@@ -216,7 +216,7 @@ void VBoxVMSettingsFD::onGbChange (bool aSwitchedOn)
 
     mMountFDChild->setEnabled (aSwitchedOn);
 
-    onCbChange();
+    onRbChange();
 }
 
 void VBoxVMSettingsFD::onRbChange()

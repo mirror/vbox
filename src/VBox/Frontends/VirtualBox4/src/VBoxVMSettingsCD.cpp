@@ -219,7 +219,7 @@ void VBoxVMSettingsCD::onGbChange (bool aSwitchedOn)
 
     mMountCDChild->setEnabled (aSwitchedOn);
 
-    onCbChange();
+    onRbChange();
 }
 
 void VBoxVMSettingsCD::onRbChange()
