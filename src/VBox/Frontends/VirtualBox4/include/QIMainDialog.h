@@ -37,18 +37,18 @@ class QIMainDialog: public QMainWindow
 
 public:
 
-    QIMainDialog (QWidget *aParent = NULL, Qt::WindowFlags aFlags = Qt::Dialog);
+    QIMainDialog (QWidget *aParent = 0, Qt::WindowFlags aFlags = Qt::Dialog);
 
     QDialog::DialogCode exec();
     QDialog::DialogCode result() const;
 
-    void setFileForProxyIcon (const QString& aFile);
+    void setFileForProxyIcon (const QString &aFile);
     QString fileForProxyIcon () const;
 
     void setSizeGripEnabled (bool aEnabled);
     bool isSizeGripEnabled () const;
 
-    void setDefaultButton (QPushButton* aButton);
+    void setDefaultButton (QPushButton *aButton);
     QPushButton* defaultButton () const;
 
 public slots:
