@@ -181,7 +181,7 @@ private:
 
 /**
  * Checking that the key passed by the guest fits our criteria for a
- * configuration key
+ * configuration key.
  *
  * @returns IPRT status code
  * @param   pszKey    the key passed by the guest
@@ -193,15 +193,12 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
 {
     LogFlowFunc(("cbKey=%d\n", cbKey));
 
-    size_t count;
-    int rc = VINF_SUCCESS;
-
-    /* Validate the format of the key. */
-    /* Only accept names in valid Utf8. */
-    rc = RTStrValidateEncodingEx(pszKey, cbKey - 1, 0);
-    if (RT_SUCCESS(rc))
-        /* We want to check the byte length, not the Utf8 length */
-        rc = RTStrNLenEx(pszKey, MAX_NAME_LEN + 1, &count);
+    /*
+     * Validate the key, checking that it's proper UTF-8 and has
+     * a string terminator.
+     */
+    int rc = RTStrValidateEncodingEx(pszKey, RT_MIN(cbKey, MAX_NAME_LEN),
+                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
 
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -210,7 +207,7 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
 
 /**
  * Check that the data passed by the guest fits our criteria for the value of
- * a configuration key
+ * a configuration key.
  *
  * @returns IPRT status code
  * @param   pszValue  the value to store in the key
@@ -221,16 +218,15 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
 {
     LogFlowFunc(("cbValue=%d\n", cbValue));
 
-    size_t count;
+    /*
+     * Validate the value, checking that it's proper UTF-8 and has
+     * a string terminator. Don't pass a 0 length request to the
+     * validator since it won't find any '\0' then.
+     */
     int rc = VINF_SUCCESS;
-
-    /* Validate the format of the value. */
-    /* Only accept values in valid Utf8 */
-    rc = RTStrValidateEncodingEx(pszValue, cbValue - 1, 0);
-    if (RT_SUCCESS(rc))
-        /* We want to check the byte length, not the Utf8 length */
-        rc = RTStrNLenEx(pszValue, MAX_VALUE_LEN + 1, &count);
-
+    if (cbValue)
+        rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, MAX_VALUE_LEN),
+                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -386,7 +382,7 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         CFGMR3RemoveValue(mpNode, pszKey);
-        if (pszValue > 0)
+        if (pszValue > 0) /** @todo r=bird: what kind of fun is this? pointers are signed and this will *NOT* work on solaris and mac! */
             rc = CFGMR3InsertString(mpNode, pszKey, pszValue);
     }
     if (RT_SUCCESS(rc))
