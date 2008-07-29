@@ -46,7 +46,8 @@
 *******************************************************************************/
 static int g_cErrors = 0;
 static bool g_fOnceCB1 = false;
-static uint32_t volatile g_cOnceCB2 = 0;
+static uint32_t volatile g_cOnce2CB = 0;
+static bool volatile g_fOnce2Ready = false;
 static RTONCE g_Once2 = RTONCE_INITIALIZER;
 static RTSEMEVENTMULTI g_hEventMulti = NIL_RTSEMEVENTMULTI;
 
@@ -67,9 +68,9 @@ static DECLCALLBACK(int) Once1CB(void *pvUser1, void *pvUser2)
 
 static DECLCALLBACK(int) Once2CB(void *pvUser1, void *pvUser2)
 {
-    if (ASMAtomicIncU32(&g_cOnceCB2) != 1)
+    if (ASMAtomicIncU32(&g_cOnce2CB) != 1)
     {
-        RTPrintf("tstOnce: ERROR - Once2CB: g_cOnceCB2 not zero!\n");
+        RTPrintf("tstOnce: ERROR - Once2CB: g_cOnce2CB not zero!\n");
         g_cErrors++;
         return VERR_WRONG_ORDER;
     }
@@ -79,6 +80,9 @@ static DECLCALLBACK(int) Once2CB(void *pvUser1, void *pvUser2)
         g_cErrors++;
         return VERR_INVALID_PARAMETER;
     }
+    RTThreadSleep(2);
+    Assert(!g_fOnce2Ready);
+    ASMAtomicWriteBool(&g_fOnce2Ready, true);
     return VINF_SUCCESS;
 }
 
@@ -89,18 +93,27 @@ static DECLCALLBACK(int) Once2Thread(RTTHREAD hThread, void *pvUser)
     int rc = RTSemEventMultiWait(g_hEventMulti, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
         return rc;
-    return RTOnce(&g_Once2, Once2CB, (void *)42, (void *)1);
+    rc = RTOnce(&g_Once2, Once2CB, (void *)42, (void *)1);
+    if (RT_SUCCESS(rc))
+    {
+        if (!ASMAtomicUoReadBool(&g_fOnce2Ready))
+        {
+            RTPrintf("tstOnce: ERROR - Once2CB: Not initialized!\n");
+            g_cErrors++;
+        }
+    }
+    return rc;
 }
 
 
 int main()
 {
     RTR3Init();
-    RTPrintf("tstOnce: SUCCESS\n");
 
     /*
      * Just a simple testcase.
      */
+    RTPrintf("tstOnce: TESTING - smoke...\n");
     RTONCE Once1 = RTONCE_INITIALIZER;
     g_fOnceCB1 = false;
     int rc = RTOnce(&Once1, Once1CB, (void *)1, (void *)42);
@@ -114,6 +127,7 @@ int main()
     /*
      * Throw a bunch of threads up against a init once thing.
      */
+    RTPrintf("tstOnce: TESTING - bunch of threads...\n");
     /* create the semaphore they'll be waiting on. */
     rc = RTSemEventMultiCreate(&g_hEventMulti);
     if (RT_FAILURE(rc))
