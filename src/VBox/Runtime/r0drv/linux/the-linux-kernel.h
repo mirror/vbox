@@ -65,7 +65,11 @@
 #include <linux/string.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
-#include <asm/semaphore.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# include <linux/semaphore.h>
+#else /* older kernels */
+# include <asm/semaphore.h>
+#endif /* older kernels */
 #include <linux/module.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/moduleparam.h>
