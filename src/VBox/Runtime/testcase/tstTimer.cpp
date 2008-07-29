@@ -151,7 +151,11 @@ int main()
         gu64Max = 0;
         gu64Min = UINT64_MAX;
         gu64Prev = 0;
+#ifdef RT_OS_WINDOWS
+        rc = RTTimerCreate(&pTimer, aTests[i].uMilliesInterval, TimerCallback, NULL);
+#else
         rc = RTTimerCreateEx(&pTimer, aTests[i].uMilliesInterval * (uint64_t)1000000, 0, TimerCallback, NULL);
+#endif
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstTimer: FAILURE - RTTimerCreateEx(,%u*1M,,,) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
@@ -163,12 +167,14 @@ int main()
          * Start the timer and active waiting for the requested test period.
          */
         uint64_t uTSBegin = RTTimeNanoTS();
+#ifndef RT_OS_WINDOWS
         rc = RTTimerStart(pTimer, 0);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
             cErrors++;
         }
+#endif
 
         while (RTTimeNanoTS() - uTSBegin < (uint64_t)aTests[i].uMilliesWait * 1000000)
             /* nothing */;
