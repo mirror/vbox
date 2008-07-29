@@ -37,8 +37,9 @@
 #include <QPushButton>
 #include <QDialogButtonBox>
 
-QIMainDialog::QIMainDialog (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = Qt::Dialog */)
-    : QMainWindow (aParent, aFlags) 
+QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
+                            Qt::WindowFlags aFlags /* = Qt::Dialog */)
+    : QMainWindow (aParent, aFlags)
     , mRescode (QDialog::Rejected)
 {
     qApp->installEventFilter (this);
@@ -52,7 +53,7 @@ QDialog::DialogCode QIMainDialog::exec()
     setResult (QDialog::Rejected);
     bool deleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
     setAttribute (Qt::WA_DeleteOnClose, false);
-    bool wasShowModal = testAttribute (Qt::WA_ShowModal); 
+    bool wasShowModal = testAttribute (Qt::WA_ShowModal);
     setAttribute (Qt::WA_ShowModal, true);
 
     /* Create a local event loop */
@@ -69,7 +70,7 @@ QDialog::DialogCode QIMainDialog::exec()
     if (guard.isNull())
         return QDialog::Rejected;
     QDialog::DialogCode res = result();
-    /* Set the old show modal attribute */ 
+    /* Set the old show modal attribute */
     setAttribute (Qt::WA_ShowModal, wasShowModal);
     /* Delete us in the case we should do so on close */
     if (deleteOnClose)
@@ -78,9 +79,9 @@ QDialog::DialogCode QIMainDialog::exec()
     return res;
 }
 
-QDialog::DialogCode QIMainDialog::result() const 
-{ 
-    return mRescode; 
+QDialog::DialogCode QIMainDialog::result() const
+{
+    return mRescode;
 }
 
 void QIMainDialog::setFileForProxyIcon (const QString& aFile)
@@ -88,7 +89,7 @@ void QIMainDialog::setFileForProxyIcon (const QString& aFile)
     mFileForProxyIcon = aFile;
 }
 
-QString QIMainDialog::fileForProxyIcon () const
+QString QIMainDialog::fileForProxyIcon() const
 {
     return mFileForProxyIcon;
 }
@@ -105,7 +106,7 @@ void QIMainDialog::setSizeGripEnabled (bool aEnabled)
         delete mSizeGrip;
 }
 
-bool QIMainDialog::isSizeGripEnabled () const
+bool QIMainDialog::isSizeGripEnabled() const
 {
     return mSizeGrip;
 }
@@ -126,85 +127,85 @@ void QIMainDialog::setVisible (bool aVisible)
     QMainWindow::setVisible (aVisible);
     /* Exit from the event loop if there is any and we are changing our state
      * from visible to invisible. */
-    if(mEventLoop && !aVisible)
+    if (mEventLoop && !aVisible)
         mEventLoop->exit();
 }
 
 bool QIMainDialog::event (QEvent *aEvent)
 {
-     switch (aEvent->type()) 
+     switch (aEvent->type())
      {
 #ifdef Q_WS_MAC
-          case QEvent::IconDrag: 
-              {
-                  Qt::KeyboardModifiers currentModifiers = qApp->keyboardModifiers();
+          case QEvent::IconDrag:
+          {
+              Qt::KeyboardModifiers currentModifiers = qApp->keyboardModifiers();
 
-                  if (currentModifiers == Qt::NoModifier) 
-                  {
-                      if (!mFileForProxyIcon.isEmpty())
-                      {
-                          aEvent->accept();
-                          /* Create a drag object we can use */
-                          QDrag *drag = new QDrag (this);
-                          QMimeData *data = new QMimeData();
-                          /* Set the appropriate url data */
-                          data->setUrls(QList<QUrl>() << QUrl::fromLocalFile (mFileForProxyIcon));
-                          drag->setMimeData (data);
-                          /* Make a nice looking DnD icon */
-                          QFileInfo fi (mFileForProxyIcon);
-                          QPixmap cursorPixmap (::darwinCreateDragPixmap (QPixmap (windowIcon().pixmap (16, 16)), fi.fileName()));
-                          drag->setPixmap (cursorPixmap);
-                          drag->setHotSpot (QPoint (5, cursorPixmap.height() - 5));
-                          /* Start the DnD action */
-                          drag->start (Qt::LinkAction | Qt::CopyAction);
-                          return true;
-                      }
-                  }
-#if QT_VERSION < 0x040400
-                  else if (currentModifiers == Qt::ShiftModifier) 
-#else
-                  else if (currentModifiers == Qt::ControlModifier) 
-#endif
-                  {
-                      if (!mFileForProxyIcon.isEmpty())
-                      {
-                          aEvent->accept();
-                          /* Create the proxy icon menu */
-                          QMenu menu(this);
-                          connect(&menu, SIGNAL (triggered (QAction *)), 
-                                  this, SLOT (openAction (QAction *)));
-                          /* Add the file with the disk icon to the menu */
-                          QFileInfo fi (mFileForProxyIcon);
-                          QAction *action = menu.addAction (fi.fileName());
-                          action->setIcon (windowIcon());
-                          /* Create some nice looking menu out of the other
-                           * directory parts. */
-                          QFileIconProvider fip;
-                          QDir dir (fi.absolutePath());
-                          do
-                          {
-                              if (dir.isRoot())
-                                  action = menu.addAction ("/");
-                              else
-                                  action = menu.addAction (dir.dirName());
-                              action->setIcon (fip.icon (QFileInfo (dir, "")));
-                          }
-                          while (dir.cdUp());
-                          /* Show the menu */
-                          menu.exec (QPoint (QCursor::pos().x() - 20, frameGeometry().y() - 5));
-                          return true;
-                      }
-                  }
-                  break;
-              }
-#endif /* Q_WS_MAC */
-          case QEvent::Polish: 
+              if (currentModifiers == Qt::NoModifier)
               {
-                  /* Initially search for the default button. */
-                  mDefaultButton = searchDefaultButton();
-                  break;
+                  if (!mFileForProxyIcon.isEmpty())
+                  {
+                      aEvent->accept();
+                      /* Create a drag object we can use */
+                      QDrag *drag = new QDrag (this);
+                      QMimeData *data = new QMimeData();
+                      /* Set the appropriate url data */
+                      data->setUrls (QList<QUrl>() << QUrl::fromLocalFile (mFileForProxyIcon));
+                      drag->setMimeData (data);
+                      /* Make a nice looking DnD icon */
+                      QFileInfo fi (mFileForProxyIcon);
+                      QPixmap cursorPixmap (::darwinCreateDragPixmap (QPixmap (windowIcon().pixmap (16, 16)), fi.fileName()));
+                      drag->setPixmap (cursorPixmap);
+                      drag->setHotSpot (QPoint (5, cursorPixmap.height() - 5));
+                      /* Start the DnD action */
+                      drag->start (Qt::LinkAction | Qt::CopyAction);
+                      return true;
+                  }
               }
-          default: 
+#if QT_VERSION < 0x040400
+              else if (currentModifiers == Qt::ShiftModifier)
+#else
+              else if (currentModifiers == Qt::ControlModifier)
+#endif
+              {
+                  if (!mFileForProxyIcon.isEmpty())
+                  {
+                      aEvent->accept();
+                      /* Create the proxy icon menu */
+                      QMenu menu (this);
+                      connect (&menu, SIGNAL (triggered (QAction*)),
+                               this, SLOT (openAction (QAction*)));
+                      /* Add the file with the disk icon to the menu */
+                      QFileInfo fi (mFileForProxyIcon);
+                      QAction *action = menu.addAction (fi.fileName());
+                      action->setIcon (windowIcon());
+                      /* Create some nice looking menu out of the other
+                       * directory parts. */
+                      QFileIconProvider fip;
+                      QDir dir (fi.absolutePath());
+                      do
+                      {
+                          if (dir.isRoot())
+                              action = menu.addAction ("/");
+                          else
+                              action = menu.addAction (dir.dirName());
+                          action->setIcon (fip.icon (QFileInfo (dir, "")));
+                      }
+                      while (dir.cdUp());
+                      /* Show the menu */
+                      menu.exec (QPoint (QCursor::pos().x() - 20, frameGeometry().y() - 5));
+                      return true;
+                  }
+              }
+              break;
+          }
+#endif /* Q_WS_MAC */
+          case QEvent::Polish:
+          {
+              /* Initially search for the default button. */
+              mDefaultButton = searchDefaultButton();
+              break;
+          }
+          default:
               break;
      }
      return QMainWindow::event (aEvent);
@@ -215,7 +216,7 @@ void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
     QMainWindow::resizeEvent (aEvent);
 
     /* Adjust the size-grip location for the current resize event */
-    if (mSizeGrip) 
+    if (mSizeGrip)
     {
         if (isRightToLeft())
             mSizeGrip->move (rect().bottomLeft() - mSizeGrip->rect().bottomLeft());
@@ -230,79 +231,82 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
     if (!isActiveWindow())
         return QMainWindow::eventFilter (aObject, aEvent);
 
+    if (qobject_cast<QWidget*> (aObject) &&
+        qobject_cast<QWidget*> (aObject)->window() != this)
+        return QMainWindow::eventFilter (aObject, aEvent);
+
     switch (aEvent->type())
     {
         /* Auto-default button focus-in processor used to move the "default"
          * button property into the currently focused button. */
         case QEvent::FocusIn:
+        {
+            if (qobject_cast<QPushButton*> (aObject) &&
+                (aObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*> (aObject->parent())))
             {
-                if (qobject_cast<QPushButton*> (aObject) &&
-                    (aObject->parent() == centralWidget() ||
-                     qobject_cast<QDialogButtonBox*> (aObject->parent()) != NULL))
-                {
-                    qobject_cast<QPushButton*> (aObject)->setDefault (aObject != mDefaultButton);
-                    if (mDefaultButton)
-                        mDefaultButton->setDefault (aObject == mDefaultButton);
-                }                                    
-                break;
+                qobject_cast<QPushButton*> (aObject)->setDefault (aObject != mDefaultButton);
+                if (mDefaultButton)
+                    mDefaultButton->setDefault (aObject == mDefaultButton);
             }
+            break;
+        }
         /* Auto-default button focus-out processor used to remove the "default"
          * button property from the previously focused button. */
         case QEvent::FocusOut:
+        {
+            if (qobject_cast<QPushButton*> (aObject) &&
+                (aObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*> (aObject->parent())))
             {
-                if (qobject_cast<QPushButton*> (aObject) && 
-                    (aObject->parent() == centralWidget() ||
-                     qobject_cast<QDialogButtonBox*> (aObject->parent()) != NULL))
-                {
-                    if (mDefaultButton)
-                        mDefaultButton->setDefault (aObject != mDefaultButton);
-                    qobject_cast<QPushButton*> (aObject)->setDefault (aObject == mDefaultButton);
-                }                     
-                break;
+                if (mDefaultButton)
+                    mDefaultButton->setDefault (aObject != mDefaultButton);
+                qobject_cast<QPushButton*> (aObject)->setDefault (aObject == mDefaultButton);
             }
+            break;
+        }
         case QEvent::KeyPress:
-            {
-                /* Make sure that we only proceed if no
-                 * popup or other modal widgets are open. */
-                if (aObject != this ||
-                    qApp->activePopupWidget() != NULL ||
-                    !(qApp->activeModalWidget() == this || 
-                      qApp->activeModalWidget() == NULL))
-                    break;
-                QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
+        {
+            /* Make sure that we only proceed if no
+             * popup or other modal widgets are open. */
+            if (qApp->activePopupWidget() ||
+                (qApp->activeModalWidget() && qApp->activeModalWidget() != this))
+                break;
+
+            QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
 #ifdef Q_WS_MAC
-                if (event->modifiers() == Qt::ControlModifier && 
-                    event->key() == Qt::Key_Period)
-                    reject();
-                else
+            if (event->modifiers() == Qt::ControlModifier &&
+                event->key() == Qt::Key_Period)
+                reject();
+            else
 #endif
-                    if (event->modifiers() == Qt::NoModifier ||
-                        (event->modifiers() & Qt::KeypadModifier && event->key() == Qt::Key_Enter))
+                if (event->modifiers() == Qt::NoModifier ||
+                    (event->modifiers() & Qt::KeypadModifier && event->key() == Qt::Key_Enter))
+                {
+                    switch (event->key())
                     {
-                        switch (event->key())
+                        case Qt::Key_Enter:
+                        case Qt::Key_Return:
                         {
-                            case Qt::Key_Enter:
-                            case Qt::Key_Return:
-                                {
-                                    QPushButton *currentDefault = searchDefaultButton();
-                                    if (currentDefault)
-                                    {
-                                        /* We handle this, so return true after
-                                         * that. */
-                                        currentDefault->animateClick();
-                                        return true;
-                                    }
-                                    break;
-                                }
-                            case Qt::Key_Escape:
-                                {
-                                    reject();
-                                    return true;
-                                    break;
-                                }
+                            QPushButton *currentDefault = searchDefaultButton();
+                            if (currentDefault)
+                            {
+                                /* We handle this, so return true after
+                                 * that. */
+                                currentDefault->animateClick();
+                                return true;
+                            }
+                            break;
+                        }
+                        case Qt::Key_Escape:
+                        {
+                            reject();
+                            return true;
+                            break;
                         }
                     }
-            }
+                }
+        }
         default:
             break;
     }
@@ -312,25 +316,25 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 QPushButton* QIMainDialog::searchDefaultButton() const
 {
     /* Search for the first default button in the dialog. */
-    QPushButton *button = NULL;
+    QPushButton *button = 0;
     QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
     foreach (button, list)
-        if(button->isDefault() &&
-           (button->parent() == centralWidget() ||
-            qobject_cast<QDialogButtonBox*> (button->parent()) != NULL))
+        if (button->isDefault() &&
+            (button->parent() == centralWidget() ||
+             qobject_cast<QDialogButtonBox*> (button->parent())))
             break;
     return button;
 }
 
 
-void QIMainDialog::accept() 
-{ 
-    done (QDialog::Accepted); 
+void QIMainDialog::accept()
+{
+    done (QDialog::Accepted);
 }
 
-void QIMainDialog::reject() 
-{ 
-    done (QDialog::Rejected); 
+void QIMainDialog::reject()
+{
+    done (QDialog::Rejected);
 }
 
 void QIMainDialog::done (QDialog::DialogCode aResult)
@@ -343,9 +347,9 @@ void QIMainDialog::done (QDialog::DialogCode aResult)
     close();
 }
 
-void QIMainDialog::setResult (QDialog::DialogCode aRescode) 
-{ 
-    mRescode = aRescode; 
+void QIMainDialog::setResult (QDialog::DialogCode aRescode)
+{
+    mRescode = aRescode;
 }
 
 void QIMainDialog::openAction (QAction *aAction)
