@@ -27,12 +27,11 @@
  * additional information or have any questions.
  */
 
-#ifndef ___iprt_netprotfmt_h
-#define ___iprt_netprotfmt_h
+#ifndef ___iprt_net_h
+#define ___iprt_net_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <VBox/types.h> /** @todo switch around PDMMAC and NETMAC. */
 #include <iprt/assert.h>
 
 
@@ -42,13 +41,6 @@ __BEGIN_DECLS
  * @ingroup grp_rt
  * @{
  */
-
-/** A Ethernet MAC address. */
-typedef PDMMAC RTNETMAC;
-/** Pointer to an ethernet MAC address. */
-typedef RTNETMAC *PRTNETMAC;
-/** Pointer to a const ethernet MAC address. */
-typedef RTNETMAC const *PCRTNETMAC;
 
 /**
  * IPv4 address.
@@ -79,7 +71,7 @@ typedef struct RTNETADDRIPX
     /** The network ID. */
     uint32_t Network;
     /** The node ID. (Defaults to the MAC address apparently.) */
-    RTNETMAC Node;
+    RTMAC Node;
 } RTNETADDRIPX;
 #pragma pack(0)
 AssertCompileSize(RTNETADDRIPX, 4+6);
@@ -108,7 +100,7 @@ typedef union RTNETADDRU
     /** IPX view. */
     RTNETADDRIPX Ipx;
     /** MAC address view. */
-    RTNETMAC Mac;
+    RTMAC Mac;
 } RTNETADDRU;
 AssertCompileSize(RTNETADDRU, 16);
 /** Pointer to an address union. */
@@ -123,8 +115,8 @@ typedef RTNETADDRU const *PCRTNETADDRU;
 #pragma pack(1)
 typedef struct RTNETETHERHDR
 {
-    RTNETMAC    MacDst;
-    RTNETMAC    MacSrc;
+    RTMAC       MacDst;
+    RTMAC       MacSrc;
     /** Ethernet frame type or frame size, depending on the kind of ethernet.
      * This is big endian on the wire. */
     uint16_t    EtherType;
@@ -323,11 +315,11 @@ typedef struct RTNETARPIPV4
     /** ARP header. */
     RTNETARPHDR     Hdr;
     /** The sender hardware address. */
-    RTNETMAC        ar_sha;
+    RTMAC           ar_sha;
     /** The sender protocol address. */
     RTNETADDRIPV4   ar_spa;
     /** The target hardware address. */
-    RTNETMAC        ar_tha;
+    RTMAC           ar_tha;
     /** The arget protocol address. */
     RTNETADDRIPV4   ar_tpa;
 } RTNETARPIPV4;
@@ -347,6 +339,4 @@ typedef RTNETARPIPV4 const *PCRTNETARPIPV4;
 __END_DECLS
 
 #endif
-
-
 
