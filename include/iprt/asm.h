@@ -2274,25 +2274,6 @@ DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u12
 
 
 /**
- * Atomically Exchange a value which size might differ
- * between platforms or compilers, ordered.
- *
- * @param   pu      Pointer to the variable to update.
- * @param   uNew    The value to assign to *pu.
- */
-#define ASMAtomicXchgSize(pu, uNew) \
-    do { \
-        switch (sizeof(*(pu))) { \
-            case 1: ASMAtomicXchgU8((volatile uint8_t *)(void *)(pu), (uint8_t)(uNew)); break; \
-            case 2: ASMAtomicXchgU16((volatile uint16_t *)(void *)(pu), (uint16_t)(uNew)); break; \
-            case 4: ASMAtomicXchgU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
-            case 8: ASMAtomicXchgU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
-            default: AssertMsgFailed(("ASMAtomicXchgSize: size %d is not supported\n", sizeof(*(pu)))); \
-        } \
-    } while (0)
-
-
-/**
  * Atomically Exchange a pointer value, ordered.
  *
  * @returns Current *ppv value
@@ -2309,6 +2290,62 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, void *pv)
 # error "ARCH_BITS is bogus"
 #endif
 }
+
+
+/** @def ASMAtomicXchgHandle
+ * Atomically Exchange a typical IPRT handle value, ordered.
+ *
+ * @param   ph          Pointer to the value to update.
+ * @param   hNew        The new value to assigned to *pu.
+ * @param   phRes       Where to store the current *ph value.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicXchgHandle(ph, hNew, phRes) \
+    do { \
+        *(void **)(phRes) = ASMAtomicXchgPtr((void * volatile *)(ph), (void *)(hNew)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
+    } while (0)
+
+
+/**
+ * Atomically Exchange a value which size might differ
+ * between platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to assign to *pu.
+ * @todo This is busted as its missing the result argument.
+ */
+#define ASMAtomicXchgSize(pu, uNew) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: ASMAtomicXchgU8((volatile uint8_t *)(void *)(pu), (uint8_t)(uNew)); break; \
+            case 2: ASMAtomicXchgU16((volatile uint16_t *)(void *)(pu), (uint16_t)(uNew)); break; \
+            case 4: ASMAtomicXchgU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: ASMAtomicXchgU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicXchgSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+/**
+ * Atomically Exchange a value which size might differ
+ * between platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to assign to *pu.
+ * @param   puRes   Where to store the current *pu value.
+ */
+#define ASMAtomicXchgSizeCorrect(pu, uNew, puRes) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: *(uint8_t  *)(puRes) = ASMAtomicXchgU8((volatile uint8_t *)(void *)(pu), (uint8_t)(uNew)); break; \
+            case 2: *(uint16_t *)(puRes) = ASMAtomicXchgU16((volatile uint16_t *)(void *)(pu), (uint16_t)(uNew)); break; \
+            case 4: *(uint32_t *)(puRes) = ASMAtomicXchgU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: *(uint64_t *)(puRes) = ASMAtomicXchgU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicXchgSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
 
 
 /**
@@ -2491,6 +2528,45 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
 }
 
 
+/**
+ * Atomically Compare and Exchange a pointer value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   ppv         Pointer to the value to update.
+ * @param   pvNew       The new value to assigned to *ppv.
+ * @param   pvOld       The old value to *ppv compare with.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, void *pvNew, void *pvOld)
+{
+#if ARCH_BITS == 32
+    return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
+#elif ARCH_BITS == 64
+    return ASMAtomicCmpXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/** @def ASMAtomicCmpXchgHandle
+ * Atomically Compare and Exchange a typical IPRT handle value, ordered.
+ *
+ * @param   ph          Pointer to the value to update.
+ * @param   hNew        The new value to assigned to *pu.
+ * @param   hOld        The old value to *pu compare with.
+ * @param   fRc         Where to store the result.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
+    do { \
+        (fRc) = ASMAtomicCmpXchgPtr((void * volatile *)(ph), (void *)(hNew), (void *)(hOld)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+    } while (0)
+
+
 /** @def ASMAtomicCmpXchgSize
  * Atomically Compare and Exchange a value which size might differ
  * between platforms or compilers, ordered.
@@ -2512,28 +2588,6 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
                 break; \
         } \
     } while (0)
-
-
-/**
- * Atomically Compare and Exchange a pointer value, ordered.
- *
- * @returns true if xchg was done.
- * @returns false if xchg wasn't done.
- *
- * @param   ppv         Pointer to the value to update.
- * @param   pvNew       The new value to assigned to *ppv.
- * @param   pvOld       The old value to *ppv compare with.
- */
-DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, void *pvNew, void *pvOld)
-{
-#if ARCH_BITS == 32
-    return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
-#elif ARCH_BITS == 64
-    return ASMAtomicCmpXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld);
-#else
-# error "ARCH_BITS is bogus"
-#endif
-}
 
 
 /**
@@ -2731,6 +2785,33 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
     return ASMAtomicCmpXchgExU64((volatile uint64_t *)pi64, (uint64_t)i64, (uint64_t)i64Old, (uint64_t *)pi64Old);
 }
 
+/** @def ASMAtomicCmpXchgExHandle
+ * Atomically Compare and Exchange a typical IPRT handle value, ordered.
+ *
+ * @param   ph          Pointer to the value to update.
+ * @param   hNew        The new value to assigned to *pu.
+ * @param   hOld        The old value to *pu compare with.
+ * @param   fRc         Where to store the result.
+ * @param   phOldVal    Pointer to where to store the old value.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#if ARCH_BITS == 32
+# define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
+    do { \
+        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(puOldVal)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+        AssertCompile(sizeof(*phOldVal) == sizeof(void *)); \
+    } while (0)
+#elif ARCH_BITS == 64
+# define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
+    do { \
+        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(puOldVal)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+        AssertCompile(sizeof(*phOldVal) == sizeof(void *)); \
+    } while (0)
+#endif
+
 
 /** @def ASMAtomicCmpXchgExSize
  * Atomically Compare and Exchange a value which size might differ
@@ -2740,14 +2821,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  * @param   uNew        The new value to assigned to *pu.
  * @param   uOld        The old value to *pu compare with.
  * @param   fRc         Where to store the result.
- * @param   uOldVal     Where to store the old value.
+ * @param   puOldVal    Pointer to where to store the old value.
  */
-#define ASMAtomicCmpXchgExSize(pu, uNew, uOld, fRc, uOldVal) \
+#define ASMAtomicCmpXchgExSize(pu, uNew, uOld, fRc, puOldVal) \
     do { \
         switch (sizeof(*(pu))) { \
-            case 4: (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)&(uOldVal)); \
+            case 4: (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(uOldVal)); \
                 break; \
-            case 8: (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)&(uOldVal)); \
+            case 8: (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(uOldVal)); \
                 break; \
             default: AssertMsgFailed(("ASMAtomicCmpXchgSize: size %d is not supported\n", sizeof(*(pu)))); \
                 (fRc) = false; \
@@ -3459,6 +3540,38 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
 
 
 /**
+ * Atomically read a typical IPRT handle value, ordered.
+ *
+ * @param   ph      Pointer to the handle variable to read.
+ * @param   phRes   Where to store the result.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicReadHandle(ph, phRes) \
+    do { \
+        *(void **)(phRes) = ASMAtomicReadPtr((void * volatile *)(ph)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
+    } while (0)
+
+
+/**
+ * Atomically read a typical IPRT handle value, unordered.
+ *
+ * @param   ph      Pointer to the handle variable to read.
+ * @param   phRes   Where to store the result.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicUoReadHandle(ph, phRes) \
+    do { \
+        *(void **)(phRes) = ASMAtomicUoReadPtr((void * volatile *)(ph)); \
+        AssertCompile(sizeof(*ph) == sizeof(void *)); \
+        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
+    } while (0)
+
+
+/**
  * Atomically read a value which size might differ
  * between platforms or compilers, ordered.
  *
@@ -3762,6 +3875,36 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, void *pv)
 # error "ARCH_BITS is bogus"
 #endif
 }
+
+
+/**
+ * Atomically write a typical IPRT handle value, ordered.
+ *
+ * @param   ph      Pointer to the variable to update.
+ * @param   hNew    The value to assign to *ph.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicWriteHandle(ph, hNew) \
+    do { \
+        ASMAtomicWritePtr((void * volatile *)(ph), (void *)hNew); \
+        AssertCompile(sizeof(*ph) == sizeof(void*)); \
+    } while (0)
+
+
+/**
+ * Atomically write a typical IPRT handle value, unordered.
+ *
+ * @param   ph      Pointer to the variable to update.
+ * @param   hNew    The value to assign to *ph.
+ *
+ * @remarks This doesn't currently work for all handles (like RTFILE).
+ */
+#define ASMAtomicUoWriteHandle(ph, hNew) \
+    do { \
+        ASMAtomicUoWritePtr((void * volatile *)(ph), (void *)hNew); \
+        AssertCompile(sizeof(*ph) == sizeof(void*)); \
+    } while (0)
 
 
 /**
