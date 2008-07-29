@@ -198,17 +198,24 @@ typedef struct _EnumProperties
     /**
      * Null-separated array of patterns to match the properties against.
      * (IN pointer)
-     * If no patterns are given then return all.
+     * If no patterns are given then return all.  The list is terminated by an
+     * empty string.
      */
     HGCMFunctionParameter patterns;
     /**
-     * Null-separated array of strings in which the properties are returned.
-     * (OUT pointer)
+     * On success, null-separated array of strings in which the properties are
+     * returned.  (OUT pointer)
      * The number of strings in the array is always a multiple of four,
      * and in sequences of name, value, timestamp (hexadecimal string) and the
-     * flags as a comma-separated list in the format "name=value"
+     * flags as a comma-separated list in the format "name=value".  The list
+     * is terminated by four empty strings.
      */
     HGCMFunctionParameter strings;
+    /**
+     * On success, the size of the returned data.  If the buffer provided is
+     * too small, the size of buffer needed.  (OUT uint32_t)
+     */
+    HGCMFunctionParameter size;
 } EnumProperties;
 #pragma pack ()
 
