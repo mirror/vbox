@@ -348,9 +348,9 @@ public:
 
                 /* make sure the previous timer (if any) is stopped;
                  * otherwise RTTimerStart() will definitely fail. */
-                RTTimerStop (sTimer);
+                RTTimerLRStop (sTimer);
 
-                int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
+                int vrc = RTTimerLRStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
                 AssertRC (vrc);
                 timerStarted = SUCCEEDED (vrc);
             }
@@ -444,9 +444,9 @@ public:
         }
     };
 
-    static void ShutdownTimer (PRTTIMER pTimer, void *pvUser, uint64_t /*iTick*/)
+    static void ShutdownTimer (RTTIMERLR hTimerLR, void *pvUser, uint64_t /*iTick*/)
     {
-        NOREF (pTimer);
+        NOREF (hTimerLR);
         NOREF (pvUser);
 
         /* A "too late" event is theoretically possible if somebody
@@ -473,7 +473,7 @@ public:
         if (VBOX_FAILURE (RTCritSectInit (&sLock)))
             return NS_ERROR_OUT_OF_MEMORY;
 
-        int vrc = RTTimerCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
+        int vrc = RTTimerLRCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
         if (VBOX_FAILURE (vrc))
         {
             LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
@@ -487,7 +487,7 @@ public:
     {
         LogFlowFunc (("\n"));
 
-        RTTimerDestroy (sTimer);
+        RTTimerLRDestroy (sTimer);
         sTimer = NULL;
 
         RTCritSectDelete (&sLock);
@@ -545,7 +545,7 @@ public:
                 {
                     /* On success, make sure the previous timer is stopped to
                      * cancel a scheduled server termination (if any). */
-                    RTTimerStop (sTimer);
+                    RTTimerLRStop (sTimer);
                 }
             }
             else
@@ -565,7 +565,7 @@ public:
                               "canceling detruction...\n"));
 
                 /* make sure the previous timer is stopped */
-                RTTimerStop (sTimer);
+                RTTimerLRStop (sTimer);
             }
         }
 
@@ -587,13 +587,13 @@ private:
     static VirtualBoxClassFactory *sInstance;
     static RTCRITSECT sLock;
 
-    static PRTTIMER sTimer;
+    static RTTIMERLR sTimer;
 };
 
 VirtualBoxClassFactory *VirtualBoxClassFactory::sInstance = 0;
 RTCRITSECT VirtualBoxClassFactory::sLock = {0};
 
-PRTTIMER VirtualBoxClassFactory::sTimer = NULL;
+RTTIMERLR VirtualBoxClassFactory::sTimer = NIL_RTTIMERLR;
 
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC
     (VirtualBox, VirtualBoxClassFactory::GetInstance)
