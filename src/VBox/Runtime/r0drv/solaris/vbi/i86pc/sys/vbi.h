@@ -27,7 +27,7 @@
 #ifndef _SYS_VBI_H
 #define	_SYS_VBI_H
 
-#pragma ident	"@(#)vbi.h	1.1	08/05/26 SMI"
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #ifdef	__cplusplus
 extern "C" {
@@ -108,6 +108,8 @@ extern int vbi_yield(void);
  * Timer functions, times expressed in nanoseconds.
  */
 extern uint64_t vbi_timer_granularity(void);
+
+/* old timer funcs */
 extern void *vbi_timer_create(void *callback, void *arg1, void *arg2,
     uint64_t interval);
 extern void vbi_timer_destroy(void *timer);
@@ -220,6 +222,74 @@ extern uint64_t vbi_va_to_pa(void *addr);
 /* end of interfaces defined for version 1 */
 
 extern uint_t vbi_revision_level;
+
+/* begin interfaces defined for version 2 */
+
+/*
+ * Install/remove a call back for CPU online/offline event notification.
+ *
+ * The call back func is invoked with 3 arguments:
+ *      void func(void *arg, int cpu, int online);
+ * - arg is passed through from vbi_watch_cpus()
+ * - cpu is the CPU id involved
+ * - online is non-zero for a CPU that comes online and 0 for a CPU that is
+ *   going offline.
+ *
+ * If current_too is non-zero, then a cpu online event will be invoked for all
+ * currently online CPUs.
+ *
+ * Note there is no guarantee about which CPU the function is invoked on.
+ */
+typedef struct vbi_cpu_watch vbi_cpu_watch_t;
+extern vbi_cpu_watch_t *vbi_watch_cpus(void (*func)(), void *arg,
+    int current_too);
+extern void vbi_ignore_cpus(vbi_cpu_watch_t *);
+#pragma weak vbi_watch_cpus
+#pragma weak vbi_ignore_cpus
+
+/*
+ * New timer interfaces
+ *
+ * A simple timer fires just once and on only one cpu. It may be repeating or
+ * a one shot.
+ *
+ * Support for one shot (ie interval == 0) global timers is optional.
+ *
+ * For simple timers, if cpu is VBI_ANY_CPU, the timer may fire on any
+ * available cpu otherwise the timer will fire only on the given cpu
+ *
+ * The repeating call back, func, is invoked with 2 arguments:
+ * - arg is just passed through
+ * - a uint64_t counter that starts at 0 and increments with each timer event.
+ *   The count is per-cpu and resets whenever a cpu goes offline and comes back
+ *   online.
+ *
+ * The when parameter is time relative to now.
+ *
+ * vbi_stimer_begin() may return NULL if there was an error in
+ * creating the timer, for example if a requested cpu is not online.
+ *
+ * vbi_gtimer_begin() may return NULL when called if it does not
+ * support the requested kind of timer (ie interval == 0)
+ */
+#define	VBI_ANY_CPU	(-1)
+
+typedef struct vbi_stimer vbi_stimer_t;
+extern vbi_stimer_t *vbi_stimer_begin(void (*func)(void *, uint64_t), void *arg,
+    uint64_t when, uint64_t interval, int cpu);
+extern void vbi_stimer_end(vbi_stimer_t *);
+#pragma weak vbi_stimer_begin
+#pragma weak vbi_stimer_end
+
+typedef struct vbi_gtimer vbi_gtimer_t;
+extern vbi_gtimer_t *vbi_gtimer_begin(void (*func)(void *, uint64_t), void *arg,
+    uint64_t when, uint64_t interval);
+extern void vbi_gtimer_end(vbi_gtimer_t *);
+#pragma weak vbi_gtimer_begin
+#pragma weak vbi_gtimer_end
+
+
+/* end of interfaces defined for version 2 */
 
 #ifdef	__cplusplus
 }

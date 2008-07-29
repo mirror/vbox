@@ -59,29 +59,31 @@ typedef struct RTTIMER
     uint32_t volatile       u32Magic;
     /** Flag indicating the the timer is suspended. */
     uint8_t volatile        fSuspended;
+    /** Run on all CPUs if set */
+    uint8_t                 fAllCpu;
     /** Whether the timer must run on a specific CPU or not. */
     uint8_t                 fSpecificCpu;
     /** The CPU it must run on if fSpecificCpu is set. */
     uint8_t                 iCpu;
-    /** The Solaris timer handle. */
-    void                   *handle;
+    /** The nano second interval for repeating timers */
+    uint64_t                interval;
+    /** simple Solaris timer handle. */
+    vbi_stimer_t            *stimer;
+    /** global Solaris timer handle. */
+    vbi_gtimer_t            *gtimer;
     /** The user callback. */
     PFNRTTIMER              pfnTimer;
-    /** The current tick count. */
-    uint64_t                iTick;
-
+    /** The argument for the user callback. */
+    void                    *pvUser;
 } RTTIMER;
 
 
-/**
- * Callback wrapper for adding the new iTick argument.
- *
- * @param   pTimer  The timer.
- * @param   pvUser  The user argument.
+/*
+ * Need a wrapper to get the PRTTIMER passed through
  */
-static void rtTimerSolarisCallbackWrapper(PRTTIMER pTimer, void *pvUser)
+static void rtTimerSolarisCallbackWrapper(PRTTIMER pTimer, uint64_t tick)
 {
-    pTimer->pfnTimer(pTimer, pvUser, ++pTimer->iTick);
+    pTimer->pfnTimer(pTimer, pTimer->pvUser, tick);
 }
 
 
@@ -96,8 +98,15 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
      */
     if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
+    if (vbi_revision_level < 2)
+        return VERR_NOT_SUPPORTED;
+
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
-        /** @todo implement &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL*/)
+        &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
+        &&  !RTMpIsCpuPossible((fFlags & RTTIMER_FLAGS_CPU_MASK)))
+        return VERR_CPU_NOT_FOUND;
+
+    if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL && u64NanoInterval == 0)
         return VERR_NOT_SUPPORTED;
 
     /*
@@ -109,11 +118,22 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 
     pTimer->u32Magic = RTTIMER_MAGIC;
     pTimer->fSuspended = true;
-    pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
-    pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
-    pTimer->handle = vbi_timer_create(rtTimerSolarisCallbackWrapper, pTimer, pvUser, u64NanoInterval);
+    if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL)
+    {
+        pTimer->fAllCpu = true;
+        pTimer->fSpecificCpu = false;
+    }
+    else if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+    {
+        pTimer->fAllCpu = false;
+        pTimer->fSpecificCpu = true;
+        pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
+    }
+    pTimer->interval = u64NanoInterval;
     pTimer->pfnTimer = pfnTimer;
-    pTimer->iTick = 0;
+    pTimer->pvUser = pvUser;
+    pTimer->stimer = NULL;
+    pTimer->gtimer = NULL;
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -144,9 +164,8 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     /*
      * Free the associated resources.
      */
+    RTTimerStop(pTimer);
     pTimer->u32Magic++;
-    vbi_timer_stop(pTimer->handle);
-    vbi_timer_destroy(pTimer->handle);
     RTMemFree(pTimer);
     return VINF_SUCCESS;
 }
@@ -154,16 +173,32 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 {
+    int cpu = VBI_ANY_CPU;
+
     if (!rtTimerIsValid(pTimer))
         return VERR_INVALID_HANDLE;
     if (!pTimer->fSuspended)
         return VERR_TIMER_ACTIVE;
 
-    /*
-     * Calc when it should start firing.
-     */
     pTimer->fSuspended = false;
-    vbi_timer_start(pTimer->handle, u64First);
+    if (pTimer->fAllCpu)
+    {
+	pTimer->gtimer = vbi_gtimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval);
+	if (pTimer->gtimer == NULL)
+	    return VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        if (pTimer->fSpecificCpu)
+            cpu = pTimer->iCpu;
+	pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, cpu);
+	if (pTimer->stimer == NULL)
+        {
+            if (cpu != VBI_ANY_CPU)
+	        return VERR_CPU_OFFLINE;
+	    return VERR_INVALID_PARAMETER;
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -176,11 +211,17 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     if (pTimer->fSuspended)
         return VERR_TIMER_SUSPENDED;
 
-    /*
-     * Suspend the timer.
-     */
     pTimer->fSuspended = true;
-    vbi_timer_stop(pTimer->handle);
+    if (pTimer->stimer)
+    {
+        vbi_stimer_end(pTimer->stimer);
+        pTimer->stimer = NULL;
+    }
+    else if (pTimer->gtimer)
+    {
+        vbi_gtimer_end(pTimer->gtimer);
+        pTimer->gtimer = NULL;
+    }
 
     return VINF_SUCCESS;
 }

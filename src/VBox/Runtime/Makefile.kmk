@@ -1131,10 +1131,8 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/mpnotification-r0drv.c
 
 ifdef VBOX_WITH_SOLARIS_VBI
- ## @todo svn copy r0drv/solaris/mpnotification-r0drv-solaris.c r0drv/solaris/vbi/mpnotification-r0drv-solaris.c
- # and change the first file below.
  RuntimeR0Drv_SOURCES.solaris += \
-	r0drv/solaris/mpnotification-r0drv-solaris.c \
+	r0drv/solaris/vbi/mpnotification-r0drv-solaris.c \
  	r0drv/solaris/vbi/alloc-r0drv-solaris.c \
  	r0drv/solaris/vbi/assert-r0drv-solaris.c \
  	r0drv/solaris/vbi/initterm-r0drv-solaris.c \

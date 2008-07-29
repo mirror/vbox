@@ -23,7 +23,7 @@
  * Use is subject to license terms.
  */
 
-#pragma ident	"@(#)vbi.c	1.1	08/05/26 SMI"
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 /*
  * Private interfaces for VirtualBox access to Solaris kernel internal
@@ -77,6 +77,7 @@ static int use_old_xc_call = 0;
 static void (*p_xc_call)() = (void (*)())xc_call;
 #pragma weak cpuset_all
 #pragma weak cpuset_all_but
+#pragma weak cpuset_only
 
 static struct modlmisc vbi_modlmisc = {
 	&mod_miscops, "Vbox Interfaces Ver 1"
@@ -158,7 +159,7 @@ vbi_contig_alloc(uint64_t *phys, size_t size)
 	pfn_t pfn;
 	void *ptr;
 
-	if ((size >> MMU_PAGESHIFT) << MMU_PAGESHIFT != size)
+	if ((size & MMU_PAGEOFFSET) != 0)
 		return (NULL);
 
 	attr = base_attr;
@@ -427,10 +428,11 @@ vbi_execute_on_all(void *func, void *arg)
 	/*
 	 * hack for a kernel compiled with the different NCPU than this module
 	 */
+	ASSERT(curthread->t_preempt >= 1);
 	if (use_old_xc_call) {
 		hack_set = 0;
 		for (i = 0; i < ncpus; ++i)
-			hack_set |= 1 << i;
+			hack_set |= 1ul << i;
 		p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI, hack_set,
 		    (xc_func_t)func);
 	} else {
@@ -450,11 +452,12 @@ vbi_execute_on_others(void *func, void *arg)
 	/*
 	 * hack for a kernel compiled with the different NCPU than this module
 	 */
+	ASSERT(curthread->t_preempt >= 1);
 	if (use_old_xc_call) {
 		hack_set = 0;
 		for (i = 0; i < ncpus; ++i) {
 			if (i != CPU->cpu_id)
-				hack_set |= 1 << i;
+				hack_set |= 1ul << i;
 		}
 		p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI, hack_set,
 		    (xc_func_t)func);
@@ -474,12 +477,13 @@ vbi_execute_on_one(void *func, void *arg, int c)
 	/*
 	 * hack for a kernel compiled with the different NCPU than this module
 	 */
+	ASSERT(curthread->t_preempt >= 1);
 	if (use_old_xc_call) {
-		hack_set = 1 << c;
+		hack_set = 1ul << c;
 		p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI, hack_set,
 		    (xc_func_t)func);
 	} else {
-		CPUSET_ALL_BUT(set, c);
+		CPUSET_ONLY(set, c);
 		xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI, set,
 		    (xc_func_t)func);
 	}
@@ -820,8 +824,220 @@ vbi_user_map(caddr_t *va, uint_t prot, uint64_t *palist, size_t len)
 }
 
 /*
- * This is revision 1 of the interface. As more functions are added,
+ * This is revision 2 of the interface. As more functions are added,
  * they should go after this point in the file and the revision level
  * increased.
  */
-uint_t vbi_revision_level = 1;
+uint_t vbi_revision_level = 2;
+
+struct vbi_cpu_watch {
+	void (*vbi_cpu_func)();
+	void *vbi_cpu_arg;
+};
+
+static int
+vbi_watcher(cpu_setup_t state, int cpu, void *arg)
+{
+	vbi_cpu_watch_t *w = arg;
+	int online;
+
+	if (state == CPU_ON)
+		online = 1;
+	else if (state == CPU_OFF)
+		online = 0;
+	else
+		return (0);
+	w->vbi_cpu_func(w->vbi_cpu_arg, cpu, online);
+	return (0);
+}
+
+vbi_cpu_watch_t *
+vbi_watch_cpus(void (*func)(), void *arg, int current_too)
+{
+	int c;
+	vbi_cpu_watch_t *w;
+
+	w = kmem_alloc(sizeof (*w), KM_SLEEP);
+	w->vbi_cpu_func = func;
+	w->vbi_cpu_arg = arg;
+	mutex_enter(&cpu_lock);
+	register_cpu_setup_func(vbi_watcher, w);
+	if (current_too) {
+		for (c = 0; c < ncpus; ++c) {
+			if (cpu_is_online(cpu[c]))
+				func(arg, c, 1);
+		}
+	}
+	mutex_exit(&cpu_lock);
+	return (w);
+}
+
+void
+vbi_ignore_cpus(vbi_cpu_watch_t *w)
+{
+	mutex_enter(&cpu_lock);
+	unregister_cpu_setup_func(vbi_watcher, w);
+	mutex_exit(&cpu_lock);
+	kmem_free(w, sizeof (*w));
+}
+
+/*
+ * Simple timers are pretty much a pass through to the cyclic subsystem.
+ */
+struct vbi_stimer {
+	cyc_handler_t	s_handler;
+	cyc_time_t	s_fire_time;
+	cyclic_id_t	s_cyclic;
+	uint64_t	s_tick;
+	void		(*s_func)(void *, uint64_t);
+	void		*s_arg;
+};
+
+static void
+vbi_stimer_func(void *arg)
+{
+	vbi_stimer_t *t = arg;
+	t->s_func(t->s_arg, t->s_tick++);
+}
+
+extern vbi_stimer_t *
+vbi_stimer_begin(
+	void (*func)(void *, uint64_t),
+	void *arg,
+	uint64_t when,
+	uint64_t interval,
+	int on_cpu)
+{
+	vbi_stimer_t *t = kmem_zalloc(sizeof (*t), KM_SLEEP);
+
+	ASSERT(when < INT64_MAX);
+	ASSERT(interval < INT64_MAX);
+	ASSERT(interval + when < INT64_MAX);
+
+	t->s_handler.cyh_func = vbi_stimer_func;
+	t->s_handler.cyh_arg = t;
+	t->s_handler.cyh_level = CY_LOCK_LEVEL;
+	t->s_tick = 0;
+	t->s_func = func;
+	t->s_arg = arg;
+
+	mutex_enter(&cpu_lock);
+	if (on_cpu != VBI_ANY_CPU && !vbi_cpu_online(on_cpu)) {
+		t = NULL;
+		goto done;
+	}
+
+	when += gethrtime();
+	t->s_fire_time.cyt_when = when;
+	if (interval == 0)
+		t->s_fire_time.cyt_interval = INT64_MAX - when;
+	else
+		t->s_fire_time.cyt_interval = interval;
+	t->s_cyclic = cyclic_add(&t->s_handler, &t->s_fire_time);
+	if (on_cpu != VBI_ANY_CPU)
+		cyclic_bind(t->s_cyclic, cpu[on_cpu], NULL);
+done:
+	mutex_exit(&cpu_lock);
+	return (t);
+}
+
+extern void
+vbi_stimer_end(vbi_stimer_t *t)
+{
+	ASSERT(t->s_cyclic != CYCLIC_NONE);
+	mutex_enter(&cpu_lock);
+	cyclic_remove(t->s_cyclic);
+	mutex_exit(&cpu_lock);
+	kmem_free(t, sizeof (*t));
+}
+
+/*
+ * Global timers are more complicated. They include a counter on the callback,
+ * that indicates the first call on a given cpu.
+ */
+struct vbi_gtimer {
+	uint64_t	*g_counters;
+	void		(*g_func)(void *, uint64_t);
+	void		*g_arg;
+	uint64_t	g_when;
+	uint64_t	g_interval;
+	cyclic_id_t	g_cyclic;
+};
+
+static void
+vbi_gtimer_func(void *arg)
+{
+	vbi_gtimer_t *t = arg;
+	t->g_func(t->g_arg, t->g_counters[CPU->cpu_id]);
+}
+
+/*
+ * Whenever a cpu is onlined, need to reset the g_counters[] for it to zero.
+ */
+static void
+vbi_gtimer_online(void *arg, cpu_t *cpu, cyc_handler_t *h, cyc_time_t *ct)
+{
+	vbi_gtimer_t *t = arg;
+	hrtime_t now;
+
+	t->g_counters[cpu->cpu_id] = 0;
+	h->cyh_func = vbi_gtimer_func;
+	h->cyh_arg = t;
+	h->cyh_level = CY_LOCK_LEVEL;
+	now = gethrtime();
+	if (t->g_when < now)
+		ct->cyt_when = now + t->g_interval / 2;
+	else
+		ct->cyt_when = t->g_when;
+	ct->cyt_interval = t->g_interval;
+}
+
+
+vbi_gtimer_t *
+vbi_gtimer_begin(
+	void (*func)(void *, uint64_t),
+	void *arg,
+	uint64_t when,
+	uint64_t interval)
+{
+	vbi_gtimer_t *t;
+	cyc_omni_handler_t omni;
+
+	/*
+	 * one shot global timer is not supported yet.
+	 */
+	if (interval == 0)
+		return (NULL);
+
+	ASSERT(when < INT64_MAX);
+	ASSERT(interval < INT64_MAX);
+	ASSERT(interval + when < INT64_MAX);
+
+	t = kmem_zalloc(sizeof (*t), KM_SLEEP);
+	t->g_counters = kmem_zalloc(ncpus * sizeof (uint64_t), KM_SLEEP);
+	t->g_when = when + gethrtime();
+	t->g_interval = interval;
+	t->g_arg = arg;
+	t->g_func = func;
+	t->g_cyclic = CYCLIC_NONE;
+
+	omni.cyo_online = (void (*)())vbi_gtimer_online;
+	omni.cyo_offline = NULL;
+	omni.cyo_arg = t;
+
+	mutex_enter(&cpu_lock);
+	t->g_cyclic = cyclic_add_omni(&omni);
+	mutex_exit(&cpu_lock);
+	return (t);
+}
+
+extern void
+vbi_gtimer_end(vbi_gtimer_t *t)
+{
+	ASSERT(t->g_cyclic != CYCLIC_NONE);
+	mutex_enter(&cpu_lock);
+	cyclic_remove(t->g_cyclic);
+	mutex_exit(&cpu_lock);
+	kmem_free(t->g_counters, ncpus * sizeof (uint64_t));
+	kmem_free(t, sizeof (*t));
+}
