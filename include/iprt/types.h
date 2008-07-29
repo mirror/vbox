@@ -1138,6 +1138,14 @@ typedef RTHANDLETABLE                              *PRTHANDLETABLE;
  * NIL handle table handle. */
 #define NIL_RTHANDLETABLE                           ((RTHANDLETABLE)0)
 
+/** A handle to a low resolution timer. */
+typedef struct RTTIMERLRINT                        *RTTIMERLR;
+/** A pointer to a low resolution timer handle. */
+typedef RTTIMERLR                                  *PRTTIMERLR;
+/** @def NIL_RTTIMERLR
+ * NIL low resolution timer handle value. */
+#define NIL_RTTIMERLR                               ((RTTIMERLR)0)
+
 
 /**
  * UUID data type.
