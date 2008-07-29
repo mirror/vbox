@@ -29,6 +29,7 @@
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/initterm.h>
+#include <iprt/autores>
 #include <VBox/log.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
@@ -105,7 +106,8 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
     if ((GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
     {
         doUsage("get <property> [-verbose]\n", g_pszProgName, "guestproperty");
-        doUsage("set <property> [<value>] [--flags <flags>]\n", g_pszProgName, "guestproperty");
+        doUsage("set <property> [<value>] [-flags <flags>]\n", g_pszProgName, "guestproperty");
+        doUsage("enumerate [-patterns <patterns>]\n", g_pszProgName, "guestproperty");
     }
 #endif
 }
@@ -890,11 +892,14 @@ int getGuestProperty(int argc, char **argv)
 /*
  * Here we actually retrieve the value from the host.
  */
-    void *pvBuf = NULL;
     const char *pszName = argv[0];
     char *pszValue = NULL;
     uint64_t u64Timestamp = 0;
     char *pszFlags = NULL;
+    /* The buffer for storing the data and its initial size.  We leave a bit
+     * of space here in case the maximum values are raised. */
+    void *pvBuf = NULL;
+    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
     if (RT_SUCCESS(rc))
     {
         /* Because there is a race condition between our reading the size of a
@@ -902,8 +907,6 @@ int getGuestProperty(int argc, char **argv)
          * hope.  Actually this should never go wrong, as we are generous
          * enough with buffer space. */
         bool finish = false;
-        /* We leave a bit of space here in case the maximum values are raised. */
-        uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
         for (unsigned i = 0; (i < 10) && !finish; ++i)
         {
             void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
@@ -1022,6 +1025,70 @@ static int setGuestProperty(int argc, char *argv[])
 
 
 /**
+ * Enumerates the properties in the guest property store.
+ * This is accessed through the "VBoxGuestPropSvc" HGCM service.
+ *
+ * @returns 0 on success, 1 on failure
+ * @note see the command line API description for parameters
+ */
+static int enumGuestProperty(int argc, char *argv[])
+{
+/*
+ * Check the syntax.  We can deduce the correct syntax from the number of
+ * arguments.
+ */
+    const char *paszPatterns = NULL;
+    if ((argc > 1) && (0 == strcmp(argv[0], "-patterns")))
+        paszPatterns = argv[1];
+    else if (argc != 0)
+    {
+        usage(GUEST_PROP);
+        return 1;
+    }
+
+/*
+ * Do the actual enumeration.
+ */
+    uint32_t u32ClientId = 0;
+    PVBGLR3GUESTPROPENUM pHandleRaw = NULL;
+    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> pHandle;
+    char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
+    uint64_t u64Timestamp = 0;
+    int rc = VINF_SUCCESS;
+    rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (!RT_SUCCESS(rc))
+        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        char **ppaszPatterns = argc > 1 ? argv + 1 : NULL;
+        int cPatterns = argc > 1 ? argc - 1 : 0;
+        rc = VbglR3GuestPropEnum(u32ClientId, ppaszPatterns, cPatterns, &pHandleRaw,
+                                 &pszName, &pszValue, &u64Timestamp, &pszFlags);
+        if (RT_SUCCESS(rc))
+        {
+            pHandle = pHandleRaw;
+        }
+        else if (VERR_NOT_FOUND == rc)
+            RTPrintf("No properties found.\n");
+        else
+            VBoxControlError("Failed to enumerate the guest properties, error %Rrc.\n", rc);
+    }
+    while (RT_SUCCESS(rc) && (pszName != NULL))
+    {
+        RTPrintf("Name: %s, value: %s, timestamp: %lld, flags: %s\n",
+                 pszName, pszValue, u64Timestamp, pszFlags);
+        rc = VbglR3GuestPropEnumNext(pHandle.get(), &pszName, &pszValue, &u64Timestamp, &pszFlags);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Error while enumerating guest propertied: %Rrc\n", rc);
+    }
+
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);
+    return RT_SUCCESS(rc) ? 0 : 1;
+}
+
+
+/**
  * Access the guest property store through the "VBoxGuestPropSvc" HGCM
  * service.
  *
@@ -1039,6 +1106,8 @@ static int handleGuestProperty(int argc, char *argv[])
         return getGuestProperty(argc - 1, argv + 1);
     else if (0 == strcmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
+    else if (0 == strcmp(argv[0], "enumerate"))
+        return enumGuestProperty(argc - 1, argv + 1);
     /* else */
     usage(GUEST_PROP);
     return 1;
