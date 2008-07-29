@@ -436,13 +436,15 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
 /**
  * Raw API for enumerating guest properties which match a given pattern.
  *
- * @returns VINF_SUCCESS on success and pcBuf points to a packed array
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success and pcBuf points to a packed array
  *          of the form <name>, <value>, <timestamp string>, <flags>,
  *          terminated by four empty strings.  pcbBufActual will contain the
  *          total size of the array.
- * @returns VERR_BUFFER_OVERFLOW if the buffer provided was too small.  In
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer provided was too small.  In
  *          this case pcbBufActual will contain the size of the buffer needed.
  * @returns IPRT error code in other cases, and pchBufActual is undefined.
+ *
  * @param   u32ClientId   The client ID returned by VbglR3GuestPropConnect
  * @param   paszPatterns  A packed array of zero terminated strings, terminated
  *                        by an empty string.
@@ -453,7 +455,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
  *                        small.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
-                                       const char *paszPatterns,
+                                       const char *pszzPatterns,
                                        char *pcBuf,
                                        uint32_t cbBuf,
                                        uint32_t *pcbBufActual)
@@ -466,12 +468,12 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
     Msg.hdr.cParms = 3;
     /* Get the length of the patterns array... */
     uint32_t cchPatterns = 0;
-    for (uint32_t cchCurrent = strlen(paszPatterns); cchCurrent != 0;
-         cchCurrent = strlen(paszPatterns + cchPatterns))
+    for (uint32_t cchCurrent = strlen(pszzPatterns); cchCurrent != 0;
+         cchCurrent = strlen(pszzPatterns + cchPatterns))
         cchPatterns += cchCurrent + 1;
     /* ...including the terminator. */
     ++cchPatterns;
-    VbglHGCMParmPtrSet(&Msg.patterns, const_cast<char *>(paszPatterns),
+    VbglHGCMParmPtrSet(&Msg.patterns, const_cast<char *>(pszzPatterns),
                        cchPatterns);
     VbglHGCMParmPtrSet(&Msg.strings, pcBuf, cbBuf);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -479,9 +481,9 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
-    if (   (RT_SUCCESS(rc) || (VERR_BUFFER_OVERFLOW == rc))
-        && (pcbBufActual != NULL)
-       )
+    if (   pcbBufActual
+        && (    RT_SUCCESS(rc)
+            ||  rc == VERR_BUFFER_OVERFLOW))
     {
         int rc2 = VbglHGCMParmUInt32Get(&Msg.size, pcbBufActual);
         if (!RT_SUCCESS(rc2))
