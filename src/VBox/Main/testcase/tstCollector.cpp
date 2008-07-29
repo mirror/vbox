@@ -24,6 +24,7 @@
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
+#include <iprt/process.h>
 
 #ifdef RT_OS_SOLARIS
 #include "../solaris/PerformanceSolaris.cpp"
@@ -95,7 +96,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
         return 1;
     }
-    rc = collector->getRawProcessCpuLoad(getpid(), &processUserStart, &processKernelStart, &processTotalStart);
+    rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStart, &processKernelStart, &processTotalStart);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
@@ -110,7 +111,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
         return 1;
     }
-    rc = collector->getRawProcessCpuLoad(getpid(), &processUserStop, &processKernelStop, &processTotalStop);
+    rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStop, &processKernelStop, &processTotalStop);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
         return 1;
     }
-    rc = collector->getRawProcessCpuLoad(getpid(), &processUserStart, &processKernelStart, &processTotalStart);
+    rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStart, &processKernelStart, &processTotalStart);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
         return 1;
     }
-    rc = collector->getRawProcessCpuLoad(getpid(), &processUserStop, &processKernelStop, &processTotalStop);
+    rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStop, &processKernelStop, &processTotalStop);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
@@ -171,7 +172,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getHostMemoryUsage() -> %Vrc\n", rc);
         return 1;
     }
-    rc = collector->getProcessMemoryUsage(getpid(), &processUsed);
+    rc = collector->getProcessMemoryUsage(RTProcSelf(), &processUsed);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getProcessMemoryUsage() -> %Vrc\n", rc);
