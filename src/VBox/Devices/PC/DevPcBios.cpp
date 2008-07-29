@@ -642,6 +642,10 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      */
     if (pData->pszSataDevice)
     {
+        /* Clear pointers to IDE controller. */
+        for (i = 0; i < ELEMENTS(apHDs); i++)
+            apHDs[i] = NULL;
+
         for (i = 0; i < ELEMENTS(apHDs); i++)
         {
             PPDMIBASE pBase;
