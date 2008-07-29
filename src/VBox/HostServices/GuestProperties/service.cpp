@@ -53,7 +53,9 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
-#include <iprt/autores>
+#if 0 /** @todo this is busted on rhel3. please, make it simple or just ditch it. (bird) */
+# include <iprt/autores>
+#endif
 #include <VBox/log.h>
 
 #include <VBox/cfgm.h>
@@ -514,6 +516,9 @@ static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
  */
 int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+#if 1 /* using broken RTMemAutoPtr stuff */
+    return VERR_NOT_IMPLEMENTED;
+#else
     /* We reallocate the temporary buffer in which we build up our array in
      * increments of size BLOCK: */
     enum { BLOCKINCR = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048) % 1024 };
@@ -538,7 +543,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 /*
  * Start by enumerating all values in the current node into a temporary buffer.
  */
-    RTMemAutoPtr<char> pchTmpBuf;
+    RTMemAutoPtr<char> pchTmpBuf; /** @todo r=bird: Do not use misleading prefixes with objects like this, that make it completely unreadable. */
     uint32_t cchTmpBuf = 0, iTmpBuf = 0;
     PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpNode);
     while ((pLeaf != NULL) && RT_SUCCESS(rc))
@@ -595,6 +600,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             rc = VERR_BUFFER_OVERFLOW;
     }
     return rc;
+#endif
 }
 
 
