@@ -195,6 +195,8 @@ RuntimeR3_SOURCES       = \
 	common/misc/semspingpong.cpp \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
+	common/string/RTStrNLen.cpp \
+	common/string/RTStrNLenEx.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \

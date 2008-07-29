@@ -1147,6 +1147,39 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
  */
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 
+/**
+ * Find the length of a zero-terminated byte string, given
+ * a max string length.
+ *
+ * See also RTStrNLenEx.
+ *
+ * @returns The string length or cbMax. The returned length does not include
+ *          the zero terminator if it was found.
+ *
+ * @param   pszString   The string.
+ * @param   cchMax      The max string length.
+ */
+RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax);
+
+/**
+ * Find the length of a zero-terminated byte string, given
+ * a max string length.
+ *
+ * See also RTStrNLen.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if the string has a length less than cchMax.
+ * @retval  VERR_BUFFER_OVERFLOW if the end of the string wasn't found
+ *          before cchMax was reached.
+ *
+ * @param   pszString   The string.
+ * @param   cchMax      The max string length.
+ * @param   pcch        Where to store the string length excluding the
+ *                      terminator. This is set to cchMax if the terminator
+ *                      isn't found.
+ */
+RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
+
 /** @} */
 
 
