@@ -52,6 +52,8 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/mem.h>
+#include <iprt/autores>
 #include <VBox/log.h>
 
 #include <VBox/cfgm.h>
@@ -169,11 +171,37 @@ private:
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                void *pvClient, uint32_t eFunction, uint32_t cParms,
                VBOXHGCMSVCPARM paParms[]);
     int hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 };
+
+
+/**
+ * Calculate the length of a string in bytes, excluding the terminator.
+ * @returns VINF_SUCCESS on success and the length in @a pcch
+ * @returns VERR_BUFFFER_OVERFLOW if no terminator is found in the first @a cch
+ *          bytes of the string
+ * @param   pszString  the string to count
+ * @param   cch        the maximum length of the string, including terminator
+ * @param   pcch       where to store the string length on success
+ * @todo move this into IPRT
+ */
+static int svcStrLenEx(const char *pszString, size_t cch, size_t *pcch)
+{
+    int rc = VINF_SUCCESS;
+    void *pvTerm = memchr(pszString, 0, cch);
+    if (NULL == pvTerm)
+    {
+        *pcch = 0;
+        rc = VERR_BUFFER_OVERFLOW;
+    }
+    else
+        *pcch = reinterpret_cast<char *>(pvTerm) - pszString;
+    return rc;
+}
 
 
 /**
@@ -197,10 +225,8 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
     /* Only accept names in valid Utf8. */
     rc = RTStrValidateEncodingEx(pszKey, cbKey - 1, 0);
     if (RT_SUCCESS(rc))
-        /* We want the byte length, not the Utf8 length */
-        count = strlen(pszKey);
-    if (RT_SUCCESS(rc) && (count > MAX_NAME_LEN))
-        rc = VERR_INVALID_PARAMETER;
+        /* We want to check the byte length, not the Utf8 length */
+        rc = svcStrLenEx(pszKey, MAX_NAME_LEN + 1, &count);
 
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -227,10 +253,8 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
     /* Only accept values in valid Utf8 */
     rc = RTStrValidateEncodingEx(pszValue, cbValue - 1, 0);
     if (RT_SUCCESS(rc))
-        /* We want the byte length, not the Utf8 length */
-        count = strlen(pszValue);
-    if (RT_SUCCESS(rc) && (count > MAX_VALUE_LEN))
-        rc = VERR_INVALID_PARAMETER;
+        /* We want to check the byte length, not the Utf8 length */
+        rc = svcStrLenEx(pszValue, MAX_VALUE_LEN + 1, &count);
 
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
@@ -427,6 +451,181 @@ int Service::delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     return rc;
 }
 
+/**
+ * Matches a sample name against a pattern.
+ *
+ * @returns True if matches, false if not.
+ * @param   pszPat      Pattern.
+ * @param   pszName     Name to match against the pattern.
+ * @todo move this into IPRT
+ */
+static bool matchesSinglePattern(const char *pszPat, const char *pszName)
+{
+    /* ASSUMES ASCII */
+    for (;;)
+    {
+        char chPat = *pszPat;
+        switch (chPat)
+        {
+            default:
+                if (*pszName != chPat)
+                    return false;
+                break;
+
+            case '*':
+            {
+                while ((chPat = *++pszPat) == '*' || chPat == '?')
+                    /* nothing */;
+
+                for (;;)
+                {
+                    char ch = *pszName++;
+                    if (    ch == chPat
+                        &&  (   !chPat
+                             || matchesSinglePattern(pszPat + 1, pszName)))
+                        return true;
+                    if (!ch)
+                        return false;
+                }
+                /* won't ever get here */
+                break;
+            }
+
+            case '?':
+                if (!*pszName)
+                    return false;
+                break;
+
+            case '\0':
+                return !*pszName;
+        }
+        pszName++;
+        pszPat++;
+    }
+    return true;
+}
+
+
+/* Checks to see if the given string matches against one of the patterns in 
+ * the list. */
+static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
+                           const char *pszString)
+{
+    size_t iOffs = 0;
+    /* If the first pattern in the list is empty, treat it as "match all". */
+    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
+    while ((iOffs < cchPatterns) && !matched)
+    {
+        size_t cchCurrent;
+        if (   RT_SUCCESS(svcStrLenEx(paszPatterns + iOffs,
+                                      cchPatterns - iOffs, &cchCurrent))
+            && (cchCurrent > 0)
+           )
+        {
+            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
+            iOffs += cchCurrent + 1;
+        }
+        else
+            iOffs = cchPatterns;
+    }
+    return matched;
+}
+
+
+/**
+ * Enumerate guest properties by mask, checking the validity
+ * of the arguments passed.
+ *
+ * @returns iprt status value
+ * @param   cParms  the number of HGCM parameters supplied
+ * @param   paParms the array of HGCM parameters
+ * @thread  HGCM
+ */
+int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /* We reallocate the temporary buffer in which we build up our array in 
+     * increments of size BLOCK: */
+    enum { BLOCKINCR = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048) % 1024 };
+    int rc = VINF_SUCCESS;
+    
+/*
+ * Get the HGCM function arguments.
+ */
+    char *paszPatterns = NULL, *pchBuf = NULL;
+    uint32_t cchPatterns, cchBuf;
+    LogFlowThisFunc(("\n"));
+    if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
+        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* patterns */
+        || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* return buffer */
+       )
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &paszPatterns, &cchPatterns);
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
+
+/*
+ * Start by enumerating all values in the current node into a temporary buffer.
+ */
+    RTMemAutoPtr<char> pchTmpBuf;
+    uint32_t cchTmpBuf = 0, iTmpBuf = 0;
+    PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpNode);
+    while ((pLeaf != NULL) && RT_SUCCESS(rc))
+    {
+        /* Reallocate the buffer if it has got too tight */
+        if (iTmpBuf + BLOCKINCR > cchTmpBuf)
+        {
+            cchTmpBuf += BLOCKINCR;
+            if (!pchTmpBuf.realloc<RTMemRealloc>(cchTmpBuf))
+                rc = VERR_NO_MEMORY;
+        }
+        /* Fetch the name into the buffer and if it matches one of the
+         * patterns, add its value and an empty timestamp and flags.  If it
+         * doesn't match, we simply overwrite it in the buffer. */
+        if (RT_SUCCESS(rc))
+            rc = CFGMR3GetValueName(pLeaf, pchTmpBuf.get() + iTmpBuf, cchTmpBuf - iTmpBuf);
+        if (   RT_SUCCESS(rc)
+            && matchesPattern(paszPatterns, cchPatterns, pchTmpBuf.get() + iTmpBuf)
+           )
+        {
+            int cchName = CFGMR3GetValueNameLen(pLeaf);
+            rc = CFGMR3QueryString(mpNode, pchTmpBuf.get() + iTmpBuf /* Name */,
+                                   pchTmpBuf.get() + iTmpBuf + cchName,
+                                   cchTmpBuf - iTmpBuf - cchName);
+            if (RT_SUCCESS(rc))
+            {
+                /* Only increment if the name matches, otherwise we overwrite
+                 * it next iteration. */
+                iTmpBuf += cchName;
+                int cchValue = strlen(pchTmpBuf.get() + iTmpBuf) + 1;
+                /* We *do* have enough space left */
+                *(pchTmpBuf.get() + iTmpBuf + cchValue) = '0';  /* Timestamp */
+                *(pchTmpBuf.get() + iTmpBuf + cchValue + 1) = 0;
+                *(pchTmpBuf.get() + iTmpBuf + cchValue + 2) = 0;  /* empty flags */
+                iTmpBuf += cchValue + 3;
+            }
+        }
+        if (RT_SUCCESS(rc))
+            pLeaf = CFGMR3GetNextValue(pLeaf);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /* The terminator.  We *do* have space left for this. */
+        *(pchTmpBuf.get() + iTmpBuf) = 0;
+        *(pchTmpBuf.get() + iTmpBuf + 1) = 0;
+        *(pchTmpBuf.get() + iTmpBuf + 2) = 0;
+        *(pchTmpBuf.get() + iTmpBuf + 3) = 0;
+        iTmpBuf += 4;
+        VBoxHGCMParmUInt32Set(&paParms[2], iTmpBuf);
+        /* Copy the memory if it fits into the guest buffer */
+        if (iTmpBuf <= cchBuf)
+            memcpy(pchBuf, pchTmpBuf.get(), iTmpBuf);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    return rc;
+}
+
 
 /**
  * Handle an HGCM service call.
@@ -473,6 +672,10 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             rc = delKey(cParms, paParms);
             break;
 
+        case ENUM_PROPS:
+            LogFlowFunc(("ENUM_PROPS\n"));
+            rc = enumProps(cParms, paParms);
+            break;
         default:
             rc = VERR_NOT_IMPLEMENTED;
     }
