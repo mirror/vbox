@@ -1252,6 +1252,28 @@ typedef RTRECT *PRTRECT;
 /** Pointer to a const rectangle. */
 typedef const RTRECT *PCRTRECT;
 
+
+/**
+ * Ethernet MAC address.
+ *
+ * The first 24 bits make up the Organisationally Unique Identifier (OUI),
+ * where the first bit (little endian) indicates multicast (set) / unicast,
+ * and the second bit indicates locally (set) / global administered. If all
+ * bits are set, it's a broadcast.
+ */
+typedef union RTMAC
+{
+    /** @todo add a bitfield view of this stuff. */
+    /** 8-bit view. */
+    uint8_t     au8[6];
+    /** 16-bit view. */
+    uint16_t    au16[3];
+} RTMAC;
+/** Pointer to a MAC address. */
+typedef RTMAC *PRTMAC;
+/** Pointer to a readonly MAC address. */
+typedef const RTMAC *PCRTMAC;
+
 /** @} */
 
 #endif
