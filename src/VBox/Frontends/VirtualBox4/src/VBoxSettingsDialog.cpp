@@ -47,7 +47,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QIMainDialog> (aParent)
     , mPolished (false)
     , mValid (true)
-    , mWarnIconLabel (new VBoxWarnIconLabel())
+    , mWarnIconLabel (new VBoxWarnIconLabel (this))
     , mWhatsThisTimer (new QTimer (this))
     , mWhatsThisCandidate (0)
 {
@@ -128,6 +128,8 @@ void VBoxSettingsDialog::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxSettingsDialog::retranslateUi (this);
+
+    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
 
     /* Revalidate all pages to retranslate the warning messages also. */
     QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
