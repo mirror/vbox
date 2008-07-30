@@ -397,6 +397,21 @@ public:
     }
 };
 
+/**
+ * A simple class used to prevent copying and assignment.  Inherit from this
+ * class in order to prevent automatic generation of the copy constructor
+ * and assignment operator in your class.
+ */
+class non_copyable
+{
+protected:
+    non_copyable() {}
+    ~non_copyable() {}
+private:
+    non_copyable(non_copyable const&);
+    non_copyable const &operator=(non_copyable const&);
+};
+
 } /* namespace stdx */
 
 /** @} */
