@@ -46,10 +46,7 @@
           </sizepolicy>
          </property>
          <property name="text" >
-          <string>&amp;Identification</string>
-         </property>
-         <property name="buddy" >
-          <cstring>mLeName</cstring>
+          <string>Identification</string>
          </property>
         </widget>
        </item>
@@ -160,7 +157,7 @@
           <string>Base &amp;Memory Size</string>
          </property>
          <property name="buddy" >
-          <cstring>mSlRam</cstring>
+          <cstring>mLeRam</cstring>
          </property>
         </widget>
        </item>
@@ -298,9 +295,6 @@
                 <property name="text" >
                  <string>MB</string>
                 </property>
-                <property name="buddy" >
-                 <cstring>mLeRam</cstring>
-                </property>
                </widget>
               </item>
              </layout>
@@ -338,7 +332,7 @@
           <string>&amp;Video Memory Size</string>
          </property>
          <property name="buddy" >
-          <cstring>mSlVideo</cstring>
+          <cstring>mLeVideo</cstring>
          </property>
         </widget>
        </item>
@@ -475,9 +469,6 @@
                 </property>
                 <property name="text" >
                  <string>MB</string>
-                </property>
-                <property name="buddy" >
-                 <cstring>mLeVideo</cstring>
                 </property>
                </widget>
               </item>
