@@ -286,6 +286,8 @@ public:
 
 signals:
 
+    void signalToCloseEditor (QWidget *aEditor,
+                              QAbstractItemDelegate::EndEditHint aCloseHint);
     void hdChanged();
 
 protected:

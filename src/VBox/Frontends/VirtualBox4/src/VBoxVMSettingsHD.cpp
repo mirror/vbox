@@ -259,16 +259,17 @@ HDVdiEditor* HDVdiEditor::mInstance = 0;
 HDVdiEditor::HDVdiEditor (QWidget *aParent)
     : VBoxMediaComboBox (aParent, VBoxDefs::HD)
 {
+    mInstance = this;
     setBelongsTo (HDSlotUniquizer::instance()->machine().GetId());
     connect (this, SIGNAL (currentIndexChanged (int)), this, SLOT (onActivate()));
     connect (this, SIGNAL (readyToCommit (QWidget *)),
              parent()->parent(), SLOT (commitData (QWidget *)));
     refresh();
-    mInstance = this;
 }
 HDVdiEditor::~HDVdiEditor()
 {
-    mInstance = 0;
+    if (mInstance == this)
+        mInstance = 0;
 }
 
 QVariant HDVdiEditor::vdi() const
@@ -467,6 +468,8 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (&vboxGlobal(),
              SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
              this, SLOT (onMediaRemoved (VBoxDefs::DiskType, const QUuid &)));
+    connect (this, SIGNAL (signalToCloseEditor (QWidget*, QAbstractItemDelegate::EndEditHint)),
+             mTwAts, SLOT (closeEditor (QWidget*, QAbstractItemDelegate::EndEditHint)));
 
     /* Install global event filter */
     qApp->installEventFilter (this);
@@ -649,7 +652,11 @@ void VBoxVMSettingsHD::newClicked()
             QIMessageBox::Cancel;
         if (result == QIMessageBox::Yes)
         {
-            mTwAts->closePersistentEditor (mTwAts->currentIndex());
+            /* Close the editor to avoid it's infliction to data model */
+            emit signalToCloseEditor (HDVdiEditor::activeEditor(),
+                                      QAbstractItemDelegate::NoHint);
+
+            /* Run new HD wizard */
             VBoxNewHDWzd dlg (this);
             if (dlg.exec() == QDialog::Accepted)
             {
@@ -702,31 +709,38 @@ void VBoxVMSettingsHD::vdmClicked()
 {
     Assert (mTwAts->currentIndex().isValid());
 
+    /* Close the editor to avoid it's infliction to data model */
+    emit signalToCloseEditor (HDVdiEditor::activeEditor(),
+                              QAbstractItemDelegate::NoHint);
+
+    HDVdiValue oldVdi (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
+                       .value<HDVdiValue>());
+
     VBoxDiskImageManagerDlg dlg (this);
-    QUuid machineId = mMachine.GetId();
-    HDVdiValue vdiInfo (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
-                        .value<HDVdiValue>());
-    QUuid hdId = vdiInfo.id;
-    dlg.setup (VBoxDefs::HD, true, &machineId, true, mMachine, hdId);
+    dlg.setup (VBoxDefs::HD, true, mMachine.GetId(), true, mMachine, oldVdi.id);
 
     if (dlg.exec() == QDialog::Accepted)
     {
+        /* Compose resulting vdi */
         QVariant result;
-        HDVdiValue val (VBoxMediaComboBox::fullItemName (dlg.selectedPath()),
-                        dlg.selectedUuid());
-        result.setValue (val);
+        HDVdiValue newVdi (VBoxMediaComboBox::fullItemName (dlg.selectedPath()),
+                           dlg.selectedUuid());
+        result.setValue (newVdi);
+
+        /* Set the model's data */
         mModel->setData (mTwAts->currentIndex(), result);
     }
 
     vboxGlobal().startEnumeratingMedia();
 }
 
-void VBoxVMSettingsHD::onCurrentChanged (const QModelIndex &aIndex)
+void VBoxVMSettingsHD::onCurrentChanged (const QModelIndex& /* aIndex */)
 {
     mNewAction->setEnabled (mModel->rowCount() - 1 <
         HDSlotUniquizer::instance()->list (HDSltValue(), false).count());
     mDelAction->setEnabled (mTwAts->currentIndex().row() != mModel->rowCount() - 1);
-    mVdmAction->setEnabled (aIndex.isValid() && aIndex.column() == 1);
+    mVdmAction->setEnabled (mTwAts->currentIndex().row() != mModel->rowCount() - 1 &&
+                            mTwAts->currentIndex().column() == 1);
 }
 
 void VBoxVMSettingsHD::cbSATAToggled (int aState)
@@ -743,8 +757,7 @@ void VBoxVMSettingsHD::cbSATAToggled (int aState)
         /* If list contains at least one SATA port */
         if (firstSataPort < list.size())
         {
-            int rc = vboxProblem().confirmDetachSATASlots (this);
-            if (rc != QIMessageBox::Ok)
+            if (vboxProblem().confirmDetachSATASlots (this) != QIMessageBox::Ok)
             {
                 /* Switch check-box back to "Qt::Checked" */
                 mCbSATA->blockSignals (true);
@@ -756,6 +769,10 @@ void VBoxVMSettingsHD::cbSATAToggled (int aState)
             {
                 /* Delete SATA items */
                 mModel->removeSata();
+
+                /* Set column #1 of first index to be the current */
+                mTwAts->setCurrentIndex (mModel->index (0, 1));
+
                 if (mValidator)
                     mValidator->revalidate();
             }
