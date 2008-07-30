@@ -199,94 +199,6 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
 
 
 /**
- * Internt protocol checksumming
- * This is great fun because of the pseudo header.
- */
-static uint16_t tstIntNet1InetCheckSum(void const *pvBuf, size_t cbBuf, uint32_t u32Src, uint32_t u32Dst, uint8_t u8Proto)
-{
-    /*
-     * Construct the pseudo header and sum it.
-     */
-    struct pseudo_header
-    {
-        uint32_t u32Src;
-        uint32_t u32Dst;
-        uint8_t  u8Zero;
-        uint8_t  u8Proto;
-        uint16_t u16Len;
-    } s =
-    {
-        RT_H2BE_U32(u32Src),
-        RT_H2BE_U32(u32Dst),
-        0,
-        u8Proto,
-        RT_H2BE_U16((uint16_t)cbBuf)
-    };
-    const uint16_t *pu16 = (const uint16_t *)&s;
-    int32_t iSum = *pu16++;
-    iSum += *pu16++;
-    iSum += *pu16++;
-    iSum += *pu16++;
-    iSum += *pu16++;
-    iSum += *pu16++;
-    AssertCompileSize(s, 12);
-
-    /*
-     * Continue with protocol header and data.
-     */
-    pu16 = (const uint16_t *)pvBuf;
-    while (cbBuf > 1)
-    {
-        iSum += *pu16++;
-        cbBuf -= 2;
-    }
-
-    /* deal with odd size */
-    if (cbBuf)
-    {
-        RTUINT16U u16;
-        u16.u = 0;
-        u16.au8[0] = *(uint8_t const *)pu16;
-        iSum += u16.u;
-    }
-
-    /* 16-bit one complement fun */
-    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
-    iSum += iSum >> 16;                     /* carry */
-    return (uint16_t)~iSum;
-}
-
-
-/**
- * IP checksumming
- */
-static uint16_t tstIntNet1IpCheckSum(void const *pvBuf, size_t cbBuf)
-{
-    const uint16_t *pu16 = (const uint16_t *)pvBuf;
-    int32_t iSum = 0;
-    while (cbBuf > 1)
-    {
-        iSum += *pu16++;
-        cbBuf -= 2;
-    }
-
-    /* deal with odd size */
-    if (cbBuf)
-    {
-        RTUINT16U u16;
-        u16.u = 0;
-        u16.au8[0] = *(uint8_t const *)pu16;
-        iSum += u16.u;
-    }
-
-    /* 16-bit one complement fun */
-    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
-    iSum += iSum >> 16;                     /* carry */
-    return (uint16_t)~iSum;
-}
-
-
-/**
  * Does the transmit test.
  *
  * @param   hIf             The interface handle.
@@ -370,14 +282,10 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     pIpHdr->ip_sum = 0;
     pIpHdr->ip_src.u = 0;
     pIpHdr->ip_dst.u = UINT32_C(0xffffffff); /* broadcast */
-    pIpHdr->ip_sum = tstIntNet1IpCheckSum(pIpHdr, sizeof(*pIpHdr));
+    pIpHdr->ip_sum = RTNetIPv4HdrChecksum(pIpHdr);
 
     /* calc the UDP checksum. */
-    pUdpHdr->uh_sum = tstIntNet1InetCheckSum(pUdpHdr,
-                                             RT_BE2H_U16(pUdpHdr->uh_ulen),
-                                             RT_BE2H_U32(pIpHdr->ip_src.u),
-                                             RT_BE2H_U32(pIpHdr->ip_dst.u),
-                                             pIpHdr->ip_p);
+    pUdpHdr->uh_sum = RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1);
 
     /* Ethernet */
     memset(&pEthHdr->DstMac, 0xff, sizeof(pEthHdr->DstMac)); /* broadcast */
