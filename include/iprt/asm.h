@@ -5539,10 +5539,34 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
     return ASMBitLastSetS32((uint32_t)i32);
 }
 
+/**
+ * Reverse the byte order of the given 16-bit integer.
+ *
+ * @returns Revert
+ * @param   u16     16-bit integer value.
+ */
+DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16)
+{
+#if RT_INLINE_ASM_USES_INTRIN
+    u16 = _byteswap_ushort(u16);
+#elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16));
+#else
+    _asm
+    {
+        mov     ax, [u16]
+        ror     ax, 8
+        mov     [u16], ax
+    }
+#endif
+    return u16;
+}
 
 /**
  * Reverse the byte order of the given 32-bit integer.
- * @param  u32      Integer
+ *
+ * @returns Revert
+ * @param   u32     32-bit integer value.
  */
 DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
 {
@@ -5560,6 +5584,25 @@ DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
 #endif
     return u32;
 }
+
+
+/**
+ * Reverse the byte order of the given 64-bit integer.
+ *
+ * @returns Revert
+ * @param   u64     64-bit integer value.
+ */
+DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
+{
+#if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN
+    u64 = _byteswap_uint64(u64);
+#else /* !RT_ARCH_AMD64 (assume x86) */
+    u64 = (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
+        | (uint64_t)ASMByteSwapU32(u64 >> 32);
+#endif
+    return u64;
+}
+
 
 /** @} */
 

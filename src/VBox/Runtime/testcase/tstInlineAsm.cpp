@@ -1070,11 +1070,75 @@ void tstASMMath(void)
 #endif
 }
 
-/*
- * Make this static. We don't want to have this located on the stack.
- */
+
+void tstASMByteSwap(void)
+{
+    RTPrintf("tstInlineASM: TESTING - ASMByteSwap*\n");
+
+    uint64_t u64In  = UINT64_C(0x0011223344556677);
+    uint64_t u64Out = ASMByteSwapU64(u64In);
+    CHECKVAL(u64In, UINT64_C(0x0011223344556677), "%#018RX64");
+    CHECKVAL(u64Out, UINT64_C(0x7766554433221100), "%#018RX64");
+    u64Out = ASMByteSwapU64(u64Out);
+    CHECKVAL(u64Out, u64In, "%#018RX64");
+    u64In  = UINT64_C(0x0123456789abcdef);
+    u64Out = ASMByteSwapU64(u64In);
+    CHECKVAL(u64In, UINT64_C(0x0123456789abcdef), "%#018RX64");
+    CHECKVAL(u64Out, UINT64_C(0xefcdab8967452301), "%#018RX64");
+    u64Out = ASMByteSwapU64(u64Out);
+    CHECKVAL(u64Out, u64In, "%#018RX64");
+    u64In  = 0;
+    u64Out = ASMByteSwapU64(u64In);
+    CHECKVAL(u64Out, u64In, "%#018RX64");
+    u64In  = ~(uint64_t)0;
+    u64Out = ASMByteSwapU64(u64In);
+    CHECKVAL(u64Out, u64In, "%#018RX64");
+
+    uint32_t u32In  = UINT32_C(0x00112233);
+    uint32_t u32Out = ASMByteSwapU32(u32In);
+    CHECKVAL(u32In, UINT32_C(0x00112233), "%#010RX32");
+    CHECKVAL(u32Out, UINT32_C(0x33221100), "%#010RX32");
+    u32Out = ASMByteSwapU32(u32Out);
+    CHECKVAL(u32Out, u32In, "%#010RX32");
+    u32In  = UINT32_C(0x12345678);
+    u32Out = ASMByteSwapU32(u32In);
+    CHECKVAL(u32In, UINT32_C(0x12345678), "%#010RX32");
+    CHECKVAL(u32Out, UINT32_C(0x78563412), "%#010RX32");
+    u32Out = ASMByteSwapU32(u32Out);
+    CHECKVAL(u32Out, u32In, "%#010RX32");
+    u32In  = 0;
+    u32Out = ASMByteSwapU32(u32In);
+    CHECKVAL(u32Out, u32In, "%#010RX32");
+    u32In  = ~(uint32_t)0;
+    u32Out = ASMByteSwapU32(u32In);
+    CHECKVAL(u32Out, u32In, "%#010RX32");
+
+    uint16_t u16In  = UINT16_C(0x0011);
+    uint16_t u16Out = ASMByteSwapU16(u16In);
+    CHECKVAL(u16In, UINT16_C(0x0011), "%#06RX16");
+    CHECKVAL(u16Out, UINT16_C(0x1100), "%#06RX16");
+    u16Out = ASMByteSwapU16(u16Out);
+    CHECKVAL(u16Out, u16In, "%#06RX16");
+    u16In  = UINT16_C(0x1234);
+    u16Out = ASMByteSwapU16(u16In);
+    CHECKVAL(u16In, UINT16_C(0x1234), "%#06RX16");
+    CHECKVAL(u16Out, UINT16_C(0x3412), "%#06RX16");
+    u16Out = ASMByteSwapU16(u16Out);
+    CHECKVAL(u16Out, u16In, "%#06RX16");
+    u16In  = 0;
+    u16Out = ASMByteSwapU16(u16In);
+    CHECKVAL(u16Out, u16In, "%#06RX16");
+    u16In  = ~(uint16_t)0;
+    u16Out = ASMByteSwapU16(u16In);
+    CHECKVAL(u16Out, u16In, "%#06RX16");
+}
+
+
 void tstASMBench(void)
 {
+    /*
+     * Make this static. We don't want to have this located on the stack.
+     */
     static uint8_t  volatile s_u8;
     static int8_t   volatile s_i8;
     static uint16_t volatile s_u16;
@@ -1174,6 +1238,7 @@ int main(int argc, char *argv[])
     tstASMMemZero32();
     tstASMMemFill32();
     tstASMMath();
+    tstASMByteSwap();
 
     tstASMBench();
 
