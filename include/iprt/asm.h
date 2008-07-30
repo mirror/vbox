@@ -5598,7 +5598,7 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
     u64 = _byteswap_uint64(u64);
 #else /* !RT_ARCH_AMD64 (assume x86) */
     u64 = (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
-        | (uint64_t)ASMByteSwapU32(u64 >> 32);
+        | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
 #endif
     return u64;
 }
