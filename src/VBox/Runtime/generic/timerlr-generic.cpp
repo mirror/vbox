@@ -101,7 +101,7 @@ RTDECL(int) RTTimerLRCreateEx(RTTIMERLR *phTimerLR, uint64_t u64NanoInterval, ui
      */
     if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         return VERR_NOT_SUPPORTED;
-    if (u64NanoInterval < 100*1000*1000)
+    if (u64NanoInterval && u64NanoInterval < 100*1000*1000)
         return VERR_INVALID_PARAMETER;
 
     /*
