@@ -224,7 +224,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     prefPage = new VBoxVMSettingsGeneral();
     connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
     addItem (":/machine_32px.png", ":/machine_16px.png",
-             GeneralId, "#general", 
+             GeneralId, "#general",
              prefPage);
 
     /* Storage page */
@@ -235,7 +235,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     prefPage = new VBoxVMSettingsHD();
     connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
     addItem (":/hd_32px.png", ":/hd_16px.png",
-             HDId, "#hdds", 
+             HDId, "#hdds",
              prefPage, StorageId);
 
     /* CD page */
@@ -300,7 +300,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
     /* Applying language settings */
     retranslateUi();
-    
+
     /* First item as default */
 
     /* Setup Settings Dialog */
@@ -336,7 +336,12 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
         mSelector->selectById (0);
 }
 
-void VBoxVMSettingsDlg::addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage /* = NULL*/, int aParentId /* = -1 */)
+void VBoxVMSettingsDlg::addItem (const QString &aBigIcon,
+                                 const QString &aSmallIcon,
+                                 int aId,
+                                 const QString &aLink,
+                                 VBoxSettingsPage* aPrefPage /* = NULL*/,
+                                 int aParentId /* = -1 */)
 {
     QWidget *page = mSelector->addItem (aBigIcon, aSmallIcon,
                                         aId, aLink,
