@@ -103,85 +103,93 @@ class RTAutoRes
 {
 protected:
     /** The resource handle. */
-    T mValue;
+    T m_hRes;
 
 public:
     /**
      * Constructor
-     * @param   aValue
+     *
+     * @param   a_hRes      The handle to resource to manage. Defaults to NIL.
      */
-    RTAutoRes(T aValue = NilRes())
-        : mValue(aValue)
+    RTAutoRes(T a_hRes = NilRes())
+        : m_hRes(a_hRes)
     {
     }
 
     /**
-     * Destructor
+     * Destructor.
+     *
+     * This destroys any resource currently managed by the object.
      */
     ~RTAutoRes()
     {
-        if (mValue != NilRes())
-            Destruct(mValue);
+        if (m_hRes != NilRes())
+            Destruct(m_hRes);
     }
 
     /**
      * Assignment from a value.
      *
-     * This will destroy any previous value referenced by the object.
+     * This destroys any resource currently managed by the object
+     * before taking on the new one.
+     *
+     * @param   a_hRes      The handle to the new resource.
      */
-    RTAutoRes &operator=(T aValue)
+    RTAutoRes &operator=(T a_hRes)
     {
-        if (mValue != NilRes())
-            Destruct(mValue);
-        mValue = aValue;
+        if (m_hRes != NilRes())
+            Destruct(m_hRes);
+        m_hRes = a_hRes;
         return *this;
     }
 
     /**
-     * Checks if the value is NIL or not.
+     * Checks if the resource handle is NIL or not.
      */
     bool operator!()
     {
-        return mValue == NilRes();
+        return m_hRes == NilRes();
     }
 
     /**
      * Give up ownership the current resource, handing it to the caller.
      *
      * @returns The current resource handle.
+     *
      * @note    Nothing happens to the resource when the object goes out of scope.
      */
     T release(void)
     {
-        T Tmp = mValue;
-        mValue = NilRes();
+        T Tmp = m_hRes;
+        m_hRes = NilRes();
         return Tmp;
     }
 
     /**
      * Deletes the current resources.
      *
-     * @param   aValue      The new resource to manage. Defaults to NIL.
+     * @param   a_hRes      Handle to a new resource to manage. Defaults to NIL.
      */
-    void reset(T aValue = NilRes())
+    void reset(T a_hRes = NilRes())
     {
-        if (aValue != mValue)
+        if (a_hRes != m_hRes)
         {
-            Destruct(mValue);
-            mValue = aValue;
+            Destruct(m_hRes);
+            m_hRes = a_hRes;
         }
     }
 
     /**
      * Get the raw resource handle.
      *
-     * Typically used passing the handle to some IPRT function.
+     * Typically used passing the handle to some IPRT function while
+     * the object remains in scope.
      *
      * @returns The raw resource handle.
      */
     T get(void)
     {
-        return mValue;
+        return m_hRes;
     }
 };
 
@@ -231,13 +239,14 @@ T *RTMemAutoNil(void)
  * @param   T           The data type to manage allocations for.
  * @param   Destruct    The function to be used to free the resource.
  *                      This will default to RTMemFree.
- * @param   Reallocator The function to be used to reallocate the resource.
+ * @param   Allocator   The function to be used to allocate or reallocate
+ *                      the managed memory.
  *                      This is standard realloc() like stuff, so it's possible
  *                      to support simple allocation without actually having
  *                      to support reallocating memory if that's a problem.
  *                      This will default to RTMemRealloc.
  */
-template <class T, void Destruct(T *) = RTMemAutoFree<T>, void *Reallocator(void *, size_t) = RTMemRealloc >
+template <class T, void Destruct(T *) = RTMemAutoFree<T>, void *Allocator(void *, size_t) = RTMemRealloc >
 class RTMemAutoPtr
     : public RTAutoRes<T *, Destruct, RTMemAutoNil<T> >
 {
@@ -291,21 +300,44 @@ public:
     }
 
     /**
+     * Allocates memory and start manage it.
+     *
+     * Any previously managed memory will be freed before making
+     * the new allocation.
+     *
+     * @returns Success indicator.
+     * @retval  true if the new allocation succeeds.
+     * @retval  false on failure, no memory is associated with the object.
+     *
+     * @param   cElements   The new number of elements (of the data type) to allocate.
+     *                      This defaults to 1.
+     */
+    bool alloc(size_t a_cElements = 1)
+    {
+        this->reset(NULL);
+        T *aNewValue = (T *)(Allocator(NULL, a_cElements * sizeof(T)));
+        this->reset(aNewValue);
+        return aNewValue != NULL;
+    }
+
+    /**
      * Reallocate or allocates the memory resource.
      *
      * Free the old value if allocation fails.
      *
-     * @returns Success indicator - true if the new allocation succeeds, false otherwise.
+     * @returns Success indicator.
+     * @retval  true if the new allocation succeeds.
+     * @retval  false on failure, no memory is associated with the object.
      *
      * @param   cElements   The new number of elements (of the data type) to allocate.
      *                      The size of the allocation is the number of elements times
      *                      the size of the data type - this is currently what's passed
-     *                      down to the Reallocator.
+     *                      down to the Allocator.
      *                      This defaults to 1.
      */
-    bool realloc(size_t cElements = 1)
+    bool realloc(size_t a_cElements = 1)
     {
-        T *aNewValue = (T *)(Reallocator(this->get(), cElements * sizeof(T)));
+        T *aNewValue = (T *)(Allocator(this->get(), a_cElements * sizeof(T)));
         if (aNewValue != NULL)
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
