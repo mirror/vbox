@@ -28,6 +28,7 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
 cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
+	iprt/autores.h \
 	iprt/cpputils.h \
 	iprt/lock.h
 
