@@ -79,7 +79,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Update page */
     prefPage = new VBoxGLSettingsUpdate();
-    page = mSelector->addItem (":/refresh_16px.png", ":/refresh_16px.png",
+    page = mSelector->addItem (":/vm_refresh_32px.png", ":/refresh_16px.png",
                                UpdateId, "#update",
                                prefPage);
     if (page)
