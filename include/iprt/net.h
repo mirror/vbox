@@ -197,27 +197,12 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 #define RTNETIPV4_PROT_UDP  (17)
 /** @} */
 
-/**
- * Calculates the checksum of the IPv4 header.
- *
- * @returns Checksum.
- * @param   pIpHdr      Pointer to the IPv4 header to checksum. Assumes
- *                      the caller already checked the minimum size requirement.
- */
 RTDECL(uint16_t) RTNetIPv4Checksum(PCRTNETIPV4 pIpHdr);
-
-/**
- * Verifies the header version, header size, packet size, and header checksum
- * of the specified IPv4 header.
- *
- * @returns true if valid, false if invalid.
- * @param   pIpHdr      Pointer to the IPv4 header to validate.
- * @param   cbHdrMax    The max header size, or  the max size of what pIpHdr points
- *                      to if you like. Note that an IPv4 header can be up to 60 bytes.
- * @param   cbPktMax    The max IP packet size, IP header and payload. This doesn't have
- *                      to be mapped following pIpHdr.
- */
-RTDECL(bool) RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
+RTDECL(bool)     RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
+RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr);
+RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV4 DstAddr, uint8_t bProtocol, uint16_t cbPkt);
+RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd);
+RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum);
 
 
 /**
@@ -244,6 +229,8 @@ typedef RTNETUDP const *PCRTNETUDP;
 
 /** The minimum UDP packet length (in bytes). (RTNETUDP::uh_ulen) */
 #define RTNETUDP_MIN_LEN   (8)
+
+RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum);
 
 
 /**
@@ -332,6 +319,8 @@ typedef RTNETTCP const *PCRTNETTCP;
 
 /** The minimum TCP header length (in bytes). (RTNETTCP::th_off * 4) */
 #define RTNETTCP_MIN_LEN    (20)
+
+RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum);
 
 
 /**
