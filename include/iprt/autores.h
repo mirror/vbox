@@ -25,6 +25,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/cpputils.h>
+#include <VBox/log.h>
 
 /**
  * A callable class template which returns the correct value against which an
