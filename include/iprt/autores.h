@@ -18,13 +18,29 @@
  * additional information or have any questions.
  */
 
-#ifndef ___iprt_autores___
-#define ___iprt_autores___
+#ifndef ___iprt_autores_h
+#define ___iprt_autores_h
 
 #include <iprt/types.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#include <iprt/cpputils.h>
+
+
+/**
+ * A simple class used to prevent copying and assignment.
+ *
+ * Inherit from this class in order to prevent automatic generation
+ * of the copy constructor and assignment operator in your class.
+ */
+class RTCNonCopyable
+{
+protected:
+    RTCNonCopyable() {}
+    ~RTCNonCopyable() {}
+private:
+    RTCNonCopyable(RTCNonCopyable const &);
+    RTCNonCopyable const &operator=(RTCNonCopyable const &);
+};
 
 
 /**
@@ -82,7 +98,8 @@ inline void RTAutoResDestruct(T aHandle)
  *          to the lack of a copy constructor. This is intentional.
  */
 template <class T, void Destruct(T) = RTAutoResDestruct<T>, T NilRes(void) = RTAutoResNil<T> >
-class RTAutoRes : public stdx::non_copyable
+class RTAutoRes
+    : public RTCNonCopyable
 {
 protected:
     /** The resource handle. */
