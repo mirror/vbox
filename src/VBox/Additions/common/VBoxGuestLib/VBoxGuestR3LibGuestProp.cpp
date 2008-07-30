@@ -543,7 +543,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
         cchPatterns += strlen(papszPatterns[i]) + 1;
     /* Pack the pattern array */
     RTMemAutoPtr<char> Patterns;
-    Patterns = reinterpret_cast<char *>(RTMemAlloc(cchPatterns));
+    Patterns = RTMemAlloc(cchPatterns);
     size_t iOffs = 0;
     for (int i = 0; i < cPatterns; ++i)
     {

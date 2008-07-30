@@ -1050,8 +1050,8 @@ static int enumGuestProperty(int argc, char *argv[])
  * Do the actual enumeration.
  */
     uint32_t u32ClientId = 0;
-    PVBGLR3GUESTPROPENUM pHandleRaw = NULL;
-    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> pHandle;
+    PVBGLR3GUESTPROPENUM pHandle = NULL;
+    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
     char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
     uint64_t u64Timestamp = 0;
     int rc = VINF_SUCCESS;
@@ -1062,11 +1062,11 @@ static int enumGuestProperty(int argc, char *argv[])
     {
         char **ppaszPatterns = argc > 1 ? argv + 1 : NULL;
         int cPatterns = argc > 1 ? argc - 1 : 0;
-        rc = VbglR3GuestPropEnum(u32ClientId, ppaszPatterns, cPatterns, &pHandleRaw,
+        rc = VbglR3GuestPropEnum(u32ClientId, ppaszPatterns, cPatterns, &pHandle,
                                  &pszName, &pszValue, &u64Timestamp, &pszFlags);
         if (RT_SUCCESS(rc))
         {
-            pHandle = pHandleRaw;
+            Handle = pHandle;
         }
         else if (VERR_NOT_FOUND == rc)
             RTPrintf("No properties found.\n");
@@ -1077,7 +1077,7 @@ static int enumGuestProperty(int argc, char *argv[])
     {
         RTPrintf("Name: %s, value: %s, timestamp: %lld, flags: %s\n",
                  pszName, pszValue, u64Timestamp, pszFlags);
-        rc = VbglR3GuestPropEnumNext(pHandle.get(), &pszName, &pszValue, &u64Timestamp, &pszFlags);
+        rc = VbglR3GuestPropEnumNext(Handle.get(), &pszName, &pszValue, &u64Timestamp, &pszFlags);
         if (!RT_SUCCESS(rc))
             VBoxControlError("Error while enumerating guest propertied: %Rrc\n", rc);
     }
