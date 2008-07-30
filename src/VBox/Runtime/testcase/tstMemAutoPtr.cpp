@@ -35,6 +35,7 @@
 #include <iprt/stream.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
+#include <iprt/rand.h>
 
 
 /*******************************************************************************
@@ -80,6 +81,39 @@ void *tstMemAutoPtrAllocatorNoZero(void *pvOld, size_t cbNew)
     if (pvNew)
         memset(pvNew, 0xfe, cbNew);
     return pvNew;
+}
+
+
+/*
+ * Feel free to inspect with gdb / objdump / whatever / g++ -fverbose-asm in
+ * a release build and compare with tstMemAutoPtrDisas1PureC.
+ */
+extern "C" int tstMemAutoPtrDisas1(void **ppv)
+{
+    RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
+    Handle->a = RTRandU32();
+    if (Handle->a < UINT32_MAX / 2)
+    {
+        *ppv = Handle.release();
+        return VINF_SUCCESS;
+    }
+    return VERR_TRY_AGAIN;
+}
+
+/*
+ * For comparing to tstMemAutoPtrDisas1.
+ */
+extern "C" int tstMemAutoPtrDisas1PureC(void **ppv)
+{
+    TSTMEMAUTOPTRSTRUCT *pHandle = (TSTMEMAUTOPTRSTRUCT *)RTMemRealloc(NULL, sizeof(*pHandle));
+    pHandle->a = RTRandU32();
+    if (pHandle->a < UINT32_MAX / 2)
+    {
+        *ppv = pHandle;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pHandle);
+    return VERR_TRY_AGAIN;
 }
 
 
@@ -239,7 +273,6 @@ int main()
         CHECK_EXPR(Zeroed2[3] == 0);
         CHECK_EXPR(Zeroed2[4] == 0);
     }
-
 
     /*
      * Summary.

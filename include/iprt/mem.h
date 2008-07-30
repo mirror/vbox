@@ -487,16 +487,17 @@ public:
     }
 
     /**
-     * Constructor that
+     * Constructor that allocates memory.
      *
      * @param   a_cElements The number of elements (of the data type) to allocate.
      * @param   a_fZeroed   Whether the memory should be memset with zeros after
      *                      the allocation. Defaults to false.
      */
     RTMemAutoPtr(size_t a_cElements, bool a_fZeroed = false)
-        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >((T *)NULL)
+        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >((T *)Allocator(NULL, a_cElements * sizeof(T)))
     {
-        alloc(a_cElements, a_fZeroed);
+        if (a_fZeroed && RT_LIKELY(this->get() != NULL))
+            memset(this->get(), '\0', a_cElements * sizeof(T));
     }
 
     /**
@@ -508,7 +509,7 @@ public:
     {
         this->RTAutoRes<T *, Destruct, RTMemAutoNil<T> >::operator=(aPtr);
         return *this;
-     }
+    }
 
     /**
      * Dereference with * operator.
@@ -556,7 +557,7 @@ public:
     {
         this->reset(NULL);
         T *pNewMem = (T *)Allocator(NULL, a_cElements * sizeof(T));
-        if (a_fZeroed && pNewMem)
+        if (a_fZeroed && RT_LIKELY(pNewMem != NULL))
             memset(pNewMem, '\0', a_cElements * sizeof(T));
         this->reset(pNewMem);
         return pNewMem != NULL;
@@ -583,7 +584,7 @@ public:
     bool realloc(size_t a_cElements = 1)
     {
         T *aNewValue = (T *)Allocator(this->get(), a_cElements * sizeof(T));
-        if (aNewValue != NULL)
+        if (RT_LIKELY(aNewValue != NULL))
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
         this->reset(aNewValue);
