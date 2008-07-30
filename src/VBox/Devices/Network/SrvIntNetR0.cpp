@@ -746,7 +746,7 @@ static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pHdr, uint3
      * Ignore 255.255.255.255 (broadcast), 0.0.0.0 (null) and already cached addresses.
      */
     RTNETADDRU Addr;
-    Addr.au32[0] = pHdr->ip_src;
+    Addr.IPv4 = pHdr->ip_src;
     if (Addr.au32[0] == UINT32_C(0xffffffff))
         return;
 
