@@ -305,6 +305,9 @@ public:
      * Any previously managed memory will be freed before making
      * the new allocation.
      *
+     * The content of the new memory is undefined when using
+     * the default allocator.
+     *
      * @returns Success indicator.
      * @retval  true if the new allocation succeeds.
      * @retval  false on failure, no memory is associated with the object.
@@ -324,6 +327,9 @@ public:
      * Reallocate or allocates the memory resource.
      *
      * Free the old value if allocation fails.
+     *
+     * The content of any additional memory that was allocated is
+     * undefined when using the default allocator.
      *
      * @returns Success indicator.
      * @retval  true if the new allocation succeeds.
