@@ -532,11 +532,9 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     char **ppszFlags)
 {
     int rc = VINF_SUCCESS;
-    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> apHandle;
-    apHandle = reinterpret_cast<PVBGLR3GUESTPROPENUM>(
-                                       RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM))
-                                                     );
-    if (NULL == apHandle.get())
+    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
+    Handle = RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
+    if (!Handle)
         rc = VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
@@ -544,32 +542,32 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     for (int i = 0; i < cPatterns; ++i)
         cchPatterns += strlen(papszPatterns[i]) + 1;
     /* Pack the pattern array */
-    RTMemAutoPtr<char> pPatterns;
-    pPatterns = reinterpret_cast<char *>(RTMemAlloc(cchPatterns));
-    char *pchPatternsRaw = pPatterns.get();
+    RTMemAutoPtr<char> Patterns;
+    Patterns = reinterpret_cast<char *>(RTMemAlloc(cchPatterns));
+    size_t iOffs = 0;
     for (int i = 0; i < cPatterns; ++i)
     {
         size_t cb = strlen(papszPatterns[i]) + 1;
-        memcpy(pchPatternsRaw, papszPatterns[i], cb);
-        pchPatternsRaw += cb;
+        memcpy(&Patterns[iOffs], papszPatterns[i], cb);
+        iOffs += cb;
     }
-    *pchPatternsRaw = '\0';
+    Patterns[iOffs] = '\0';
 
     /* Randomly chosen initial size for the buffer to hold the enumeration
      * information. */
     uint32_t cchBuf = 4096;
-    RTMemAutoPtr<char> pchBuf;
+    RTMemAutoPtr<char> Buf;
     /* In reading the guest property data we are racing against the host
      * adding more of it, so loop a few times and retry on overflow. */
     bool finish = false;
     if (RT_SUCCESS(rc))
         for (int i = 0; (i < 10) && !finish; ++i)
         {
-            if (!pchBuf.realloc<RTMemRealloc>(cchBuf))
+            if (!Buf.realloc(cchBuf))
                 rc = VERR_NO_MEMORY;
             if (RT_SUCCESS(rc) || (VERR_BUFFER_OVERFLOW == rc))
-                rc = VbglR3GuestPropEnumRaw(u32ClientId, pPatterns.get(),
-                                            pchBuf.get(), cchBuf, &cchBuf);
+                rc = VbglR3GuestPropEnumRaw(u32ClientId, Patterns.get(),
+                                            Buf.get(), cchBuf, &cchBuf);
             if (rc != VERR_BUFFER_OVERFLOW)
                 finish = true;
             else
@@ -580,18 +578,18 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     if (RT_SUCCESS(rc))
     {
         /* Transfer ownership of the buffer to the handle structure. */
-        apHandle->pchBuf = pchBuf.release();
-        apHandle->cchBuf = cchBuf;
+        Handle->pchBuf = Buf.release();
+        Handle->cchBuf = cchBuf;
     }
     if (RT_SUCCESS(rc))
-        rc = VbglR3GuestPropEnumNext(apHandle.get(), ppszName, ppszValue,
+        rc = VbglR3GuestPropEnumNext(Handle.get(), ppszName, ppszValue,
                                      pu64Timestamp, ppszFlags);
     if (RT_SUCCESS(rc) && (NULL == ppszName))
         /* No matching properties found */
         rc = VERR_NOT_FOUND;
     /* And transfer ownership of the handle to the caller. */
     if (RT_SUCCESS(rc))
-        *ppHandle = apHandle.release();
+        *ppHandle = Handle.release();
     return rc;
 }
 
