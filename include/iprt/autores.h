@@ -50,7 +50,7 @@ private:
  * @warning This template *must* be specialised for the types it is to work with.
  */
 template <class T>
-DECLINLINE(T) RTAutoResNil(void)
+inline T RTAutoResNil(void)
 {
     AssertFatalMsgFailed(("Unspecialized template!\n"));
     return (T)0;
@@ -63,7 +63,7 @@ DECLINLINE(T) RTAutoResNil(void)
  * @warning This template *must* be specialised for the types it is to work with.
  */
 template <class T>
-DECLINLINE(void) RTAutoResDestruct(T aHandle)
+inline void RTAutoResDestruct(T aHandle)
 {
     AssertFatalMsgFailed(("Unspecialized template!\n"));
     NOREF(aHandle);
