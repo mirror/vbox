@@ -510,7 +510,7 @@ RTDECL(void *) rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, s
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAlloc(size_t cb)
+RTDECL(void *)  RTMemEfTmpAlloc(size_t cb) RT_NO_THROW
 {
     return RTMemEfAlloc(cb);
 }
@@ -523,7 +523,7 @@ RTDECL(void *)  RTMemEfTmpAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb)
+RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb) RT_NO_THROW
 {
     return RTMemEfAllocZ(cb);
 }
@@ -534,7 +534,7 @@ RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfTmpFree(void *pv)
+RTDECL(void)    RTMemEfTmpFree(void *pv) RT_NO_THROW
 {
     RTMemEfFree(pv);
 }
@@ -547,7 +547,7 @@ RTDECL(void)    RTMemEfTmpFree(void *pv)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAlloc(size_t cb)
+RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW
 {
     return rtMemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, ((void **)&cb)[-1], 0, NULL, NULL);
 }
@@ -560,7 +560,7 @@ RTDECL(void *)  RTMemEfAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAllocZ(size_t cb)
+RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW
 {
     return rtMemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, ((void **)&cb)[-1], 0, NULL, NULL);
 }
@@ -574,7 +574,7 @@ RTDECL(void *)  RTMemEfAllocZ(size_t cb)
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew)
+RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 {
     return rtMemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ((void **)&pvOld)[-1], 0, NULL, NULL);
 }
@@ -585,7 +585,7 @@ RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfFree(void *pv)
+RTDECL(void)    RTMemEfFree(void *pv) RT_NO_THROW
 {
     if (pv)
         rtMemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ((void **)&pv)[-1], 0, NULL, NULL);
@@ -600,7 +600,7 @@ RTDECL(void)    RTMemEfFree(void *pv)
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb)
+RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb) RT_NO_THROW
 {
     void *pvDst = RTMemEfAlloc(cb);
     if (pvDst)
@@ -618,7 +618,7 @@ RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb)
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra)
+RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW
 {
     void *pvDst = RTMemEfAlloc(cbSrc + cbExtra);
     if (pvDst)

@@ -49,7 +49,7 @@ void rtRandLazyInitNative(void);
  */
 int rtRandGenBytesNative(void *pv, size_t cb);
 
-void rtRandGenBytesFallback(void *pv, size_t cb);
+void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW;
 
 __END_DECLS
 

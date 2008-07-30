@@ -99,7 +99,7 @@ static void rtRandGenBytes(void *pv, size_t cb)
  * @param   pv  Where to store the random bytes.
  * @param   cb  Number of bytes to generate.
  */
-RTDECL(void) RTRandBytes(void *pv, size_t cb)
+RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW
 {
     if (cb)
         rtRandGenBytes(pv, cb);
@@ -113,7 +113,7 @@ RTDECL(void) RTRandBytes(void *pv, size_t cb)
  * @param   i32First    First number in the set.
  * @param   i32Last     Last number in the set.
  */
-RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last)
+RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW
 {
     /* get 4 random bytes. */
     union
@@ -142,7 +142,7 @@ RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last)
  *
  * @returns The random number.
  */
-RTDECL(int32_t) RTRandS32(void)
+RTDECL(int32_t) RTRandS32(void) RT_NO_THROW
 {
     return RTRandS32Ex(INT32_MIN, INT32_MAX);
 }
@@ -155,7 +155,7 @@ RTDECL(int32_t) RTRandS32(void)
  * @param   u32First    First number in the set.
  * @param   u32Last     Last number in the set.
  */
-RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last)
+RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW
 {
     /* get 4 random bytes. */
     union
@@ -184,7 +184,7 @@ RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last)
  *
  * @returns The random number.
  */
-RTDECL(uint32_t) RTRandU32(void)
+RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW
 {
     return RTRandU32Ex(0, UINT32_MAX);
 }
@@ -197,7 +197,7 @@ RTDECL(uint32_t) RTRandU32(void)
  * @param   i64First    First number in the set.
  * @param   i64Last     Last number in the set.
  */
-RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last)
+RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW
 {
     /* get 8 random bytes. */
     union
@@ -225,7 +225,7 @@ RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last)
  *
  * @returns The random number.
  */
-RTDECL(int64_t) RTRandS64(void)
+RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
 {
     return RTRandS64Ex(INT64_MIN, INT64_MAX);
 }
@@ -238,7 +238,7 @@ RTDECL(int64_t) RTRandS64(void)
  * @param   u64First    First number in the set.
  * @param   u64Last     Last number in the set.
  */
-RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last)
+RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW
 {
     /* get 8 random bytes. */
     union
@@ -266,7 +266,7 @@ RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last)
  *
  * @returns The random number.
  */
-RTDECL(uint64_t) RTRandU64(void)
+RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW
 {
     return RTRandU64Ex(0, UINT64_MAX);
 }
@@ -278,7 +278,7 @@ RTDECL(uint64_t) RTRandU64(void)
  * @param   pv  Where to store the random bytes.
  * @param   cb  Number of bytes to generate.
  */
-void rtRandGenBytesFallback(void *pv, size_t cb)
+void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW
 {
     uint8_t *pb = (uint8_t *)pv;
     for (unsigned i = 0;; i++)
