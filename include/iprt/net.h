@@ -149,30 +149,30 @@ typedef struct RTNETIPV4
     unsigned int    ip_tos : 8;
     unsigned int    ip_len : 16;
 #else
-    /** Header length given as a 32-bit word count. */
+    /** 00:0 - Header length given as a 32-bit word count. */
     unsigned int    ip_hl : 4;
-    /** Header version. */
+    /** 00:4 - Header version. */
     unsigned int    ip_v : 4;
-    /** Type of service. */
+    /** 01 - Type of service. */
     unsigned int    ip_tos : 8;
-    /** Total length (header + data). */
+    /** 02 - Total length (header + data). */
     unsigned int    ip_len : 16;
 #endif
-    /** Packet idenficiation. */
+    /** 04 - Packet idenficiation. */
     uint16_t        ip_id;
-    /** Offset if fragmented. */
+    /** 06 - Offset if fragmented. */
     uint16_t        ip_off;
-    /** Time to live. */
+    /** 08 - Time to live. */
     uint8_t         ip_ttl;
-    /** Protocol. */
+    /** 09 - Protocol. */
     uint8_t         ip_p;
-    /** Header check sum. */
+    /** 0a - Header check sum. */
     uint16_t        ip_sum;
-    /** Source address. */
-    uint32_t        ip_src;
-    /** Destination address. */
-    uint32_t        ip_dst;
-    /** Options (optional). */
+    /** 0c - Source address. */
+    RTNETADDRIPV4   ip_src;
+    /** 10 - Destination address. */
+    RTNETADDRIPV4   ip_dst;
+    /** 14 - Options (optional). */
     uint32_t        ip_options[1];
 } RTNETIPV4;
 #pragma pack(0)
@@ -197,6 +197,28 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 #define RTNETIPV4_PROT_UDP  (17)
 /** @} */
 
+/**
+ * Calculates the checksum of the IPv4 header.
+ *
+ * @returns Checksum.
+ * @param   pIpHdr      Pointer to the IPv4 header to checksum. Assumes
+ *                      the caller already checked the minimum size requirement.
+ */
+RTDECL(uint16_t) RTNetIPv4Checksum(PCRTNETIPV4 pIpHdr);
+
+/**
+ * Verifies the header version, header size, packet size, and header checksum
+ * of the specified IPv4 header.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr      Pointer to the IPv4 header to validate.
+ * @param   cbHdrMax    The max header size, or  the max size of what pIpHdr points
+ *                      to if you like. Note that an IPv4 header can be up to 60 bytes.
+ * @param   cbPktMax    The max IP packet size, IP header and payload. This doesn't have
+ *                      to be mapped following pIpHdr.
+ */
+RTDECL(bool) RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
+
 
 /**
  * UDP header.
@@ -215,10 +237,12 @@ typedef struct RTNETUDP
 } RTNETUDP;
 #pragma pack(0)
 AssertCompileSize(RTNETUDP, 8);
+/** Pointer to an UDP header. */
 typedef RTNETUDP *PRTNETUDP;
+/** Pointer to a const UDP header. */
 typedef RTNETUDP const *PCRTNETUDP;
 
-/** The minimum IPv4 packet length (in bytes). (RTNETUDP::uh_ulen) */
+/** The minimum UDP packet length (in bytes). (RTNETUDP::uh_ulen) */
 #define RTNETUDP_MIN_LEN   (8)
 
 
@@ -257,11 +281,57 @@ typedef struct RTNETDHCP
     uint8_t         abOptions[57];
 } RTNETDHCP;
 #pragma pack(0)
-/// @todo AssertCompileSize(RTNETDHCP, );
+/** @todo AssertCompileSize(RTNETDHCP, ); */
 /** Pointer to a DHCP packet. */
 typedef RTNETDHCP *PRTNETDHCP;
 /** Pointer to a const DHCP packet. */
 typedef RTNETDHCP const *PCRTNETDHCP;
+
+
+/**
+ * TCP packet.
+ */
+#pragma pack(1)
+typedef struct RTNETTCP
+{
+    /** 00 - The source port. */
+    uint16_t        th_sport;
+    /** 02 - The destination port. */
+    uint16_t        th_dport;
+    /** 04 - The sequence number. */
+    uint32_t        th_seq;
+    /** 08 - The acknowledgement number. */
+    uint32_t        th_ack;
+#ifdef RT_BIG_ENDIAN
+    unsigned int    th_win : 16;
+    unsigned int    th_flags : 8;
+    unsigned int    th_off : 4;
+    unsigned int    th_x2 : 4;
+#else
+    /** 0c:0 - Reserved. */
+    unsigned int    th_x2 : 4;
+    /** 0c:4 - The data offset given as a dword count from the start of this header. */
+    unsigned int    th_off : 4;
+    /** 0d - flags. */
+    unsigned int    th_flags : 8;
+    /** 0e - The window. */
+    unsigned int    th_win : 16;
+#endif
+    /** 10 - The checksum of the pseudo header, the TCP header and the data. */
+    uint16_t        th_sum;
+    /** 12 - The urgent pointer. */
+    uint16_t        th_urp;
+    /* (options follows here and then the data (aka text).) */
+} RTNETTCP;
+#pragma pack(0)
+AssertCompileSize(RTNETTCP, 20);
+/** Pointer to a TCP packet. */
+typedef RTNETTCP *PRTNETTCP;
+/** Pointer to a const TCP packet. */
+typedef RTNETTCP const *PCRTNETTCP;
+
+/** The minimum TCP header length (in bytes). (RTNETTCP::th_off * 4) */
+#define RTNETTCP_MIN_LEN    (20)
 
 
 /**
