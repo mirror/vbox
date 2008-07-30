@@ -151,15 +151,17 @@ public:
     /**
      * Reallocate the resource value.  Free the old value if allocation fails.
      * @returns true if the new allocation succeeds, false otherwise
-     * @param   Reallocator  the function to be used for reallocating the
-     *                       resource.  It should have equivalent semantics to
-     *                       C realloc.
+     * @param   cElements  the size of the new allocation in multiples of the
+     *                     size of the base type
      * @note We can overload this member for other reallocator signatures as
      *       needed.
+     * @warning The default reallocator will only do the right thing with
+     *          plain memory buffers.  If you use more complex types, either
+     *          avoid reallocation or supply your own reallocator.
      */
-    bool realloc(size_t cchNewSize)
+    bool realloc(size_t cElements)
     {
-        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->get(), cchNewSize));
+        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->get(), cElements * sizeof(T)));
         if (aNewValue != NULL)
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
