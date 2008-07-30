@@ -237,7 +237,7 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
     {
-        if (hPidfile != NULL)
+        if (hPidfile != 0)
         {
             char szBuf[256];
             size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
