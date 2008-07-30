@@ -84,7 +84,6 @@ RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr)
 }
 
 
-
 /**
  * Verifies the header version, header size, packet size, and header checksum
  * of the specified IPv4 header.
@@ -96,8 +95,11 @@ RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr)
  * @param   cbPktMax    The max IP packet size, IP header and payload. This doesn't have
  *                      to be mapped following pIpHdr.
  */
-RTDECL(bool) RTNetIPv4IsHdrsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax)
+RTDECL(bool) RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax)
 {
+    /*
+     * The header fields.
+     */
     Assert(cbPktMax >= cbHdrMax);
     if (RT_UNLIKELY(cbHdrMax < RTNETIPV4_MIN_LEN))
         return false;
@@ -112,6 +114,10 @@ RTDECL(bool) RTNetIPv4IsHdrsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cb
         return false;
     if (RT_UNLIKELY(RT_BE2H_U16(pIpHdr->ip_len) > cbPktMax))
         return false;
+
+    /*
+     * The header checksum.
+     */
     uint16_t u16Sum = RTNetIPv4HdrChecksum(pIpHdr);
     if (RT_UNLIKELY(RT_BE2H_U16(pIpHdr->ip_sum) != u16Sum))
         return false;
@@ -379,12 +385,72 @@ RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum)
  */
 RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData)
 {
-    uint32_t iSum = RTNetIPv4PseudoChecksum(pIpHdr);
-    iSum = RTNetIPv4AddUDPChecksum(pUdpHdr, iSum);
+    uint32_t iSum = rtNetIPv4PseudoChecksum(pIpHdr);
+    iSum = rtNetIPv4AddUDPChecksum(pUdpHdr, iSum);
     bool fOdd = false;
-    iSum = RTNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), iSum, &fOdd);
-    iSum = RTNetIPv4FinalizeChecksum(iSum);
+    iSum = rtNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), iSum, &fOdd);
+    iSum = rtNetIPv4FinalizeChecksum(iSum);
     return iSum;
 }
 
 
+/**
+ * Simple verficiation of an UDP packet size.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
+ * @param   cbPktMax        The max UDP packet size, UDP header and payload (data).
+ */
+DECLINLINE(bool) rtNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, size_t cbPktMax)
+{
+    /*
+     * Size validation.
+     */
+    if (RT_UNLIKELY(cbPktMax < RTNETUDP_MIN_LEN))
+        return false;
+    size_t cb = RT_BE2H_U16(pUdpHdr->uh_ulen);
+    if (RT_UNLIKELY(cb > cbPktMax))
+        return false;
+    if (RT_UNLIKELY(cb > RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4))
+        return false;
+    return true;
+}
+
+
+/**
+ * Simple verficiation of an UDP packet size.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
+ * @param   cbPktMax        The max UDP packet size, UDP header and payload (data).
+ */
+RTDECL(bool) RTNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, size_t cbPktMax)
+{
+    return rtNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbPktMax);
+}
+
+
+/**
+ * Simple verficiation of an UDP packet (size + checksum).
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
+ * @param   pvData          Pointer to the data, assuming it's one single segment
+ *                          and that cbPktMax - sizeof(RTNETUDP) is mapped here.
+ * @param   cbPktMax        The max UDP packet size, UDP header and payload (data).
+ */
+RTDECL(bool) RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData, size_t cbPktMax)
+{
+    if (RT_UNLIKELY(!rtNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbPktMax)))
+        return false;
+    uint16_t u16Sum = RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pvData);
+    if (RT_UNLIKELY(RT_BE2H_U16(pUdpHdr->uh_sum) != u16Sum))
+        return false;
+    return true;
+}

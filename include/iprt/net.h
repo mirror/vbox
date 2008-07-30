@@ -201,8 +201,8 @@ RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr);
 RTDECL(bool)     RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
 RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr);
 RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV4 DstAddr, uint8_t bProtocol, uint16_t cbPkt);
-RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd);
-RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum);
+RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t u32Sum, bool *pfOdd);
+RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t u32Sum);
 
 
 /**
@@ -230,8 +230,10 @@ typedef RTNETUDP const *PCRTNETUDP;
 /** The minimum UDP packet length (in bytes). (RTNETUDP::uh_ulen) */
 #define RTNETUDP_MIN_LEN   (8)
 
-RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum);
+RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t u32Sum);
 RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData);
+RTDECL(bool)     RTNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, size_t cbPktMax);
+RTDECL(bool)     RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData, size_t cbPktMax);
 
 
 /**
@@ -321,7 +323,7 @@ typedef RTNETTCP const *PCRTNETTCP;
 /** The minimum TCP header length (in bytes). (RTNETTCP::th_off * 4) */
 #define RTNETTCP_MIN_LEN    (20)
 
-RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum);
+RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum);
 
 
 /**
