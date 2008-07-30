@@ -438,6 +438,19 @@ public:
     }
 
     /**
+     * Constructor that
+     *
+     * @param   a_cElements The number of elements (of the data type) to allocate.
+     * @param   a_fZeroed   Whether the memory should be memset with zeros after
+     *                      the allocation. Defaults to false.
+     */
+    RTMemAutoPtr(size_t a_cElements, bool a_fZeroed = false)
+        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >((T *)NULL)
+    {
+        alloc(a_cElements, a_fZeroed);
+    }
+
+    /**
      * Free current memory and start managing aPtr.
      *
      * @param   aPtr    Memory pointer to manage.
@@ -481,22 +494,23 @@ public:
      * Any previously managed memory will be freed before making
      * the new allocation.
      *
-     * The content of the new memory is undefined when using
-     * the default allocator.
-     *
      * @returns Success indicator.
      * @retval  true if the new allocation succeeds.
      * @retval  false on failure, no memory is associated with the object.
      *
-     * @param   cElements   The new number of elements (of the data type) to allocate.
+     * @param   a_cElements The number of elements (of the data type) to allocate.
      *                      This defaults to 1.
+     * @param   a_fZeroed   Whether the memory should be memset with zeros after
+     *                      the allocation. Defaults to false.
      */
-    bool alloc(size_t a_cElements = 1)
+    bool alloc(size_t a_cElements = 1, bool a_fZeroed = false)
     {
         this->reset(NULL);
-        T *aNewValue = (T *)(Allocator(NULL, a_cElements * sizeof(T)));
-        this->reset(aNewValue);
-        return aNewValue != NULL;
+        T *pNewMem = (T *)Allocator(NULL, a_cElements * sizeof(T));
+        if (a_fZeroed && pNewMem)
+            memset(pNewMem, '\0', a_cElements * sizeof(T));
+        this->reset(pNewMem);
+        return pNewMem != NULL;
     }
 
     /**
@@ -519,7 +533,7 @@ public:
      */
     bool realloc(size_t a_cElements = 1)
     {
-        T *aNewValue = (T *)(Allocator(this->get(), a_cElements * sizeof(T)));
+        T *aNewValue = (T *)Allocator(this->get(), a_cElements * sizeof(T));
         if (aNewValue != NULL)
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
