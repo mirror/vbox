@@ -546,7 +546,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         if (iTmpBuf + BLOCKINCR > cchTmpBuf)
         {
             cchTmpBuf += BLOCKINCR;
-            if (!apchTmpBuf.realloc<RTMemRealloc>(cchTmpBuf))
+            if (!apchTmpBuf.realloc(cchTmpBuf))
                 rc = VERR_NO_MEMORY;
         }
         /* Fetch the name into the buffer and if it matches one of the

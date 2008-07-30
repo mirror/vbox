@@ -87,6 +87,8 @@ public:
         return *this;
     }
 
+    bool operator!() { return (NulRes() == mValue); }
+
     /** release method to get the pointer's value and "reset" the pointer. */
     T release(void) { T aTmp = mValue; mValue = NulRes(); return aTmp; }
 
@@ -98,9 +100,13 @@ public:
     T get(void) { return mValue; }
 };
 
-/** Re-casting template to convert a void fn(void *) to a void fn(T *) */
-template <class T, void fn(void *)>
-inline void RTAutoResRecastVoid(T *aValue) { fn(aValue); }
+/** 
+ * Inline wrapper around RTMemFree to correct the signature.  We can't use a
+ * more complex template here, because the G++ on RHEL 3 chokes on it with an
+ * internal compiler error.
+ */
+template <class T>
+void RTMemAutoFree(T *pMem) { RTMemFree(pMem); }
 
 template <class T>
 T *RTMemAutoNul(void) { return (T *)(NULL); }
@@ -122,7 +128,8 @@ T *RTMemAutoNul(void) { return (T *)(NULL); }
  * @param T         the type of the resource
  * @param Destruct  the function to be used to free the resource
  */
-template <class T, void Destruct(T *) = RTAutoResRecastVoid <T, RTMemFree> >
+template <class T, void Destruct(T *) = RTMemAutoFree<T>,
+          void *Reallocator(void *, size_t) = RTMemRealloc >
 class RTMemAutoPtr : public RTAutoRes <T *, Destruct, RTMemAutoNul<T> >
 {
 public:
@@ -132,11 +139,21 @@ public:
     RTMemAutoPtr& operator=(T *aValue)
     { this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(aValue); return *this; }
 
+    /** Assignment from a void pointer. */
+    RTMemAutoPtr& operator=(void *aValue)
+    {
+        this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(reinterpret_cast<T *>(aValue));
+        return *this;
+    }
+
     /** Dereference with * operator. */
     T &operator*() { return *this->get(); }
 
     /** Dereference with -> operator. */
     T* operator->() { return this->get(); }
+
+    /** Dereference with [] operator. */
+    T &operator[](size_t i) { return this->get()[i]; }
 
     /**
      * Reallocate the resource value.  Free the old value if allocation fails.
@@ -147,12 +164,13 @@ public:
      * @note We can overload this member for other reallocator signatures as
      *       needed.
      */
-    template <void *Reallocator(void *, size_t)>
     bool realloc(size_t cchNewSize)
     {
-        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->release(), cchNewSize));
-        if (aNewValue != NULL)  /* This line is technically not necessary */
-            this->reset(aNewValue);
+        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->get(), cchNewSize));
+        if (aNewValue != NULL)
+            this->release();
+        /* We want this both if aNewValue is non-NULL and if it is NULL. */
+        this->reset(aNewValue);
         return (aNewValue != NULL);
     }
 };
