@@ -131,8 +131,14 @@ void VBoxSettingsDialog::retranslateUi()
 
     mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
 
-    /* Revalidate all pages to retranslate the warning messages also. */
     QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
+
+    /* Rename all validators to make them feat new language. */
+    foreach (QIWidgetValidator *wval, vlist)
+        wval->setCaption (mSelector->itemTextByPage (
+            qobject_cast<VBoxSettingsPage*> (wval->widget())));
+
+    /* Revalidate all pages to retranslate the warning messages also. */
     foreach (QIWidgetValidator *wval, vlist)
         if (!wval->isValid())
             revalidate (wval);
