@@ -79,7 +79,7 @@ static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb)
+RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW
 {
     return RTMemAlloc(cb);
 }
@@ -94,7 +94,7 @@ RTDECL(void *)  RTMemTmpAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb)
+RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW
 {
     return RTMemAllocZ(cb);
 }
@@ -105,7 +105,7 @@ RTDECL(void *)  RTMemTmpAllocZ(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemTmpFree(void *pv)
+RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 {
     return RTMemFree(pv);
 }
@@ -118,7 +118,7 @@ RTDECL(void)    RTMemTmpFree(void *pv)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemAlloc(size_t cb)
+RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
     if (pHdr)
@@ -144,7 +144,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemAllocZ(size_t cb)
+RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
     if (pHdr)
@@ -169,7 +169,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb)
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew)
+RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 {
     if (!cbNew)
         RTMemFree(pvOld);
@@ -216,7 +216,7 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void) RTMemFree(void *pv)
+RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
     if (!pv)
@@ -248,7 +248,7 @@ RTDECL(void) RTMemFree(void *pv)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)    RTMemExecAlloc(size_t cb)
+RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
@@ -268,7 +268,7 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)      RTMemExecFree(void *pv)
+RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
     if (!pv)

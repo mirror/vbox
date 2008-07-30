@@ -442,7 +442,7 @@
  * How to express that a function doesn't throw C++ exceptions
  * and the compiler can thus save itself the bother of trying
  * to catch any of them. Put this between the closing parenthesis
- * and the semicolon in function prototypes.
+ * and the semicolon in function prototypes (and implementation if C++).
  */
 #ifdef __cplusplus
 # define RT_NO_THROW    throw()

@@ -53,7 +53,7 @@
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb)
+RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW
 {
     return RTMemAlloc(cb);
 }
@@ -68,7 +68,7 @@ RTDECL(void *)  RTMemTmpAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb)
+RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW
 {
     return RTMemAllocZ(cb);
 }
@@ -79,7 +79,7 @@ RTDECL(void *)  RTMemTmpAllocZ(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemTmpFree(void *pv)
+RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 {
     RTMemFree(pv);
 }
@@ -92,7 +92,7 @@ RTDECL(void)    RTMemTmpFree(void *pv)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemAlloc(size_t cb)
+RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtMemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, ((void **)&cb)[-1], 0, NULL, NULL);
@@ -125,7 +125,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb)
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemAllocZ(size_t cb)
+RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtMemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, ((void **)&cb)[-1], 0, NULL, NULL);
@@ -156,7 +156,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb)
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew)
+RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtMemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ((void **)&pvOld)[-1], 0, NULL, NULL);
@@ -182,7 +182,7 @@ RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemFree(void *pv)
+RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW
 {
     if (pv)
 #ifdef RTALLOC_USE_EFENCE
