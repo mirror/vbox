@@ -381,9 +381,58 @@ __END_DECLS
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
-inline void RTMemAutoFree(T *aMem)
+inline void RTMemAutoDestructor(T *aMem)
 {
     RTMemFree(aMem);
+}
+
+
+/**
+ * RTMemAutoPtr allocator which uses RTMemTmpAlloc().
+ *
+ * @returns Allocated memory on success, NULL on failure.
+ * @param   pvOld       What to reallocate, shall always be NULL.
+ * @param   cbNew       The amount of memory to allocate (in bytes).
+ */
+inline void *RTMemTmpAutoAllocator(void *pvOld, size_t cbNew)
+{
+    AssertReturn(!pvOld, NULL);
+    return RTMemTmpAlloc(cbNew);
+}
+
+
+/**
+ * Template function wrapping RTMemTmpFree to get the correct Destruct
+ * signature for RTAutoRes.
+ *
+ * We can't use a more complex template here, because the g++ on RHEL 3
+ * chokes on it with an internal compiler error.
+ *
+ * @param   T           The data type that's being managed.
+ * @param   aMem        Pointer to the memory that should be free.
+ */
+template <class T>
+inline void RTMemTmpAutoDestructor(T *aMem)
+{
+    RTMemTmpFree(aMem);
+}
+
+
+
+/**
+ * Template function wrapping RTMemEfFree to get the correct Destruct
+ * signature for RTAutoRes.
+ *
+ * We can't use a more complex template here, because the g++ on RHEL 3
+ * chokes on it with an internal compiler error.
+ *
+ * @param   T           The data type that's being managed.
+ * @param   aMem        Pointer to the memory that should be free.
+ */
+template <class T>
+inline void RTMemEfAutoFree(T *aMem)
+{
+    RTMemEfFree(aMem);
 }
 
 
@@ -422,7 +471,7 @@ inline T * RTMemAutoNil(void)
  *                      to support reallocating memory if that's a problem.
  *                      This will default to RTMemRealloc.
  */
-template <class T, void Destruct(T *) = RTMemAutoFree<T>, void *Allocator(void *, size_t) = RTMemRealloc >
+template <class T, void Destruct(T *) = RTMemAutoDestructor<T>, void *Allocator(void *, size_t) = RTMemRealloc >
 class RTMemAutoPtr
     : public RTAutoRes<T *, Destruct, RTMemAutoNil<T> >
 {
@@ -541,6 +590,7 @@ public:
         return aNewValue != NULL;
     }
 };
+
 
 #endif /* __cplusplus */
 
