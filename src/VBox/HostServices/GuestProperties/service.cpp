@@ -537,7 +537,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 /*
  * Start by enumerating all values in the current node into a temporary buffer.
  */
-    RTMemAutoPtr<char> apchTmpBuf;
+    RTMemAutoPtr<char> TmpBuf;
     uint32_t cchTmpBuf = 0, iTmpBuf = 0;
     PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpNode);
     while ((pLeaf != NULL) && RT_SUCCESS(rc))
@@ -546,32 +546,32 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         if (iTmpBuf + BLOCKINCR > cchTmpBuf)
         {
             cchTmpBuf += BLOCKINCR;
-            if (!apchTmpBuf.realloc(cchTmpBuf))
+            if (!TmpBuf.realloc(cchTmpBuf))
                 rc = VERR_NO_MEMORY;
         }
         /* Fetch the name into the buffer and if it matches one of the
          * patterns, add its value and an empty timestamp and flags.  If it
          * doesn't match, we simply overwrite it in the buffer. */
         if (RT_SUCCESS(rc))
-            rc = CFGMR3GetValueName(pLeaf, apchTmpBuf.get() + iTmpBuf, cchTmpBuf - iTmpBuf);
+            rc = CFGMR3GetValueName(pLeaf, &TmpBuf[iTmpBuf], cchTmpBuf - iTmpBuf);
         if (   RT_SUCCESS(rc)
-            && matchesPattern(paszPatterns, cchPatterns, apchTmpBuf.get() + iTmpBuf)
+            && matchesPattern(paszPatterns, cchPatterns, &TmpBuf[iTmpBuf])
            )
         {
             int cchName = CFGMR3GetValueNameLen(pLeaf);
-            rc = CFGMR3QueryString(mpNode, apchTmpBuf.get() + iTmpBuf /* Name */,
-                                   apchTmpBuf.get() + iTmpBuf + cchName,
+            rc = CFGMR3QueryString(mpNode, &TmpBuf[iTmpBuf] /* Name */,
+                                   &TmpBuf[iTmpBuf + cchName],
                                    cchTmpBuf - iTmpBuf - cchName);
             if (RT_SUCCESS(rc))
             {
                 /* Only increment if the name matches, otherwise we overwrite
                  * it next iteration. */
                 iTmpBuf += cchName;
-                int cchValue = strlen(apchTmpBuf.get() + iTmpBuf) + 1;
+                int cchValue = strlen(&TmpBuf[iTmpBuf]) + 1;
                 /* We *do* have enough space left */
-                *(apchTmpBuf.get() + iTmpBuf + cchValue) = '0';  /* Timestamp */
-                *(apchTmpBuf.get() + iTmpBuf + cchValue + 1) = 0;
-                *(apchTmpBuf.get() + iTmpBuf + cchValue + 2) = 0;  /* empty flags */
+                TmpBuf[iTmpBuf + cchValue] = '0';  /* Timestamp */
+                TmpBuf[iTmpBuf + cchValue + 1] = '\0';
+                TmpBuf[iTmpBuf + cchValue + 2] = '\0';  /* empty flags */
                 iTmpBuf += cchValue + 3;
             }
         }
@@ -581,15 +581,15 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         /* The terminator.  We *do* have space left for this. */
-        *(apchTmpBuf.get() + iTmpBuf) = 0;
-        *(apchTmpBuf.get() + iTmpBuf + 1) = 0;
-        *(apchTmpBuf.get() + iTmpBuf + 2) = 0;
-        *(apchTmpBuf.get() + iTmpBuf + 3) = 0;
+        TmpBuf[iTmpBuf] = '\0';
+        TmpBuf[iTmpBuf + 1] = '\0';
+        TmpBuf[iTmpBuf + 2] = '\0';
+        TmpBuf[iTmpBuf + 3] = '\0';
         iTmpBuf += 4;
         VBoxHGCMParmUInt32Set(&paParms[2], iTmpBuf);
         /* Copy the memory if it fits into the guest buffer */
         if (iTmpBuf <= cchBuf)
-            memcpy(pchBuf, apchTmpBuf.get(), iTmpBuf);
+            memcpy(pchBuf, TmpBuf.get(), iTmpBuf);
         else
             rc = VERR_BUFFER_OVERFLOW;
     }
