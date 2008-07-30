@@ -241,7 +241,7 @@ void QIWidgetValidator::rescan()
         }
         else if (QComboBox *cb = qobject_cast<QComboBox *> (wgt))
         {
-            
+
             if (!cb->validator() || !cb->lineEdit())
                 continue;
             /* disconnect to avoid duplicate connections */
@@ -272,7 +272,7 @@ void QIWidgetValidator::rescan()
     }
 }
 
-/** 
+/**
  *  Returns a message that describes the last detected error (invalid or
  *  incomplete input).
  *
@@ -298,8 +298,14 @@ QString QIWidgetValidator::warningText() const
     if (mLastInvalid.buddy != NULL)
     {
         if (mLastInvalid.buddy->inherits ("QLabel"))
+        {
+            /* Remove '&' symbol from the buddy field name */
             title = VBoxGlobal::
                 removeAccelMark (((QLabel *) mLastInvalid.buddy)->text());
+
+            /* Remove ':' symbol from the buddy field name */
+            title = title.remove (':');
+        }
     }
 
     QString state;
