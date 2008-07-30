@@ -292,11 +292,11 @@ public:
      * Accessed with the subscript operator ([]).
      *
      * @returns Reference to the element.
-     * @param   i       The element to access.
+     * @param   a_i     The element to access.
      */
-    T &operator[](size_t i)
+    T &operator[](size_t a_i)
     {
-        return this->get()[i];
+        return this->get()[a_i];
     }
 
     /**
