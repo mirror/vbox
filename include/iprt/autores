@@ -21,71 +21,64 @@
 #ifndef ___iprt_autores___
 # define ___iprt_autores___
 
+#include <iprt/types.h>
 #include <iprt/mem.h>
+#include <iprt/assert.h>
+#include <iprt/cpputils.h>
 
 /**
- * Wrapper class around RTAutoRes to provide reference semantics.  This is
- * needed to construct AutoRes objects from constant references to other
- * AutoRes objects (such as temporary objects returned from functions) which
- * can not be modified due to their const modifier, but are not actually
- * constant objects.  See a discussion of auto_ptr and auto_ptr_ref for more
- * details.
+ * A callable class template which returns the correct value against which an
+ * IPRT type must be compared to see if it is invalid.
+ * @note this template must be specialised for the types it is to work with.
  */
-template <class T, void Destruct(T)>
-struct RTAutoResRef
-{
-    T mValue;
+template <class T>
+inline T RTResNul(void)
+{ AssertLogRelMsgFailedReturn (("Unspecialized template!\n"), (T) 0); }
 
-    explicit RTAutoResRef(T aValue) { mValue = aValue; }
-};
+/**
+ * A function template which calls the correct destructor for an IPRT type.
+ * @note this template must be specialised for the types it is to work with.
+ */
+template <class T> inline void RTResDestruct(T aHandle)
+{ AssertLogRelMsgFailedReturn (("Unspecialized template!\n"), (T) 0); }
 
 /** 
  * An auto pointer-type class for resources which take a C-style destructor
- * destructor (free() or equivalent).
+ * (RTMemFree() or equivalent).
+ *
+ * The idea of this class is to manage resources which the current code is
+ * responsible for freeing.  By wrapping the resource in an RTAutoRes, you
+ * ensure that the resource will be freed when you leave the scope in which
+ * the RTAutoRes is defined, unless you explicitly release the resource again.
+ *
+ * A typical use case is when a function is allocating a number of resources.
+ * If any single allocation fails then all other resources must be freed.  If
+ * all allocations succeed, then the resources should be returned to the
+ * caller.  By placing all allocated resources in RTAutoRes containers, you
+ * ensure that they will be freed on failure, and only have to take care of
+ * releasing them when you return them.
+ * @param T         the type of the resource
+ * @param Destruct  the function to be used to free the resource
+ * @note The class can not be initialised directly using assignment, due to
+ *       the lack of a copy constructor.
  */
-template <class T, void Destruct(T)>
-class RTAutoRes
+template <class T, void Destruct(T) = RTResDestruct<T>, T NulRes(void) = RTResNul<T> >
+class RTAutoRes : public stdx::non_copyable
 {
 private:
     /** The actual resource value */
     T mValue;
 public:
     /** Constructor */
-    RTAutoRes(T aValue = 0) { mValue = aValue; }
+    RTAutoRes(T aValue = NulRes()) { mValue = aValue; }
 
     /** Destructor */
-    ~RTAutoRes() { if (mValue != 0) Destruct(mValue); }
-
-    /** Copy constructor */
-    RTAutoRes(RTAutoRes &orig) { mValue = orig.release(); }
-
-    /** Copy from equivalent class */
-    template <class T1>
-    RTAutoRes(RTAutoRes<T1, Destruct> &orig)
-    { mValue = orig.release(); }
-
-    /** Convert a reference structure into an AutoRes pointer. */
-    RTAutoRes(RTAutoResRef<T, Destruct> ref) { mValue = ref.mValue; }
-
-    /** Assignment operator. */
-    RTAutoRes& operator=(RTAutoRes &orig)
-    {
-        reset(orig.release());
-        return *this;
-    }
-
-    /** Assignment from equivalent class. */
-    template <class T1>
-    RTAutoRes& operator=(RTAutoRes<T1, Destruct> &orig)
-    {
-        reset(orig.release);
-        return *this;
-    }
+    ~RTAutoRes() { if (mValue != NulRes()) Destruct(mValue); }
 
     /** Assignment from a value. */
     RTAutoRes& operator=(T aValue)
     {
-        if (mValue != 0)
+        if (mValue != NulRes())
         {
             Destruct(mValue);
         }
@@ -93,32 +86,12 @@ public:
         return *this;
     }
 
-    /** Assign from a reference structure into an AutoRes pointer. */
-    RTAutoRes& operator=(RTAutoResRef<T, Destruct> ref)
-    {
-        if (ref.mValue != mValue)
-        {
-            Destruct(mValue);
-            mValue = ref.mValue;
-        }
-        return *this;
-    }
-
-    /** Typecast an AutoRes pointer to an AutoRes pointer of a different type. */
-    template <class T1>
-    operator RTAutoRes<T1, Destruct>()
-    { return RTAutoRes<T1, Destruct>(release()); }
-
-    /** Typecast an AutoRes pointer to a reference structure. */
-    template <class T1>
-    operator RTAutoResRef<T1, Destruct>()
-    { return RTAutoResRef<T1, Destruct>(release()); }
-
     /** release method to get the pointer's value and "reset" the pointer. */
-    T release(void) { T aTmp = mValue; mValue = 0; return aTmp; }
+    T release(void) { T aTmp = mValue; mValue = NulRes(); return aTmp; }
 
     /** reset the pointer value to zero or to another pointer. */
-    void reset(T aValue = 0) { if (aValue != mValue) { Destruct(mValue); mValue = aValue; } }
+    void reset(T aValue = NulRes()) { if (aValue != mValue)
+    { Destruct(mValue); mValue = aValue; } }
 
     /** Accessing the value inside. */
     T get(void) { return mValue; }
@@ -128,28 +101,35 @@ public:
 template <class T, void fn(void *)>
 inline void RTAutoResRecastVoid(T *aValue) { fn(aValue); }
 
+template <class T>
+T *RTMemAutoNul(void) { return (T *)(NULL); }
+
+/** 
+ * An auto pointer-type class for structures allocated using C-like APIs.
+ *
+ * The idea of this class is to manage resources which the current code is
+ * responsible for freeing.  By wrapping the resource in an RTAutoRes, you
+ * ensure that the resource will be freed when you leave the scope in which
+ * the RTAutoRes is defined, unless you explicitly release the resource again.
+ *
+ * A typical use case is when a function is allocating a number of resources.
+ * If any single allocation fails then all other resources must be freed.  If
+ * all allocations succeed, then the resources should be returned to the
+ * caller.  By placing all allocated resources in RTAutoRes containers, you
+ * ensure that they will be freed on failure, and only have to take care of
+ * releasing them when you return them.
+ * @param T         the type of the resource
+ * @param Destruct  the function to be used to free the resource
+ */
 template <class T, void Destruct(T *) = RTAutoResRecastVoid <T, RTMemFree> >
-class RTMemAutoPtr : public RTAutoRes <T *, Destruct>
+class RTMemAutoPtr : public RTAutoRes <T *, Destruct, RTMemAutoNul<T> >
 {
 public:
     /** Constructor */
-    RTMemAutoPtr(T *aValue = NULL) : RTAutoRes <T *, Destruct>(aValue) {}
+    RTMemAutoPtr(T *aValue = NULL) : RTAutoRes <T *, Destruct, RTMemAutoNul<T> >(aValue) {}
 
-    /** Copy constructors */
-    RTMemAutoPtr(RTMemAutoPtr &orig) : RTAutoRes <T *, Destruct>(orig) {}
-    template <class T1>
-    RTMemAutoPtr(RTMemAutoPtr<T1, Destruct> &orig) : RTAutoRes<T1 *, Destruct>(orig) {}
-
-    /** Assignment operators */
-    RTMemAutoPtr& operator=(RTMemAutoPtr &orig)
-    { this->RTAutoRes <T *, Destruct>::operator=(orig); }
-    template <class T1>
-    RTMemAutoPtr& operator=(RTMemAutoPtr<T1, Destruct> &orig)
-    { this->RTAutoRes<T1 *, Destruct>::operator=(orig); return *this; }
     RTMemAutoPtr& operator=(T *aValue)
-    { this->RTAutoRes <T *, Destruct>::operator=(aValue); return *this; }
-    RTMemAutoPtr& operator=(RTAutoResRef<T *, Destruct> ref)
-    { this->RTAutoRes <T *, Destruct>::operator=(ref); return *this; }
+    { this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(aValue); return *this; }
 
     /** Dereference with * operator. */
     T &operator*() { return *this->get(); }
