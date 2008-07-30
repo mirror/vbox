@@ -1312,12 +1312,12 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
     {
         bool fIt = false;
         if (    (   !pIf->fMacSet
-                 || (fIt = !memcmp(&pIf->Mac, &pEthHdr->MacDst, sizeof(pIf->Mac))) )
+                 || (fIt = !memcmp(&pIf->Mac, &pEthHdr->DstMac, sizeof(pIf->Mac))) )
             ||  (   pIf->fPromiscuous
                  && !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC))
                  && pIf != pIfSender /* promiscuous mode: omit the sender */))
         {
-            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->MacDst, &pIf->Mac));
+            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
             fExactIntNetRecipient |= fIt;
             intnetR0IfSend(pIf, pIfSender, pSG);
         }
@@ -1345,7 +1345,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
         if (    fDst != (INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE)
             &&  !fExactIntNetRecipient  /* if you have duplicate mac addresses, you're screwed. */ )
         {
-            if (pTrunkIf->pIfPort->pfnIsHostMac(pTrunkIf->pIfPort, &pEthHdr->MacDst))
+            if (pTrunkIf->pIfPort->pfnIsHostMac(pTrunkIf->pIfPort, &pEthHdr->DstMac))
                 fDst |= INTNETTRUNKDIR_HOST;
             else
                 fDst |= INTNETTRUNKDIR_WIRE;
@@ -1358,9 +1358,9 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
     /* log it */
     if (    !fExactIntNetRecipient
         &&  !fDst
-        &&  (   (pEthHdr->MacDst.au8[0] == 0x08 && pEthHdr->MacDst.au8[1] == 0x00 && pEthHdr->MacDst.au8[2] == 0x27)
-             || (pEthHdr->MacSrc.au8[0] == 0x08 && pEthHdr->MacSrc.au8[1] == 0x00 && pEthHdr->MacSrc.au8[2] == 0x27)))
-        Log2(("Dst=%.6Rhxs ??\n", &pEthHdr->MacDst));
+        &&  (   (pEthHdr->DstMac.au8[0] == 0x08 && pEthHdr->DstMac.au8[1] == 0x00 && pEthHdr->DstMac.au8[2] == 0x27)
+             || (pEthHdr->SrcMac.au8[0] == 0x08 && pEthHdr->SrcMac.au8[1] == 0x00 && pEthHdr->SrcMac.au8[2] == 0x27)))
+        Log2(("Dst=%.6Rhxs ??\n", &pEthHdr->DstMac));
 
     return fExactIntNetRecipient;
 }
@@ -1426,35 +1426,35 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
         }
         AssertReturn(!cbLeft, false);
     }
-    if (    (EthHdr.MacDst.au8[0] == 0x08 && EthHdr.MacDst.au8[1] == 0x00 && EthHdr.MacDst.au8[2] == 0x27)
-        ||  (EthHdr.MacSrc.au8[0] == 0x08 && EthHdr.MacSrc.au8[1] == 0x00 && EthHdr.MacSrc.au8[2] == 0x27)
-        ||  (EthHdr.MacDst.au8[0] == 0x00 && EthHdr.MacDst.au8[1] == 0x16 && EthHdr.MacDst.au8[2] == 0xcb)
-        ||  (EthHdr.MacSrc.au8[0] == 0x00 && EthHdr.MacSrc.au8[1] == 0x16 && EthHdr.MacSrc.au8[2] == 0xcb)
-        ||  EthHdr.MacDst.au8[0] == 0xff
-        ||  EthHdr.MacSrc.au8[0] == 0xff)
+    if (    (EthHdr.DstMac.au8[0] == 0x08 && EthHdr.DstMac.au8[1] == 0x00 && EthHdr.DstMac.au8[2] == 0x27)
+        ||  (EthHdr.SrcMac.au8[0] == 0x08 && EthHdr.SrcMac.au8[1] == 0x00 && EthHdr.SrcMac.au8[2] == 0x27)
+        ||  (EthHdr.DstMac.au8[0] == 0x00 && EthHdr.DstMac.au8[1] == 0x16 && EthHdr.DstMac.au8[2] == 0xcb)
+        ||  (EthHdr.SrcMac.au8[0] == 0x00 && EthHdr.SrcMac.au8[1] == 0x16 && EthHdr.SrcMac.au8[2] == 0xcb)
+        ||  EthHdr.DstMac.au8[0] == 0xff
+        ||  EthHdr.SrcMac.au8[0] == 0xff)
         Log2(("D=%.6Rhxs  S=%.6Rhxs  T=%04x f=%x z=%x\n",
-              &EthHdr.MacDst, &EthHdr.MacSrc, RT_BE2H_U16(EthHdr.EtherType), fSrc, pSG->cbTotal));
+              &EthHdr.DstMac, &EthHdr.SrcMac, RT_BE2H_U16(EthHdr.EtherType), fSrc, pSG->cbTotal));
 
     /*
      * Inspect the header updating the mac address of the sender in the process.
      */
     if (    pIfSender
-        &&  memcmp(&EthHdr.MacSrc, &pIfSender->Mac, sizeof(pIfSender->Mac)))
+        &&  memcmp(&EthHdr.SrcMac, &pIfSender->Mac, sizeof(pIfSender->Mac)))
     {
         /** @todo stats */
-        Log2(("IF MAC: %.6Rhxs -> %.6Rhxs\n", &pIfSender->Mac, &EthHdr.MacSrc));
-        pIfSender->Mac = EthHdr.MacSrc;
+        Log2(("IF MAC: %.6Rhxs -> %.6Rhxs\n", &pIfSender->Mac, &EthHdr.SrcMac));
+        pIfSender->Mac = EthHdr.SrcMac;
         pIfSender->fMacSet = true;
     }
 
     /*
      * Distribute the frame.
      */
-    if (RT_UNLIKELY(EthHdr.MacDst.au8[0] & 1))      /* multicast address */
+    if (RT_UNLIKELY(EthHdr.DstMac.au8[0] & 1))      /* multicast address */
         fRc = intnetR0NetworkSendMulticast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
-    else if (   EthHdr.MacDst.au16[0] == 0xffff     /* broadcast address. */
-             && EthHdr.MacDst.au16[1] == 0xffff
-             && EthHdr.MacDst.au16[2] == 0xffff)
+    else if (   EthHdr.DstMac.au16[0] == 0xffff     /* broadcast address. */
+             && EthHdr.DstMac.au16[1] == 0xffff
+             && EthHdr.DstMac.au16[2] == 0xffff)
         fRc = intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked);
     else
         fRc = intnetR0NetworkSendUnicast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
