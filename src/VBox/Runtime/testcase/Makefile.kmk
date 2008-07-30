@@ -71,6 +71,7 @@ PROGRAMS += \
 	tstLdr-4 \
 	tstLdrLoad \
 	tstLog \
+	tstMemAutoPtr \
 	tstMove \
 	tstMp-1 \
 	tstNoCrt-1 \
@@ -249,6 +250,8 @@ tstLdr-4_LIBS = \
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
 
 tstLog_SOURCES = tstLog.cpp
+
+tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 
 tstMove_SOURCES = tstMove.cpp
 
