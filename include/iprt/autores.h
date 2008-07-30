@@ -19,38 +19,49 @@
  */
 
 #ifndef ___iprt_autores___
-# define ___iprt_autores___
+#define ___iprt_autores___
 
 #include <iprt/types.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/cpputils.h>
-#include <VBox/log.h>
+
 
 /**
  * A callable class template which returns the correct value against which an
  * IPRT type must be compared to see if it is invalid.
- * @note this template must be specialised for the types it is to work with.
+ *
+ * @warning This template *must* be specialised for the types it is to work with.
  */
 template <class T>
-inline T RTResNul(void)
-{ AssertLogRelMsgFailedReturn (("Unspecialized template!\n"), (T) 0); }
+inline T RTAutoResNil(void)
+{
+    AssertFatalMsgFailed(("Unspecialized template!\n"));
+    return (T)0;
+}
+
 
 /**
  * A function template which calls the correct destructor for an IPRT type.
- * @note this template must be specialised for the types it is to work with.
+ *
+ * @warning This template *must* be specialised for the types it is to work with.
  */
-template <class T> inline void RTResDestruct(T aHandle)
-{ AssertLogRelMsgFailedReturn (("Unspecialized template!\n"), (T) 0); }
+template <class T>
+inline void RTAutoResDestruct(T aHandle)
+{
+    AssertFatalMsgFailed(("Unspecialized template!\n"));
+    NOREF(aHandle);
+}
 
-/** 
+
+/**
  * An auto pointer-type class for resources which take a C-style destructor
  * (RTMemFree() or equivalent).
  *
  * The idea of this class is to manage resources which the current code is
  * responsible for freeing.  By wrapping the resource in an RTAutoRes, you
  * ensure that the resource will be freed when you leave the scope in which
- * the RTAutoRes is defined, unless you explicitly release the resource again.
+ * the RTAutoRes is defined, unless you explicitly release the resource.
  *
  * A typical use case is when a function is allocating a number of resources.
  * If any single allocation fails then all other resources must be freed.  If
@@ -58,110 +69,226 @@ template <class T> inline void RTResDestruct(T aHandle)
  * caller.  By placing all allocated resources in RTAutoRes containers, you
  * ensure that they will be freed on failure, and only have to take care of
  * releasing them when you return them.
- * @param T         the type of the resource
- * @param Destruct  the function to be used to free the resource
- * @note The class can not be initialised directly using assignment, due to
- *       the lack of a copy constructor.
+ *
+ * @param   T           The type of the resource.
+ * @param   Destruct    The function to be used to free the resource.
+ *                      This is *not* optional, the default is there for
+ *                      working around compiler issues (?).
+ * @param   NilRes      The function returning the NIL value for T. Required.
+ *                      This is *not* optional, the default is there for
+ *                      working around compiler issues (?).
+ *
+ * @note    The class can not be initialised directly using assignment, due
+ *          to the lack of a copy constructor. This is intentional.
  */
-template <class T, void Destruct(T) = RTResDestruct<T>, T NulRes(void) = RTResNul<T> >
+template <class T, void Destruct(T) = RTAutoResDestruct<T>, T NilRes(void) = RTAutoResNil<T> >
 class RTAutoRes : public stdx::non_copyable
 {
-private:
-    /** The actual resource value */
+protected:
+    /** The resource handle. */
     T mValue;
+
 public:
-    /** Constructor */
-    RTAutoRes(T aValue = NulRes()) { mValue = aValue; }
-
-    /** Destructor */
-    ~RTAutoRes() { if (mValue != NulRes()) Destruct(mValue); }
-
-    /** Assignment from a value. */
-    RTAutoRes& operator=(T aValue)
+    /**
+     * Constructor
+     * @param   aValue
+     */
+    RTAutoRes(T aValue = NilRes())
+        : mValue(aValue)
     {
-        if (mValue != NulRes())
-        {
+    }
+
+    /**
+     * Destructor
+     */
+    ~RTAutoRes()
+    {
+        if (mValue != NilRes())
             Destruct(mValue);
-        }
+    }
+
+    /**
+     * Assignment from a value.
+     *
+     * This will destroy any previous value referenced by the object.
+     */
+    RTAutoRes &operator=(T aValue)
+    {
+        if (mValue != NilRes())
+            Destruct(mValue);
         mValue = aValue;
         return *this;
     }
 
-    bool operator!() { return (NulRes() == mValue); }
-
-    /** release method to get the pointer's value and "reset" the pointer. */
-    T release(void) { T aTmp = mValue; mValue = NulRes(); return aTmp; }
-
-    /** reset the pointer value to zero or to another pointer. */
-    void reset(T aValue = NulRes()) { if (aValue != mValue)
-    { Destruct(mValue); mValue = aValue; } }
-
-    /** Accessing the value inside. */
-    T get(void) { return mValue; }
-};
-
-/** 
- * Inline wrapper around RTMemFree to correct the signature.  We can't use a
- * more complex template here, because the G++ on RHEL 3 chokes on it with an
- * internal compiler error.
- */
-template <class T>
-void RTMemAutoFree(T *pMem) { RTMemFree(pMem); }
-
-template <class T>
-T *RTMemAutoNul(void) { return (T *)(NULL); }
-
-/** 
- * An auto pointer-type class for structures allocated using C-like APIs.
- *
- * The idea of this class is to manage resources which the current code is
- * responsible for freeing.  By wrapping the resource in an RTAutoRes, you
- * ensure that the resource will be freed when you leave the scope in which
- * the RTAutoRes is defined, unless you explicitly release the resource again.
- *
- * A typical use case is when a function is allocating a number of resources.
- * If any single allocation fails then all other resources must be freed.  If
- * all allocations succeed, then the resources should be returned to the
- * caller.  By placing all allocated resources in RTAutoRes containers, you
- * ensure that they will be freed on failure, and only have to take care of
- * releasing them when you return them.
- * @param T         the type of the resource
- * @param Destruct  the function to be used to free the resource
- */
-template <class T, void Destruct(T *) = RTMemAutoFree<T>,
-          void *Reallocator(void *, size_t) = RTMemRealloc >
-class RTMemAutoPtr : public RTAutoRes <T *, Destruct, RTMemAutoNul<T> >
-{
-public:
-    /** Constructor */
-    RTMemAutoPtr(T *aValue = NULL) : RTAutoRes <T *, Destruct, RTMemAutoNul<T> >(aValue) {}
-
-    RTMemAutoPtr& operator=(T *aValue)
-    { this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(aValue); return *this; }
-
-    /** Dereference with * operator. */
-    T &operator*() { return *this->get(); }
-
-    /** Dereference with -> operator. */
-    T* operator->() { return this->get(); }
-
-    /** Dereference with [] operator. */
-    T &operator[](size_t i) { return this->get()[i]; }
+    /**
+     * Checks if the value is NIL or not.
+     */
+    bool operator!()
+    {
+        return mValue == NilRes();
+    }
 
     /**
-     * Reallocate the resource value.  Free the old value if allocation fails.
-     * @returns true if the new allocation succeeds, false otherwise
-     * @param   cElements  the size of the new allocation in multiples of the
-     *                     size of the base type
-     * @note We can overload this member for other reallocator signatures as
-     *       needed.
-     * @warning The default reallocator will only do the right thing with
-     *          plain memory buffers.  If you use more complex types, either
-     *          avoid reallocation or supply your own reallocator.
+     * Give up ownership the current resource, handing it to the caller.
+     *
+     * @returns The current resource handle.
+     * @note    Nothing happens to the resource when the object goes out of scope.
      */
-    bool realloc(size_t cElements)
+    T release(void)
     {
-        T *aNewValue = reinterpret_cast<T *>(Reallocator(this->get(), cElements * sizeof(T)));
+        T Tmp = mValue;
+        mValue = NilRes();
+        return Tmp;
+    }
+
+    /**
+     * Deletes the current resources.
+     *
+     * @param   aValue      The new resource to manage. Defaults to NIL.
+     */
+    void reset(T aValue = NilRes())
+    {
+        if (aValue != mValue)
+        {
+            Destruct(mValue);
+            mValue = aValue;
+        }
+    }
+
+    /**
+     * Get the raw resource handle.
+     *
+     * Typically used passing the handle to some IPRT function.
+     *
+     * @returns The raw resource handle.
+     */
+    T get(void)
+    {
+        return mValue;
+    }
+};
+
+
+/**
+ * Template function wrapping RTMemFree to get the correct Destruct
+ * signature for RTAutoRes.
+ *
+ * We can't use a more complex template here, because the g++ on RHEL 3
+ * chokes on it with an internal compiler error.
+ *
+ * @param   T           The data type that's being managed.
+ * @param   aMem        Pointer to the memory that should be free.
+ */
+template <class T>
+void RTMemAutoFree(T *aMem)
+{
+    RTMemFree(aMem);
+}
+
+
+/**
+ * Template function wrapping NULL to get the correct NilRes signature
+ * for RTAutoRes.
+ *
+ * @param   T           The data type that's being managed.
+ * @returns NULL with the right type.
+ */
+template <class T>
+T *RTMemAutoNil(void)
+{
+    return (T *)(NULL);
+}
+
+
+/**
+ * An auto pointer-type template class for managing memory allocating
+ * via C APIs like RTMem (the default).
+ *
+ * The main purpose of this class is to automatically free memory that
+ * isn't explicitly used (released()) when the object goes out of scope.
+ *
+ * As an additional service it can also make the allocations and
+ * reallocations for you if you like, but it can also take of memory
+ * you hand it.
+ *
+ * @param   T           The data type to manage allocations for.
+ * @param   Destruct    The function to be used to free the resource.
+ *                      This will default to RTMemFree.
+ * @param   Reallocator The function to be used to reallocate the resource.
+ *                      This is standard realloc() like stuff, so it's possible
+ *                      to support simple allocation without actually having
+ *                      to support reallocating memory if that's a problem.
+ *                      This will default to RTMemRealloc.
+ */
+template <class T, void Destruct(T *) = RTMemAutoFree<T>, void *Reallocator(void *, size_t) = RTMemRealloc >
+class RTMemAutoPtr
+    : public RTAutoRes<T *, Destruct, RTMemAutoNil<T> >
+{
+public:
+    /**
+     * Constructor
+     *
+     * @param   aPtr    Memory pointer to manage.
+     *  */
+    RTMemAutoPtr(T *aPtr = NULL)
+        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >(aPtr)
+    {
+    }
+
+    /**
+     * Free current memory and start managing aPtr.
+     *
+     * @param   aPtr    Memory pointer to manage.
+     */
+    RTMemAutoPtr &operator=(T *aPtr)
+    {
+        this->RTAutoRes<T *, Destruct, RTMemAutoNil<T> >::operator=(aPtr);
+        return *this;
+     }
+
+    /**
+     * Dereference with * operator.
+     */
+    T &operator*()
+    {
+         return *this->get();
+    }
+
+    /**
+     * Dereference with -> operator.
+     */
+    T *operator->()
+    {
+        return this->get();
+    }
+
+    /**
+     * Accessed with the subscript operator ([]).
+     *
+     * @returns Reference to the element.
+     * @param   i       The element to access.
+     */
+    T &operator[](size_t i)
+    {
+        return this->get()[i];
+    }
+
+    /**
+     * Reallocate or allocates the memory resource.
+     *
+     * Free the old value if allocation fails.
+     *
+     * @returns Success indicator - true if the new allocation succeeds, false otherwise.
+     *
+     * @param   cElements   The new number of elements (of the data type) to allocate.
+     *                      The size of the allocation is the number of elements times
+     *                      the size of the data type - this is currently what's passed
+     *                      down to the Reallocator.
+     *                      This defaults to 1.
+     */
+    bool realloc(size_t cElements = 1)
+    {
+        T *aNewValue = (T *)(Reallocator(this->get(), cElements * sizeof(T)));
         if (aNewValue != NULL)
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
@@ -170,4 +297,5 @@ public:
     }
 };
 
-#endif /* ___iprt_autores___ not defined */
+#endif
+
