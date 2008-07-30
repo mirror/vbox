@@ -27,9 +27,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#if 0 /** @todo this isn't work. As noted elsewhere, avoid complicated templates. */
-# include <iprt/autores>
-#endif
+#include <iprt/autores.h>
 #include <iprt/stdarg.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>
@@ -533,15 +531,12 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     uint64_t *pu64Timestamp,
                                     char **ppszFlags)
 {
-#if 1 /* the RTMemAutoPtr doesn't compile */
-    return VERR_NOT_IMPLEMENTED;
-#else
     int rc = VINF_SUCCESS;
-    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> pHandle;
-    pHandle = reinterpret_cast<PVBGLR3GUESTPROPENUM>(
-                                      RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM))
-                                                    );
-    if (NULL == pHandle.get())
+    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> apHandle;
+    apHandle = reinterpret_cast<PVBGLR3GUESTPROPENUM>(
+                                       RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM))
+                                                     );
+    if (NULL == apHandle.get())
         rc = VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
@@ -585,20 +580,19 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     if (RT_SUCCESS(rc))
     {
         /* Transfer ownership of the buffer to the handle structure. */
-        pHandle->pchBuf = pchBuf.release();
-        pHandle->cchBuf = cchBuf;
+        apHandle->pchBuf = pchBuf.release();
+        apHandle->cchBuf = cchBuf;
     }
     if (RT_SUCCESS(rc))
-        rc = VbglR3GuestPropEnumNext(pHandle.get(), ppszName, ppszValue,
+        rc = VbglR3GuestPropEnumNext(apHandle.get(), ppszName, ppszValue,
                                      pu64Timestamp, ppszFlags);
     if (RT_SUCCESS(rc) && (NULL == ppszName))
         /* No matching properties found */
         rc = VERR_NOT_FOUND;
     /* And transfer ownership of the handle to the caller. */
     if (RT_SUCCESS(rc))
-        *ppHandle = pHandle.release();
+        *ppHandle = apHandle.release();
     return rc;
-#endif
 }
 
 

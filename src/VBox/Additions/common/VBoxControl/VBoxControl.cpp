@@ -29,7 +29,7 @@
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/initterm.h>
-#include <iprt/autores>
+#include <iprt/autores.h>
 #include <VBox/log.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
