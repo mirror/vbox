@@ -381,7 +381,7 @@ __END_DECLS
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
-void RTMemAutoFree(T *aMem)
+DECLINLINE(void) RTMemAutoFree(T *aMem)
 {
     RTMemFree(aMem);
 }
@@ -395,7 +395,7 @@ void RTMemAutoFree(T *aMem)
  * @returns NULL with the right type.
  */
 template <class T>
-T *RTMemAutoNil(void)
+DECLINLINE(T *) RTMemAutoNil(void)
 {
     return (T *)(NULL);
 }
