@@ -243,10 +243,10 @@ class RTMemAutoPtr
 {
 public:
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param   aPtr    Memory pointer to manage.
-     *  */
+     * @param   aPtr    Memory pointer to manage. Defaults to NULL.
+     */
     RTMemAutoPtr(T *aPtr = NULL)
         : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >(aPtr)
     {
@@ -310,7 +310,7 @@ public:
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
         this->reset(aNewValue);
-        return (aNewValue != NULL);
+        return aNewValue != NULL;
     }
 };
 
