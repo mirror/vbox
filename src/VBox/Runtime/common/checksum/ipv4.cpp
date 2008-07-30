@@ -46,41 +46,41 @@
 RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr)
 {
     uint16_t const *paw = (uint16_t const *)pIpHdr;
-    int32_t iSum = paw[0]               /* ip_hl */
-                 + paw[1]               /* ip_len */
-                 + paw[2]               /* ip_id */
-                 + paw[3]               /* ip_off */
-                 + paw[4]               /* ip_ttl */
-                 /*+ paw[5] == 0 */     /* ip_sum */
-                 + paw[6]               /* ip_src */
-                 + paw[7]               /* ip_src:16 */
-                 + paw[8]               /* ip_dst */
-                 + paw[9];              /* ip_dst:16 */
+    uint32_t u32Sum = paw[0]            /* ip_hl */
+                    + paw[1]            /* ip_len */
+                    + paw[2]            /* ip_id */
+                    + paw[3]            /* ip_off */
+                    + paw[4]            /* ip_ttl */
+                    /*+ paw[5] == 0 */  /* ip_sum */
+                    + paw[6]            /* ip_src */
+                    + paw[7]            /* ip_src:16 */
+                    + paw[8]            /* ip_dst */
+                    + paw[9];           /* ip_dst:16 */
     /* any options */
     if (pIpHdr->ip_hl > 20 / 4)
     {
         /* this is a bit insane... (identical to the TCP header) */
         switch (pIpHdr->ip_hl)
         {
-            case 6:  iSum += paw[10] + paw[11]; break;
-            case 7:  iSum += paw[10] + paw[11] + paw[12] + paw[13]; break;
-            case 8:  iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15]; break;
-            case 9:  iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17]; break;
-            case 10: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19]; break;
-            case 11: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21]; break;
-            case 12: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23]; break;
-            case 13: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25]; break;
-            case 14: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27]; break;
-            case 15: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27] + paw[28] + paw[29]; break;
+            case 6:  u32Sum += paw[10] + paw[11]; break;
+            case 7:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13]; break;
+            case 8:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15]; break;
+            case 9:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17]; break;
+            case 10: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19]; break;
+            case 11: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21]; break;
+            case 12: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23]; break;
+            case 13: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25]; break;
+            case 14: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27]; break;
+            case 15: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27] + paw[28] + paw[29]; break;
             default:
                 AssertFailed();
         }
     }
 
     /* 16-bit one complement fun */
-    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
-    iSum += iSum >> 16;                     /* carry */
-    return (uint16_t)~iSum;
+    u32Sum = (u32Sum >> 16) + (u32Sum & 0xffff);  /* hi + low words */
+    u32Sum += u32Sum >> 16;                     /* carry */
+    return (uint16_t)~u32Sum;
 }
 
 
@@ -134,17 +134,17 @@ RTDECL(bool) RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbP
 DECLINLINE(uint32_t) rtNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
 {
     uint16_t cbPayload = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4;
-    uint32_t iSum = pIpHdr->ip_src.au16[0]
-                  + pIpHdr->ip_src.au16[1]
-                  + pIpHdr->ip_dst.au16[0]
-                  + pIpHdr->ip_dst.au16[1]
+    uint32_t u32Sum = pIpHdr->ip_src.au16[0]
+                    + pIpHdr->ip_src.au16[1]
+                    + pIpHdr->ip_dst.au16[0]
+                    + pIpHdr->ip_dst.au16[1]
 #ifdef RT_BIG_ENDIAN
-                  + pIpHdr->ip_p
+                    + pIpHdr->ip_p
 #else
-                  + ((uint32_t)pIpHdr->ip_p << 8)
+                    + ((uint32_t)pIpHdr->ip_p << 8)
 #endif
-                  + RT_H2BE_U16(cbPayload);
-    return iSum;
+                    + RT_H2BE_U16(cbPayload);
+    return u32Sum;
 }
 
 
@@ -171,17 +171,17 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
  */
 RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV4 DstAddr, uint8_t bProtocol, uint16_t cbPkt)
 {
-    uint32_t iSum = RT_H2BE_U16(SrcAddr.au16[0])
-                  + RT_H2BE_U16(SrcAddr.au16[1])
-                  + RT_H2BE_U16(DstAddr.au16[0])
-                  + RT_H2BE_U16(DstAddr.au16[1])
+    uint32_t u32Sum = RT_H2BE_U16(SrcAddr.au16[0])
+                    + RT_H2BE_U16(SrcAddr.au16[1])
+                    + RT_H2BE_U16(DstAddr.au16[0])
+                    + RT_H2BE_U16(DstAddr.au16[1])
 #ifdef RT_BIG_ENDIAN
-                  + bProtocol
+                    + bProtocol
 #else
-                  + ((uint32_t)bProtocol << 8)
+                    + ((uint32_t)bProtocol << 8)
 #endif
-                  + RT_H2BE_U16(cbPkt);
-    return iSum;
+                    + RT_H2BE_U16(cbPkt);
+    return u32Sum;
 }
 
 
@@ -190,15 +190,15 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-DECLINLINE(uint32_t) rtNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
+DECLINLINE(uint32_t) rtNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t u32Sum)
 {
-    iSum += pUdpHdr->uh_sport
-          + pUdpHdr->uh_dport
-          /*+ pUdpHdr->uh_sum = 0 */
-          + pUdpHdr->uh_ulen;
-    return iSum;
+    u32Sum += pUdpHdr->uh_sport
+            + pUdpHdr->uh_dport
+            /*+ pUdpHdr->uh_sum = 0 */
+            + pUdpHdr->uh_ulen;
+    return u32Sum;
 }
 
 
@@ -207,11 +207,11 @@ DECLINLINE(uint32_t) rtNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
+RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t u32Sum)
 {
-    return rtNetIPv4AddUDPChecksum(pUdpHdr,iSum);
+    return rtNetIPv4AddUDPChecksum(pUdpHdr, u32Sum);
 }
 
 
@@ -222,42 +222,42 @@ RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
  * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
  *                          Assums the caller has already validate it and made sure the
  *                          entire header is present.
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
+DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum)
 {
     uint16_t const *paw = (uint16_t const *)pTcpHdr;
-    iSum += paw[0]                      /* th_sport */
-          + paw[1]                      /* th_dport */
-          + paw[2]                      /* th_seq */
-          + paw[3]                      /* th_seq:16 */
-          + paw[4]                      /* th_ack */
-          + paw[5]                      /* th_ack:16 */
-          + paw[6]                      /* th_off, th_x2, th_flags */
-          + paw[7]                      /* th_win */
-          /*+ paw[8] == 0 */            /* th_sum */
-          + paw[9];                     /* th_urp */
+    u32Sum += paw[0]                    /* th_sport */
+            + paw[1]                    /* th_dport */
+            + paw[2]                    /* th_seq */
+            + paw[3]                    /* th_seq:16 */
+            + paw[4]                    /* th_ack */
+            + paw[5]                    /* th_ack:16 */
+            + paw[6]                    /* th_off, th_x2, th_flags */
+            + paw[7]                    /* th_win */
+            /*+ paw[8] == 0 */          /* th_sum */
+            + paw[9];                   /* th_urp */
     if (pTcpHdr->th_off > RTNETTCP_MIN_LEN / 4)
     {
         /* this is a bit insane... (identical to the IPv4 header) */
         switch (pTcpHdr->th_off)
         {
-            case 6:  iSum += paw[10] + paw[11]; break;
-            case 7:  iSum += paw[10] + paw[11] + paw[12] + paw[13]; break;
-            case 8:  iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15]; break;
-            case 9:  iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17]; break;
-            case 10: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19]; break;
-            case 11: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21]; break;
-            case 12: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23]; break;
-            case 13: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25]; break;
-            case 14: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27]; break;
-            case 15: iSum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27] + paw[28] + paw[29]; break;
+            case 6:  u32Sum += paw[10] + paw[11]; break;
+            case 7:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13]; break;
+            case 8:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15]; break;
+            case 9:  u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17]; break;
+            case 10: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19]; break;
+            case 11: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21]; break;
+            case 12: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23]; break;
+            case 13: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25]; break;
+            case 14: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27]; break;
+            case 15: u32Sum += paw[10] + paw[11] + paw[12] + paw[13] + paw[14] + paw[15] + paw[16] + paw[17] + paw[18] + paw[19] + paw[20] + paw[21] + paw[22] + paw[23] + paw[24] + paw[25] + paw[26] + paw[27] + paw[28] + paw[29]; break;
             default:
                 AssertFailed();
         }
     }
 
-    return iSum;
+    return u32Sum;
 }
 
 
@@ -268,11 +268,11 @@ DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
  * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
  *                          Assums the caller has already validate it and made sure the
  *                          entire header is present.
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
+RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum)
 {
-    return rtNetIPv4AddTCPChecksum(pTcpHdr, iSum);
+    return rtNetIPv4AddTCPChecksum(pTcpHdr, u32Sum);
 }
 
 
@@ -281,26 +281,26 @@ RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  * @param   pfOdd           This is used to keep track of odd bits, initialize to false
  *                          when starting to checksum the data (aka text) after a TCP
  *                          or UDP header (data never start at an odd offset).
  */
-DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd)
+DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t u32Sum, bool *pfOdd)
 {
     if (*pfOdd)
     {
 #ifdef RT_BIG_ENDIAN
         /* there was an odd byte in the previous chunk, add the lower byte. */
-        iSum += *(uint8_t *)pvData;
+        u32Sum += *(uint8_t *)pvData;
 #else
         /* there was an odd byte in the previous chunk, add the upper byte. */
-        iSum += (uint32_t)*(uint8_t *)pvData << 8;
+        u32Sum += (uint32_t)*(uint8_t *)pvData << 8;
 #endif
         /* skip the byte. */
         cbData--;
         if (!cbData)
-            return iSum;
+            return u32Sum;
         pvData = (uint8_t const *)pvData + 1;
     }
 
@@ -308,7 +308,7 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
     uint16_t const *pw = (uint16_t const *)pvData;
     while (cbData > 1)
     {
-        iSum += *pw;
+        u32Sum += *pw;
         pw++;
         cbData -= 2;
     }
@@ -317,15 +317,15 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
     if (cbData)
     {
 #ifdef RT_BIG_ENDIAN
-        iSum += (uint32_t)*(uint8_t *)pw << 8;
+        u32Sum += (uint32_t)*(uint8_t *)pw << 8;
 #else
-        iSum += *(uint8_t *)pw;
+        u32Sum += *(uint8_t *)pw;
 #endif
         *pfOdd = true;
     }
     else
         *pfOdd = false;
-    return iSum;
+    return u32Sum;
 }
 
 /**
@@ -333,14 +333,14 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  * @param   pfOdd           This is used to keep track of odd bits, initialize to false
  *                          when starting to checksum the data (aka text) after a TCP
  *                          or UDP header (data never start at an odd offset).
  */
-RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd)
+RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t u32Sum, bool *pfOdd)
 {
-    return rtNetIPv4AddDataChecksum(pvData, cbData, iSum, pfOdd);
+    return rtNetIPv4AddDataChecksum(pvData, cbData, u32Sum, pfOdd);
 }
 
 
@@ -348,14 +348,14 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
  * Finalizes a IPv4 checksum [inlined].
  *
  * @returns The checksum.
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t iSum)
+DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t u32Sum)
 {
     /* 16-bit one complement fun */
-    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
-    iSum += iSum >> 16;                     /* carry */
-    return (uint16_t)~iSum;
+    u32Sum = (u32Sum >> 16) + (u32Sum & 0xffff);  /* hi + low words */
+    u32Sum += u32Sum >> 16;                       /* carry */
+    return (uint16_t)~u32Sum;
 }
 
 
@@ -363,11 +363,11 @@ DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t iSum)
  * Finalizes a IPv4 checksum.
  *
  * @returns The checksum.
- * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   u32Sum          The 32-bit intermediate checksum value.
  */
-RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum)
+RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t u32Sum)
 {
-    return rtNetIPv4FinalizeChecksum(iSum);
+    return rtNetIPv4FinalizeChecksum(u32Sum);
 }
 
 
@@ -385,12 +385,11 @@ RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum)
  */
 RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData)
 {
-    uint32_t iSum = rtNetIPv4PseudoChecksum(pIpHdr);
-    iSum = rtNetIPv4AddUDPChecksum(pUdpHdr, iSum);
+    uint32_t u32Sum = rtNetIPv4PseudoChecksum(pIpHdr);
+    u32Sum = rtNetIPv4AddUDPChecksum(pUdpHdr, u32Sum);
     bool fOdd = false;
-    iSum = rtNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), iSum, &fOdd);
-    iSum = rtNetIPv4FinalizeChecksum(iSum);
-    return iSum;
+    u32Sum = rtNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), u32Sum, &fOdd);
+    return rtNetIPv4FinalizeChecksum(u32Sum);
 }
 
 
