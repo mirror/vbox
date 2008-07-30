@@ -50,7 +50,7 @@
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *) RTMemExecAlloc(size_t cb)
+RTDECL(void *) RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
     /*
      * Allocate first.
@@ -81,7 +81,7 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemExecFree(void *pv)
+RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
 {
     return RTMemPageFree(pv);
 }
@@ -94,7 +94,7 @@ RTDECL(void)    RTMemExecFree(void *pv)
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAlloc(size_t cb)
+RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
 {
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = malloc(cb);
@@ -112,7 +112,7 @@ RTDECL(void *) RTMemPageAlloc(size_t cb)
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAllocZ(size_t cb)
+RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 {
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = RTMemPageAlloc(cb);
@@ -128,7 +128,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb)
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
  */
-RTDECL(void) RTMemPageFree(void *pv)
+RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW
 {
     if (pv)
         free(pv);
@@ -143,7 +143,7 @@ RTDECL(void) RTMemPageFree(void *pv)
  * @param   cb          Size of the region. Will be rounded up to the nearest page boundary.
  * @param   fProtect    The new protection, a combination of the RTMEM_PROT_* defines.
  */
-RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect)
+RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW
 {
     /*
      * Validate input.

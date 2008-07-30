@@ -45,13 +45,13 @@
 
 #if !defined(RT_USE_MMAP) && (defined(RT_OS_LINUX))
 # define RT_USE_MMAP
-#endif 
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 #ifdef RT_USE_MMAP
-/** 
+/**
  * RTMemExecAlloc() header used when using mmap for allocating the memory.
  */
 typedef struct RTMEMEXECHDR
@@ -62,7 +62,7 @@ typedef struct RTMEMEXECHDR
     size_t      cb;
 # if ARCH_BITS == 32
     uint32_t    Alignment[2];
-# endif 
+# endif
 } RTMEMEXECHDR, *PRTMEMEXECHDR;
 
 /** Magic for RTMEMEXECHDR. */
@@ -81,7 +81,7 @@ typedef struct RTMEMEXECHDR
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *) RTMemExecAlloc(size_t cb)
+RTDECL(void *) RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 
@@ -90,7 +90,7 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
      * Use mmap to get low memory.
      */
     size_t cbAlloc = RT_ALIGN_Z(cb + sizeof(RTMEMEXECHDR), PAGE_SIZE);
-    void *pv = mmap(NULL, cbAlloc, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS 
+    void *pv = mmap(NULL, cbAlloc, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS
 #if defined(RT_ARCH_AMD64) && defined(MAP_32BIT)
                     | MAP_32BIT
 #endif
@@ -139,7 +139,7 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemExecFree(void *pv)
+RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
 {
     if (pv)
     {
@@ -151,7 +151,7 @@ RTDECL(void)    RTMemExecFree(void *pv)
         AssertMsg(!rc, ("munmap -> %d errno=%d\n", rc, errno)); NOREF(rc);
 #else
         free(pv);
-#endif 
+#endif
     }
 }
 
@@ -163,7 +163,7 @@ RTDECL(void)    RTMemExecFree(void *pv)
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAlloc(size_t cb)
+RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
 {
 #if 0 /** @todo huh? we're using posix_memalign in the next function... */
     void *pv;
@@ -184,7 +184,7 @@ RTDECL(void *) RTMemPageAlloc(size_t cb)
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAllocZ(size_t cb)
+RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 {
     void *pv;
     int rc = posix_memalign(&pv, PAGE_SIZE, RT_ALIGN_Z(cb, PAGE_SIZE));
@@ -203,7 +203,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb)
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
  */
-RTDECL(void) RTMemPageFree(void *pv)
+RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW
 {
     if (pv)
         free(pv);
@@ -218,7 +218,7 @@ RTDECL(void) RTMemPageFree(void *pv)
  * @param   cb          Size of the region. Will be rounded up to the nearest page boundary.
  * @param   fProtect    The new protection, a combination of the RTMEM_PROT_* defines.
  */
-RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect)
+RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW
 {
     /*
      * Validate input.
