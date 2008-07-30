@@ -197,8 +197,8 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 #define RTNETIPV4_PROT_UDP  (17)
 /** @} */
 
-RTDECL(uint16_t) RTNetIPv4Checksum(PCRTNETIPV4 pIpHdr);
-RTDECL(bool)     RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
+RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr);
+RTDECL(bool)     RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax);
 RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr);
 RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV4 DstAddr, uint8_t bProtocol, uint16_t cbPkt);
 RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd);
@@ -231,6 +231,7 @@ typedef RTNETUDP const *PCRTNETUDP;
 #define RTNETUDP_MIN_LEN   (8)
 
 RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum);
+RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData);
 
 
 /**

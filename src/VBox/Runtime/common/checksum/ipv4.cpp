@@ -42,7 +42,7 @@
  * @param   pIpHdr      Pointer to the IPv4 header to checksum, network endian (big).
  *                      Assumes the caller already checked the minimum size requirement.
  */
-RTDECL(uint16_t) RTNetIPv4Checksum(PCRTNETIPV4 pIpHdr)
+RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr)
 {
     uint16_t const *paw = (uint16_t const *)pIpHdr;
     int32_t iSum = paw[0]               /* ip_hl */
@@ -95,7 +95,7 @@ RTDECL(uint16_t) RTNetIPv4Checksum(PCRTNETIPV4 pIpHdr)
  * @param   cbPktMax    The max IP packet size, IP header and payload. This doesn't have
  *                      to be mapped following pIpHdr.
  */
-RTDECL(bool) RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax)
+RTDECL(bool) RTNetIPv4IsHdrsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax)
 {
     Assert(cbPktMax >= cbHdrMax);
     if (RT_UNLIKELY(cbHdrMax < RTNETIPV4_MIN_LEN))
@@ -111,7 +111,7 @@ RTDECL(bool) RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktM
         return false;
     if (RT_UNLIKELY(RT_BE2H_U16(pIpHdr->ip_len) > cbPktMax))
         return false;
-    uint16_t u16Sum = RTNetIPv4Checksum(pIpHdr);
+    uint16_t u16Sum = RTNetIPv4HdrChecksum(pIpHdr);
     if (RT_UNLIKELY(RT_BE2H_U16(pIpHdr->ip_sum) != u16Sum))
         return false;
     return true;
@@ -119,12 +119,12 @@ RTDECL(bool) RTNetIPv4IsValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktM
 
 
 /**
- * Calculates the checksum of a pseudo header given an IPv4 header.
+ * Calculates the checksum of a pseudo header given an IPv4 header [inlined].
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pIpHdr      The IP header (network endian (big)).
  */
-RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
+DECLINLINE(uint32_t) rtNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
 {
     uint16_t cbPayload = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4;
     uint32_t iSum = pIpHdr->ip_src.au16[0]
@@ -138,6 +138,18 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
 #endif
                   + RT_H2BE_U16(cbPayload);
     return iSum;
+}
+
+
+/**
+ * Calculates the checksum of a pseudo header given an IPv4 header.
+ *
+ * @returns 32-bit intermediary checksum value.
+ * @param   pIpHdr      The IP header (network endian (big)).
+ */
+RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
+{
+    return rtNetIPv4PseudoChecksum(pIpHdr);
 }
 
 
@@ -167,13 +179,13 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV
 
 
 /**
- * Adds the checksum of the UDP header to the intermediate checksum value.
+ * Adds the checksum of the UDP header to the intermediate checksum value [inlined].
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
  * @param   iSum            The 32-bit intermediate checksum value.
  */
-RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
+DECLINLINE(uint32_t) rtNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
 {
     iSum += pUdpHdr->uh_sport
           + pUdpHdr->uh_dport
@@ -184,7 +196,20 @@ RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
 
 
 /**
- * Adds the checksum of the TCP header to the intermediate checksum value.
+ * Adds the checksum of the UDP header to the intermediate checksum value.
+ *
+ * @returns 32-bit intermediary checksum value.
+ * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
+ * @param   iSum            The 32-bit intermediate checksum value.
+ */
+RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
+{
+    return rtNetIPv4AddUDPChecksum(pUdpHdr,iSum);
+}
+
+
+/**
+ * Adds the checksum of the TCP header to the intermediate checksum value [inlined].
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
@@ -192,7 +217,7 @@ RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t iSum)
  *                          entire header is present.
  * @param   iSum            The 32-bit intermediate checksum value.
  */
-RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
+DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
 {
     uint16_t const *paw = (uint16_t const *)pTcpHdr;
     iSum += paw[0]                      /* th_sport */
@@ -230,7 +255,22 @@ RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
 
 
 /**
- * Adds the checksum of the specified data segment to the intermediate checksum value.
+ * Adds the checksum of the TCP header to the intermediate checksum value.
+ *
+ * @returns 32-bit intermediary checksum value.
+ * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
+ *                          Assums the caller has already validate it and made sure the
+ *                          entire header is present.
+ * @param   iSum            The 32-bit intermediate checksum value.
+ */
+RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
+{
+    return rtNetIPv4AddTCPChecksum(pTcpHdr, iSum);
+}
+
+
+/**
+ * Adds the checksum of the specified data segment to the intermediate checksum value [inlined].
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
@@ -239,7 +279,7 @@ RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t iSum)
  *                          when starting to checksum the data (aka text) after a TCP
  *                          or UDP header (data never start at an odd offset).
  */
-RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd)
+DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd)
 {
     if (*pfOdd)
     {
@@ -262,7 +302,7 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
     while (cbData > 1)
     {
         iSum += *pw;
-        pw += 2;
+        pw++;
         cbData -= 2;
     }
 
@@ -281,6 +321,36 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
     return iSum;
 }
 
+/**
+ * Adds the checksum of the specified data segment to the intermediate checksum value.
+ *
+ * @returns 32-bit intermediary checksum value.
+ * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
+ * @param   iSum            The 32-bit intermediate checksum value.
+ * @param   pfOdd           This is used to keep track of odd bits, initialize to false
+ *                          when starting to checksum the data (aka text) after a TCP
+ *                          or UDP header (data never start at an odd offset).
+ */
+RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t iSum, bool *pfOdd)
+{
+    return rtNetIPv4AddDataChecksum(pvData, cbData, iSum, pfOdd);
+}
+
+
+/**
+ * Finalizes a IPv4 checksum [inlined].
+ *
+ * @returns The checksum.
+ * @param   iSum            The 32-bit intermediate checksum value.
+ */
+DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t iSum)
+{
+    /* 16-bit one complement fun */
+    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
+    iSum += iSum >> 16;                     /* carry */
+    return (uint16_t)~iSum;
+}
+
 
 /**
  * Finalizes a IPv4 checksum.
@@ -290,11 +360,30 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
  */
 RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t iSum)
 {
-    /* 16-bit one complement fun */
-    iSum = (iSum >> 16) + (iSum & 0xffff);  /* hi + low words */
-    iSum += iSum >> 16;                     /* carry */
-    return (uint16_t)~iSum;
+    return rtNetIPv4FinalizeChecksum(iSum);
 }
 
+
+
+/**
+ * Calculates the checksum for the UDP header given the IP header,
+ * UDP header and payload.
+ *
+ * @returns The checksum.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
+ * @param   pvData          Pointer to the UDP payload. The size is taken from the
+ *                          UDP header and the caller is supposed to have validated
+ *                          this before calling.
+ */
+RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData)
+{
+    uint32_t iSum = RTNetIPv4PseudoChecksum(pIpHdr);
+    iSum = RTNetIPv4AddUDPChecksum(pUdpHdr, iSum);
+    bool fOdd = false;
+    iSum = RTNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), iSum, &fOdd);
+    iSum = RTNetIPv4FinalizeChecksum(iSum);
+    return iSum;
+}
 
 
