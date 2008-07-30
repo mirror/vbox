@@ -69,7 +69,7 @@ __BEGIN_DECLS
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb);
+RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Allocates zero'ed temporary memory.
@@ -80,14 +80,14 @@ RTDECL(void *)  RTMemTmpAlloc(size_t cb);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb);
+RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW;
 
 /**
  * Free temporary memory.
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemTmpFree(void *pv);
+RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW;
 
 
 /**
@@ -97,7 +97,7 @@ RTDECL(void)    RTMemTmpFree(void *pv);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemAlloc(size_t cb);
+RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Allocates zero'ed memory.
@@ -110,7 +110,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemAllocZ(size_t cb);
+RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW;
 
 /**
  * Duplicates a chunk of memory into a new heap block.
@@ -120,7 +120,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb);
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb);
+RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb) RT_NO_THROW;
 
 /**
  * Duplicates a chunk of memory into a new heap block with some
@@ -132,7 +132,7 @@ RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb);
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra);
+RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
 
 /**
  * Reallocates memory.
@@ -142,14 +142,14 @@ RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra);
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew);
+RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
 
 /**
  * Free memory related to an virtual machine
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemFree(void *pv);
+RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
 
 /**
  * Allocates memory which may contain code.
@@ -158,14 +158,14 @@ RTDECL(void)    RTMemFree(void *pv);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)    RTMemExecAlloc(size_t cb);
+RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Free executable/read/write memory allocated by RTMemExecAlloc().
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)      RTMemExecFree(void *pv);
+RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW;
 
 #if defined(IN_RING0) && defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)
 /**
@@ -183,7 +183,7 @@ RTDECL(void)      RTMemExecFree(void *pv);
  * @param   pvMemory    Pointer to the memory block.
  * @param   cb          The size of the memory block.
  */
-RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb);
+RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb) RT_NO_THROW;
 #endif /* R0+AMD64+LINUX */
 
 /**
@@ -193,7 +193,7 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb);
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAlloc(size_t cb);
+RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Allocate zero'ed page aligned memory.
@@ -202,7 +202,7 @@ RTDECL(void *) RTMemPageAlloc(size_t cb);
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAllocZ(size_t cb);
+RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW;
 
 /**
  * Free a memory block allocated with RTMemPageAlloc() or RTMemPageAllocZ().
@@ -210,7 +210,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb);
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
  */
-RTDECL(void) RTMemPageFree(void *pv);
+RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW;
 
 /** Page level protection flags for RTMemProtect().
  * @{
@@ -233,7 +233,7 @@ RTDECL(void) RTMemPageFree(void *pv);
  * @param   cb          Size of the region. Will be rounded up to the nearest page boundary.
  * @param   fProtect    The new protection, a combination of the RTMEM_PROT_* defines.
  */
-RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect);
+RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW;
 
 
 #ifdef IN_RING0
@@ -247,7 +247,7 @@ RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect);
  * @param   cb      The allocation size in bytes. This is always
  *                  rounded up to PAGE_SIZE.
  */
-RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb);
+RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb) RT_NO_THROW;
 
 /**
  * Frees memory allocated ysing RTMemContAlloc().
@@ -255,7 +255,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb);
  * @param   pv      Pointer to return from RTMemContAlloc().
  * @param   cb      The cb parameter passed to RTMemContAlloc().
  */
-RTR0DECL(void) RTMemContFree(void *pv, size_t cb);
+RTR0DECL(void) RTMemContFree(void *pv, size_t cb) RT_NO_THROW;
 
 #endif
 
@@ -271,7 +271,7 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAlloc(size_t cb);
+RTDECL(void *)  RTMemEfTmpAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Same as RTMemTmpAllocZ() except that it's fenced.
@@ -280,14 +280,14 @@ RTDECL(void *)  RTMemEfTmpAlloc(size_t cb);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb);
+RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb) RT_NO_THROW;
 
 /**
  * Same as RTMemTmpFree() except that it's for fenced memory.
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfTmpFree(void *pv);
+RTDECL(void)    RTMemEfTmpFree(void *pv) RT_NO_THROW;
 
 /**
  * Same as RTMemAlloc() except that it's fenced.
@@ -296,7 +296,7 @@ RTDECL(void)    RTMemEfTmpFree(void *pv);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAlloc(size_t cb);
+RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Same as RTMemAllocZ() except that it's fenced.
@@ -305,7 +305,7 @@ RTDECL(void *)  RTMemEfAlloc(size_t cb);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAllocZ(size_t cb);
+RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW;
 
 /**
  * Same as RTMemRealloc() except that it's fenced.
@@ -315,14 +315,14 @@ RTDECL(void *)  RTMemEfAllocZ(size_t cb);
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew);
+RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
 
 /**
  * Free memory allocated by any of the RTMemEf* allocators.
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfFree(void *pv);
+RTDECL(void)    RTMemEfFree(void *pv) RT_NO_THROW;
 
 /**
  * Same as RTMemDup() except that it's fenced.
@@ -332,7 +332,7 @@ RTDECL(void)    RTMemEfFree(void *pv);
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb);
+RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb) RT_NO_THROW;
 
 /**
  * Same as RTMemEfDupEx except that it's fenced.
@@ -343,7 +343,7 @@ RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb);
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra);
+RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
 
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
@@ -381,7 +381,7 @@ __END_DECLS
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
-inline void RTMemAutoDestructor(T *aMem)
+inline void RTMemAutoDestructor(T *aMem) RT_NO_THROW
 {
     RTMemFree(aMem);
 }
@@ -394,7 +394,7 @@ inline void RTMemAutoDestructor(T *aMem)
  * @param   pvOld       What to reallocate, shall always be NULL.
  * @param   cbNew       The amount of memory to allocate (in bytes).
  */
-inline void *RTMemTmpAutoAllocator(void *pvOld, size_t cbNew)
+inline void *RTMemTmpAutoAllocator(void *pvOld, size_t cbNew) RT_NO_THROW
 {
     AssertReturn(!pvOld, NULL);
     return RTMemTmpAlloc(cbNew);
@@ -412,7 +412,7 @@ inline void *RTMemTmpAutoAllocator(void *pvOld, size_t cbNew)
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
-inline void RTMemTmpAutoDestructor(T *aMem)
+inline void RTMemTmpAutoDestructor(T *aMem) RT_NO_THROW
 {
     RTMemTmpFree(aMem);
 }
@@ -430,7 +430,7 @@ inline void RTMemTmpAutoDestructor(T *aMem)
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
-inline void RTMemEfAutoFree(T *aMem)
+inline void RTMemEfAutoFree(T *aMem) RT_NO_THROW
 {
     RTMemEfFree(aMem);
 }
@@ -444,7 +444,7 @@ inline void RTMemEfAutoFree(T *aMem)
  * @returns NULL with the right type.
  */
 template <class T>
-inline T * RTMemAutoNil(void)
+inline T * RTMemAutoNil(void) RT_NO_THROW
 {
     return (T *)(NULL);
 }

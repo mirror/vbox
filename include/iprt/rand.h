@@ -46,7 +46,7 @@ __BEGIN_DECLS
  * @param   pv  Where to store the random bytes.
  * @param   cb  Number of bytes to generate.
  */
-RTDECL(void) RTRandBytes(void *pv, size_t cb);
+RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW;
 
 /**
  * Generate a 32-bit signed random number in the set [i32First..i32Last].
@@ -55,14 +55,14 @@ RTDECL(void) RTRandBytes(void *pv, size_t cb);
  * @param   i32First    First number in the set.
  * @param   i32Last     Last number in the set.
  */
-RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last);
+RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW;
 
 /**
  * Generate a 32-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int32_t) RTRandS32(void);
+RTDECL(int32_t) RTRandS32(void) RT_NO_THROW;
 
 /**
  * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
@@ -71,14 +71,14 @@ RTDECL(int32_t) RTRandS32(void);
  * @param   u32First    First number in the set.
  * @param   u32Last     Last number in the set.
  */
-RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last);
+RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW;
 
 /**
  * Generate a 32-bit unsigned random number.
  *
  * @returns The random number.
  */
-RTDECL(uint32_t) RTRandU32(void);
+RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW;
 
 /**
  * Generate a 64-bit signed random number in the set [i64First..i64Last].
@@ -87,14 +87,14 @@ RTDECL(uint32_t) RTRandU32(void);
  * @param   i64First    First number in the set.
  * @param   i64Last     Last number in the set.
  */
-RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last);
+RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW;
 
 /**
  * Generate a 64-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int64_t) RTRandS64(void);
+RTDECL(int64_t) RTRandS64(void) RT_NO_THROW;
 
 /**
  * Generate a 64-bit unsigned random number in the set [u64First..u64Last].
@@ -103,14 +103,14 @@ RTDECL(int64_t) RTRandS64(void);
  * @param   u64First    First number in the set.
  * @param   u64Last     Last number in the set.
  */
-RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last);
+RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW;
 
 /**
  * Generate a 64-bit unsigned random number.
  *
  * @returns The random number.
  */
-RTDECL(uint64_t) RTRandU64(void);
+RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW;
 
 /** @} */
 
