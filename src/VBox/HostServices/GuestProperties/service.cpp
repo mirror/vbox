@@ -53,14 +53,11 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
-#if 0 /** @todo this is busted on rhel3. please, make it simple or just ditch it. (bird) */
-# include <iprt/autores>
-#endif
+#include <iprt/autores.h>
+#include <iprt/cpputils.h>
 #include <VBox/log.h>
 
 #include <VBox/cfgm.h>
-
-#include "noncopyable.h"
 
 /*******************************************************************************
 *   Internal functions                                                         *
@@ -99,7 +96,7 @@ namespace guestProp {
 /**
  * Class containing the shared information service functionality.
  */
-class Service : public noncopyable
+class Service : public stdx::non_copyable
 {
 private:
     /** Type definition for use in callback functions */
@@ -516,9 +513,6 @@ static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
  */
 int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-#if 1 /* using broken RTMemAutoPtr stuff */
-    return VERR_NOT_IMPLEMENTED;
-#else
     /* We reallocate the temporary buffer in which we build up our array in
      * increments of size BLOCK: */
     enum { BLOCKINCR = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048) % 1024 };
@@ -543,7 +537,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 /*
  * Start by enumerating all values in the current node into a temporary buffer.
  */
-    RTMemAutoPtr<char> pchTmpBuf; /** @todo r=bird: Do not use misleading prefixes with objects like this, that make it completely unreadable. */
+    RTMemAutoPtr<char> apchTmpBuf;
     uint32_t cchTmpBuf = 0, iTmpBuf = 0;
     PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpNode);
     while ((pLeaf != NULL) && RT_SUCCESS(rc))
@@ -552,32 +546,32 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         if (iTmpBuf + BLOCKINCR > cchTmpBuf)
         {
             cchTmpBuf += BLOCKINCR;
-            if (!pchTmpBuf.realloc<RTMemRealloc>(cchTmpBuf))
+            if (!apchTmpBuf.realloc<RTMemRealloc>(cchTmpBuf))
                 rc = VERR_NO_MEMORY;
         }
         /* Fetch the name into the buffer and if it matches one of the
          * patterns, add its value and an empty timestamp and flags.  If it
          * doesn't match, we simply overwrite it in the buffer. */
         if (RT_SUCCESS(rc))
-            rc = CFGMR3GetValueName(pLeaf, pchTmpBuf.get() + iTmpBuf, cchTmpBuf - iTmpBuf);
+            rc = CFGMR3GetValueName(pLeaf, apchTmpBuf.get() + iTmpBuf, cchTmpBuf - iTmpBuf);
         if (   RT_SUCCESS(rc)
-            && matchesPattern(paszPatterns, cchPatterns, pchTmpBuf.get() + iTmpBuf)
+            && matchesPattern(paszPatterns, cchPatterns, apchTmpBuf.get() + iTmpBuf)
            )
         {
             int cchName = CFGMR3GetValueNameLen(pLeaf);
-            rc = CFGMR3QueryString(mpNode, pchTmpBuf.get() + iTmpBuf /* Name */,
-                                   pchTmpBuf.get() + iTmpBuf + cchName,
+            rc = CFGMR3QueryString(mpNode, apchTmpBuf.get() + iTmpBuf /* Name */,
+                                   apchTmpBuf.get() + iTmpBuf + cchName,
                                    cchTmpBuf - iTmpBuf - cchName);
             if (RT_SUCCESS(rc))
             {
                 /* Only increment if the name matches, otherwise we overwrite
                  * it next iteration. */
                 iTmpBuf += cchName;
-                int cchValue = strlen(pchTmpBuf.get() + iTmpBuf) + 1;
+                int cchValue = strlen(apchTmpBuf.get() + iTmpBuf) + 1;
                 /* We *do* have enough space left */
-                *(pchTmpBuf.get() + iTmpBuf + cchValue) = '0';  /* Timestamp */
-                *(pchTmpBuf.get() + iTmpBuf + cchValue + 1) = 0;
-                *(pchTmpBuf.get() + iTmpBuf + cchValue + 2) = 0;  /* empty flags */
+                *(apchTmpBuf.get() + iTmpBuf + cchValue) = '0';  /* Timestamp */
+                *(apchTmpBuf.get() + iTmpBuf + cchValue + 1) = 0;
+                *(apchTmpBuf.get() + iTmpBuf + cchValue + 2) = 0;  /* empty flags */
                 iTmpBuf += cchValue + 3;
             }
         }
@@ -587,20 +581,19 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         /* The terminator.  We *do* have space left for this. */
-        *(pchTmpBuf.get() + iTmpBuf) = 0;
-        *(pchTmpBuf.get() + iTmpBuf + 1) = 0;
-        *(pchTmpBuf.get() + iTmpBuf + 2) = 0;
-        *(pchTmpBuf.get() + iTmpBuf + 3) = 0;
+        *(apchTmpBuf.get() + iTmpBuf) = 0;
+        *(apchTmpBuf.get() + iTmpBuf + 1) = 0;
+        *(apchTmpBuf.get() + iTmpBuf + 2) = 0;
+        *(apchTmpBuf.get() + iTmpBuf + 3) = 0;
         iTmpBuf += 4;
         VBoxHGCMParmUInt32Set(&paParms[2], iTmpBuf);
         /* Copy the memory if it fits into the guest buffer */
         if (iTmpBuf <= cchBuf)
-            memcpy(pchBuf, pchTmpBuf.get(), iTmpBuf);
+            memcpy(pchBuf, apchTmpBuf.get(), iTmpBuf);
         else
             rc = VERR_BUFFER_OVERFLOW;
     }
     return rc;
-#endif
 }
 
 
