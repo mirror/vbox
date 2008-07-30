@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/net.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 
 
