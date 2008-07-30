@@ -174,7 +174,8 @@ public:
     {
         if (a_hRes != m_hRes)
         {
-            Destruct(m_hRes);
+            if (m_hRes != NilRes())
+                Destruct(m_hRes);
             m_hRes = a_hRes;
         }
     }
