@@ -438,6 +438,18 @@
 # define RTCALL
 #endif
 
+/** @def RT_NO_THROW
+ * How to express that a function doesn't throw C++ exceptions
+ * and the compiler can thus save itself the bother of trying
+ * to catch any of them. Put this between the closing parenthesis
+ * and the semicolon in function prototypes.
+ */
+#ifdef __cplusplus
+# define RT_NO_THROW    throw()
+#else
+# define RT_NO_THROW
+#endif
+
 /** @def DECLEXPORT
  * How to declare an exported function.
  * @param   type    The return type of the function declaration.
