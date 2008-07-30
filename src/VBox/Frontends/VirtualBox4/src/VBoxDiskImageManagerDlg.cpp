@@ -446,7 +446,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
 }
 
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
-                                     const QUuid *aTargetVMId /* = NULL */,
+                                     const QUuid &aTargetVMId /* = NULL */,
                                      bool aRefresh /* = true */,
                                      CMachine aMachine /* = NULL */,
                                      const QUuid &aHdId,
@@ -464,8 +464,8 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     twImages->setTabEnabled (FDTab, mType & VBoxDefs::FD);
 
     mDoSelect = aDoSelect;
-    if (aTargetVMId)
-        mTargetVMId = *aTargetVMId;
+    if (!aTargetVMId.isNull())
+        mTargetVMId = aTargetVMId;
 
     if (mDoSelect)
         mButtonBox->button (QDialogButtonBox::Ok)->setText (tr ("&Select"));

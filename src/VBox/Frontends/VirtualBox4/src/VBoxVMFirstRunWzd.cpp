@@ -241,10 +241,9 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 void VBoxVMFirstRunWzd::openVdm()
 {
     VBoxDiskImageManagerDlg vdm (this);
-    QUuid machineId = mMachine.GetId();
     VBoxDefs::DiskType type = mRbCdType->isChecked() ? VBoxDefs::CD :
         mRbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;
-    vdm.setup (type, true, &machineId);
+    vdm.setup (type, true, mMachine.GetId());
     if (vdm.exec() == QDialog::Accepted)
     {
         mCbImage->setCurrentItem (vdm.selectedUuid());

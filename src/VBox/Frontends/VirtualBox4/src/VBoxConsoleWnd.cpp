@@ -2577,8 +2577,7 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
     if (!console) return;
 
     VBoxDiskImageManagerDlg dlg (this);
-    QUuid id = csession.GetMachine().GetId();
-    dlg.setup (VBoxDefs::FD, true, &id);
+    dlg.setup (VBoxDefs::FD, true, csession.GetMachine().GetId());
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -2621,8 +2620,7 @@ void VBoxConsoleWnd::devicesMountDVDImage()
     if (!console) return;
 
     VBoxDiskImageManagerDlg dlg (this);
-    QUuid id = csession.GetMachine().GetId();
-    dlg.setup (VBoxDefs::CD, true, &id);
+    dlg.setup (VBoxDefs::CD, true, csession.GetMachine().GetId());
 
     if (dlg.exec() == QDialog::Accepted)
     {

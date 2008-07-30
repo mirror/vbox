@@ -48,7 +48,7 @@ public:
 
     VBoxDiskImageManagerDlg (QWidget *aParent = NULL, Qt::WindowFlags aFlags = Qt::Dialog);
 
-    void setup (int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine aMachine = NULL, const QUuid & aHdId = QUuid(), const QUuid & aCdId = QUuid(), const QUuid & aFdId = QUuid());
+    void setup (int aType, bool aDoSelect, const QUuid &aTargetVMId = QUuid(), bool aRefresh = true, CMachine aMachine = NULL, const QUuid &aHdId = QUuid(), const QUuid &aCdId = QUuid(), const QUuid &aFdId = QUuid());
 
     static void showModeless (bool aRefresh = true);
 

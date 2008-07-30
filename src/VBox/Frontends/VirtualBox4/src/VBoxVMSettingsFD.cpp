@@ -243,8 +243,7 @@ void VBoxVMSettingsFD::showImageManager()
 {
     QUuid oldId = mUuidIsoFD;
     VBoxDiskImageManagerDlg dlg (this);
-    QUuid machineId = mMachine.GetId();
-    dlg.setup (VBoxDefs::FD, true, &machineId, true /* aRefresh */,
+    dlg.setup (VBoxDefs::FD, true, mMachine.GetId(), true /* aRefresh */,
                mMachine, QUuid(), mCbIsoFD->getId(), QUuid());
 
     QUuid newId = dlg.exec() == QDialog::Accepted ?
