@@ -115,8 +115,8 @@ typedef RTNETADDRU const *PCRTNETADDRU;
 #pragma pack(1)
 typedef struct RTNETETHERHDR
 {
-    RTMAC       MacDst;
-    RTMAC       MacSrc;
+    RTMAC       DstMac;
+    RTMAC       SrcMac;
     /** Ethernet frame type or frame size, depending on the kind of ethernet.
      * This is big endian on the wire. */
     uint16_t    EtherType;

@@ -37,6 +37,7 @@
 #include <iprt/rand.h>
 #include <iprt/log.h>
 #include <iprt/crc32.h>
+#include <iprt/net.h>
 
 #include "../Pcap.h"
 
@@ -45,44 +46,6 @@
 *******************************************************************************/
 #pragma pack(1)
 
-struct MyEthHdr
-{
-    PDMMAC      DstMac;
-    PDMMAC      SrcMac;
-    uint16_t    u16Type;
-};
-
-struct MyIpHdr
-{
-#ifdef RT_BIG_ENDIAN
-    unsigned int    ip_v : 4;
-    unsigned int    ip_hl : 4;
-    unsigned int    ip_tos : 8;
-    unsigned int    ip_len : 16;
-#else
-    unsigned int    ip_hl : 4;
-    unsigned int    ip_v : 4;
-    unsigned int    ip_tos : 8;
-    unsigned int    ip_len : 16;
-#endif
-    uint16_t        ip_id;
-    uint16_t        ip_off;
-    uint8_t         ip_ttl;
-    uint8_t         ip_p;
-    uint16_t        ip_sum;
-    uint32_t        ip_src;
-    uint32_t        ip_dst;
-    /* more */
-    uint32_t        ip_options[1];
-};
-
-struct MyUdpHdr
-{
-    uint16_t    uh_sport;
-    uint16_t    uh_dport;
-    uint16_t    uh_ulen;
-    uint16_t    uh_sum;
-};
 
 struct MyDhcpMsg
 {
@@ -366,10 +329,10 @@ static uint16_t tstIntNet1IpCheckSum(void const *pvBuf, size_t cbBuf)
 static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw)
 {
     uint8_t abFrame[4096];
-    struct MyEthHdr    *pEthHdr  = (struct MyEthHdr  *)&abFrame[0];
-    struct MyIpHdr     *pIpHdr   = (struct MyIpHdr   *)(pEthHdr + 1);
-    struct MyUdpHdr    *pUdpHdr  = (struct MyUdpHdr  *)(pIpHdr  + 1);
-    struct MyDhcpMsg   *pDhcpMsg = (struct MyDhcpMsg *)(pUdpHdr + 1);
+    PRTNETETHERHDR      pEthHdr  = (PRTNETETHERHDR)&abFrame[0];
+    PRTNETIPV4          pIpHdr   = (PRTNETIPV4)    (pEthHdr + 1);
+    PRTNETUDP           pUdpHdr  = (PRTNETUDP)     (pIpHdr  + 1);
+    PRTNETDHCP          pDhcpMsg = (PRTNETDHCP)    (pUdpHdr + 1);
 
     /*
      * Create a simple DHCP broadcast request.
@@ -383,10 +346,10 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     pDhcpMsg->XID = g_DhcpXID = RTRandU32();
     pDhcpMsg->Secs = 0;
     pDhcpMsg->Flags = 0; /* unicast */ //RT_H2BE_U16(0x8000); /* broadcast */
-    pDhcpMsg->CIAddr = 0;
-    pDhcpMsg->YIAddr = 0;
-    pDhcpMsg->SIAddr = 0;
-    pDhcpMsg->GIAddr = 0;
+    pDhcpMsg->CIAddr.u = 0;
+    pDhcpMsg->YIAddr.u = 0;
+    pDhcpMsg->SIAddr.u = 0;
+    pDhcpMsg->GIAddr.u = 0;
     memset(&pDhcpMsg->CHAddr[0], '\0', sizeof(pDhcpMsg->CHAddr));
     memcpy(&pDhcpMsg->CHAddr[0], pSrcMac, sizeof(*pSrcMac));
     memset(&pDhcpMsg->SName[0], '\0', sizeof(pDhcpMsg->SName));
@@ -436,21 +399,21 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     pIpHdr->ip_ttl = 255;
     pIpHdr->ip_p = 0x11; /* UDP */
     pIpHdr->ip_sum = 0;
-    pIpHdr->ip_src = 0;
-    pIpHdr->ip_dst = UINT32_C(0xffffffff); /* broadcast */
+    pIpHdr->ip_src.u = 0;
+    pIpHdr->ip_dst.u = UINT32_C(0xffffffff); /* broadcast */
     pIpHdr->ip_sum = tstIntNet1IpCheckSum(pIpHdr, sizeof(*pIpHdr));
 
     /* calc the UDP checksum. */
     pUdpHdr->uh_sum = tstIntNet1InetCheckSum(pUdpHdr,
                                              RT_BE2H_U16(pUdpHdr->uh_ulen),
-                                             RT_BE2H_U32(pIpHdr->ip_src),
-                                             RT_BE2H_U32(pIpHdr->ip_dst),
+                                             RT_BE2H_U32(pIpHdr->ip_src.u),
+                                             RT_BE2H_U32(pIpHdr->ip_dst.u),
                                              pIpHdr->ip_p);
 
     /* Ethernet */
     memset(&pEthHdr->DstMac, 0xff, sizeof(pEthHdr->DstMac)); /* broadcast */
     pEthHdr->SrcMac = *pSrcMac;
-    pEthHdr->u16Type = RT_H2BE_U16(0x0800); /* IP */
+    pEthHdr->EtherType = RT_H2BE_U16(RTNET_ETHERTYPE_IPV4); /* IP */
 
     doXmitFrame(hIf, pSession, pBuf, &abFrame[0], (uint8_t *)(pDhcpMsg + 1) - (uint8_t *)&abFrame[0], pFileRaw);
 }
@@ -513,24 +476,24 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                 if (pFileRaw)
                     PcapStreamFrame(pFileRaw, g_StartTS, pvFrame, cbFrame, 0xffff);
 
-                struct MyEthHdr const *pEthHdr = (struct MyEthHdr const *)pvFrame;
+                PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
                 if (pFileText)
                     RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s\n",
                                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
-                                 cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->u16Type),
+                                 cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->EtherType),
                                  !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
 
                 /* Loop for the DHCP reply. */
                 if (    cbFrame > 64
-                    &&  RT_BE2H_U16(pEthHdr->u16Type) == 0x0800 /* EtherType == IP */)
+                    &&  RT_BE2H_U16(pEthHdr->EtherType) == 0x0800 /* EtherType == IP */)
                 {
-                    struct MyIpHdr const  *pIpHdr  = (struct MyIpHdr const  *)(pEthHdr + 1);
-                    struct MyUdpHdr const *pUdpHdr = (struct MyUdpHdr const *)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
+                    PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)(pEthHdr + 1);
+                    PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
                     if (    pIpHdr->ip_p == 0x11 /*UDP*/
                         &&  RT_BE2H_U16(pUdpHdr->uh_dport) == 68 /* bootp */
                         &&  RT_BE2H_U16(pUdpHdr->uh_sport) == 67 /* bootps */)
                     {
-                        struct MyDhcpMsg const *pDhcpMsg = (struct MyDhcpMsg const *)(pUdpHdr + 1);
+                        PCRTNETDHCP pDhcpMsg = (PCRTNETDHCP)(pUdpHdr + 1);
                         if (    pDhcpMsg->Op == 2 /* boot reply */
                             &&  pDhcpMsg->HType == 1 /* ethernet */
                             &&  pDhcpMsg->HLen == sizeof(PDMMAC)
@@ -539,10 +502,10 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                         {
                             g_fDhcpReply = true;
                             RTPrintf("tstIntNet-1: DHCP server reply! My IP: %d.%d.%d.%d\n",
-                                     RT_BYTE4(RT_BE2H_U32(pDhcpMsg->YIAddr)),
-                                     RT_BYTE3(RT_BE2H_U32(pDhcpMsg->YIAddr)),
-                                     RT_BYTE2(RT_BE2H_U32(pDhcpMsg->YIAddr)),
-                                     RT_BYTE1(RT_BE2H_U32(pDhcpMsg->YIAddr)));
+                                     pDhcpMsg->YIAddr.au8[0],
+                                     pDhcpMsg->YIAddr.au8[1],
+                                     pDhcpMsg->YIAddr.au8[2],
+                                     pDhcpMsg->YIAddr.au8[3]);
                         }
                     }
                 }
