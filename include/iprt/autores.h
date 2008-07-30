@@ -139,13 +139,6 @@ public:
     RTMemAutoPtr& operator=(T *aValue)
     { this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(aValue); return *this; }
 
-    /** Assignment from a void pointer. */
-    RTMemAutoPtr& operator=(void *aValue)
-    {
-        this->RTAutoRes <T *, Destruct, RTMemAutoNul<T> >::operator=(reinterpret_cast<T *>(aValue));
-        return *this;
-    }
-
     /** Dereference with * operator. */
     T &operator*() { return *this->get(); }
 
