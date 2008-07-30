@@ -90,6 +90,12 @@ stop_module()
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox kernel module not loaded."
     fi
+
+    # check for vbi and force unload it
+    vbi_mod_id=`/usr/sbin/modinfo | grep vbi | cut -f 1 -d ' ' `
+    if test -n "$vbi_mod_id"; then
+        /usr/sbin/modunload -i $vbi_mod_id
+    fi
 }
 
 restart_module()
