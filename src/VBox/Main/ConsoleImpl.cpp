@@ -83,6 +83,7 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
+# include <VBox/com/array.h>
 #endif
 
 #include <set>
@@ -3644,6 +3645,148 @@ HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
         rc = setError (E_UNEXPECTED,
             tr ("Failed to call the VBoxGuestPropSvc service (%Rrc)"), vrc);
     return rc;
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
+}
+
+
+/**
+ * @note Temporarily locks this object for writing.
+ */
+HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
+                                           ComSafeArrayOut(BSTR, aNames),
+                                           ComSafeArrayOut(BSTR, aValues),
+                                           ComSafeArrayOut(ULONG64, aTimestamps),
+                                           ComSafeArrayOut(BSTR, aFlags))
+{
+#if !defined (VBOX_WITH_GUEST_PROPS)
+    return E_NOTIMPL;
+#else
+    if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aNames))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aValues))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aTimestamps))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aFlags))
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerWeak autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
+     * autoVMCaller, so there is no need to hold a lock of this */
+
+    using namespace guestProp;
+
+    VBOXHGCMSVCPARM parm[3];
+
+/*
+ * Set up the pattern parameter, translating the comma-separated list to a
+ * double-terminated zero-separated one.
+ */
+    Utf8Str Utf8PatternsIn = aPatterns;
+    if ((aPatterns != NULL) && Utf8PatternsIn.isNull())
+        return E_OUTOFMEMORY;
+    size_t cchPatterns = Utf8PatternsIn.length();
+    Utf8Str Utf8Patterns(cchPatterns + 2);  /* Double terminator */
+    if (Utf8Patterns.isNull())
+        return E_OUTOFMEMORY;
+    char *pszPatterns = Utf8Patterns.mutableRaw();
+    unsigned iPatterns = 0;
+    for (unsigned i = 0; i < cchPatterns; ++i)
+    {
+        char cIn = Utf8PatternsIn.raw()[i];
+        if ((cIn != ',') && (cIn != ' '))
+            pszPatterns[iPatterns] = cIn;
+        else if (cIn != ' ')
+            pszPatterns[iPatterns] = '\0';
+        if (cIn != ' ')
+            ++iPatterns;
+    }
+    pszPatterns[iPatterns] = '\0';
+    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    parm[0].u.pointer.addr = pszPatterns;
+    parm[0].u.pointer.size = cchPatterns + 1;
+
+/*
+ * Now things get slightly complicated.  Due to a race with the guest adding
+ * properties, there is no good way to know how much large a buffer to provide
+ * the service to enumerate into.  We choose a decent starting size and loop a
+ * few times, each time retrying with the size suggested by the service plus
+ * one Kb.
+ */
+    size_t cchBuf = 4096;
+    Utf8Str Utf8Buf;
+    int vrc = VERR_BUFFER_OVERFLOW;
+    for (unsigned i = 0; i < 10 && (VERR_BUFFER_OVERFLOW == vrc); ++i)
+    {
+        Utf8Buf.alloc(cchBuf + 1024);
+        if (Utf8Buf.isNull())
+            return E_OUTOFMEMORY;
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
+        parm[1].u.pointer.size = cchBuf + 1024;
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
+                                     &parm[0]);
+        if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
+            return setError (E_FAIL, tr ("Internal application error"));
+        cchBuf = parm[2].u.uint32;
+    }
+    if (VERR_BUFFER_OVERFLOW == vrc)
+        return setError (E_UNEXPECTED, tr ("Temporary failure due to guest activity, please retry"));
+
+/*
+ * Finally we have to unpack the data returned by the service into the safe
+ * arrays supplied by the caller.  We start by counting the number of entries.
+ */
+     const char *pszBuf
+         = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
+     unsigned cEntries = 0;
+     /* The list is terminated by a zero-length string at the end of a set
+      * of four strings. */
+     for (size_t i = 0; strlen(pszBuf + i) != 0; )
+     {
+        /* We are counting sets of four strings. */
+        for (unsigned j = 0; j < 4; ++j)
+            i += strlen(pszBuf + i) + 1;
+        ++cEntries;
+     }
+
+/*
+ * And now we create the COM safe arrays and fill them in.
+ */
+     com::SafeArray <BSTR> names(cEntries);
+     com::SafeArray <BSTR> values(cEntries);
+     com::SafeArray <ULONG64> timestamps(cEntries);
+     com::SafeArray <BSTR> flags(cEntries);
+     size_t iBuf = 0;
+     /* Rely on the service to have formated the data correctly. */
+     for (unsigned i = 0; i < cEntries; ++i)
+     {
+        size_t cchName = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&names[i]);
+        iBuf += cchName + 1;
+        size_t cchValue = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&values[i]);
+        iBuf += cchValue + 1;
+        size_t cchTimestamp = strlen(pszBuf + iBuf);
+        timestamps[i] = RTStrToUInt64(pszBuf + iBuf);
+        iBuf += cchTimestamp + 1;
+        size_t cchFlags = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&flags[i]);
+        iBuf += cchFlags + 1;
+     }
+     names.detachTo(ComSafeArrayOutArg (aNames));
+     values.detachTo(ComSafeArrayOutArg (aValues));
+     timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
+     flags.detachTo(ComSafeArrayOutArg (aFlags));
+     return S_OK;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
