@@ -304,6 +304,11 @@ typedef RTNETBOOTP *PRTNETBOOTP;
 /** Pointer to a const BOOTP / DHCP packet. */
 typedef RTNETBOOTP const *PCRTNETBOOTP;
 
+/** Minimum BOOTP packet length. For quick validation, no standard thing really. */
+#define RTNETBOOTP_MIN_LEN          0xec
+/** Minimum DHCP packet length. For quick validation, no standard thing really. */
+#define RTNETBOOTP_DHCP_MIN_LEN     0xf1
+
 /** @name BOOTP packet opcode values
  * @{ */
 #define RTNETBOOTP_OP_REQUEST       1
