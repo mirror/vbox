@@ -650,14 +650,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
 #ifdef VBOX_WITH_GUEST_PROPS
     if (u64Cmd & USAGE_GUESTPROPERTY)
-    {
-        RTPrintf("VBoxManage guestproperty    get <vmname>|<uuid>\n"
-                 "                            <property> [-verbose]\n"
-                 "\n");
-        RTPrintf("VBoxManage guestproperty    set <vmname>|<uuid>\n"
-                 "                            <property> [<value>] [-flags <flags>]\n"
-                 "\n");
-    }
+        usageGuestProperty();
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 }
@@ -7581,130 +7574,6 @@ static int handleVMStatistics(int argc, char *argv[],
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
-
-#ifdef VBOX_WITH_GUEST_PROPS
-static int handleGetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> virtualBox,
-                                  ComPtr<ISession> session)
-{
-    HRESULT rc = S_OK;
-
-    bool verbose = false;
-    if ((3 == argc) && (0 == strcmp(argv[2], "-verbose")))
-        verbose = true;
-    else if (argc != 2)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-
-    ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
-    }
-    if (machine)
-    {
-        Bstr value;
-        uint64_t u64Timestamp;
-        Bstr flags;
-        CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam(),
-                    &u64Timestamp, flags.asOutParam()));
-        if (!value)
-            RTPrintf("No value set!\n");
-        if (value)
-            RTPrintf("Value: %lS\n", value.raw());
-        if (value && verbose)
-        {
-            RTPrintf("Timestamp: %lld\n", u64Timestamp);
-            RTPrintf("Flags: %lS\n", flags.raw());
-        }
-    }
-    return SUCCEEDED(rc) ? 0 : 1;
-}
-
-static int handleSetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> virtualBox,
-                                  ComPtr<ISession> session)
-{
-    HRESULT rc = S_OK;
-
-/*
- * Check the syntax.  We can deduce the correct syntax from the number of
- * arguments.
- */
-    bool usageOK = true;
-    const char *pszName = NULL;
-    const char *pszValue = NULL;
-    const char *pszFlags = NULL;
-    if (3 == argc)
-    {
-        pszName = argv[1];
-        pszValue = argv[2];
-    }
-    else if (4 == argc)
-    {
-        pszName = argv[1];
-        if (strcmp(argv[2], "-flags") != 0)
-            usageOK = false;
-        pszFlags = argv[3];
-    }
-    else if (5 == argc)
-    {
-        pszName = argv[1];
-        pszValue = argv[2];
-        if (strcmp(argv[3], "-flags") != 0)
-            usageOK = false;
-        pszFlags = argv[4];
-    }
-    else if (argc != 2)
-        usageOK = false;
-    if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-
-    ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
-    }
-    if (machine)
-    {
-        if ((NULL == pszValue) && (NULL == pszFlags))
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), NULL));
-        else if (NULL == pszFlags)
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr(pszValue)));
-        else if (NULL == pszValue)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), NULL, Bstr(pszFlags)));
-        else
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), Bstr(pszValue), Bstr(pszFlags)));
-    }
-    return SUCCEEDED(rc) ? 0 : 1;
-}
-
-
-/**
- * Access the guest property store.
- *
- * @returns 0 on success, 1 on failure
- * @note see the command line API description for parameters
- */
-static int handleGuestProperty(int argc, char *argv[],
-                               ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
-{
-    if (0 == argc)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-    if (0 == strcmp(argv[0], "get"))
-        return handleGetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
-    else if (0 == strcmp(argv[0], "set"))
-        return handleSetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
-    /* else */
-    return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-}
-
-#endif /* VBOX_WITH_GUEST_PROPS defined */
 
 enum ConvertSettings
 {

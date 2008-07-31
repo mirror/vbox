@@ -99,6 +99,9 @@ int errorArgument(const char *pszFormat, ...);
 void printUsageInternal(USAGECATEGORY u64Cmd);
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+extern void usageGuestProperty(void);
+extern int handleGuestProperty(int argc, char *argv[],
+                               ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 unsigned long VBoxSVNRev();
 
 #endif /* !___H_VBOXMANAGE */
