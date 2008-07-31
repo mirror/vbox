@@ -96,6 +96,10 @@ typedef struct VBOXDISK
     VDINTERFACE        VDIAsyncIO;
     /** Callback table for async I/O interface. */
     VDINTERFACEASYNCIO VDIAsyncIOCallbacks;
+    /** Common structure for the configuration information interface. */
+    VDINTERFACE        VDIConfig;
+    /** Callback table for the configuration information interface. */
+    VDINTERFACECONFIG  VDIConfigCallbacks;
     /** Flag whether opened disk suppports async I/O operations. */
     bool               fAsyncIOSupported;
     /** The async media interface. */
@@ -212,6 +216,54 @@ static DECLCALLBACK(int) drvvdAsyncIOTasksSubmit(void *pvUser, void *apTasks[], 
 
     return pDrvVD->pDrvTransportAsync->pfnTasksSubmit(pDrvVD->pDrvTransportAsync, apTasks, cTasks, pDrvVDAsyncTask);
 }
+
+/*******************************************************************************
+*   VD Configuration interface implementation                                  *
+*******************************************************************************/
+
+static bool drvvdCfgAreValuesValid(PVDCFGNODE pNode, const char *pszzValid)
+{
+    return CFGMR3AreValuesValid((PCFGMNODE)pNode, pszzValid);
+}
+
+static int drvvdCfgQueryType(PVDCFGNODE pNode, const char *pszName, PVDCFGVALUETYPE penmType)
+{
+    Assert(VDCFGVALUETYPE_INTEGER == CFGMVALUETYPE_INTEGER);
+    Assert(VDCFGVALUETYPE_STRING == CFGMVALUETYPE_STRING);
+    Assert(VDCFGVALUETYPE_BYTES == CFGMVALUETYPE_BYTES);
+    return CFGMR3QueryType((PCFGMNODE)pNode, pszName, (PCFGMVALUETYPE)penmType);
+}
+
+static int drvvdCfgQuerySize(PVDCFGNODE pNode, const char *pszName, size_t *pcb)
+{
+    return CFGMR3QuerySize((PCFGMNODE)pNode, pszName, pcb);
+}
+
+static int drvvdCfgQueryInteger(PVDCFGNODE pNode, const char *pszName, uint64_t *pu64)
+{
+    return CFGMR3QueryInteger((PCFGMNODE)pNode, pszName, pu64);
+}
+
+static int drvvdCfgQueryIntegerDef(PVDCFGNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
+{
+    return CFGMR3QueryInteger((PCFGMNODE)pNode, pszName, pu64);
+}
+
+static int drvvdCfgQueryString(PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString)
+{
+    return CFGMR3QueryString((PCFGMNODE)pNode, pszName, pszString, cchString);
+}
+
+static int drvvdCfgQueryStringDef(PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+{
+    return CFGMR3QueryStringDef((PCFGMNODE)pNode, pszName, pszString, cchString, pszDef);
+}
+
+static int drvvdCfgQueryBytes(PVDCFGNODE pNode, const char *pszName, void *pvData, size_t cbData)
+{
+    return CFGMR3QueryBytes((PCFGMNODE)pNode, pszName, pvData, cbData);
+}
+
 
 /*******************************************************************************
 *   Media interface methods                                                    *
@@ -505,6 +557,25 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                            &pData->VDIAsyncIOCallbacks, pData, &pData->VDIError);
     AssertRC(rc);
 
+    pData->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
+    pData->VDIConfigCallbacks.enmInterface          = VDINTERFACETYPE_CONFIG;
+    pData->VDIConfigCallbacks.pfnAreValuesValid     = drvvdCfgAreValuesValid;
+    pData->VDIConfigCallbacks.pfnQueryType          = drvvdCfgQueryType;
+    pData->VDIConfigCallbacks.pfnQuerySize          = drvvdCfgQuerySize;
+    pData->VDIConfigCallbacks.pfnQueryInteger       = drvvdCfgQueryInteger;
+    pData->VDIConfigCallbacks.pfnQueryIntegerDef    = drvvdCfgQueryIntegerDef;
+    pData->VDIConfigCallbacks.pfnQueryString        = drvvdCfgQueryString;
+    pData->VDIConfigCallbacks.pfnQueryStringDef     = drvvdCfgQueryStringDef;
+    pData->VDIConfigCallbacks.pfnQueryBytes         = drvvdCfgQueryBytes;
+
+    /** @todo TEMP! this isn't really correct - this needs to be made per image,
+     * as CFGM needs access to the right configuration node for each image.
+     * At the moment this is harmless, as iSCSI can only be used as a base
+     * image, and no other backend uses the private data for these callbacks. */
+    rc = VDInterfaceCreate(&pData->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
+                           &pData->VDIConfigCallbacks, NULL /**< @todo TEMP */, &pData->VDIAsyncIO);
+    AssertRC(rc);
+
     /* Try to attach async media port interface above.*/
     pData->pDrvMediaAsyncPort = (PPDMIMEDIAASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MEDIA_ASYNC_PORT);
 
@@ -586,10 +657,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (VBOX_SUCCESS(rc))
     {
-        rc = VDCreate(&pData->VDIAsyncIO, &pData->pDisk);
+        /** @todo TEMP! later the iSCSI config callbacks won't be included here */
+        rc = VDCreate(&pData->VDIConfig, &pData->pDisk);
         /* Error message is already set correctly. */
     }
 
+    unsigned cImages = iLevel;
     while (pCurNode && VBOX_SUCCESS(rc))
     {
         /*
@@ -639,6 +712,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fHonorZeroWrites = false;
         }
 
+        /** @todo TEMP! Later this needs to be done for each image. */
+        if (iLevel == cImages)
+        {
+            PCFGMNODE pCfg = CFGMR3GetChild(pCurNode, "VDConfig");
+            pData->VDIConfig.pvUser = pCfg; /**< @todo TEMP! */
+        }
+
         /*
          * Open the image.
          */
@@ -656,7 +736,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         rc = VDOpen(pData->pDisk, pszFormat, pszName, uOpenFlags);
         if (rc == VERR_NOT_SUPPORTED)
         {
-            /* Seems asxnc I/O is not supported by the backend, open in normal mode. */
+            /* Seems async I/O is not supported by the backend, open in normal mode. */
             uOpenFlags &= ~VD_OPEN_FLAGS_ASYNC_IO;
             rc = VDOpen(pData->pDisk, pszFormat, pszName, uOpenFlags);
         }
