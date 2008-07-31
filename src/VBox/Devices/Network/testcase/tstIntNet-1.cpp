@@ -49,7 +49,117 @@ static int      g_cErrors = 0;
 static uint64_t g_StartTS = 0;
 static uint32_t g_DhcpXID = 0;
 static bool     g_fDhcpReply = false;
+static uint32_t g_cOtherPkts = 0;
+static uint32_t g_cArpPkts = 0;
+static uint32_t g_cIpv4Pkts = 0;
+static uint32_t     g_cUdpPkts = 0;
+static uint32_t         g_cDhcpPkts = 0;
+static uint32_t     g_cTcpPkts = 0;
 
+
+/**
+ * Error reporting wrapper.
+ *
+ * @param   pErrStrm        The stream to write the error message to. Can be NULL.
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+static void tstIntNetError(PRTSTREAM pErrStrm, const char *pszFormat, ...)
+{
+    if (!pErrStrm)
+        pErrStrm = g_pStdOut;
+
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrmPrintf(pErrStrm, "tstIntNet-1: ERROR - ");
+    RTStrmPrintfV(pErrStrm, pszFormat, va);
+    va_end(va);
+
+    g_cErrors++;
+}
+
+
+/**
+ * Parses a frame an runs in thru the RTNet validation code so it gets
+ * some exercise.
+ *
+ * @param   pvFrame     Pointer to the ethernet frame.
+ * @param   cbFrame     The size of the ethernet frame.
+ * @param   pErrStrm    The error stream.
+ */
+static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pErrStrm)
+{
+    /*
+     * Ethernet header.
+     */
+    PCRTNETETHERHDR pEtherHdr = (PCRTNETETHERHDR)pvFrame;
+    if (cbFrame <= sizeof(*pEtherHdr))
+        return tstIntNetError(pErrStrm, "cbFrame=%#x <= %#x (ether)\n", cbFrame, sizeof(*pEtherHdr));
+    ssize_t cbLeft = cbFrame - sizeof(*pEtherHdr);
+    uint8_t const *pbCur = (uint8_t const *)(pEtherHdr + 1);
+
+    switch (RT_BE2H_U16(pEtherHdr->EtherType))
+    {
+        case RTNET_ETHERTYPE_ARP:
+        {
+            g_cArpPkts++;
+
+            break;
+        }
+
+        case RTNET_ETHERTYPE_IPV4:
+        {
+            g_cIpv4Pkts++;
+
+            PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)pbCur;
+            if (!RTNetIPv4IsHdrValid(pIpHdr, cbLeft, cbLeft))
+                return tstIntNetError(pErrStrm, "RTNetIPv4IsHdrValid failed\n");
+            pbCur += pIpHdr->ip_hl * 4;
+            cbLeft -= pIpHdr->ip_hl * 4;
+            AssertFatal(cbLeft >= 0);
+
+            switch (pIpHdr->ip_p)
+            {
+                case RTNETIPV4_PROT_ICMP:
+                {
+                    break;
+                }
+
+                case RTNETIPV4_PROT_UDP:
+                {
+                    g_cUdpPkts++;
+                    PCRTNETUDP pUdpHdr = (PCRTNETUDP)pbCur;
+                    if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbLeft))
+                        return tstIntNetError(pErrStrm, "RTNetIPv4IsUDPValid failed\n");
+                    pbCur += sizeof(*pUdpHdr);
+                    cbLeft -= sizeof(*pUdpHdr);
+
+                    if (RT_BE2H_U16(pUdpHdr->uh_dport) == RTNETIPV4_PORT_BOOTPS)
+                    {
+                        g_cDhcpPkts++;
+
+                    }
+                    break;
+                }
+
+                case RTNETIPV4_PROT_TCP:
+                {
+                    g_cTcpPkts++;
+                    PCRTNETTCP pTcpHdr = (PCRTNETTCP)pbCur;
+                    if (!RTNetIPv4IsTCPValid(pIpHdr, pTcpHdr, cbLeft, NULL, cbLeft))
+                        return tstIntNetError(pErrStrm, "RTNetIPv4IsTCPValid failed\n");
+                    break;
+                }
+            }
+            break;
+        }
+
+        //case RTNET_ETHERTYPE_IPV6:
+        default:
+            g_cOtherPkts++;
+            break;
+    }
+}
 
 
 /**
@@ -154,16 +264,26 @@ static int tstIntNetWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const v
  * @param   pvFrame         The frame without a crc.
  * @param   cbFrame         The size of it.
  * @param   pFileRaw        The file to write the raw data to (optional).
+ * @param   pFileText       The file to write a textual packet summary to (optional).
  */
-static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, void *pvFrame, size_t cbFrame, PRTSTREAM pFileRaw)
+static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, void *pvFrame, size_t cbFrame, PRTSTREAM pFileRaw, PRTSTREAM pFileText)
 {
     /*
-     * Calcuate and append the checksum.
+     * Log it.
      */
-    uint32_t u32Crc = RTCrc32(pvFrame, cbFrame);
-    u32Crc = RT_H2LE_U32(u32Crc); /* huh? */
-    memcpy((uint8_t *)pvFrame + cbFrame, &u32Crc, sizeof(u32Crc));
-    cbFrame += sizeof(u32Crc);
+    if (pFileText)
+    {
+        PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
+        uint64_t    NanoTS = RTTimeNanoTS() - g_StartTS;
+        RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x Send!\n",
+                     NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
+                     cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->EtherType));
+    }
+
+    /*
+     * Run in thru the frame validator to test the RTNet code.
+     */
+    tstIntNetTestFrame(pvFrame, cbFrame, pFileText);
 
     /*
      * Write the frame and push the queue.
@@ -206,8 +326,9 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
  * @param   pBuf            The shared interface buffer.
  * @param   pSrcMac         The mac address to use as source.
  * @param   pFileRaw        The file to write the raw data to (optional).
+ * @param   pFileText       The file to write a textual packet summary to (optional).
  */
-static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw)
+static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw, PRTSTREAM pFileText)
 {
     uint8_t abFrame[4096];
     PRTNETETHERHDR      pEthHdr  = (PRTNETETHERHDR)&abFrame[0];
@@ -292,7 +413,7 @@ static void doXmitText(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     pEthHdr->SrcMac = *pSrcMac;
     pEthHdr->EtherType = RT_H2BE_U16(RTNET_ETHERTYPE_IPV4); /* IP */
 
-    doXmitFrame(hIf, pSession, pBuf, &abFrame[0], (uint8_t *)(pDhcpMsg + 1) - (uint8_t *)&abFrame[0], pFileRaw);
+    doXmitFrame(hIf, pSession, pBuf, &abFrame[0], (uint8_t *)(pDhcpMsg + 1) - (uint8_t *)&abFrame[0], pFileRaw, pFileText);
 }
 
 
@@ -359,6 +480,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
                                  cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->EtherType),
                                  !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
+                tstIntNetTestFrame(pvFrame, cbFrame, pFileText);
 
                 /* Loop for the DHCP reply. */
                 if (    cbFrame > 64
@@ -408,6 +530,10 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                  pBuf->cStatYieldsOk.c,
                  pBuf->cStatYieldsNok.c
                  );
+    RTStrmPrintf(pFileText ? pFileText : g_pStdOut,
+                 "%3RU64.%09u: cOtherPkts=%RU32 cArpPkts=%RU32 cIpv4Pkts=%RU32 cTcpPkts=%RU32 cUdpPkts=%RU32 cDhcpPkts=%RU32\n",
+                 NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
+                 g_cOtherPkts, g_cArpPkts, g_cIpv4Pkts, g_cTcpPkts, g_cUdpPkts, g_cDhcpPkts);
 }
 
 
@@ -668,7 +794,7 @@ int main(int argc, char **argv)
                      * Do the transmit test first and so we can sniff for the response.
                      */
                     if (fXmitTest)
-                        doXmitText(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw);
+                        doXmitTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);
 
                     /*
                      * Either enter sniffing mode or do a timeout thing.
