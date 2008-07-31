@@ -31,6 +31,8 @@
  *
  * Inherit from this class in order to prevent automatic generation
  * of the copy constructor and assignment operator in your class.
+ * @note r=michael This is a rather generic class which is useful in a lot of
+ *                 situations - does it belong here?
  */
 class RTCNonCopyable
 {
@@ -48,6 +50,8 @@ private:
  * IPRT type must be compared to see if it is invalid.
  *
  * @warning This template *must* be specialised for the types it is to work with.
+ * @note r=michael This could also be used in other contexts to get the value
+ *                 of the nil handle for a type.
  */
 template <class T>
 inline T RTAutoResNil(void)
@@ -56,6 +60,12 @@ inline T RTAutoResNil(void)
     return (T)0;
 }
 
+/** Specialisation of RTAutoResNil for RTFILE */
+template <>
+inline RTFILE RTAutoResNil(void)
+{
+    return NIL_RTFILE;
+}
 
 /**
  * A function template which calls the correct destructor for an IPRT type.
@@ -68,7 +78,6 @@ inline void RTAutoResDestruct(T aHandle)
     AssertFatalMsgFailed(("Unspecialized template!\n"));
     NOREF(aHandle);
 }
-
 
 /**
  * An auto pointer-type class for resources which take a C-style destructor
@@ -88,11 +97,11 @@ inline void RTAutoResDestruct(T aHandle)
  *
  * @param   T           The type of the resource.
  * @param   Destruct    The function to be used to free the resource.
- *                      This is *not* optional, the default is there for
- *                      working around compiler issues (?).
+ *                      This parameter must be supplied if there is no
+ *                      specialisation of RTAutoDestruct available for @a T. 
  * @param   NilRes      The function returning the NIL value for T. Required.
- *                      This is *not* optional, the default is there for
- *                      working around compiler issues (?).
+ *                      This parameter must be supplied if there is no
+ *                      specialisation of RTAutoResNil available for @a T. 
  *
  * @note    The class can not be initialised directly using assignment, due
  *          to the lack of a copy constructor. This is intentional.
