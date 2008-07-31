@@ -40,7 +40,7 @@ VBoxManage_DEFS.win    = _WIN32_WINNT=0x0500
 VBoxManage_SOURCES     = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProps.cpp) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	VBoxManageSVN.cpp
 VBoxManage_LIBS       += $(LIB_DDU)
 
