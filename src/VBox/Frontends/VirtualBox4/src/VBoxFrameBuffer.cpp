@@ -359,7 +359,8 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
         mPM = QPixmap::fromImage (QImage (mImg.scanLine (r.y() + mView->contentsY()),
                                   mImg.width(), r.height(), mImg.bytesPerLine(),
                                   QImage::Format_RGB32));
-        painter.drawPixmap (r.x() + mView->contentsX(), r.y(), mPM);
+        painter.drawPixmap (r.x(), r.y(), mPM,
+                            r.x() + mView->contentsX(), 0, 0, 0);
     }
 
     FRAMEBUF_DEBUG_STOP (xxx, r.width(), r.height());
