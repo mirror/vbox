@@ -26,6 +26,7 @@
 
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
+#include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 
 #include <VBox/com/VirtualBox.h>
@@ -44,6 +45,9 @@ void usageGuestProperty(void)
              "\n");
     RTPrintf("VBoxManage guestproperty    set <vmname>|<uuid>\n"
              "                            <property> [<value>] [-flags <flags>]\n"
+             "\n");
+    RTPrintf("VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
+             "                            [-patterns <patterns>]\n"
              "\n");
 }
 
@@ -148,6 +152,81 @@ static int handleSetGuestProperty(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+/**
+ * Enumerates the properties in the guest property store.
+ *
+ * @returns 0 on success, 1 on failure
+ * @note see the command line API description for parameters
+ */
+static int handleEnumGuestProperty(int argc, char *argv[],
+                                   ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+/*
+ * Check the syntax.  We can deduce the correct syntax from the number of
+ * arguments.
+ */
+    const char *paszPatterns = NULL;
+    if ((argc > 2) && (0 == strcmp(argv[0], "-patterns")))
+        paszPatterns = argv[1];
+    else if (argc != 1)
+        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+
+/*
+ * Count the size of the patterns and pack them.
+ */
+    size_t cchPatterns = 0;
+    if (argc > 2)
+        for (int i = 1; i < argc; ++i)
+            cchPatterns += strlen(argv[i]) + 1;
+    Utf8Str Utf8Patterns(cchPatterns);
+    if ((cchPatterns > 0) && Utf8Patterns.isNull())
+        return errorArgument ("out of memory");
+    char *pszPatterns = Utf8Patterns.mutableRaw();
+    size_t iPatterns = 0;
+    if (argc > 2)
+    {
+        for (int i = 1; i < argc; ++i)
+        {
+            strcpy(pszPatterns + iPatterns, argv[i]);
+            iPatterns += strlen(argv[i]) + 1;
+            pszPatterns[iPatterns - 1] = ',';
+        }
+        pszPatterns[iPatterns - 1] = '\0';
+    }
+
+/*
+ * Make the actual call to Main.
+ */
+    ComPtr<IMachine> machine;
+    /* assume it's a UUID */
+    HRESULT rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    if (FAILED(rc) || !machine)
+    {
+        /* must be a name */
+        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+    }
+    if (machine)
+    {
+        com::SafeArray <BSTR> names;
+        com::SafeArray <BSTR> values;
+        com::SafeArray <ULONG64> timestamps;
+        com::SafeArray <BSTR> flags;
+        CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns),
+                                                      ComSafeArrayAsOutParam(names),
+                                                      ComSafeArrayAsOutParam(values),
+                                                      ComSafeArrayAsOutParam(timestamps),
+                                                      ComSafeArrayAsOutParam(flags)));
+        if (SUCCEEDED(rc))
+        {
+            if (names.size() == 0)
+                RTPrintf("No properties found.\n");
+            for (unsigned i = 0; i < names.size(); ++i)
+                RTPrintf("Name: %lS, value: %lS, timestamp: %lld, flags: %lS\n",
+                         names[i], values[i], timestamps[i], flags[i]);
+        }
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
 
 /**
  * Access the guest property store.
@@ -164,6 +243,8 @@ int handleGuestProperty(int argc, char *argv[],
         return handleGetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
     else if (0 == strcmp(argv[0], "set"))
         return handleSetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
+    else if (0 == strcmp(argv[0], "enumerate"))
+        return handleEnumGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
     /* else */
     return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 }
