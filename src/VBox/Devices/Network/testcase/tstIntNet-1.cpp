@@ -137,7 +137,9 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
                     if (RT_BE2H_U16(pUdpHdr->uh_dport) == RTNETIPV4_PORT_BOOTPS)
                     {
                         g_cDhcpPkts++;
-
+                        PCRTNETBOOTP pDhcp = (PCRTNETBOOTP)pbCur;
+                        if (!RTNetIPv4IsDHCPValid(pUdpHdr, pDhcp, cbLeft, NULL))
+                            return tstIntNetError(pErrStrm, "RTNetIPv4IsDHCPValid failed\n");
                     }
                     break;
                 }
