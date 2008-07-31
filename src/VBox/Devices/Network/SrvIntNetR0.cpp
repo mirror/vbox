@@ -325,6 +325,39 @@ static DECLCALLBACK(int) intnetR0IfRetainHandle(RTHANDLETABLE hHandleTable, void
 
 
 /**
+ * Checks if the IPv4 address is a broadcast address.
+ * @returns true/false.
+ * @param   Addr        The address, network endian.
+ */
+DECLINLINE(bool) intnetR0IPv4AddrIsBroadcast(RTNETADDRIPV4 Addr)
+{
+    /* Just check for 255.255.255.255 atm. */
+    return Addr.u == UINT32_MAX;
+}
+
+
+/**
+ * Checks if the IPv4 address is a good interface address.
+ * @returns true/false.
+ * @param   Addr        The address, network endian.
+ */
+DECLINLINE(bool) intnetR0IPv4AddrIsGood(RTNETADDRIPV4 Addr)
+{
+    /* Usual suspects. */
+    if (    Addr.u == UINT32_MAX    /* 255.255.255.255 - broadcast. */
+        ||  Addr.au8[0] == 0)       /* Current network, can be used as source address. */
+        return false;
+
+    /* Unusual suspects. */
+    if (RT_UNLIKELY(     Addr.au8[0]        == 127  /* Loopback */
+                    ||  (Addr.au8[0] & 0xf0 == 224) /* Multicast */
+                    ))
+        return false;
+    return true;
+}
+
+
+/**
  * Gets the address size of a network layer type.
  *
  * @returns size in bytes.
@@ -719,6 +752,26 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
 
 
 /**
+ * Snoops IP assignments and releases from the DHCPv4 trafik.
+ *
+ * The caller is responsible for making sure this trafik between the
+ * BOOTPS and BOOTPC ports and validate the IP header. The UDP packet
+ * need not be validated beyond the ports.
+ *
+ * @param   pNetwork        The network this frame was seen on.
+ * @param   pIpHdr          Pointer to a valid IP header. This is for pseudo
+ *                          header validation, so only the minimum header size
+ *                          needs to be available and valid here.
+ * @param   pUdpHdr         Pointer to the UDP header in the frame.
+ * @param   cbUdpPkt        What's left of the frame when starting at the UDP header.
+ */
+static void intnetR0NetworkSnoopDHCP(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, uint32_t cbUdpPkt)
+{
+    /** @todo later */
+}
+
+
+/**
  * Deals with an IPv4 packet.
  *
  * This will fish out the source IP address and add it to the cache.
@@ -726,91 +779,99 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
  * that we migh find useful later.
  *
  * @param   pIf             The interface that's sending the frame.
- * @param   pHdr            Pointer to the IPv4 header in the frame.
+ * @param   pIpHdr          Pointer to the IPv4 header in the frame.
  * @param   cbPacket        The size of the packet, or more correctly the
  *                          size of the frame without the ethernet header.
  */
-static void intnetR0IfSniffIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pHdr, uint32_t cbPacket)
+static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uint32_t cbPacket)
 {
     /*
-     * Check the header size.
+     * Check the header size first to prevent access invalid data.
      */
-    if (cbPacket < RT_UOFFSETOF(RTNETIPV4, ip_options)) /** @todo check minimum size requirements here. */
+    if (cbPacket < RTNETIPV4_MIN_LEN)
         return;
-    uint32_t cbHdr = (uint32_t)pHdr->ip_hl * 4;
+    uint32_t cbHdr = (uint32_t)pIpHdr->ip_hl * 4;
     if (    cbHdr < RT_UOFFSETOF(RTNETIPV4, ip_options)
         ||  cbPacket < cbHdr)
         return;
 
     /*
-     * Ignore 255.255.255.255 (broadcast), 0.0.0.0 (null) and already cached addresses.
+     * Ignore non good IP address (like broadcast and my network),
+     * also skip packets containing address that are already in the
+     * cache. Don't ignore potential DHCP trafik though.
      */
+    bool fValidatedIpHdr = false;
     RTNETADDRU Addr;
-    Addr.IPv4 = pHdr->ip_src;
-    if (Addr.au32[0] == UINT32_C(0xffffffff))
-        return;
-
-    int i = -1;
-    if (    Addr.au32[0] == 0
-        || (i = intnetR0IfAddrCacheLookupLikely(&pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pHdr->ip_src))) >= 0)
+    Addr.IPv4 = pIpHdr->ip_src;
+    if (    intnetR0IPv4AddrIsGood(Addr.IPv4)
+        &&  intnetR0IfAddrCacheLookupLikely(&pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(Addr.IPv4)) < 0)
     {
-#if 0 /** @todo quick DHCP check? */
-        if (pHdr->ip_p != RTNETIPV4_PROT_UDP)
+        /*
+         * Got a candidate, check that the IP header is valid before adding it.
+         */
+        if (!RTNetIPv4IsHdrValid(pIpHdr, cbPacket, cbPacket))
+        {
+            Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header\n"));
             return;
-#endif
-        return;
+        }
+        intnetR0IfAddrCacheAddIt(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr);
+        fValidatedIpHdr = true;
     }
 
     /*
-     * Check the header checksum.
+     * Check for potential DHCP packets.
      */
-    /** @todo IP checksumming */
-
-    /*
-     * Add the source address.
-     */
-    if (i < 0)
-        intnetR0IfAddrCacheAddIt(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr);
-
-    /*
-     * Check for DHCP (properly this time).
-     */
-    /** @todo DHCPRELEASE request? */
+    if (    pIpHdr->ip_p == RTNETIPV4_PROT_UDP                              /* DHCP is UDP. */
+        &&  cbPacket >= cbHdr + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN) /* Min DHCP packet len */
+    {
+        PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint8_t const *)pIpHdr + cbHdr);
+        if (    (   RT_BE2H_U16(pUdpHdr->uh_dport) == RTNETIPV4_PORT_BOOTPS
+                 || RT_BE2H_U16(pUdpHdr->uh_sport) == RTNETIPV4_PORT_BOOTPS)
+            &&  (   RT_BE2H_U16(pUdpHdr->uh_sport) == RTNETIPV4_PORT_BOOTPC
+                 || RT_BE2H_U16(pUdpHdr->uh_dport) == RTNETIPV4_PORT_BOOTPC))
+        {
+            if (    fValidatedIpHdr
+                ||  RTNetIPv4IsHdrValid(pIpHdr, cbPacket, cbPacket))
+                intnetR0NetworkSnoopDHCP(pIf->pNetwork, pIpHdr, pUdpHdr, cbPacket - cbHdr);
+            else
+                Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header (dhcp)\n"));
+        }
+    }
 }
 
 
-
 /**
- * Sniff up source addresses from an ARP request or reply.
+ * Snoop up source addresses from an ARP request or reply.
  *
  * @param   pIf             The interface that's sending the frame.
  * @param   pHdr            The ARP header.
  * @param   cbPacket        The size of the packet (migth be larger than the ARP
  *                          request 'cause of min ethernet frame size).
  */
-static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket)
+static void intnetR0IfSnoopArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket)
 {
     /*
-     * Ignore malformed packets and packets which doesn't interrest us.
+     * Ignore malformed packets and packets which doesn't interest us.
      */
     if (RT_UNLIKELY(    cbPacket <= sizeof(*pHdr)
                     ||  pHdr->ar_hlen != sizeof(PDMMAC)
-                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)
-                    ||  (   pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REQUEST)
-                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REPLY)
-                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REVREQUEST)
-                         && pHdr->ar_oper != RT_H2BE_U16(RTNET_ARPOP_REVREPLY)
-                         /** @todo Read up on inverse ARP. */
-                        )
-                   )
-       )
+                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
+        return;
+    uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
+    if (RT_UNLIKELY(    ar_oper != RTNET_ARPOP_REQUEST
+                    &&  ar_oper != RTNET_ARPOP_REPLY
+                    &&  ar_oper != RTNET_ARPOP_REVREQUEST
+                    &&  ar_oper != RTNET_ARPOP_REVREPLY
+                    /** @todo Read up on inverse ARP. */
+                   ))
         return;
 
     /*
      * Deal with the protocols.
      */
     RTNETADDRU Addr;
-    if (pHdr->ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
+    uint16_t ar_ptype = RT_H2BE_U16(pHdr->ar_ptype);
+    if (ar_ptype == RTNET_ETHERTYPE_IPV4)
     {
         /*
          * IPv4.
@@ -818,11 +879,11 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
         PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
         if (RT_UNLIKELY(    pHdr->ar_plen == sizeof(pReq->ar_spa)
                         ||  cbPacket < sizeof(*pReq)
-                        ||  pReq->ar_spa.u == 0 /** @todo add an inline function for checking that an IP address is worth caching. */
-                        ||  pReq->ar_spa.u == UINT32_C(0xffffffff)))
+                        ||  !intnetR0IPv4AddrIsGood(pReq->ar_spa)))
             return;
 
-        if (RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
+        if (    RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper))
+            &&  intnetR0IPv4AddrIsGood(pReq->ar_tpa))
         {
             Addr.IPv4 = pReq->ar_tpa;
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_tpa));
@@ -830,7 +891,8 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
         Addr.IPv4 = pReq->ar_spa;
         intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_spa));
     }
-    else if (pHdr->ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+#if 0 /** @todo IPv6 support */
+    else if (ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
     {
         /*
          * IPv6.
@@ -838,11 +900,11 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
         PCINTNETARPIPV6 pReq = (PCINTNETARPIPV6)pHdr;
         if (RT_UNLIKELY(    pHdr->ar_plen == sizeof(pReq->ar_spa)
                         ||  cbPacket < sizeof(*pReq)
-                        /** @todo IPv6 ||  pReq->ar_spa.au32[0] == 0 or something
-                        ||  pReq->ar_spa.au32[0] == UINT32_C(0xffffffff)*/))
+                        ||  !intnetR0IPv6AddrIsGood(&pReq->ar_spa)))
             return;
 
-        if (RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper)))
+        if (    RTNET_ARPOP_IS_REPLY(RT_BE2H_U16(pHdr->ar_oper))
+            &&  intnetR0IPv6AddrIsGood(&pReq->ar_tpa))
         {
             Addr.IPv6 = pReq->ar_tpa;
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_tpa));
@@ -850,8 +912,9 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
         Addr.IPv6 = pReq->ar_spa;
         intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_spa));
     }
+#endif
     else
-        Log(("intnetR0IfSniffArpSourceAddr: unknown ar_ptype=%#x\n", RT_BE2H_U16(pHdr->ar_ptype)));
+        Log(("intnetR0IfSnoopArpSourceAddr: unknown ar_ptype=%#x\n", ar_ptype));
 }
 
 
@@ -864,7 +927,7 @@ static void intnetR0IfSniffArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
  * @param   pbFrame         The frame.
  * @param   cbFrame         The size of the frame.
  */
-static void intnetR0IfSniffSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t cbFrame)
+static void intnetR0ISnoopSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t cbFrame)
 {
     /*
      * Fish out the ethertype and look for stuff we can handle.
@@ -873,22 +936,22 @@ static void intnetR0IfSniffSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uin
         return;
     cbFrame -= sizeof(RTNETETHERHDR);
 
-    uint16_t EtherType = ((PCRTNETETHERHDR)pbFrame)->EtherType;
-    if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
-        intnetR0IfSniffIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+    uint16_t EtherType = RT_H2BE_U16(((PCRTNETETHERHDR)pbFrame)->EtherType);
+    if (EtherType == RTNET_ETHERTYPE_IPV4)
+        intnetR0IfSnoopIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
-    else if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
-        intnetR0IfSniffIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+    else if (EtherType == RTNET_ETHERTYPE_IPV6)
+        intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #endif
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
-    else if (   EtherType == RT_H2BE_U16(0x8037) //??
-             || EtherType == RT_H2BE_U16(0x8137) //??
+    else if (   EtherType == RT_H2BE_U16(0x8137) //??
              || EtherType == RT_H2BE_U16(0x8138) //??
+             || EtherType == RT_H2BE_U16(0x8037) //??
              )
-        intnetR0IfSniffIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+        intnetR0IfSnoopIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 #endif
     else if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
-        intnetR0IfSniffArpSourceAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+        intnetR0IfSnoopArpSourceAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
 }
 
 
@@ -1560,7 +1623,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
             if (pvCurFrame)
             {
                 if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                    intnetR0IfSniffSourceAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame);
+                    intnetR0ISnoopSourceAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame);
                 intnetR0SgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
                 intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
             }
