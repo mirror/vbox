@@ -897,7 +897,7 @@ static void
 vbi_stimer_func(void *arg)
 {
 	vbi_stimer_t *t = arg;
-	t->s_func(t->s_arg, t->s_tick++);
+	t->s_func(t->s_arg, ++t->s_tick);
 }
 
 extern vbi_stimer_t *
@@ -968,7 +968,7 @@ static void
 vbi_gtimer_func(void *arg)
 {
 	vbi_gtimer_t *t = arg;
-	t->g_func(t->g_arg, t->g_counters[CPU->cpu_id]);
+	t->g_func(t->g_arg, ++t->g_counters[CPU->cpu_id]);
 }
 
 /*
