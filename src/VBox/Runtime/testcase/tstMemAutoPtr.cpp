@@ -52,36 +52,10 @@ typedef struct TSTMEMAUTOPTRSTRUCT
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+#ifndef TST_MEM_AUTO_PTR_ONLY_DISAS
 static unsigned g_cErrors = 0;
 static unsigned g_cFrees;
-
-
-
-template <class T>
-void tstMemAutoPtrDestructorCounter(T *aMem)
-{
-    if (aMem == NULL)
-    {
-        RTPrintf("tstMemAutoPtr(%d): Destructor called with NILL handle!\n");
-        g_cErrors++;
-    }
-    else if (!VALID_PTR(aMem))
-    {
-        RTPrintf("tstMemAutoPtr(%d): Destructor called with a bad handle %p\n", aMem);
-        g_cErrors++;
-    }
-    RTMemEfFree(aMem);
-    g_cFrees++;
-}
-
-
-void *tstMemAutoPtrAllocatorNoZero(void *pvOld, size_t cbNew)
-{
-    void *pvNew = RTMemRealloc(pvOld, cbNew);
-    if (pvNew)
-        memset(pvNew, 0xfe, cbNew);
-    return pvNew;
-}
+#endif
 
 
 /*
@@ -90,7 +64,7 @@ void *tstMemAutoPtrAllocatorNoZero(void *pvOld, size_t cbNew)
  */
 extern "C" int tstMemAutoPtrDisas1(void **ppv)
 {
-    RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
+    register RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
     if (!Handle)
     {
         Handle->a = RTRandU32();
@@ -120,6 +94,35 @@ extern "C" int tstMemAutoPtrDisas1PureC(void **ppv)
         RTMemFree(pHandle);
     }
     return VERR_TRY_AGAIN;
+}
+
+
+#ifndef TST_MEM_AUTO_PTR_ONLY_DISAS
+
+template <class T>
+void tstMemAutoPtrDestructorCounter(T *aMem)
+{
+    if (aMem == NULL)
+    {
+        RTPrintf("tstMemAutoPtr(%d): Destructor called with NILL handle!\n");
+        g_cErrors++;
+    }
+    else if (!VALID_PTR(aMem))
+    {
+        RTPrintf("tstMemAutoPtr(%d): Destructor called with a bad handle %p\n", aMem);
+        g_cErrors++;
+    }
+    RTMemEfFree(aMem);
+    g_cFrees++;
+}
+
+
+void *tstMemAutoPtrAllocatorNoZero(void *pvOld, size_t cbNew)
+{
+    void *pvNew = RTMemRealloc(pvOld, cbNew);
+    if (pvNew)
+        memset(pvNew, 0xfe, cbNew);
+    return pvNew;
 }
 
 
@@ -289,3 +292,4 @@ int main()
         RTPrintf("tstMemAutoPtr: FAILED - %d errors\n", g_cErrors);
     return !!g_cErrors;
 }
+#endif /* TST_MEM_AUTO_PTR_ONLY_DISAS */
