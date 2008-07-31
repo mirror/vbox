@@ -190,11 +190,20 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 /** @name IPv4 Protocol Numbers
  * @{ */
 /** IPv4: ICMP */
-#define RTNETIPV4_PROT_ICMP (0)
+#define RTNETIPV4_PROT_ICMP     (0)
 /** IPv4: TCP */
-#define RTNETIPV4_PROT_TCP  (6)
+#define RTNETIPV4_PROT_TCP      (6)
 /** IPv4: UDP */
-#define RTNETIPV4_PROT_UDP  (17)
+#define RTNETIPV4_PROT_UDP      (17)
+/** @} */
+
+/** @name Common IPv4 Port Assignments
+ * @{
+ */
+/** Boostrap Protocol / DHCP) Server. */
+#define RTNETIPV4_PORT_BOOTPS   (67)
+/** Boostrap Protocol / DHCP) Client. */
+#define RTNETIPV4_PORT_BOOTPC   (68)
 /** @} */
 
 RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr);
@@ -324,6 +333,9 @@ typedef RTNETTCP const *PCRTNETTCP;
 #define RTNETTCP_MIN_LEN    (20)
 
 RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum);
+RTDECL(uint16_t) RTNetIPv4TCPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, void const *pvData);
+RTDECL(bool)     RTNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, size_t cbPktMax);
+RTDECL(bool)     RTNetIPv4IsTCPValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, void const *pvData, size_t cbPktMax);
 
 
 /**

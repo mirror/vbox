@@ -454,3 +454,97 @@ RTDECL(bool) RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void co
 }
 
 
+/**
+ * Calculates the checksum for the TCP header given the IP header,
+ * TCP header and payload.
+ *
+ * @returns The checksum (network endian).
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ * @param   pTcpHdr         Pointer to the TCP header, in network endian (big).
+ * @param   pvData          Pointer to the TCP payload. The size is taken from the
+ *                          TCP header and the caller is supposed to have validated
+ *                          this before calling.
+ *                          If NULL then we assume the data follows immediately after
+ *                          the TCP header.
+ */
+RTDECL(uint16_t) RTNetIPv4TCPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, void const *pvData)
+{
+    uint32_t u32Sum = rtNetIPv4PseudoChecksum(pIpHdr);
+    u32Sum = rtNetIPv4AddTCPChecksum(pTcpHdr, u32Sum);
+    bool fOdd = false;
+    size_t cbData = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4 - pTcpHdr->th_off * 4;
+    u32Sum = rtNetIPv4AddDataChecksum(pvData ? pvData : (uint8_t const *)pTcpHdr + pTcpHdr->th_off * 4,
+                                      cbData, u32Sum, &fOdd);
+    return rtNetIPv4FinalizeChecksum(u32Sum);
+}
+
+
+/**
+ * Verficiation of a TCP header.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pTcpHdr         Pointer to the TCP header, in network endian (big).
+ * @param   cbHdrMax        The max TCP header size (what pTcpHdr points to).
+ * @param   cbPktMax        The max TCP packet size, TCP header and payload (data).
+ */
+DECLINLINE(bool) rtNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, size_t cbPktMax)
+{
+    Assert(cbPktMax >= cbHdrMax);
+
+    /*
+     * Size validations.
+     */
+    if (RT_UNLIKELY(cbPktMax < RTNETTCP_MIN_LEN))
+        return false;
+    size_t cbTcpHdr = pTcpHdr->th_off * 4;
+    if (RT_UNLIKELY(cbTcpHdr > cbHdrMax))
+        return false;
+    size_t cbTcp = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4;
+    if (RT_UNLIKELY(cbTcp > cbPktMax))
+        return false;
+    return true;
+}
+
+
+/**
+ * Simple verficiation of an TCP packet size.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pTcpHdr         Pointer to the TCP header, in network endian (big).
+ * @param   cbHdrMax        The max TCP header size (what pTcpHdr points to).
+ * @param   cbPktMax        The max TCP packet size, TCP header and payload (data).
+ */
+RTDECL(bool) RTNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, size_t cbPktMax)
+{
+    return rtNetIPv4IsTCPSizeValid(pIpHdr, pTcpHdr, cbHdrMax, cbPktMax);
+}
+
+
+/**
+ * Simple verficiation of an TCP packet (size + checksum).
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
+ *                          This is assumed to be valid and the minimum size being mapped.
+ * @param   pTcpHdr         Pointer to the TCP header, in network endian (big).
+ * @param   cbHdrMax        The max TCP header size (what pTcpHdr points to).
+ * @param   pvData          Pointer to the data, assuming it's one single segment
+ *                          and that cbPktMax - sizeof(RTNETTCP) is mapped here.
+ *                          If NULL then we assume the data follows immediately after
+ *                          the TCP header.
+ * @param   cbPktMax        The max TCP packet size, TCP header and payload (data).
+ */
+RTDECL(bool) RTNetIPv4IsTCPValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, void const *pvData, size_t cbPktMax)
+{
+    if (RT_UNLIKELY(!rtNetIPv4IsTCPSizeValid(pIpHdr, pTcpHdr, cbHdrMax, cbPktMax)))
+        return false;
+    uint16_t u16Sum = RTNetIPv4TCPChecksum(pIpHdr, pTcpHdr, pvData);
+    if (RT_UNLIKELY(pTcpHdr->th_sum != u16Sum))
+        return false;
+    return true;
+}
+
