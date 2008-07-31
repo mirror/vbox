@@ -103,7 +103,6 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
         case RTNET_ETHERTYPE_ARP:
         {
             g_cArpPkts++;
-
             break;
         }
 
@@ -122,6 +121,7 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
             {
                 case RTNETIPV4_PROT_ICMP:
                 {
+                    /** @todo ICMP? */
                     break;
                 }
 
