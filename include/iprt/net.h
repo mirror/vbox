@@ -327,6 +327,106 @@ RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum);
 
 
 /**
+ * IPv4 ICMP packet header.
+ */
+#pragma pack(1)
+typedef struct RTNETICMPV4HDR
+{
+    /** 00 - The ICMP message type. */
+    uint8_t         icmp_type;
+    /** 01 - Type specific code that further qualifies the message. */
+    uint8_t         icmp_code;
+    /** 02 - Checksum of the ICMP message. */
+    uint16_t        icmp_cksum;
+} RTNETICMPV4HDR;
+#pragma pack(0)
+AssertCompileSize(RTNETICMPV4HDR, 4);
+/** Pointer to an ICMP packet header. */
+typedef RTNETICMPV4HDR *PRTNETICMPV4HDR;
+/** Pointer to a const ICMP packet header. */
+typedef RTNETICMPV4HDR const *PCRTNETICMPV4HDR;
+
+/** @name ICMP (v4) message types.
+ * @{  */
+#define RTNETICMPV4_TYPE_ECHO_REPLY     0
+#define RTNETICMPV4_TYPE_ECHO_REQUEST   8
+#define RTNETICMPV4_TYPE_TRACEROUTE     30
+/** @} */
+
+/**
+ * IPv4 ICMP ECHO Reply & Request packet.
+ */
+#pragma pack(1)
+typedef struct RTNETICMPV4ECHO
+{
+    /** 00 - The ICMP header. */
+    RTNETICMPV4HDR  Hdr;
+    /** 04 - The identifier to help the requestor match up the reply.
+     *       Can be 0. Typically fixed value. */
+    uint16_t        icmp_id;
+    /** 06 - The sequence number to help the requestor match up the reply.
+     *       Can be 0. Typically incrementing between requests. */
+    uint16_t        icmp_seq;
+    /** 08 - Variable length data that is to be returned unmodified in the reply. */
+    uint8_t         icmp_data[1];
+} RTNETICMPV4ECHO;
+#pragma pack(0)
+AssertCompileSize(RTNETICMPV4ECHO, 9);
+/** Pointer to an ICMP ECHO packet. */
+typedef RTNETICMPV4ECHO *PRTNETICMPV4ECHO;
+/** Pointer to a const ICMP ECHO packet. */
+typedef RTNETICMPV4ECHO const *PCRTNETICMPV4ECHO;
+
+/**
+ * IPv4 ICMP TRACEROUTE packet.
+ * This is an reply to an IP packet with the traceroute option set.
+ */
+#pragma pack(1)
+typedef struct RTNETICMPV4TRACEROUTE
+{
+    /** 00 - The ICMP header. */
+    RTNETICMPV4HDR  Hdr;
+    /** 04 - Identifier copied from the traceroute option's ID number. */
+    uint16_t        icmp_id;
+    /** 06 - Unused. (Possibly an icmp_seq?) */
+    uint16_t        icmp_void;
+    /** 08 - Outbound hop count. From the IP packet causing this message. */
+    uint16_t        icmp_ohc;
+    /** 0a - Return hop count. From the IP packet causing this message. */
+    uint16_t        icmp_rhc;
+    /** 0c - Output link speed, 0 if not known. */
+    uint32_t        icmp_speed;
+    /** 10 - Output link MTU, 0 if not known. */
+    uint32_t        icmp_mtu;
+} RTNETICMPV4TRACEROUTE;
+#pragma pack(0)
+AssertCompileSize(RTNETICMPV4TRACEROUTE, 20);
+/** Pointer to an ICMP TRACEROUTE packet. */
+typedef RTNETICMPV4TRACEROUTE *PRTNETICMPV4TRACEROUTE;
+/** Pointer to a const ICMP TRACEROUTE packet. */
+typedef RTNETICMPV4TRACEROUTE const *PCRTNETICMPV4TRACEROUTE;
+
+/** @todo add more ICMPv4 as needed. */
+
+/**
+ * IPv4 ICMP union packet.
+ */
+typedef union RTNETICMPV4
+{
+    RTNETICMPV4HDR Hdr;
+    RTNETICMPV4ECHO Echo;
+    RTNETICMPV4TRACEROUTE Traceroute;
+} RTNETICMPV4;
+/** Pointer to an ICMP union packet. */
+typedef RTNETICMPV4 *PRTNETICMPV4;
+/** Pointer to a const ICMP union packet. */
+typedef RTNETICMPV4 const *PCRTNETICMPV4;
+
+
+/** @todo add ICMPv6 when needed. */
+
+
+/**
  * Ethernet ARP header.
  */
 #pragma pack(1)
