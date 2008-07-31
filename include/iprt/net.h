@@ -244,13 +244,130 @@ RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, vo
 RTDECL(bool)     RTNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, size_t cbPktMax);
 RTDECL(bool)     RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData, size_t cbPktMax);
 
+/**
+ * IPv4 BOOTP / DHCP packet.
+ */
+#pragma pack(1)
+typedef struct RTNETBOOTP
+{
+    /** 00 - The packet opcode. */
+    uint8_t         bp_op;
+    /** 01 - Hardware address type. Same as RTNETARPHDR::ar_htype.  */
+    uint8_t         bp_htype;
+    /** 02 - Hardware address length. */
+    uint8_t         bp_hlen;
+    /** 03 - Gateway hops. */
+    uint8_t         bp_hops;
+    /** 04 - Transaction ID. */
+    uint32_t        bp_xid;
+    /** 08 - Seconds since boot started. */
+    uint16_t        bp_secs;
+    /** 0a - Unused (BOOTP) / Flags (DHCP). */
+    uint16_t        bp_flags;
+    /** 0c - Client IPv4 address. */
+    RTNETADDRIPV4   bp_ciaddr;
+    /** 10 - Your IPv4 address. */
+    RTNETADDRIPV4   bp_yiaddr;
+    /** 14 - Server IPv4 address. */
+    RTNETADDRIPV4   bp_siaddr;
+    /** 18 - Gateway IPv4 address. */
+    RTNETADDRIPV4   bp_giaddr;
+    /** 1c - Client hardware address. */
+    union
+    {
+        uint8_t     au8[16];
+        RTMAC       Mac;
+    }               bp_chaddr;
+    /** 2c - Server name. */
+    uint8_t         bp_sname[64];
+    /** 6c - File name / more DHCP options. */
+    uint8_t         bp_file[128];
+    /** ec - Vendor specific area (BOOTP) / Options (DHCP).
+     * @remark This is really 312 bytes in the DHCP version. */
+    union
+    {
+        uint8_t         au8[128];
+        struct DHCP
+        {
+            /** ec - The DHCP cookie (RTNET_DHCP_COOKIE). */
+            uint32_t    dhcp_cookie;
+            /** f0 - The DHCP options. */
+            uint8_t     dhcp_opts[124];
+        }           Dhcp;
+    }               bp_vend;
+
+} RTNETBOOTP;
+#pragma pack(0)
+AssertCompileSize(RTNETBOOTP, 0xec + 128);
+/** Pointer to a BOOTP / DHCP packet. */
+typedef RTNETBOOTP *PRTNETBOOTP;
+/** Pointer to a const BOOTP / DHCP packet. */
+typedef RTNETBOOTP const *PCRTNETBOOTP;
+
+/** @name BOOTP packet opcode values
+ * @{ */
+#define RTNETBOOTP_OP_REQUEST       1
+#define RTNETBOOTP_OP_REPLY         2
+/** @} */
+
+/** @name DHCP flags (RTNETBOOTP::bp_flags)
+ * @{ */
+#define RTNET_DHCP_FLAGS_NO_BROADCAST   UINT16_C(0x8000) /** @todo check test!!! */
+/** @} */
+
+/** The DHCP cookie (network endian). */
+#define RTNET_DHCP_COOKIE           UINT32_C(0x63825363)
+
+/**
+ * An IPv4 DHCP option header.
+ */
+typedef struct RTNETDHCPOPT
+{
+    /** 00 - The DHCP option. */
+    uint8_t     dhcp_opt;
+    /** 01 - The data length (excluding this header). */
+    uint8_t     dhcp_len;
+    /*  02 - The option data follows here, optional and of variable length. */
+} RTNETDHCPOPT;
+AssertCompileSize(RTNETDHCPOPT, 2);
+/** Pointer to a DHCP option header. */
+typedef RTNETDHCPOPT *PRTNETDHCPOPT;
+/** Pointer to a const DHCP option header. */
+typedef RTNETDHCPOPT const *PCRTNETDHCPOPT;
+
+/** @name DHCP options
+ * @{ */
+/** 1 byte padding, this has no dhcp_len field. */
+#define RTNET_DHCP_OPT_PAD          0
+/** Have a 8-bit message type value as data, see RTNET_DHCP_MT_*. */
+#define RTNET_DHCP_OPT_MSG_TYPE     53
+/** Marks the end of the DHCP options, this has no dhcp_len field. */
+#define RTNET_DHCP_OPT_END          255
+/** @} */
+
+/** @name DHCP Message Types (option 53)
+ * @{ */
+#define RTNET_DHCP_MT_DISCOVER      1
+#define RTNET_DHCP_MT_OFFER         2
+#define RTNET_DHCP_MT_REQUEST       3
+#define RTNET_DHCP_MT_DECLINE       4
+#define RTNET_DHCP_MT_ACK           5
+#define RTNET_DHCP_MT_NAC           6
+#define RTNET_DHCP_MT_RELEASE       7
+#define RTNET_DHCP_MT_INFORM        8
+/** @} */
+
+RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t cbDhcp, uint8_t *pMsgType);
+
 
 /**
  * IPv4 DHCP packet.
+ * @obsolete Use RTNETBOOTP.
  */
 #pragma pack(1)
 typedef struct RTNETDHCP
 {
+    /** 00 - The packet opcode. */
     uint8_t         Op;
     /** Hardware address type. */
     uint8_t         HType;
