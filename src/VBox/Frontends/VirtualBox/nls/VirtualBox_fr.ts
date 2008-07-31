@@ -713,7 +713,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>Supp&amp;rimer toutes les avertissements</translation>
+        <translation>&amp;Réinitialiser toutes les avertissements</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
