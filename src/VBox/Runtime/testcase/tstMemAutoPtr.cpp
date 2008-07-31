@@ -64,7 +64,7 @@ static unsigned g_cFrees;
  */
 extern "C" int tstMemAutoPtrDisas1(void **ppv)
 {
-    register RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
+    RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
     if (!Handle)
     {
         Handle->a = RTRandU32();
