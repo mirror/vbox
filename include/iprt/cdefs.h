@@ -444,7 +444,7 @@
  * to catch any of them. Put this between the closing parenthesis
  * and the semicolon in function prototypes (and implementation if C++).
  */
-#ifdef __cplusplus
+#if defined(__cplusplus) && !(defined(IN_RING0) && defined(RT_OS_SOLARIS))
 # define RT_NO_THROW    throw()
 #else
 # define RT_NO_THROW
