@@ -50,7 +50,12 @@ enum eHostFn
      * Remove the value attached to a configuration property key
      * The parameter format matches that of DEL_CONFIG_KEY.
      */
-    DEL_CONFIG_KEY_HOST = 4
+    DEL_CONFIG_KEY_HOST = 4,
+    /** 
+     * Enumerate guest properties.
+     * The parameter format matches that of ENUM_PROPS.
+     */
+    ENUM_PROPS_HOST = 5
 };
 
 /**

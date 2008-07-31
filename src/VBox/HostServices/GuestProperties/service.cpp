@@ -642,6 +642,7 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             rc = delKey(cParms, paParms);
             break;
 
+        /* The guest wishes to enumerate all properties */
         case ENUM_PROPS:
             LogFlowFunc(("ENUM_PROPS\n"));
             rc = enumProps(cParms, paParms);
@@ -714,6 +715,11 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
             rc = delKey(cParms, paParms);
             break;
 
+        /* The host wishes to enumerate all properties */
+        case ENUM_PROPS_HOST:
+            LogFlowFunc(("ENUM_PROPS\n"));
+            rc = enumProps(cParms, paParms);
+            break;
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
