@@ -418,7 +418,6 @@ inline void RTMemTmpAutoDestructor(T *aMem) RT_NO_THROW
 }
 
 
-
 /**
  * Template function wrapping RTMemEfFree to get the correct Destruct
  * signature for RTAutoRes.
@@ -455,7 +454,7 @@ inline T * RTMemAutoNil(void) RT_NO_THROW
  * via C APIs like RTMem (the default).
  *
  * The main purpose of this class is to automatically free memory that
- * isn't explicitly used (released()) when the object goes out of scope.
+ * isn't explicitly used (release()'ed) when the object goes out of scope.
  *
  * As an additional service it can also make the allocations and
  * reallocations for you if you like, but it can also take of memory
