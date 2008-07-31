@@ -575,7 +575,7 @@ typedef enum VDCFGVALUETYPE
     /** Integer value. */
     VDCFGVALUETYPE_INTEGER = 1,
     /** String value. */
-    VDCDFVALUETYPE_STRING,
+    VDCFGVALUETYPE_STRING,
     /** Bytestring value. */
     VDCFGVALUETYPE_BYTES
 } VDCFGVALUETYPE;
