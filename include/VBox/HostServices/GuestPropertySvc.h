@@ -213,7 +213,8 @@ typedef struct _EnumProperties
      * The number of strings in the array is always a multiple of four,
      * and in sequences of name, value, timestamp (hexadecimal string) and the
      * flags as a comma-separated list in the format "name=value".  The list
-     * is terminated by four empty strings.
+     * is terminated by an empty string after a "flags" entry (or at the
+     * start).
      */
     HGCMFunctionParameter strings;
     /**
