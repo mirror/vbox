@@ -548,3 +548,131 @@ RTDECL(bool) RTNetIPv4IsTCPValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t 
     return true;
 }
 
+
+/**
+ * Minimal validation of a DHCP packet.
+ *
+ * This will fail on BOOTP packets (if sufficient data is supplied).
+ * It will not verify the source and destination ports, that's the
+ * caller's responsibility.
+ *
+ * This function will ASSUME that the hardware type is ethernet
+ * and use that for htype/hlen validation.
+ *
+ * @returns true if valid, false if invalid.
+ * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
+ *                          This is assumed to be valid and fully mapped.
+ * @param   pDhcp           Pointer to the DHCP packet.
+ *                          This might not be the entire thing, see cbDhcp.
+ * @param   cbDhcp          The number of valid bytes that pDhcp points to.
+ * @param   pMsgType        Where to store the message type (if found).
+ *                          This will be set to 0 if not found and on failure.
+ */
+RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t cbDhcp, uint8_t *pMsgType)
+{
+    AssertPtrNull(pMsgType);
+    if (pMsgType)
+        *pMsgType = 0;
+
+    /*
+     * Validate all the header fields we're able to...
+     */
+    if (cbDhcp < RT_OFFSETOF(RTNETBOOTP, bp_op) + sizeof(pDhcp->bp_op))
+        return true;
+    if (RT_UNLIKELY(    pDhcp->bp_op != RTNETBOOTP_OP_REQUEST
+                    &&  pDhcp->bp_op != RTNETBOOTP_OP_REPLY))
+        return false;
+
+    if (cbDhcp < RT_OFFSETOF(RTNETBOOTP, bp_htype) + sizeof(pDhcp->bp_htype))
+        return true;
+    if (RT_UNLIKELY(pDhcp->bp_htype != RTNET_ARP_ETHER))
+        return false;
+
+    if (cbDhcp < RT_OFFSETOF(RTNETBOOTP, bp_hlen) + sizeof(pDhcp->bp_hlen))
+        return true;
+    if (RT_UNLIKELY(pDhcp->bp_hlen != sizeof(RTMAC)))
+        return false;
+
+    if (cbDhcp < RT_OFFSETOF(RTNETBOOTP, bp_flags) + sizeof(pDhcp->bp_flags))
+        return true;
+    if (RT_UNLIKELY(RT_BE2H_U16(pDhcp->bp_flags) & ~(RTNET_DHCP_FLAGS_NO_BROADCAST)))
+        return false;
+
+    /*
+     * Check the DHCP cookie and make sure it isn't followed by an END option
+     * (because that seems to be indicating that it's BOOTP and not DHCP).
+     */
+    ssize_t cbLeft = (ssize_t)cbDhcp - RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_cookie) + sizeof(pDhcp->bp_vend.Dhcp.dhcp_cookie);
+    if (cbLeft < 0)
+        return true;
+    if (RT_UNLIKELY(RT_BE2H_U32(pDhcp->bp_vend.Dhcp.dhcp_cookie) != RTNET_DHCP_COOKIE))
+        return false;
+    if (cbLeft < 1)
+        return true;
+    PCRTNETDHCPOPT pOpt = (PCRTNETDHCPOPT)&pDhcp->bp_vend.Dhcp.dhcp_opts[0];
+    if (pOpt->dhcp_opt == RTNET_DHCP_OPT_END)
+        return false;
+
+    /*
+     * Scan the options until we find the message type or run out of message.
+     *
+     * We're not strict about termination (END) for many reasons, however,
+     * we don't accept END without MSG_TYPE.
+     */
+    uint8_t MsgType = 0;
+    while (cbLeft > 0)
+    {
+        if (pOpt->dhcp_opt == RTNET_DHCP_OPT_END)
+        {
+            /* Fail if no MSG_TYPE. */
+            if (!MsgType)
+                return false;
+            break;
+        }
+        if (pOpt->dhcp_opt == RTNET_DHCP_OPT_PAD)
+        {
+            pOpt = (PCRTNETDHCPOPT)((uint8_t const *)pOpt + 1);
+            cbLeft--;
+        }
+        else
+        {
+            switch (pOpt->dhcp_opt)
+            {
+                case RTNET_DHCP_OPT_MSG_TYPE:
+                {
+                    if (cbLeft < 3)
+                        return true;
+                    MsgType = *(const uint8_t *)(pOpt + 1);
+                    switch (MsgType)
+                    {
+                        case RTNET_DHCP_MT_DISCOVER:
+                        case RTNET_DHCP_MT_OFFER:
+                        case RTNET_DHCP_MT_REQUEST:
+                        case RTNET_DHCP_MT_DECLINE:
+                        case RTNET_DHCP_MT_ACK:
+                        case RTNET_DHCP_MT_NAC:
+                        case RTNET_DHCP_MT_RELEASE:
+                        case RTNET_DHCP_MT_INFORM:
+                            break;
+
+                        default:
+                            /* we don't know this message type, fail. */
+                            return false;
+                    }
+
+                    /* Found a known message type, consider the job done. */
+                    if (pMsgType)
+                        *pMsgType = MsgType;
+                    return true;
+                }
+            }
+
+            /* Skip the option. */
+            cbLeft -= pOpt->dhcp_len + sizeof(*pOpt);
+            pOpt = (PCRTNETDHCPOPT)((uint8_t const *)pOpt + pOpt->dhcp_len + sizeof(*pOpt));
+        }
+    }
+
+    return true;
+}
+
