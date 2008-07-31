@@ -3521,26 +3521,26 @@
       <desc>
         Reads an entry from the machine's guest property store.
       </desc>
-      <param name="key" type="wstring" dir="in">
+      <param name="name" type="wstring" dir="in">
         <desc>
-          The name of the key to read.
+          The name of the property to read.
         </desc>
       </param>
       <param name="value" type="wstring" dir="out">
         <desc>
-          The value of the key.  If the key does not exist then this will be
-          empty.
+          The value of the property.  If the property does not exist then this
+          will be empty.
         </desc>
       </param>
       <param name="timestamp" type="unsigned long long" dir="out">
         <desc>
-          The time at which the key was last modified, as seen by the server
-          process.
+          The time at which the property was last modified, as seen by the
+          server process.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="out">
         <desc>
-          Additional key parameters, passed as a comma-separated list of
+          Additional property parameters, passed as a comma-separated list of
           "name=value" type entries.
         </desc>
       </param>
@@ -3550,31 +3550,32 @@
       <desc>
         Reads a value from the machine's guest property store.
       </desc>
-      <param name="key" type="wstring" dir="in">
+      <param name="property" type="wstring" dir="in">
         <desc>
-          The name of the key to read.
+          The name of the property to read.
         </desc>
       </param>
       <param name="value" type="wstring" dir="return">
         <desc>
-          The value of the key.  If the key does not exist then this will be
-          empty.
+          The value of the property.  If the property does not exist then this
+          will be empty.
         </desc>
       </param>
     </method>
 
     <method name="getGuestPropertyTimestamp">
       <desc>
-        Reads a key timestamp from the machine's guest property store.
+        Reads a property timestamp from the machine's guest property store.
       </desc>
-      <param name="key" type="wstring" dir="in">
+      <param name="property" type="wstring" dir="in">
         <desc>
-          The name of the key to read.
+          The name of the property to read.
         </desc>
       </param>
       <param name="value" type="unsigned long long" dir="return">
         <desc>
-          The timestamp.  If the key does not exist then this will be empty.
+          The timestamp.  If the property does not exist then this will be
+          empty.
         </desc>
       </param>
     </method>
@@ -3584,21 +3585,22 @@
         Sets, changes or deletes an entry in the machine's guest property
         store.
       </desc>
-      <param name="key" type="wstring" dir="in">
+      <param name="property" type="wstring" dir="in">
         <desc>
-          The name of the key to set, change or delete.
+          The name of the property to set, change or delete.
         </desc>
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>
-          The new value of the key to set, change or delete.  If the key does
-          not yet exist and value is non-empty, it will be created.  If value
-          is empty, the key will be deleted if it exists.
+          The new value of the property to set, change or delete.  If the
+          property does not yet exist and value is non-empty, it will be
+          created.  If the value is empty, the key will be deleted if it
+          exists.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="in">
         <desc>
-          Additional key parameters, passed as a comma-separated list of
+          Additional property parameters, passed as a comma-separated list of
           "name=value" type entries.
         </desc>
       </param>
@@ -3610,16 +3612,17 @@
         store.  The flags field will be left unchanged or created empty for a
         new property.
       </desc>
-      <param name="key" type="wstring" dir="in">
+      <param name="property" type="wstring" dir="in">
         <desc>
-          The name of the key to set, change or delete.
+          The name of the property to set, change or delete.
         </desc>
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>
-          The new value of the key to set, change or delete.  If the key does
-          not yet exist and value is non-empty, it will be created.  If value
-          is empty, the key will be deleted if it exists.
+          The new value of the property to set, change or delete.  If the
+          property does not yet exist and value is non-empty, it will be
+          created.  If value is empty, the property will be deleted if it
+          exists.
         </desc>
       </param>
     </method>
@@ -3632,31 +3635,31 @@
       <param name="patterns" type="wstring" dir="in">
         <desc>
           The patterns to match the properties against as a comma-separated
-          string.  If this is empty, all properties currently set will be
-          returned.
+          string with no spaces.  If this is empty, all properties currently
+          set will be returned.
         </desc>
       </param>
-      <param name="key" type="wstring" dir="out" safearray="yes">
+      <param name="name" type="wstring" dir="out" safearray="yes">
         <desc>
-          The key names of the properties returned.
+          The names of the properties returned.
         </desc>
       </param>
       <param name="value" type="wstring" dir="out" safearray="yes">
         <desc>
           The values of the properties returned.  The array entries match the
-          corresponding entries in the @a key array.
+          corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
         <desc>
           The timestamps of the properties returned.  The array entries match
-          the corresponding entries in the @a key array.
+          the corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="out" safearray="yes">
         <desc>
           The flags of the properties returned.  The array entries match the
-          corresponding entries in the @a key array.
+          corresponding entries in the @a name array.
         </desc>
       </param>
     </method>
@@ -9776,7 +9779,7 @@
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="ee0bec44-ffec-4994-8f15-c3dea54bbbb6"
+     uuid="0dc8dc04-2d4c-45e7-885c-a0afe7e4dfa7"
      internal="yes"
      wsmap="suppress"
      >
@@ -9939,6 +9942,43 @@
       <param name="value" type="wstring" dir="in"/>
       <param name="isSetter" type="boolean" dir="in"/>
       <param name="retValue" type="wstring" dir="return"/>
+    </method>
+
+    <method name="enumerateGuestProperties">
+      <desc>
+        Return a list of the guest properties matching a set of patterns along
+        with their values, timestamps and flags.
+      </desc>
+      <param name="patterns" type="wstring" dir="in">
+        <desc>
+          The patterns to match the properties against as a comma-separated
+          string.  If this is empty, all properties currently set will be
+          returned.
+        </desc>
+      </param>
+      <param name="key" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The key names of the properties returned.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The values of the properties returned.  The array entries match the
+          corresponding entries in the @a key array.
+        </desc>
+      </param>
+      <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
+        <desc>
+          The timestamps of the properties returned.  The array entries match
+          the corresponding entries in the @a key array.
+        </desc>
+      </param>
+      <param name="flags" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The flags of the properties returned.  The array entries match the
+          corresponding entries in the @a key array.
+        </desc>
+      </param>
     </method>
 
   </interface>

@@ -107,6 +107,11 @@ public:
     STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
     STDMETHOD(AccessGuestProperty) (INPTR BSTR aKey, INPTR BSTR aValue,
                                     BOOL aIsSetter, BSTR *aRetValue);
+    STDMETHOD(EnumerateGuestProperties) (INPTR BSTR aPatterns,
+                                         ComSafeArrayOut(BSTR, aNames),
+                                         ComSafeArrayOut(BSTR, aValues),
+                                         ComSafeArrayOut(ULONG64, aTimestamps),
+                                         ComSafeArrayOut(BSTR, aFlags));
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Session"; }

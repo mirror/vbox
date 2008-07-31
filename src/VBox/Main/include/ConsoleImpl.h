@@ -183,7 +183,7 @@ public:
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
     HRESULT getGuestProperty (INPTR BSTR aKey, BSTR *aValue);
     HRESULT setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue);
-
+    HRESULT enumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer () { return mAudioSniffer; }
 

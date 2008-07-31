@@ -681,6 +681,41 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
+STDMETHODIMP Session::EnumerateGuestProperties (INPTR BSTR aPatterns,
+                                                ComSafeArrayOut(BSTR, aNames),
+                                                ComSafeArrayOut(BSTR, aValues),
+                                                ComSafeArrayOut(ULONG64, aTimestamps),
+                                                ComSafeArrayOut(BSTR, aFlags))
+{
+#ifdef VBOX_WITH_GUEST_PROPS
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    if (mState != SessionState_Open)
+        return setError (E_FAIL,
+            tr ("Machine session is not open (session state: %d)."),
+            mState);
+    AssertReturn (mType == SessionType_Direct, E_UNEXPECTED);
+    if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aNames))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aValues))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aTimestamps))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aFlags))
+        return E_POINTER;
+    return mConsole->enumerateGuestProperties(aPatterns,
+                                              ComSafeArrayOutArg(aNames),
+                                              ComSafeArrayOutArg(aValues),
+                                              ComSafeArrayOutArg(aTimestamps),
+                                              ComSafeArrayOutArg(aFlags));
+#else /* VBOX_WITH_GUEST_PROPS not defined */
+    return E_NOTIMPL;
+#endif /* VBOX_WITH_GUEST_PROPS not defined */
+}
+
 // private methods
 ///////////////////////////////////////////////////////////////////////////////
 

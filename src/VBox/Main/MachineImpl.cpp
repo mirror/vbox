@@ -2855,9 +2855,67 @@ STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aKey, INPTR BSTR aValue)
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
-STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPattern, ComSafeArrayOut(BSTR, aKeys), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
 {
+#if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
+#else
+    if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aNames))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aValues))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aTimestamps))
+        return E_POINTER;
+    if (ComSafeArrayOutIsNull (aFlags))
+        return E_POINTER;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    using namespace guestProp;
+    HRESULT rc = E_FAIL;
+
+    switch (mData->mSession.mState)
+    {
+        case SessionState_Closed:
+        {
+            rc = setError (E_NOTIMPL,
+                     tr ("Not yet implemented for a non-running VM"));
+            break;
+        }
+        case SessionState_Open:
+        {
+            if (mData->mSession.mState != SessionState_Open)
+            {
+                rc = setError (E_FAIL,
+                    tr ("Session is not open (session state: %d)"),
+                    mData->mSession.mState);
+                break;
+            }
+
+            ComPtr <IInternalSessionControl> directControl =
+                mData->mSession.mDirectControl;
+
+            /* just be on the safe side when calling another process */
+            alock.unlock();
+
+            rc = directControl->EnumerateGuestProperties(aPatterns,
+                                                         ComSafeArrayOutArg(aNames),
+                                                         ComSafeArrayOutArg(aValues),
+                                                         ComSafeArrayOutArg(aTimestamps),
+                                                         ComSafeArrayOutArg(aFlags));
+            break;
+        }
+        default:
+            rc = setError (E_FAIL,
+                tr ("Session is currently transitioning (session state: %d)"),
+                mData->mSession.mState);
+    }
+    return rc;
+#endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
 
