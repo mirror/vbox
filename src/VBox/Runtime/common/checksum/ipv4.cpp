@@ -39,7 +39,7 @@
 /**
  * Calculates the checksum of the IPv4 header.
  *
- * @returns Checksum.
+ * @returns Checksum (network endian).
  * @param   pIpHdr      Pointer to the IPv4 header to checksum, network endian (big).
  *                      Assumes the caller already checked the minimum size requirement.
  */
@@ -119,7 +119,7 @@ RTDECL(bool) RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbP
      * The header checksum.
      */
     uint16_t u16Sum = RTNetIPv4HdrChecksum(pIpHdr);
-    if (RT_UNLIKELY(RT_BE2H_U16(pIpHdr->ip_sum) != u16Sum))
+    if (RT_UNLIKELY(pIpHdr->ip_sum != u16Sum))
         return false;
     return true;
 }
@@ -347,7 +347,7 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
 /**
  * Finalizes a IPv4 checksum [inlined].
  *
- * @returns The checksum.
+ * @returns The checksum (network endian).
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
 DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t u32Sum)
@@ -362,7 +362,7 @@ DECLINLINE(uint16_t) rtNetIPv4FinalizeChecksum(uint32_t u32Sum)
 /**
  * Finalizes a IPv4 checksum.
  *
- * @returns The checksum.
+ * @returns The checksum (network endian).
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
 RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t u32Sum)
@@ -371,12 +371,11 @@ RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t u32Sum)
 }
 
 
-
 /**
  * Calculates the checksum for the UDP header given the IP header,
  * UDP header and payload.
  *
- * @returns The checksum.
+ * @returns The checksum (network endian).
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
  * @param   pUdpHdr         Pointer to the UDP header, in network endian (big).
  * @param   pvData          Pointer to the UDP payload. The size is taken from the
@@ -449,7 +448,9 @@ RTDECL(bool) RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void co
     if (RT_UNLIKELY(!rtNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbPktMax)))
         return false;
     uint16_t u16Sum = RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pvData);
-    if (RT_UNLIKELY(RT_BE2H_U16(pUdpHdr->uh_sum) != u16Sum))
+    if (RT_UNLIKELY(pUdpHdr->uh_sum != u16Sum))
         return false;
     return true;
 }
+
+
