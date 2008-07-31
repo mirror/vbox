@@ -4510,7 +4510,6 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
-    const char *pszFilename;
 
     /* Image must be opened and the new flags must be valid. Just readonly flag
      * is supported. */
@@ -4521,7 +4520,6 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     }
 
     /* Implement this operation via reopening the image. */
-    pszFilename = pImage->pszFilename;
     vmdkFreeImage(pImage, false);
     rc = vmdkOpenImage(pImage, uOpenFlags);
 
