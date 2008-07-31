@@ -69,12 +69,17 @@ static int rtMpNotificationSolarisCallback(cpu_setup_t enmSolarisEvent, int iCpu
 
 int rtR0MpNotificationNativeInit(void)
 {
+    mutex_enter(&cpu_lock);
     register_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
+    mutex_exit(&cpu_lock);
+    return VINF_SUCCESS;
 }
 
 
 void rtR0MpNotificationNativeTerm(void)
 {
+    mutex_enter(&cpu_lock);
     unregister_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
+    mutex_exit(&cpu_lock);
 }
 
