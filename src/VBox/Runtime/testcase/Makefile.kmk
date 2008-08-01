@@ -78,6 +78,7 @@ PROGRAMS += \
 	tstOnce \
 	tstPath \
 	tstPrfRT \
+	tstRand \
 	tstRTFsQueries \
 	tstStrFormat \
 	tstStrToNum \
@@ -275,6 +276,8 @@ tstOnce_SOURCES = tstOnce.cpp
 tstPath_SOURCES = tstPath.cpp
 
 tstPrfRT_SOURCES = tstPrfRT.cpp
+
+tstRand_SOURCES = tstRand.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 

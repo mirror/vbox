@@ -107,48 +107,6 @@ RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW
 
 
 /**
- * Generate a 32-bit signed random number in the set [i32First..i32Last].
- *
- * @returns The random number.
- * @param   i32First    First number in the set.
- * @param   i32Last     Last number in the set.
- */
-RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW
-{
-    /* get 4 random bytes. */
-    union
-    {
-        uint32_t    off;
-        uint8_t     ab[4];
-    } u;
-    rtRandGenBytes(&u.ab, sizeof(u));
-
-
-    /* squeeze it into the requested range. */
-    uint32_t offLast = i32Last - i32First;
-    if (u.off > offLast)
-    {
-        do
-        {
-            u.off >>= 1;
-        } while (u.off > offLast);
-    }
-    return i32First + u.off;
-}
-
-
-/**
- * Generate a 32-bit signed random number.
- *
- * @returns The random number.
- */
-RTDECL(int32_t) RTRandS32(void) RT_NO_THROW
-{
-    return RTRandS32Ex(INT32_MIN, INT32_MAX);
-}
-
-
-/**
  * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
  *
  * @returns The random number.
@@ -157,25 +115,35 @@ RTDECL(int32_t) RTRandS32(void) RT_NO_THROW
  */
 RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW
 {
-    /* get 4 random bytes. */
     union
     {
         uint32_t    off;
-        uint8_t     ab[4];
+        uint8_t     ab[5];
     } u;
-    rtRandGenBytes(&u.ab, sizeof(u));
 
-
-    /* squeeze it into the requested range. */
     const uint32_t offLast = u32Last - u32First;
-    if (u.off > offLast)
+    if (offLast == UINT32_MAX)
+        /* get 4 random bytes and return them raw. */
+        rtRandGenBytes(&u.ab, sizeof(u.off));
+    else if (!(offLast & UINT32_C(0xf0000000)))
     {
-        do
-        {
-            u.off >>= 1;
-        } while (u.off > offLast);
+        /* get 4 random bytes and do simple squeeze. */
+        rtRandGenBytes(&u.ab, sizeof(u.off));
+        u.off %= offLast + 1;
+        u.off += u32First;
     }
-    return u32First + u.off;
+    else
+    {
+        /* get 5 random bytes and do shifted squeeze. (this ain't perfect) */
+        rtRandGenBytes(&u.ab, sizeof(u.ab));
+        u.off %= (offLast >> 4) + 1;
+        u.off <<= 4;
+        u.off |= u.ab[4] & 0xf;
+        if (u.off > offLast)
+            u.off = offLast;
+        u.off += u32First;
+    }
+    return u.off;
 }
 
 
@@ -191,43 +159,28 @@ RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW
 
 
 /**
- * Generate a 64-bit signed random number in the set [i64First..i64Last].
+ * Generate a 32-bit signed random number in the set [i32First..i32Last].
  *
  * @returns The random number.
- * @param   i64First    First number in the set.
- * @param   i64Last     Last number in the set.
+ * @param   i32First    First number in the set.
+ * @param   i32Last     Last number in the set.
  */
-RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW
+RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW
 {
-    /* get 8 random bytes. */
-    union
-    {
-        uint64_t    off;
-        uint8_t     ab[8];
-    } u;
-    rtRandGenBytes(&u.ab, sizeof(u));
-
-    /* squeeze it into the requested range. */
-    uint64_t offLast = i64Last - i64First;
-    if (u.off > offLast)
-    {
-        do
-        {
-            u.off >>= 1;
-        } while (u.off > offLast);
-    }
-    return i64First + u.off;
+    if (i32First == INT32_MIN && i32Last == INT32_MAX)
+        return (int32_t)RTRandU32Ex(0, UINT32_MAX);
+    return RTRandU32Ex(0, i32Last - i32First) + i32First;
 }
 
 
 /**
- * Generate a 64-bit signed random number.
+ * Generate a 32-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
+RTDECL(int32_t) RTRandS32(void) RT_NO_THROW
 {
-    return RTRandS64Ex(INT64_MIN, INT64_MAX);
+    return (int32_t)RTRandU32Ex(0, UINT32_MAX);
 }
 
 
@@ -240,24 +193,36 @@ RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
  */
 RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW
 {
-    /* get 8 random bytes. */
     union
     {
         uint64_t    off;
-        uint8_t     ab[8];
+        uint32_t    off32;
+        uint8_t     ab[5];
     } u;
-    rtRandGenBytes(&u.ab, sizeof(u));
 
-    /* squeeze it into the requested range. */
     const uint64_t offLast = u64Last - u64First;
-    if (u.off > offLast)
+    if (offLast == UINT64_MAX)
+        /* get 8 random bytes and return them raw. */
+        rtRandGenBytes(&u.ab, sizeof(u.off));
+    else if (!(offLast & UINT64_C(0xf000000000000000)))
     {
-        do
-        {
-            u.off >>= 1;
-        } while (u.off > offLast);
+        /* get 8 random bytes and do simple squeeze. */
+        rtRandGenBytes(&u.ab, sizeof(u.off));
+        u.off %= offLast + 1;
+        u.off += u64First;
     }
-    return u64First + u.off;
+    else
+    {
+        /* get 9 random bytes and do shifted squeeze. (this ain't perfect) */
+        rtRandGenBytes(&u.ab, sizeof(u.ab));
+        u.off %= (offLast >> 4) + 1;
+        u.off <<= 4;
+        u.off |= u.ab[8] & 0xf;
+        if (u.off > offLast)
+            u.off = offLast;
+        u.off += u64First;
+    }
+    return u.off;
 }
 
 
@@ -273,6 +238,32 @@ RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW
 
 
 /**
+ * Generate a 64-bit signed random number in the set [i64First..i64Last].
+ *
+ * @returns The random number.
+ * @param   i64First    First number in the set.
+ * @param   i64Last     Last number in the set.
+ */
+RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW
+{
+    if (i64First == INT64_MIN && i64Last == INT64_MAX)
+        return (int64_t)RTRandU64Ex(0, UINT64_MAX);
+    return (int64_t)RTRandU64Ex(0, i64Last - i64First) + i64First;
+}
+
+
+/**
+ * Generate a 64-bit signed random number.
+ *
+ * @returns The random number.
+ */
+RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
+{
+    return (int64_t)RTRandU64Ex(0, UINT64_MAX);
+}
+
+
+/**
  * Fallback random byte source.
  *
  * @param   pv  Where to store the random bytes.
@@ -280,6 +271,7 @@ RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW
  */
 void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW
 {
+    uint64_t u64Last;
     uint8_t *pb = (uint8_t *)pv;
     for (unsigned i = 0;; i++)
     {
@@ -299,17 +291,24 @@ void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW
         if (!--cb)
             break;
 
-        /* Is this really a good idea? */
+        /*
+         * Is this really a good idea? Looks like we cannot
+         * quite trust the lower bits here for instance...
+         */
         if (!(i % 3))
         {
-            if (i)
-                RTThreadYield();
-            *pb++ = (uint8_t)ASMReadTSC();
-            if (!--cb)
-                break;
+            uint64_t u64 = ASMReadTSC();
+            uint64_t u64Delta = u64 - u64Last;
+            if (u64Delta > 0xff)
+            {
+                u32 >>= 8;
+                *pb++ = ((uint8_t)u64 >> 5) | (u32 << 3);
+                if (!--cb)
+                    break;
+                u64Last = u64;
+            }
         }
     }
-
 }
 
 
