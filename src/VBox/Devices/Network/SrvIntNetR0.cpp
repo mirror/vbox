@@ -111,7 +111,7 @@ typedef struct INTNETIF
      * This is protected by the INTNET::FastMutex. */
     struct INTNETIF        *pNext;
     /** The current MAC address for the interface. */
-    PDMMAC                  Mac;
+    RTMAC                   Mac;
     /** Set if the INTNET::Mac member is valid. */
     bool                    fMacSet;
     /** Set if the interface is in promiscuous mode.
@@ -253,11 +253,11 @@ typedef struct INTNETARPIPV6
 {
     RTNETARPHDR     Hdr;
     /** The sender hardware address. */
-    PDMMAC          ar_sha;
+    RTMAC           ar_sha;
     /** The sender protocol address. */
     RTNETADDRIPV6   ar_spa;
     /** The target hardware address. */
-    PDMMAC          ar_tha;
+    RTMAC           ar_tha;
     /** The arget protocol address. */
     RTNETADDRIPV6   ar_tpa;
 } INTNETARPIPV6;
@@ -266,6 +266,15 @@ typedef struct INTNETARPIPV6
 typedef INTNETARPIPV6 *PINTNETARPIPV6;
 /** Pointer to a const ethernet IPv6+MAC ARP request packet. */
 typedef INTNETARPIPV6 const *PCINTNETARPIPV6;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Minimum length for ARP packets that we snoop. */
+#define INTNET_ARP_MIN_LEN      sizeof(RTNETARPIPV4)
+/** Maximum length for ARP packets that we snoop. */
+#define INTNET_ARP_MAX_LEN      sizeof(INTNETARPIPV6)
 
 
 /*******************************************************************************
@@ -963,12 +972,91 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
 
 static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
-
 }
 
+
+/**
+ * Snoops up source addresses from ARP requests and purge these
+ * from the address caches.
+ *
+ * The purpose of this purging is to get rid of stale addresses.
+ *
+ * @param   pNetwork        The network the this frame was seen on.
+ * @param   pSG             The gather list for the frame.
+ */
 static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
+    /*
+     * Check the minimum size first.
+     */
+    if (RT_UNLIKELY(pSG->cbTotal < INTNET_ARP_MIN_LEN))
+        return;
 
+    /*
+     * Copy to temporary buffer if necessary.
+     */
+    size_t cbPacket = RT_MIN(pSG->cbTotal, INTNET_ARP_MAX_LEN);
+    PCRTNETARPHDR pHdr = (PCRTNETARPHDR)((uintptr_t)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+    if (    pSG->cSegsUsed != 1
+        &&  pSG->aSegs[0].cb < cbPacket)
+    {
+        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), cbPacket, pNetwork->pbTmp))
+            return;
+        pHdr = (PCRTNETARPHDR)pNetwork->pbTmp;
+    }
+
+    /*
+     * Ignore malformed packets and packets which doesn't interest us.
+     */
+    if (RT_UNLIKELY(    pHdr->ar_hlen != sizeof(RTMAC)
+                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
+        return;
+    uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
+    if (RT_UNLIKELY(    ar_oper != RTNET_ARPOP_REQUEST
+                    &&  ar_oper != RTNET_ARPOP_REPLY
+                    &&  ar_oper != RTNET_ARPOP_REVREQUEST
+                    &&  ar_oper != RTNET_ARPOP_REVREPLY
+                    /** @todo Read up on inverse ARP. */
+                   ))
+        return;
+
+    /*
+     * Deal with the protocols.
+     */
+    RTNETADDRU Addr;
+    uint16_t ar_ptype = RT_H2BE_U16(pHdr->ar_ptype);
+    if (ar_ptype == RTNET_ETHERTYPE_IPV4)
+    {
+        /*
+         * IPv4.
+         */
+        PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
+        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
+                        ||  cbPacket < sizeof(*pReq)
+                        ||  !intnetR0IPv4AddrIsGood(pReq->ar_spa)))
+            return;
+
+        Addr.IPv4 = pReq->ar_spa;
+        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv4, sizeof(pReq->ar_spa));
+    }
+#if 0 /** @todo IPv6 support */
+    else if (ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+    {
+        /*
+         * IPv6.
+         */
+        PCINTNETARPIPV6 pReq = (PCINTNETARPIPV6)pHdr;
+        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
+                        ||  cbPacket < sizeof(*pReq)
+                        ||  !intnetR0IPv6AddrIsGood(&pReq->ar_spa)))
+            return;
+
+        Addr.IPv6 = pReq->ar_spa;
+        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv6, sizeof(pReq->ar_spa));
+    }
+#endif
+    else
+        Log(("intnetR0TrunkIfSnoopArp: unknown ar_ptype=%#x\n", ar_ptype));
 }
 
 
@@ -1106,8 +1194,8 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t c
     /*
      * Ignore malformed packets and packets which doesn't interest us.
      */
-    if (RT_UNLIKELY(    cbPacket <= sizeof(*pHdr)
-                    ||  pHdr->ar_hlen != sizeof(PDMMAC)
+    if (RT_UNLIKELY(    cbPacket <= INTNET_ARP_MIN_LEN
+                    ||  pHdr->ar_hlen != sizeof(RTMAC)
                     ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
         return;
     uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
@@ -1130,7 +1218,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t c
          * IPv4.
          */
         PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
-        if (RT_UNLIKELY(    pHdr->ar_plen == sizeof(pReq->ar_spa)
+        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
                         ||  cbPacket < sizeof(*pReq)
                         ||  !intnetR0IPv4AddrIsGood(pReq->ar_spa)))
             return;
@@ -1151,7 +1239,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t c
          * IPv6.
          */
         PCINTNETARPIPV6 pReq = (PCINTNETARPIPV6)pHdr;
-        if (RT_UNLIKELY(    pHdr->ar_plen == sizeof(pReq->ar_spa)
+        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
                         ||  cbPacket < sizeof(*pReq)
                         ||  !intnetR0IPv6AddrIsGood(&pReq->ar_spa)))
             return;
@@ -1264,7 +1352,7 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
     AssertPtr(pBuf);
     AssertPtr(pRingBuf);
     AssertPtr(pSG);
-    Assert(pSG->cbTotal >= sizeof(PDMMAC) * 2);
+    Assert(pSG->cbTotal >= sizeof(RTMAC) * 2);
     uint32_t offWrite = pRingBuf->offWrite;
     Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
     uint32_t offRead = pRingBuf->offRead;
@@ -1526,7 +1614,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
     {
         uint16_t EtherType = RT_BE2H_U16(pEthHdr->EtherType);
         if (    (   EtherType == RTNET_ETHERTYPE_IPV4       /* for DHCP */
-                 && pSG->cbTotal >= RTNETBOOTP_DHCP_MIN_LEN)
+                 && pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
             ||  EtherType == RTNET_ETHERTYPE_ARP)
             intnetR0TrunkIfSnoopAddr(pNetwork, pSG, EtherType);
     }
@@ -1649,7 +1737,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
      * Perform DHCP snooping.
      */
     if (    enmAddrType == kIntNetAddrType_IPv4
-        &&  pSG->cbTotal >= RTNETBOOTP_DHCP_MIN_LEN)
+        &&  pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
         intnetR0TrunkIfSnoopAddr(pNetwork, pSG, RT_BE2H_U16(pEthHdr->EtherType));
 
     return fExactIntNetRecipient;
