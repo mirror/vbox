@@ -204,6 +204,10 @@ typedef struct INTNETNETWORK
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
     void                   *pvObj;
+    /** Pointer to the temporary buffer that is used when snooping fragmented packets.
+     * This is allocated after this structure if we're sharing the MAC address with
+     * the host. The buffer is INTNETNETWORK_TMP_SIZE big and aligned on a 64-byte boundrary. */
+    uint8_t                *pbTmp;
     /** Network creation flags (INTNET_OPEN_FLAGS_*). */
     uint32_t                fFlags;
     /** The number of active interfaces (excluding the trunk). */
@@ -219,6 +223,9 @@ typedef struct INTNETNETWORK
 } INTNETNETWORK;
 /** Pointer to an internal network. */
 typedef INTNETNETWORK *PINTNETNETWORK;
+
+/** The size of the buffer INTNETNETWORK::pbTmp points at. */
+#define INTNETNETWORK_TMP_SIZE  2048
 
 
 /**
@@ -3352,7 +3359,10 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
     /*
      * Allocate and initialize.
      */
-    PINTNETNETWORK pNew = (PINTNETNETWORK)RTMemAllocZ(sizeof(*pNew));
+    size_t cb = sizeof(INTNETNETWORK);
+    if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+        cb += INTNETNETWORK_TMP_SIZE + 64;
+    PINTNETNETWORK pNew = (PINTNETNETWORK)RTMemAllocZ(cb);
     if (!pNew)
         return VERR_NO_MEMORY;
     int rc = RTSemFastMutexCreate(&pNew->FastMutex);
@@ -3369,6 +3379,10 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
         pNew->enmTrunkType = enmTrunkType;
         Assert(strlen(pszTrunk) < sizeof(pNew->szTrunk));   /* caller's responsibility. */
         strcpy(pNew->szTrunk, pszTrunk);
+        if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+            pNew->pbTmp = RT_ALIGN_PT(pNew + 1, 64, uint8_t *);
+        //else
+        //    pNew->pbTmp = NULL;
 
         /*
          * Register the object in the current session and link it into the network list.
