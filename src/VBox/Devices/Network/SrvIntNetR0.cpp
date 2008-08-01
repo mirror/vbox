@@ -744,11 +744,13 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCRT
  * @param   pIf             The interface (for logging).
  * @param   pCache          The cache.
  * @param   iEntry          The entry to delete.
+ * @param   pszMsg          Log message.
  */
-static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, int iEntry)
+static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, int iEntry, const char *pszMsg)
 {
-    Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 type=%d #%d %.*Rhxs\n", pIf->hIf,
-         (int)(intptr_t)(pCache - &pIf->aAddrCache[0]), iEntry, pCache->cbAddress, pCache->pbEntries + iEntry * pCache->cbEntry));
+    Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 type=%d #%d %.*Rhxs %s\n", pIf->hIf,
+         (int)(intptr_t)(pCache - &pIf->aAddrCache[0]), iEntry, pCache->cbAddress,
+         pCache->pbEntries + iEntry * pCache->cbEntry, pszMsg));
     Assert(iEntry < pCache->cEntries);
     pCache->cEntries--;
     if (iEntry < pCache->cEntries)
@@ -770,7 +772,7 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
 {
     int i = intnetR0IfAddrCacheLookup(pCache, pAddr, cbAddr);
     if (RT_UNLIKELY(i >= 0))
-        intnetR0IfAddrCacheDeleteIt(pIf, pCache, i);
+        intnetR0IfAddrCacheDeleteIt(pIf, pCache, i, "if");
 }
 
 
@@ -784,15 +786,16 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
  * @param   pAddr           The address.
  * @param   enmType         The address type.
  * @param   cbAddr          The address size (optimization).
+ * @param   pszMsg          Log message.
  */
-DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr,
-                                                INTNETADDRTYPE const enmType, uint8_t const cbAddr)
+DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr, INTNETADDRTYPE const enmType,
+                                                uint8_t const cbAddr, const char *pszMsg)
 {
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
     {
         int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
         if (RT_UNLIKELY(i >= 0))
-            intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i);
+            intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i, pszMsg);
     }
 }
 
@@ -807,16 +810,17 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNET
  * @param   pAddr           The address.
  * @param   enmType         The address type.
  * @param   cbAddr          The address size (optimization).
+ * @param   pszMsg          Log message.
  */
 DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCRTNETADDRU pAddr,
-                                                       INTNETADDRTYPE const enmType, uint8_t const cbAddr)
+                                                       INTNETADDRTYPE const enmType, uint8_t const cbAddr, const char *pszMsg)
 {
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
         {
             int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
             if (RT_UNLIKELY(i >= 0))
-                intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i);
+                intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i, pszMsg);
         }
 }
 
@@ -828,8 +832,9 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
  * @param   pIf         The interface (for logging).
  * @param   pCache      The address cache.
  * @param   pAddr       The address.
+ * @param   pszMsg      log message.
  */
-static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr)
+static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, const char *pszMsg)
 {
     if (!pCache->cEntriesAlloc)
     {
@@ -837,8 +842,9 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
         pCache->pbEntries = (uint8_t *)RTMemAllocZ(pCache->cbEntry * 16);
         if (!pCache->pbEntries)
             return;
+        pCache->cEntriesAlloc = 16;
     }
-    else
+    else if (pCache->cEntries >= pCache->cEntriesAlloc)
     {
         bool fReplace = true;
         if (pCache->cEntriesAlloc < 64)
@@ -868,8 +874,9 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     uint8_t *pbEntry = pCache->pbEntries + pCache->cEntries * pCache->cbEntry;
     memcpy(pbEntry, pAddr, pCache->cbAddress);
     memset(pbEntry + pCache->cbAddress, '\0', pCache->cbEntry - pCache->cbAddress);
-    Log(("intnetR0IfAddrCacheAddIt: type=%d added #%d %.*Rhxs\n",
-         (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cEntries, pCache->cbAddress, pAddr));
+    Log(("intnetR0IfAddrCacheAddIt: type=%d added #%d %.*Rhxs %s\n",
+         (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cEntries,
+         pCache->cbAddress, pAddr, pszMsg));
     pCache->cEntries++;
     Assert(pCache->cEntries <= pCache->cEntriesAlloc);
 }
@@ -882,8 +889,9 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
  * @param   pCache      The address cache.
  * @param   pAddr       The address.
  * @param   cbAddr      The size of the address (optimization).
+ * @param   pszMsg      Log message.
  */
-static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
+static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr, const char *pszMsg)
 {
     /*
      * Check all but the first and last entries, the caller
@@ -905,7 +913,7 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
     /*
      * Not found, add it.
      */
-    intnetR0IfAddrCacheAddIt(pIf, pCache, pAddr);
+    intnetR0IfAddrCacheAddIt(pIf, pCache, pAddr, pszMsg);
 }
 
 
@@ -916,8 +924,9 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
  * @param   pCache      The address cache.
  * @param   pAddr       The address.
  * @param   cbAddr      The size of the address (optimization).
+ * @param   pszMsg      Log message.
  */
-DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr)
+DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr, const char *pszMsg)
 {
     Assert(pCache->cbAddress == cbAddr);
 
@@ -946,7 +955,7 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
     if (i <= 1)
         return;
 
-    intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr);
+    intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr, pszMsg);
 }
 
 
@@ -1037,7 +1046,7 @@ static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
             return;
 
         Addr.IPv4 = pReq->ar_spa;
-        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv4, sizeof(pReq->ar_spa));
+        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv4, sizeof(pReq->ar_spa), "tif/arp");
     }
 #if 0 /** @todo IPv6 support */
     else if (ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
@@ -1052,7 +1061,7 @@ static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
             return;
 
         Addr.IPv6 = pReq->ar_spa;
-        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv6, sizeof(pReq->ar_spa));
+        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv6, sizeof(pReq->ar_spa), "tif/arp");
     }
 #endif
     else
@@ -1155,7 +1164,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
             Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header\n"));
             return;
         }
-        intnetR0IfAddrCacheAddIt(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr);
+        intnetR0IfAddrCacheAddIt(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, "if/ipv4");
         fValidatedIpHdr = true;
     }
 
@@ -1230,7 +1239,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t c
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_tpa));
         }
         Addr.IPv4 = pReq->ar_spa;
-        intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_spa));
+        intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_spa), "if/arp");
     }
 #if 0 /** @todo IPv6 support */
     else if (ar_ptype == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
@@ -1251,7 +1260,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t c
             intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_tpa));
         }
         Addr.IPv6 = pReq->ar_spa;
-        intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_spa));
+        intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(pReq->ar_spa), "if/arp");
     }
 #endif
     else
@@ -1340,11 +1349,12 @@ static unsigned intnetR0RingReadFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, 
  * Writes a frame packet to the buffer.
  *
  * @returns VBox status code.
- * @param   pBuf        The buffer.
- * @param   pRingBuf    The ring buffer to read from.
- * @param   pSG         The gatter list.
+ * @param   pBuf            The buffer.
+ * @param   pRingBuf        The ring buffer to read from.
+ * @param   pSG             The gather list.
+ * @param   pNewDstMac      Set the destination MAC address to the address if specified.
  */
-static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCINTNETSG pSG)
+static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTMAC pNewDstMac)
 {
     /*
      * Validate input.
@@ -1372,6 +1382,8 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
             pHdr->offFrame = sizeof(INTNETHDR);
 
             intnetR0SgRead(pSG, pHdr + 1);
+            if (pNewDstMac)
+                ((PRTNETETHERHDR)(pHdr + 1))->DstMac = *pNewDstMac;
 
             offWrite += cb + sizeof(INTNETHDR);
             Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
@@ -1396,6 +1408,8 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
             pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
 
             intnetR0SgRead(pSG, pvFrameOut);
+            if (pNewDstMac)
+                ((PRTNETETHERHDR)pvFrameOut)->DstMac = *pNewDstMac;
 
             offWrite = pRingBuf->offStart + cb;
             ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
@@ -1414,6 +1428,8 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
         pHdr->offFrame = sizeof(INTNETHDR);
 
         intnetR0SgRead(pSG, pHdr + 1);
+        if (pNewDstMac)
+            ((PRTNETETHERHDR)(pHdr + 1))->DstMac = *pNewDstMac;
 
         offWrite += cb + sizeof(INTNETHDR);
         ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
@@ -1433,11 +1449,12 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
  * @param   pIf             The interface.
  * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
  * @param   pSG             The gather buffer which data is being sent to the interface.
+ * @param   pNewDstMac      Set the destination MAC address to the address if specified.
  */
-static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
+static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PCRTMAC pNewDstMac)
 {
 //    LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
-    int rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG);
+    int rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG, pNewDstMac);
     if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
@@ -1475,7 +1492,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG)
         {
             RTSemEventSignal(pIf->Event);
             RTThreadYield();
-            rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG);
+            rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG, pNewDstMac);
             if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
@@ -1604,7 +1621,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
      */
     for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
-            intnetR0IfSend(pIf, pIfSender, pSG);
+            intnetR0IfSend(pIf, pIfSender, pSG, NULL);
 
     /*
      * Unless the trunk is the origin, broadcast it to both the wire
@@ -1675,16 +1692,23 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
     switch (RT_BE2H_U16(pEthHdr->EtherType))
     {
         case RTNET_ETHERTYPE_IPV4:
-            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr))
+            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr)))
+            {
+                Log(("intnetshareduni: failed to read ip_dst! cbTotal=%#x\n", pSG->cbTotal));
                 return false;
+            }
             enmAddrType = kIntNetAddrType_IPv4;
             cbAddr = sizeof(Addr.IPv4);
+            Log6(("intnetshareduni: IPv4 %d.%d.%d.%d\n", Addr.au8[0], Addr.au8[1], Addr.au8[2], Addr.au8[3]));
             break;
 
 #if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
         case RTNET_ETHERTYPE_IPV6
-            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr))
+            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr)))
+            {
+                Log(("intnetshareduni: failed to read ip6_dst! cbTotal=%#x\n", pSG->cbTotal));
                 return false;
+            }
             enmAddrType = kIntNetAddrType_IPv6;
             cbAddr = sizeof(Addr.IPv6);
             break;
@@ -1693,8 +1717,11 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
         case RTNET_ETHERTYPE_IPX_1:
         case RTNET_ETHERTYPE_IPX_2:
         case RTNET_ETHERTYPE_IPX_3:
-            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPX, ipx_dstnet), sizeof(Addr.IPX), &Addr))
+            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPX, ipx_dstnet), sizeof(Addr.IPX), &Addr)))
+            {
+                Log(("intnetshareduni: failed to read ipx_dstnet! cbTotal=%#x\n", pSG->cbTotal));
                 return false;
+            }
             enmAddrType = kIntNetAddrType_IPX;
             cbAddr = sizeof(Addr.IPX);
             break;
@@ -1705,6 +1732,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
          * so it goes last in the switch).
          */
         case RTNET_ETHERTYPE_ARP:
+            Log6(("intnetshareduni: ARP\n"));
             return intnetR0NetworkSendBroadcast(pNetwork, NULL, pSG, fTrunkLocked, pEthHdr);
 
         /*
@@ -1712,13 +1740,14 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
          */
         default:
         {
+            Log6(("intnetshareduni: unknown ethertype=%#x\n", RT_BE2H_U16(pEthHdr->EtherType)));
             if (!(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC)))
             {
                 for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
                     if (pIf->fPromiscuous)
                     {
                         Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-                        intnetR0IfSend(pIf, NULL, pSG);
+                        intnetR0IfSend(pIf, NULL, pSG, NULL);
                     }
             }
             return false;
@@ -1738,7 +1767,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
         {
             Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
             fExactIntNetRecipient |= fIt;
-            intnetR0IfSend(pIf, NULL, pSG);
+            intnetR0IfSend(pIf, NULL, pSG, fIt ? &pIf->Mac : NULL);
         }
     }
 
@@ -1783,7 +1812,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
         {
             Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
             fExactIntNetRecipient |= fIt;
-            intnetR0IfSend(pIf, pIfSender, pSG);
+            intnetR0IfSend(pIf, pIfSender, pSG, NULL);
         }
     }
 
