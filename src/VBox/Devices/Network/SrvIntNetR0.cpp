@@ -2717,6 +2717,22 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     pIf->pNetwork = pNetwork;
     pIf->pSession = pSession;
     //pIf->pvObj = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_Invalid] = {0};
+    //pIf->aAddrCache[kIntNetAddrType_IPv4].pbEntries = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntries = 0;
+    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntriesAlloc = 0;
+    pIf->aAddrCache[kIntNetAddrType_IPv4].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPv4);
+    pIf->aAddrCache[kIntNetAddrType_IPv4].cbEntry   = intnetR0AddrSize(kIntNetAddrType_IPv4);
+    //pIf->aAddrCache[kIntNetAddrType_IPv6].pbEntries = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntries = 0;
+    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntriesAlloc = 0;
+    pIf->aAddrCache[kIntNetAddrType_IPv6].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPv6);
+    pIf->aAddrCache[kIntNetAddrType_IPv6].cbEntry   = intnetR0AddrSize(kIntNetAddrType_IPv6);
+    //pIf->aAddrCache[kIntNetAddrType_IPX].pbEntries = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntries = 0;
+    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntriesAlloc = 0;
+    pIf->aAddrCache[kIntNetAddrType_IPX].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPX);
+    pIf->aAddrCache[kIntNetAddrType_IPX].cbEntry   = RT_ALIGN_32(intnetR0AddrSize(kIntNetAddrType_IPv4), 16);
     int rc = RTSemEventCreate((PRTSEMEVENT)&pIf->Event);
     if (RT_SUCCESS(rc))
     {
