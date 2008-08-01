@@ -884,6 +884,17 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
         strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("if=") - 1]);
     }
+    /* Temporary hack: attach to a network with the name 'wif=en0' and you're on the air. */
+    if (    !OpenReq.szTrunk[0]
+        &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
+        &&  !strncmp(pThis->szNetwork, "wif=en", sizeof("wif=en") - 1)
+        &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("wif=en") - 1])
+        &&  !pThis->szNetwork[sizeof("wif=en")])
+    {
+        OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
+        strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("wif=") - 1]);
+    }
 #endif
 
     /*
