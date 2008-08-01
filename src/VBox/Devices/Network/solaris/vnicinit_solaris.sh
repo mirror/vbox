@@ -35,8 +35,12 @@ if [ -z "$2" ]; then
     # Try obtain one that's currently active (82 dladm show-link doesn't indicate status; just use show-dev atm)
     if [ $snv_num -le 82 ]; then
         phys_nic=`/usr/sbin/dladm show-dev -p | /usr/bin/awk 'NF==4 && $2=="link=up" { print $1 }'`
-    else
+    elif [ $snv_num -le 95 ]; then
         phys_field=`/usr/sbin/dladm show-link -p | /usr/bin/awk 'NF==5 && $4=="STATE=\"up\"" { print $1 }'`
+        eval $phys_field
+        phys_nic="$LINK"
+    else
+        phys_field=`/usr/sbin/dladm show-link -p -o link,state | /usr/bin/awk 'BEGIN{FS=":"} /up/ {print $1}'`
         eval $phys_field
         phys_nic="$LINK"
     fi
@@ -45,10 +49,14 @@ if [ -z "$2" ]; then
         # Failed to get a currently active NIC, get the first available link.
         if [ $snv_num -le 82 ]; then
             phys_nic=`/usr/sbin/dladm show-link -p | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
-        else
+        elif [ $snv_num -le 95 ]; then
             phys_field=`/usr/sbin/dladm show-link -p | /usr/bin/awk 'NF==5 && $2=="CLASS=\"phys\"" { print $1 }'`
             eval $phys_field
             phys_nic="$LINK"
+        else
+            phys_field=`/usr/sbin/dladm show-link -p -o link,class | /usr/bin/awk 'BEGIN{FS=":"} /up/ {print $1}'`
+            eval $phys_field
+            phys_nic="$LINK"            
         fi
         if [ -z "$phys_nic" ]; then
             # Failed to get any NICs!
