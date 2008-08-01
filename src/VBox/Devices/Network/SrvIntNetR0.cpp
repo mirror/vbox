@@ -1519,6 +1519,15 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, u
     AssertReturnVoid(pThis->pIfPort);
 
     /*
+     * If we're supposed to be sharing the MAC address with the host
+     * interface when hitting the wire, change INTNETTRUNKDIR_WIRE to
+     * INTNETTRUNKDIR_WIRE_SHARED  before calling pfnXmit.
+     */
+    if (    (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+        &&  (fDst & INTNETTRUNKDIR_WIRE))
+        fDst = (fDst & ~INTNETTRUNKDIR_WIRE) | INTNETTRUNKDIR_WIRE_SHARED;
+
+    /*
      * Temporarily leave the network lock while transmitting the frame.
      *
      * Note that we're relying on the out-bound lock to serialize threads down
