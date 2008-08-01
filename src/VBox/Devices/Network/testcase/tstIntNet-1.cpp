@@ -551,6 +551,7 @@ int main(int argc, char **argv)
         { "--duration",     'd', RTGETOPT_REQ_UINT32 },
         { "--file",         'f', RTGETOPT_REQ_STRING },
         { "--interface",    'i', RTGETOPT_REQ_STRING },
+        { "--mac-sharing",  'm', RTGETOPT_REQ_NOTHING },
         { "--network",      'n', RTGETOPT_REQ_STRING },
         { "--promiscuous",  'p', RTGETOPT_REQ_NOTHING },
         { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
@@ -571,8 +572,9 @@ int main(int argc, char **argv)
 #else
     const char *pszIf = "em0";
 #endif
-    bool        fPromiscuous = false;
+    bool        fMacSharing = false;
     const char *pszNetwork = "tstIntNet-1";
+    bool        fPromiscuous = false;
     uint32_t    cbRecv = 0;
     uint32_t    cbSend = 0;
     bool        fSniffer = false;
@@ -616,6 +618,10 @@ int main(int argc, char **argv)
                     RTPrintf("tstIntNet-1: Interface name is too long (max %d chars): %s\n", INTNET_MAX_TRUNK_NAME - 1, pszIf);
                     return 1;
                 }
+                break;
+
+            case 'm':
+                fMacSharing = true;
                 break;
 
             case 'n':
@@ -725,7 +731,7 @@ int main(int argc, char **argv)
     strncpy(OpenReq.szNetwork, pszNetwork, sizeof(OpenReq.szNetwork));
     strncpy(OpenReq.szTrunk, pszIf, sizeof(OpenReq.szTrunk));
     OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
-    OpenReq.fFlags = 0;
+    OpenReq.fFlags = fMacSharing ? INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE : 0;
     OpenReq.cbSend = cbSend;
     OpenReq.cbRecv = cbRecv;
     OpenReq.hIf = INTNET_HANDLE_INVALID;
