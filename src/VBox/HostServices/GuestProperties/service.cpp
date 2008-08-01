@@ -54,6 +54,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/autores.h>
+#include <iprt/time.h>
 #include <iprt/cpputils.h>
 #include <VBox/log.h>
 
@@ -103,12 +104,17 @@ private:
     typedef Service SELF;
     /** HGCM helper functions. */
     PVBOXHGCMSVCHELPERS mpHelpers;
-    /** Pointer to our configuration node. */
-    PCFGMNODE mpNode;
+    /** Pointer to our configuration values node. */
+    PCFGMNODE mpValueNode;
+    /** Pointer to our configuration timestamps node. */
+    PCFGMNODE mpTimestampNode;
+    /** Pointer to our configuration flags node. */
+    PCFGMNODE mpFlagsNode;
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
-                  : mpHelpers(pHelpers), mpNode(NULL) {}
+        : mpHelpers(pHelpers), mpValueNode(NULL), mpTimestampNode(NULL),
+          mpFlagsNode(NULL) {}
 
     /**
      * @copydoc VBOXHGCMSVCHELPERS::pfnUnload
@@ -198,6 +204,8 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
      */
     int rc = RTStrValidateEncodingEx(pszKey, RT_MIN(cbKey, MAX_NAME_LEN),
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    if (RT_SUCCESS(rc) && (cbKey < 2))
+        rc = VERR_INVALID_PARAMETER;
 
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -265,13 +273,13 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = validateKey(pszKey, cbKey);
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QuerySize(mpNode, pszKey, &cbValueActual);
+        rc = CFGMR3QuerySize(mpValueNode, pszKey, &cbValueActual);
     if (RT_SUCCESS(rc))
         VBoxHGCMParmUInt32Set(&paParms[2], cbValueActual);
     if (RT_SUCCESS(rc) && (cbValueActual > cbValue))
         rc = VERR_BUFFER_OVERFLOW;
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QueryString(mpNode, pszKey, pszValue, cbValue);
+        rc = CFGMR3QueryString(mpValueNode, pszKey, pszValue, cbValue);
     if (RT_SUCCESS(rc))
         Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pszValue));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
@@ -297,9 +305,12 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
     char *pszName, *pchBuf;
-    uint32_t cbName, cbBuf;
-    size_t cbValueActual;
+    uint32_t cchName, cchBuf;
+    size_t cchValue, cchFlags, cchBufActual;
 
+/*
+ * Get and validate the parameters
+ */
     LogFlowThisFunc(("\n"));
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)    /* name */
@@ -307,32 +318,52 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cbName);
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cchName);
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cbBuf);
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
     if (RT_SUCCESS(rc))
-        rc = validateKey(pszName, cbName);
+        rc = validateKey(pszName, cchName);
+    /* Get the value size */
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QuerySize(mpNode, pszName, &cbValueActual);
+        rc = CFGMR3QuerySize(mpValueNode, pszName, &cchValue);
+
+/*
+ * Read and set the values we will return
+ */
+    /* Get the flags size */
+    cchFlags = 1;  /* Empty string if no flags set. */
+    if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
+        CFGMR3QuerySize(mpFlagsNode, pszName, &cchFlags);  /* Ignore failure. */
+    /* Check that the buffer is big enough */
     if (RT_SUCCESS(rc))
     {
-        /* Temporary hack for an empty flags string */
-        cbValueActual += 1;
-        VBoxHGCMParmUInt32Set(&paParms[3], cbValueActual);
+        cchBufActual = cchValue + cchFlags;
+        VBoxHGCMParmUInt32Set(&paParms[3], cchBufActual);
     }
-    if (RT_SUCCESS(rc) && (cbValueActual > cbBuf))
+    if (RT_SUCCESS(rc) && (cchBufActual > cchBuf))
         rc = VERR_BUFFER_OVERFLOW;
+    /* Write the value */
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QueryString(mpNode, pszName, pchBuf, cbBuf);
+        rc = CFGMR3QueryString(mpValueNode, pszName, pchBuf, cchBuf);
+    /* Write the flags if there are any */
+    pchBuf[cchValue] = '\0';  /* In case there aren't */
+    if (RT_SUCCESS(rc) && (mpFlagsNode != NULL) && (cchFlags != 1))
+        CFGMR3QueryString(mpFlagsNode, pszName, pchBuf + cchValue,
+                          cchBuf - cchValue);
+    /* Timestamp */
+    uint64_t u64Timestamp = 0;
+    if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+        rc = CFGMR3QueryU64(mpFlagsNode, pszName, &u64Timestamp);
     if (RT_SUCCESS(rc))
-    {
-        /* No timestamp */
         VBoxHGCMParmUInt64Set(&paParms[2], 0);
-        /* No flags */
-        pchBuf[cbValueActual - 1] = 0;
-    }
+
+/*
+ * Done!  Do exit logging and return.
+ */
     if (RT_SUCCESS(rc))
-        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszName, rc, cbBuf, pchBuf));
+        Log2(("Queried string %S, value=%.*S, timestamp=%lld, flags=%.*S\n",
+              pszName, cchValue, pchBuf, u64Timestamp, cchFlags,
+              pchBuf + cchValue));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
         rc = VERR_NOT_FOUND;
     LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -353,36 +384,52 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
     char *pszKey, *pszValue;
-    uint32_t cbKey, cbValue;
+    uint32_t cchKey, cchValue;
 
     LogFlowThisFunc(("\n"));
-    if (   (cParms != 2)  /* Hardcoded value as the next lines depend on it. */
+    if (   (cParms < 2) || (cParms > 4)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* key */
         || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* value */
+        || ((3 == cParms) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR)) 
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cbKey);
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cchKey);
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cbValue);
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cchValue);
     if (RT_SUCCESS(rc))
-        rc = validateKey(pszKey, cbKey);
+        rc = validateKey(pszKey, cchKey);
     if (RT_SUCCESS(rc))
-        rc = validateValue(pszValue, cbValue);
+        rc = validateValue(pszValue, cchValue);
     if (RT_SUCCESS(rc))
     {
         /* Limit the number of keys that we can set. */
         unsigned cChildren = 0;
-        for (PCFGMNODE pChild = CFGMR3GetFirstChild(mpNode); pChild != 0; pChild = CFGMR3GetNextChild(pChild))
+        for (PCFGMNODE pChild = CFGMR3GetFirstChild(mpValueNode); pChild != 0; pChild = CFGMR3GetNextChild(pChild))
             ++cChildren;
         if (cChildren >= MAX_KEYS)
             rc = VERR_TOO_MUCH_DATA;
     }
+    /* For now, we do not support any flags */
+    if (RT_SUCCESS(rc) && (3 == cParms))
+    {
+        char *pszFlags;
+        uint32_t cchFlags;
+        rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
+        for (size_t i = 0; (i < cchFlags - 1) && RT_SUCCESS(rc); ++i)
+            if (pszFlags[i] != ' ')
+                rc = VERR_INVALID_PARAMETER;
+    }
     if (RT_SUCCESS(rc))
     {
-        CFGMR3RemoveValue(mpNode, pszKey);
-        if (pszValue > 0) /** @todo r=bird: what kind of fun is this? pointers are signed and this will *NOT* work on solaris and mac! */
-            rc = CFGMR3InsertString(mpNode, pszKey, pszValue);
+        CFGMR3RemoveValue(mpValueNode, pszKey);
+        if (mpTimestampNode != NULL)
+            CFGMR3RemoveValue(mpTimestampNode, pszKey);
+        if ((3 == cParms) && (mpFlagsNode != NULL))
+            CFGMR3RemoveValue(mpFlagsNode, pszKey);
+        rc = CFGMR3InsertString(mpValueNode, pszKey, pszValue);
+        if (RT_SUCCESS(rc))
+            rc = CFGMR3InsertInteger(mpTimestampNode, pszKey, RTTimeMilliTS());
     }
     if (RT_SUCCESS(rc))
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszKey, rc, pszValue));
@@ -416,7 +463,7 @@ int Service::delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = validateKey(pszKey, cbKey);
     if (RT_SUCCESS(rc))
-        CFGMR3RemoveValue(mpNode, pszKey);
+        CFGMR3RemoveValue(mpValueNode, pszKey);
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
@@ -515,7 +562,11 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /* We reallocate the temporary buffer in which we build up our array in
      * increments of size BLOCK: */
-    enum { BLOCKINCR = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048) % 1024 };
+    enum
+    {
+        BLOCKINCRFULL = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048),
+        BLOCKINCR = BLOCKINCRFULL - BLOCKINCRFULL % 1024
+    };
     int rc = VINF_SUCCESS;
 
 /*
@@ -539,13 +590,13 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  */
     RTMemAutoPtr<char> TmpBuf;
     uint32_t cchTmpBuf = 0, iTmpBuf = 0;
-    PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpNode);
+    PCFGMLEAF pLeaf = CFGMR3GetFirstValue(mpValueNode);
     while ((pLeaf != NULL) && RT_SUCCESS(rc))
     {
         /* Reallocate the buffer if it has got too tight */
         if (iTmpBuf + BLOCKINCR > cchTmpBuf)
         {
-            cchTmpBuf += BLOCKINCR;
+            cchTmpBuf += BLOCKINCR * 2;
             if (!TmpBuf.realloc(cchTmpBuf))
                 rc = VERR_NO_MEMORY;
         }
@@ -554,25 +605,32 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
          * doesn't match, we simply overwrite it in the buffer. */
         if (RT_SUCCESS(rc))
             rc = CFGMR3GetValueName(pLeaf, &TmpBuf[iTmpBuf], cchTmpBuf - iTmpBuf);
+        /* Only increment the buffer offest if the name matches, otherwise we
+         * overwrite it next iteration. */
         if (   RT_SUCCESS(rc)
             && matchesPattern(paszPatterns, cchPatterns, &TmpBuf[iTmpBuf])
            )
         {
-            int cchName = CFGMR3GetValueNameLen(pLeaf);
-            rc = CFGMR3QueryString(mpNode, &TmpBuf[iTmpBuf] /* Name */,
-                                   &TmpBuf[iTmpBuf + cchName],
-                                   cchTmpBuf - iTmpBuf - cchName);
+            const char *pszName = &TmpBuf[iTmpBuf];
+            /* Get value */
+            iTmpBuf += strlen(&TmpBuf[iTmpBuf]) + 1;
+            rc = CFGMR3QueryString(mpValueNode, pszName, &TmpBuf[iTmpBuf],
+                                   cchTmpBuf - iTmpBuf);
             if (RT_SUCCESS(rc))
             {
-                /* Only increment if the name matches, otherwise we overwrite
-                 * it next iteration. */
-                iTmpBuf += cchName;
-                int cchValue = strlen(&TmpBuf[iTmpBuf]) + 1;
-                /* We *do* have enough space left */
-                TmpBuf[iTmpBuf + cchValue] = '0';  /* Timestamp */
-                TmpBuf[iTmpBuf + cchValue + 1] = '\0';
-                TmpBuf[iTmpBuf + cchValue + 2] = '\0';  /* empty flags */
-                iTmpBuf += cchValue + 3;
+                /* Get timestamp */
+                iTmpBuf += strlen(&TmpBuf[iTmpBuf]) + 1;
+                uint64_t u64Timestamp = 0;
+                if (mpTimestampNode != NULL)
+                    CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
+                iTmpBuf += RTStrFormatNumber(&TmpBuf[iTmpBuf], u64Timestamp,
+                                             10, 0, 0, 0) + 1;
+                /* Get flags */
+                TmpBuf[iTmpBuf] = '\0';  /* In case there are none. */
+                if (mpFlagsNode != NULL)
+                    CFGMR3QueryString(mpFlagsNode, pszName, &TmpBuf[iTmpBuf],
+                                      cchTmpBuf - iTmpBuf);  /* Ignore failure */
+                iTmpBuf += strlen(&TmpBuf[iTmpBuf]) + 1;
             }
         }
         if (RT_SUCCESS(rc))
@@ -627,7 +685,7 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         /* The guest wishes to set a property */
         case SET_PROP:
             LogFlowFunc(("SET_PROP\n"));
-            rc = setKey(cParms - 1, paParms);
+            rc = setKey(cParms, paParms);
             break;
 
         /* The guest wishes to set a property value */
@@ -678,11 +736,13 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         {
             LogFlowFunc(("SET_CFGM_NODE\n"));
 
-            if (cParms != 1)
+            if ((cParms < 1) || (cParms > 3))
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* pNode */
+            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* pValue */
+                     || (cParms > 1) && (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* pTimestamp */
+                     || (cParms > 2) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR)   /* pFlags */
                     )
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -693,7 +753,18 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 uint32_t cbDummy;
 
                 rc = VBoxHGCMParmPtrGet (&paParms[0], (void **) &pNode, &cbDummy);
-                mpNode = pNode;
+                if (RT_SUCCESS(rc))
+                    mpValueNode = pNode;
+                if (RT_SUCCESS(rc) && (cParms > 1))
+                {
+                    rc = VBoxHGCMParmPtrGet (&paParms[1], (void **) &pNode, &cbDummy);
+                    mpTimestampNode = pNode;
+                }
+                if (RT_SUCCESS(rc) && (cParms > 2))
+                {
+                    rc = VBoxHGCMParmPtrGet (&paParms[2], (void **) &pNode, &cbDummy);
+                    mpFlagsNode = pNode;
+                }
             }
         } break;
 
