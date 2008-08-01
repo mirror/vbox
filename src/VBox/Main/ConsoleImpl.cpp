@@ -4316,7 +4316,7 @@ HRESULT Console::powerDown()
 # ifdef VBOX_WITH_GUEST_PROPS
     /* Save all guest/host property store entries to the machine XML
      * file as extra data. */
-    PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "Guest/Registry/");
+    PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Values/");
     PCFGMLEAF pValue = CFGMR3GetFirstValue (pRegistry);
     vrc = VINF_SUCCESS;
     while (pValue != NULL && RT_SUCCESS(vrc))
