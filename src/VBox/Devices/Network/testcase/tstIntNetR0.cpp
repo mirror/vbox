@@ -248,7 +248,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 #else
         INTNETSG Sg;
         intnetR0SgInitTemp(&Sg, abBuf, cb);
-        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, &Sg);
+        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, &Sg, NULL);
         if (RT_SUCCESS(rc))
             rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, NULL, 0);
 #endif
