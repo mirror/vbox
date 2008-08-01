@@ -271,13 +271,19 @@ typedef INTNETSG const *PCINTNETSG;
 /** @name INTNETSG::fFlags definitions.
  * @{ */
 /** Set if the SG is free. */
-#define INTNETSG_FLAGS_FREE     RT_BIT_32(1)
+#define INTNETSG_FLAGS_FREE             RT_BIT_32(1)
 /** Set if the SG is a temporary one that will become invalid upon return.
  * Try to finish using it before returning, and if that's not possible copy
  * to other buffers.
  * When not set, the callee should always free the SG.
  * Attempts to free it made by the callee will be quietly ignored. */
-#define INTNETSG_FLAGS_TEMP     RT_BIT_32(2)
+#define INTNETSG_FLAGS_TEMP             RT_BIT_32(2)
+/** ARP packet, IPv4 + MAC.
+ * @internal */
+#define INTNETSG_FLAGS_ARP_IPV4         RT_BIT_32(3)
+/** Copied to the temporary buffer.
+ * @internal */
+#define INTNETSG_FLAGS_PKT_CP_IN_TMP    RT_BIT_32(4)
 /** @} */
 
 
@@ -287,10 +293,8 @@ typedef INTNETSG const *PCINTNETSG;
 #define INTNETTRUNKDIR_WIRE             RT_BIT_32(0)
 /** To/From the host. */
 #define INTNETTRUNKDIR_HOST             RT_BIT_32(1)
-/** To the wire but with RTNETETHERHDR::SrcMac set to the host interface MAC address. */
-#define INTNETTRUNKDIR_WIRE_SHARED      RT_BIT_32(2)
 /** Mask of valid bits. */
-#define INTNETTRUNKDIR_VALID_MASK       UINT32_C(0x7)
+#define INTNETTRUNKDIR_VALID_MASK       UINT32_C(3)
 /** @} */
 
 
@@ -471,6 +475,16 @@ typedef struct INTNETTRUNKIFPORT
     DECLR0CALLBACKMEMBER(int, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
 
     /**
+     * Gets the MAC address of the host network interface that we're attached to.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   pMac        Where to store the host MAC address.
+     *
+     * @remarks Called while owning the network and the out-bound trunk port semaphores.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnGetMacAddress,(PINTNETTRUNKIFPORT pIfPort, PPDMMAC pMac));
+
+    /**
      * Tests if the mac address belongs to any of the host NICs
      * and should take the host route.
      *
@@ -483,6 +497,9 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @remarks TAP and NAT will compare with their own MAC address and let all their
      *          traffic take the host direction.
+     *
+     * @remarks This didn't quiet work out the way it should... perhaps obsolete this
+     *          with pfnGetHostMac?
      */
     DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCPDMMAC pMac));
 
@@ -574,8 +591,8 @@ typedef struct INTNETTRUNKFACTORY
 /** Pointer to the trunk factory. */
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
-/** The UUID for the (current) trunk factory */
-#define INTNETTRUNKFACTORY_UUID_STR     "c913a8e4-8593-41cd-ae73-f8d7701b08fb"
+/** The UUID for the (current) trunk factory. (case sensitive) */
+#define INTNETTRUNKFACTORY_UUID_STR     "ae8fcb95-280c-42f4-a8f1-09f84e3bdab3"
 
 
 /**
