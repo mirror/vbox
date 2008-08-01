@@ -245,8 +245,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
 	PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
 #ifdef VBOX_WITH_GUEST_PROPS
-    PCFGMNODE pGuest = NULL;        /* /Guest */
-    PCFGMNODE pRegistry = NULL;     /* /Guest/Registry */
+    PCFGMNODE pGuestProps = NULL;   /* /GuestProps */
+    PCFGMNODE pValues = NULL;       /* /GuestProps/Values */
+    PCFGMNODE pTimestamps = NULL;   /* /GuestProps/Timestamps */
+    PCFGMNODE pFlags = NULL;        /* /GuestProps/Flags */
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
@@ -1710,8 +1712,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
         else
         {
-            rc = CFGMR3InsertNode(pRoot,     "Guest", &pGuest);                            RC_CHECK();
-            rc = CFGMR3InsertNode(pGuest,    "Registry", &pRegistry);                      RC_CHECK();
+            rc = CFGMR3InsertNode(pRoot,       "GuestProps", &pGuestProps);              RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Values", &pValues);                      RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Timestamps", &pTimestamps);              RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Flags", &pFlags);                        RC_CHECK();
             /* Load the saved machine registry.  This is stored as extra data
              * keys in the machine XML file, starting with the prefix
              * VBOX_SHARED_INFO_KEY_PREFIX. */
@@ -1743,19 +1747,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 /* empty value means remove value which we've already done */
                 if (pszCFGMValue && *pszCFGMValue)
                 {
-                    rc = CFGMR3InsertString(pRegistry, pszCFGMValueName, pszCFGMValue);
+                    rc = CFGMR3InsertString(pValues, pszCFGMValueName, pszCFGMValue);
                     AssertMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszCFGMValueName));
                 }
             }
 
             /* Setup the service. */
-            VBOXHGCMSVCPARM parm;
+            VBOXHGCMSVCPARM parms[3];
 
-            parm.type = VBOX_HGCM_SVC_PARM_PTR;
-            parm.u.pointer.addr = pRegistry;
-            parm.u.pointer.size = sizeof(pRegistry);  /* We don't actually care. */
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[0].u.pointer.addr = pValues;
+            parms[0].u.pointer.size = sizeof(pValues);  /* We don't actually care. */
+            parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[1].u.pointer.addr = pTimestamps;
+            parms[1].u.pointer.size = sizeof(pTimestamps);
+            parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[2].u.pointer.addr = pFlags;
+            parms[2].u.pointer.size = sizeof(pFlags);
 
-            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_CFGM_NODE, 1, &parm);
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_CFGM_NODE, 3, &parms[0]);
 
             Log(("Set VBoxGuestPropSvc property store\n"));
         }
