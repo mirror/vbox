@@ -726,7 +726,7 @@ __BEGIN_DECLS
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange);
+PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 
 /**
  * Find patch for privileged instruction at specified location
