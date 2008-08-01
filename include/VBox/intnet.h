@@ -287,8 +287,10 @@ typedef INTNETSG const *PCINTNETSG;
 #define INTNETTRUNKDIR_WIRE             RT_BIT_32(0)
 /** To/From the host. */
 #define INTNETTRUNKDIR_HOST             RT_BIT_32(1)
+/** To the wire but with RTNETETHERHDR::SrcMac set to the host interface MAC address. */
+#define INTNETTRUNKDIR_WIRE_SHARED      RT_BIT_32(2)
 /** Mask of valid bits. */
-#define INTNETTRUNKDIR_VALID_MASK       UINT32_C(0x3)
+#define INTNETTRUNKDIR_VALID_MASK       UINT32_C(0x7)
 /** @} */
 
 
