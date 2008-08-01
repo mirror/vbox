@@ -270,6 +270,185 @@ static bool intnetR0TrunkIfOutLock(PINTNETTRUNKIF pThis);
 static void intnetR0TrunkIfOutUnlock(PINTNETTRUNKIF pThis);
 
 
+/**
+ * Initializes a scatter / gather buffer from a simple linear buffer.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
+ * @param   pvFrame     Pointer to the frame
+ * @param   cbFrame     The size of the frame.
+ */
+DECLINLINE(void) intnetR0SgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame)
+{
+    pSG->pvOwnerData = NULL;
+    pSG->pvUserData = NULL;
+    pSG->pvUserData2 = NULL;
+    pSG->cbTotal = cbFrame;
+    pSG->cUsers = 1;
+    pSG->fFlags = INTNETSG_FLAGS_TEMP;
+    pSG->cSegsAlloc = 1;
+    pSG->cSegsUsed = 1;
+    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+    pSG->aSegs[0].pv = pvFrame;
+    pSG->aSegs[0].cb = cbFrame;
+}
+
+
+/**
+ * Initializes a scatter / gather buffer from a internal networking packet.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
+ * @param   pHdr        Pointer to the packet header.
+ * @param   pBuf        The buffer the header is within. Only used in strict builds.
+ */
+DECLINLINE(void) intnetR0SgInitFromPkt(PINTNETSG pSG, PCINTNETHDR pPktHdr, PCINTNETBUF pBuf)
+{
+    pSG->cSegsUsed = 1;
+    pSG->cbTotal = pSG->aSegs[0].cb = pPktHdr->cbFrame;
+    pSG->aSegs[0].pv = INTNETHdrGetFramePtr(pPktHdr, pBuf);
+    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+}
+
+
+/**
+ * Reads a byte from a SG list.
+ *
+ * @returns The byte on success. 0xff on failure.
+ * @param   pSG         The SG list to read.
+ * @param   off         The offset (into the SG) off the byte.
+ */
+DECLINLINE(uint8_t) intnetR0SgReadByte(PCINTNETSG pSG, uint32_t off)
+{
+    if (RT_LIKELY(pSG->aSegs[0].cb > off))
+        return ((uint8_t const *)pSG->aSegs[0].pv)[off];
+
+    unsigned const cSegs = pSG->cSegsUsed; Assert(cSegs == pSG->cSegsUsed);
+    for (unsigned iSeg = 1; iSeg < cSegs; iSeg++)
+    {
+        if (pSG->aSegs[iSeg].cb > 0)
+            return ((uint8_t const *)pSG->aSegs[iSeg].pv)[off];
+        off -= pSG->aSegs[iSeg].cb;
+    }
+    return false;
+}
+
+
+/**
+ * Worker for intnetR0SgReadPart that deals with the case where the
+ * requested data isn't in the first segment.
+ *
+ * @returns true, unless the SG is invalid.
+ * @param   pSG         The SG list to read.
+ * @param   off         Where to start reading (offset into the SG).
+ * @param   cb          How much to read.
+ * @param   pvBuf       The buffer to read into.
+ */
+static bool intnetR0SgReadPartSlow(PCINTNETSG pSG, uint32_t off, uint32_t cb, void *pvBuf)
+{
+    if (RT_UNLIKELY(off + cb > pSG->cbTotal))
+        return false;
+
+    /*
+     * Skip ahead to the segment where off starts.
+     */
+    unsigned const cSegs = pSG->cSegsUsed; Assert(cSegs == pSG->cSegsUsed);
+    unsigned iSeg = 0;
+    while (off > pSG->aSegs[iSeg].cb)
+    {
+        off -= pSG->aSegs[iSeg++].cb;
+        AssertReturn(iSeg < cSegs, false);
+    }
+
+    /*
+     * Copy the data, hoping that it's all from one segment...
+     */
+    uint32_t cbCanCopy = pSG->aSegs[iSeg].cb - off;
+    if (cbCanCopy >= cb)
+        memcpy(pvBuf, (uint8_t const *)pSG->aSegs[iSeg].pv + off, cb);
+    else
+    {
+        /* copy the portion in the current segment. */
+        memcpy(pvBuf, (uint8_t const *)pSG->aSegs[iSeg].pv + off, cbCanCopy);
+        cb -= cbCanCopy;
+
+        /* copy the portions in the other segments. */
+        do
+        {
+            pvBuf = (uint8_t *)pvBuf + cbCanCopy;
+            iSeg++;
+            AssertReturn(iSeg < cSegs, false);
+
+            cbCanCopy = RT_MIN(cb, pSG->aSegs[iSeg].cb);
+            memcpy(pvBuf, (uint8_t const *)pSG->aSegs[iSeg].pv + off, cbCanCopy);
+
+            cb -= cbCanCopy;
+        } while (cb > 0);
+    }
+
+    return true;
+}
+
+
+/**
+ * Reads a part of an SG into a buffer.
+ *
+ * @returns true on success, false on failure (out of bounds).
+ * @param   pSG         The SG list to read.
+ * @param   off         Where to start reading (offset into the SG).
+ * @param   cb          How much to read.
+ * @param   pvBuf       The buffer to read into.
+ */
+DECLINLINE(bool) intnetR0SgReadPart(PCINTNETSG pSG, uint32_t off, uint32_t cb, void *pvBuf)
+{
+    Assert(off + cb > off);
+
+    /* The optimized case. */
+    if (RT_LIKELY(    pSG->cSegsUsed == 1
+                  ||  pSG->aSegs[0].cb >= off + cb))
+    {
+        Assert(pSG->cbTotal == pSG->aSegs[0].cb);
+        memcpy(pvBuf, (uint8_t const *)pSG->aSegs[0].pv + off, cb);
+        return true;
+    }
+    return intnetR0SgReadPartSlow(pSG, off, cb, pvBuf);
+}
+
+
+/**
+ * Reads an entire SG into a fittingly size buffer.
+ *
+ * @param   pSG         The SG list to read.
+ * @param   pvBuf       The buffer to read into (at least pSG->cbTotal in size).
+ */
+DECLINLINE(void) intnetR0SgRead(PCINTNETSG pSG, void *pvBuf)
+{
+    if (pSG->cSegsUsed == 1)
+    {
+        Assert(pSG->cbTotal == pSG->aSegs[0].cb);
+        memcpy(pvBuf, pSG->aSegs[0].pv, pSG->cbTotal);
+    }
+    else
+    {
+        uint8_t       *pbDst = (uint8_t *)pvBuf;
+        unsigned const cSegs = pSG->cSegsUsed; Assert(cSegs == pSG->cSegsUsed);
+        for (unsigned iSeg = 0; iSeg < cSegs; iSeg++)
+        {
+            uint32_t cbSeg = pSG->aSegs[iSeg].cb;
+            Assert(cbSeg <= pSG->cbTotal && (uintptr_t)(pbDst - (uint8_t *)pvBuf) + cbSeg <= pSG->cbTotal);
+            memcpy(pbDst, pSG->aSegs[iSeg].pv, cbSeg);
+            pbDst += cbSeg;
+        }
+    }
+}
+
+
+
+
+
+
 
 /**
  * Retain an interface.
@@ -322,6 +501,10 @@ static DECLCALLBACK(int) intnetR0IfRetainHandle(RTHANDLETABLE hHandleTable, void
         return intnetR0IfRetain(pIf, (PSUPDRVSESSION)pvCtx);
     return VINF_SUCCESS;
 }
+
+
+
+
 
 
 /**
@@ -752,9 +935,9 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
 
 
 /**
- * Snoops IP assignments and releases from the DHCPv4 trafik.
+ * Snoops IP assignments and releases from the DHCPv4 traffic.
  *
- * The caller is responsible for making sure this trafik between the
+ * The caller is responsible for making sure this traffic between the
  * BOOTPS and BOOTPC ports and validate the IP header. The UDP packet
  * need not be validated beyond the ports.
  *
@@ -765,9 +948,72 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
  * @param   pUdpHdr         Pointer to the UDP header in the frame.
  * @param   cbUdpPkt        What's left of the frame when starting at the UDP header.
  */
-static void intnetR0NetworkSnoopDHCP(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, uint32_t cbUdpPkt)
+static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, uint32_t cbUdpPkt)
 {
     /** @todo later */
+}
+
+
+static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
+{
+
+}
+
+static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
+{
+
+}
+
+
+/**
+ * Snoop up addresses from ARP and DHCP traffic from frames comming
+ * over the trunk connection.
+ *
+ * The caller is responsible for do some basic filtering before calling
+ * this function.
+ * For IPv4 this means checking against the minimum DHCPv4 frame size.
+ *
+ * @param   pNetwork        The network.
+ * @param   pSG             The SG list for the frame.
+ * @param   EtherType       The Ethertype of the frame.
+ */
+static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, uint16_t EtherType)
+{
+    switch (EtherType)
+    {
+        case RTNET_ETHERTYPE_IPV4:
+        {
+            Assert(pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN);
+/** @todo optimize for the case where we can expect both the IP and UDP header to be in the first segment. */
+
+            /* check if the protocol is UDP */
+            if (    intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_p))
+                !=  RTNETIPV4_PROT_UDP)
+                return;
+
+            /* get the TCP header length */
+            uint8_t b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + 0); /* (IPv4 first byte, a bitfield) */
+            uint32_t cbIpHdr = (b & 0x0f) * 4;
+            if (cbIpHdr < RTNETIPV4_MIN_LEN)
+                return;
+
+            /* get the lower byte of the UDP source port number. */
+            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport) + 1);
+            if (    b != RTNETIPV4_PORT_BOOTPS
+                &&  b != RTNETIPV4_PORT_BOOTPC)
+                return;
+            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport));
+            if (b)
+                return;
+            intnetR0TrunkIfSnoopDhcp(pNetwork, pSG);
+            break;
+        }
+
+        case RTNET_ETHERTYPE_ARP:
+            intnetR0TrunkIfSnoopArp(pNetwork, pSG);
+            break;
+    }
+    /** @todo soon */
 }
 
 
@@ -798,7 +1044,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
     /*
      * Ignore non good IP address (like broadcast and my network),
      * also skip packets containing address that are already in the
-     * cache. Don't ignore potential DHCP trafik though.
+     * cache. Don't ignore potential DHCP traffic though.
      */
     bool fValidatedIpHdr = false;
     RTNETADDRU Addr;
@@ -832,7 +1078,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
         {
             if (    fValidatedIpHdr
                 ||  RTNetIPv4IsHdrValid(pIpHdr, cbPacket, cbPacket))
-                intnetR0NetworkSnoopDHCP(pIf->pNetwork, pIpHdr, pUdpHdr, cbPacket - cbHdr);
+                intnetR0NetworkSnoopDhcp(pIf->pNetwork, pIpHdr, pUdpHdr, cbPacket - cbHdr);
             else
                 Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header (dhcp)\n"));
         }
@@ -848,7 +1094,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
  * @param   cbPacket        The size of the packet (migth be larger than the ARP
  *                          request 'cause of min ethernet frame size).
  */
-static void intnetR0IfSnoopArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket)
+static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket)
 {
     /*
      * Ignore malformed packets and packets which doesn't interest us.
@@ -927,7 +1173,7 @@ static void intnetR0IfSnoopArpSourceAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint
  * @param   pbFrame         The frame.
  * @param   cbFrame         The size of the frame.
  */
-static void intnetR0ISnoopSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t cbFrame)
+static void intnetR0IfSnoopAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t cbFrame)
 {
     /*
      * Fish out the ethertype and look for stuff we can handle.
@@ -937,64 +1183,27 @@ static void intnetR0ISnoopSourceAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint
     cbFrame -= sizeof(RTNETETHERHDR);
 
     uint16_t EtherType = RT_H2BE_U16(((PCRTNETETHERHDR)pbFrame)->EtherType);
-    if (EtherType == RTNET_ETHERTYPE_IPV4)
-        intnetR0IfSnoopIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+    switch (EtherType)
+    {
+        case RTNET_ETHERTYPE_IPV4:
+            intnetR0IfSnoopIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            break;
 #if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
-    else if (EtherType == RTNET_ETHERTYPE_IPV6)
-        intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+        case RTNET_ETHERTYPE_IPV6:
+            intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            break;
 #endif
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
-    else if (   EtherType == RT_H2BE_U16(0x8137) //??
-             || EtherType == RT_H2BE_U16(0x8138) //??
-             || EtherType == RT_H2BE_U16(0x8037) //??
-             )
-        intnetR0IfSnoopIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+        case RTNET_ETHERTYPE_IPX_1:
+        case RTNET_ETHERTYPE_IPX_2:
+        case RTNET_ETHERTYPE_IPX_3:
+            intnetR0IfSnoopIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            break;
 #endif
-    else if (EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
-        intnetR0IfSnoopArpSourceAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
-}
-
-
-/**
- * Initializes a scatter / gather buffer from a simple linear buffer.
- *
- * @returns Pointer to the start of the frame.
- * @param   pSG         Pointer to the scatter / gather structure.
- *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
- * @param   pvFrame     Pointer to the frame
- * @param   cbFrame     The size of the frame.
- */
-DECLINLINE(void) intnetR0SgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame)
-{
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cbTotal = cbFrame;
-    pSG->cUsers = 1;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsAlloc = 1;
-    pSG->cSegsUsed = 1;
-    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
-    pSG->aSegs[0].pv = pvFrame;
-    pSG->aSegs[0].cb = cbFrame;
-}
-
-
-/**
- * Initializes a scatter / gather buffer from a internal networking packet.
- *
- * @returns Pointer to the start of the frame.
- * @param   pSG         Pointer to the scatter / gather structure.
- *                      (The pvOwnerData, fFlags, cUsers, and cSegsAlloc members are left untouched.)
- * @param   pHdr        Pointer to the packet header.
- * @param   pBuf        The buffer the header is within. Only used in strict builds.
- */
-DECLINLINE(void) intnetR0SgInitFromPkt(PINTNETSG pSG, PCINTNETHDR pPktHdr, PCINTNETBUF pBuf)
-{
-    pSG->cSegsUsed = 1;
-    pSG->cbTotal = pSG->aSegs[0].cb = pPktHdr->cbFrame;
-    pSG->aSegs[0].pv = INTNETHdrGetFramePtr(pPktHdr, pBuf);
-    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+        case RTNET_ETHERTYPE_ARP:
+            intnetR0IfSnoopArpAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            break;
+    }
 }
 
 
@@ -1030,34 +1239,6 @@ static unsigned intnetR0RingReadFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, 
     return cb;
 }
 #endif /* IN_INTNET_TESTCASE */
-
-
-/**
- * Reads an entire SG into a fittingly size buffer.
- *
- * @param   pSG         The SG list to read.
- * @param   pvBuf       The buffer to read into (at least pSG->cbTotal in size).
- */
-DECLINLINE(void) intnetR0SgRead(PCINTNETSG pSG, void *pvBuf)
-{
-    if (pSG->cSegsUsed == 1)
-    {
-        Assert(pSG->cbTotal == pSG->aSegs[0].cb);
-        memcpy(pvBuf, pSG->aSegs[0].pv, pSG->cbTotal);
-    }
-    else
-    {
-        uint8_t       *pbDst = (uint8_t *)pvBuf;
-        unsigned const cSegs = pSG->cSegsUsed; Assert(cSegs == pSG->cSegsUsed);
-        for (unsigned iSeg = 0; iSeg < cSegs; iSeg++)
-        {
-            uint32_t cbSeg = pSG->aSegs[iSeg].cb;
-            Assert(cbSeg <= pSG->cbTotal && (uintptr_t)(pbDst - (uint8_t *)pvBuf) + cbSeg <= pSG->cbTotal);
-            memcpy(pbDst, pSG->aSegs[iSeg].pv, cbSeg);
-            pbDst += cbSeg;
-        }
-    }
-}
 
 
 /**
@@ -1307,8 +1488,9 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, u
  * @param   fSrc            The source flags. This 0 if it's not from the trunk.
  * @param   pSG             Pointer to the gather list.
  * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
+ * @param   pEthHdr         Pointer to the ethernet header.
  */
-static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PINTNETSG pSG, bool fTrunkLocked)
+static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
 {
     /*
      * This is a broadcast or multicast address. For the present we treat those
@@ -1328,6 +1510,20 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
     if (    pIfSender
         &&  pTrunkIf)
         intnetR0TrunkIfSend(pTrunkIf, pNetwork, INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked);
+
+    /*
+     * Snoop address info from packet orginating from the trunk connection.
+     */
+    else if (   (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+             && !pIfSender)
+    {
+        uint16_t EtherType = RT_BE2H_U16(pEthHdr->EtherType);
+        if (    (   EtherType == RTNET_ETHERTYPE_IPV4       /* for DHCP */
+                 && pSG->cbTotal >= RTNETBOOTP_DHCP_MIN_LEN)
+            ||  EtherType == RTNET_ETHERTYPE_ARP)
+            intnetR0TrunkIfSnoopAddr(pNetwork, pSG, EtherType);
+    }
+
     return false; /* broadcast frames are never dropped */
 }
 
@@ -1348,7 +1544,108 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
 static bool intnetR0NetworkSendMulticast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
 {
     /** @todo implement multicast */
-    return intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked);
+    return intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked, pEthHdr);
+}
+
+
+/**
+ * Sends a unicast frame using the network layer address instead
+ * of the link layer one.
+ *
+ * The caller must own the network mutex, might be abandond temporarily.
+ *
+ * @returns true if it's addressed to someone on the network, otherwise false.
+ * @param   pNetwork        The network the frame is being sent to.
+ * @param   pSG             Pointer to the gather list.
+ * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
+ * @param   pEthHdr         Pointer to the ethernet header.
+ */
+static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
+{
+    /*
+     * Extract the network address from the packet.
+     */
+    RTNETADDRU      Addr;
+    INTNETADDRTYPE  enmAddrType;
+    uint8_t         cbAddr;
+    switch (RT_BE2H_U16(pEthHdr->EtherType))
+    {
+        case RTNET_ETHERTYPE_IPV4:
+            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr))
+                return false;
+            enmAddrType = kIntNetAddrType_IPv4;
+            cbAddr = sizeof(Addr.IPv4);
+            break;
+
+#if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
+        case RTNET_ETHERTYPE_IPV6
+            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr))
+                return false;
+            enmAddrType = kIntNetAddrType_IPv6;
+            cbAddr = sizeof(Addr.IPv6);
+            break;
+#endif
+#if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
+        case RTNET_ETHERTYPE_IPX_1:
+        case RTNET_ETHERTYPE_IPX_2:
+        case RTNET_ETHERTYPE_IPX_3:
+            if (!intnetR0SgReadPart(pSG, RT_OFFSETOF(RTNETIPX, ipx_dstnet), sizeof(Addr.IPX), &Addr))
+                return false;
+            enmAddrType = kIntNetAddrType_IPX;
+            cbAddr = sizeof(Addr.IPX);
+            break;
+#endif
+
+        /*
+         * Treat ARP is broadcast (it shouldn't end up here normally,
+         * so it goes last in the switch).
+         */
+        case RTNET_ETHERTYPE_ARP:
+            return intnetR0NetworkSendBroadcast(pNetwork, NULL, pSG, fTrunkLocked, pEthHdr);
+
+        /*
+         * Unknown packets are sent do all interfaces that are in promiscuous mode.
+         */
+        default:
+        {
+            if (!(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC)))
+            {
+                for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+                    if (pIf->fPromiscuous)
+                    {
+                        Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
+                        intnetR0IfSend(pIf, NULL, pSG);
+                    }
+            }
+            return false;
+        }
+    }
+
+    /*
+     * Send it to interfaces with matching network addresses.
+     */
+    bool fExactIntNetRecipient = false;
+    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    {
+        bool fIt = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmAddrType], &Addr, cbAddr) >= 0;
+        if (    fIt
+            ||  (   pIf->fPromiscuous
+                 && !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC))))
+        {
+            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
+            fExactIntNetRecipient |= fIt;
+            intnetR0IfSend(pIf, NULL, pSG);
+        }
+    }
+
+    /*
+     * Perform DHCP snooping.
+     */
+    if (    enmAddrType == kIntNetAddrType_IPv4
+        &&  pSG->cbTotal >= RTNETBOOTP_DHCP_MIN_LEN)
+        intnetR0TrunkIfSnoopAddr(pNetwork, pSG, RT_BE2H_U16(pEthHdr->EtherType));
+
+    return fExactIntNetRecipient;
 }
 
 
@@ -1518,9 +1815,12 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     else if (   EthHdr.DstMac.au16[0] == 0xffff     /* broadcast address. */
              && EthHdr.DstMac.au16[1] == 0xffff
              && EthHdr.DstMac.au16[2] == 0xffff)
-        fRc = intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked);
-    else
+        fRc = intnetR0NetworkSendBroadcast(pNetwork, pIfSender, pSG, fTrunkLocked, &EthHdr);
+    else if (   !(pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+             || !(fSrc & INTNETTRUNKDIR_WIRE))
         fRc = intnetR0NetworkSendUnicast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
+    else
+        fRc = intnetR0NetworkSendUnicastWithSharedMac(pNetwork, pSG, fTrunkLocked, &EthHdr);
     return fRc;
 }
 
@@ -1623,7 +1923,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
             if (pvCurFrame)
             {
                 if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                    intnetR0ISnoopSourceAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame);
+                    intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame);
                 intnetR0SgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
                 intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
             }
