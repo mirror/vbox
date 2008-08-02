@@ -1201,17 +1201,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
                     }
                     /* The name is on the form 'ifX: long name', chop it off at the colon. */
-                    Bstr hostInterfaceName;
-                    hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
+                    Bstr HifName;
+                    hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
+                    Utf8Str HifNameUtf8(HifName);
+                    const char *pszHifName = HifNameUtf8.raw();
                     char szTrunk[8];
-                    strncpy(szTrunk, Utf8Str(hostInterfaceName).raw(), sizeof(szTrunk));
+                    strncpy(szTrunk, pszHifName, sizeof(szTrunk));
                     char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
                     if (!pszColon)
                     {
                         hrc = networkAdapter->Detach();                              H();
                         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                           N_("Malformed host interface networking name '%ls'"),
-                                          hostInterfaceName.raw());
+                                          HifName.raw());
                     }
                     *pszColon = '\0';
 
@@ -1222,6 +1224,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     char szNetwork[80];
                     RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", szTrunk);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+                    /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
+                    if (    strstr(pszHifName, "Wireless")
+                        ||  strstr(pszHifName, "AirPort" ))
+                    {
+                        rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
+                    }
 
 #elif defined(RT_OS_WINDOWS)
                     if (fSniffer)
