@@ -247,39 +247,6 @@ typedef struct INTNET
 } INTNET;
 
 
-#pragma pack(1)
-/**
- * Ethernet IPv6 + 6-byte MAC ARP request packet.
- *
- * @todo check if this exists and is actually used.
- */
-typedef struct INTNETARPIPV6
-{
-    RTNETARPHDR     Hdr;
-    /** The sender hardware address. */
-    RTMAC           ar_sha;
-    /** The sender protocol address. */
-    RTNETADDRIPV6   ar_spa;
-    /** The target hardware address. */
-    RTMAC           ar_tha;
-    /** The arget protocol address. */
-    RTNETADDRIPV6   ar_tpa;
-} INTNETARPIPV6;
-#pragma pack(0)
-/** Pointer to an ethernet IPv6+MAC ARP request packet. */
-typedef INTNETARPIPV6 *PINTNETARPIPV6;
-/** Pointer to a const ethernet IPv6+MAC ARP request packet. */
-typedef INTNETARPIPV6 const *PCINTNETARPIPV6;
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** Minimum length for ARP packets that we snoop. */
-#define INTNET_ARP_MIN_LEN      sizeof(RTNETARPIPV4)
-/** Maximum length for ARP packets that we snoop. */
-#define INTNET_ARP_MAX_LEN      sizeof(INTNETARPIPV6)
-
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -833,17 +800,15 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCRT
  */
 static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, int iEntry, const char *pszMsg)
 {
-#if 0 /** @todo the inbound ARP snooping is busted. */
     Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 type=%d #%d %.*Rhxs %s\n", pIf->hIf,
          (int)(intptr_t)(pCache - &pIf->aAddrCache[0]), iEntry, pCache->cbAddress,
          pCache->pbEntries + iEntry * pCache->cbEntry, pszMsg));
-    Assert(iEntry < pCache->cEntries);
+    AssertReturnVoid(iEntry < pCache->cEntries);
     pCache->cEntries--;
     if (iEntry < pCache->cEntries)
         memmove(pCache->pbEntries +      iEntry  * pCache->cbEntry,
                 pCache->pbEntries + (iEntry + 1) * pCache->cbEntry,
                 (pCache->cEntries - iEntry)      * pCache->cbEntry);
-#endif
 }
 
 
@@ -1104,65 +1069,59 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
  */
 static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
+Log6(("ts-ar: %#d\n", pSG->cbTotal));
+
     /*
      * Check the minimum size first.
      */
-    if (RT_UNLIKELY(pSG->cbTotal < INTNET_ARP_MIN_LEN))
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETARPIPV4)))
         return;
 
     /*
      * Copy to temporary buffer if necessary.
      */
-    size_t cbPacket = RT_MIN(pSG->cbTotal, INTNET_ARP_MAX_LEN);
-    PCRTNETARPHDR pHdr = (PCRTNETARPHDR)((uintptr_t)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+    size_t cbPacket = RT_MIN(pSG->cbTotal, sizeof(RTNETARPIPV4));
+    PCRTNETARPIPV4 pArpIPv4 = (PCRTNETARPIPV4)((uintptr_t)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
     if (    pSG->cSegsUsed != 1
         &&  pSG->aSegs[0].cb < cbPacket)
     {
-        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), cbPacket, pNetwork->pbTmp))
-            return;
-        pHdr = (PCRTNETARPHDR)pNetwork->pbTmp;
+        if (        (pSG->fFlags & (INTNETSG_FLAGS_ARP_IPV4 | INTNETSG_FLAGS_PKT_CP_IN_TMP))
+                !=  (INTNETSG_FLAGS_ARP_IPV4 | INTNETSG_FLAGS_PKT_CP_IN_TMP)
+            && !intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), cbPacket, pNetwork->pbTmp))
+                return;
+        pArpIPv4 = (PCRTNETARPIPV4)pNetwork->pbTmp;
     }
 
     /*
-     * Ignore malformed packets and packets which doesn't interest us.
+     * Ignore packets which doesn't interest us or we perceive as malformed.
      */
-    if (RT_UNLIKELY(    pHdr->ar_hlen != sizeof(RTMAC)
-                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
+    if (RT_UNLIKELY(    pArpIPv4->Hdr.ar_hlen  != sizeof(RTMAC)
+                    ||  pArpIPv4->Hdr.ar_plen  != sizeof(RTNETADDRIPV4)
+                    ||  pArpIPv4->Hdr.ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)
+                    ||  pArpIPv4->Hdr.ar_ptype != RT_H2BE_U16(RTNET_ETHERTYPE_IPV4)))
         return;
-    uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
+    uint16_t ar_oper = RT_H2BE_U16(pArpIPv4->Hdr.ar_oper);
     if (RT_UNLIKELY(    ar_oper != RTNET_ARPOP_REQUEST
-                    &&  ar_oper != RTNET_ARPOP_REPLY
-                 /* These doesn't interest us at the moment since they are rarely used on ethernet:
-                    &&  ar_oper != RTNET_ARPOP_REVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_REVREPLY
-                    &&  ar_oper != RTNET_ARPOP_INVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_INVREPLY */
-                   ))
+                    &&  ar_oper != RTNET_ARPOP_REPLY))
+    {
+        Log6(("ts-ar: op=%#x\n", ar_oper));
         return;
+    }
 
     /*
-     * Deal with the protocols.
+     * Delete the source address if it's OK.
      */
-    RTNETADDRU Addr;
-    uint16_t ar_ptype = RT_H2BE_U16(pHdr->ar_ptype);
-    if (ar_ptype == RTNET_ETHERTYPE_IPV4)
+    if (    !(pArpIPv4->ar_sha.au8[0] & 1)
+        &&  (   pArpIPv4->ar_sha.au16[0]
+             || pArpIPv4->ar_sha.au16[1]
+             || pArpIPv4->ar_sha.au16[2])
+        &&  intnetR0IPv4AddrIsGood(pArpIPv4->ar_spa))
     {
-        /*
-         * IPv4.
-         */
-        PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
-        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
-                        ||  cbPacket < sizeof(*pReq)
-                        ||  !intnetR0IPv4AddrIsGood(pReq->ar_spa)))
-            return;
-
-        Addr.IPv4 = pReq->ar_spa;
-        intnetR0NetworkAddrCacheDelete(pNetwork, &Addr, kIntNetAddrType_IPv4, sizeof(pReq->ar_spa), "tif/arp");
+        Log6(("ts-ar: %d.%d.%d.%d / %.6Rhxs\n", pArpIPv4->ar_spa.au8[0], pArpIPv4->ar_spa.au8[1],
+              pArpIPv4->ar_spa.au8[2], pArpIPv4->ar_spa.au8[3], &pArpIPv4->ar_sha));
+        intnetR0NetworkAddrCacheDelete(pNetwork, (PCRTNETADDRU)&pArpIPv4->ar_spa,
+                                       kIntNetAddrType_IPv4, sizeof(pArpIPv4->ar_spa), "tif/arp");
     }
-#if 0 /** @todo IPv6 ARP support? Is it used at all? */
-#endif
-    else
-        Log(("intnetR0TrunkIfSnoopArp: unknown ar_ptype=%#x\n", ar_ptype));
 }
 
 
@@ -1210,11 +1169,17 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             break;
         }
 
+        case RTNET_ETHERTYPE_IPV6:
+        {
+            /** @todo IPv6: Check for ICMPv6. It looks like type 133 (Router solicitation) might
+             * need to be edited. Check out how NDP works...  */
+            break;
+        }
+
         case RTNET_ETHERTYPE_ARP:
             intnetR0TrunkIfSnoopArp(pNetwork, pSG);
             break;
     }
-    /** @todo soon */
 }
 
 
@@ -1297,58 +1262,45 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
  * @param   pfSgFlags       Pointer to the SG flags. This is used to tag the packet so we
  *                          don't have to repeat the frame parsing in intnetR0TrunkIfSend.
  */
-static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPHDR pHdr, uint32_t cbPacket, uint16_t *pfSgFlags)
+static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPIPV4 pArpIPv4, uint32_t cbPacket, uint16_t *pfSgFlags)
 {
     /*
-     * Ignore malformed packets and packets which doesn't interest us.
+     * Ignore packets which doesn't interest us or we perceive as malformed.
      */
-    if (RT_UNLIKELY(    cbPacket <= INTNET_ARP_MIN_LEN
-                    ||  pHdr->ar_hlen != sizeof(RTMAC)
-                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
+    if (RT_UNLIKELY(cbPacket < sizeof(RTNETARPIPV4)))
         return;
-    uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
+    if (RT_UNLIKELY(    pArpIPv4->Hdr.ar_hlen  != sizeof(RTMAC)
+                    ||  pArpIPv4->Hdr.ar_plen  != sizeof(RTNETADDRIPV4)
+                    ||  pArpIPv4->Hdr.ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)
+                    ||  pArpIPv4->Hdr.ar_ptype != RT_H2BE_U16(RTNET_ETHERTYPE_IPV4)))
+        return;
+    uint16_t ar_oper = RT_H2BE_U16(pArpIPv4->Hdr.ar_oper);
     if (RT_UNLIKELY(    ar_oper != RTNET_ARPOP_REQUEST
-                    &&  ar_oper != RTNET_ARPOP_REPLY
-                 /* These doesn't interest us at the moment since they are rarely used on ethernet:
-                    &&  ar_oper != RTNET_ARPOP_REVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_REVREPLY
-                    &&  ar_oper != RTNET_ARPOP_INVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_INVREPLY */
-                   ))
+                    &&  ar_oper != RTNET_ARPOP_REPLY))
+    {
+        Log6(("ar_oper=%#x\n", ar_oper));
         return;
+    }
 
     /*
-     * Deal with the protocols.
+     * Tag the SG as ARP IPv4 for later editing, then check for addresses
+     * which can be removed or added to the address cache of the sender.
      */
-    RTNETADDRU Addr;
-    uint16_t ar_ptype = RT_H2BE_U16(pHdr->ar_ptype);
-    if (ar_ptype == RTNET_ETHERTYPE_IPV4)
-    {
-        /*
-         * IPv4.
-         */
-        PCRTNETARPIPV4 pReq = (PCRTNETARPIPV4)pHdr;
-        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
-                        ||  cbPacket < sizeof(*pReq)))
-            return;
-        *pfSgFlags |= INTNETSG_FLAGS_ARP_IPV4;
-/** @todo should check the MAC addresses here. */
-        if (    RTNET_ARPOP_IS_REPLY(ar_oper)
-            &&  intnetR0IPv4AddrIsGood(pReq->ar_tpa))
-        {
-            Addr.IPv4 = pReq->ar_tpa;
-            intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_tpa), "if/arp");
-        }
-        if (intnetR0IPv4AddrIsGood(pReq->ar_spa))
-        {
-            Addr.IPv4 = pReq->ar_spa;
-            intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(pReq->ar_spa), "if/arp");
-        }
-    }
-#if 0 /** @todo IPv6 ARP support? Is it used at all? */
-#endif
-    else
-        Log(("intnetR0IfSnoopArpSourceAddr: unknown ar_ptype=%#x\n", ar_ptype));
+    *pfSgFlags |= INTNETSG_FLAGS_ARP_IPV4;
+
+    if (    ar_oper == RTNET_ARPOP_REPLY
+        &&  !(pArpIPv4->ar_tha.au8[0] & 1)
+        &&  (   pArpIPv4->ar_tha.au16[0]
+             || pArpIPv4->ar_tha.au16[1]
+             || pArpIPv4->ar_tha.au16[2])
+        &&  intnetR0IPv4AddrIsGood(pArpIPv4->ar_tpa))
+        intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4],
+                                  (PCRTNETADDRU)&pArpIPv4->ar_tpa, sizeof(RTNETADDRIPV4), "if/arp");
+
+    if (    !memcmp(&pArpIPv4->ar_sha, &pIf->Mac, sizeof(RTMAC))
+        &&  intnetR0IPv4AddrIsGood(pArpIPv4->ar_spa))
+        intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4],
+                               (PCRTNETADDRU)&pArpIPv4->ar_spa, sizeof(RTNETADDRIPV4), "if/arp");
 }
 
 
@@ -1380,18 +1332,20 @@ static void intnetR0IfSnoopAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t 
             break;
 #if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
         case RTNET_ETHERTYPE_IPV6:
-            intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            /** @todo IPv6: Check for ICMPv6. It looks like type 133 (Router solicitation) might
+             * need to be edited. Check out how NDP works...  */
+            intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, pfSgFlags);
             break;
 #endif
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
         case RTNET_ETHERTYPE_IPX_1:
         case RTNET_ETHERTYPE_IPX_2:
         case RTNET_ETHERTYPE_IPX_3:
-            intnetR0IfSnoopIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame);
+            intnetR0IfSnoopIpxSourceAddr(pIf, (PCINTNETIPX)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, pfSgFlags);
             break;
 #endif
         case RTNET_ETHERTYPE_ARP:
-            intnetR0IfSnoopArpAddr(pIf, (PCRTNETARPHDR)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, pfSgFlags);
+            intnetR0IfSnoopArpAddr(pIf, (PCRTNETARPIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, pfSgFlags);
             break;
     }
 }
@@ -1624,11 +1578,12 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     AssertReturnVoid(pThis->pIfPort);
 
     /*
-     * Do frame modifications when sharing MAC address on the wire.
+     * Edit the frame if we're sharing the MAC address with the host on the wire.
      *
-     * If the frame is headed for both the host and the wire, we'll
-     * have to send it to the host before making any modifications,
-     * and force a copy of the frame.
+     * If the frame is headed for both the host and the wire, we'll have to send
+     * it to the host before making any modifications, and force the OS specific
+     * backend to copy it. We do this by marking it as TEMP (which is always the
+     * case right now).
      */
     if (    (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
         &&  (fDst & INTNETTRUNKDIR_WIRE))
@@ -1652,8 +1607,8 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
          * Get the host mac address and update the ethernet header.
          *
          * The reason for caching it in the trunk structure is because
-         * we cannot take the trunk out-bound semaphore when we handle
-         * stuff like ARP replies from the wire.
+         * we cannot take the trunk out-bound semaphore when we make
+         * edits in the intnetR0TrunkIfPortRecv path.
          */
         pThis->pIfPort->pfnGetMacAddress(pThis->pIfPort, &pThis->CachedMac);
         if (!memcmp(&pEthHdr->SrcMac, &pIfSender->Mac, sizeof(RTMAC)))
@@ -1664,6 +1619,13 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
          */
         if (pSG->fFlags & INTNETSG_FLAGS_ARP_IPV4)
         {
+            /*
+             * APR IPv4: replace hardware (MAC) addresses because these end up
+             *           in ARP caches. So, if we don't the other machiens will
+             *           send the packets to the MAC address of the guest
+             *           instead of the one of the host, which won't work on
+             *           wireless of course...
+             */
             PRTNETARPIPV4 pArp = (PRTNETARPIPV4)(pEthHdr + 1);
             if (!memcmp(&pArp->ar_sha, &pIfSender->Mac, sizeof(RTMAC)))
             {
@@ -1676,6 +1638,9 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 pArp->ar_tha = pThis->CachedMac;
             }
         }
+        //else if (pSG->fFlags & INTNETSG_FLAGS_ICMPV6_NDP)
+        //{ /// @todo move the editing into a different function
+        //}
     }
 
     /*
@@ -1743,95 +1708,67 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
 static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
     /*
-     * Check the minimum size first.
+     * Check the minimum size and get a linear copy of the thing to work on,
+     * using the temporary buffer if necessary.
      */
-    if (RT_UNLIKELY(pSG->cbTotal < INTNET_ARP_MIN_LEN))
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETARPIPV4)))
         return;
-
-    /*
-     * Copy to temporary buffer if necessary.
-     */
-    size_t  cbPacket = RT_MIN(pSG->cbTotal, INTNET_ARP_MAX_LEN);
-    PCRTNETARPHDR pHdr = (PCRTNETARPHDR)((uintptr_t)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+    PRTNETARPIPV4 pArpIPv4 = (PRTNETARPIPV4)((uint8_t *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
     if (    pSG->cSegsUsed != 1
-        &&  pSG->aSegs[0].cb < cbPacket)
+        &&  pSG->aSegs[0].cb < sizeof(RTNETETHERHDR) + sizeof(RTNETARPIPV4))
     {
-        Log6(("fw: Copying ARP pkt %u\n", cbPacket));
-        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), cbPacket, pNetwork->pbTmp))
+        Log6(("fw: Copying ARP pkt %u\n", sizeof(RTNETARPIPV4)));
+        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), sizeof(RTNETARPIPV4), pNetwork->pbTmp))
             return;
-        pHdr = (PCRTNETARPHDR)pNetwork->pbTmp;
         pSG->fFlags |= INTNETSG_FLAGS_PKT_CP_IN_TMP;
+        pArpIPv4 = (PRTNETARPIPV4)pNetwork->pbTmp;
     }
 
     /*
-     * Ignore malformed packets and packets which doesn't interest us.
+     * Ignore packets which doesn't interest us or we perceive as malformed.
      */
-    if (RT_UNLIKELY(    pHdr->ar_hlen != sizeof(RTMAC)
-                    ||  pHdr->ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)))
+    if (RT_UNLIKELY(    pArpIPv4->Hdr.ar_hlen  != sizeof(RTMAC)
+                    ||  pArpIPv4->Hdr.ar_plen  != sizeof(RTNETADDRIPV4)
+                    ||  pArpIPv4->Hdr.ar_htype != RT_H2BE_U16(RTNET_ARP_ETHER)
+                    ||  pArpIPv4->Hdr.ar_ptype != RT_H2BE_U16(RTNET_ETHERTYPE_IPV4)))
         return;
-    uint16_t ar_oper = RT_H2BE_U16(pHdr->ar_oper);
+    uint16_t ar_oper = RT_H2BE_U16(pArpIPv4->Hdr.ar_oper);
     if (RT_UNLIKELY(    ar_oper != RTNET_ARPOP_REQUEST
-                    &&  ar_oper != RTNET_ARPOP_REPLY
-                 /* These doesn't interest us at the moment since they are rarely used on ethernet:
-                    &&  ar_oper != RTNET_ARPOP_REVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_REVREPLY
-                    &&  ar_oper != RTNET_ARPOP_INVREQUEST
-                    &&  ar_oper != RTNET_ARPOP_INVREPLY */
-                   ))
+                    &&  ar_oper != RTNET_ARPOP_REPLY))
+    {
+        Log6(("ar_oper=%#x\n", ar_oper));
         return;
+    }
+
+    /* Tag it as ARP IPv4. */
+    pSG->fFlags |= INTNETSG_FLAGS_ARP_IPV4;
 
     /*
-     * Deal with the protocols.
-     *
-     * The thing we're interested in here is a reply to a query
-     * made by a guest since we've modified the MAC in the initial
-     * request the guest made.
+     * The thing we're interested in here is a reply to a query made by a guest
+     * since we modified the MAC in the initial request the guest made.
      */
-    bool fModified = false;
-    uint16_t ar_ptype = RT_H2BE_U16(pHdr->ar_ptype);
-    if (ar_ptype == RTNET_ETHERTYPE_IPV4)
+    if (    ar_oper == RTNET_ARPOP_REPLY
+        &&  !memcmp(&pArpIPv4->ar_tha, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
     {
-        /*
-         * IPv4.
-         */
-        PRTNETARPIPV4 pReq = (PRTNETARPIPV4)pHdr;
-        if (RT_UNLIKELY(    pHdr->ar_plen != sizeof(pReq->ar_spa)
-                        ||  cbPacket < sizeof(*pReq)))
-            return;
-        pSG->fFlags |= INTNETSG_FLAGS_ARP_IPV4;
-        if (    ar_oper == RTNET_ARPOP_REPLY
-            &&  !memcmp(&pReq->ar_tha, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
+        PINTNETIF pIf = intnetR0NetworkAddrCacheLookupIf(pNetwork, (PCRTNETADDRU)&pArpIPv4->ar_tpa,
+                                                         kIntNetAddrType_IPv4, sizeof(pArpIPv4->ar_tpa));
+        if (pIf)
         {
-            PINTNETIF pIf = intnetR0NetworkAddrCacheLookupIf(pNetwork, (PCRTNETADDRU)&pReq->ar_tpa,
-                                                             kIntNetAddrType_IPv4, sizeof(pReq->ar_tpa));
-            if (pIf)
+            Log6(("fw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArpIPv4->ar_tha, &pIf->Mac));
+            pArpIPv4->ar_tha = pIf->Mac;
+            if (!memcmp(&pEthHdr->DstMac, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
             {
-                Log6(("fw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pReq->ar_tha, &pIf->Mac));
-                pReq->ar_tha = pIf->Mac;
-                if (!memcmp(&pEthHdr->DstMac, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
-                {
-                    Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-                    pEthHdr->DstMac = pIf->Mac;
-                    if ((void *)pEthHdr != pSG->aSegs[0].pv)
-                        intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->Mac);
-                }
-
-                fModified = true;
+                Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
+                pEthHdr->DstMac = pIf->Mac;
+                if ((void *)pEthHdr != pSG->aSegs[0].pv)
+                    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->Mac);
             }
+
+            /* Write back the packet if we've been making changes to a buffered copy. */
+            if (pSG->fFlags & INTNETSG_FLAGS_PKT_CP_IN_TMP)
+                intnetR0SgWritePart(pSG, sizeof(RTNETETHERHDR), sizeof(PRTNETARPIPV4), pArpIPv4);
         }
     }
-#if 0 /** @todo IPv6 support, does it use ARP at all? */
-#endif
-    else
-        Log(("intnetR0TrunkIfSnoopArp: unknown ar_ptype=%#x\n", ar_ptype));
-
-    /*
-     * Write back the packet if we've been making changes
-     * to a buffered copy.
-     */
-    if (    (pSG->fFlags & INTNETSG_FLAGS_PKT_CP_IN_TMP)
-        && fModified)
-        intnetR0SgWritePart(pSG, sizeof(RTNETETHERHDR), cbPacket, pHdr);
 }
 
 
@@ -1981,6 +1918,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
          */
         case RTNET_ETHERTYPE_ARP:
             Log6(("intnetshareduni: ARP\n"));
+            /** @todo revisit this broadcasting of unicast ARP frames! */
             return intnetR0NetworkSendBroadcast(pNetwork, NULL, INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked, pEthHdr);
 
         /*
