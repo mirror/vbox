@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,14 @@
 #include <iprt/time.h>
 #include <iprt/handletable.h>
 #include <iprt/net.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def INTNET_WITH_DHCP_SNOOPING
+ * Enabled DHCP snooping when in shared-mac-on-the-wire mode. */
+/*#define INTNET_WITH_DHCP_SNOOPING - the implementation isn't completed yet. */
 
 
 /*******************************************************************************
@@ -1033,6 +1041,8 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
 }
 
 
+#ifdef INTNET_WITH_DHCP_SNOOPING
+
 /**
  * Snoops IP assignments and releases from the DHCPv4 traffic.
  *
@@ -1057,6 +1067,8 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
 }
 
+#endif /* INTNET_WITH_DHCP_SNOOPING */
+
 
 /**
  * Snoops up source addresses from ARP requests and purge these
@@ -1069,8 +1081,6 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
  */
 static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
-Log6(("ts-ar: %#d\n", pSG->cbTotal));
-
     /*
      * Check the minimum size first.
      */
@@ -1125,6 +1135,7 @@ Log6(("ts-ar: %#d\n", pSG->cbTotal));
 }
 
 
+#ifdef INTNET_WITH_DHCP_SNOOPING
 /**
  * Snoop up addresses from ARP and DHCP traffic from frames comming
  * over the trunk connection.
@@ -1181,6 +1192,7 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             break;
     }
 }
+#endif /* INTNET_WITH_DHCP_SNOOPING */
 
 
 /**
@@ -1230,6 +1242,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
         fValidatedIpHdr = true;
     }
 
+#ifdef INTNET_WITH_DHCP_SNOOPING
     /*
      * Check for potential DHCP packets.
      */
@@ -1249,6 +1262,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
                 Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header (dhcp)\n"));
         }
     }
+#endif /* INTNET_WITH_DHCP_SNOOPING */
 }
 
 
@@ -1823,11 +1837,16 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
     else if (   (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
              && !pIfSender)
     {
+#ifdef INTNET_WITH_DHCP_SNOOPING
         uint16_t EtherType = RT_BE2H_U16(pEthHdr->EtherType);
         if (    (   EtherType == RTNET_ETHERTYPE_IPV4       /* for DHCP */
                  && pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
             ||  (pSG->fFlags & (INTNETSG_FLAGS_ARP_IPV4)) )
             intnetR0TrunkIfSnoopAddr(pNetwork, pSG, EtherType);
+#else
+       if (pSG->fFlags & (INTNETSG_FLAGS_ARP_IPV4))
+           intnetR0TrunkIfSnoopArp(pNetwork, pSG);
+#endif
     }
 
     return false; /* broadcast frames are never dropped */
@@ -1957,12 +1976,14 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
         }
     }
 
+#ifdef INTNET_WITH_DHCP_SNOOPING
     /*
      * Perform DHCP snooping.
      */
     if (    enmAddrType == kIntNetAddrType_IPv4
         &&  pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
         intnetR0TrunkIfSnoopAddr(pNetwork, pSG, RT_BE2H_U16(pEthHdr->EtherType));
+#endif /* INTNET_WITH_DHCP_SNOOPING */
 
     return fExactIntNetRecipient;
 }
