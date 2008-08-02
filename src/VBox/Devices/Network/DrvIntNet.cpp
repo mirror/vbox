@@ -756,6 +756,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                               "ReceiveBufferSize\0"
                               "SendBufferSize\0"
                               "RestrictAccess\0"
+                              "SharedMacOnWire\0"
                               "IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
@@ -832,6 +833,18 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
     OpenReq.fFlags = fRestrictAccess ? 0 : INTNET_OPEN_FLAGS_PUBLIC;
+
+    /** @cfgm{SharedMacOnWire, boolean, false}
+     * Whether to shared the MAC address of the host interface when using the wire. When
+     * attaching to a wireless NIC this option is usally a requirement.
+     */
+    bool fSharedMacOnWire;
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "SharedMacOnWire", &fSharedMacOnWire, false);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"SharedMacOnWire\" value"));
+    if (fSharedMacOnWire)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
 
     /** @cfgm{ReceiveBufferSize, uint32_t, 234 KB}
      * The size of the receive buffer.
