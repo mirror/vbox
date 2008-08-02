@@ -189,13 +189,13 @@ RuntimeR3_SOURCES       = \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
 	common/misc/once.cpp \
-	common/misc/rand.cpp \
 	common/misc/req.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/semspingpong.cpp \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
+	common/rand/rand.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/string/straprintf.cpp \
