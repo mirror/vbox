@@ -46,6 +46,8 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
+# include <VBox/com/defs.h>
+# include <VBox/com/array.h>
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
 
@@ -1720,44 +1722,26 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
         else
         {
-            rc = CFGMR3InsertNode(pRoot,       "GuestProps", &pGuestProps);              RC_CHECK();
-            rc = CFGMR3InsertNode(pGuestProps, "Values", &pValues);                      RC_CHECK();
-            rc = CFGMR3InsertNode(pGuestProps, "Timestamps", &pTimestamps);              RC_CHECK();
-            rc = CFGMR3InsertNode(pGuestProps, "Flags", &pFlags);                        RC_CHECK();
-            /* Load the saved machine registry.  This is stored as extra data
-             * keys in the machine XML file, starting with the prefix
-             * VBOX_SHARED_INFO_KEY_PREFIX. */
-            Bstr strExtraDataKey;
-            for (;;)
+            rc = CFGMR3InsertNode(pRoot,       "GuestProps", &pGuestProps);             RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Values", &pValues);                     RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Timestamps", &pTimestamps);             RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Flags", &pFlags);                       RC_CHECK();
+
+            /* Pull over the properties from the server. */
+            SafeArray <BSTR> names;
+            SafeArray <BSTR> values;
+            SafeArray <ULONG64> timestamps;
+            SafeArray <BSTR> flags;
+            hrc = pConsole->mControl->PullGuestProperties(ComSafeArrayAsOutParam(names),
+                                                ComSafeArrayAsOutParam(values),
+                                                ComSafeArrayAsOutParam(timestamps),
+                                                ComSafeArrayAsOutParam(flags));                H();
+            size_t cProps = names.size();
+            for (size_t i = 0; i < cProps; ++i)
             {
-                Bstr strNextExtraDataKey;
-                Bstr strExtraDataValue;
-
-                /* get the next key */
-                hrc = pMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
-                                                    strExtraDataValue.asOutParam());
-
-                /* stop if for some reason there's nothing more to request */
-                if (FAILED(hrc) || !strNextExtraDataKey)
-                    break;
-
-                strExtraDataKey = strNextExtraDataKey;
-                Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
-
-                /* we only care about keys starting with VBOX_SHARED_INFO_KEY_PREFIX */
-                if (strncmp(strExtraDataKeyUtf8.raw(), VBOX_SHARED_INFO_KEY_PREFIX, VBOX_SHARED_INFO_PREFIX_LEN) != 0)
-                    continue;
-                char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
-
-                /* now let's have a look at the value */
-                Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
-                const char *pszCFGMValue = strCFGMValueUtf8.raw();
-                /* empty value means remove value which we've already done */
-                if (pszCFGMValue && *pszCFGMValue)
-                {
-                    rc = CFGMR3InsertString(pValues, pszCFGMValueName, pszCFGMValue);
-                    AssertMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszCFGMValueName));
-                }
+                rc = CFGMR3InsertString(pValues, Utf8Str(names[i]).raw(), Utf8Str(values[i]).raw()); RC_CHECK();
+                rc = CFGMR3InsertInteger(pTimestamps, Utf8Str(names[i]).raw(), timestamps[i]);           RC_CHECK();
+                rc = CFGMR3InsertString(pFlags, Utf8Str(names[i]).raw(), Utf8Str(flags[i]).raw());   RC_CHECK();
             }
 
             /* Setup the service. */

@@ -653,8 +653,8 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
 }
 
-STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
-                                           BOOL aIsSetter, BSTR *aRetValue)
+STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags,
+                                           BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller (this);
@@ -665,17 +665,24 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue,
             tr ("Machine session is not open (session state: %d)."),
             mState);
     AssertReturn (mType == SessionType_Direct, E_UNEXPECTED);
-    if (!VALID_PTR (aKey))
+    if (!VALID_PTR (aName))
         return E_POINTER;
     if (!aIsSetter && !VALID_PTR (aRetValue))
+        return E_POINTER;
+    if (!aIsSetter && !VALID_PTR (aRetTimestamp))
+        return E_POINTER;
+    if (!aIsSetter && !VALID_PTR (aRetFlags))
         return E_POINTER;
     /* aValue can be NULL for a setter call if the property is to be deleted. */
     if (aIsSetter && (aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
+    /* aFlags can be null if it is to be left as is */
+    if (aIsSetter && (aFlags != NULL) && !VALID_PTR (aFlags))
+        return E_INVALIDARG;
     if (!aIsSetter)
-        return mConsole->getGuestProperty (aKey, aRetValue);
+        return mConsole->getGuestProperty (aName, aRetValue, aRetTimestamp, aRetFlags);
     else
-        return mConsole->setGuestProperty (aKey, aValue);
+        return mConsole->setGuestProperty (aName, aValue, aFlags);
 #else /* VBOX_WITH_GUEST_PROPS not defined */
     return E_NOTIMPL;
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
