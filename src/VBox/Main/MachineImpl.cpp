@@ -75,6 +75,7 @@
 #include <VBox/param.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
+# include <VBox/com/array.h>
 #endif
 
 #include <algorithm>
