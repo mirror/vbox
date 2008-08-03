@@ -389,7 +389,7 @@ DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIO
 
     u32Addr = RT_H2LE_U32(u32Addr);
     pPciDev->config[iReg]     = u32Addr         & 0xff;
-    pPciDev->config[iReg + 1] = (u32Addr >> 16) & 0xff;
+    pPciDev->config[iReg + 1] = (u32Addr >>  8) & 0xff;
     pPciDev->config[iReg + 2] = (u32Addr >> 16) & 0xff;
     pPciDev->config[iReg + 3] = (u32Addr >> 24) & 0xff;
 }
