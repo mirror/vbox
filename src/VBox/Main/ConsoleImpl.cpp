@@ -3536,14 +3536,19 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
+HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
+                                   ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
-    if (!VALID_PTR (aKey))
+    if (!VALID_PTR (aName))
         return E_INVALIDARG;
     if (!VALID_PTR (aValue))
+        return E_POINTER;
+    if ((aTimestamp != NULL) && !VALID_PTR (aTimestamp))
+        return E_POINTER;
+    if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -3559,27 +3564,34 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
     HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
 
-    VBOXHGCMSVCPARM parm[3];
-    Utf8Str Utf8Key = aKey;
-    Utf8Str Utf8Value (MAX_VALUE_LEN + 1);
+    VBOXHGCMSVCPARM parm[4];
+    Utf8Str Utf8Name = aName;
+    AssertReturn(!Utf8Name.isNull(), E_OUTOFMEMORY);
+    char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN + 2];
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
-    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
+    parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Key.length() + 1;
+    parm[0].u.pointer.size = Utf8Name.length() + 1;
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[1].u.pointer.addr = Utf8Value.mutableRaw();
-    parm[1].u.pointer.size = MAX_VALUE_LEN + 1;
-    int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_CONFIG_KEY_HOST,
-                                     3, &parm[0]);
+    parm[1].u.pointer.addr = pszBuffer;
+    parm[1].u.pointer.size = sizeof(pszBuffer);
+    int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_PROP_HOST,
+                                     4, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
     AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
+    AssertLogRel (!RT_SUCCESS(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
     if (RT_SUCCESS (vrc) || (VERR_NOT_FOUND == vrc))
     {
         rc = S_OK;
         if (vrc != VERR_NOT_FOUND)
-            Utf8Value.cloneTo (aValue);
+        {
+            size_t iFlags = strlen(pszBuffer) + 1;
+            Utf8Str(pszBuffer).cloneTo (aValue);
+            *aTimestamp = parm[2].u.uint32;
+            Utf8Str(pszBuffer + iFlags).cloneTo (aFlags);
+        }
         else
             aValue = NULL;
     }
@@ -3593,14 +3605,16 @@ HRESULT Console::getGuestProperty (INPTR BSTR aKey, BSTR *aValue)
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
+HRESULT Console::setGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
-    if (!VALID_PTR (aKey))
+    if (!VALID_PTR (aName))
         return E_INVALIDARG;
     if ((aValue != NULL) && !VALID_PTR (aValue))
+        return E_INVALIDARG;
+    if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -3616,28 +3630,41 @@ HRESULT Console::setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue)
     HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
 
-    VBOXHGCMSVCPARM parm[2];
-    Utf8Str Utf8Key = aKey;
+    VBOXHGCMSVCPARM parm[3];
+    Utf8Str Utf8Name = aName;
     int vrc = VINF_SUCCESS;
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
-    parm[0].u.pointer.addr = Utf8Key.mutableRaw();
+    parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Key.length() + 1;
+    parm[0].u.pointer.size = Utf8Name.length() + 1;
+    Utf8Str Utf8Value = aValue;
     if (aValue != NULL)
     {
-        Utf8Str Utf8Value = aValue;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         /* To save doing a const cast, we use the mutableRaw() member. */
         parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = Utf8Value.length() + 1;
-        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", SET_CONFIG_KEY_HOST,
-                                     2, &parm[0]);
     }
+    Utf8Str Utf8Flags = aFlags;
+    if (aFlags != NULL)
+    {
+        parm[2].type = VBOX_HGCM_SVC_PARM_PTR;
+        /* To save doing a const cast, we use the mutableRaw() member. */
+        parm[2].u.pointer.addr = Utf8Flags.mutableRaw();
+        /* The + 1 is the null terminator */
+        parm[2].u.pointer.size = Utf8Flags.length() + 1;
+    }
+    if ((aValue != NULL) && (aFlags != NULL))
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", SET_PROP_HOST,
+                                     3, &parm[0]);
+    else if (aValue != NULL)
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", SET_PROP_VALUE_HOST,
+                                     2, &parm[0]);
     else
-        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", DEL_CONFIG_KEY_HOST,
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", DEL_PROP_HOST,
                                      1, &parm[0]);
     if (RT_SUCCESS (vrc))
         rc = S_OK;
@@ -3745,30 +3772,30 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
  * Finally we have to unpack the data returned by the service into the safe
  * arrays supplied by the caller.  We start by counting the number of entries.
  */
-     const char *pszBuf
-         = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
-     unsigned cEntries = 0;
-     /* The list is terminated by a zero-length string at the end of a set
-      * of four strings. */
-     for (size_t i = 0; strlen(pszBuf + i) != 0; )
-     {
-        /* We are counting sets of four strings. */
-        for (unsigned j = 0; j < 4; ++j)
-            i += strlen(pszBuf + i) + 1;
-        ++cEntries;
-     }
+    const char *pszBuf
+        = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
+    unsigned cEntries = 0;
+    /* The list is terminated by a zero-length string at the end of a set
+     * of four strings. */
+    for (size_t i = 0; strlen(pszBuf + i) != 0; )
+    {
+       /* We are counting sets of four strings. */
+       for (unsigned j = 0; j < 4; ++j)
+           i += strlen(pszBuf + i) + 1;
+       ++cEntries;
+    }
 
 /*
  * And now we create the COM safe arrays and fill them in.
  */
-     com::SafeArray <BSTR> names(cEntries);
-     com::SafeArray <BSTR> values(cEntries);
-     com::SafeArray <ULONG64> timestamps(cEntries);
-     com::SafeArray <BSTR> flags(cEntries);
-     size_t iBuf = 0;
-     /* Rely on the service to have formated the data correctly. */
-     for (unsigned i = 0; i < cEntries; ++i)
-     {
+    com::SafeArray <BSTR> names(cEntries);
+    com::SafeArray <BSTR> values(cEntries);
+    com::SafeArray <ULONG64> timestamps(cEntries);
+    com::SafeArray <BSTR> flags(cEntries);
+    size_t iBuf = 0;
+    /* Rely on the service to have formated the data correctly. */
+    for (unsigned i = 0; i < cEntries; ++i)
+    {
         size_t cchName = strlen(pszBuf + iBuf);
         Bstr(pszBuf + iBuf).detachTo(&names[i]);
         iBuf += cchName + 1;
@@ -3781,12 +3808,12 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
         size_t cchFlags = strlen(pszBuf + iBuf);
         Bstr(pszBuf + iBuf).detachTo(&flags[i]);
         iBuf += cchFlags + 1;
-     }
-     names.detachTo(ComSafeArrayOutArg (aNames));
-     values.detachTo(ComSafeArrayOutArg (aValues));
-     timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
-     flags.detachTo(ComSafeArrayOutArg (aFlags));
-     return S_OK;
+    }
+    names.detachTo(ComSafeArrayOutArg (aNames));
+    values.detachTo(ComSafeArrayOutArg (aValues));
+    timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
+    flags.detachTo(ComSafeArrayOutArg (aFlags));
+    return S_OK;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
@@ -4314,64 +4341,54 @@ HRESULT Console::powerDown()
         alock.enter();
     }
 # ifdef VBOX_WITH_GUEST_PROPS
-    /* Save all guest/host property store entries to the machine XML
-     * file as extra data. */
-    PCFGMNODE pRegistry = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Values/");
-    PCFGMLEAF pValue = CFGMR3GetFirstValue (pRegistry);
+    /* Save all guest property store entries to the machine XML file */
+    PCFGMNODE pValues = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Values/");
+    PCFGMNODE pTimestamps = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Timestamps/");
+    PCFGMNODE pFlags = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Flags/");
+    /* Count the number of entries we have */
+    unsigned cValues = 0;
+    for (PCFGMLEAF pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
+         pValue = CFGMR3GetNextValue (pValue))
+        ++cValues;
+    /* And pack them into safe arrays */
+    com::SafeArray <BSTR> names(cValues);
+    com::SafeArray <BSTR> values(cValues);
+    com::SafeArray <ULONG64> timestamps(cValues);
+    com::SafeArray <BSTR> flags(cValues);
+    PCFGMLEAF pValue = CFGMR3GetFirstValue (pValues);
     vrc = VINF_SUCCESS;
+    unsigned iProp = 0;
     while (pValue != NULL && RT_SUCCESS(vrc))
     {
         using namespace guestProp;
-        char szKeyName[MAX_NAME_LEN + 1];
-        char szKeyValue[MAX_VALUE_LEN + 1];
-        char szExtraDataName[VBOX_SHARED_INFO_PREFIX_LEN + MAX_NAME_LEN + 1];
-        vrc = CFGMR3GetValueName (pValue, szKeyName, sizeof(szKeyName));
+
+        char szPropName[MAX_NAME_LEN + 1];
+        char szPropValue[MAX_VALUE_LEN + 1];
+        char szPropFlags[MAX_FLAGS_LEN + 1];
+        ULONG64 u64Timestamp = 0;  /* default */
+        szPropFlags[0] = '\0';  /* default */
+        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
         if (RT_SUCCESS(vrc))
-            vrc = CFGMR3QueryString (pRegistry, szKeyName, szKeyValue, sizeof(szKeyValue));
+            vrc = CFGMR3QueryString (pValues, szPropName, szPropValue, sizeof(szPropValue));
         if (RT_SUCCESS(vrc))
         {
-            strcpy(szExtraDataName, VBOX_SHARED_INFO_KEY_PREFIX);
-            strncpy(szExtraDataName + VBOX_SHARED_INFO_PREFIX_LEN, szKeyName, sizeof(szKeyName));
-            szExtraDataName[sizeof(szExtraDataName) - 1] = 0;
-        }
-        if (RT_SUCCESS(vrc))
-            if (FAILED(mMachine->SetExtraData(Bstr(szExtraDataName).raw(), Bstr(szKeyValue).raw())))
-                vrc = VERR_UNRESOLVED_ERROR;  /* We only need to know that we have to stop. */
-        if (RT_SUCCESS(vrc))
+            CFGMR3QueryString (pFlags, szPropName, szPropFlags, sizeof(szPropFlags));
+            CFGMR3QueryU64 (pTimestamps, szPropName, &u64Timestamp);
+            Bstr(szPropName).cloneTo(&names[iProp]);
+            Bstr(szPropValue).cloneTo(&values[iProp]);
+            timestamps[iProp] = u64Timestamp;
+            Bstr(szPropFlags).cloneTo(&flags[iProp]);
             pValue = CFGMR3GetNextValue (pValue);
+            ++iProp;
+            if (iProp >= cValues)
+                vrc = VERR_TOO_MUCH_DATA;
+        }
     }
-    /* In a second stage, we remove any extra data keys corresponding to
-     * properties which aren't in the CFGM node. */
-    Bstr strExtraDataKey;
-    for (;;)
-    {
-        using namespace guestProp;
-        Bstr strNextExtraDataKey;
-        Bstr strExtraDataValue;
-
-        /* get the next key */
-        int hrc = mMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
-                                                strExtraDataValue.asOutParam());
-
-        /* stop if for some reason there's nothing more to request */
-        if (FAILED(hrc) || !strNextExtraDataKey)
-            break;
-
-        strExtraDataKey = strNextExtraDataKey;
-        Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
-
-        /* we only care about keys starting with VBOX_SHARED_INFO_KEY_PREFIX */
-        if (strncmp(strExtraDataKeyUtf8.raw(), VBOX_SHARED_INFO_KEY_PREFIX, VBOX_SHARED_INFO_PREFIX_LEN) != 0)
-            continue;
-        char *pszCFGMValueName = (char*)strExtraDataKeyUtf8.raw() + VBOX_SHARED_INFO_PREFIX_LEN;
-
-        /* Now see if a lookup of the name in the CFGM node succeeds. */
-        char szKeyValue[MAX_VALUE_LEN + 1];
-        vrc = CFGMR3QueryString (pRegistry, pszCFGMValueName, szKeyValue, sizeof(szKeyValue));
-        /* And delete it from the extra data if it failed. */
-        if (VERR_CFGM_VALUE_NOT_FOUND == vrc)
-            mMachine->SetExtraData(strExtraDataKey, NULL);
-    }
+    if (RT_SUCCESS(vrc) || (VERR_TOO_MUCH_DATA == vrc))
+        mControl->PushGuestProperties(ComSafeArrayAsInParam (names),
+                                      ComSafeArrayAsInParam (values),
+                                      ComSafeArrayAsInParam (timestamps),
+                                      ComSafeArrayAsInParam (flags));
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 #endif /* VBOX_HGCM */
 

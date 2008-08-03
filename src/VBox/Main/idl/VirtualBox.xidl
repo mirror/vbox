@@ -2224,7 +2224,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="1063893c-4c38-4304-aee9-73e072c181cc"
+     uuid="de04566a-7125-444b-949e-34e9f3ec3676"
      internal="yes"
      wsmap="suppress"
      >
@@ -2461,6 +2461,67 @@
       </param>
     </method>
 
+    <method name="pullGuestProperties">
+      <desc>
+        Get the list of the guest properties matching a set of patterns along
+        with their values, timestamps and flags and give responsibility for
+        managing properties to the console.
+      </desc>
+      <param name="name" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The names of the properties returned.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The values of the properties returned.  The array entries match the
+          corresponding entries in the @a name array.
+        </desc>
+      </param>
+      <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
+        <desc>
+          The timestamps of the properties returned.  The array entries match
+          the corresponding entries in the @a name array.
+        </desc>
+      </param>
+      <param name="flags" type="wstring" dir="out" safearray="yes">
+        <desc>
+          The flags of the properties returned.  The array entries match the
+          corresponding entries in the @a name array.
+        </desc>
+      </param>
+    </method>
+
+    <method name="pushGuestProperties">
+      <desc>
+        Set the list of the guest properties matching a set of patterns along
+        with their values, timestamps and flags and return responsibility for
+        managing properties to IMachine.
+      </desc>
+      <param name="name" type="wstring" dir="in" safearray="yes">
+        <desc>
+          The names of the properties returned.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="in" safearray="yes">
+        <desc>
+          The values of the properties returned.  The array entries match the
+          corresponding entries in the @a name array.
+        </desc>
+      </param>
+      <param name="timestamp" type="unsigned long long" dir="in" safearray="yes">
+        <desc>
+          The timestamps of the properties returned.  The array entries match
+          the corresponding entries in the @a name array.
+        </desc>
+      </param>
+      <param name="flags" type="wstring" dir="in" safearray="yes">
+        <desc>
+          The flags of the properties returned.  The array entries match the
+          corresponding entries in the @a name array.
+        </desc>
+      </param>
+    </method>
   </interface>
 
   <interface
@@ -9779,7 +9840,7 @@
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="0dc8dc04-2d4c-45e7-885c-a0afe7e4dfa7"
+     uuid="2581845a-5a9d-45fb-bc3b-2476552dd970"
      internal="yes"
      wsmap="suppress"
      >
@@ -9938,10 +9999,13 @@
         <link to="IMachine::setGuestProperty()"/> in order to read and
         modify guest properties.
       </desc>
-      <param name="key" type="wstring" dir="in"/>
+      <param name="name" type="wstring" dir="in"/>
       <param name="value" type="wstring" dir="in"/>
+      <param name="flags" type="wstring" dir="in"/>
       <param name="isSetter" type="boolean" dir="in"/>
-      <param name="retValue" type="wstring" dir="return"/>
+      <param name="retValue" type="wstring" dir="out"/>
+      <param name="retTimestamp" type="unsigned long long" dir="out"/>
+      <param name="retFlags" type="wstring" dir="out"/>
     </method>
 
     <method name="enumerateGuestProperties">

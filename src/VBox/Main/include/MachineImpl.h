@@ -228,6 +228,20 @@ public:
      */
     struct HWData
     {
+        /**
+         * Data structure to hold information about a guest property.
+         */
+        struct GuestProperty {
+            /** Property name */
+            Bstr mName;
+            /** Property value */
+            Bstr mValue;
+            /** Property timestamp */
+            ULONG64 mTimestamp;
+            /** Property flags */
+            Bstr mFlags;
+        };
+
         HWData();
         ~HWData();
 
@@ -247,6 +261,9 @@ public:
         typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
         SharedFolderList mSharedFolders;
         ClipboardMode_T mClipboardMode;
+        typedef std::list <GuestProperty> GuestPropertyList;
+        GuestPropertyList mGuestProperties;
+        BOOL           mPropertyServiceActive;
     };
 
     /**
@@ -522,12 +539,12 @@ public:
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(CanShowConsoleWindow) (BOOL *aCanShow);
     STDMETHOD(ShowConsoleWindow) (ULONG64 *aWinId);
-    STDMETHOD(GetGuestProperty) (INPTR BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
-    STDMETHOD(GetGuestPropertyValue) (INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(GetGuestPropertyTimestamp) (INPTR BSTR aKey, ULONG64 *aTimestamp);
-    STDMETHOD(SetGuestProperty) (INPTR BSTR aKey, INPTR BSTR aValue, INPTR BSTR aFlags);
-    STDMETHOD(SetGuestPropertyValue) (INPTR BSTR aKey, INPTR BSTR aValue);
-    STDMETHOD(EnumerateGuestProperties) (INPTR BSTR aPattern, ComSafeArrayOut(BSTR, aKeys), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(GetGuestProperty) (INPTR BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
+    STDMETHOD(GetGuestPropertyValue) (INPTR BSTR aName, BSTR *aValue);
+    STDMETHOD(GetGuestPropertyTimestamp) (INPTR BSTR aName, ULONG64 *aTimestamp);
+    STDMETHOD(SetGuestProperty) (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags);
+    STDMETHOD(SetGuestPropertyValue) (INPTR BSTR aName, INPTR BSTR aValue);
+    STDMETHOD(EnumerateGuestProperties) (INPTR BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
 
     // public methods only for internal purposes
 
@@ -823,6 +840,10 @@ public:
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
+    STDMETHOD(PullGuestProperties) (ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
+              ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(PushGuestProperties) (ComSafeArrayIn(INPTR BSTR, aNames), ComSafeArrayIn(INPTR BSTR, aValues),
+              ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(INPTR BSTR, aFlags));
 
     // public methods only for internal purposes
 

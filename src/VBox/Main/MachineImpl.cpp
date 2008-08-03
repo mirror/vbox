@@ -2690,6 +2690,9 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 
 STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
 {
+#if !defined (VBOX_WITH_GUEST_PROPS)
+    return E_NOTIMPL;
+#else
     if (!VALID_PTR (aKey))
         return E_INVALIDARG;
     if (!VALID_PTR (aValue))
@@ -2698,95 +2701,65 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
         return E_POINTER;
     if (!VALID_PTR (aFlags))
         return E_POINTER;
-    *aTimestamp = 0;
-    Bstr().cloneTo(aFlags);
-    return GetGuestPropertyValue (aKey, aValue);
-}
-
-STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aKey, BSTR *aValue)
-{
-#if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
-#else
-    if (!VALID_PTR (aKey))
-        return E_INVALIDARG;
-    if (!VALID_PTR (aValue))
-        return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
 
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
     using namespace guestProp;
-    HRESULT rc = E_FAIL;
+    rc = E_FAIL;
 
-    switch (mData->mSession.mState)
+    if (!mHWData->mPropertyServiceActive)
     {
-        case SessionState_Closed:
+        bool found = false;
+        for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
+             (it != mHWData->mGuestProperties.end()) && !found; ++it)
         {
-            /* The "+ 1" in the length is the null terminator. */
-            Bstr strKey (Bstr (aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
-            BSTR strKeyRaw = strKey.mutableRaw();
-
-            /* String manipulation in Main is pretty painful, especially given
-             * how often it is needed. */
-            for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
-                /* I take it this is legal, at least g++ accepts it. */
-                strKeyRaw [i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
-            /* The "+ 1" in the length is the null terminator. */
-            for (unsigned i = 0, len = Bstr (aKey).length() + 1; i < len; ++i)
-                strKeyRaw [i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey [i];
-            rc = GetExtraData (strKey, aValue);
-            break;
-        }
-        case SessionState_Open:
-        {
-            if (mData->mSession.mState != SessionState_Open)
+            if (it->mName == aKey)
             {
-                rc = setError (E_FAIL,
-                    tr ("Session is not open (session state: %d)"),
-                    mData->mSession.mState);
-                break;
+                it->mValue.cloneTo(aValue);
+                *aTimestamp = it->mTimestamp;
+                it->mFlags.cloneTo(aFlags);
+                found = true;
             }
-
-            ComPtr <IInternalSessionControl> directControl =
-                mData->mSession.mDirectControl;
-
-            /* just be on the safe side when calling another process */
-            alock.unlock();
-
-            rc = directControl->AccessGuestProperty (aKey, NULL,
-                                                     false /* isSetter */,
-                                                     aValue);
-            break;
         }
-        default:
-            rc = setError (E_FAIL,
-                tr ("Session is currently transitioning (session state: %d)"),
-                mData->mSession.mState);
+        rc = S_OK;
+    }
+    else
+    {
+        ComPtr <IInternalSessionControl> directControl =
+            mData->mSession.mDirectControl;
+
+        /* just be on the safe side when calling another process */
+        alock.unlock();
+
+        rc = directControl->AccessGuestProperty (aKey, NULL, NULL,
+                                                 false /* isSetter */,
+                                                 aValue, aTimestamp, aFlags);
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
+STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aKey, BSTR *aValue)
+{
+    ULONG64 dummyTimestamp;
+    BSTR dummyFlags;
+    return GetGuestProperty(aKey, aValue, &dummyTimestamp, &dummyFlags);
+}
+
 STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aKey, ULONG64 *aTimestamp)
 {
-    return E_NOTIMPL;
+    BSTR dummyValue;
+    BSTR dummyFlags;
+    return GetGuestProperty(aKey, &dummyValue, aTimestamp, &dummyFlags);
 }
 
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPTR BSTR aFlags)
-{
-    if (!VALID_PTR (aKey))
-        return E_INVALIDARG;
-    if ((aValue != NULL) && !VALID_PTR (aValue))
-        return E_INVALIDARG;
-    if ((aFlags != NULL) && !VALID_PTR (aFlags))
-        return E_INVALIDARG;
-    return SetGuestPropertyValue (aKey, aValue);
-}
-
-STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aKey, INPTR BSTR aValue)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
@@ -2795,64 +2768,83 @@ STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aKey, INPTR BSTR aValue)
         return E_INVALIDARG;
     if ((aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
+    if ((aFlags != NULL) && !VALID_PTR (aFlags))
+        return E_INVALIDARG;
+
+    /* For now there are no valid flags, so check this. */
+    if (aFlags != NULL)
+        for (size_t i = 0; aFlags[i] != '\0'; ++i)
+            if (aFlags[i] != ' ')
+                return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* SetExtraData() needs a write lock */
     AutoWriteLock alock (this);
 
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
     using namespace guestProp;
-    HRESULT rc = E_FAIL;
+    rc = E_FAIL;
 
-    switch (mData->mSession.mState)
+    if (!mHWData->mPropertyServiceActive)
     {
-        case SessionState_Closed:
-        {
-            /* The "+ 1" in the length is the null terminator. */
-            Bstr strKey (Bstr (aKey).length() + VBOX_SHARED_INFO_PREFIX_LEN + 1);
-            BSTR strKeyRaw = strKey.mutableRaw();
-
-            /* String manipulation in Main is pretty painful, especially given
-             * how often it is needed. */
-            for (unsigned i = 0; i < VBOX_SHARED_INFO_PREFIX_LEN; ++i)
-                /* I take it this is legal, at least g++ accepts it. */
-                strKeyRaw [i] = VBOX_SHARED_INFO_KEY_PREFIX[i];
-            /* The "+ 1" in the length is the null terminator. */
-            for (unsigned i = 0, len = Bstr (aKey).length() + 1; i < len; ++i)
-                strKeyRaw [i + VBOX_SHARED_INFO_PREFIX_LEN] = aKey [i];
-            rc = SetExtraData (strKey, aValue);
-            break;
-        }
-        case SessionState_Open:
-        {
-            if (mData->mSession.mState != SessionState_Open)
+        bool found = false;
+        HWData::GuestPropertyList::iterator targetIt = mHWData->mGuestProperties.end();
+        for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+             (it != mHWData->mGuestProperties.end()) && !found; ++it)
+            if (it->mName == aKey)
             {
-                rc = setError (E_FAIL,
-                    tr ("Session is not open (session state: %d)"),
-                    mData->mSession.mState);
-                break;
+                targetIt = it;
+                found = true;
             }
-
-            ComPtr <IInternalSessionControl> directControl =
-                mData->mSession.mDirectControl;
-
-            /* just be on the safe side when calling another process */
-            alock.leave();
-
-            BSTR dummy = NULL;
-            rc = directControl->AccessGuestProperty (aKey, aValue,
-                                                     true /* isSetter */,
-                                                     &dummy);
-            break;
+        if (targetIt != mHWData->mGuestProperties.end())
+        {
+            mHWData.backup();
+            if (NULL == aValue)
+                mHWData->mGuestProperties.erase(targetIt);
+            else
+            {
+                targetIt->mValue = aValue;
+                targetIt->mTimestamp = RTTimeMilliTS();
+                if (aFlags != NULL)
+                    targetIt->mFlags = aFlags;
+            }
         }
-        default:
-            rc = setError (E_FAIL,
-                tr ("Session is currently transitioning (session state: %d)"),
-                mData->mSession.mState);
+        else if (aValue != NULL)
+        {
+            mHWData.backup();
+            HWData::GuestProperty property;
+            property.mName = aKey;
+            property.mValue = aValue;
+            property.mTimestamp = RTTimeMilliTS();
+            property.mFlags = (aFlags != NULL ? Bstr(aFlags) : Bstr(""));
+            mHWData->mGuestProperties.push_back(property);
+        }
+        rc = S_OK;
+    }
+    else
+    {
+        ComPtr <IInternalSessionControl> directControl =
+            mData->mSession.mDirectControl;
+
+        /* just be on the safe side when calling another process */
+        alock.leave();
+
+        BSTR dummy = NULL;
+        ULONG64 dummy64;
+        rc = directControl->AccessGuestProperty (aKey, aValue, aFlags,
+                                                 true /* isSetter */,
+                                                 &dummy, &dummy64, &dummy);
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
+}
+
+STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aName, INPTR BSTR aValue)
+{
+    return SetGuestProperty(aName, aValue, NULL);
 }
 
 STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
@@ -4835,6 +4827,31 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             guestNode.value <ULONG> ("statisticsUpdateInterval");
     }
 
+    /* Guest properties (optional) */
+    {
+        Key guestPropertiesNode = aNode.findKey ("GuestProperties");
+        if (!guestPropertiesNode.isNull())
+        {
+            Key::List properties = guestPropertiesNode.keys ("GuestProperty");
+            for (Key::List::const_iterator it = properties.begin();
+                 it != properties.end(); ++ it)
+            {
+                /* property name (required) */
+                Bstr name = (*it).stringValue ("name");
+                /* property value (required) */
+                Bstr value = (*it).stringValue ("value");
+                /* property timestamp (optional, defaults to 0) */
+                ULONG64 timestamp = (*it).value<ULONG64> ("timestamp");
+                /* property flags (optional, defaults to empty) */
+                Bstr flags = (*it).stringValue ("flags");
+    
+                HWData::GuestProperty property = { name, value, timestamp, flags };
+                mHWData->mGuestProperties.push_back(property);
+            }
+        }
+        mHWData->mPropertyServiceActive = false;
+    }
+
     AssertComRC (rc);
     return rc;
 }
@@ -6180,6 +6197,25 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                                     mHWData->mMemoryBalloonSize);
         guestNode.setValue <ULONG> ("statisticsUpdateInterval",
                                     mHWData->mStatisticsUpdateInterval);
+    }
+
+    /* Guest properties */
+    {
+        Key guestPropertiesNode = aNode.createKey ("GuestProperties");
+
+        for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
+             it != mHWData->mGuestProperties.end();
+             ++ it)
+        {
+            HWData::GuestProperty property = *it;
+
+            Key propertyNode = guestPropertiesNode.appendKey ("GuestProperty");
+
+            propertyNode.setValue <Bstr> ("name", property.mName);
+            propertyNode.setValue <Bstr> ("value", property.mValue);
+            propertyNode.setValue <ULONG64> ("timestamp", property.mTimestamp);
+            propertyNode.setValue <Bstr> ("flags", property.mFlags);
+        }
     }
 
     AssertComRC (rc);
@@ -8727,6 +8763,86 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
 
+    return S_OK;
+}
+
+STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
+              ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    AssertReturn(!ComSafeArrayOutIsNull (aNames), E_POINTER);
+    AssertReturn(!ComSafeArrayOutIsNull (aValues), E_POINTER);
+    AssertReturn(!ComSafeArrayOutIsNull (aTimestamps), E_POINTER);
+    AssertReturn(!ComSafeArrayOutIsNull (aFlags), E_POINTER);
+
+    unsigned cEntries = mHWData->mGuestProperties.size();
+    com::SafeArray <BSTR> names(cEntries);
+    com::SafeArray <BSTR> values(cEntries);
+    com::SafeArray <ULONG64> timestamps(cEntries);
+    com::SafeArray <BSTR> flags(cEntries);
+    unsigned i = 0;
+    for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+         it != mHWData->mGuestProperties.end(); ++it)
+    {
+        it->mName.cloneTo(&names[i]);
+        it->mValue.cloneTo(&values[i]);
+        timestamps[i] = it->mTimestamp;
+        it->mFlags.cloneTo(&flags[i]);
+        ++i;
+    }
+    names.detachTo(ComSafeArrayOutArg (aNames));
+    values.detachTo(ComSafeArrayOutArg (aValues));
+    timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
+    flags.detachTo(ComSafeArrayOutArg (aFlags));
+    mHWData->mPropertyServiceActive = true;
+    return S_OK;
+}
+
+STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNames),
+                                                  ComSafeArrayIn(INPTR BSTR, aValues),
+                                                  ComSafeArrayIn(ULONG64, aTimestamps),
+                                                  ComSafeArrayIn(INPTR BSTR, aFlags))
+{
+    LogFlowThisFunc (("\n"));
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    mData->mRegistered = FALSE;
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    LogRel(("checkStateDependency (MutableStateDep) returned 0x%x\n", rc));
+    CheckComRCReturnRC (rc);
+
+    // ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
+
+    AssertReturn(!ComSafeArrayInIsNull (aNames), E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull (aValues), E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull (aTimestamps), E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull (aFlags), E_POINTER);
+
+    com::SafeArray <INPTR BSTR> names(ComSafeArrayInArg(aNames));
+    com::SafeArray <INPTR BSTR> values(ComSafeArrayInArg(aValues));
+    com::SafeArray <ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
+    com::SafeArray <INPTR BSTR> flags(ComSafeArrayInArg(aFlags));
+    mHWData.backup();
+    mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
+                                    mHWData->mGuestProperties.end());
+    for (unsigned i = 0; i < names.size(); ++i)
+    {
+        HWData::GuestProperty property = { names[i], values[i], timestamps[i], flags[i] };
+        mHWData->mGuestProperties.push_back(property);
+    }
+    mHWData->mPropertyServiceActive = false;
+    alock.unlock();
+    SaveSettings();
+    mData->mRegistered = TRUE;
     return S_OK;
 }
 

@@ -686,6 +686,19 @@
   <xsd:attribute name="PortCount"                  type="xsd:unsignedInt" default="30"/>
 </xsd:complexType>
 
+<xsd:complexType name="TGuestProperty">
+  <xsd:attribute name="name"      type="xsd:string"       use="required"/>
+  <xsd:attribute name="value"     type="xsd:string"       use="required"/>
+  <xsd:attribute name="timestamp" type="xsd:unsignedLong" default="0"/>
+  <xsd:attribute name="flags"     type="xsd:string"       default=""/>
+</xsd:complexType>
+
+<xsd:complexType name="TGuestProperties">
+  <xsd:sequence>
+    <xsd:element name="GuestProperty" type="TGuestProperty" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="THardware">
   <xsd:all>
     <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
@@ -730,6 +743,12 @@
     </xsd:element>
     <xsd:element name="Clipboard" type="TClipboard"/>
     <xsd:element name="Guest" type="TGuest"/>
+    <xsd:element name="GuestProperties" type="TGuestProperties" minOccurs="0">
+      <xsd:unique name="THardware-GuestProperties-GuestProperty">
+        <xsd:selector xpath="vb:GuestProperty"/>
+        <xsd:field xpath="@name"/>
+      </xsd:unique>
+    </xsd:element>
   </xsd:all>
 </xsd:complexType>
 

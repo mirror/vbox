@@ -353,9 +353,8 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     /* Timestamp */
     uint64_t u64Timestamp = 0;
     if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
-        rc = CFGMR3QueryU64(mpFlagsNode, pszName, &u64Timestamp);
-    if (RT_SUCCESS(rc))
-        VBoxHGCMParmUInt64Set(&paParms[2], 0);
+        CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
+    VBoxHGCMParmUInt64Set(&paParms[2], u64Timestamp);
 
 /*
  * Done!  Do exit logging and return.
@@ -769,19 +768,25 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         } break;
 
         /* The host wishes to read a configuration value */
-        case GET_CONFIG_KEY_HOST:
-            LogFlowFunc(("GET_CONFIG_KEY_HOST\n"));
-            rc = getKey(cParms, paParms);
+        case GET_PROP_HOST:
+            LogFlowFunc(("GET_PROP_HOST\n"));
+            rc = getProperty(cParms, paParms);
             break;
 
         /* The host wishes to set a configuration value */
-        case SET_CONFIG_KEY_HOST:
-            LogFlowFunc(("SET_CONFIG_KEY_HOST\n"));
+        case SET_PROP_HOST:
+            LogFlowFunc(("SET_PROP_HOST\n"));
+            rc = setKey(cParms, paParms);
+            break;
+
+        /* The host wishes to set a configuration value */
+        case SET_PROP_VALUE_HOST:
+            LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
             rc = setKey(cParms, paParms);
             break;
 
         /* The host wishes to remove a configuration value */
-        case DEL_CONFIG_KEY_HOST:
+        case DEL_PROP_HOST:
             LogFlowFunc(("DEL_CONFIG_KEY_HOST\n"));
             rc = delKey(cParms, paParms);
             break;
