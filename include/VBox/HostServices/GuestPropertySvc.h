@@ -38,29 +38,24 @@ enum eHostFn
     SET_CFGM_NODE = 1,
     /** 
      * Get the value attached to a configuration property key
-     * The parameter format matches that of GET_PROP. 
+     * The parameter format matches that of GET_CONFIG_KEY. 
      */
-    GET_PROP_HOST = 2,
+    GET_CONFIG_KEY_HOST = 2,
     /** 
      * Set the value attached to a configuration property key
-     * The parameter format matches that of SET_PROP.
+     * The parameter format matches that of SET_CONFIG_KEY.
      */
-    SET_PROP_HOST = 3,
-    /** 
-     * Set the value attached to a configuration property key
-     * The parameter format matches that of SET_PROP_VALUE.
-     */
-    SET_PROP_VALUE_HOST = 4,
+    SET_CONFIG_KEY_HOST = 3,
     /** 
      * Remove the value attached to a configuration property key
-     * The parameter format matches that of DEL_PROP.
+     * The parameter format matches that of DEL_CONFIG_KEY.
      */
-    DEL_PROP_HOST = 5,
+    DEL_CONFIG_KEY_HOST = 4,
     /** 
      * Enumerate guest properties.
      * The parameter format matches that of ENUM_PROPS.
      */
-    ENUM_PROPS_HOST = 6
+    ENUM_PROPS_HOST = 5
 };
 
 /**
