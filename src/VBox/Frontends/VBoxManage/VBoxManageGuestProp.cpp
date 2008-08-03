@@ -92,8 +92,8 @@ static int handleGetGuestProperty(int argc, char *argv[],
 }
 
 static int handleSetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> virtualBox,
-                                  ComPtr<ISession> session)
+                                  ComPtr<IVirtualBox> aVirtualBox,
+                                  ComPtr<ISession> aSession)
 {
     HRESULT rc = S_OK;
 
@@ -132,14 +132,23 @@ static int handleSetGuestProperty(int argc, char *argv[],
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
+        Guid uuid;
+        machine->COMGETTER(Id)(uuid.asOutParam());
+
+        /* open a session for the VM */
+        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+
+        /* get the mutable session machine */
+        aSession->COMGETTER(Machine)(machine.asOutParam());
+
         if ((NULL == pszValue) && (NULL == pszFlags))
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), NULL));
         else if (NULL == pszFlags)
@@ -148,6 +157,11 @@ static int handleSetGuestProperty(int argc, char *argv[],
             CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), NULL, Bstr(pszFlags)));
         else
             CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), Bstr(pszValue), Bstr(pszFlags)));
+
+        if (SUCCEEDED(rc))
+            CHECK_ERROR(machine, SaveSettings());
+
+        aSession->Close();
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
