@@ -171,7 +171,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/sdk/bin/xpidl $(prefix)/usr/lib/$(package)
 	rmdir $(archdir)/sdk/bin
 	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
-	$(if $(HEADLESS),,mv $(archdir)/nls $(archdir)/nls3 $(prefix)/usr/share/$(package))
+	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
