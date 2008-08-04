@@ -2757,12 +2757,12 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aKey, ULONG64 *aTime
     return GetGuestProperty(aKey, &dummyValue, aTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPTR BSTR aFlags)
+STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
-    if (!VALID_PTR (aKey))
+    if (!VALID_PTR (aName))
         return E_INVALIDARG;
     if ((aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
@@ -2789,32 +2789,35 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPT
     if (!mHWData->mPropertyServiceActive)
     {
         bool found = false;
-        HWData::GuestPropertyList::iterator targetIt = mHWData->mGuestProperties.end();
+        HWData::GuestProperty property;
         for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
              (it != mHWData->mGuestProperties.end()) && !found; ++it)
-            if (it->mName == aKey)
+            if (it->mName == aName)
             {
-                targetIt = it;
+                property = *it;
+                mHWData.backup();
+                /* The backup() operation invalidates our iterator, so get a
+                 * new one. */
+                for (it = mHWData->mGuestProperties.begin();
+                     it->mName != aName; ++it); 
+                mHWData->mGuestProperties.erase(it);
                 found = true;
             }
-        if (targetIt != mHWData->mGuestProperties.end())
+        if (found)
         {
-            mHWData.backup();
-            if (NULL == aValue)
-                mHWData->mGuestProperties.erase(targetIt);
-            else
+            if (NULL != aValue)
             {
-                targetIt->mValue = aValue;
-                targetIt->mTimestamp = RTTimeMilliTS();
+                property.mValue = aValue;
+                property.mTimestamp = RTTimeMilliTS();
                 if (aFlags != NULL)
-                    targetIt->mFlags = aFlags;
+                    property.mFlags = aFlags;
+                mHWData->mGuestProperties.push_back(property);
             }
         }
         else if (aValue != NULL)
         {
             mHWData.backup();
-            HWData::GuestProperty property;
-            property.mName = aKey;
+            property.mName = aName;
             property.mValue = aValue;
             property.mTimestamp = RTTimeMilliTS();
             property.mFlags = (aFlags != NULL ? Bstr(aFlags) : Bstr(""));
@@ -2832,7 +2835,7 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPT
 
         BSTR dummy = NULL;
         ULONG64 dummy64;
-        rc = directControl->AccessGuestProperty (aKey, aValue, aFlags,
+        rc = directControl->AccessGuestProperty (aName, aValue, aFlags,
                                                  true /* isSetter */,
                                                  &dummy, &dummy64, &dummy);
     }
