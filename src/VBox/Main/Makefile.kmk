@@ -274,6 +274,7 @@ VBoxSVC_SOURCES.linux   +=   linux/PerformanceLinux.cpp
 VBoxSVC_SOURCES.os2     +=     os2/PerformanceOs2.cpp
 VBoxSVC_SOURCES.solaris += solaris/PerformanceSolaris.cpp
 VBoxSVC_SOURCES.win     +=     win/PerformanceWin.cpp
+VBoxSVC_LDFLAGS.solaris += -lkstat
 VBoxSVC_LDFLAGS.win     += wbemuuid.lib
 endif
 

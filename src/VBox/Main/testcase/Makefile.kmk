@@ -111,6 +111,7 @@ tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../Performance.cpp
 tstCollector_INCS     = ../include
+tstCollector_LDFLAGS.solaris += -lkstat
 tstCollector_LDFLAGS.win += wbemuuid.lib
 
 

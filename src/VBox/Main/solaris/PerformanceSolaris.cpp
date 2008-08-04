@@ -22,6 +22,18 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <kstat.h>
+#include <sys/sysinfo.h>
+#include <sys/time.h>
+#include <procfs.h>
+
+#include <iprt/err.h>
+#include <iprt/string.h>
+#include <iprt/alloc.h>
+#include <iprt/param.h>
+#include <VBox/log.h>
 #include "Performance.h"
 
 namespace pm {
@@ -29,12 +41,17 @@ namespace pm {
 class CollectorSolaris : public CollectorHAL
 {
 public:
+    CollectorSolaris();
+    ~CollectorSolaris();
     virtual int getHostCpuMHz(unsigned long *mhz);
     virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
+private:
+    kstat_ctl_t *mKC;
+    kstat_t     *mSysPages;
 };
 
 // Solaris Metric factory
@@ -45,117 +62,176 @@ MetricFactorySolaris::MetricFactorySolaris()
     Assert(mHAL);
 }
 
-BaseMetric *MetricFactorySolaris::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-{
-    Assert(mHAL);
-    return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
-}
-
-BaseMetric *MetricFactorySolaris::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
-{
-    Assert(mHAL);
-    return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
-}
-
 // Collector HAL for Solaris
+
+
+CollectorSolaris::CollectorSolaris() : mKC(0), mSysPages(0)
+{
+    if ((mKC = kstat_open()) == 0)
+    {
+        Log(("kstat_open() -> %d\n", errno));
+        return;
+    }
+
+    if ((mSysPages = kstat_lookup(mKC, "unix", 0, "system_pages")) == 0)
+    {
+        Log(("kstat_lookup(system_pages) -> %d\n", errno));
+        return;
+    }
+}
+
+CollectorSolaris::~CollectorSolaris()
+{
+    kstat_close(mKC);
+}
 
 int CollectorSolaris::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
-#ifdef RT_OS_LINUX
     int rc = VINF_SUCCESS;
-    unsigned long nice;
-    FILE *f = fopen("/proc/stat", "r");
-
-    if (f)
-    {
-        if (fscanf(f, "cpu %lu %lu %lu %lu", user, &nice, kernel, idle) == 4)
-            *user += nice;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
+    kstat_t *ksp;
+    uint64_t tmpUser, tmpKernel, tmpIdle;
+    int cpus;
+    cpu_stat_t cpu_stats;
+    
+    if (mKC == 0)
+        return VERR_INTERNAL_ERROR;
+    
+    tmpUser = tmpKernel = tmpIdle = cpus = 0;
+    for (ksp = mKC->kc_chain; ksp != NULL; ksp = ksp->ks_next) {
+        if (strcmp(ksp->ks_module, "cpu_stat") == 0) {
+            if (kstat_read(mKC, ksp, &cpu_stats) == -1)
+            {
+                Log(("kstat_read() -> %d", errno));
+                return VERR_INTERNAL_ERROR;
+            }
+            ++cpus;
+            tmpUser   += cpu_stats.cpu_sysinfo.cpu[CPU_USER];
+            tmpKernel += cpu_stats.cpu_sysinfo.cpu[CPU_KERNEL];
+            tmpIdle   += cpu_stats.cpu_sysinfo.cpu[CPU_IDLE];
+        }         
     }
-    else
-        rc = VERR_ACCESS_DENIED;
+    
+    if (cpus == 0)
+    {
+        Log(("no cpu stats found!\n"));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    if (user)   *user   = tmpUser;
+    if (kernel) *kernel = tmpKernel;
+    if (idle)   *idle   = tmpIdle;
 
     return rc;
-#else
-    return E_NOTIMPL;
-#endif
 }
 
 int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
-#ifdef RT_OS_LINUX
     int rc = VINF_SUCCESS;
     char *pszName;
-    pid_t pid2;
-    char c;
-    int iTmp;
-    unsigned uTmp;
-    unsigned long ulTmp;
-    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+    prusage_t prusage;
 
-    RTStrAPrintf(&pszName, "/proc/%d/stat", process);
-    //printf("Opening %s...\n", pszName);
-    FILE *f = fopen(pszName, "r");
+    RTStrAPrintf(&pszName, "/proc/%d/usage", process);
+    Log(("Opening %s...\n", pszName));
+    int h = open(pszName, O_RDONLY);
     RTMemFree(pszName);
 
-    if (f)
+    if (h != -1)
     {
-        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
-                   &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
-                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, user, kernel) == 15)
+        if (read(h, &prusage, sizeof(prusage)) == sizeof(prusage))
         {
-            Assert((pid_t)process == pid2);
+            //Assert((pid_t)process == pstatus.pr_pid);
+            //Log(("user=%u kernel=%u total=%u\n", prusage.pr_utime.tv_sec, prusage.pr_stime.tv_sec, prusage.pr_tstamp.tv_sec));
+            *user = (uint64_t)prusage.pr_utime.tv_sec * 1000000000 + prusage.pr_utime.tv_nsec;
+            *kernel = (uint64_t)prusage.pr_stime.tv_sec * 1000000000 + prusage.pr_stime.tv_nsec;
+            *total = (uint64_t)prusage.pr_tstamp.tv_sec * 1000000000 + prusage.pr_tstamp.tv_nsec;
+            //Log(("user=%llu kernel=%llu total=%llu\n", *user, *kernel, *total));
         }
         else
+        {
+            Log(("read() -> %d", errno));
             rc = VERR_FILE_IO_ERROR;
-        fclose(f);
+        }
+        close(h);
     }
     else
+    {
+        Log(("open() -> %d", errno));
         rc = VERR_ACCESS_DENIED;
+    }
 
     return rc;
-#else
-    return E_NOTIMPL;
-#endif
 }
 
 int CollectorSolaris::getHostCpuMHz(unsigned long *mhz)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorSolaris::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
 {
-#ifdef RT_OS_LINUX
     int rc = VINF_SUCCESS;
-    unsigned long buffers, cached;
-    FILE *f = fopen("/proc/meminfo", "r");
 
-    if (f)
+    kstat_named_t *kn;
+    
+    if (mKC == 0 || mSysPages == 0)
+        return VERR_INTERNAL_ERROR;
+
+    if (kstat_read(mKC, mSysPages, 0) == -1)
     {
-        int processed = fscanf(f, "MemTotal: %lu kB", total);
-        processed    += fscanf(f, "MemFree: %lu kB", available);
-        processed    += fscanf(f, "Buffers: %lu kB", &buffers);
-        processed    += fscanf(f, "Cached: %lu kB", &cached);
-        if (processed == 4)
-            *available += buffers + cached;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
+        Log(("kstat_read(sys_pages) -> %d", errno));
+        return VERR_INTERNAL_ERROR;
     }
-    else
-        rc = VERR_ACCESS_DENIED;
+    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "freemem")) == 0)
+    {
+        Log(("kstat_data_lookup(freemem) -> %d", errno));
+        return VERR_INTERNAL_ERROR;
+    }
+    *available = kn->value.ul * (PAGE_SIZE/1024);
+    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "physmem")) == 0)
+    {
+        Log(("kstat_data_lookup(physmem) -> %d", errno));
+        return VERR_INTERNAL_ERROR;
+    }
+    *total = kn->value.ul * (PAGE_SIZE/1024);
+    *used = *total - *available;
 
     return rc;
-#else
-    return E_NOTIMPL;
-#endif
 }
 int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
 {
-    return E_NOTIMPL;
+    int rc = VINF_SUCCESS;
+    char *pszName;
+    pid_t pid2;
+    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+    psinfo_t psinfo;
+
+    RTStrAPrintf(&pszName, "/proc/%d/psinfo", process);
+    Log(("Opening %s...\n", pszName));
+    int h = open(pszName, O_RDONLY);
+    RTMemFree(pszName);
+
+    if (h != -1)
+    {
+        if (read(h, &psinfo, sizeof(psinfo)) == sizeof(psinfo))
+        {
+            Assert((pid_t)process == psinfo.pr_pid);
+            *used = psinfo.pr_rssize;
+        }
+        else
+        {
+            Log(("read() -> %d", errno));
+            rc = VERR_FILE_IO_ERROR;
+        }
+        close(h);
+    }
+    else
+    {
+        Log(("open() -> %d", errno));
+        rc = VERR_ACCESS_DENIED;
+    }
+
+    return rc;
 }
 
 }
+
