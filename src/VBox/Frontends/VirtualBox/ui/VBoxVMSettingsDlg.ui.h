@@ -662,9 +662,14 @@ void VBoxVMSettingsDlg::init()
 
     /* Network Page */
 
-#ifndef Q_WS_WIN
+#if !defined(Q_WS_WIN) && !defined Q_OS_MAC
     gbInterfaceList->setHidden (true);
 #endif
+#ifdef Q_OS_MAC
+    pbHostAdd->setHidden (true);
+    pbHostRemove->setHidden (true);
+#endif
+
     /* setup tab widget */
     mNoInterfaces = tr ("<No suitable interfaces>");
     /* setup iconsets */
@@ -972,7 +977,7 @@ void VBoxVMSettingsDlg::updateShortcuts()
 
 void VBoxVMSettingsDlg::loadInterfacesList()
 {
-#if defined Q_WS_WIN
+#if defined Q_WS_WIN || defined Q_OS_MAC
     /* clear inner list */
     mInterfaceList.clear();
     /* load current inner list */
@@ -1148,7 +1153,7 @@ void VBoxVMSettingsDlg::hostInterfaceRemove()
 void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 {
     if (!aWidget) return;
-#if defined Q_WS_WIN
+#if defined Q_WS_WIN || defined Q_OS_MAC
     VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
     set->loadInterfaceList (mInterfaceList, mNoInterfaces);
     set->revalidate();
@@ -2174,14 +2179,16 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     page->setValidator (wval);
     page->revalidate();
 
-#ifdef Q_WS_WIN
+#ifdef Q_WS_WIN || defined Q_OS_MAC
 
     /* fix focus order (make sure the Host Interface list UI goes after the
      * last network adapter UI item) */
 
     setTabOrder (page->chbCableConnected, lbHostInterface);
+# if defined Q_OS_WIN
     setTabOrder (lbHostInterface, pbHostAdd);
     setTabOrder (pbHostAdd, pbHostRemove);
+# endif
 
 #endif
 }
