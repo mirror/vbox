@@ -52,8 +52,8 @@ void usageGuestProperty(void)
 }
 
 static int handleGetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> virtualBox,
-                                  ComPtr<ISession> session)
+                                  ComPtr<IVirtualBox> aVirtualBox,
+                                  ComPtr<ISession> aSession)
 {
     HRESULT rc = S_OK;
 
@@ -65,14 +65,23 @@ static int handleGetGuestProperty(int argc, char *argv[],
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
+        Guid uuid;
+        machine->COMGETTER(Id)(uuid.asOutParam());
+
+        /* open a session for the VM */
+        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+
+        /* get the mutable session machine */
+        aSession->COMGETTER(Machine)(machine.asOutParam());
+
         Bstr value;
         uint64_t u64Timestamp;
         Bstr flags;
@@ -221,6 +230,15 @@ static int handleEnumGuestProperty(int argc, char *argv[],
     }
     if (machine)
     {
+        Guid uuid;
+        machine->COMGETTER(Id)(uuid.asOutParam());
+
+        /* open a session for the VM */
+        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+
+        /* get the mutable session machine */
+        aSession->COMGETTER(Machine)(machine.asOutParam());
+
         com::SafeArray <BSTR> names;
         com::SafeArray <BSTR> values;
         com::SafeArray <ULONG64> timestamps;
