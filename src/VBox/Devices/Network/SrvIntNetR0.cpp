@@ -45,7 +45,7 @@
 *******************************************************************************/
 /** @def INTNET_WITH_DHCP_SNOOPING
  * Enabled DHCP snooping when in shared-mac-on-the-wire mode. */
-/*#define INTNET_WITH_DHCP_SNOOPING - the implementation isn't completed yet. */
+#define INTNET_WITH_DHCP_SNOOPING
 
 
 /*******************************************************************************
@@ -808,10 +808,24 @@ DECLINLINE(int) intnetR0IfAddrCacheLookupUnlikely(PCINTNETADDRCACHE pCache, PCRT
  */
 static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, int iEntry, const char *pszMsg)
 {
-    Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 type=%d #%d %.*Rhxs %s\n", pIf->hIf,
-         (int)(intptr_t)(pCache - &pIf->aAddrCache[0]), iEntry, pCache->cbAddress,
-         pCache->pbEntries + iEntry * pCache->cbEntry, pszMsg));
     AssertReturnVoid(iEntry < pCache->cEntries);
+    AssertReturnVoid(iEntry >= 0);
+#ifdef LOG_ENABLED
+    INTNETADDRTYPE enmAddrType = (INTNETADDRTYPE)(uintptr_t)(pCache - &pIf->aAddrCache[0]);
+    PCRTNETADDRU pAddr = (PCRTNETADDRU)(pCache->pbEntries + iEntry * pCache->cbEntry);
+    switch (enmAddrType)
+    {
+        case kIntNetAddrType_IPv4:
+            Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
+                 pIf->hIf, &pIf->Mac, iEntry, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+            break;
+        default:
+            Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 MAC=%.6Rhxs type=%d #%d %.*Rhxs %s\n",
+                 pIf->hIf, &pIf->Mac, enmAddrType, iEntry, pCache->cbAddress, pAddr, pszMsg));
+            break;
+    }
+#endif
+
     pCache->cEntries--;
     if (iEntry < pCache->cEntries)
         memmove(pCache->pbEntries +      iEntry  * pCache->cbEntry,
@@ -956,9 +970,20 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     uint8_t *pbEntry = pCache->pbEntries + pCache->cEntries * pCache->cbEntry;
     memcpy(pbEntry, pAddr, pCache->cbAddress);
     memset(pbEntry + pCache->cbAddress, '\0', pCache->cbEntry - pCache->cbAddress);
-    Log(("intnetR0IfAddrCacheAddIt: type=%d added #%d %.*Rhxs %s\n",
-         (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cEntries,
-         pCache->cbAddress, pAddr, pszMsg));
+#ifdef LOG_ENABLED
+    INTNETADDRTYPE enmAddrType = (INTNETADDRTYPE)(uintptr_t)(pCache - &pIf->aAddrCache[0]);
+    switch (enmAddrType)
+    {
+        case kIntNetAddrType_IPv4:
+            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
+                 pIf->hIf, &pIf->Mac, pCache->cEntries, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+            break;
+        default:
+            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs type=%d added #%d %.*Rhxs %s\n",
+                 pIf->hIf, &pIf->Mac, enmAddrType, pCache->cEntries, pCache->cbAddress, pAddr, pszMsg));
+            break;
+    }
+#endif
     pCache->cEntries++;
     Assert(pCache->cEntries <= pCache->cEntriesAlloc);
 }
@@ -1040,12 +1065,130 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
  */
 static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, uint32_t cbUdpPkt)
 {
-    /** @todo later */
+    /*
+     * Check if the DHCP message is valid and get the type.
+     */
+    if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbUdpPkt))
+    {
+        Log6(("Bad UDP packet\n"));
+        return;
+    }
+    PCRTNETBOOTP pDhcp = (PCRTNETBOOTP)(pUdpHdr + 1);
+    uint8_t MsgType;
+    if (!RTNetIPv4IsDHCPValid(pUdpHdr, pDhcp, cbUdpPkt - sizeof(*pUdpHdr), &MsgType))
+    {
+        Log6(("Bad DHCP packet\n"));
+        return;
+    }
+
+#ifdef LOG_ENABLED
+    /*
+     * Log it.
+     */
+    const char *pszType = "unknown";
+    switch (MsgType)
+    {
+        case RTNET_DHCP_MT_DISCOVER: pszType = "discover";  break;
+        case RTNET_DHCP_MT_OFFER:    pszType = "offer"; break;
+        case RTNET_DHCP_MT_REQUEST:  pszType = "request"; break;
+        case RTNET_DHCP_MT_DECLINE:  pszType = "decline"; break;
+        case RTNET_DHCP_MT_ACK:      pszType = "ack";break;
+        case RTNET_DHCP_MT_NAC:      pszType = "nac"; break;
+        case RTNET_DHCP_MT_RELEASE:  pszType = "release"; break;
+        case RTNET_DHCP_MT_INFORM:   pszType = "inform"; break;
+    }
+    Log6(("DHCP msg: %d (%s) client %.6Rhxs ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d\n", MsgType, pszType, &pDhcp->bp_chaddr,
+          pDhcp->bp_ciaddr.au8[0], pDhcp->bp_ciaddr.au8[1], pDhcp->bp_ciaddr.au8[2], pDhcp->bp_ciaddr.au8[3],
+          pDhcp->bp_yiaddr.au8[0], pDhcp->bp_yiaddr.au8[1], pDhcp->bp_yiaddr.au8[2], pDhcp->bp_yiaddr.au8[3]));
+#endif /* LOG_EANBLED */
+
+    /*
+     * Act upon the message.
+     */
+    switch (MsgType)
+    {
+        /*
+         * Lookup the interface by its MAC address and insert the IPv4 address into the cache.
+         * Delete the old client address first, just in case it changed in a renewal.
+         */
+        case RTNET_DHCP_MT_ACK:
+            if (intnetR0IPv4AddrIsGood(pDhcp->bp_yiaddr))
+                for (PINTNETIF pCur = pNetwork->pIFs; pCur; pCur = pCur->pNext)
+                    if (    pCur->fMacSet
+                        &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
+                    {
+                        intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
+                                                  (PCRTNETADDRU)&pDhcp->bp_ciaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_ACK");
+                        intnetR0IfAddrCacheAdd(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
+                                               (PCRTNETADDRU)&pDhcp->bp_yiaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_ACK");
+                        break;
+                    }
+            break;
+
+
+        /*
+         * Lookup the interface by its MAC address and remove the IPv4 address(es) from the cache.
+         */
+        case RTNET_DHCP_MT_RELEASE:
+        {
+            for (PINTNETIF pCur = pNetwork->pIFs; pCur; pCur = pCur->pNext)
+                if (    pCur->fMacSet
+                    &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
+                {
+                    intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
+                                              (PCRTNETADDRU)&pDhcp->bp_ciaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_RELEASE");
+                    intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
+                                              (PCRTNETADDRU)&pDhcp->bp_yiaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_RELEASE");
+                }
+            break;
+        }
+    }
+
 }
 
 
+/**
+ * Worker for intnetR0TrunkIfSnoopAddr that takes care of what
+ * is likely to be a DHCP message.
+ *
+ * The caller has already check that the UDP source and destination ports
+ * are BOOTPS or BOOTPC.
+ *
+ * @param   pNetwork        The network this frame was seen on.
+ * @param   pSG             The gather list for the frame.
+ */
 static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 {
+    /*
+     * Get a pointer to a linear copy of the full packet, using the
+     * temporary buffer if necessary.
+     */
+    PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)((PCRTNETETHERHDR)pSG->aSegs[0].pv + 1);
+    size_t cbPacket = pSG->cbTotal - sizeof(RTNETETHERHDR);
+    if (pSG->cSegsUsed > 1)
+    {
+        cbPacket = RT_MIN(cbPacket, INTNETNETWORK_TMP_SIZE);
+        Log6(("intnetR0TrunkIfSnoopDhcp: Copying IPv4/UDP/DHCP pkt %u\n", cbPacket));
+        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), cbPacket, pNetwork->pbTmp))
+            return;
+        //pSG->fFlags |= INTNETSG_FLAGS_PKT_CP_IN_TMP;
+        pIpHdr = (PCRTNETIPV4)pNetwork->pbTmp;
+    }
+
+    /*
+     * Validate the IP header and find the UDP packet.
+     */
+    if (!RTNetIPv4IsHdrValid(pIpHdr, cbPacket, pSG->cbTotal - sizeof(RTNETETHERHDR)))
+    {
+        Log(("intnetR0TrunkIfSnoopDhcp: bad ip header\n"));
+        return;
+    }
+    size_t cbIpHdr = pIpHdr->ip_hl * 4;
+
+    /*
+     * Hand it over to the common DHCP snooper.
+     */
+    intnetR0NetworkSnoopDhcp(pNetwork, pIpHdr, (PCRTNETUDP)((uintptr_t)pIpHdr + cbIpHdr), cbPacket - cbIpHdr);
 }
 
 #endif /* INTNET_WITH_DHCP_SNOOPING */
@@ -1057,7 +1200,7 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
  *
  * The purpose of this purging is to get rid of stale addresses.
  *
- * @param   pNetwork        The network the this frame was seen on.
+ * @param   pNetwork        The network this frame was seen on.
  * @param   pSG             The gather list for the frame.
  */
 static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
@@ -1157,6 +1300,15 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport));
             if (b)
                 return;
+
+            /* get the lower byte of the UDP destination port number. */
+            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport) + 1);
+            if (    b != RTNETIPV4_PORT_BOOTPS
+                &&  b != RTNETIPV4_PORT_BOOTPC)
+                return;
+            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport));
+            if (b)
+                return;
             intnetR0TrunkIfSnoopDhcp(pNetwork, pSG);
             break;
         }
@@ -1196,14 +1348,14 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
     if (cbPacket < RTNETIPV4_MIN_LEN)
         return;
     uint32_t cbHdr = (uint32_t)pIpHdr->ip_hl * 4;
-    if (    cbHdr < RT_UOFFSETOF(RTNETIPV4, ip_options)
+    if (    cbHdr < RTNETIPV4_MIN_LEN
         ||  cbPacket < cbHdr)
         return;
 
     /*
-     * Ignore non good IP address (like broadcast and my network),
-     * also skip packets containing address that are already in the
-     * cache. Don't ignore potential DHCP traffic though.
+     * If the source address is good (not broadcast or my network) and
+     * not already in the address cache of the sender, add it. Validate
+     * the IP header before adding it.
      */
     bool fValidatedIpHdr = false;
     RTNETADDRU Addr;
@@ -1211,9 +1363,6 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
     if (    intnetR0IPv4AddrIsGood(Addr.IPv4)
         &&  intnetR0IfAddrCacheLookupLikely(&pIf->aAddrCache[kIntNetAddrType_IPv4], &Addr, sizeof(Addr.IPv4)) < 0)
     {
-        /*
-         * Got a candidate, check that the IP header is valid before adding it.
-         */
         if (!RTNetIPv4IsHdrValid(pIpHdr, cbPacket, cbPacket))
         {
             Log(("intnetR0IfSnoopIPv4SourceAddr: bad ip header\n"));
@@ -3454,7 +3603,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             {
                 Assert(pTrunkIF->pIfPort);
                 pNetwork->pTrunkIF = pTrunkIF;
-                Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s %s Network=%s%s\n",
+                Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s%s Network=%s\n",
                      pszName, pNetwork->szTrunk, pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE ? " shared-mac" : "", pNetwork->szName));
                 return VINF_SUCCESS;
             }
