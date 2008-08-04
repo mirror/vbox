@@ -3739,7 +3739,7 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
     pszPatterns[iPatterns] = '\0';
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[0].u.pointer.addr = pszPatterns;
-    parm[0].u.pointer.size = cchPatterns + 1;
+    parm[0].u.pointer.size = iPatterns + 1;
 
 /*
  * Now things get slightly complicated.  Due to a race with the guest adding
