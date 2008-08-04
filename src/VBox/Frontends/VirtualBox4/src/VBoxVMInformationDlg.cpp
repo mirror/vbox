@@ -74,10 +74,11 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     mPage1->setFocusProxy (mDetailsText);
     mPage2->setFocusProxy (mStatisticText);
 
-    /* Setup mTeSummary browser.
-     * Contents propagation of the parent background */
+    /* Setup browsers */
     mDetailsText->viewport()->setAutoFillBackground (false);
     mStatisticText->viewport()->setAutoFillBackground (false);
+    mDetailsText->setViewportMargins (5, 5, 5, 5);
+    mStatisticText->setViewportMargins (5, 5, 5, 5);
 
     /* Setup handlers */
     connect (mInfoStack, SIGNAL (currentChanged (int)),
@@ -385,8 +386,8 @@ void VBoxVMInformationDlg::refreshStatistics()
     if (mSession.isNull())
         return;
 
-    QString table = "<table border=0 cellspacing=2 cellpadding=0>%1</table>";
-    QString hdrRow = "<tr><td align=left><img src='%1'></td><td colspan=3><b>%2</b></td></tr>";
+    QString table = "<table border=0 cellspacing=0 cellpadding=0>%1</table>";
+    QString hdrRow = "<tr><td width=26 align=left><img src='%1'></td><td colspan=3><b>%2</b></td></tr>";
     QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
     QString paragraph = "<tr><td colspan=4></td></tr>";
     QString result;

@@ -60,7 +60,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTextEdit" name="mDetailsText" >
+         <widget class="QRichTextEdit" name="mDetailsText" >
           <property name="frameShape" >
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -95,7 +95,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTextEdit" name="mStatisticText" >
+         <widget class="QRichTextEdit" name="mStatisticText" >
           <property name="frameShape" >
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -126,6 +126,11 @@
    <class>QIDialogButtonBox</class>
    <extends>QDialogButtonBox</extends>
    <header>QIDialogButtonBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QRichTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>VBoxUtils.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -26,6 +26,7 @@
 /* Qt includes */
 #include <QMouseEvent>
 #include <QWidget>
+#include <QTextEdit>
 
 /**
  *  Simple class that filters out all key presses and releases
@@ -87,6 +88,23 @@ protected:
 
     QWidget *mFrom;
     QWidget *mTo;
+};
+
+/**
+ *  QTextEdit reimplementation to feat some extended requirements.
+ */
+class QRichTextEdit : public QTextEdit
+{
+    Q_OBJECT;
+
+public:
+
+    QRichTextEdit (QWidget *aParent) : QTextEdit (aParent) {}
+
+    void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
+    {
+        QTextEdit::setViewportMargins (aLeft, aTop, aRight, aBottom);
+    }
 };
 
 #ifdef Q_WS_MAC
