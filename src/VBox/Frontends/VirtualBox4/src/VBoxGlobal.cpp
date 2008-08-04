@@ -1482,14 +1482,14 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                    bool withLinks, bool aDoRefresh)
 {
     static const char *sTableTpl =
-        "<table border=0 cellspacing=2 cellpadding=0>%1</table>";
+        "<table border=0 cellspacing=0 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
-        "<tr><td rowspan=%1 align=left><img src='%2'></td>"
+        "<tr><td width=26 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
         "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
-        "<tr><td rowspan=%1 align=left><img src='%2'></td>"
+        "<tr><td width=26 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=2><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
         "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
