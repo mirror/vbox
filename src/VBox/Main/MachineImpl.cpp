@@ -8900,7 +8900,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     AssertReturn(!ComSafeArrayOutIsNull (aTimestamps), E_POINTER);
     AssertReturn(!ComSafeArrayOutIsNull (aFlags), E_POINTER);
 
-    unsigned cEntries = mHWData->mGuestProperties.size();
+    size_t cEntries = mHWData->mGuestProperties.size();
     com::SafeArray <BSTR> names(cEntries);
     com::SafeArray <BSTR> values(cEntries);
     com::SafeArray <ULONG64> timestamps(cEntries);
