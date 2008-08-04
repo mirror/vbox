@@ -2709,7 +2709,7 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
     AutoReadLock alock (this);
 
     using namespace guestProp;
-    rc = E_FAIL;
+    HRESULT rc = E_FAIL;
 
     if (!mHWData->mPropertyServiceActive)
     {
@@ -2946,7 +2946,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
     AutoReadLock alock (this);
 
     using namespace guestProp;
-    rc = E_FAIL;
+    HRESULT rc = E_FAIL;
 
     if (!mHWData->mPropertyServiceActive)
     {
@@ -8934,6 +8934,11 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
 
     AutoWriteLock alock (this);
 
+    /* Temporarily reset the registered flag, so that our machine state
+     * changes (i.e. mHWData.backup()) succeed.  (isMutable() used in
+     * all setters will return FALSE for a Machine instance if mRegistered
+     * is TRUE).  This is copied from registeredInit(), and may or may not be
+     * the right way to handle this. */
     mData->mRegistered = FALSE;
     HRESULT rc = checkStateDependency (MutableStateDep);
     LogRel(("checkStateDependency (MutableStateDep) returned 0x%x\n", rc));
@@ -8961,6 +8966,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     mHWData->mPropertyServiceActive = false;
     alock.unlock();
     SaveSettings();
+    /* Restore the mRegistered flag. */
     mData->mRegistered = TRUE;
     return S_OK;
 }
