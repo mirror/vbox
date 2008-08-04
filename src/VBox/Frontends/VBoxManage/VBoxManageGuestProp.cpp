@@ -116,19 +116,16 @@ static int handleSetGuestProperty(int argc, char *argv[],
     const char *pszFlags = NULL;
     if (3 == argc)
     {
-        pszName = argv[1];
         pszValue = argv[2];
     }
     else if (4 == argc)
     {
-        pszName = argv[1];
         if (strcmp(argv[2], "-flags") != 0)
             usageOK = false;
         pszFlags = argv[3];
     }
     else if (5 == argc)
     {
-        pszName = argv[1];
         pszValue = argv[2];
         if (strcmp(argv[3], "-flags") != 0)
             usageOK = false;
@@ -138,6 +135,8 @@ static int handleSetGuestProperty(int argc, char *argv[],
         usageOK = false;
     if (!usageOK)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+    /* This is always needed. */
+    pszName = argv[1];
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
