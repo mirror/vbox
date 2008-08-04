@@ -54,7 +54,7 @@ public:
                      Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxSelectorWnd();
 
-    bool startMachine (const QUuid &id);
+    bool startMachine (const QUuid &aId);
 
 public slots:
 
@@ -81,8 +81,8 @@ public slots:
 
 protected:
 
-    /* events */
-    bool event (QEvent *e);
+    /* Events */
+    bool event (QEvent *aEvent);
 
     void retranslateUi();
 
@@ -104,6 +104,7 @@ private slots:
     void snapshotChanged (const VBoxSnapshotEvent &e);
 
 private:
+
     /* Main menus */
     QMenu *mFileMenu;
     QMenu *mVMMenu;
@@ -112,7 +113,7 @@ private:
     /* VM list context menu */
     QMenu *mVMCtxtMenu;
 
-    /* actions */
+    /* Actions */
     QAction *fileDiskMgrAction;
     QAction *fileSettingsAction;
     QAction *fileExitAction;
