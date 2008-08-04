@@ -974,19 +974,16 @@ static int setGuestProperty(int argc, char *argv[])
     const char *pszFlags = NULL;
     if (2 == argc)
     {
-        pszName = argv[0];
         pszValue = argv[1];
     }
     else if (3 == argc)
     {
-        pszName = argv[0];
         if (strcmp(argv[1], "-flags") != 0)
             usageOK = false;
         pszFlags = argv[2];
     }
     else if (4 == argc)
     {
-        pszName = argv[0];
         pszValue = argv[1];
         if (strcmp(argv[2], "-flags") != 0)
             usageOK = false;
@@ -999,6 +996,8 @@ static int setGuestProperty(int argc, char *argv[])
         usage(GUEST_PROP);
         return 1;
     }
+    /* This is always needed. */
+    pszName = argv[0];
 
 /*
  * Do the actual setting.
