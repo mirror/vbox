@@ -333,6 +333,11 @@ typedef struct INTNETTRUNKSWPORT
     /**
      * Incoming frame.
      *
+     * The frame may be modified when the trunk port on the switch is set to share
+     * the mac address of the host when hitting the wire. Currently rames containing
+     * ARP packets are subject to this, later other protocols like NDP/ICMPv6 may
+     * need editing as well when operating in this mode.
+     *
      * @returns true if we've handled it and it should be dropped.
      *          false if it should hit the wire.
      *
@@ -344,7 +349,11 @@ typedef struct INTNETTRUNKSWPORT
      *
      * @remarks Will grab the network semaphore.
      *
-     * @remark  NAT and TAP will use this interface.
+     * @remarks NAT and TAP will use this interface.
+     *
+     * @todo    Do any of the host require notification before frame modifications? If so,
+     *          we'll add a callback to INTNETTRUNKIFPORT for this (pfnSGModifying) and
+     *          a SG flag.
      */
     DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc));
 
@@ -528,13 +537,16 @@ typedef struct INTNETTRUNKIFPORT
      * @return  VBox status code. Error generally means we'll drop the packet.
      * @param   pIfPort     Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
-     *                      This will never be a temporary one, so, it's safe to retain
-     *                      it and do an asynchronous request to avoid copying.
+     *                      This may or may not be a temporary buffer. If it's temporary
+     *                      the transmit operation(s) then it's required to make a copy
+     *                      of the frame unless it can be transmitted synchronously.
      * @param   fDst        The destination mask. At least one bit will be set.
      *
      * @remarks Called holding the out-bound trunk port lock.
      *
      * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
+     *
+     * @todo
      */
     DECLR0CALLBACKMEMBER(int, pfnXmit,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst));
 
