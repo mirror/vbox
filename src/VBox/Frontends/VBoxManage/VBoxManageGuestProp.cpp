@@ -44,7 +44,7 @@ void usageGuestProperty(void)
              "                            <property> [-verbose]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    set <vmname>|<uuid>\n"
-             "                            <property> [<value>] [-flags <flags>]\n"
+             "                            <property> [<value> [-flags <flags>]]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
              "                            [-patterns <patterns>]\n"
@@ -122,7 +122,9 @@ static int handleSetGuestProperty(int argc, char *argv[],
     {
         if (strcmp(argv[2], "-flags") != 0)
             usageOK = false;
-        pszFlags = argv[3];
+        else
+            return errorSyntax(USAGE_GUESTPROPERTY,
+                               "You may not specify flags without a value");
     }
     else if (5 == argc)
     {
