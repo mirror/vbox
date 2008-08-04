@@ -346,7 +346,8 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = CFGMR3QueryString(mpValueNode, pszName, pchBuf, cchBuf);
     /* Write the flags if there are any */
-    pchBuf[cchValue] = '\0';  /* In case there aren't */
+    if (RT_SUCCESS(rc))
+        pchBuf[cchValue] = '\0';  /* In case there aren't */
     if (RT_SUCCESS(rc) && (mpFlagsNode != NULL) && (cchFlags != 1))
         CFGMR3QueryString(mpFlagsNode, pszName, pchBuf + cchValue,
                           cchBuf - cchValue);
@@ -421,6 +422,7 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     }
     if (RT_SUCCESS(rc))
     {
+        RTTIMESPEC time;
         CFGMR3RemoveValue(mpValueNode, pszKey);
         if (mpTimestampNode != NULL)
             CFGMR3RemoveValue(mpTimestampNode, pszKey);
@@ -428,7 +430,8 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             CFGMR3RemoveValue(mpFlagsNode, pszKey);
         rc = CFGMR3InsertString(mpValueNode, pszKey, pszValue);
         if (RT_SUCCESS(rc))
-            rc = CFGMR3InsertInteger(mpTimestampNode, pszKey, RTTimeMilliTS());
+            rc = CFGMR3InsertInteger(mpTimestampNode, pszKey,
+                                     RTTimeSpecGetNano(RTTimeNow(&time)));
     }
     if (RT_SUCCESS(rc))
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszKey, rc, pszValue));
