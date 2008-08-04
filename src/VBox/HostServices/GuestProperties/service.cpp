@@ -743,8 +743,8 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 rc = VERR_INVALID_PARAMETER;
             }
             else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* pValue */
-                     || (cParms > 1) && (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* pTimestamp */
-                     || (cParms > 2) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR)   /* pFlags */
+                     || ((cParms > 1) && (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR))   /* pTimestamp */
+                     || ((cParms > 2) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR))   /* pFlags */
                     )
             {
                 rc = VERR_INVALID_PARAMETER;
