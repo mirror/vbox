@@ -416,7 +416,7 @@ static int tstHandleTableTest2(uint32_t uBase, uint32_t cMax, uint32_t cThreads)
     /*
      * Wait for them to complete.
      */
-    uint32_t cRunning;
+    uint32_t cRunning = cThreads;
     do /** @todo Remove when RTSemEventWait (linux) has been fixed. */
     {
         if (cRunning != cThreads)
