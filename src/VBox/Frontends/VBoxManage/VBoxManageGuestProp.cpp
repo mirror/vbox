@@ -189,34 +189,16 @@ static int handleEnumGuestProperty(int argc, char *argv[],
  * Check the syntax.  We can deduce the correct syntax from the number of
  * arguments.
  */
-    const char *paszPatterns = NULL;
-    if ((argc > 2) && (0 == strcmp(argv[0], "-patterns")))
-        paszPatterns = argv[1];
-    else if (argc != 1)
+    if ((argc < 1) || (2 == argc) ||
+        ((argc > 3) && strcmp(argv[1], "-patterns") != 0))
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
 /*
- * Count the size of the patterns and pack them.
+ * Pack the patterns
  */
-    size_t cchPatterns = 0;
-    if (argc > 2)
-        for (int i = 1; i < argc; ++i)
-            cchPatterns += strlen(argv[i]) + 1;
-    Utf8Str Utf8Patterns(cchPatterns);
-    if ((cchPatterns > 0) && Utf8Patterns.isNull())
-        return errorArgument ("out of memory");
-    char *pszPatterns = Utf8Patterns.mutableRaw();
-    size_t iPatterns = 0;
-    if (argc > 2)
-    {
-        for (int i = 1; i < argc; ++i)
-        {
-            strcpy(pszPatterns + iPatterns, argv[i]);
-            iPatterns += strlen(argv[i]) + 1;
-            pszPatterns[iPatterns - 1] = ',';
-        }
-        pszPatterns[iPatterns - 1] = '\0';
-    }
+    Utf8Str Utf8Patterns(argc > 2 ? argv[2] : "");
+    for (ssize_t i = 3; i < argc; ++i)
+        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), argv[i]);
 
 /*
  * Make the actual call to Main.
