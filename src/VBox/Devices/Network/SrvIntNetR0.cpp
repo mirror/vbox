@@ -979,9 +979,9 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
      * Check all but the first and last entries, the caller
      * has already checked those.
      */
-    unsigned cLeft = pCache->cEntries;
+    int i = pCache->cEntries - 2;
     uint8_t const *pbEntry = pCache->pbEntries + pCache->cbEntry;
-    while (--cLeft > 1)
+    while (i >= 1)
     {
         if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pbEntry, pAddr, cbAddr)))
         {
@@ -989,7 +989,7 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
             return;
         }
         pbEntry += pCache->cbEntry;
-        cLeft--;
+        i--;
     }
 
     /*
@@ -1013,30 +1013,17 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
     Assert(pCache->cbAddress == cbAddr);
 
     /*
-     * The optimized case is when the address the first cache entry.
+     * The optimized case is when the address the first or last cache entry.
      */
     unsigned i = pCache->cEntries;
     if (RT_LIKELY(   i > 0
-                  && intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
+                  && (   intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)
+                      || (i > 1
+                          && intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))) ))
     {
         /** @todo usage/ageing? */
         return;
     }
-    if (i <= 1)
-        return;
-
-    /*
-     * And the case where it's the last entry.
-     */
-    i--;
-    if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)))
-    {
-        /** @todo usage/ageing? */
-        return;
-    }
-    if (i <= 1)
-        return;
-
     intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr, pszMsg);
 }
 
@@ -2249,6 +2236,8 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     if (pvFrame && cbFrame)
     {
         intnetR0SgInitTemp(&Sg, (void *)pvFrame, cbFrame);
+        if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+            intnetR0IfSnoopAddr(pIf, (uint8_t *)pvFrame, cbFrame, (uint16_t *)&Sg.fFlags);
         intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
     }
 
@@ -3471,8 +3460,8 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             {
                 Assert(pTrunkIF->pIfPort);
                 pNetwork->pTrunkIF = pTrunkIF;
-                LogFlow(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s Network=%s\n",
-                         rc, pszName, pNetwork->szTrunk, pNetwork->szName));
+                Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s %s Network=%s%s\n",
+                     pszName, pNetwork->szTrunk, pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE ? " shared-mac" : "", pNetwork->szName));
                 return VINF_SUCCESS;
             }
         }
