@@ -60,8 +60,8 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
                                               ":/usb_new_disabled_16px.png"));
     mAddAction->setIcon (VBoxGlobal::iconSet (":/usb_add_16px.png",
                                               ":/usb_add_disabled_16px.png"));
-    mEdtAction->setIcon (VBoxGlobal::iconSet (":/usb_add_16px.png",
-                                              ":/usb_add_disabled_16px.png"));
+    mEdtAction->setIcon (VBoxGlobal::iconSet (":/usb_filter_edit_16px.png",
+                                              ":/usb_filter_edit_disabled_16px.png"));
     mDelAction->setIcon (VBoxGlobal::iconSet (":/usb_remove_16px.png",
                                               ":/usb_remove_disabled_16px.png"));
     mMupAction->setIcon (VBoxGlobal::iconSet (":/usb_moveup_16px.png",

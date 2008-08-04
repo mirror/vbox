@@ -152,6 +152,8 @@
     <file alias="usb_write_16px.png">images/usb_write_16px.png</file>
     <file alias="usb_add_16px.png">images/usb_add_16px.png</file>
     <file alias="usb_add_disabled_16px.png">images/usb_add_disabled_16px.png</file>
+    <file alias="usb_filter_edit_16px.png">images/usb_filter_edit_16px.png</file>
+    <file alias="usb_filter_edit_disabled_16px.png">images/usb_filter_edit_disabled_16px.png</file>
     <file alias="usb_movedown_16px.png">images/usb_movedown_16px.png</file>
     <file alias="usb_movedown_disabled_16px.png">images/usb_movedown_disabled_16px.png</file>
     <file alias="usb_moveup_16px.png">images/usb_moveup_16px.png</file>
