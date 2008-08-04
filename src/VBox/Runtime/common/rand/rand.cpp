@@ -197,7 +197,7 @@ RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW
     {
         uint64_t    off;
         uint32_t    off32;
-        uint8_t     ab[5];
+        uint8_t     ab[9];
     } u;
 
     const uint64_t offLast = u64Last - u64First;
@@ -271,7 +271,7 @@ RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
  */
 void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW
 {
-    uint64_t u64Last;
+    uint64_t u64Last = 0;
     uint8_t *pb = (uint8_t *)pv;
     for (unsigned i = 0;; i++)
     {
