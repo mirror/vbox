@@ -1279,37 +1279,67 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
     {
         case RTNET_ETHERTYPE_IPV4:
         {
+            uint32_t    cbIpHdr;
+            uint8_t     b;
+
             Assert(pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN);
-/** @todo optimize for the case where we can expect both the IP and UDP header to be in the first segment. */
+            if (pSG->aSegs[0].cb >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN)
+            {
+                /* check if the protocol is UDP */
+                PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)((uint8_t const *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+                if (pIpHdr->ip_p != RTNETIPV4_PROT_UDP)
+                    return;
 
-            /* check if the protocol is UDP */
-            if (    intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_p))
-                !=  RTNETIPV4_PROT_UDP)
-                return;
+                /* get the TCP header length */
+                cbIpHdr = pIpHdr->ip_hl * 4;
+            }
+            else
+            {
+                /* check if the protocol is UDP */
+                if (    intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_p))
+                    !=  RTNETIPV4_PROT_UDP)
+                    return;
 
-            /* get the TCP header length */
-            uint8_t b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + 0); /* (IPv4 first byte, a bitfield) */
-            uint32_t cbIpHdr = (b & 0x0f) * 4;
+                /* get the TCP header length */
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + 0); /* (IPv4 first byte, a bitfield) */
+                cbIpHdr = (b & 0x0f) * 4;
+            }
             if (cbIpHdr < RTNETIPV4_MIN_LEN)
                 return;
 
-            /* get the lower byte of the UDP source port number. */
-            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport) + 1);
-            if (    b != RTNETIPV4_PORT_BOOTPS
-                &&  b != RTNETIPV4_PORT_BOOTPC)
-                return;
-            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport));
-            if (b)
-                return;
+            /* compare the ports. */
+            if (pSG->aSegs[0].cb >= sizeof(RTNETETHERHDR) + cbIpHdr + RTNETUDP_MIN_LEN)
+            {
+                PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint8_t const *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR) + cbIpHdr);
+                if (    (   RT_BE2H_U16(pUdpHdr->uh_sport) != RTNETIPV4_PORT_BOOTPS
+                         && RT_BE2H_U16(pUdpHdr->uh_dport) != RTNETIPV4_PORT_BOOTPS)
+                    ||  (   RT_BE2H_U16(pUdpHdr->uh_dport) != RTNETIPV4_PORT_BOOTPC
+                         && RT_BE2H_U16(pUdpHdr->uh_sport) != RTNETIPV4_PORT_BOOTPC))
+                    return;
+            }
+            else
+            {
+                /* get the lower byte of the UDP source port number. */
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport) + 1);
+                if (    b != RTNETIPV4_PORT_BOOTPS
+                    &&  b != RTNETIPV4_PORT_BOOTPC)
+                    return;
+                uint8_t SrcPort = b;
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport));
+                if (b)
+                    return;
 
-            /* get the lower byte of the UDP destination port number. */
-            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport) + 1);
-            if (    b != RTNETIPV4_PORT_BOOTPS
-                &&  b != RTNETIPV4_PORT_BOOTPC)
-                return;
-            b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport));
-            if (b)
-                return;
+                /* get the lower byte of the UDP destination port number. */
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport) + 1);
+                if (    b != RTNETIPV4_PORT_BOOTPS
+                    &&  b != RTNETIPV4_PORT_BOOTPC)
+                    return;
+                if (b == SrcPort)
+                    return;
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport));
+                if (b)
+                    return;
+            }
             intnetR0TrunkIfSnoopDhcp(pNetwork, pSG);
             break;
         }
