@@ -942,7 +942,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
         }
         if (fReplace)
         {
-            /* simple FIFO, might consider usage/ageing here? */
+            /* simple FIFO, might consider usage/ageing here... */
             Log(("intnetR0IfAddrCacheAddIt: type=%d replacing %.*Rhxs\n",
                  (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cbAddress, pCache->pbEntries));
             memmove(pCache->pbEntries, pCache->pbEntries + pCache->cbEntry, pCache->cbEntry * (pCache->cEntries - 1));
@@ -984,10 +984,7 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
     while (i >= 1)
     {
         if (RT_LIKELY(intnetR0AddrUIsEqualEx((PCRTNETADDRU)pbEntry, pAddr, cbAddr)))
-        {
-            /** @todo usage/ageing? */
             return;
-        }
         pbEntry += pCache->cbEntry;
         i--;
     }
@@ -1020,10 +1017,7 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
                   && (   intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)
                       || (i > 1
                           && intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))) ))
-    {
-        /** @todo usage/ageing? */
         return;
-    }
     intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr, pszMsg);
 }
 
