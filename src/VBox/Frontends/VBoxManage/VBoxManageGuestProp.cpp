@@ -76,8 +76,9 @@ static int handleGetGuestProperty(int argc, char *argv[],
         Guid uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
 
-        /* open a session for the VM */
-        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+        /* open a session for the VM - new or existing */
+        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
+            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
 
         /* get the mutable session machine */
         aSession->COMGETTER(Machine)(machine.asOutParam());
@@ -153,8 +154,9 @@ static int handleSetGuestProperty(int argc, char *argv[],
         Guid uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
 
-        /* open a session for the VM */
-        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+        /* open a session for the VM - new or existing */
+        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
+            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
 
         /* get the mutable session machine */
         aSession->COMGETTER(Machine)(machine.asOutParam());
@@ -216,8 +218,9 @@ static int handleEnumGuestProperty(int argc, char *argv[],
         Guid uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
 
-        /* open a session for the VM */
-        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+        /* open a session for the VM - new or existing */
+        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
+            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
 
         /* get the mutable session machine */
         aSession->COMGETTER(Machine)(machine.asOutParam());
