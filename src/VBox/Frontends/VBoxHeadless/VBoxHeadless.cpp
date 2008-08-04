@@ -41,6 +41,7 @@ using namespace com;
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
 #include <iprt/getopt.h>
+#include <iprt/env.h>
 
 #ifdef VBOX_FFMPEG
 #include <cstdlib>
@@ -421,6 +422,10 @@ int main (int argc, char **argv)
     const char *pszFileNameParam = "VBox-%d.vob";
 #endif /* VBOX_FFMPEG */
 
+    /* Make sure that DISPLAY is unset, so that X11 bits do not get initialised
+     * on X11-using OSes. */
+    /** @todo this should really be taken care of in Main. */
+    RTEnvUnset("DISPLAY");
     // initialize VBox Runtime
     RTR3Init(true, ~(size_t)0);
 
