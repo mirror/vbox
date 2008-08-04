@@ -31,8 +31,6 @@
  *
  * Inherit from this class in order to prevent automatic generation
  * of the copy constructor and assignment operator in your class.
- * @note r=michael This is a rather generic class which is useful in a lot of
- *                 situations - does it belong here?
  */
 class RTCNonCopyable
 {
@@ -50,8 +48,6 @@ private:
  * IPRT type must be compared to see if it is invalid.
  *
  * @warning This template *must* be specialised for the types it is to work with.
- * @note r=michael This could also be used in other contexts to get the value
- *                 of the nil handle for a type.
  */
 template <class T>
 inline T RTAutoResNil(void)
@@ -98,10 +94,10 @@ inline void RTAutoResDestruct(T aHandle)
  * @param   T           The type of the resource.
  * @param   Destruct    The function to be used to free the resource.
  *                      This parameter must be supplied if there is no
- *                      specialisation of RTAutoDestruct available for @a T. 
+ *                      specialisation of RTAutoDestruct available for @a T.
  * @param   NilRes      The function returning the NIL value for T. Required.
  *                      This parameter must be supplied if there is no
- *                      specialisation of RTAutoResNil available for @a T. 
+ *                      specialisation of RTAutoResNil available for @a T.
  *
  * @note    The class can not be initialised directly using assignment, due
  *          to the lack of a copy constructor. This is intentional.
