@@ -2703,13 +2703,10 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
     if (!VALID_PTR (aFlags))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
+    AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
-
-    HRESULT rc = checkStateDependency (MutableStateDep);
-    CheckComRCReturnRC (rc);
 
     using namespace guestProp;
     rc = E_FAIL;
@@ -2848,6 +2845,85 @@ STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aName, INPTR BSTR aValue
     return SetGuestProperty(aName, aValue, NULL);
 }
 
+/**
+ * Matches a sample name against a pattern.
+ *
+ * @returns True if matches, false if not.
+ * @param   pszPat      Pattern.
+ * @param   pszName     Name to match against the pattern.
+ * @todo move this into IPRT
+ */
+static bool matchesSinglePattern(const char *pszPat, const char *pszName)
+{
+    /* ASSUMES ASCII */
+    for (;;)
+    {
+        char chPat = *pszPat;
+        switch (chPat)
+        {
+            default:
+                if (*pszName != chPat)
+                    return false;
+                break;
+
+            case '*':
+            {
+                while ((chPat = *++pszPat) == '*' || chPat == '?')
+                    /* nothing */;
+
+                for (;;)
+                {
+                    char ch = *pszName++;
+                    if (    ch == chPat
+                        &&  (   !chPat
+                             || matchesSinglePattern(pszPat + 1, pszName)))
+                        return true;
+                    if (!ch)
+                        return false;
+                }
+                /* won't ever get here */
+                break;
+            }
+
+            case '?':
+                if (!*pszName)
+                    return false;
+                break;
+
+            case '\0':
+                return !*pszName;
+        }
+        pszName++;
+        pszPat++;
+    }
+    return true;
+}
+
+/* Checks to see if the given string matches against one of the patterns in
+ * the list. */
+static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
+                           const char *pszString)
+{
+    size_t iOffs = 0;
+    /* If the first pattern in the list is empty, treat it as "match all". */
+    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
+    while ((iOffs < cchPatterns) && !matched)
+    {
+        size_t cchCurrent;
+        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
+                                      cchPatterns - iOffs, &cchCurrent))
+            && (cchCurrent > 0)
+           )
+        {
+            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
+            iOffs += cchCurrent + 1;
+        }
+        else
+            iOffs = cchPatterns;
+    }
+    return matched;
+}
+
 STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
@@ -2863,49 +2939,91 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
         return E_POINTER;
     if (ComSafeArrayOutIsNull (aFlags))
         return E_POINTER;
-    AutoCaller autoCaller (this);
+
+    AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
 
     using namespace guestProp;
-    HRESULT rc = E_FAIL;
+    rc = E_FAIL;
 
-    switch (mData->mSession.mState)
+    if (!mHWData->mPropertyServiceActive)
     {
-        case SessionState_Closed:
+
+/*
+ * Set up the pattern parameter, translating the comma-separated list to a
+ * double-terminated zero-separated one.
+ */
+/** @todo skip this conversion. */
+        Utf8Str Utf8PatternsIn = aPatterns;
+        if ((aPatterns != NULL) && Utf8PatternsIn.isNull())
+            return E_OUTOFMEMORY;
+        size_t cchPatterns = Utf8PatternsIn.length();
+        Utf8Str Utf8Patterns(cchPatterns + 2);  /* Double terminator */
+        if (Utf8Patterns.isNull())
+            return E_OUTOFMEMORY;
+        char *pszPatterns = Utf8Patterns.mutableRaw();
+        unsigned iPatterns = 0;
+        for (unsigned i = 0; i < cchPatterns; ++i)
         {
-            rc = setError (E_NOTIMPL,
-                     tr ("Not yet implemented for a non-running VM"));
-            break;
+            char cIn = Utf8PatternsIn.raw()[i];
+            if ((cIn != ',') && (cIn != ' '))
+                pszPatterns[iPatterns] = cIn;
+            else if (cIn != ' ')
+                pszPatterns[iPatterns] = '\0';
+            if (cIn != ' ')
+                ++iPatterns;
         }
-        case SessionState_Open:
+        pszPatterns[iPatterns] = '\0';
+        ++iPatterns;
+
+/*
+ * Look for matching patterns and build up a list.
+ */
+        HWData::GuestPropertyList propList;
+        for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+             it != mHWData->mGuestProperties.end(); ++it)
+            if (matchesPattern(pszPatterns, iPatterns, Utf8Str(it->mName).raw()))
+                propList.push_back(*it);
+
+/*
+ * And build up the arrays for returning the property information.
+ */
+        size_t cEntries = propList.size();
+        SafeArray <BSTR> names(cEntries);
+        SafeArray <BSTR> values(cEntries);
+        SafeArray <ULONG64> timestamps(cEntries);
+        SafeArray <BSTR> flags(cEntries);
+        size_t iProp = 0;
+        for (HWData::GuestPropertyList::iterator it = propList.begin();
+             it != propList.end(); ++it)
         {
-            if (mData->mSession.mState != SessionState_Open)
-            {
-                rc = setError (E_FAIL,
-                    tr ("Session is not open (session state: %d)"),
-                    mData->mSession.mState);
-                break;
-            }
-
-            ComPtr <IInternalSessionControl> directControl =
-                mData->mSession.mDirectControl;
-
-            /* just be on the safe side when calling another process */
-            alock.unlock();
-
-            rc = directControl->EnumerateGuestProperties(aPatterns,
-                                                         ComSafeArrayOutArg(aNames),
-                                                         ComSafeArrayOutArg(aValues),
-                                                         ComSafeArrayOutArg(aTimestamps),
-                                                         ComSafeArrayOutArg(aFlags));
-            break;
+             it->mName.cloneTo(&names[iProp]);
+             it->mValue.cloneTo(&values[iProp]);
+             timestamps[iProp] = it->mTimestamp;
+             it->mFlags.cloneTo(&flags[iProp]);
+             ++iProp;
         }
-        default:
-            rc = setError (E_FAIL,
-                tr ("Session is currently transitioning (session state: %d)"),
-                mData->mSession.mState);
+        names.detachTo(ComSafeArrayOutArg (aNames));
+        values.detachTo(ComSafeArrayOutArg (aValues));
+        timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
+        flags.detachTo(ComSafeArrayOutArg (aFlags));
+        rc = S_OK;
+    }
+    else
+    {
+        ComPtr <IInternalSessionControl> directControl =
+            mData->mSession.mDirectControl;
+
+        /* just be on the safe side when calling another process */
+        alock.unlock();
+
+        rc = directControl->EnumerateGuestProperties(aPatterns,
+                                                     ComSafeArrayOutArg(aNames),
+                                                     ComSafeArrayOutArg(aValues),
+                                                     ComSafeArrayOutArg(aTimestamps),
+                                                     ComSafeArrayOutArg(aFlags));
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
