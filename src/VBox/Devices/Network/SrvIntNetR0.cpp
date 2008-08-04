@@ -401,10 +401,11 @@ DECLINLINE(uint8_t) intnetR0SgReadByte(PCINTNETSG pSG, uint32_t off)
     if (RT_LIKELY(pSG->aSegs[0].cb > off))
         return ((uint8_t const *)pSG->aSegs[0].pv)[off];
 
+    off -= pSG->aSegs[0].cb;
     unsigned const cSegs = pSG->cSegsUsed; Assert(cSegs == pSG->cSegsUsed);
     for (unsigned iSeg = 1; iSeg < cSegs; iSeg++)
     {
-        if (pSG->aSegs[iSeg].cb > 0)
+        if (pSG->aSegs[iSeg].cb > off)
             return ((uint8_t const *)pSG->aSegs[iSeg].pv)[off];
         off -= pSG->aSegs[iSeg].cb;
     }
@@ -2243,21 +2244,10 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
      * Get the ethernet header (might theoretically involve multiple segments).
      */
     RTNETETHERHDR EthHdr;
-    if (RT_LIKELY(pSG->aSegs[0].cb >= sizeof(EthHdr)))
+    if (pSG->aSegs[0].cb >= sizeof(EthHdr))
         EthHdr = *(PCRTNETETHERHDR)pSG->aSegs[0].pv;
-    else
-    {
-        uint8_t *pbDst = (uint8_t *)&EthHdr;
-        size_t   cbLeft = sizeof(EthHdr);
-        for (unsigned iSeg = 0; cbLeft && iSeg < pSG->cSegsUsed; iSeg++)
-        {
-            size_t cb = RT_MIN(cbLeft, pSG->aSegs[iSeg].cb);
-            memcpy(pbDst, pSG->aSegs[iSeg].pv, cb);
-            pbDst += cb;
-            cbLeft -= cb;
-        }
-        AssertReturn(!cbLeft, false);
-    }
+    else if (!intnetR0SgReadPart(pSG, 0, sizeof(EthHdr), &EthHdr))
+        return false;
     if (    (EthHdr.DstMac.au8[0] == 0x08 && EthHdr.DstMac.au8[1] == 0x00 && EthHdr.DstMac.au8[2] == 0x27)
         ||  (EthHdr.SrcMac.au8[0] == 0x08 && EthHdr.SrcMac.au8[1] == 0x00 && EthHdr.SrcMac.au8[2] == 0x27)
         ||  (EthHdr.DstMac.au8[0] == 0x00 && EthHdr.DstMac.au8[1] == 0x16 && EthHdr.DstMac.au8[2] == 0xcb)
