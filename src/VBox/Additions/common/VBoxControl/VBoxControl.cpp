@@ -106,7 +106,7 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
     if ((GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
     {
         doUsage("get <property> [-verbose]\n", g_pszProgName, "guestproperty");
-        doUsage("set <property> [<value>] [-flags <flags>]\n", g_pszProgName, "guestproperty");
+        doUsage("set <property> [<value> [-flags <flags>]]\n", g_pszProgName, "guestproperty");
         doUsage("enumerate [-patterns <patterns>]\n", g_pszProgName, "guestproperty");
     }
 #endif
@@ -980,7 +980,11 @@ static int setGuestProperty(int argc, char *argv[])
     {
         if (strcmp(argv[1], "-flags") != 0)
             usageOK = false;
-        pszFlags = argv[2];
+        else
+        {
+            RTPrintf("You may not specify flags without a value");
+            return 1;
+        }
     }
     else if (4 == argc)
     {
