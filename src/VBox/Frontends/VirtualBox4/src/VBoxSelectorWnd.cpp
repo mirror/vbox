@@ -589,7 +589,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     retranslateUi();
 
-    /* restore the position of the window */
+    /* Restore the position of the window */
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
         QString winPos = vbox.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
@@ -608,14 +608,21 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         if (ok)
         {
             QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
+
             /* Do some position checks */
             if (x < ar.left() || x > ar.right())
                 x = ar.left();
             if (y < ar.top() || y > ar.bottom())
                 y = ar.top();
-            move (x, y);
-            resize (QSize (w, h).expandedTo (minimumSizeHint())
-                .boundedTo (ar.size()));
+
+            /* Composing normal parameters */
+            normal_size = QSize (w, h).expandedTo (minimumSizeHint())
+                          .boundedTo (ar.size());
+            normal_pos = QPoint (x, y);
+
+            /* Applying normal parameters */
+            resize (normal_size);
+            move (normal_pos);
             if (max)
                 /* maximize if needed */
                 showMaximized();
@@ -706,10 +713,11 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-    /* save the position of the window */
+    /* Save the position of the window */
     {
         QString winPos = QString ("%1,%2,%3,%4")
-                                 .arg (normal_pos.x()).arg (normal_pos.y())
+                                 .arg (normal_pos.x())
+                                 .arg (normal_pos.y())
                                  .arg (normal_size.width())
                                  .arg (normal_size.height());
         if (isMaximized())
@@ -717,7 +725,8 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
         vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
     }
-    /* save vm selector position */
+
+    /* Save vm selector position */
     {
         VBoxVMItem *item = mVMListView->selectedItem();
         QString curVMId = item ?
@@ -1116,7 +1125,18 @@ bool VBoxSelectorWnd::event (QEvent *e)
         {
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-                normal_pos = pos();
+            {
+                /* On X11 systems window remains un-framed before it
+                 * shown and painted for the first time. In this case
+                 * qt returns similar values for window's position either
+                 * including or excluding window's frame. We no need to
+                 * memorize window's position in this case as this is
+                 * not normal situation, so just ignoring such events.
+                 * Do not trust frameGeometry() in this situation. */
+
+                if (!(pos().x() == geometry().x() && pos().y() == geometry().y()))
+                    normal_pos = pos();
+            }
             break;
         }
 
