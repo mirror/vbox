@@ -982,7 +982,7 @@ static int setGuestProperty(int argc, char *argv[])
             usageOK = false;
         else
         {
-            RTPrintf("You may not specify flags without a value");
+            VBoxControlError("You may not specify flags without a value");
             return 1;
         }
     }
