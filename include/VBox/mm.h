@@ -212,14 +212,18 @@ typedef enum MMTAG
  * @{ */
 
 MMDECL(RTR3PTR)     MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
-MMDECL(RTGCPTR)     MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr);
+MMDECL(RTRCPTR)     MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr);
+#define MMHyperR0ToGC(pVM, pv) MMHyperR0ToRC(pVM, pv)       /**< @deprecated */
 #ifndef IN_RING0
 MMDECL(void *)      MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
 #endif
 MMDECL(RTR0PTR)     MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
-MMDECL(RTGCPTR)     MMHyperR3ToGC(PVM pVM, RTR3PTR R3Ptr);
-MMDECL(RTR3PTR)     MMHyperGCToR3(PVM pVM, RTGCPTR GCPtr);
-MMDECL(RTR0PTR)     MMHyperGCToR0(PVM pVM, RTGCPTR GCPtr);
+MMDECL(RTRCPTR)     MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr);
+#define MMHyperR3ToGC(pVM, R3Ptr) MMHyperR3ToRC(pVM, R3Ptr) /**< @deprecated */
+MMDECL(RTR3PTR)     MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr);
+#define MMHyperGCToR3(pVM, RCPtr) MMHyperRCToR3(pVM, RCPtr) /**< @deprecated */
+MMDECL(RTR0PTR)     MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr);
+#define MMHyperGCToR0(pVM, RCPtr) MMHyperRCToR0(pVM, RCPtr) /**< @deprecated */
 
 #ifndef IN_RING3
 MMDECL(void *)      MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
@@ -233,14 +237,15 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 
 
 #ifndef IN_GC
-MMDECL(void *)      MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr);
+MMDECL(void *)      MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
 #else
-DECLINLINE(void *)  MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr)
+DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 {
     NOREF(pVM);
-    return (void *)GCPtr;
+    return (void *)RCPtr;
 }
 #endif
+#define MMHyperGCToCC(pVM, RCPtr) MMHyperRCToCC(pVM, RCPtr)
 
 #ifndef IN_RING3
 MMDECL(RTR3PTR)     MMHyperCCToR3(PVM pVM, void *pv);
@@ -283,15 +288,6 @@ DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 }
 #endif
 
-#ifndef IN_GC
-MMDECL(RCPTRTYPE(void *))     MMHyper2GC(PVM pVM, uintptr_t Ptr);
-#else
-DECLINLINE(RCPTRTYPE(void *)) MMHyper2GC(PVM pVM, uintptr_t Ptr)
-{
-    NOREF(pVM);
-    return (RCPTRTYPE(void *))Ptr;
-}
-#endif
 
 MMDECL(RCPTRTYPE(void *))     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
 MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr);
