@@ -939,7 +939,7 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaCccPorts);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerR3);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerR0);
-    GEN_CHECK_OFF(AHCI, pHbaCccTimerGC);
+    GEN_CHECK_OFF(AHCI, pHbaCccTimerRC);
     GEN_CHECK_OFF(AHCI, pNotifierQueueR3);
     GEN_CHECK_OFF(AHCI, pNotifierQueueR0);
     GEN_CHECK_OFF(AHCI, pNotifierQueueGC);
