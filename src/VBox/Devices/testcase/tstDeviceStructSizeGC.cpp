@@ -863,10 +863,10 @@ int main()
     GEN_CHECK_SIZE(AHCIPort);
     GEN_CHECK_OFF(AHCIPort, pDevInsR3);
     GEN_CHECK_OFF(AHCIPort, pDevInsR0);
-    GEN_CHECK_OFF(AHCIPort, pDevInsGC);
+    GEN_CHECK_OFF(AHCIPort, pDevInsRC);
     GEN_CHECK_OFF(AHCIPort, pAhciR3);
     GEN_CHECK_OFF(AHCIPort, pAhciR0);
-    GEN_CHECK_OFF(AHCIPort, pAhciGC);
+    GEN_CHECK_OFF(AHCIPort, pAhciRC);
     GEN_CHECK_OFF(AHCIPort, regCLB);
     GEN_CHECK_OFF(AHCIPort, regCLBU);
     GEN_CHECK_OFF(AHCIPort, regFB);
@@ -925,7 +925,7 @@ int main()
     GEN_CHECK_OFF(AHCI, dev);
     GEN_CHECK_OFF(AHCI, pDevInsR3);
     GEN_CHECK_OFF(AHCI, pDevInsR0);
-    GEN_CHECK_OFF(AHCI, pDevInsGC);
+    GEN_CHECK_OFF(AHCI, pDevInsRC);
     GEN_CHECK_OFF(AHCI, IBase);
     GEN_CHECK_OFF(AHCI, ILeds);
     GEN_CHECK_OFF(AHCI, pLedsConnector);
@@ -942,7 +942,7 @@ int main()
     GEN_CHECK_OFF(AHCI, pHbaCccTimerRC);
     GEN_CHECK_OFF(AHCI, pNotifierQueueR3);
     GEN_CHECK_OFF(AHCI, pNotifierQueueR0);
-    GEN_CHECK_OFF(AHCI, pNotifierQueueGC);
+    GEN_CHECK_OFF(AHCI, pNotifierQueueRC);
     GEN_CHECK_OFF(AHCI, uCccPortNr);
     GEN_CHECK_OFF(AHCI, uCccTimeout);
     GEN_CHECK_OFF(AHCI, uCccNr);
