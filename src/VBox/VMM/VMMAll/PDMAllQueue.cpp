@@ -143,7 +143,7 @@ PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 #ifdef IN_GC
     return pQueue;
 #else
-    return MMHyperHC2GC(pQueue->pVMHC, pQueue);
+    return MMHyperCCToRC(pQueue->pVMHC, pQueue);
 #endif
 }
 
