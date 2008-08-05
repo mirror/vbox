@@ -137,8 +137,10 @@ typedef PPDMDEVINS *PPPDMDEVINS;
 typedef R3PTRTYPE(PPDMDEVINS) PPDMDEVINSR3;
 /** R0 pointer to a PDM Device Instance. */
 typedef R0PTRTYPE(PPDMDEVINS) PPDMDEVINSR0;
-/** GC pointer to a PDM Device Instance. */
-typedef RCPTRTYPE(PPDMDEVINS) PPDMDEVINSGC;
+/** RC pointer to a PDM Device Instance. */
+typedef RCPTRTYPE(PPDMDEVINS) PPDMDEVINSRC;
+/** @deprecated */
+typedef PPDMDEVINSRC PPDMDEVINSGC;
 
 /** Pointer to a PDM USB Device Instance. */
 typedef struct PDMUSBINS *PPDMUSBINS;
@@ -165,15 +167,17 @@ typedef R0PTRTYPE(struct TMTIMER *) PTMTIMERR0;
 /** Pointer to a R3 pointer to a timer. */
 typedef PTMTIMERR0 *PPTMTIMERR0;
 
-/** GC pointer to a timer. */
-typedef RCPTRTYPE(struct TMTIMER *) PTMTIMERGC;
-/** Pointer to a GC pointer to a timer. */
-typedef PTMTIMERGC *PPTMTIMERGC;
+/** RC pointer to a timer. */
+typedef RCPTRTYPE(struct TMTIMER *) PTMTIMERRC;
+/** Pointer to a RC pointer to a timer. */
+typedef PTMTIMERRC *PPTMTIMERRC;
+/** @deprecated */
+typedef PTMTIMERRC PTMTIMERGC;
 
 /** Pointer to a timer. */
 typedef CTXALLSUFF(PTMTIMER)   PTMTIMER;
 /** Pointer to a pointer to a timer. */
-typedef CTXALLSUFF(PPTMTIMER)  PPTMTIMER;
+typedef PTMTIMER              *PPTMTIMER;
 
 /** SSM Operation handle. */
 typedef struct SSMHANDLE *PSSMHANDLE;

@@ -361,14 +361,14 @@ TMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
 
 
 /**
- * Gets the GC pointer of the timer.
+ * Gets the RC pointer of the timer.
  *
- * @returns GC pointer.
+ * @returns RC pointer.
  * @param   pTimer      Timer handle as returned by one of the create functions.
  */
-TMDECL(PTMTIMERGC) TMTimerGCPtr(PTMTIMER pTimer)
+TMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
 {
-    return (PTMTIMERGC)MMHyperCCToGC(pTimer->CTXALLSUFF(pVM), pTimer);
+    return (PTMTIMERRC)MMHyperCCToRC(pTimer->CTXALLSUFF(pVM), pTimer);
 }
 
 
