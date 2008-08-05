@@ -55,16 +55,16 @@
  */
 #define PDMINS2DATA(pIns, type)     PDMINS_2_DATA(pIns, type)
 
-/** @def PDMINS2DATA_GCPTR
- * Converts a PDM Device, USB Device, or Driver instance pointer to a GC pointer to the instance data.
+/** @def PDMINS2DATA_RCPTR
+ * Converts a PDM Device, USB Device, or Driver instance pointer to a RC pointer to the instance data.
  */
-#define PDMINS_2_DATA_GCPTR(pIns)   ( (pIns)->pvInstanceDataGC )
+#define PDMINS_2_DATA_RCPTR(pIns)   ( (pIns)->pvInstanceDataGC )
 
 /** @def PDMINS2DATA_GCPTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a GC pointer to the instance data.
  * @deprecated  Use PDMINS_2_DATA_GCPTR.
  */
-#define PDMINS2DATA_GCPTR(pIns)     PDMINS_2_DATA_GCPTR(pIns)
+#define PDMINS2DATA_GCPTR(pIns)     PDMINS_2_DATA_RCPTR(pIns)
 
 /** @def PDMINS2DATA_R3PTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a HC pointer to the instance data.
