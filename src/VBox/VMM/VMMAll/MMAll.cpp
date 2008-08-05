@@ -119,22 +119,22 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 
 
 /**
- * Lookup a guest context address.
+ * Lookup a raw-mode context address.
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
  * @param   pVM     The VM handle.
- * @param   GCPtr   The guest context address to lookup.
+ * @param   RCPtr   The raw-mode context address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
-DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupGC(PVM pVM, RTGCPTR GCPtr, uint32_t *poff)
+DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *poff)
 {
     /** @todo cache last lookup this stuff ain't cheap! */
-    unsigned        offGC = (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
+    unsigned        offRC = (RTRCUINTPTR)RCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
-        const uint32_t off = offGC - pLookup->off;
+        const uint32_t off = offRC - pLookup->off;
         if (off < pLookup->cb)
         {
             switch (pLookup->enmType)
@@ -156,7 +156,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupGC(PVM pVM, RTGCPTR GCPtr, uint32_t *pof
         pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
     }
 
-    AssertMsgFailed(("GCPtr=%p is not inside the hypervisor memory area!\n", GCPtr));
+    AssertMsgFailed(("GCPtr=%p is not inside the hypervisor memory area!\n", RCPtr));
     return NULL;
 }
 
@@ -173,7 +173,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupGC(PVM pVM, RTGCPTR GCPtr, uint32_t *pof
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
 {
 #ifdef IN_GC
-    return mmHyperLookupGC(pVM, (RTGCPTR)pv, poff);
+    return mmHyperLookupRC(pVM, (RTRCPTR)pv, poff);
 #elif defined(IN_RING0)
     return mmHyperLookupR0(pVM, pv, poff);
 #else
@@ -229,16 +229,16 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PMMLOOKUPHYPER pLookup, uint32_t off)
 
 
 /**
- * Calculate the guest context address of an offset into the HMA memory chunk.
+ * Calculate the raw-mode context address of an offset into the HMA memory chunk.
  *
- * @returns the guest context base address.
+ * @returns the raw-mode context base address.
  * @param   pVM         The the VM handle.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
-DECLINLINE(RTGCPTR) mmHyperLookupCalcGC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
+DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
-    return (RTGCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+    return (RTRCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
 }
 
 
@@ -253,7 +253,7 @@ DECLINLINE(RTGCPTR) mmHyperLookupCalcGC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
 DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
 #ifdef IN_GC
-    return (void *)mmHyperLookupCalcGC(pVM, pLookup, off);
+    return (void *)mmHyperLookupCalcRC(pVM, pLookup, off);
 #elif defined(IN_RING0)
     return mmHyperLookupCalcR0(pLookup, off);
 #else
@@ -282,21 +282,21 @@ MMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
 
 
 /**
- * Converts a ring-0 host context address in the Hypervisor memory region to a guest context address.
+ * Converts a ring-0 host context address in the Hypervisor memory region to a raw-mode context address.
  *
- * @returns guest context address.
+ * @returns raw-mode context address.
  * @param   pVM         The VM to operate on.
  * @param   R0Ptr       The ring-0 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTGCPTR) MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr)
+MMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
     if (pLookup)
-        return mmHyperLookupCalcGC(pVM, pLookup, off);
-    return NIL_RTGCPTR;
+        return mmHyperLookupCalcRC(pVM, pLookup, off);
+    return NIL_RTRCPTR;
 }
 
 
@@ -350,14 +350,14 @@ MMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTGCPTR) MMHyperR3ToGC(PVM pVM, RTR3PTR R3Ptr)
+MMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
     if (pLookup)
-        return mmHyperLookupCalcGC(pVM, pLookup, off);
+        return mmHyperLookupCalcRC(pVM, pLookup, off);
     AssertMsgFailed(("R3Ptr=%p is not inside the hypervisor memory area!\n", R3Ptr));
-    return NIL_RTGCPTR;
+    return NIL_RTRCPTR;
 }
 
 
@@ -383,18 +383,18 @@ MMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 
 
 /**
- * Converts a guest context address in the Hypervisor memory region to a ring-3 context address.
+ * Converts a raw-mode context address in the Hypervisor memory region to a ring-3 context address.
  *
  * @returns ring-3 host context address.
  * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
+ * @param   GCPtr       The raw-mode context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR3PTR) MMHyperGCToR3(PVM pVM, RTGCPTR GCPtr)
+MMDECL(RTR3PTR) MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupGC(pVM, GCPtr, &off);
+    PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
     if (pLookup)
         return mmHyperLookupCalcR3(pLookup, off);
     return NIL_RTR3PTR;
@@ -402,18 +402,18 @@ MMDECL(RTR3PTR) MMHyperGCToR3(PVM pVM, RTGCPTR GCPtr)
 
 
 /**
- * Converts a guest context address in the Hypervisor memory region to a ring-0 host context address.
+ * Converts a raw-mode context address in the Hypervisor memory region to a ring-0 host context address.
  *
  * @returns ring-0 host context address.
  * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
+ * @param   RCPtr       The raw-mode context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR0PTR) MMHyperGCToR0(PVM pVM, RTGCPTR GCPtr)
+MMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupGC(pVM, GCPtr, &off);
+    PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
     if (pLookup)
         return mmHyperLookupCalcR0(pLookup, off);
     return NIL_RTR0PTR;
@@ -421,19 +421,19 @@ MMDECL(RTR0PTR) MMHyperGCToR0(PVM pVM, RTGCPTR GCPtr)
 
 
 /**
- * Converts a guest context address in the Hypervisor memory region to a current context address.
+ * Converts a raw-mode context address in the Hypervisor memory region to a current context address.
  *
  * @returns current context address.
  * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest host context address.
+ * @param   RCPtr       The raw-mode host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_GC
-MMDECL(void *) MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr)
+MMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupGC(pVM, GCPtr, &off);
+    PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
     if (pLookup)
         return mmHyperLookupCalcCC(pVM, pLookup, off);
     return NULL;
@@ -484,7 +484,7 @@ MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 
 
 /**
- * Converts a current context address in the Hypervisor memory region to a guest context address.
+ * Converts a current context address in the Hypervisor memory region to a raw-mode context address.
  *
  * @returns guest context address.
  * @param   pVM         The VM to operate on.
@@ -493,13 +493,13 @@ MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_GC
-MMDECL(RCPTRTYPE(void *)) MMHyperCCToGC(PVM pVM, void *pv)
+MMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
     if (pLookup)
-        return mmHyperLookupCalcGC(pVM, pLookup, off);
-    return NIL_RTGCPTR;
+        return mmHyperLookupCalcRC(pVM, pLookup, off);
+    return NIL_RTRCPTR;
 }
 #endif
 
@@ -515,7 +515,7 @@ MMDECL(RCPTRTYPE(void *)) MMHyperCCToGC(PVM pVM, void *pv)
  *                      You'll be damed if this is not in the hypervisor region! :-)
  * @deprecated
  */
-MMDECL(RCPTRTYPE(void *)) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
+MMDECL(RTRCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
 {
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
@@ -526,7 +526,7 @@ MMDECL(RCPTRTYPE(void *)) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
             {
                 unsigned    off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pLookup->u.Locked.pvHC;
                 if (off < pLookup->cb)
-                    return (RCPTRTYPE(void *))((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+                    return (RTRCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
                 break;
             }
 
@@ -534,7 +534,7 @@ MMDECL(RCPTRTYPE(void *)) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
             {
                 unsigned    off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pLookup->u.HCPhys.pvHC;
                 if (off < pLookup->cb)
-                    return (RCPTRTYPE(void *))((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+                    return (RTRCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
                 break;
             }
 
@@ -555,27 +555,27 @@ MMDECL(RCPTRTYPE(void *)) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
     }
 
     AssertMsgFailed(("HCPtr=%p is not inside the hypervisor memory area!\n", HCPtr));
-    return (RCPTRTYPE(void *))0;
+    return NIL_RTRCPTR;
 }
 
 
 /**
- * Converts a GC address in the Hypervisor memory region to a HC address.
+ * Converts a RC address in the Hypervisor memory region to a HC address.
  * The memory must have been allocated with MMHyperAlloc().
  *
  * @returns HC address.
  * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
+ * @param   RCPtr       The raw-mode context address.
  *                      You'll be damed if this is not in the hypervisor region! :-)
  * @deprecated
  */
-MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr)
+MMDECL(RTHCPTR) MMHyperRC2HC(PVM pVM, RTRCPTR RCPtr)
 {
-    unsigned        offGC = (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
+    unsigned        offRC = (RTRCUINTPTR)RCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
-        unsigned off = offGC - pLookup->off;
+        unsigned off = offRC - pLookup->off;
         if (off < pLookup->cb)
         {
             switch (pLookup->enmType)
@@ -597,41 +597,7 @@ MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr)
         pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
     }
 
-    AssertMsgFailed(("GCPtr=%p is not inside the hypervisor memory area!\n", GCPtr));
+    AssertMsgFailed(("RCPtr=%p is not inside the hypervisor memory area!\n", RCPtr));
     return (RTHCPTR)0;
 }
 
-
-#ifdef IN_GC
-/**
- * Converts a current context address in the Hypervisor memory region to a HC address.
- * The memory must have been allocated with MMGCHyperAlloc() or MMR3HyperAlloc().
- *
- * @returns HC address.
- * @param   pVM         The VM to operate on.
- * @param   Ptr         The current context address.
- * @deprecated
- */
-MMDECL(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
-{
-    return MMHyperGC2HC(pVM, (RCPTRTYPE(void *))Ptr);
-}
-
-#else /* !IN_GC */
-
-/**
- * Converts a current context address in the Hypervisor memory region to a GC address.
- * The memory must have been allocated with MMHyperAlloc().
- *
- * @returns HC address.
- * @param   pVM         The VM to operate on.
- * @param   Ptr         The current context address.
- * @thread  The Emulation Thread.
- * @deprecated
- */
-MMDECL(RCPTRTYPE(void *)) MMHyper2GC(PVM pVM, uintptr_t Ptr)
-{
-    return MMHyperHC2GC(pVM, (RTHCPTR)Ptr);
-}
-
-#endif /* !IN_GC */
