@@ -732,12 +732,12 @@ bool VBoxConsoleWnd::openView (const CSession &session)
             if (y < ar.top() || y > ar.bottom())
                 y = ar.top();
 
-            mNormalGeometry = QRect (x, y, w, h);
+            mNormalGeo = QRect (x, y, w, h);
 
             setGeometry (x, y, w, h);
         }
         else
-            mNormalGeometry = QRect();
+            mNormalGeo = QRect();
 
         /* Normalize to the optimal size */
         console->normalizeGeometry (true /* adjustPosition */);
@@ -1008,8 +1008,8 @@ void VBoxConsoleWnd::closeView()
     {
         CMachine machine = csession.GetMachine();
         QString winPos = QString ("%1,%2,%3,%4")
-            .arg (mNormalGeometry.x()).arg (mNormalGeometry.y())
-            .arg (mNormalGeometry.width()).arg (mNormalGeometry.height());
+            .arg (mNormalGeo.x()).arg (mNormalGeo.y())
+            .arg (mNormalGeo.width()).arg (mNormalGeo.height());
         if (isMaximized() || (mIsFullscreen && was_max)
                           || (mIsSeamless && was_max))
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
@@ -1131,7 +1131,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             if (!mIsWaitingModeResize && !isMaximized() &&
                 !isTrueFullscreen() && !isTrueSeamless())
             {
-                mNormalGeometry.setSize (re->size());
+                mNormalGeo.setSize (re->size());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 dbgAdjustRelativePos();
 #endif
@@ -1151,7 +1151,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         {
             if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
-                mNormalGeometry.moveTo (geometry().x(), geometry().y());
+                mNormalGeo.moveTo (geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 dbgAdjustRelativePos();
 #endif
