@@ -58,12 +58,12 @@
 #undef LOG_GROUP
 #include "Serial/DevSerial.cpp"
 #ifdef VBOX_WITH_AHCI
-#undef LOG_GROUP
-#include "Storage/DevAHCI.cpp"
+# undef LOG_GROUP
+# include "Storage/DevAHCI.cpp"
 #endif
 #ifdef VBOX_WITH_E1000
-#undef LOG_GROUP
-#include "Network/DevE1000.cpp"
+# undef LOG_GROUP
+# include "Network/DevE1000.cpp"
 #endif
 
 #include <stdio.h>
@@ -223,6 +223,7 @@ int main()
 #endif
     CHECK_MEMBER_ALIGNMENT(PITState, StatPITIrq, 8);
     CHECK_MEMBER_ALIGNMENT(ATADevState, cTotalSectors, 8);
+    CHECK_MEMBER_ALIGNMENT(ATADevState, StatATADMA, 8);
     CHECK_MEMBER_ALIGNMENT(ATADevState, StatReads, 8);
     CHECK_MEMBER_ALIGNMENT(ATACONTROLLER, StatAsyncOps, 8);
 #ifdef VBOX_WITH_USB
