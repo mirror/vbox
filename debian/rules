@@ -71,7 +71,7 @@ debdocs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/virtualbox\""
 configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
-	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
+	cd $(vboxroot) && ./configure --odir=$(current)/debian --disable-qt3 $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
 	    $(shell test $(gccvmaj) -eq 4 -a $(gccvmin) -gt 2 -o $(gccvmaj) -gt 4 && echo "yes"),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
@@ -178,7 +178,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(HEADLESS),,VirtualBox3 VirtualBox) $(if $(ose),,VBoxVRDP) \
+	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
