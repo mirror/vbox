@@ -622,9 +622,13 @@ int main()
     GEN_CHECK_OFF(ATADevState, cNotifiedMediaChange);
     GEN_CHECK_OFF(ATADevState, Led);
     GEN_CHECK_OFF(ATADevState, cbIOBuffer);
-    GEN_CHECK_OFF(ATADevState, pbIOBufferHC);
+    GEN_CHECK_OFF(ATADevState, pbIOBufferR3);
+    GEN_CHECK_OFF(ATADevState, pbIOBufferR0);
     GEN_CHECK_OFF(ATADevState, pbIOBufferGC);
     GEN_CHECK_OFF(ATADevState, StatATADMA);
+    GEN_CHECK_OFF(ATADevState, StatATAPIO);
+    GEN_CHECK_OFF(ATADevState, StatATAPIDMA);
+    GEN_CHECK_OFF(ATADevState, StatATAPIPIO);
     GEN_CHECK_OFF(ATADevState, StatReads);
     GEN_CHECK_OFF(ATADevState, StatBytesRead);
     GEN_CHECK_OFF(ATADevState, StatWrites);
@@ -640,9 +644,11 @@ int main()
     GEN_CHECK_OFF(ATADevState, IPort);
     GEN_CHECK_OFF(ATADevState, IMountNotify);
     GEN_CHECK_OFF(ATADevState, iLUN);
-    GEN_CHECK_OFF(ATADevState, pDevInsHC);
+    GEN_CHECK_OFF(ATADevState, pDevInsR3);
+    GEN_CHECK_OFF(ATADevState, pDevInsR0);
     GEN_CHECK_OFF(ATADevState, pDevInsGC);
-    GEN_CHECK_OFF(ATADevState, pControllerHC);
+    GEN_CHECK_OFF(ATADevState, pControllerR3);
+    GEN_CHECK_OFF(ATADevState, pControllerR0);
     GEN_CHECK_OFF(ATADevState, pControllerGC);
     GEN_CHECK_SIZE(ATATransferRequest);
     GEN_CHECK_OFF(ATATransferRequest, iIf);
@@ -678,7 +684,8 @@ int main()
     GEN_CHECK_OFF(ATACONTROLLER, cbRedoDMABuffer);
     GEN_CHECK_OFF(ATACONTROLLER, aIfs);
     GEN_CHECK_OFF(ATACONTROLLER, aIfs[1]);
-    GEN_CHECK_OFF(ATACONTROLLER, pDevInsHC);
+    GEN_CHECK_OFF(ATACONTROLLER, pDevInsR3);
+    GEN_CHECK_OFF(ATACONTROLLER, pDevInsR0);
     GEN_CHECK_OFF(ATACONTROLLER, pDevInsGC);
     GEN_CHECK_OFF(ATACONTROLLER, fShutdown);
     GEN_CHECK_OFF(ATACONTROLLER, AsyncIOThread);
