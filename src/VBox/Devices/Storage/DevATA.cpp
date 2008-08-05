@@ -5601,14 +5601,14 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         pData->aCts[i].pDevInsR3 = pDevIns;
         pData->aCts[i].pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-        pData->aCts[i].pDevInsRC = PDMDEVINS_2_GCPTR(pDevIns);
+        pData->aCts[i].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
         pData->aCts[i].DelayIRQMillies = (uint32_t)DelayIRQMillies;
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
         {
             pData->aCts[i].aIfs[j].iLUN = i * RT_ELEMENTS(pData->aCts) + j;
             pData->aCts[i].aIfs[j].pDevInsR3 = pDevIns;
             pData->aCts[i].aIfs[j].pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-            pData->aCts[i].aIfs[j].pDevInsRC = PDMDEVINS_2_GCPTR(pDevIns);
+            pData->aCts[i].aIfs[j].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
             pData->aCts[i].aIfs[j].pControllerR3 = &pData->aCts[i];
             pData->aCts[i].aIfs[j].pControllerR0 = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
             pData->aCts[i].aIfs[j].pControllerRC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
