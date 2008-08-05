@@ -245,7 +245,7 @@ DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
     return (void *)RCPtr;
 }
 #endif
-#define MMHyperGCToCC(pVM, RCPtr) MMHyperRCToCC(pVM, RCPtr)
+#define MMHyperGCToCC(pVM, RCPtr) MMHyperRCToCC(pVM, RCPtr) /**< @deprecated */
 
 #ifndef IN_RING3
 MMDECL(RTR3PTR)     MMHyperCCToR3(PVM pVM, void *pv);
@@ -268,14 +268,15 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 #endif
 
 #ifndef IN_GC
-MMDECL(RCPTRTYPE(void *))     MMHyperCCToGC(PVM pVM, void *pv);
+MMDECL(RTRCPTR)     MMHyperCCToRC(PVM pVM, void *pv);
 #else
-DECLINLINE(RCPTRTYPE(void *)) MMHyperCCToGC(PVM pVM, void *pv)
+DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 {
     NOREF(pVM);
-    return (RCPTRTYPE(void *))pv;
+    return (RTRCPTR)pv;
 }
 #endif
+#define MMHyperCCToGC(pVM, pv)  MMHyperCCToRC(pVM, pv) /** @deprecated */
 
 
 #ifdef IN_GC
@@ -288,9 +289,10 @@ DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 }
 #endif
 
+#define MMHyperHC2GC(pVM, R3Ptr) MMHyperR3ToRC((pVM), (R3Ptr)) /**< @deprecated */
+#define MMHyperGC2HC(pVM, RCPtr) MMHyperRCToR3((pVM), (RCPtr)) /**< @deprecated */
 
-MMDECL(RCPTRTYPE(void *))     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
-MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RCPTRTYPE(void *) GCPtr);
+
 MMDECL(int)         MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 MMDECL(int)         MMHyperFree(PVM pVM, void *pv);
 MMDECL(void)        MMHyperHeapCheck(PVM pVM);
