@@ -165,7 +165,7 @@ typedef struct ATADevState {
     /** Pointer to the I/O buffer. */
     R0PTRTYPE(uint8_t *) pbIOBufferR0;
     /** Pointer to the I/O buffer. */
-    RCPTRTYPE(uint8_t *) pbIOBufferGC;
+    RCPTRTYPE(uint8_t *) pbIOBufferRC;
 #if 1 /*HC_ARCH_BITS == 64*/
     RTRCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
 #endif
@@ -237,9 +237,9 @@ typedef struct ATADevState {
     /** Pointer to controller instance. */
     R0PTRTYPE(struct ATACONTROLLER *)   pControllerR0;
     /** Pointer to device instance. */
-    PPDMDEVINSGC                        pDevInsGC;
+    PPDMDEVINSRC                        pDevInsRC;
     /** Pointer to controller instance. */
-    RCPTRTYPE(struct ATACONTROLLER *)   pControllerGC;
+    RCPTRTYPE(struct ATACONTROLLER *)   pControllerRC;
 } ATADevState;
 
 
@@ -334,7 +334,7 @@ typedef struct ATACONTROLLER
     /** Pointer to device instance. */
     PPDMDEVINSR0        pDevInsR0;
     /** Pointer to device instance. */
-    PPDMDEVINSGC        pDevInsGC;
+    PPDMDEVINSRC        pDevInsRC;
 
     /** Set when the destroying the device instance and the thread must exit. */
     uint32_t volatile   fShutdown;
@@ -370,9 +370,9 @@ typedef struct ATACONTROLLER
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-#define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTXALLSUFF(pController) )
-#define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTXALLSUFF(pDevIns) )
-#define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTXALLSUFF(pDevIns) )
+#define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTX_SUFF(pController) )
+#define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTX_SUFF(pDevIns) )
+#define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTX_SUFF(pDevIns) )
 #define PDMIBASE_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IBase)) )
 
 
