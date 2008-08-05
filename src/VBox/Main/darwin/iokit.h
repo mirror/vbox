@@ -54,7 +54,7 @@ typedef struct DARWINETHERNIC
     /** The fake unique identifier. */
     RTUUID Uuid;
     /** The MAC address. */
-    PDMMAC Mac;
+    RTMAC Mac;
     /** Internal category number (0..7). */
     int iCat;
     /** Whether it's wireless (true) or wired (false). */

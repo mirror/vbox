@@ -371,7 +371,7 @@ static void drvNATSetMac(PDRVNAT pData)
 {
     if (pData->pConfig)
     {
-        PDMMAC Mac;
+        RTMAC Mac;
         pData->pConfig->pfnGetMac(pData->pConfig, &Mac);
         slirp_set_ethaddr(pData->pNATState, Mac.au8);
     }

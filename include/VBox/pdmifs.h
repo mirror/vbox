@@ -2191,7 +2191,7 @@ typedef struct PDMINETWORKCONFIG
      * @param   pMac            Where to store the MAC address.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetMac,(PPDMINETWORKCONFIG pInterface, PPDMMAC pMac));
+    DECLR3CALLBACKMEMBER(int, pfnGetMac,(PPDMINETWORKCONFIG pInterface, PRTMAC pMac));
 
     /**
      * Gets the new link state.

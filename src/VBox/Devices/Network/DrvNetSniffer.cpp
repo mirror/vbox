@@ -212,7 +212,7 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKPORT pInterface, const
  * @param   pMac            Where to store the MAC address.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PPDMMAC pMac)
+static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
     PDRVNETSNIFFER pThis = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
     return pThis->pConfig->pfnGetMac(pThis->pConfig, pMac);

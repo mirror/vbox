@@ -495,14 +495,6 @@ typedef VBOXTSS *PVBOXTSS;
 typedef const VBOXTSS *PCVBOXTSS;
 
 
-/** PDM MAC address.
- * @obsolete Use RTMAC. */
-typedef RTMAC PDMMAC;
-/** Pointer to a MAC address. */
-typedef PDMMAC *PPDMMAC;
-/** Pointer to a const MAC address. */
-typedef const PDMMAC *PCPDMMAC;
-
 /**
  * Data transport buffer (scatter/gather)
  */
