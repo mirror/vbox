@@ -296,8 +296,7 @@ private:
     QMap <QAction *, CHostDVDDrive> hostDVDMap;
     QMap <QAction *, CHostFloppyDrive> hostFloppyMap;
 
-    QPoint normal_pos;
-    QSize normal_size;
+    QRect mNormalGeometry;
     QSize prev_min_size;
 
 #ifdef Q_WS_WIN32
