@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * ATA/ATAPI declarations
+ * VBox storage devices: ATA/ATAPI declarations
  */
 
 /*
@@ -20,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __IDE_h__
-#define __IDE_h__
+#ifndef ___Storage_IDE_h
+#define ___Storage_IDE_h
 
 
 /* Bits of HD_STATUS */
@@ -446,4 +445,5 @@ static const char * const g_apszATACmdNames[256] =
 #define ATAPI_INT_REASON_TAG_MASK       0xf8
 
 
-#endif /* __IDE_h__ */
+#endif /* !___Storage_IDE_h */
+
