@@ -149,6 +149,25 @@ PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue)
 
 
 /**
+ * Gets the ring-0 pointer for the specified queue.
+ *
+ * @returns The ring-0 address of the queue.
+ * @returns NULL if pQueue is invalid.
+ * @param   pQueue          The queue handle.
+ */
+PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
+{
+    Assert(VALID_PTR(pQueue));
+    Assert(pQueue->pVMHC && pQueue->pVMGC);
+#ifdef IN_RING0
+    return pQueue;
+#else
+    return MMHyperCCToR0(pQueue->CTXSUFF(pVM), pQueue);
+#endif
+}
+
+
+/**
  * Flushes a PDM queue.
  *
  * @param   pQueue          The queue handle.
