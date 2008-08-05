@@ -196,7 +196,7 @@ typedef struct APICState {
     /** Pointer to the APIC GC helpers. */
     PCPDMAPICHLPGC  pApicHlpGC;
     /** The APIC timer - GC Ptr. */
-    PTMTIMERGC      pTimerGC;
+    PTMTIMERRC      pTimerGC;
 
     /** Number of attempts made to optimize TPR accesses. */
     uint32_t        ulTPRPatchAttempts;
@@ -560,7 +560,7 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
     int irrv, ppr;
 
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
-    if (!s) 
+    if (!s)
         return false;
 
     irrv = get_highest_priority_int(s->irr);
