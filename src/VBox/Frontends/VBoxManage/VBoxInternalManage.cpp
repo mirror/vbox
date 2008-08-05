@@ -844,7 +844,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         }
         else
         {
-            RTPrintf("File '%s' is no fixed medium device\n", rawdisk.raw());
+            RTPrintf("File '%s' is no fixed/removable medium device\n", rawdisk.raw());
             vrc = VERR_INVALID_PARAMETER;
             goto out;
         }
