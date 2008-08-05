@@ -834,7 +834,8 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                         IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
                         &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
     {
-        if (DriveGeo.MediaType == FixedMedia)
+        if (   DriveGeo.MediaType == FixedMedia
+            || DriveGeo.MediaType == RemovableMedia)
         {
             cbSize =     DriveGeo.Cylinders.QuadPart
                      *   DriveGeo.TracksPerCylinder
