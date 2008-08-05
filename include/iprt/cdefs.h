@@ -321,6 +321,23 @@
 # define CTXALLSUFF(var)    var##R3
 #endif
 
+/** @def CTX_SUFF
+ * Adds the suffix of the current context to the passed in
+ * identifier name. The suffix is R3, R0 or RC.
+ *
+ * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * @param   var     Identifier name.
+ *
+ * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
+ */
+#ifdef IN_GC
+# define CTX_SUFF(var)      var##RC
+#elif defined(IN_RING0)
+# define CTX_SUFF(var)      var##R0
+#else
+# define CTX_SUFF(var)      var##R3
+#endif
+
 /** @def CTXMID
  * Adds the current context as a middle name of an identifier name
  * The middle name is HC or GC.
