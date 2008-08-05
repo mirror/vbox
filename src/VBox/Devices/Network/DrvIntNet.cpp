@@ -188,7 +188,7 @@ static int drvIntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, con
     Assert(pBuf);
     Assert(pRingBuf);
     Assert(pvFrame);
-    Assert(cbFrame >= sizeof(PDMMAC) * 2);
+    Assert(cbFrame >= sizeof(RTMAC) * 2);
     uint32_t offWrite = pRingBuf->offWrite;
     Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
     uint32_t offRead = pRingBuf->offRead;

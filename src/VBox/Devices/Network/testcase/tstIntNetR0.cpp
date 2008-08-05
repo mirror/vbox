@@ -210,7 +210,7 @@ typedef struct ARGS
     PINTNET pIntNet;
     PINTNETBUF pBuf;
     INTNETIFHANDLE hIf;
-    PDMMAC Mac;
+    RTMAC Mac;
     uint64_t u64Start;
     uint64_t u64End;
 } ARGS, *PARGS;
@@ -230,8 +230,8 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
      * Send 64 MB of data.
      */
     uint8_t abBuf[4096] = {0};
-    PPDMMAC pMacSrc = (PPDMMAC)&abBuf[0];
-    PPDMMAC pMacDst = pMacSrc + 1;
+    PRTMAC pMacSrc = (PRTMAC)&abBuf[0];
+    PRTMAC pMacDst = pMacSrc + 1;
     *pMacSrc = pArgs->Mac;
     *pMacDst = pArgs->Mac;
     pMacDst->au16[2] = pArgs->Mac.au16[2] ? 0 : 1;
@@ -269,7 +269,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     puFrame[3] = 0xffffdead;
     for (unsigned c = 0; c < 20; c++)
     {
-        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, sizeof(PDMMAC) * 2 + sizeof(unsigned) * 4);
+        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4);
         if (VBOX_FAILURE(rc))
         {
             g_cErrors++;
@@ -326,10 +326,10 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         {
             uint8_t abBuf[16384];
             unsigned cb = intnetR0RingReadFrame(pArgs->pBuf, &pArgs->pBuf->Recv, abBuf);
-            unsigned *puFrame = (unsigned *)&abBuf[sizeof(PDMMAC) * 2];
+            unsigned *puFrame = (unsigned *)&abBuf[sizeof(RTMAC) * 2];
 
             /* check for termination frame. */
-            if (    cb == sizeof(PDMMAC) * 2 + sizeof(unsigned) * 4
+            if (    cb == sizeof(RTMAC) * 2 + sizeof(unsigned) * 4
                 &&  puFrame[0] == 0xffffdead
                 &&  puFrame[1] == 0xffffdead
                 &&  puFrame[2] == 0xffffdead
@@ -342,8 +342,8 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
             }
 
             /* validate frame header */
-            PPDMMAC pMacSrc = (PPDMMAC)&abBuf[0];
-            PPDMMAC pMacDst = pMacSrc + 1;
+            PRTMAC pMacSrc = (PRTMAC)&abBuf[0];
+            PRTMAC pMacDst = pMacSrc + 1;
             if (    pMacDst->au16[0] != 0x8086
                 ||  pMacDst->au16[1] != 0
                 ||  pMacDst->au16[2] != pArgs->Mac.au16[2]

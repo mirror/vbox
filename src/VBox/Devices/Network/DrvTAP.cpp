@@ -96,7 +96,7 @@ typedef struct DRVTAP
 #ifdef RT_OS_SOLARIS
 # ifdef VBOX_WITH_CROSSBOW
     /** Crossbow: MAC address of the device. */
-    PDMMAC                  MacAddress;
+    RTMAC                   MacAddress;
     /** Crossbow: Handle of the NIC. */
     dlpi_handle_t           pDeviceHandle;
 # else
@@ -402,8 +402,8 @@ static int drvTAPSetupApplication(PDRVTAP pData)
     /* Convert MAC address bytes to string (required by Solaris' dladm). */
     char *pszHex = "0123456789abcdef";
     uint8_t *pMacAddr8 = pData->MacAddress.au8;
-    char szMacAddress[3 * sizeof(PDMMAC)];
-    for (unsigned int i = 0; i < sizeof(PDMMAC); i++)
+    char szMacAddress[3 * sizeof(RTMAC)];
+    for (unsigned int i = 0; i < sizeof(RTMAC); i++)
     {
         szMacAddress[3 * i] = pszHex[((*pMacAddr8 >> 4) & 0x0f)];
         szMacAddress[3 * i + 1] = pszHex[(*pMacAddr8 & 0x0f)];

@@ -182,7 +182,7 @@ static int tstIntNetWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const v
     Assert(pBuf);
     Assert(pRingBuf);
     Assert(pvFrame);
-    Assert(cbFrame >= sizeof(PDMMAC) * 2);
+    Assert(cbFrame >= sizeof(RTMAC) * 2);
     uint32_t offWrite = pRingBuf->offWrite;
     Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
     uint32_t offRead = pRingBuf->offRead;
@@ -330,7 +330,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
  * @param   pFileRaw        The file to write the raw data to (optional).
  * @param   pFileText       The file to write a textual packet summary to (optional).
  */
-static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCPDMMAC pSrcMac, PRTSTREAM pFileRaw, PRTSTREAM pFileText)
+static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCRTMAC pSrcMac, PRTSTREAM pFileRaw, PRTSTREAM pFileText)
 {
     uint8_t abFrame[4096];
     PRTNETETHERHDR      pEthHdr  = (PRTNETETHERHDR)&abFrame[0];
@@ -345,7 +345,7 @@ static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
 
     pDhcpMsg->Op = 1; /* request */
     pDhcpMsg->HType = 1; /* ethernet */
-    pDhcpMsg->HLen = sizeof(PDMMAC);
+    pDhcpMsg->HLen = sizeof(RTMAC);
     pDhcpMsg->Hops = 0;
     pDhcpMsg->XID = g_DhcpXID = RTRandU32();
     pDhcpMsg->Secs = 0;
@@ -431,7 +431,7 @@ static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
  * @param   pSrcMac         Out MAC address.
  */
 static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, uint32_t cMillies,
-                             PRTSTREAM pFileRaw, PRTSTREAM pFileText, PCPDMMAC pSrcMac)
+                             PRTSTREAM pFileRaw, PRTSTREAM pFileText, PCRTMAC pSrcMac)
 {
     /*
      * The loop.
@@ -497,7 +497,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                         PCRTNETDHCP pDhcpMsg = (PCRTNETDHCP)(pUdpHdr + 1);
                         if (    pDhcpMsg->Op == 2 /* boot reply */
                             &&  pDhcpMsg->HType == 1 /* ethernet */
-                            &&  pDhcpMsg->HLen == sizeof(PDMMAC)
+                            &&  pDhcpMsg->HLen == sizeof(RTMAC)
                             &&  (pDhcpMsg->XID == g_DhcpXID || !g_DhcpXID)
                             &&  !memcmp(&pDhcpMsg->CHAddr[0], pSrcMac, sizeof(*pSrcMac)))
                         {
@@ -580,7 +580,7 @@ int main(int argc, char **argv)
     bool        fSniffer = false;
     PRTSTREAM   pFileText = g_pStdOut;
     bool        fXmitTest = false;
-    PDMMAC      SrcMac;
+    RTMAC       SrcMac;
     SrcMac.au8[0] = 0x08;
     SrcMac.au8[1] = 0x03;
     SrcMac.au8[2] = 0x86;

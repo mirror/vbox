@@ -491,7 +491,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @remarks Called while owning the network and the out-bound trunk port semaphores.
      */
-    DECLR0CALLBACKMEMBER(void, pfnGetMacAddress,(PINTNETTRUNKIFPORT pIfPort, PPDMMAC pMac));
+    DECLR0CALLBACKMEMBER(void, pfnGetMacAddress,(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac));
 
     /**
      * Tests if the mac address belongs to any of the host NICs
@@ -510,7 +510,7 @@ typedef struct INTNETTRUNKIFPORT
      * @remarks This didn't quiet work out the way it should... perhaps obsolete this
      *          with pfnGetHostMac?
      */
-    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCPDMMAC pMac));
+    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac));
 
     /**
      * Tests whether the host is operating the interface is promiscuous mode.
@@ -779,7 +779,7 @@ typedef struct INTNETIFSETMACADDRESSREQ
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
     /** The new MAC address. */
-    PDMMAC          Mac;
+    RTMAC           Mac;
 } INTNETIFSETMACADDRESSREQ;
 /** Pointer to an INTNETR0IfSetMacAddressReq / VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS request buffer. */
 typedef INTNETIFSETMACADDRESSREQ *PINTNETIFSETMACADDRESSREQ;
@@ -932,7 +932,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * @param   fPromiscuous    Set if the interface should be in promiscuous mode, clear if not.
  */
 INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode( PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
-INTNETR0DECL(int) INTNETR0IfSetMacAddress(      PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCPDMMAC pMac);
+INTNETR0DECL(int) INTNETR0IfSetMacAddress(      PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac);
 INTNETR0DECL(int) INTNETR0IfSetActive(          PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
 
 /**

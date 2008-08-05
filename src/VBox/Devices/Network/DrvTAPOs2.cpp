@@ -117,8 +117,8 @@ static DECLCALLBACK(int) drvTAPOs2Send(PPDMINETWORKCONNECTOR pInterface, const v
     STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
-    /* 
-     * If the pvBuf is a high address, we'll have to copy it onto a 
+    /*
+     * If the pvBuf is a high address, we'll have to copy it onto a
      * stack buffer of the tap driver will trap.
      */
     if ((uintptr_t)pvBuf >= _1M*512)
@@ -148,7 +148,7 @@ static DECLCALLBACK(int) drvTAPOs2Send(PPDMINETWORKCONNECTOR pInterface, const v
     {
         static unsigned cComplaints = 0;
         if (cComplaints++ < 256)
-            LogRel(("%s: send failed. rc=%d Parm={%ld,%ld} cb=%d\n", 
+            LogRel(("%s: send failed. rc=%d Parm={%ld,%ld} cb=%d\n",
                     pThis->szName, rc, Parm[0], Parm[1], cb));
         if (rc)
             rc = RTErrConvertFromOS2(rc);
@@ -229,7 +229,7 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
     Assert(pThread->enmState == PDMTHREADSTATE_RUNNING);
 
     /*
-     * Loop while the thread is running, quit immediately when 
+     * Loop while the thread is running, quit immediately when
      * we're supposed to suspend or terminate.
      */
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -283,7 +283,7 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
         /* we'll be returning ~1 per second with no data; rc=0 Parm[0] = 1, Parm[1] = 0. */
         else if (rc)
         {
-            LogFlow(("%s: ReceiveThread: DoDevIOCtl -> %s Parm={%ld, %ld}\n", 
+            LogFlow(("%s: ReceiveThread: DoDevIOCtl -> %s Parm={%ld, %ld}\n",
                      pThis->szName, rc, Parm[0], Parm[1]));
             rc = RTErrConvertFromOS2(rc);
             if (rc == VERR_INVALID_HANDLE)
@@ -377,7 +377,7 @@ static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
                               &Data, cbData, &cbData);
         if (    orc
             ||  Parm[0])
-            LogRel(("%s: Failed to disconnect %d from %d! orc=%d Parm={%ld,%ld}\n", 
+            LogRel(("%s: Failed to disconnect %d from %d! orc=%d Parm={%ld,%ld}\n",
                     pThis->szName, pThis->iLan, pThis->iConnectedTo, orc, Parm[0], Parm[1]));
         pThis->iConnectedTo = -1;
     }
@@ -483,12 +483,12 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         rc = VERR_GENERAL_FAILURE;
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}"), 
+                                   N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}"),
                                    orc, Parm[0], Parm[1]);
     pThis->iLan = (int32_t)Data;
     Log(("%s: iLan=%d Parm[1]=%ld\n", pThis->szName, pThis->iLan, Parm[1]));
 
-    /* 
+    /*
      * Connect it requested.
      */
     if (iConnectTo != -1)
@@ -510,30 +510,30 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
             rc = VERR_GENERAL_FAILURE;
         if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}"), 
+                                       N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}"),
                                        pThis->iLan, iConnectTo, orc, Parm[0], Parm[1]);
         Log(("%s: Connected to %d\n", pThis->szName, iConnectTo));
         pThis->iConnectedTo = iConnectTo;
     }
 
-    /* 
+    /*
      * Log the config.
      */
     Parm[0] = Parm[1] = ~0UL; /* mysterious output */
-    PDMMAC Mac;
+    RTMAC Mac;
     cbParm = sizeof(Parm);
     cbData = sizeof(Mac);
     orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_READ_MAC_ADDRESS,
                       &Parm[0], cbParm, &cbParm,
                       &Mac, cbData, &cbData);
-    if (    !orc 
+    if (    !orc
         &&  !Parm[0]
       /*&&  !Parm[1]?*/)
-        LogRel(("%s: iLan=%d iConnectedTo=%d Mac=%02x:%02x:%02x:%02x:%02x:%02x\n", 
-                pThis->szName, pThis->iLan, pThis->iConnectedTo, 
+        LogRel(("%s: iLan=%d iConnectedTo=%d Mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                pThis->szName, pThis->iLan, pThis->iConnectedTo,
                 Mac.au8[0], Mac.au8[1], Mac.au8[2], Mac.au8[3], Mac.au8[4], Mac.au8[5]));
     else
-        LogRel(("%s: iLan=%d iConnectedTo Mac=failed - orc=%d Parm={%ld,%ld}\n", 
+        LogRel(("%s: iLan=%d iConnectedTo Mac=failed - orc=%d Parm={%ld,%ld}\n",
                 pThis->szName, pThis->iLan, pThis->iConnectedTo, Parm[0], Parm[1]));
 
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvTAPOs2ReceiveThread, drvTAPOs2WakeupReceiveThread,

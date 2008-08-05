@@ -1479,7 +1479,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                         darwinDictGetBool(IfPropsRef, CFSTR("IOPrimaryInterface"), &fPrimaryIf);
 
                         /* Get the MAC address. */
-                        PDMMAC Mac;
+                        RTMAC Mac;
                         AssertBreak(darwinDictGetData(PropsRef, CFSTR("IOMACAddress"), &Mac, sizeof(Mac)));
 
                         /* The BSD Name from the interface dictionary. */

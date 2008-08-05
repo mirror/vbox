@@ -1033,7 +1033,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         Utf8Str macAddrUtf8 = macAddr;
         char *macStr = (char*)macAddrUtf8.raw();
         Assert(strlen(macStr) == 12);
-        PDMMAC Mac;
+        RTMAC Mac;
         memset(&Mac, 0, sizeof(Mac));
         char *pMac = (char*)&Mac;
         for (uint32_t i = 0; i < 6; i++)
