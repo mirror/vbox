@@ -36,6 +36,10 @@
 #include "PIIX3ATABmDma.h"
 #include "ide.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA
@@ -60,6 +64,10 @@
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct ATADevState {
     /** Flag indicating whether the current command uses LBA48 mode. */
     bool fLBA48;
@@ -153,10 +161,12 @@ typedef struct ATADevState {
     /** Size of I/O buffer. */
     uint32_t cbIOBuffer;
     /** Pointer to the I/O buffer. */
-    R3R0PTRTYPE(uint8_t *) pbIOBufferHC;
+    R3PTRTYPE(uint8_t *) pbIOBufferR3;
+    /** Pointer to the I/O buffer. */
+    R0PTRTYPE(uint8_t *) pbIOBufferR0;
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferGC;
-#if HC_ARCH_BITS == 64
+#if 1 /*HC_ARCH_BITS == 64*/
     RTRCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
 #endif
 
@@ -216,14 +226,18 @@ typedef struct ATADevState {
     /** The LUN #. */
     RTUINT                          iLUN;
 #if HC_ARCH_BITS == 64
-    RTUINT                          Alignment2; /**< Align pDevInsHC correctly. */
+    RTUINT                          Alignment2; /**< Align pDevInsR3 correctly. */
 #endif
     /** Pointer to device instance. */
-    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
+    PPDMDEVINSR3                        pDevInsR3;
     /** Pointer to controller instance. */
-    R3R0PTRTYPE(struct ATACONTROLLER *) pControllerHC;
+    R3PTRTYPE(struct ATACONTROLLER *)   pControllerR3;
     /** Pointer to device instance. */
-    RCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    PPDMDEVINSR0                        pDevInsR0;
+    /** Pointer to controller instance. */
+    R0PTRTYPE(struct ATACONTROLLER *)   pControllerR0;
+    /** Pointer to device instance. */
+    PPDMDEVINSGC                        pDevInsGC;
     /** Pointer to controller instance. */
     RCPTRTYPE(struct ATACONTROLLER *)   pControllerGC;
 } ATADevState;
@@ -316,9 +330,11 @@ typedef struct ATACONTROLLER
     ATADevState aIfs[2];
 
     /** Pointer to device instance. */
-    R3R0PTRTYPE(PPDMDEVINS)         pDevInsHC;
+    PPDMDEVINSR3        pDevInsR3;
     /** Pointer to device instance. */
-    RCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+    PPDMDEVINSR0        pDevInsR0;
+    /** Pointer to device instance. */
+    PPDMDEVINSGC        pDevInsGC;
 
     /** Set when the destroying the device instance and the thread must exit. */
     uint32_t volatile   fShutdown;
@@ -339,25 +355,27 @@ typedef struct ATACONTROLLER
     RTSEMMUTEX          AsyncIORequestMutex;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
-#if HC_ARCH_BITS == 32
+#if 0 /*HC_ARCH_BITS == 32*/
     uint32_t            Alignment0;
 #endif
 
     /* Statistics */
-    STAMCOUNTER StatAsyncOps;
-    uint64_t    StatAsyncMinWait;
-    uint64_t    StatAsyncMaxWait;
-    STAMCOUNTER StatAsyncTimeUS;
-    STAMPROFILEADV StatAsyncTime;
-    STAMPROFILE StatLockWait;
+    STAMCOUNTER     StatAsyncOps;
+    uint64_t        StatAsyncMinWait;
+    uint64_t        StatAsyncMaxWait;
+    STAMCOUNTER     StatAsyncTimeUS;
+    STAMPROFILEADV  StatAsyncTime;
+    STAMPROFILE     StatLockWait;
 } ATACONTROLLER, *PATACONTROLLER;
 
-#define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTXSUFF(pController) )
-#define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTXSUFF(pDevIns) )
-#define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTXSUFF(pDevIns) )
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
+#define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTXALLSUFF(pController) )
+#define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTXALLSUFF(pDevIns) )
+#define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTXALLSUFF(pDevIns) )
 #define PDMIBASE_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IBase)) )
 
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
 /*******************************************************************************
  *  Internal Functions                                                         *
  ******************************************************************************/
