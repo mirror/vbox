@@ -3029,11 +3029,17 @@ typedef struct PDMDEVINS
 
 /** @def PDMDEVINS_2_GCPTR
  * Converts a PDM Device instance pointer a GC PDM Device instance pointer.
+ * @deprecated Use PDMDEVINS_2_RCPTR.
  */
-#define PDMDEVINS_2_GCPTR(pDevIns)  ( (RCPTRTYPE(PPDMDEVINS))((RTGCUINTPTR)(pDevIns)->pvInstanceDataGC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
+#define PDMDEVINS_2_GCPTR(pDevIns)  PDMDEVINS_2_RCPTR(pDevIns)
+
+/** @def PDMDEVINS_2_RCPTR
+ * Converts a PDM Device instance pointer a RC PDM Device instance pointer.
+ */
+#define PDMDEVINS_2_RCPTR(pDevIns)  ( (RCPTRTYPE(PPDMDEVINS))((RTGCUINTPTR)(pDevIns)->pvInstanceDataGC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
 /** @def PDMDEVINS_2_R3PTR
- * Converts a PDM Device instance pointer a HC PDM Device instance pointer.
+ * Converts a PDM Device instance pointer a R3 PDM Device instance pointer.
  */
 #define PDMDEVINS_2_R3PTR(pDevIns)  ( (R3PTRTYPE(PPDMDEVINS))((RTHCUINTPTR)(pDevIns)->pvInstanceDataR3 - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
