@@ -204,7 +204,7 @@ typedef struct BFENetworkDevice
     }           enmType;    /**< The type of network driver. */
     bool        fSniff;     /**< Set if the network sniffer should be installed. */
     const char *pszSniff;   /**< Output file for the network sniffer. */
-    PDMMAC      Mac;        /**< The mac address for the device. */
+    RTMAC       Mac;        /**< The mac address for the device. */
     const char *pszName;    /**< The device name of a HIF device. The name of the internal network. */
 #ifdef RT_OS_OS2
     bool        fHaveConnectTo; /**< Whether fConnectTo is set. */
@@ -1730,7 +1730,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                                              !ulInstance ? 3 : ulInstance - 1 + 8); UPDATE_RC();
             rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                   UPDATE_RC();
             rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);               UPDATE_RC();
-            rc = CFGMR3InsertBytes(pCfg,    "MAC",            &g_aNetDevs[ulInstance].Mac, sizeof(PDMMAC));
+            rc = CFGMR3InsertBytes(pCfg,    "MAC",            &g_aNetDevs[ulInstance].Mac, sizeof(RTMAC));
                                                                                     UPDATE_RC();
 
             /*
