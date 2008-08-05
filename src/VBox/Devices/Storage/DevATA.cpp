@@ -4908,7 +4908,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
 DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 {
     if (s->pbIOBufferR3)
-        s->pbIOBufferGC = MMHyperR3ToGC(PDMDevHlpGetVM(pDevIns), s->pbIOBufferR3);
+        s->pbIOBufferGC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), s->pbIOBufferR3);
 }
 
 
@@ -5092,7 +5092,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             AssertRelease(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * 512);
         Assert(pIf->pbIOBufferR3);
         Assert(pIf->pbIOBufferR0 == MMHyperR3ToR0(pVM, pIf->pbIOBufferR3));
-        Assert(pIf->pbIOBufferGC == MMHyperR3ToGC(pVM, pIf->pbIOBufferR3));
+        Assert(pIf->pbIOBufferGC == MMHyperR3ToRC(pVM, pIf->pbIOBufferR3));
     }
     else
     {
@@ -5105,7 +5105,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         if (VBOX_FAILURE(rc))
             return VERR_NO_MEMORY;
         pIf->pbIOBufferR0 = MMHyperR3ToR0(pVM, pIf->pbIOBufferR3);
-        pIf->pbIOBufferGC = MMHyperR3ToGC(pVM, pIf->pbIOBufferR3);
+        pIf->pbIOBufferGC = MMHyperR3ToRC(pVM, pIf->pbIOBufferR3);
     }
 
     /*
@@ -5611,7 +5611,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pData->aCts[i].aIfs[j].pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
             pData->aCts[i].aIfs[j].pControllerR3 = &pData->aCts[i];
             pData->aCts[i].aIfs[j].pControllerR0 = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
-            pData->aCts[i].aIfs[j].pControllerGC = MMHyperR3ToGC(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
+            pData->aCts[i].aIfs[j].pControllerGC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
             pData->aCts[i].aIfs[j].IBase.pfnQueryInterface = ataQueryInterface;
             pData->aCts[i].aIfs[j].IMountNotify.pfnMountNotify = ataMountNotify;
             pData->aCts[i].aIfs[j].IMountNotify.pfnUnmountNotify = ataUnmountNotify;

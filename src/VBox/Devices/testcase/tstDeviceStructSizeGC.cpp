@@ -861,9 +861,11 @@ int main()
     /* Storage/DevAHCI.cpp */
 
     GEN_CHECK_SIZE(AHCIPort);
-    GEN_CHECK_OFF(AHCIPort, pDevInsHC);
+    GEN_CHECK_OFF(AHCIPort, pDevInsR3);
+    GEN_CHECK_OFF(AHCIPort, pDevInsR0);
     GEN_CHECK_OFF(AHCIPort, pDevInsGC);
-    GEN_CHECK_OFF(AHCIPort, pAhciHC);
+    GEN_CHECK_OFF(AHCIPort, pAhciR3);
+    GEN_CHECK_OFF(AHCIPort, pAhciR0);
     GEN_CHECK_OFF(AHCIPort, pAhciGC);
     GEN_CHECK_OFF(AHCIPort, regCLB);
     GEN_CHECK_OFF(AHCIPort, regCLBU);
@@ -921,7 +923,8 @@ int main()
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
-    GEN_CHECK_OFF(AHCI, pDevInsHC);
+    GEN_CHECK_OFF(AHCI, pDevInsR3);
+    GEN_CHECK_OFF(AHCI, pDevInsR0);
     GEN_CHECK_OFF(AHCI, pDevInsGC);
     GEN_CHECK_OFF(AHCI, IBase);
     GEN_CHECK_OFF(AHCI, ILeds);
@@ -934,9 +937,11 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaVs);
     GEN_CHECK_OFF(AHCI, regHbaCccCtl);
     GEN_CHECK_OFF(AHCI, regHbaCccPorts);
-    GEN_CHECK_OFF(AHCI, pHbaCccTimerHC);
+    GEN_CHECK_OFF(AHCI, pHbaCccTimerR3);
+    GEN_CHECK_OFF(AHCI, pHbaCccTimerR0);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerGC);
-    GEN_CHECK_OFF(AHCI, pNotifierQueueHC);
+    GEN_CHECK_OFF(AHCI, pNotifierQueueR3);
+    GEN_CHECK_OFF(AHCI, pNotifierQueueR0);
     GEN_CHECK_OFF(AHCI, pNotifierQueueGC);
     GEN_CHECK_OFF(AHCI, uCccPortNr);
     GEN_CHECK_OFF(AHCI, uCccTimeout);
