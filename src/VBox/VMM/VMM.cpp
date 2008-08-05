@@ -247,20 +247,22 @@ static int vmmR3InitCoreCode(PVM pVM)
         rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
         if (rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT)
         {
-            /* try more allocations. */
-            struct
+            /* try more allocations - Solaris  */
+            const unsigned cTries = 4112;
+            struct VMMInitBadTry
             {
                 RTR0PTR  pvR0;
                 void    *pvR3;
                 RTHCPHYS HCPhys;
                 RTUINT   cb;
-            } aBadTries[128];
+            } *paBadTries = (struct VMMInitBadTry *)RTMemTmpAlloc(sizeof(*paBadTries) * cTries);
+            AssertReturn(paBadTries, VERR_NO_TMP_MEMORY);
             unsigned i = 0;
             do
             {
-                aBadTries[i].pvR3 = pVM->vmm.s.pvHCCoreCodeR3;
-                aBadTries[i].pvR0 = pVM->vmm.s.pvHCCoreCodeR0;
-                aBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
+                paBadTries[i].pvR3 = pVM->vmm.s.pvHCCoreCodeR3;
+                paBadTries[i].pvR0 = pVM->vmm.s.pvHCCoreCodeR0;
+                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
                 i++;
                 pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
                 pVM->vmm.s.HCPhysCoreCode = NIL_RTHCPHYS;
@@ -269,24 +271,25 @@ static int vmmR3InitCoreCode(PVM pVM)
                     break;
                 rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
             } while (   rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT
-                     && i < RT_ELEMENTS(aBadTries) - 1);
+                     && i < cTries - 1);
 
             /* cleanup */
             if (VBOX_FAILURE(rc))
             {
-                aBadTries[i].pvR3   = pVM->vmm.s.pvHCCoreCodeR3;
-                aBadTries[i].pvR0   = pVM->vmm.s.pvHCCoreCodeR0;
-                aBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
-                aBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
+                paBadTries[i].pvR3   = pVM->vmm.s.pvHCCoreCodeR3;
+                paBadTries[i].pvR0   = pVM->vmm.s.pvHCCoreCodeR0;
+                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
+                paBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
                 i++;
                 LogRel(("Failed to allocated and map core code: rc=%Vrc\n", rc));
             }
             while (i-- > 0)
             {
                 LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%VHp\n",
-                        i, aBadTries[i].pvR3, aBadTries[i].pvR0, aBadTries[i].HCPhys));
-                SUPContFree(aBadTries[i].pvR3, aBadTries[i].cb >> PAGE_SHIFT);
+                        i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
+                SUPContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
             }
+            RTMemTmpFree(paBadTries);
         }
     }
     if (VBOX_SUCCESS(rc))
