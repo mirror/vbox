@@ -624,7 +624,7 @@ int main()
     GEN_CHECK_OFF(ATADevState, cbIOBuffer);
     GEN_CHECK_OFF(ATADevState, pbIOBufferR3);
     GEN_CHECK_OFF(ATADevState, pbIOBufferR0);
-    GEN_CHECK_OFF(ATADevState, pbIOBufferGC);
+    GEN_CHECK_OFF(ATADevState, pbIOBufferRC);
     GEN_CHECK_OFF(ATADevState, StatATADMA);
     GEN_CHECK_OFF(ATADevState, StatATAPIO);
     GEN_CHECK_OFF(ATADevState, StatATAPIDMA);
@@ -646,10 +646,10 @@ int main()
     GEN_CHECK_OFF(ATADevState, iLUN);
     GEN_CHECK_OFF(ATADevState, pDevInsR3);
     GEN_CHECK_OFF(ATADevState, pDevInsR0);
-    GEN_CHECK_OFF(ATADevState, pDevInsGC);
+    GEN_CHECK_OFF(ATADevState, pDevInsRC);
     GEN_CHECK_OFF(ATADevState, pControllerR3);
     GEN_CHECK_OFF(ATADevState, pControllerR0);
-    GEN_CHECK_OFF(ATADevState, pControllerGC);
+    GEN_CHECK_OFF(ATADevState, pControllerRC);
     GEN_CHECK_SIZE(ATATransferRequest);
     GEN_CHECK_OFF(ATATransferRequest, iIf);
     GEN_CHECK_OFF(ATATransferRequest, iBeginTransfer);
@@ -686,7 +686,7 @@ int main()
     GEN_CHECK_OFF(ATACONTROLLER, aIfs[1]);
     GEN_CHECK_OFF(ATACONTROLLER, pDevInsR3);
     GEN_CHECK_OFF(ATACONTROLLER, pDevInsR0);
-    GEN_CHECK_OFF(ATACONTROLLER, pDevInsGC);
+    GEN_CHECK_OFF(ATACONTROLLER, pDevInsRC);
     GEN_CHECK_OFF(ATACONTROLLER, fShutdown);
     GEN_CHECK_OFF(ATACONTROLLER, AsyncIOThread);
     GEN_CHECK_OFF(ATACONTROLLER, AsyncIOSem);
