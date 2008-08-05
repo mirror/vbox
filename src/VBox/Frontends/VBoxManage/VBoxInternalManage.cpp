@@ -1350,7 +1350,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (VBOX_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Vrc\n", vrc);
-        return vrc;
+        return 1;
     }
 
     /* Open raw output file. */
@@ -1364,7 +1364,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     {
         VDCloseAll(pDisk);
         RTPrintf("Error while creating destination file \"%s\": %Vrc\n", Utf8Str(dst).raw(), vrc);
-        return vrc;
+        return 1;
     }
 
     if (srcformat.isEmpty())
@@ -1380,7 +1380,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                 RTFileDelete(Utf8Str(dst).raw());
             }
             RTPrintf("No file format specified and autodetect failed - please specify format: %Vrc\n", vrc);
-            return vrc;
+            return 1;
         }
         srcformat = pszFormat;
         RTStrFree(pszFormat);
@@ -1395,7 +1395,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
             RTFileDelete(Utf8Str(dst).raw());
         }
         RTPrintf("Error while opening the source image: %Vrc\n", vrc);
-        return vrc;
+        return 1;
     }
 
     uint64_t cbSize = VDGetSize(pDisk, VD_LAST_IMAGE);
@@ -1426,7 +1426,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                 RTFileDelete(Utf8Str(dst).raw());
             }
             RTPrintf("Error copying image data: %Vrc\n", vrc);
-            return vrc;
+            return 1;
         }
     }
     else
@@ -1439,13 +1439,13 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
             RTFileDelete(Utf8Str(dst).raw());
         }
         RTPrintf("Error allocating read buffer: %Vrc\n", vrc);
-        return vrc;
+        return 1;
     }
 
     if (!fWriteToStdOut)
         RTFileClose(outFile);
     VDCloseAll(pDisk);
-    return vrc;
+    return 0;
 }
 
 /**
