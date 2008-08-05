@@ -804,7 +804,7 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
-    RTCPUID  idCpu = RTMpCpuId();
+    RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
 
     Assert(!VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(HWACCMR0Globals.aCpuInfo[idCpu].fConfigured);
