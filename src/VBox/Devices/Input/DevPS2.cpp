@@ -1292,7 +1292,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     NOREF(pvUser);
     if (cb == 1)
     {
-        *pu32 = kbd_read_data(PDMINS2DATA(pDevIns, KBDState *), Port);
+        *pu32 = kbd_read_data(PDMINS_2_DATA(pDevIns, KBDState *), Port);
         Log2(("kbdIOPortDataRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
     }
@@ -1317,7 +1317,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     NOREF(pvUser);
     if (cb == 1)
     {
-        rc = kbd_write_data(PDMINS2DATA(pDevIns, KBDState *), Port, u32);
+        rc = kbd_write_data(PDMINS_2_DATA(pDevIns, KBDState *), Port, u32);
         Log2(("kbdIOPortDataWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
     }
     else
@@ -1341,7 +1341,7 @@ PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     NOREF(pvUser);
     if (cb == 1)
     {
-        *pu32 = kbd_read_status(PDMINS2DATA(pDevIns, KBDState *), Port);
+        *pu32 = kbd_read_status(PDMINS_2_DATA(pDevIns, KBDState *), Port);
         Log2(("kbdIOPortStatusRead: Port=%#x cb=%d -> *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
     }
@@ -1365,7 +1365,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     if (cb == 1)
     {
-        int rc = kbd_write_command(PDMINS2DATA(pDevIns, KBDState *), Port, u32);
+        int rc = kbd_write_command(PDMINS_2_DATA(pDevIns, KBDState *), Port, u32);
         Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Vrc\n", Port, cb, u32, rc));
         return rc;
     }
@@ -1384,7 +1384,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    kbd_save(pSSMHandle, PDMINS2DATA(pDevIns, KBDState *));
+    kbd_save(pSSMHandle, PDMINS_2_DATA(pDevIns, KBDState *));
     return VINF_SUCCESS;
 }
 
@@ -1399,7 +1399,7 @@ static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    return kbd_load(pSSMHandle, PDMINS2DATA(pDevIns, KBDState *), u32Version);
+    return kbd_load(pSSMHandle, PDMINS_2_DATA(pDevIns, KBDState *), u32Version);
 }
 
 /**
@@ -1410,7 +1410,7 @@ static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  */
 static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 {
-    kbd_reset(PDMINS2DATA(pDevIns, KBDState *));
+    kbd_reset(PDMINS_2_DATA(pDevIns, KBDState *));
 }
 
 
@@ -1528,13 +1528,13 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32
 static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
     int         rc;
-    KBDState   *pData = PDMINS2DATA(pDevIns, KBDState *);
+    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
     switch (iLUN)
     {
         /* LUN #0: keyboard */
         case 0:
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Keyboard.Base, &pData->Keyboard.pDrvBase, "Keyboard Port");
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pData->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pData->Keyboard.pDrvBase->pfnQueryInterface(pData->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
                 if (!pData->Keyboard.pDrv)
@@ -1555,7 +1555,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
         /* LUN #1: aux/mouse */
         case 1:
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Mouse.Base, &pData->Mouse.pDrvBase, "Aux (Mouse) Port");
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pData->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pData->Mouse.pDrvBase->pfnQueryInterface(pData->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
                 if (!pData->Mouse.pDrv)
@@ -1602,7 +1602,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     /*
      * Reset the interfaces and update the controller state.
      */
-    KBDState   *pData = PDMINS2DATA(pDevIns, KBDState *);
+    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
     switch (iLUN)
     {
         /* LUN #0: keyboard */
@@ -1629,7 +1629,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
  */
 static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    KBDState   *pData = PDMINS2DATA(pDevIns, KBDState *);
+    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
     pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
@@ -1649,7 +1649,7 @@ static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    KBDState   *pData = PDMINS2DATA(pDevIns, KBDState *);
+    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
     int         rc;
     bool        fGCEnabled;
     bool        fR0Enabled;
@@ -1661,10 +1661,10 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"GCEnabled\" from the config"));
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"R0Enabled\" from the config"));
     Log(("pckbd: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
 
@@ -1685,43 +1685,43 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Register I/O ports, save state, keyboard event handler and mouse event handlers.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x60, 1, NULL, kbdIOPortDataWrite,    kbdIOPortDataRead, NULL, NULL,   "PC Keyboard - Data");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x64, 1, NULL, kbdIOPortCommandWrite, kbdIOPortStatusRead, NULL, NULL, "PC Keyboard - Command / Status");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0x60, 1, 0, "kbdIOPortDataWrite",    "kbdIOPortDataRead", NULL, NULL,   "PC Keyboard - Data");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0x64, 1, 0, "kbdIOPortCommandWrite", "kbdIOPortStatusRead", NULL, NULL, "PC Keyboard - Command / Status");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
         rc = pDevIns->pDevHlp->pfnIOPortRegisterR0(pDevIns, 0x60, 1, 0, "kbdIOPortDataWrite",    "kbdIOPortDataRead", NULL, NULL,   "PC Keyboard - Data");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         rc = pDevIns->pDevHlp->pfnIOPortRegisterR0(pDevIns, 0x64, 1, 0, "kbdIOPortCommandWrite", "kbdIOPortStatusRead", NULL, NULL, "PC Keyboard - Command / Status");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     rc = PDMDevHlpSSMRegister(pDevIns, g_DevicePS2KeyboardMouse.szDeviceName, iInstance, PCKBD_SAVED_STATE_VERSION, sizeof(*pData),
                               NULL, kbdSaveExec, NULL,
                               NULL, kbdLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Attach to the keyboard and mouse drivers.
      */
     rc = kbdAttach(pDevIns, 0 /* keyboard LUN # */);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = kbdAttach(pDevIns, 1 /* aux/mouse LUN # */);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
