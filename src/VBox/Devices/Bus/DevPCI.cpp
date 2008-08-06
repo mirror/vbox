@@ -1445,34 +1445,27 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0" "GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0" "GCEnabled\0" "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* query whether we got an IOAPIC */
-    rc = CFGMR3QueryBool(pCfgHandle, "IOAPIC", &fUseIoApic);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fUseIoApic = false;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fUseIoApic, false);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
 
     /* check if RC code is enabled. */
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
-    Log(("PCI: fGCEnabled=%d\n", fGCEnabled));
 
     /* check if R0 code is enabled. */
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
-    Log(("PCI: fR0Enabled=%d\n", fR0Enabled));
+    Log(("PCI: fUseIoApic=%RTbool fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fUseIoApic, fGCEnabled, fR0Enabled));
 
     /*
      * Init data and register the PCI bus.
