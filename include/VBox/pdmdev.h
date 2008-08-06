@@ -504,11 +504,11 @@ typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 #define PDM_PCIBUSREG_VERSION   0xd0020000
 
 /**
- * PCI Bus GC helpers.
+ * PCI Bus RC helpers.
  */
-typedef struct PDMPCIHLPGC
+typedef struct PDMPCIHLPRC
 {
-    /** Structure version. PDM_PCIHLPGC_VERSION defines the current version. */
+    /** Structure version. PDM_PCIHLPRC_VERSION defines the current version. */
     uint32_t                    u32Version;
 
     /**
@@ -550,14 +550,14 @@ typedef struct PDMPCIHLPGC
 
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
-} PDMPCIHLPGC;
+} PDMPCIHLPRC;
 /** Pointer to PCI helpers. */
-typedef RCPTRTYPE(PDMPCIHLPGC *) PPDMPCIHLPGC;
+typedef RCPTRTYPE(PDMPCIHLPRC *) PPDMPCIHLPRC;
 /** Pointer to const PCI helpers. */
-typedef RCPTRTYPE(const PDMPCIHLPGC *) PCPDMPCIHLPGC;
+typedef RCPTRTYPE(const PDMPCIHLPRC *) PCPDMPCIHLPRC;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPGC_VERSION  0xe1010000
+#define PDM_PCIHLPRC_VERSION  0xe1010000
 
 
 /**
@@ -655,16 +655,16 @@ typedef struct PDMPCIHLPR3
     DECLR3CALLBACKMEMBER(bool,  pfnIsMMIO2Base,(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys));
 
     /**
-     * Gets the address of the GC PCI Bus helpers.
+     * Gets the address of the RC PCI Bus helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the RC helpers.
      *
-     * @returns GC pointer to the PCI Bus helpers.
+     * @returns RC pointer to the PCI Bus helpers.
      * @param   pDevIns         Device instance of the PCI Bus.
      * @thread  EMT only.
      */
-    DECLR3CALLBACKMEMBER(PCPDMPCIHLPGC, pfnGetGCHelpers,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(PCPDMPCIHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the R0 PCI Bus helpers.
