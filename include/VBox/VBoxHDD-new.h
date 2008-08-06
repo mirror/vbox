@@ -365,16 +365,21 @@ typedef struct VDINTERFACEERROR
  * Get error interface from opaque callback table.
  *
  * @return Pointer to the callback table.
- * @param  pCallbacks Opaque interface pointer.
+ * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(void *pCallbacks)
+DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEERROR pInterfaceError = (PVDINTERFACEERROR)pCallbacks;
+    /* Check that the interface descriptor is a error interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_ERROR)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not an error interface"), NULL);
+
+    PVDINTERFACEERROR pInterfaceError = (PVDINTERFACEERROR)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceError->cbSize == sizeof(VDINTERFACEERROR))
                     && (pInterfaceError->enmInterface == VDINTERFACETYPE_ERROR),
-                    ("Not an error interface\n"), NULL);
+                    ("A non error callback table attached to a error interface descriptor\n"), NULL);
 
     return pInterfaceError;
 }
@@ -511,16 +516,21 @@ typedef struct VDINTERFACEASYNCIO
  * Get async I/O interface from opaque callback table.
  *
  * @return Pointer to the callback table.
- * @param  pCallbacks Opaque interface pointer.
+ * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(void *pCallbacks)
+DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEASYNCIO pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pCallbacks;
+    /* Check that the interface descriptor is a async I/O interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_ASYNCIO)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not an async I/O interface"), NULL);
+
+    PVDINTERFACEASYNCIO pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceAsyncIO->cbSize == sizeof(VDINTERFACEASYNCIO))
                     && (pInterfaceAsyncIO->enmInterface == VDINTERFACETYPE_ASYNCIO),
-                    ("Not an async I/O interface\n"), NULL);
+                    ("A non async I/O callback table attached to a async I/O interface descriptor\n"), NULL);
 
     return pInterfaceAsyncIO;
 }
@@ -550,16 +560,22 @@ typedef struct VDINTERFACEPROGRESS
  * Get progress interface from opaque callback table.
  *
  * @return Pointer to the callback table.
- * @param  pCallbacks Opaque interface pointer.
+ * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACEPROGRESS) VDGetInterfaceProgress(void *pCallbacks)
+DECLINLINE(PVDINTERFACEPROGRESS) VDGetInterfaceProgress(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEPROGRESS pInterfaceProgress = (PVDINTERFACEPROGRESS)pCallbacks;
+    /* Check that the interface descriptor is a progress interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_PROGRESS)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not a progress interface"), NULL);
+
+
+    PVDINTERFACEPROGRESS pInterfaceProgress = (PVDINTERFACEPROGRESS)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceProgress->cbSize == sizeof(VDINTERFACEPROGRESS))
                     && (pInterfaceProgress->enmInterface == VDINTERFACETYPE_PROGRESS),
-                    ("Not a progress notification interface\n"), NULL);
+                    ("A non progress callback table attached to a progress interface descriptor\n"), NULL);
 
     return pInterfaceProgress;
 }
@@ -620,16 +636,21 @@ typedef struct VDINTERFACECONFIG
  * Get configuration information interface from opaque callback table.
  *
  * @return Pointer to the callback table.
- * @param  pCallbacks Opaque interface pointer.
+ * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(void *pCallbacks)
+DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(PVDINTERFACE pInterface)
 {
-    PVDINTERFACECONFIG pInterfaceConfig = (PVDINTERFACECONFIG)pCallbacks;
+    /* Check that the interface descriptor is a progress interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_CONFIG)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not a config interface"), NULL);
+
+    PVDINTERFACECONFIG pInterfaceConfig = (PVDINTERFACECONFIG)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceConfig->cbSize == sizeof(VDINTERFACECONFIG))
                     && (pInterfaceConfig->enmInterface == VDINTERFACETYPE_CONFIG),
-                    ("Not a configuration informaion interface\n"), NULL);
+                    ("A non config callback table attached to a config interface descriptor\n"), NULL);
 
     return pInterfaceConfig;
 }
