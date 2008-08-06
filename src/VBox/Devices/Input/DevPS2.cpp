@@ -1539,7 +1539,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 pData->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pData->Keyboard.pDrvBase->pfnQueryInterface(pData->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
                 if (!pData->Keyboard.pDrv)
                 {
-                    AssertMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Vrc\n", rc));
+                    AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Vrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
             }
@@ -1549,7 +1549,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertMsgFailed(("Failed to attach LUN #0! rc=%Vrc\n", rc));
+                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Vrc\n", rc));
             break;
 
         /* LUN #1: aux/mouse */
@@ -1560,7 +1560,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 pData->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pData->Mouse.pDrvBase->pfnQueryInterface(pData->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
                 if (!pData->Mouse.pDrv)
                 {
-                    AssertMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Vrc\n", rc));
+                    AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Vrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
             }
@@ -1570,7 +1570,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertMsgFailed(("Failed to attach LUN #1! rc=%Vrc\n", rc));
+                AssertLogRelMsgFailed(("Failed to attach LUN #1! rc=%Vrc\n", rc));
             break;
 
         default:
