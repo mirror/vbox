@@ -74,8 +74,6 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
                                                     ":/select_file_dis_16px.png"));
 #endif
 
-    layout()->activate();
-
     /* Applying language settings */
     retranslateUi();
 }
@@ -732,8 +730,6 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
         /* Setup connections */
         connect (page->mCbNetwork, SIGNAL (editTextChanged (const QString&)),
                  this, SLOT (updateNetworksList()));
-        page->layout()->activate();
-        page->updateGeometry();
     }
 
 #if defined (Q_WS_WIN) || defined (Q_OS_MAC)
