@@ -424,13 +424,13 @@ MMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char
  * @param   off         The offset into the region. Will be rounded down to closest page boundrary.
  * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundrary.
  * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address.
+ * @param   pRCPtr      Where to store the RC address.
  */
 MMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                const char *pszDesc, PRTGCPTR pGCPtr)
+                                const char *pszDesc, PRTRCPTR pRCPtr)
 {
-    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%VGp cb=%VGp pszDesc=%p:{%s} pGCPtr=%p\n",
-             pDevIns, iRegion, off, cb, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%VGp cb=%VGp pszDesc=%p:{%s} pRCPtr=%p\n",
+             pDevIns, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
     int rc;
 
     /*
@@ -483,8 +483,12 @@ MMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, R
             }
         }
 
-        if (VBOX_SUCCESS(rc) && pGCPtr)
-            *pGCPtr = GCPtr | offPage;
+        if (VBOX_SUCCESS(rc))
+        {
+            GCPtr |= offPage;
+            *pRCPtr = GCPtr;
+            AssertLogRelReturn(*pRCPtr == GCPtr, VERR_INTERNAL_ERROR);
+        }
     }
     return rc;
 }
