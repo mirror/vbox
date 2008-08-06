@@ -342,7 +342,7 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
 
     pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     rc = rawOpenImage(pImage, uOpenFlags);
     if (VBOX_SUCCESS(rc))
@@ -397,7 +397,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
 
     pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
 
     rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,

@@ -783,7 +783,7 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
 
     pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     rc = vdiOpenImage(pImage, uOpenFlags);
     if (VBOX_SUCCESS(rc))
