@@ -320,11 +320,13 @@ int main()
     GEN_CHECK_SIZE(PCNetState);
     GEN_CHECK_OFF(PCNetState, PciDev);
 #ifndef PCNET_NO_POLLING
-    GEN_CHECK_OFF(PCNetState, pTimerPollHC);
-    GEN_CHECK_OFF(PCNetState, pTimerPollGC);
+    GEN_CHECK_OFF(PCNetState, pTimerPollR3);
+    GEN_CHECK_OFF(PCNetState, pTimerPollR0);
+    GEN_CHECK_OFF(PCNetState, pTimerPollRC);
 #endif
-    GEN_CHECK_OFF(PCNetState, pTimerSoftIntHC);
-    GEN_CHECK_OFF(PCNetState, pTimerSoftIntGC);
+    GEN_CHECK_OFF(PCNetState, pTimerSoftIntR3);
+    GEN_CHECK_OFF(PCNetState, pTimerSoftIntR0);
+    GEN_CHECK_OFF(PCNetState, pTimerSoftIntRC);
     GEN_CHECK_OFF(PCNetState, u32RAP);
     GEN_CHECK_OFF(PCNetState, iISR);
     GEN_CHECK_OFF(PCNetState, u32Lnkst);
@@ -347,13 +349,16 @@ int main()
     GEN_CHECK_OFF(PCNetState, abRecvBuf);
     GEN_CHECK_OFF(PCNetState, iLog2DescSize);
     GEN_CHECK_OFF(PCNetState, GCUpperPhys);
-    GEN_CHECK_OFF(PCNetState, pXmitQueueHC);
-    GEN_CHECK_OFF(PCNetState, pXmitQueueGC);
-    GEN_CHECK_OFF(PCNetState, pCanRxQueueHC);
-    GEN_CHECK_OFF(PCNetState, pCanRxQueueGC);
+    GEN_CHECK_OFF(PCNetState, pXmitQueueR3);
+    GEN_CHECK_OFF(PCNetState, pXmitQueueR0);
+    GEN_CHECK_OFF(PCNetState, pXmitQueueRC);
+    GEN_CHECK_OFF(PCNetState, pCanRxQueueR3);
+    GEN_CHECK_OFF(PCNetState, pCanRxQueueR0);
+    GEN_CHECK_OFF(PCNetState, pCanRxQueueRC);
     GEN_CHECK_OFF(PCNetState, pTimerRestore);
-    GEN_CHECK_OFF(PCNetState, pDevInsHC);
-    GEN_CHECK_OFF(PCNetState, pDevInsGC);
+    GEN_CHECK_OFF(PCNetState, pDevInsR3);
+    GEN_CHECK_OFF(PCNetState, pDevInsR0);
+    GEN_CHECK_OFF(PCNetState, pDevInsRC);
     GEN_CHECK_OFF(PCNetState, pDrv);
     GEN_CHECK_OFF(PCNetState, pDrvBase);
     GEN_CHECK_OFF(PCNetState, IBase);
@@ -380,8 +385,9 @@ int main()
     GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionGC
     GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionR0
 #endif
-    GEN_CHECK_OFF(PCNetState, pSharedMMIOHC);
-    GEN_CHECK_OFF(PCNetState, pSharedMMIOGC);
+    GEN_CHECK_OFF(PCNetState, pSharedMMIOR3);
+    GEN_CHECK_OFF(PCNetState, pSharedMMIOR0);
+    GEN_CHECK_OFF(PCNetState, pSharedMMIORC);
     GEN_CHECK_OFF(PCNetState, fPrivIfEnabled);
     GEN_CHECK_OFF(PCNetState, fGCEnabled);
     GEN_CHECK_OFF(PCNetState, fR0Enabled);
