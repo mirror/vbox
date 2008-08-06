@@ -53,8 +53,8 @@ public:
     bool operator< (const VBoxVersion &aOther) const
     {
         return x <  aOther.x ||
-               x == aOther.x && y <  aOther.y ||
-               x == aOther.x && y == aOther.y && z <  aOther.z;
+               (x == aOther.x && y <  aOther.y) ||
+               (x == aOther.x && y == aOther.y && z <  aOther.z);
     }
 
     QString toString() const

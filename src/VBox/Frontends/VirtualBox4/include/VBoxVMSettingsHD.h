@@ -119,8 +119,8 @@ public:
     bool operator< (const HDValue &aOther) const
     {
         return slt.bus <  aOther.slt.bus ||
-               slt.bus == aOther.slt.bus && slt.channel <  aOther.slt.channel ||
-               slt.bus == aOther.slt.bus && slt.channel == aOther.slt.channel && slt.device <  aOther.slt.device;
+               (slt.bus == aOther.slt.bus && slt.channel <  aOther.slt.channel) ||
+               (slt.bus == aOther.slt.bus && slt.channel == aOther.slt.channel && slt.device <  aOther.slt.device);
     }
 
     HDSltValue slt;
