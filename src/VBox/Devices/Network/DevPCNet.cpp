@@ -2442,12 +2442,12 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         /** @todo should we continue after an error (tmd.tmd1.err) or not? */
 
         STAM_COUNTER_INC(&pData->aStatXmitChainCounts[RT_MIN(cBuffers,
-                                                      ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
+                                                      RT_ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
 
     if (cFlushIrq)
     {
-        STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, ELEMENTS(pData->aStatXmitFlush)) - 1]);
+        STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, RT_ELEMENTS(pData->aStatXmitFlush)) - 1]);
         pData->aCSR[0] |= 0x0200;    /* set TINT */
         pcnetUpdateIrq(pData);
     }
