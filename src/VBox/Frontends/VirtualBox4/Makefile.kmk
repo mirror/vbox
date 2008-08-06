@@ -230,10 +230,10 @@ else # the gcc guys:
    TEMPLATE_VBOXQT4GUIEXE_LIBS += \
         rt socket nsl
   endif
-  ifdef VBOX_WITH_ORIGIN
-   # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
-   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
-  endif
+ endif
+ ifdef VBOX_WITH_ORIGIN
+  # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
+  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
  endif
 
 endif
