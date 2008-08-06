@@ -74,7 +74,7 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
 
 #elif defined(RT_OS_OS2)
     /** @todo create a pidfile if this is (/was :) ) usual on OS/2 */
-    noref(pszPidfile);
+    NOREF(pszPidfile);
     PPIB pPib;
     PTIB pTib;
     DosGetInfoBlocks(&pTib, &pPib);
