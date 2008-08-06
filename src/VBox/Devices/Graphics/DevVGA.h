@@ -186,7 +186,7 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 /* bird: vram_offset have been remove, function pointers declared external,
          some type changes, and some padding have been added. */
 #define VGA_STATE_COMMON                                                \
-    R3R0PTRTYPE(uint8_t *) vram_ptrHC;                                  \
+    R3PTRTYPE(uint8_t *) vram_ptrR3;                                    \
     uint32_t vram_size;                                                 \
     uint32_t latch;                                                     \
     uint8_t sr_index;                                                   \
@@ -249,25 +249,28 @@ typedef struct VGAState {
     uint32_t                    u32Marker;
     /** The physical address the VRAM was assigned. */
     RTGCPHYS32                  GCPhysVRAM;
-    /** Pointer to GC vram mapping. */
-    RCPTRTYPE(uint8_t *)        vram_ptrGC;
-/** @todo r=bird: bool not RTUINT (my fault I guess). */
+    /** The R0 vram pointer... */
+    R0PTRTYPE(uint8_t *)        vram_ptrR0;
+    /** Pointer to the GC vram mapping. */
+    RCPTRTYPE(uint8_t *)        vram_ptrRC;
     /** LFB was updated flag. */
-    RTUINT                      fLFBUpdated;
+    bool                        fLFBUpdated;
     /** Indicates if the GC extensions are enabled or not. */
-    RTUINT                      fGCEnabled;
+    bool                        fGCEnabled;
     /** Indicates if the R0 extensions are enabled or not. */
-    RTUINT                      fR0Enabled;
-    /** Pointer to vgaGCLFBAccessHandler(). */
-    RTGCPTR32                   GCPtrLFBHandler;
+    bool                        fR0Enabled;
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHaveDirtyBits;
+    /** Pointer to vgaGCLFBAccessHandler(). */
+    RTRCPTR                     RCPtrLFBHandler;
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
-    /** Pointer to the device instance - HC Ptr. */
-    R3R0PTRTYPE(PPDMDEVINS)     pDevInsHC;
-    /* * Pointer to the device instance - GC Ptr. */
-    /*RCPTRTYPE(PPDMDEVINS)   pDevInsGC;*/
+    /** Pointer to the device instance - RC Ptr. */
+    PPDMDEVINSRC                pDevInsRC;
+    /** Pointer to the device instance - R3 Ptr. */
+    PPDMDEVINSR3                pDevInsR3;
+    /** Pointer to the device instance - R0 Ptr. */
+    PPDMDEVINSR0                pDevInsR0;
 
     /** The display port base interface. */
     PDMIBASE                    Base;
