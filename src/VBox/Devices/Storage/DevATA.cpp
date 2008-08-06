@@ -5531,35 +5531,27 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
 
-    rc = CFGMR3QueryU32(pCfgHandle, "IRQDelay", &DelayIRQMillies);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        DelayIRQMillies = 0;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryU32Def(pCfgHandle, "IRQDelay", &DelayIRQMillies, 0);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
-    rc = CFGMR3QueryBool(pCfgHandle, "PIIX4", &pData->fPIIX4);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fPIIX4 = false;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "PIIX4", &pData->fPIIX4, false);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read PIIX4 as boolean"));
     Log(("%s: fPIIX4=%d\n", __FUNCTION__, pData->fPIIX4));
