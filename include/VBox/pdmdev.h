@@ -2657,10 +2657,10 @@ typedef struct PDMDEVHLP
      * @param   off         The offset into the region. Will be rounded down to closest page boundrary.
      * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundrary.
      * @param   pszDesc     Mapping description.
-     * @param   pGCPtr      Where to store the GC address.
+     * @param   pRCPtr      Where to store the RC address.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMHyperMapMMIO2,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                                  const char *pszDesc, PRTGCPTR pGCPtr));
+                                                  const char *pszDesc, PRTRCPTR pRCPtr));
 
     /** @} */
 
@@ -3187,9 +3187,9 @@ DECLINLINE(int) PDMDevHlpMMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPH
  * @copydoc PDMDEVHLP::pfnMMHyperMapMMIO2
  */
 DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                         const char *pszDesc, PRTGCPTR pGCPtr)
+                                         const char *pszDesc, PRTRCPTR pRCPtr)
 {
-    return pDevIns->pDevHlp->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pGCPtr);
+    return pDevIns->pDevHlp->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
 }
 
 /**
