@@ -4980,7 +4980,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
     {
-        if (pData->aCts[i].AsyncIORequestMutex)
+        if (pData->aCts[i].AsyncIORequestMutex != NIL_RTSEMEVENT)
         {
             RTSemMutexDestroy(pData->aCts[i].AsyncIORequestMutex);
             pData->aCts[i].AsyncIORequestMutex = NIL_RTSEMEVENT;
@@ -5525,6 +5525,16 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Assert(iInstance == 0);
 
     /*
+     * Initialize NIL handle values (for the destructor).
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
+    {
+        pData->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
+        pData->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
+        pData->aCts[i].AsyncIORequestMutex = NIL_RTSEMEVENT;
+    }
+
+    /*
      * Validate and read configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0"))
@@ -5563,28 +5573,23 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pData->IBase.pfnQueryInterface = ataStatus_QueryInterface;
     pData->ILeds.pfnQueryStatusLed = ataStatus_QueryStatusLed;
 
-    /* pci */
-    pData->dev.config[0x00] = 0x86; /* Vendor: Intel */
-    pData->dev.config[0x01] = 0x80;
+    /* PCI configuration space. */
+    PCIDevSetVendorId(&pData->dev, 0x8086); /* Intel */
     if (pData->fPIIX4)
     {
-        pData->dev.config[0x02] = 0x11; /* Device: PIIX4 IDE */
-        pData->dev.config[0x03] = 0x71;
-        pData->dev.config[0x08] = 0x01; /* Revision: PIIX4E */
+        PCIDevSetDeviceId(&pData->dev, 0x7111); /* PIIX4 IDE */
+        PCIDevSetRevisionId(&pData->dev, 0x01); /* PIIX4E */
         pData->dev.config[0x48] = 0x00; /* UDMACTL */
         pData->dev.config[0x4A] = 0x00; /* UDMATIM */
         pData->dev.config[0x4B] = 0x00;
     }
     else
-    {
-        pData->dev.config[0x02] = 0x10; /* Device: PIIX3 IDE */
-        pData->dev.config[0x03] = 0x70;
-    }
-    pData->dev.config[0x04] = PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER;
-    pData->dev.config[0x09] = 0x8a; /* programming interface = PCI_IDE bus master is supported */
-    pData->dev.config[0x0a] = 0x01; /* class_sub = PCI_IDE */
-    pData->dev.config[0x0b] = 0x01; /* class_base = PCI_mass_storage */
-    pData->dev.config[0x0e] = 0x00; /* header_type */
+        PCIDevSetDeviceId(&pData->dev, 0x7010); /* PIIX3 IDE */
+    PCIDevSetCommand(   &pData->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
+    PCIDevSetClassProg( &pData->dev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
+    PCIDevSetClassSub(  &pData->dev, 0x01); /* class_sub = PCI_IDE */
+    PCIDevSetClassBase( &pData->dev, 0x01); /* class_base = PCI_mass_storage */
+    PCIDevSetHeaderType(&pData->dev, 0x00);
 
     pData->pDevIns          = pDevIns;
     pData->fGCEnabled       = fGCEnabled;
