@@ -33,14 +33,14 @@ namespace pm {
 class CollectorLinux : public CollectorHAL
 {
 public:
-    virtual int getHostCpuMHz(unsigned long *mhz);
-    virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-    virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
+    virtual int getHostCpuMHz(ULONG *mhz);
+    virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
-    int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed);
+    int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
 };
 
 // Linux Metric factory
@@ -56,7 +56,7 @@ MetricFactoryLinux::MetricFactoryLinux()
 int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
     int rc = VINF_SUCCESS;
-    unsigned long u32user, u32nice, u32kernel, u32idle;
+    ULONG u32user, u32nice, u32kernel, u32idle;
     FILE *f = fopen("/proc/stat", "r");
 
     if (f)
@@ -85,7 +85,7 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
     rc = getRawHostCpuLoad(&uHostUser, &uHostKernel, &uHostIdle);
     if (RT_SUCCESS(rc))
     {
-        unsigned long ulTmp;
+        ULONG ulTmp;
         *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
         rc = getRawProcessStats(process, user, kernel, &ulTmp);
     }
@@ -93,15 +93,15 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
     return rc;
 }
 
-int CollectorLinux::getHostCpuMHz(unsigned long *mhz)
+int CollectorLinux::getHostCpuMHz(ULONG *mhz)
 {
     return E_NOTIMPL;
 }
 
-int CollectorLinux::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
+int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     int rc = VINF_SUCCESS;
-    unsigned long buffers, cached;
+    ULONG buffers, cached;
     FILE *f = fopen("/proc/meminfo", "r");
 
     if (f)
@@ -125,10 +125,10 @@ int CollectorLinux::getHostMemoryUsage(unsigned long *total, unsigned long *used
     return rc;
 }
 
-int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
+int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     uint64_t u64Tmp;
-    unsigned long nPagesUsed;
+    ULONG nPagesUsed;
     int rc = getRawProcessStats(process, &u64Tmp, &u64Tmp, &nPagesUsed);
     if (RT_SUCCESS(rc))
     {
@@ -138,7 +138,7 @@ int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, unsigned long *used
     return rc;
 }
 
-int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, unsigned long *memPagesUsed)
+int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed)
 {
     int rc = VINF_SUCCESS;
     char *pszName;
@@ -147,7 +147,7 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     int iTmp;
     uint64_t u64Tmp;
     unsigned uTmp;
-    unsigned long ulTmp, u32user, u32kernel;
+    ULONG ulTmp, u32user, u32kernel;
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
 
     RTStrAPrintf(&pszName, "/proc/%d/stat", process);

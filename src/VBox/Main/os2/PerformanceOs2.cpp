@@ -28,11 +28,11 @@ namespace pm {
 class CollectorOS2 : public CollectorHAL
 {
 public:
-    virtual int getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-    virtual int getHostCpuMHz(unsigned long *mhz);
-    virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-    virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
-    virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
+    virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
+    virtual int getHostCpuMHz(ULONG *mhz);
+    virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
+    virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 };
 
 
@@ -42,27 +42,27 @@ MetricFactoryOS2::MetricFactoryOS2()
     Assert(mHAL);
 }
 
-int CollectorOS2::getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorOS2::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 {
     return E_NOTIMPL;
 }
 
-int CollectorOS2::getHostCpuMHz(unsigned long *mhz)
+int CollectorOS2::getHostCpuMHz(ULONG *mhz)
 {
     return E_NOTIMPL;
 }
 
-int CollectorOS2::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
+int CollectorOS2::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     return E_NOTIMPL;
 }
 
-int CollectorOS2::getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorOS2::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
 {
     return E_NOTIMPL;
 }
 
-int CollectorOS2::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
+int CollectorOS2::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     return E_NOTIMPL;
 }
