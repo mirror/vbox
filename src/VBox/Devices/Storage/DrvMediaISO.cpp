@@ -143,7 +143,6 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     else
     {
         PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Failed to open ISO file \"%s\""), pszName);
-        AssertMsgFailed(("Could not open ISO file %s, rc=%Vrc\n", pszName, rc));
         MMR3HeapFree(pszName);
     }
 
