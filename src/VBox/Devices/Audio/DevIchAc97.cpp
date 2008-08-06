@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox ICH AC97 Audio Controller.
+ * DevIchAc97 - VBox ICH AC97 Audio Controller.
  */
 
 /*
@@ -28,7 +28,7 @@
 #include <iprt/uuid.h>
 #include <iprt/string.h>
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 extern "C" {
 #include "audio.h"
@@ -200,7 +200,7 @@ typedef struct AC97LinkState
     uint8_t                 silence[128];
     int                     bup_flag;
     /** Pointer to the device instance. */
-    PPDMDEVINS              pDevIns;
+    PPDMDEVINSR3            pDevIns;
     /** Pointer to the connector of the attached audio driver. */
     PPDMIAUDIOCONNECTOR     pDrv;
     /** Pointer to the attached audio driver. */
@@ -1418,7 +1418,7 @@ static DECLCALLBACK(int) ichac97IOPortMap (PPCIDEVICE pPciDev, int iRegion,
  */
 static DECLCALLBACK(int) ichac97SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
     size_t  i;
     uint8_t active[LAST_INDEX];
     AC97LinkState *s = &pData->ac97;
@@ -1462,7 +1462,7 @@ static DECLCALLBACK(int) ichac97SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
 static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
                                           uint32_t u32Version)
 {
-    PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
     size_t  i;
     uint8_t active[LAST_INDEX];
     AC97LinkState *s = &pData->ac97;
@@ -1521,7 +1521,7 @@ static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
  */
 static DECLCALLBACK(void)  ac97Reset (PPDMDEVINS pDevIns)
 {
-    PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
 
     /*
      * Reset the device state (will need pDrv later).
@@ -1584,7 +1584,7 @@ static DECLCALLBACK(void *) ichac97QueryInterface (struct PDMIBASE *pInterface,
 static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                                            PCFGMNODE pCfgHandle)
 {
-    PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
     AC97LinkState    *s     = &pData->ac97;
     int               rc;
 
