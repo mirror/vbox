@@ -124,18 +124,18 @@ RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW
     const uint32_t offLast = u32Last - u32First;
     if (offLast == UINT32_MAX)
         /* get 4 random bytes and return them raw. */
-        rtRandGenBytes(&u.ab, sizeof(u.off));
+        rtRandGenBytes(&u.ab[0], sizeof(u.off));
     else if (!(offLast & UINT32_C(0xf0000000)))
     {
         /* get 4 random bytes and do simple squeeze. */
-        rtRandGenBytes(&u.ab, sizeof(u.off));
+        rtRandGenBytes(&u.ab[0], sizeof(u.off));
         u.off %= offLast + 1;
         u.off += u32First;
     }
     else
     {
         /* get 5 random bytes and do shifted squeeze. (this ain't perfect) */
-        rtRandGenBytes(&u.ab, sizeof(u.ab));
+        rtRandGenBytes(&u.ab[0], sizeof(u.ab));
         u.off %= (offLast >> 4) + 1;
         u.off <<= 4;
         u.off |= u.ab[4] & 0xf;
@@ -203,18 +203,18 @@ RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW
     const uint64_t offLast = u64Last - u64First;
     if (offLast == UINT64_MAX)
         /* get 8 random bytes and return them raw. */
-        rtRandGenBytes(&u.ab, sizeof(u.off));
+        rtRandGenBytes(&u.ab[0], sizeof(u.off));
     else if (!(offLast & UINT64_C(0xf000000000000000)))
     {
         /* get 8 random bytes and do simple squeeze. */
-        rtRandGenBytes(&u.ab, sizeof(u.off));
+        rtRandGenBytes(&u.ab[0], sizeof(u.off));
         u.off %= offLast + 1;
         u.off += u64First;
     }
     else
     {
         /* get 9 random bytes and do shifted squeeze. (this ain't perfect) */
-        rtRandGenBytes(&u.ab, sizeof(u.ab));
+        rtRandGenBytes(&u.ab[0], sizeof(u.ab));
         u.off %= (offLast >> 4) + 1;
         u.off <<= 4;
         u.off |= u.ab[8] & 0xf;
