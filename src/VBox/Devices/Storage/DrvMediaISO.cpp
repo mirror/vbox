@@ -128,10 +128,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     char *pszName;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: query for \"Path\" string return %Vra.\n", rc));
-        return rc;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Path\" from the config"));
 
     /*
      * Open the image.
@@ -145,6 +142,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     }
     else
     {
+        PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Failed to open ISO file \"%s\""), pszName);
         AssertMsgFailed(("Could not open ISO file %s, rc=%Vrc\n", pszName, rc));
         MMR3HeapFree(pszName);
     }
