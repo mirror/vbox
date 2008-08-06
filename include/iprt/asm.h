@@ -4262,7 +4262,7 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
 
 
 /**
- * Devides a 64-bit unsigned by a 32-bit unsigned returning an unsigned 32-bit result.
+ * Divides a 64-bit unsigned by a 32-bit unsigned returning an unsigned 32-bit result.
  *
  * @returns u64 / u32.
  */
@@ -4296,7 +4296,7 @@ DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
 
 
 /**
- * Devides a 64-bit signed by a 32-bit signed returning a signed 32-bit result.
+ * Divides a 64-bit signed by a 32-bit signed returning a signed 32-bit result.
  *
  * @returns u64 / u32.
  */
@@ -4321,6 +4321,80 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
         mov     ecx, [i32]
         idiv    ecx
         mov     [i32], eax
+    }
+#  endif
+    return i32;
+# endif /* !RT_ARCH_AMD64 */
+}
+#endif
+
+
+/**
+ * Performs 64-bit unsigned by a 32-bit unsigned division with a 32-bit unsigned result,
+ * returning the rest.
+ *
+ * @returns u64 % u32.
+ *
+ * @remarks It is important that the result is <= UINT32_MAX or we'll overflow and crash.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
+DECLASM(uint32_t) ASMModU64ByU32RetU32(uint64_t u64, uint32_t u32);
+#else
+DECLINLINE(uint32_t) ASMModU64ByU32RetU32(uint64_t u64, uint32_t u32)
+{
+# ifdef RT_ARCH_AMD64
+    return (uint32_t)(u64 % u32);
+# else /* !RT_ARCH_AMD64 */
+#  if RT_INLINE_ASM_GNU_STYLE
+    RTCCUINTREG uDummy;
+    __asm__ __volatile__("divl %3"
+                         : "=a" (uDummy), "=d"(u32)
+                         : "A" (u64), "r" (u32));
+#  else
+    __asm
+    {
+        mov     eax, dword ptr [u64]
+        mov     edx, dword ptr [u64 + 4]
+        mov     ecx, [u32]
+        div     ecx
+        mov     [u32], edx
+    }
+#  endif
+    return u32;
+# endif /* !RT_ARCH_AMD64 */
+}
+#endif
+
+
+/**
+ * Performs 64-bit signed by a 32-bit signed division with a 32-bit signed result,
+ * returning the rest.
+ *
+ * @returns u64 % u32.
+ *
+ * @remarks It is important that the result is <= UINT32_MAX or we'll overflow and crash.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
+DECLASM(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32);
+#else
+DECLINLINE(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32)
+{
+# ifdef RT_ARCH_AMD64
+    return (int32_t)(i64 % i32);
+# else /* !RT_ARCH_AMD64 */
+#  if RT_INLINE_ASM_GNU_STYLE
+    RTCCUINTREG iDummy;
+    __asm__ __volatile__("idivl %3"
+                         : "=a" (iDummy), "=d"(i32)
+                         : "A" (i64), "r" (i32));
+#  else
+    __asm
+    {
+        mov     eax, dword ptr [i64]
+        mov     edx, dword ptr [i64 + 4]
+        mov     ecx, [i32]
+        idiv    ecx
+        mov     [i32], edx
     }
 #  endif
     return i32;
