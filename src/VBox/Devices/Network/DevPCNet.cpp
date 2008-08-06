@@ -1166,7 +1166,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
     uint32_t cb;
     int rc = CTXALLSUFF(pData->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
-    if (VBOX_SUCCESS(rc) && cb)
+    if (RT_SUCCESS(rc) && cb)
     {
         if (    (GCPhysFault >= pData->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pData, 0))
 #ifdef PCNET_MONITOR_RECEIVE_RING
@@ -1177,7 +1177,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             uint32_t offsetTDRA = (GCPhysFault - pData->GCTDRA);
 
             int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWrite)); ;
 
@@ -1221,7 +1221,7 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
                                               size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
-    PCNetState *pData   = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData   = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
 #ifdef VBOX_WITH_STATISTICS
@@ -1616,7 +1616,7 @@ static void pcnetStop(PCNetState *pData)
 #ifdef IN_RING3
 static DECLCALLBACK(void) pcnetWakeupReceive(PPDMDEVINS pDevIns)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     STAM_COUNTER_INC(&pData->StatRxOverflowWakeup);
     if (pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
         RTSemEventSignal(pData->hEventOutOfRxSpace);
@@ -1992,7 +1992,7 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
  */
 static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     NOREF(pItem);
 
     /* Clear counter .*/
@@ -2467,7 +2467,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
  */
 static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     /*
      * We can enter this function in two states, initializing or resuming.
@@ -2527,7 +2527,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
  */
 static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     return RTSemEventSignal(pData->hSendEventSem);
 }
 
@@ -3418,7 +3418,7 @@ static uint32_t pcnetMMIOReadU32(PCNetState *pData, RTGCPHYS addr)
 PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
                                         RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int        rc;
 
     STAM_PROFILE_ADV_START(&pData->StatAPROMRead, a);
@@ -3464,7 +3464,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
                                          RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int        rc;
 
     if (cb == 1)
@@ -3506,7 +3506,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIORead), a);
@@ -3547,7 +3547,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                                     RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIOWrite), a);
@@ -3690,7 +3690,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
  */
 static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc;
 
     STAM_PROFILE_ADV_START(&pData->StatTimer, a);
@@ -3713,7 +3713,7 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     pData->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pData);
@@ -3733,14 +3733,14 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
     if (pData->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
         rc = TMTimerSetMillies(pData->pTimerRestore, 1500);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         pData->fLinkTempDown = false;
         if (pData->fLinkUp)
@@ -3786,33 +3786,33 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRe
 
     rc = PDMDevHlpIOPortRegister(pDevIns, Port, 0x10, 0, pcnetIOPortAPromWrite,
                                  pcnetIOPortAPromRead, NULL, NULL, "PCNet ARPOM");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, Port + 0x10, 0x10, 0, pcnetIOPortWrite,
                                  pcnetIOPortRead, NULL, NULL, "PCNet");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (pData->fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
                                        "pcnetIOPortAPromRead", NULL, NULL, "PCNet aprom");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
                                        "pcnetIOPortRead", NULL, NULL, "PCNet");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     if (pData->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
                                        "pcnetIOPortAPromRead", NULL, NULL, "PCNet aprom");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
                                        "pcnetIOPortRead", NULL, NULL, "PCNet");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -3845,7 +3845,7 @@ static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegi
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
     rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, pData,
                                pcnetMMIOWrite, pcnetMMIORead, NULL, "PCNet");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pData->MMIOBase = GCPhysAddress;
     return rc;
@@ -3884,7 +3884,7 @@ static DECLCALLBACK(int) pcnetMMIOSharedMap(PPCIDEVICE pPciDev, /*unsigned*/ int
  */
 static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     bool        fRcvRing = false;
     bool        fXmtRing = false;
 
@@ -4111,7 +4111,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
@@ -4130,7 +4130,7 @@ static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  */
 static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     int rc = VINF_SUCCESS;
 
     SSMR3PutBool(pSSMHandle, pData->fLinkUp);
@@ -4154,7 +4154,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     return VINF_SUCCESS;
 #else
     rc = TMR3TimerSave(pData->CTX_SUFF(pTimerPoll), pSSMHandle);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
     if (pData->fAm79C973)
@@ -4172,7 +4172,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  */
 static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
@@ -4192,7 +4192,7 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  */
 static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     RTMAC       Mac;
     if (   SSM_VERSION_MAJOR_CHANGED(u32Version, PCNET_SAVEDSTATE_VERSION)
         || SSM_VERSION_MINOR(u32Version) < 7)
@@ -4531,7 +4531,7 @@ static DECLCALLBACK(void) pcnetSuspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     if (pData->fLinkTempDown)
     {
         pData->cLinkDownReported = 0x10000;
@@ -4551,7 +4551,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     pData->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
     pData->pXmitQueueRC  = PDMQueueRCPtr(pData->pXmitQueueR3);
     pData->pCanRxQueueRC = PDMQueueRCPtr(pData->pCanRxQueueR3);
@@ -4578,7 +4578,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 {
-    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
 
     if (PDMCritSectIsInitialized(&pData->CritSect))
     {
@@ -4617,7 +4617,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PCNetState     *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState     *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
     PPDMIBASE       pBase;
     char            szTmp[128];
     int             rc;
@@ -4646,32 +4646,32 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Read the configuration.
      */
     rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pData->MacConfigured, sizeof(pData->MacConfigured));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"MAC\" value"));
     rc = CFGMR3QueryBoolDef(pCfgHandle, "CableConnected", &pData->fLinkUp, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"CableConnected\" value"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "Am79C973", &pData->fAm79C973, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Am79C973\" value"));
 
     rc = CFGMR3QueryU32Def(pCfgHandle, "LineSpeed", &pData->u32LinkSpeed, 1000000); /* 1GBit/s (in kbps units)*/
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"LineSpeed\" value"));
 
 #ifdef PCNET_GC_ENABLED
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pData->fGCEnabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pData->fR0Enabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
@@ -4735,22 +4735,22 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register the PCI device, its I/O regions, the timer and the saved state item.
      */
     rc = PDMDevHlpPCIRegister(pDevIns, &pData->PciDev);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, PCNET_IOPORT_SIZE,
                                       PCI_ADDRESS_SPACE_IO, pcnetIOPortMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, PCNET_PNPMMIO_SIZE,
                                       PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     bool fPrivIfEnabled;
     rc = CFGMR3QueryBool(pCfgHandle, "PrivIfEnabled", &fPrivIfEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPrivIfEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"PrivIfEnabled\" value"));
 
@@ -4761,11 +4761,11 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          * should not care if there is an additional PCI ressource but just in case we made this configurable.
          */
         rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pData->pSharedMMIOR3, "PCNetShMem");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);
         rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pData->pSharedMMIORC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
         pData->pSharedMMIOR0 = (uintptr_t)pData->pSharedMMIOR3; /** @todo #1865: Map MMIO2 into ring-0. */
@@ -4773,7 +4773,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pcnetInitSharedMemory(pData);
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,
                                           PCI_ADDRESS_SPACE_MEM, pcnetMMIOSharedMap);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -4782,13 +4782,13 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Resolve the R0 and RC handlers.
      */
     rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pData->pfnEMInterpretInstructionR0);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PDMR3GetSymbolGCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionRC);
     AssertLogRelMsgRCReturn(rc, ("PDMR3GetSymbolGCLazy(EMInterpretInstruction) -> %Vrc\n", rc), rc);
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer,
                                 "PCNet Poll Timer", &pData->pTimerPollR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pData->pTimerPollR0 = TMTimerR0Ptr(pData->pTimerPollR3);
     pData->pTimerPollRC = TMTimerRCPtr(pData->pTimerPollR3);
@@ -4812,7 +4812,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                               PCNET_SAVEDSTATE_VERSION, sizeof(*pData),
                               pcnetSavePrep, pcnetSaveExec, NULL,
                               pcnetLoadPrep, pcnetLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -4822,7 +4822,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     char szName[24];
     RTStrPrintf(szName, sizeof(szName), "PCNet#%d", iInstance);
     rc = PDMDevHlpCritSectInit(pDevIns, &pData->CritSect, szName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = RTSemEventCreate(&pData->hEventOutOfRxSpace);
@@ -4833,7 +4833,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
                                  pcnetXmitQueueConsumer, true, &pData->pXmitQueueR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pData->pXmitQueueR0 = PDMQueueR0Ptr(pData->pXmitQueueR3);
     pData->pXmitQueueRC = PDMQueueRCPtr(pData->pXmitQueueR3);
@@ -4843,7 +4843,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
                                  pcnetCanRxQueueConsumer, true, &pData->pCanRxQueueR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pData->pCanRxQueueR0 = PDMQueueR0Ptr(pData->pCanRxQueueR3);
     pData->pCanRxQueueRC = PDMQueueRCPtr(pData->pCanRxQueueR3);
@@ -4858,7 +4858,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Attach status driver (optional).
      */
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->IBase, &pBase, "Status Port");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pData->pLedsConnector = (PPDMILEDCONNECTORS)
             pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
@@ -4871,7 +4871,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Attach driver.
      */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Network Port");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (rc == VINF_NAT_DNS)
         {
