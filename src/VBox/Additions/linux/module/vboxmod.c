@@ -1068,8 +1068,8 @@ static __init int init(void)
                 vbox_major, vboxDev->irq, vboxDev->io_port,
                 vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
                 vboxDev->hypervisorStart, vboxDev->hypervisorSize));
-    Log(("Successfully loaded VirtualBox device version "
-           VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n"));
+    printk(KERN_DEBUG "vboxadd: Successfully loaded version "
+            VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
 
     /* successful return */
     PCI_DEV_PUT(pcidev);
@@ -1078,7 +1078,10 @@ static __init int init(void)
 fail:
     PCI_DEV_PUT(pcidev);
     free_resources();
-    unregister_chrdev(vbox_major, "vboxadd");
+    if (vbox_major > 0)
+        unregister_chrdev(vbox_major, "vboxadd");
+    else
+        misc_deregister(&gMiscDevice);
     return err;
 }
 
@@ -1088,7 +1091,10 @@ fail:
  */
 static __exit void fini(void)
 {
-    unregister_chrdev(vbox_major, "vboxadd");
+    if (vbox_major > 0)
+        unregister_chrdev(vbox_major, "vboxadd");
+    else
+        misc_deregister(&gMiscDevice);
     free_resources();
     vboxadd_cmc_fini ();
 }
