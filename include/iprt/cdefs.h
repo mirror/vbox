@@ -576,17 +576,19 @@
 # define DECLR3CALLBACKMEMBER(type, name, args)  RTR3PTR name
 #endif
 
-/** @def DECLGCCALLBACKMEMBER
- * How to declare an call back function pointer member - GC Ptr.
+/** @def DECLRCCALLBACKMEMBER
+ * How to declare an call back function pointer member - RC Ptr.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  */
 #ifdef IN_GC
-# define DECLGCCALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
+# define DECLRCCALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
 #else
-# define DECLGCCALLBACKMEMBER(type, name, args)  RTRCPTR name
+# define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
 #endif
+/** @deprecated */
+#define DECLGCCALLBACKMEMBER(type, name, args) DECLRCCALLBACKMEMBER(type, name, args)
 
 /** @def DECLR0CALLBACKMEMBER
  * How to declare an call back function pointer member - R0 Ptr.
