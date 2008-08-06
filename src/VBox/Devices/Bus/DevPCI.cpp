@@ -1507,26 +1507,24 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Fill in PCI configs and add them to the bus.
      */
     /* i440FX */
-    pBus->PciDev.config[0x00]         = 0x86; /* vendor_id: Intel */
-    pBus->PciDev.config[0x01]         = 0x80;
-    pBus->PciDev.config[0x02]         = 0x37; /* device_id: */
-    pBus->PciDev.config[0x03]         = 0x12;
-    pBus->PciDev.config[0x08]         = 0x02; /* revision */
-    pBus->PciDev.config[0x0a]         = 0x00; /* class_sub = host2pci */
-    pBus->PciDev.config[0x0b]         = 0x06; /* class_base = PCI_bridge */
-    pBus->PciDev.config[0x0e]         = 0x00; /* header_type */
+    PCIDevSetVendorId(  &pBus->PciDev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  &pBus->PciDev, 0x1237);
+    PCIDevSetRevisionId(&pBus->PciDev,   0x02);
+    PCIDevSetClassSub(  &pBus->PciDev,   0x00); /* host2pci */
+    PCIDevSetClassBase( &pBus->PciDev,   0x06); /* PCI_bridge */
+    PCIDevSetHeaderType(&pBus->PciDev,   0x00);
+
     pBus->PciDev.pDevIns              = pDevIns;
     pBus->PciDev.Int.s.fRequestedDevFn= true;
     pciRegisterInternal(pBus, 0, &pBus->PciDev, "i440FX");
 
     /* PIIX3 */
-    pBus->PIIX3State.dev.config[0x00] = 0x86; /* vendor:    Intel */
-    pBus->PIIX3State.dev.config[0x01] = 0x80;
-    pBus->PIIX3State.dev.config[0x02] = 0x00; /* device_id: 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
-    pBus->PIIX3State.dev.config[0x03] = 0x70;
-    pBus->PIIX3State.dev.config[0x0a] = 0x01; /* class_sub = PCI_ISA */
-    pBus->PIIX3State.dev.config[0x0b] = 0x06; /* class_base = PCI_bridge */
-    pBus->PIIX3State.dev.config[0x0e] = 0x80; /* header_type = PCI_multifunction, generic */
+    PCIDevSetVendorId(  &pBus->PIIX3State.dev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  &pBus->PIIX3State.dev, 0x7000); /* 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
+    PCIDevSetClassSub(  &pBus->PIIX3State.dev,   0x01); /* PCI_ISA */
+    PCIDevSetClassBase( &pBus->PIIX3State.dev,   0x06); /* PCI_bridge */
+    PCIDevSetHeaderType(&pBus->PIIX3State.dev,   0x80); /* PCI_multifunction, generic */
+
     pBus->PIIX3State.dev.pDevIns      = pDevIns;
     pBus->PciDev.Int.s.fRequestedDevFn= true;
     pciRegisterInternal(pBus, 8, &pBus->PIIX3State.dev, "PIIX3");
