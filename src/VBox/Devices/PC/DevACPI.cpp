@@ -161,8 +161,9 @@ struct ACPIState
     uint16_t            pm1a_ctl;
     uint16_t            Alignment0;
     int64_t             pm_timer_initial;
-    R3R0PTRTYPE(PTMTIMER) tsHC;
-    RCPTRTYPE(PTMTIMER)   tsGC;
+    PTMTIMERR3          tsR3;
+    PTMTIMERR0          tsR0;
+    PTMTIMERRC          tsRC;
 
     uint32_t            gpe0_en;
     uint32_t            gpe0_sts;
@@ -904,15 +905,15 @@ static void acpiPMTimerReset (ACPIState *s)
 {
     uint64_t interval, freq;
 
-    freq = TMTimerGetFreq (s->CTXSUFF(ts));
+    freq = TMTimerGetFreq (s->CTX_SUFF(ts));
     interval = ASMMultU64ByU32DivByU32 (0xffffffff, freq, PM_TMR_FREQ);
     Log (("interval = %RU64\n", interval));
-    TMTimerSet (s->CTXSUFF(ts), TMTimerGet (s->CTXSUFF(ts)) + interval);
+    TMTimerSet (s->CTX_SUFF(ts), TMTimerGet (s->CTX_SUFF(ts)) + interval);
 }
 
 static DECLCALLBACK(void) acpiTimer (PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
 
     Log (("acpi: pm timer sts %#x (%d), en %#x (%d)\n",
           s->pm1a_sts, (s->pm1a_sts & TMR_STS) != 0,
@@ -1090,7 +1091,7 @@ IO_READ_PROTO (acpiFdcStatusRead)
     switch (cb)
     {
         case 4:
-            *pu32 = s->u8UseFdc 
+            *pu32 = s->u8UseFdc
                 ?   STA_DEVICE_PRESENT_MASK                 /* present */
                   | STA_DEVICE_ENABLED_MASK                 /* enabled and decodes its resources */
                   | STA_DEVICE_SHOW_IN_UI_MASK              /* should be shown in UI */
@@ -1277,11 +1278,11 @@ IO_READ_PROTO (acpiPMTmrRead)
 {
     if (cb == 4)
     {
-        ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
-        int64_t now = TMTimerGet (s->CTXSUFF(ts));
+        ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
+        int64_t now = TMTimerGet (s->CTX_SUFF(ts));
         int64_t elapsed = now - s->pm_timer_initial;
 
-        *pu32 = ASMMultU64ByU32DivByU32 (elapsed, PM_TMR_FREQ, TMTimerGetFreq (s->CTXSUFF(ts)));
+        *pu32 = ASMMultU64ByU32DivByU32 (elapsed, PM_TMR_FREQ, TMTimerGetFreq (s->CTX_SUFF(ts)));
         Log (("acpi: acpiPMTmrRead -> %#x\n", *pu32));
         return VINF_SUCCESS;
     }
@@ -1431,14 +1432,14 @@ static const SSMFIELD g_AcpiSavedStateFields[] =
 
 static DECLCALLBACK(int) acpi_save_state (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
     return SSMR3PutStruct (pSSMHandle, s, &g_AcpiSavedStateFields[0]);
 }
 
 static DECLCALLBACK(int) acpi_load_state (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
                                           uint32_t u32Version)
 {
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
     int rc;
 
     if (u32Version != 4)
@@ -1566,7 +1567,7 @@ static int acpiPlantTables (ACPIState *s)
 static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     int rc;
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
     uint32_t rsdp_addr;
     PCIDevice *dev;
     bool fGCEnabled;
@@ -1668,15 +1669,16 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertRCReturn(rc, rc);
     }
 
-    rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsHC);
+    rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsR3);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
 
-    s->tsGC = TMTimerGCPtr (s->tsHC);
-    s->pm_timer_initial = TMTimerGet (s->tsHC);
+    s->tsR0 = TMTimerR0Ptr (s->tsR3);
+    s->tsRC = TMTimerRCPtr (s->tsR3);
+    s->pm_timer_initial = TMTimerGet (s->tsR3);
     acpiPMTimerReset (s);
 
     dev = &s->dev;
@@ -1757,18 +1759,18 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
  */
 static DECLCALLBACK(void) acpiRelocate (PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
-    s->tsGC = TMTimerGCPtr (s->tsHC);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
+    s->tsRC = TMTimerGCPtr (s->CTX_SUFF(ts));
 }
 
 static DECLCALLBACK(void) acpiReset (PPDMDEVINS pDevIns)
 {
-    ACPIState *s = PDMINS2DATA (pDevIns, ACPIState *);
+    ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
 
     s->pm1a_en           = 0;
     s->pm1a_sts          = 0;
     s->pm1a_ctl          = 0;
-    s->pm_timer_initial  = TMTimerGet (s->CTXSUFF(ts));
+    s->pm_timer_initial  = TMTimerGet (s->CTX_SUFF(ts));
     acpiPMTimerReset(s);
     s->uBatteryIndex     = 0;
     s->uSystemInfoIndex  = 0;
