@@ -259,7 +259,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys);
 static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns);
-static DECLCALLBACK(PCPDMPCIHLPGC) pdmR3PciHlp_GetGCHelpers(PPDMDEVINS pDevIns);
+static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
 
@@ -534,7 +534,7 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     pdmR3PciHlp_IsaSetIrq,
     pdmR3PciHlp_IoApicSetIrq,
     pdmR3PciHlp_IsMMIO2Base,
-    pdmR3PciHlp_GetGCHelpers,
+    pdmR3PciHlp_GetRCHelpers,
     pdmR3PciHlp_GetR0Helpers,
     pdmR3PciHlp_Lock,
     pdmR3PciHlp_Unlock,
@@ -4253,18 +4253,18 @@ static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnGetGCHelpers */
-static DECLCALLBACK(PCPDMPCIHLPGC) pdmR3PciHlp_GetGCHelpers(PPDMDEVINS pDevIns)
+/** @copydoc PDMPCIHLPR3::pfnGetRCHelpers */
+static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
-    RTGCPTR32 pGCHelpers = 0;
-    int rc = PDMR3GetSymbolGC(pDevIns->Internal.s.pVMHC, NULL, "g_pdmGCPciHlp", &pGCHelpers);
+    RTRCPTR pRCHelpers = 0;
+    int rc = PDMR3GetSymbolGC(pDevIns->Internal.s.pVMHC, NULL, "g_pdmRCPciHlp", &pRCHelpers);
     AssertReleaseRC(rc);
-    AssertRelease(pGCHelpers);
-    LogFlow(("pdmR3IoApicHlp_GetGCHelpers: caller='%s'/%d: returns %VGv\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pGCHelpers));
-    return pGCHelpers;
+    AssertRelease(pRCHelpers);
+    LogFlow(("pdmR3IoApicHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pRCHelpers));
+    return pRCHelpers;
 }
 
 

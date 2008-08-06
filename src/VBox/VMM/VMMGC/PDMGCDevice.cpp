@@ -62,7 +62,7 @@ extern DECLEXPORT(const PDMDEVHLPGC)    g_pdmGCDevHlp;
 extern DECLEXPORT(const PDMPICHLPGC)    g_pdmGCPicHlp;
 extern DECLEXPORT(const PDMAPICHLPGC)   g_pdmGCApicHlp;
 extern DECLEXPORT(const PDMIOAPICHLPGC) g_pdmGCIoApicHlp;
-extern DECLEXPORT(const PDMPCIHLPGC)    g_pdmGCPciHlp;
+extern DECLEXPORT(const PDMPCIHLPRC)    g_pdmRCPciHlp;
 __END_DECLS
 
 
@@ -116,13 +116,13 @@ static DECLCALLBACK(void) pdmGCIoApicHlp_Unlock(PPDMDEVINS pDevIns);
 /** @} */
 
 
-/** @name PCI Bus GC Helpers
+/** @name PCI Bus RC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmGCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmGCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(int) pdmGCPciHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmGCPciHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void) pdmRCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(int) pdmRCPciHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(void) pdmRCPciHlp_Unlock(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -193,16 +193,16 @@ extern DECLEXPORT(const PDMIOAPICHLPGC) g_pdmGCIoApicHlp =
 
 
 /**
- * The Guest Context PCI Bus Helper Callbacks.
+ * The Raw-Mode Context PCI Bus Helper Callbacks.
  */
-extern DECLEXPORT(const PDMPCIHLPGC) g_pdmGCPciHlp =
+extern DECLEXPORT(const PDMPCIHLPRC) g_pdmRCPciHlp =
 {
-    PDM_PCIHLPGC_VERSION,
-    pdmGCPciHlp_IsaSetIrq,
-    pdmGCPciHlp_IoApicSetIrq,
-    pdmGCPciHlp_Lock,
-    pdmGCPciHlp_Unlock,
-    PDM_PCIHLPGC_VERSION, /* the end */
+    PDM_PCIHLPRC_VERSION,
+    pdmRCPciHlp_IsaSetIrq,
+    pdmRCPciHlp_IoApicSetIrq,
+    pdmRCPciHlp_Lock,
+    pdmRCPciHlp_Unlock,
+    PDM_PCIHLPRC_VERSION, /* the end */
 };
 
 
@@ -471,25 +471,25 @@ static DECLCALLBACK(void) pdmGCIoApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMPCIHLPGC::pfnIsaSetIrq */
-static DECLCALLBACK(void) pdmGCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmRCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmGCPciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
+    Log4(("pdmRCPciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     pdmGCIsaSetIrq(pDevIns->Internal.s.pVMGC, iIrq, iLevel);
 }
 
 
 /** @copydoc PDMPCIHLPGC::pfnIoApicSetIrq */
-static DECLCALLBACK(void) pdmGCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmGCPciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
+    Log4(("pdmRCPciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     pdmGCIoApicSetIrq(pDevIns->Internal.s.pVMGC, iIrq, iLevel);
 }
 
 
 /** @copydoc PDMPCIHLPGC::pfnLock */
-static DECLCALLBACK(int) pdmGCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
+static DECLCALLBACK(int) pdmRCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     return pdmLockEx(pDevIns->Internal.s.pVMGC, rc);
@@ -497,7 +497,7 @@ static DECLCALLBACK(int) pdmGCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 
 
 /** @copydoc PDMPCIHLPGC::pfnUnlock */
-static DECLCALLBACK(void) pdmGCPciHlp_Unlock(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pdmRCPciHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMGC);
