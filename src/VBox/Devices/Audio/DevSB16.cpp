@@ -281,7 +281,7 @@ static void aux_timer (void *opaque)
 #else  /* VBOX */
 static DECLCALLBACK(void) sb16Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    SB16State *s = PDMINS2DATA(pDevIns, SB16State *);
+    SB16State *s = PDMINS_2_DATA(pDevIns, SB16State *);
     s->can_write = 1;
     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
 }
@@ -1482,7 +1482,7 @@ static void SB_save (QEMUFile *f, void *opaque)
 #else
 static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    SB16State *s = PDMINS2DATA (pDevIns, SB16State *);
+    SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
 #endif
 
@@ -1551,7 +1551,7 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
 static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
                                    uint32_t u32Version)
 {
-    SB16State *s = PDMINS2DATA (pDevIns, SB16State *);
+    SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
 
     if (u32Version != SB16_SSM_VERSION)
@@ -1726,7 +1726,7 @@ static DECLCALLBACK(void *) sb16QueryInterface (struct PDMIBASE *pInterface,
 
 static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    SB16State *s = PDMINS2DATA(pDevIns, SB16State *);
+    SB16State *s = PDMINS_2_DATA(pDevIns, SB16State *);
     int rc;
 
     /*
