@@ -1,7 +1,7 @@
 #ifdef VBOX
-/* $Id: $ */
+/* $Id$ */
 /** @file
- * VBox VGA/VESA device
+ * DevVGA - VBox VGA/VESA device.
  */
 
 /*

@@ -1,8 +1,9 @@
+/* $Id$ */
 /** @file
+ * DevVGA - VBox VGA/VESA device, VBE modes.
  *
- * VBox VGA/VESA device:
  * List of static mode information, containing all "supported" VBE
- * modes and their 'settings'
+ * modes and their 'settings'.
  */
 
 /*

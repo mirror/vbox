@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Advanced Configuration and Power Interface (ACPI) Device.
+ * DevACPI - Advanced Configuration and Power Interface (ACPI) Device.
  */
 
 /*
