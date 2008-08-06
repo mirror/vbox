@@ -417,7 +417,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Setup table-view */
     mTwAts->verticalHeader()->setDefaultSectionSize (
-        (int) (mTwAts->fontMetrics().height() * 1.40 /* 130% of font height */));
+        (int) (mTwAts->fontMetrics().height() * 1.30 /* 130% of font height */));
     mTwAts->verticalHeader()->hide();
     mTwAts->horizontalHeader()->setStretchLastSection (true);
     mTwAts->setModel (mModel);
