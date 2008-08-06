@@ -38,14 +38,14 @@ namespace pm
     {
     public:
         CircularBuffer() : mData(0), mLength(0), mEnd(0), mWrapped(false) {};
-        void init(unsigned long length);
-        unsigned long length();
-        void put(unsigned long value);
-        void copyTo(unsigned long *data);
+        void init(ULONG length);
+        ULONG length();
+        void put(ULONG value);
+        void copyTo(ULONG *data);
     private:
-        unsigned long *mData;
-        unsigned long  mLength;
-        unsigned long  mEnd;
+        ULONG *mData;
+        ULONG  mLength;
+        ULONG  mEnd;
         bool           mWrapped;
     };
 
@@ -54,7 +54,7 @@ namespace pm
     public:
         SubMetric(const char *name)
         : mName(name) {};
-        void query(unsigned long *data);
+        void query(ULONG *data);
         const char *getName() { return mName; };
     private:
         const char *mName;
@@ -65,11 +65,11 @@ namespace pm
     class CollectorHAL
     {
     public:
-        virtual int getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-        virtual int getHostCpuMHz(unsigned long *mhz) = 0;
-        virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available) = 0;
-        virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
-        virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used) = 0;
+        virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
+        virtual int getHostCpuMHz(ULONG *mhz) = 0;
+        virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
+        virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
+        virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used) = 0;
 
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
@@ -82,11 +82,11 @@ namespace pm
         BaseMetric(CollectorHAL *hal, const char *name, ComPtr<IUnknown> object)
             : mHAL(hal), mLength(0), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
 
-        virtual void init(unsigned long period, unsigned long length) = 0;
+        virtual void init(ULONG period, ULONG length) = 0;
         virtual void collect() = 0;
         virtual const char *getUnit() = 0;
-        virtual unsigned long getMinValue() = 0;
-        virtual unsigned long getMaxValue() = 0;
+        virtual ULONG getMinValue() = 0;
+        virtual ULONG getMaxValue() = 0;
 
         void collectorBeat(uint64_t nowAt);
 
@@ -94,16 +94,16 @@ namespace pm
         void disable() { mEnabled = false; };
 
         bool isEnabled() { return mEnabled; };
-        unsigned long getPeriod() { return mPeriod; };
-        unsigned long getLength() { return mLength; };
+        ULONG getPeriod() { return mPeriod; };
+        ULONG getLength() { return mLength; };
         const char *getName() { return mName; };
         ComPtr<IUnknown> getObject() { return mObject; };
         bool associatedWith(ComPtr<IUnknown> object) { return mObject == object; };
 
     protected:
         CollectorHAL    *mHAL;
-        unsigned long    mPeriod;
-        unsigned long    mLength;
+        ULONG    mPeriod;
+        ULONG    mLength;
         const char      *mName;
         ComPtr<IUnknown> mObject;
         uint64_t         mLastSampleTaken;
@@ -115,12 +115,12 @@ namespace pm
     public:
         HostCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
-        void init(unsigned long period, unsigned long length);
+        void init(ULONG period, ULONG length);
 
         void collect();
         const char *getUnit() { return "%"; };
-        unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
 
     protected:
         SubMetric *mUser;
@@ -147,11 +147,11 @@ namespace pm
         HostCpuMhz(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *mhz)
         : BaseMetric(hal, "CPU/MHz", object), mMHz(mhz) {};
 
-        void init(unsigned long period, unsigned long length);
+        void init(ULONG period, ULONG length);
         void collect();
         const char *getUnit() { return "MHz"; };
-        unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return UINT32_MAX; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return UINT32_MAX; };
     private:
         SubMetric *mMHz;
     };
@@ -162,11 +162,11 @@ namespace pm
         HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
         : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
 
-        void init(unsigned long period, unsigned long length);
+        void init(ULONG period, ULONG length);
         void collect();
         const char *getUnit() { return "kB"; };
-        unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return UINT32_MAX; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return UINT32_MAX; };
     private:
         SubMetric *mTotal;
         SubMetric *mUsed;
@@ -179,11 +179,11 @@ namespace pm
         MachineCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
         : BaseMetric(hal, "CPU/Load", object), mProcess(process), mUser(user), mKernel(kernel) {};
 
-        void init(unsigned long period, unsigned long length);
+        void init(ULONG period, ULONG length);
         void collect();
         const char *getUnit() { return "%"; };
-        unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
     protected:
         RTPROCESS  mProcess;
         SubMetric *mUser;
@@ -209,11 +209,11 @@ namespace pm
         MachineRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used)
         : BaseMetric(hal, "RAM/Usage", object), mProcess(process), mUsed(used) {};
 
-        void init(unsigned long period, unsigned long length);
+        void init(ULONG period, ULONG length);
         void collect();
         const char *getUnit() { return "kB"; };
-        unsigned long getMinValue() { return 0; };
-        unsigned long getMaxValue() { return UINT32_MAX; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return UINT32_MAX; };
     private:
         RTPROCESS  mProcess;
         SubMetric *mUsed;
@@ -223,28 +223,28 @@ namespace pm
     class Aggregate
     {
     public:
-        virtual unsigned long compute(unsigned long *data, unsigned long length) = 0;
+        virtual ULONG compute(ULONG *data, ULONG length) = 0;
         virtual const char *getName() = 0;
     };
 
     class AggregateAvg : public Aggregate
     {
     public:
-        virtual unsigned long compute(unsigned long *data, unsigned long length);
+        virtual ULONG compute(ULONG *data, ULONG length);
         virtual const char *getName();
     };
 
     class AggregateMin : public Aggregate
     {
     public:
-        virtual unsigned long compute(unsigned long *data, unsigned long length);
+        virtual ULONG compute(ULONG *data, ULONG length);
         virtual const char *getName();
     };
 
     class AggregateMax : public Aggregate
     {
     public:
-        virtual unsigned long compute(unsigned long *data, unsigned long length);
+        virtual ULONG compute(ULONG *data, ULONG length);
         virtual const char *getName();
     };
 
@@ -271,11 +271,11 @@ namespace pm
         const char *getName() { return mName.c_str(); };
         ComPtr<IUnknown> getObject() { return mBaseMetric->getObject(); };
         const char *getUnit() { return mBaseMetric->getUnit(); };
-        unsigned long getMinValue() { return mBaseMetric->getMinValue(); };
-        unsigned long getMaxValue() { return mBaseMetric->getMaxValue(); };
-        unsigned long getPeriod() { return mBaseMetric->getPeriod(); };
-        unsigned long getLength() { return mAggregate ? 1 : mBaseMetric->getLength(); };
-        void query(unsigned long **data, unsigned long *count);
+        ULONG getMinValue() { return mBaseMetric->getMinValue(); };
+        ULONG getMaxValue() { return mBaseMetric->getMaxValue(); };
+        ULONG getPeriod() { return mBaseMetric->getPeriod(); };
+        ULONG getLength() { return mAggregate ? 1 : mBaseMetric->getLength(); };
+        void query(ULONG **data, ULONG *count);
 
     private:
         std::string mName;

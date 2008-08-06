@@ -28,11 +28,11 @@ namespace pm {
 class CollectorDarwin : public CollectorHAL
 {
 public:
-    virtual int getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-    virtual int getHostCpuMHz(unsigned long *mhz);
-    virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-    virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
-    virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
+    virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
+    virtual int getHostCpuMHz(ULONG *mhz);
+    virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
+    virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 };
 
 MetricFactoryDarwin::MetricFactoryDarwin()
@@ -41,27 +41,27 @@ MetricFactoryDarwin::MetricFactoryDarwin()
     Assert(mHAL);
 }
 
-int CollectorDarwin::getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorDarwin::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 {
     return E_NOTIMPL;
 }
 
-int CollectorDarwin::getHostCpuMHz(unsigned long *mhz)
+int CollectorDarwin::getHostCpuMHz(ULONG *mhz)
 {
     return E_NOTIMPL;
 }
 
-int CollectorDarwin::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
+int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     return E_NOTIMPL;
 }
 
-int CollectorDarwin::getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorDarwin::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
 {
     return E_NOTIMPL;
 }
 
-int CollectorDarwin::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
+int CollectorDarwin::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     return E_NOTIMPL;
 }

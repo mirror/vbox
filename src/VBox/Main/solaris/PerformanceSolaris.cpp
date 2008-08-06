@@ -44,9 +44,9 @@ class CollectorSolaris : public CollectorHAL
 public:
     CollectorSolaris();
     ~CollectorSolaris();
-    virtual int getHostCpuMHz(unsigned long *mhz);
-    virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-    virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
+    virtual int getHostCpuMHz(ULONG *mhz);
+    virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
@@ -163,12 +163,12 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
     return rc;
 }
 
-int CollectorSolaris::getHostCpuMHz(unsigned long *mhz)
+int CollectorSolaris::getHostCpuMHz(ULONG *mhz)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int CollectorSolaris::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
+int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     int rc = VINF_SUCCESS;
 
@@ -198,7 +198,7 @@ int CollectorSolaris::getHostMemoryUsage(unsigned long *total, unsigned long *us
 
     return rc;
 }
-int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
+int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     int rc = VINF_SUCCESS;
     char *pszName;

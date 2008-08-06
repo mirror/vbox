@@ -74,12 +74,12 @@ BaseMetric *MetricFactory::createMachineRamUsage(ComPtr<IUnknown> object, RTPROC
 
 // Stubs for non-pure virtual methods
 
-int CollectorHAL::getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorHAL::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 {
     return E_NOTIMPL;
 }
 
-int CollectorHAL::getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorHAL::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
 {
     return E_NOTIMPL;
 }
@@ -113,7 +113,7 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
     return mObject == object;
 }*/
 
-void HostCpuLoad::init(unsigned long period, unsigned long length)
+void HostCpuLoad::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
@@ -124,7 +124,7 @@ void HostCpuLoad::init(unsigned long period, unsigned long length)
 
 void HostCpuLoad::collect()
 {
-    unsigned long user, kernel, idle;
+    ULONG user, kernel, idle;
     int rc = mHAL->getHostCpuLoad(&user, &kernel, &idle);
     if (RT_SUCCESS(rc))
     {
@@ -158,9 +158,9 @@ void HostCpuLoadRaw::collect()
         }
         else
         {
-            mUser->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff));
-            mKernel->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff));
-            mIdle->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff));
+            mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * userDiff / totalDiff));
+            mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff));
+            mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff));
         }
     
         mUserPrev   = user;
@@ -169,7 +169,7 @@ void HostCpuLoadRaw::collect()
     }
 }
 
-void HostCpuMhz::init(unsigned long period, unsigned long length)
+void HostCpuMhz::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
@@ -178,13 +178,13 @@ void HostCpuMhz::init(unsigned long period, unsigned long length)
 
 void HostCpuMhz::collect()
 {
-    unsigned long mhz;
+    ULONG mhz;
     int rc = mHAL->getHostCpuMHz(&mhz);
     if (RT_SUCCESS(rc))
         mMHz->put(mhz);
 }
 
-void HostRamUsage::init(unsigned long period, unsigned long length)
+void HostRamUsage::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
@@ -195,7 +195,7 @@ void HostRamUsage::init(unsigned long period, unsigned long length)
 
 void HostRamUsage::collect()
 {
-    unsigned long total, used, available;
+    ULONG total, used, available;
     int rc = mHAL->getHostMemoryUsage(&total, &used, &available);
     if (RT_SUCCESS(rc))
     {
@@ -207,7 +207,7 @@ void HostRamUsage::collect()
 
 
 
-void MachineCpuLoad::init(unsigned long period, unsigned long length)
+void MachineCpuLoad::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
@@ -217,7 +217,7 @@ void MachineCpuLoad::init(unsigned long period, unsigned long length)
 
 void MachineCpuLoad::collect()
 {
-    unsigned long user, kernel;
+    ULONG user, kernel;
     int rc = mHAL->getProcessCpuLoad(mProcess, &user, &kernel);
     if (RT_SUCCESS(rc))
     {
@@ -241,8 +241,8 @@ void MachineCpuLoadRaw::collect()
         }
         else
         {
-            mUser->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
-            mKernel->put((unsigned long)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
+            mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
+            mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
         }
     
         mHostTotalPrev     = hostTotal;
@@ -251,7 +251,7 @@ void MachineCpuLoadRaw::collect()
     }
 }
 
-void MachineRamUsage::init(unsigned long period, unsigned long length)
+void MachineRamUsage::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
@@ -260,28 +260,28 @@ void MachineRamUsage::init(unsigned long period, unsigned long length)
 
 void MachineRamUsage::collect()
 {
-    unsigned long used;
+    ULONG used;
     int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
     if (RT_SUCCESS(rc))
         mUsed->put(used);
 }
 
-void CircularBuffer::init(unsigned long length)
+void CircularBuffer::init(ULONG length)
 {
     if (mData)
         RTMemFree(mData);
     mLength = length;
-    mData = (unsigned long *)RTMemAllocZ(length * sizeof(unsigned long));
+    mData = (ULONG *)RTMemAllocZ(length * sizeof(ULONG));
     mWrapped = false;
     mEnd = 0;
 }
 
-unsigned long CircularBuffer::length()
+ULONG CircularBuffer::length()
 {
     return mWrapped ? mLength : mEnd;
 }
 
-void CircularBuffer::put(unsigned long value)
+void CircularBuffer::put(ULONG value)
 {
     if (mData)
     {
@@ -294,38 +294,38 @@ void CircularBuffer::put(unsigned long value)
     }
 }
 
-void CircularBuffer::copyTo(unsigned long *data)
+void CircularBuffer::copyTo(ULONG *data)
 {
     if (mWrapped)
     {
-        memcpy(data, mData + mEnd, (mLength - mEnd) * sizeof(unsigned long));
+        memcpy(data, mData + mEnd, (mLength - mEnd) * sizeof(ULONG));
         // Copy the wrapped part
         if (mEnd)
-            memcpy(data + (mLength - mEnd), mData, mEnd * sizeof(unsigned long));
+            memcpy(data + (mLength - mEnd), mData, mEnd * sizeof(ULONG));
     }
     else
-        memcpy(data, mData, mEnd * sizeof(unsigned long));
+        memcpy(data, mData, mEnd * sizeof(ULONG));
 }
 
-void SubMetric::query(unsigned long *data)
+void SubMetric::query(ULONG *data)
 {
     copyTo(data);
 }
     
-void Metric::query(unsigned long **data, unsigned long *count)
+void Metric::query(ULONG **data, ULONG *count)
 {
-    unsigned long length;
-    unsigned long *tmpData;
+    ULONG length;
+    ULONG *tmpData;
 
     length = mSubMetric->length();
     if (length)
     {
-        tmpData = (unsigned long*)RTMemAlloc(sizeof(*tmpData)*length);
+        tmpData = (ULONG*)RTMemAlloc(sizeof(*tmpData)*length);
         mSubMetric->query(tmpData);
         if (mAggregate)
         {
             *count = 1;
-            *data  = (unsigned long*)RTMemAlloc(sizeof(**data));
+            *data  = (ULONG*)RTMemAlloc(sizeof(**data));
             **data = mAggregate->compute(tmpData, length);
             RTMemFree(tmpData);
         }
@@ -342,12 +342,12 @@ void Metric::query(unsigned long **data, unsigned long *count)
     }
 }
 
-unsigned long AggregateAvg::compute(unsigned long *data, unsigned long length)
+ULONG AggregateAvg::compute(ULONG *data, ULONG length)
 {
     uint64_t tmp = 0;
-    for (unsigned long i = 0; i < length; ++i)
+    for (ULONG i = 0; i < length; ++i)
         tmp += data[i];
-    return (unsigned long)(tmp / length);
+    return (ULONG)(tmp / length);
 }
 
 const char * AggregateAvg::getName()
@@ -355,10 +355,10 @@ const char * AggregateAvg::getName()
     return "avg";
 }
 
-unsigned long AggregateMin::compute(unsigned long *data, unsigned long length)
+ULONG AggregateMin::compute(ULONG *data, ULONG length)
 {
-    unsigned long tmp = *data;
-    for (unsigned long i = 0; i < length; ++i)
+    ULONG tmp = *data;
+    for (ULONG i = 0; i < length; ++i)
         if (data[i] < tmp)
             tmp = data[i];
     return tmp;
@@ -369,10 +369,10 @@ const char * AggregateMin::getName()
     return "min";
 }
 
-unsigned long AggregateMax::compute(unsigned long *data, unsigned long length)
+ULONG AggregateMax::compute(ULONG *data, ULONG length)
 {
-    unsigned long tmp = *data;
-    for (unsigned long i = 0; i < length; ++i)
+    ULONG tmp = *data;
+    for (ULONG i = 0; i < length; ++i)
         if (data[i] > tmp)
             tmp = data[i];
     return tmp;

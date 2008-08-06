@@ -35,11 +35,11 @@ public:
     CollectorWin();
     ~CollectorWin();
 
-    virtual int getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle);
-    virtual int getHostCpuMHz(unsigned long *mhz);
-    virtual int getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available);
-    virtual int getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel);
-    virtual int getProcessMemoryUsage(RTPROCESS process, unsigned long *used);
+    virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
+    virtual int getHostCpuMHz(ULONG *mhz);
+    virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
+    virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
@@ -260,7 +260,7 @@ int CollectorWin::getObjects(IWbemHiPerfEnum *mEnum, IWbemObjectAccess ***objArr
     return VINF_SUCCESS;
 }
 
-int CollectorWin::getHostCpuLoad(unsigned long *user, unsigned long *kernel, unsigned long *idle)
+int CollectorWin::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -333,20 +333,20 @@ int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
     return rc;
 }
 
-int CollectorWin::getHostCpuMHz(unsigned long *mhz)
+int CollectorWin::getHostCpuMHz(ULONG *mhz)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int CollectorWin::getHostMemoryUsage(unsigned long *total, unsigned long *used, unsigned long *available)
+int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     MEMORYSTATUSEX mstat;
     
     mstat.dwLength = sizeof(mstat);
     if (GlobalMemoryStatusEx(&mstat))
     {
-        *total = (unsigned long)( mstat.ullTotalPhys / 1000 );
-        *available = (unsigned long)( mstat.ullAvailPhys / 1000 );
+        *total = (ULONG)( mstat.ullTotalPhys / 1000 );
+        *available = (ULONG)( mstat.ullAvailPhys / 1000 );
         *used = *total - *available;
     }
     else
@@ -355,7 +355,7 @@ int CollectorWin::getHostMemoryUsage(unsigned long *total, unsigned long *used, 
     return VINF_SUCCESS;
 }
 
-int CollectorWin::getProcessCpuLoad(RTPROCESS process, unsigned long *user, unsigned long *kernel)
+int CollectorWin::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -429,7 +429,7 @@ int CollectorWin::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64
     return rc;
 }
 
-int CollectorWin::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
+int CollectorWin::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     HRESULT hr;
     IWbemObjectAccess       **apEnumAccess = NULL;
@@ -471,7 +471,7 @@ int CollectorWin::getProcessMemoryUsage(RTPROCESS process, unsigned long *used)
             Log (("Failed to read 'WorkingSet' property. HR = %x\n", hr));
                 return VERR_INTERNAL_ERROR;
             }
-            *used = (unsigned long)(u64used / 1024);
+            *used = (ULONG)(u64used / 1024);
             rc = VINF_SUCCESS;
         }
         apEnumAccess[i]->Release();

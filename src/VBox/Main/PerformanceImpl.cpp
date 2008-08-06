@@ -346,7 +346,7 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it, ++i)
     {
         /* @todo Filtering goes here! */
-        unsigned long *values, length;
+        ULONG *values, length;
         /* @todo We may want to revise the query method to get rid of excessive alloc/memcpy calls. */
         (*it)->query(&values, &length);
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
