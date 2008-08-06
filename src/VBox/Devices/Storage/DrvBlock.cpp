@@ -757,10 +757,8 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      */
     pData->pDrvBlockPort = (PPDMIBLOCKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_PORT);
     if (!pData->pDrvBlockPort)
-    {
-        AssertMsgFailed(("Configuration error: No block port interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
+                                N_("No block port interface above"));
 
     /* Try to get the optional async block port interface above. */
     pData->pDrvBlockAsyncPort = (PPDMIBLOCKASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_ASYNC_PORT);
@@ -774,10 +772,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     char *psz;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Type", &psz);
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Failed to obtain the type, rc=%Vrc.\n", rc));
-        return VERR_PDM_BLOCK_NO_TYPE;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the type"));
     if (!strcmp(psz, "HardDisk"))
         pData->enmType = PDMBLOCKTYPE_HARD_DISK;
     else if (!strcmp(psz, "DVD"))
@@ -796,7 +791,8 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         pData->enmType = PDMBLOCKTYPE_FLOPPY_360;
     else
     {
-        AssertMsgFailed(("Configuration error: Unknown type \"%s\".\n", psz));
+        PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_BLOCK_UNKNOWN_TYPE, RT_SRC_POS,
+                            N_("Unknown type \"%s\""), psz);
         MMR3HeapFree(psz);
         return VERR_PDM_BLOCK_UNKNOWN_TYPE;
     }
@@ -804,66 +800,36 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     MMR3HeapFree(psz); psz = NULL;
 
     /* Mountable */
-    rc = CFGMR3QueryBool(pCfgHandle, "Mountable", &pData->fMountable);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fMountable = false;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"Mountable\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "Mountable", &pData->fMountable, false);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Mountable\" from the config"));
 
     /* Locked */
-    rc = CFGMR3QueryBool(pCfgHandle, "Locked", &pData->fLocked);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fLocked = false;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"Locked\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "Locked", &pData->fLocked, false);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Locked\" from the config"));
 
     /* BIOS visible */
-    rc = CFGMR3QueryBool(pCfgHandle, "BIOSVisible", &pData->fBiosVisible);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fBiosVisible = true;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"BIOSVisible\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "BIOSVisible", &pData->fBiosVisible, true);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"BIOSVisible\" from the config"));
 
     /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
-    rc = CFGMR3QueryU32(pCfgHandle, "Cylinders", &pData->LCHSGeometry.cCylinders);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->LCHSGeometry.cCylinders = 0;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"Cylinders\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Cylinders", &pData->LCHSGeometry.cCylinders, 0);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Cylinders\" from the config"));
 
     /* Heads */
-    rc = CFGMR3QueryU32(pCfgHandle, "Heads", &pData->LCHSGeometry.cHeads);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->LCHSGeometry.cHeads = 0;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"Heads\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Heads", &pData->LCHSGeometry.cHeads, 0);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Heads\" from the config"));
 
     /* Sectors */
-    rc = CFGMR3QueryU32(pCfgHandle, "Sectors", &pData->LCHSGeometry.cSectors);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->LCHSGeometry.cSectors = 0;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"Sectors\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Sectors", &pData->LCHSGeometry.cSectors, 0);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Sectors\" from the config"));
 
     /* Uuid */
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Uuid", &psz);
@@ -874,38 +840,26 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         rc = RTUuidFromStr(&pData->Uuid, psz);
         if (VBOX_FAILURE(rc))
         {
-            AssertMsgFailed(("Configuration error: Uuid from string failed on \"%s\", rc=%Vrc.\n", psz, rc));
+            PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "%s",
+                                N_("Uuid from string failed on \"%s\""), psz);
             MMR3HeapFree(psz);
             return rc;
         }
         MMR3HeapFree(psz); psz = NULL;
     }
     else
-    {
-        AssertMsgFailed(("Configuration error: Failed to obtain the type, rc=%Vrc.\n", rc));
-        return VERR_PDM_BLOCK_NO_TYPE;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Uuid\" from the config"));
 
 #ifdef VBOX_PERIODIC_FLUSH
-    rc = CFGMR3QueryU32(pCfgHandle, "FlushInterval", &pData->cbFlushInterval);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->cbFlushInterval = 0;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"FlushInterval\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU32Def(pCfgHandle, "FlushInterval", &pData->cbFlushInterval, 0);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"FlushInterval\" from the config"));
 #endif /* VBOX_PERIODIC_FLUSH */
 
 #ifdef VBOX_IGNORE_FLUSH
-    rc = CFGMR3QueryBool(pCfgHandle, "IgnoreFlush", &pData->fIgnoreFlush);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fIgnoreFlush = true;     /* The default is to ignore flushes. */
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Query \"IgnoreFlush\" resulted in %Vrc.\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreFlush", &pData->fIgnoreFlush, true);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlush\" from the config"));
 #endif /* VBOX_IGNORE_FLUSH */
 
     /*
@@ -918,15 +872,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         return VINF_SUCCESS;
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
+        AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
         return rc;
     }
     pData->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
     if (!pData->pDrvMedia)
-    {
-            AssertMsgFailed(("Configuration error: No media or async media interface below!\n"));
-            return VERR_PDM_MISSING_INTERFACE_BELOW;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
+                                N_("No media or async media interface below"));
 
     /* Try to get the optional async interface. */
     pData->pDrvMediaAsync = (PPDMIMEDIAASYNC)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA_ASYNC);
