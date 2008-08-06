@@ -4744,7 +4744,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     if (fPrivIfEnabled)
     {
-        RTGCPTR pGCMapping;
+        RTRCPTR pRCMapping;
 
         /*
          * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
@@ -4754,11 +4754,11 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pGCMapping);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pRCMapping);
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
-        pData->pSharedMMIOGC = pGCMapping;
+        pData->pSharedMMIOGC = pRCMapping;
         pcnetInitSharedMemory(pData);
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,
                                           PCI_ADDRESS_SPACE_MEM, pcnetMMIOSharedMap);
