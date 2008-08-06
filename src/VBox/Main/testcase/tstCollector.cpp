@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 
     RTPrintf("tstCollector: TESTING - Memory usage\n");
 
-    unsigned long total, used, available, processUsed;
+    ULONG total, used, available, processUsed;
 
     rc = collector->getHostMemoryUsage(&total, &used, &available);
     if (RT_FAILURE(rc))
