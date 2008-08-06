@@ -1,8 +1,7 @@
 #ifdef VBOX
+/* $Id: $ */
 /** @file
- *
- * VBox input devices:
- * PS/2 keyboard & mouse controller device
+ * DevPS2 - PS/2 keyboard & mouse controller device.
  */
 
 /*
@@ -47,7 +46,6 @@
  *
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -56,7 +54,7 @@
 #include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 #define PCKBD_SAVED_STATE_VERSION 2
 
@@ -225,10 +223,12 @@ typedef struct KBDState {
     uint8_t mouse_buttons;
 
 #ifdef VBOX
+    /** Pointer to the device instance - RC. */
+    PPDMDEVINSGC                pDevInsRC;
+    /** Pointer to the device instance - R3 . */
+    PPDMDEVINSR3                pDevInsR3;
     /** Pointer to the device instance. */
-    PPDMDEVINSGC                pDevInsGC;
-    /** Pointer to the device instance. */
-    R3R0PTRTYPE(PPDMDEVINS)     pDevInsHC;
+    PPDMDEVINSR0                pDevInsR0;
     /**
      * Keyboard port - LUN#0.
      */
@@ -314,8 +314,8 @@ static void kbd_update_irq(KBDState *s)
     pic_set_irq(1, irq1_level);
     pic_set_irq(12, irq12_level);
 #else /* VBOX */
-    PDMDevHlpISASetIrq(CTXSUFF(s->pDevIns), 1, irq1_level);
-    PDMDevHlpISASetIrq(CTXSUFF(s->pDevIns), 12, irq12_level);
+    PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, irq1_level);
+    PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, irq12_level);
 #endif /* VBOX */
 }
 
@@ -453,7 +453,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 # ifndef VBOX
         val = 0x01 | (ioport_get_a20() << 1);
 # else /* VBOX */
-        val = 0x01 | (PDMDevHlpA20IsEnabled(CTXSUFF(s->pDevIns)) << 1);
+        val = 0x01 | (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)) << 1);
 # endif /* VBOX */
 #else
         val = 0x01;
@@ -470,10 +470,10 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         ioport_set_a20(1);
 #else /* VBOX */
 # ifndef IN_RING3
-        if (!PDMDevHlpA20IsEnabled(CTXSUFF(s->pDevIns)))
+        if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
             rc = VINF_IOM_HC_IOPORT_WRITE;
 # else /* IN_RING3 */
-        PDMDevHlpA20Set(CTXSUFF(s->pDevIns), true);
+        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
 # endif /* IN_RING3 */
 #endif /* VBOX */
         break;
@@ -482,10 +482,10 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         ioport_set_a20(0);
 #else /* VBOX */
 # ifndef IN_RING3
-        if (PDMDevHlpA20IsEnabled(CTXSUFF(s->pDevIns)))
+        if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
             rc = VINF_IOM_HC_IOPORT_WRITE;
 # else /* IN_RING3 */
-        PDMDevHlpA20Set(CTXSUFF(s->pDevIns), false);
+        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), false);
 # endif /* !IN_RING3 */
 #endif /* VBOX */
         break;
@@ -502,7 +502,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 # ifndef IN_RING3
         rc = VINF_IOM_HC_IOPORT_WRITE;
 # else /* IN_RING3 */
-        rc = PDMDevHlpVMReset(CTXSUFF(s->pDevIns));
+        rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
 # endif /* !IN_RING3 */
 #endif /* VBOX */
         break;
@@ -598,9 +598,9 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
             pic_set_irq(1, 0);
 #else /* VBOX */
         if (aux)
-            PDMDevHlpISASetIrq(CTXSUFF(s->pDevIns), 12, 0);
+            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, 0);
         else
-            PDMDevHlpISASetIrq(CTXSUFF(s->pDevIns), 1, 0);
+            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 0);
 #endif /* VBOX */
     }
     /* reassert IRQs if data left */
@@ -1011,10 +1011,10 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
         ioport_set_a20((val >> 1) & 1);
 # else /* VBOX */
 #  ifndef IN_RING3
-        if (PDMDevHlpA20IsEnabled(CTXSUFF(s->pDevIns)) != !!(val & 2))
+        if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)) != !!(val & 2))
             rc = VINF_IOM_HC_IOPORT_WRITE;
 #  else /* IN_RING3 */
-        PDMDevHlpA20Set(CTXSUFF(s->pDevIns), !!(val & 2));
+        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), !!(val & 2));
 #  endif /* !IN_RING3 */
 # endif /* VBOX */
 #endif
@@ -1025,7 +1025,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 # ifndef IN_RING3
             rc = VINF_IOM_HC_IOPORT_WRITE;
 # else
-            rc = PDMDevHlpVMReset(CTXSUFF(s->pDevIns));
+            rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
 # endif
 #endif /* VBOX */
         }
@@ -1630,7 +1630,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
 static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     KBDState   *pData = PDMINS2DATA(pDevIns, KBDState *);
-    pData->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
+    pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
 
@@ -1660,30 +1660,21 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("configuration error: failed to read GCEnabled as boolean. rc=%Vrc\n", rc));
-        return rc;
-    }
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("configuration error: failed to read R0Enabled as boolean. rc=%Vrc\n", rc));
-        return rc;
-    }
-    Log(("pckbd: fGCEnabled=%d fR0Enabled=%d\n", fGCEnabled, fR0Enabled));
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"GCEnabled\" from the config"));
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"R0Enabled\" from the config"));
+    Log(("pckbd: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
 
 
     /*
      * Initialize the interfaces.
      */
-    pData->pDevInsHC = pDevIns;
-    pData->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
+    pData->pDevInsR3 = pDevIns;
+    pData->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pData->Keyboard.Base.pfnQueryInterface  = kbdKeyboardQueryInterface;
     pData->Keyboard.Port.pfnPutEvent        = kbdKeyboardPutEvent;
 
