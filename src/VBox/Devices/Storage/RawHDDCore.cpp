@@ -397,7 +397,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
 
     pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError->pCallbacks);
 
 
     rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
