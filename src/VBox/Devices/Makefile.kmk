@@ -563,7 +563,11 @@ else
 NatAlias_TEMPLATE   = VBOXR3NP
 
 
-Drivers_SOURCES +=	Network/DrvNAT2.cpp
+Drivers_SOURCES +=	Network/DrvNAT.cpp
+
+Network/DrvNAT.cpp_DEFS += VBOX_NAT_SOURCES
+
+Drivers_SOURCES += Network/nat/nat_socket.c
 
 NatAlias_CFLAGS += -include Network/nat/bsd.h
 NatAlias_DEFS += VBOX_NAT_SOURCES
@@ -573,10 +577,17 @@ NatAlias_DEFS += IPFIREWALL_NAT
 NatAlias_DEFS += RWLOCK_NOINLINE
 NatAlias_DEFS += MUTEX_NOINLINE
 
+NatAlias_DEFS += IN_NAT # used in Network/nat/nat.h (which glues VBox and *BSD sources)
+
 NatAlias_DEFS.linux   += _GNU_SOURCE
 
+NatAlias_SOURCES +=	Network/nat/nat_utils.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw_nat.c
+NatAlias_SOURCES +=	Network/nat/src/sys/netinet/in_cksum.c
 NatAlias_SOURCES +=	Network/nat/src/sys/kern/subr_eventhandler.c
+NatAlias_SOURCES +=	Network/nat/src/sys/kern/kern_mbuf.c
+NatAlias_SOURCES +=	Network/nat/src/sys/kern/uipc_mbuf.c
+NatAlias_SOURCES +=	Network/nat/src/sys/vm/uma.c
 #NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw2.c
 NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias.c
 #NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_cuseeme.c
