@@ -1,6 +1,12 @@
 /* $Id$ */
 /** @file
- * AMD PCnet-PCI II / PCnet-FAST III (Am79C970A / Am79C973) Ethernet Controller Emulation.
+ * DevPCNet - AMD PCnet-PCI II / PCnet-FAST III (Am79C970A / Am79C973) Ethernet Controller Emulation.
+ *
+ * This software was written to be compatible with the specifications:
+ *      AMD Am79C970A PCnet-PCI II Ethernet Controller Data-Sheet
+ *      AMD Publication# 19436  Rev:E  Amendment/0  Issue Date: June 2000
+ * and
+ *      todo
  */
 
 /*
@@ -44,11 +50,6 @@
  * THE SOFTWARE.
  */
 
-/* This software was written to be compatible with the specification:
- * AMD Am79C970A PCnet-PCI II Ethernet Controller Data-Sheet
- * AMD Publication# 19436  Rev:E  Amendment/0  Issue Date: June 2000
- */
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -67,7 +68,7 @@
 # include <iprt/semaphore.h>
 #endif
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
 /* #define PCNET_NO_POLLING */
@@ -110,20 +111,24 @@ struct PCNetState_st
 {
     PCIDEVICE                           PciDev;
 #ifndef PCNET_NO_POLLING
-    /** Poll timer (address for host context) */
-    R3R0PTRTYPE(PTMTIMER)               pTimerPollHC;
-    /** Poll timer (address for guest context) */
-    RCPTRTYPE(PTMTIMER)                 pTimerPollGC;
+    /** Poll timer - R3. */
+    PTMTIMERR3                          pTimerPollR3;
+    /** Poll timer - R0. */
+    PTMTIMERR0                          pTimerPollR0;
+    /** Poll timer - RC. */
+    PTMTIMERRC                          pTimerPollRC;
 #endif
 
 #if HC_ARCH_BITS == 64
     uint32_t                            Alignment1;
 #endif
 
-    /** Software Interrupt timer (address for host context) */
-    R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
-    /** Software Interrupt timer (address for guest context) */
-    RCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
+    /** Software Interrupt timer - R3. */
+    PTMTIMERR3                          pTimerSoftIntR3;
+    /** Software Interrupt timer - R0. */
+    PTMTIMERR0                          pTimerSoftIntR0;
+    /** Software Interrupt timer - RC. */
+    PTMTIMERRC                          pTimerSoftIntRC;
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;
@@ -164,17 +169,25 @@ struct PCNetState_st
     /** Bits 16..23 in 16-bit mode */
     RTGCPHYS32                          GCUpperPhys;
 
-    /** Transmit signaller */
-    RCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
-    R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
+    /** Transmit signaller - RC. */
+    RCPTRTYPE(PPDMQUEUE)                pXmitQueueRC;
+    /** Transmit signaller - R3. */
+    R3PTRTYPE(PPDMQUEUE)                pXmitQueueR3;
+    /** Transmit signaller - R0. */
+    R0PTRTYPE(PPDMQUEUE)                pXmitQueueR0;
 
-    /** Receive signaller */
-    R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
-    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
-    /** Pointer to the device instance. */
-    RCPTRTYPE(PPDMDEVINS)               pDevInsGC;
-    /** Pointer to the device instance. */
-    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
+    /** Receive signaller - R3. */
+    R3PTRTYPE(PPDMQUEUE)                pCanRxQueueR3;
+    /** Receive signaller - R0. */
+    R0PTRTYPE(PPDMQUEUE)                pCanRxQueueR0;
+    /** Receive signaller - RC. */
+    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueRC;
+    /** Pointer to the device instance - RC. */
+    PPDMDEVINSRC                        pDevInsRC;
+    /** Pointer to the device instance - R3. */
+    PPDMDEVINSR3                        pDevInsR3;
+    /** Pointer to the device instance - R0. */
+    PPDMDEVINSR0                        pDevInsR0;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERR3                          pTimerRestore;
@@ -233,14 +246,16 @@ struct PCNetState_st
     RTGCPHYS32                          RDRAPhysOld;
     uint32_t                            cbRDRAOld;
 
-    DECLGCCALLBACKMEMBER(int, pfnEMInterpretInstructionGC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
+    DECLRCCALLBACKMEMBER(int, pfnEMInterpretInstructionRC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
     DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
 #endif
 
-    /** The host context of the shared memory used for the private interface. */
-    R3R0PTRTYPE(PPCNETGUESTSHAREDMEMORY) pSharedMMIOHC;
-    /** The hypervisor/guest context of the shared memory used for the private interface. */
-    RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
+    /** The shared memory used for the private interface - R3. */
+    R3PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR3;
+    /** The shared memory used for the private interface - R0. */
+    R0PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR0;
+    /** The shared memory used for the private interface - RC. */
+    RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIORC;
 
 #if HC_ARCH_BITS == 64
     uint32_t                            Alignment6;
@@ -254,12 +269,12 @@ struct PCNetState_st
     uint32_t                            u32LinkSpeed;
 
 #ifdef PCNET_QUEUE_SEND_PACKETS
-    #define PCNET_MAX_XMIT_SLOTS         128
-    #define PCNET_MAX_XMIT_SLOTS_MASK    (PCNET_MAX_XMIT_SLOTS-1)
+# define PCNET_MAX_XMIT_SLOTS           128
+# define PCNET_MAX_XMIT_SLOTS_MASK      (PCNET_MAX_XMIT_SLOTS - 1)
 
     uint32_t                            iXmitRingBufProd;
     uint32_t                            iXmitRingBufCons;
-    /* XXX currently atomic operations on this variable are overkill */
+    /** @todo XXX currently atomic operations on this variable are overkill */
     volatile int32_t                    cXmitRingBufPending;
     uint16_t                            cbXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
     R3PTRTYPE(uint8_t *)                apXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
@@ -314,7 +329,7 @@ struct PCNetState_st
 #endif /* VBOX_WITH_STATISTICS */
 };
 
-#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTXSUFF(pDevIns))
+#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
 #define PCIDEV_2_PCNETSTATE(pPciDev)           ((PCNetState *)(pPciDev))
 #define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pData)->iInstance)
 
@@ -618,9 +633,9 @@ DECLINLINE(bool) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
     if (pData->fPrivIfEnabled)
     {
         /* RX/TX descriptors shared between host and guest => direct copy */
-        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+        uint8_t *pv = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
                     + (addr - pData->GCTDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offTxDescriptors;
+                    + pData->CTX_SUFF(pSharedMMIO)->V.V1.offTxDescriptors;
         if (!(pv[7] & 0x80) && fRetIfNotOwn)
             return false;
         memcpy(tmd, pv, 16);
@@ -680,9 +695,9 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 a
     if (pData->fPrivIfEnabled)
     {
         /* RX/TX descriptors shared between host and guest => direct copy */
-        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+        uint8_t *pv = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
                     + (addr - pData->GCTDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offTxDescriptors;
+                    + pData->CTX_SUFF(pSharedMMIO)->V.V1.offTxDescriptors;
         memcpy(pv, tmd, 16);
         pv[7] &= ~0x80;
     }
@@ -737,9 +752,9 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
     if (pData->fPrivIfEnabled)
     {
         /* RX/TX descriptors shared between host and guest => direct copy */
-        uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+        uint8_t *pb = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
                     + (addr - pData->GCRDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                    + pData->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
         if (!(pb[7] & 0x80) && fRetIfNotOwn)
             return false;
         memcpy(rmd, pb, 16);
@@ -797,9 +812,9 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 a
     if (pData->fPrivIfEnabled)
     {
         /* RX/TX descriptors shared between host and guest => direct copy */
-        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+        uint8_t *pv = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
                     + (addr - pData->GCRDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                    + pData->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
         memcpy(pv, rmd, 16);
         pv[7] &= ~0x80;
     }
@@ -852,7 +867,7 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 a
 #define ETHER_ADDR_LEN ETH_ALEN
 #define ETH_ALEN 6
 #pragma pack(1)
-struct ether_header
+struct ether_header /** @todo Use RTNETETHERHDR */
 {
     uint8_t  ether_dhost[ETH_ALEN]; /**< destination ethernet address */
     uint8_t  ether_shost[ETH_ALEN]; /**< source ethernet address */
@@ -884,18 +899,18 @@ struct ether_header
 static void pcnetInitSharedMemory(PCNetState *pData)
 {
     /* Clear the entire block for pcnetReset usage. */
-    memset(pData->pSharedMMIOHC, 0, PCNET_GUEST_SHARED_MEMORY_SIZE);
+    memset(pData->pSharedMMIOR3, 0, PCNET_GUEST_SHARED_MEMORY_SIZE);
 
-    pData->pSharedMMIOHC->u32Version = PCNET_GUEST_INTERFACE_VERSION;
+    pData->pSharedMMIOR3->u32Version = PCNET_GUEST_INTERFACE_VERSION;
     uint32_t off = 2048; /* Leave some space for more fields within the header */
 
     /*
      * The Descriptor arrays.
      */
-    pData->pSharedMMIOHC->V.V1.offTxDescriptors = off;
+    pData->pSharedMMIOR3->V.V1.offTxDescriptors = off;
     off = RT_ALIGN(off + PCNET_GUEST_TX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
 
-    pData->pSharedMMIOHC->V.V1.offRxDescriptors = off;
+    pData->pSharedMMIOR3->V.V1.offRxDescriptors = off;
     off = RT_ALIGN(off + PCNET_GUEST_RX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
 
     /* Make sure all the descriptors are mapped into HMA space (and later ring-0). The 8192
@@ -907,17 +922,17 @@ static void pcnetInitSharedMemory(PCNetState *pData)
      */
 #if 0
     /* Don't allocate TX buffers since Windows guests cannot use it */
-    pData->pSharedMMIOHC->V.V1.offTxBuffers = off;
+    pData->pSharedMMIOR3->V.V1.offTxBuffers = off;
     off = RT_ALIGN(off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
 #endif
 
-    pData->pSharedMMIOHC->V.V1.offRxBuffers = off;
-    pData->pSharedMMIOHC->fFlags = PCNET_GUEST_FLAGS_ADMIT_HOST;
+    pData->pSharedMMIOR3->V.V1.offRxBuffers = off;
+    pData->pSharedMMIOR3->fFlags = PCNET_GUEST_FLAGS_ADMIT_HOST;
     off = RT_ALIGN(off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
     AssertRelease(off <= PCNET_GUEST_SHARED_MEMORY_SIZE);
 
     /* Update the header with the final size. */
-    pData->pSharedMMIOHC->cbUsed = off;
+    pData->pSharedMMIOR3->cbUsed = off;
 }
 
 #define MULTICAST_FILTER_LEN 8
@@ -1379,8 +1394,8 @@ static void pcnetUpdateIrq(PCNetState *pData)
  */
 static void pcnetEnablePrivateIf(PCNetState *pData)
 {
-    bool fPrivIfEnabled =       pData->pSharedMMIOHC
-                          && !!(pData->CTXSUFF(pSharedMMIO)->fFlags & PCNET_GUEST_FLAGS_ADMIT_GUEST);
+    bool fPrivIfEnabled =       pData->pSharedMMIOR3
+                          && !!(pData->CTX_SUFF(pSharedMMIO)->fFlags & PCNET_GUEST_FLAGS_ADMIT_GUEST);
     if (fPrivIfEnabled != pData->fPrivIfEnabled)
     {
         pData->fPrivIfEnabled = fPrivIfEnabled;
@@ -1661,9 +1676,9 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
 #ifdef IN_RING3
                     pcnetWakeupReceive(PCNETSTATE_2_DEVINS(pData));
 #else
-                    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pCanRxQueue));
+                    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pData->CTX_SUFF(pCanRxQueue));
                     if (pItem)
-                        PDMQueueInsert(CTXSUFF(pData->pCanRxQueue), pItem);
+                        PDMQueueInsert(pData->CTX_SUFF(pCanRxQueue), pItem);
 #endif
                 }
             }
@@ -1856,8 +1871,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, size_t siz
 #if 0
             if (pData->fPrivIfEnabled)
             {
-                uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
-                            + rbadr - pData->GCRDRA + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                uint8_t *pb = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
+                            + rbadr - pData->GCRDRA + pData->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
                 memcpy(pb, src, count);
             }
             else
@@ -1895,8 +1910,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, size_t siz
 #if 0
                 if (pData->fPrivIfEnabled)
                 {
-                    uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
-                                + rbadr - pData->GCRDRA + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                    uint8_t *pb = (uint8_t*)pData->CTX_SUFF(pSharedMMIO)
+                                + rbadr - pData->GCRDRA + pData->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
                     memcpy(pb, src, count);
                 }
                 else
@@ -2020,7 +2035,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, con
 #else
     pData->pvSendFrame = pData->abSendBuf;
 #endif
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, pData->pvSendFrame, cbFrame);
+    PDMDevHlpPhysRead(pData->CTX_SUFF(pDevIns), GCPhysFrame, pData->pvSendFrame, cbFrame);
     pData->cbSendFrame = cbFrame;
 }
 
@@ -2031,7 +2046,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, con
 DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
     Assert(pData->cbSendFrame + cbFrame <= MAX_FRAME);
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, pData->pvSendFrame + pData->cbSendFrame, cbFrame);
+    PDMDevHlpPhysRead(pData->CTX_SUFF(pDevIns), GCPhysFrame, pData->pvSendFrame + pData->cbSendFrame, cbFrame);
     pData->cbSendFrame += cbFrame;
 }
 
@@ -2122,7 +2137,7 @@ DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pData)
  */
 DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
 {
-    pcnetXmitQueueConsumer(CTXSUFF(pData->pDevIns), NULL);
+    pcnetXmitQueueConsumer(pData->CTX_SUFF(pDevIns), NULL);
 }
 
 #endif /* IN_RING3 */
@@ -2159,18 +2174,18 @@ static void pcnetTransmit(PCNetState *pData)
     pcnetXmitFlushFrames(pData);
 #else
 # if 1
-    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
+    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pData->CTX_SUFF(pXmitQueue));
     if (RT_UNLIKELY(pItem))
-        PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
+        PDMQueueInsert(pData->CTX_SUFF(pXmitQueue), pItem);
 # else
     if (ASMAtomicIncU32(&pData->cPendingSends) < 16)
     {
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pData->CTX_SUFF(pXmitQueue));
         if (RT_UNLIKELY(pItem))
-            PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
+            PDMQueueInsert(pData->CTX_SUFF(pXmitQueue), pItem);
     }
     else
-        PDMQueueFlush(CTXSUFF(pData->pXmitQueue));
+        PDMQueueFlush(pData->CTX_SUFF(pXmitQueue));
 # endif
 #endif
 }
@@ -2539,7 +2554,7 @@ static void pcnetPollRxTx(PCNetState *pData)
  */
 static void pcnetPollTimerStart(PCNetState *pData)
 {
-    TMTimerSetMillies(pData->CTXSUFF(pTimerPoll), 2);
+    TMTimerSetMillies(pData->CTX_SUFF(pTimerPoll), 2);
 }
 
 
@@ -2594,13 +2609,13 @@ static void pcnetPollTimer(PCNetState *pData)
 #ifdef PCNET_NO_POLLING
         pcnetPollRxTx(pData);
 #else
-        uint64_t u64Now = TMTimerGet(pData->CTXSUFF(pTimerPoll));
+        uint64_t u64Now = TMTimerGet(pData->CTX_SUFF(pTimerPoll));
         if (RT_UNLIKELY(u64Now - pData->u64LastPoll > 200000))
         {
             pData->u64LastPoll = u64Now;
             pcnetPollRxTx(pData);
         }
-        if (!TMTimerIsActive(pData->CTXSUFF(pTimerPoll)))
+        if (!TMTimerIsActive(pData->CTX_SUFF(pTimerPoll)))
             pcnetPollTimerStart(pData);
 #endif
     }
@@ -2909,7 +2924,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             val &= 0xffff;
             pData->aBCR[BCR_STVAL] = val;
             if (pData->fAm79C973)
-                TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), 12800U * val);
+                TMTimerSetNano(pData->CTX_SUFF(pTimerSoftInt), 12800U * val);
             break;
 
         case BCR_MIIMDR:
@@ -3702,7 +3717,7 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 
     pData->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pData);
-    TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), 12800U * (pData->aBCR[BCR_STVAL] & 0xffff));
+    TMTimerSetNano(pData->CTX_SUFF(pTimerSoftInt), 12800U * (pData->aBCR[BCR_STVAL] & 0xffff));
 }
 
 
@@ -4138,12 +4153,12 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #ifdef PCNET_NO_POLLING
     return VINF_SUCCESS;
 #else
-    rc = TMR3TimerSave(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+    rc = TMR3TimerSave(pData->CTX_SUFF(pTimerPoll), pSSMHandle);
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
     if (pData->fAm79C973)
-        rc = TMR3TimerSave(pData->CTXSUFF(pTimerSoftInt), pSSMHandle);
+        rc = TMR3TimerSave(pData->CTX_SUFF(pTimerSoftInt), pSSMHandle);
     return rc;
 }
 
@@ -4214,13 +4229,13 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetBool(pSSMHandle, &pData->fAm79C973);
     SSMR3GetU32(pSSMHandle, &pData->u32LinkSpeed);
 #ifndef PCNET_NO_POLLING
-    TMR3TimerLoad(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+    TMR3TimerLoad(pData->CTX_SUFF(pTimerPoll), pSSMHandle);
 #endif
     if (pData->fAm79C973)
     {
         if (   SSM_VERSION_MAJOR(u32Version) >  0
             || SSM_VERSION_MINOR(u32Version) >= 8)
-            TMR3TimerLoad(pData->CTXSUFF(pTimerSoftInt), pSSMHandle);
+            TMR3TimerLoad(pData->CTX_SUFF(pTimerSoftInt), pSSMHandle);
     }
 
     pData->iLog2DescSize = BCR_SWSTYLE(pData)
@@ -4333,7 +4348,7 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsi
     rc = VERR_INTERRUPTED;
     ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pData->StatRxOverflow, a);
-    while (RT_LIKELY(PDMDevHlpVMState(pData->CTXSUFF(pDevIns)) == VMSTATE_RUNNING))
+    while (RT_LIKELY(PDMDevHlpVMState(pData->CTX_SUFF(pDevIns)) == VMSTATE_RUNNING))
     {
         int rc2 = pcnetCanReceive(pData);
         if (RT_SUCCESS(rc2))
@@ -4523,7 +4538,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
         TMTimerStop(pData->pTimerRestore);
         pcnetTimerRestore(pDevIns, pData->pTimerRestore);
     }
-    if (pData->pSharedMMIOHC)
+    if (pData->pSharedMMIOR3)
         pcnetInitSharedMemory(pData);
 
     /** @todo How to flush the queues? */
@@ -4537,18 +4552,18 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-    pData->pDevInsGC     = PDMDEVINS_2_GCPTR(pDevIns);
-    pData->pXmitQueueGC  = PDMQueueGCPtr(pData->pXmitQueueHC);
-    pData->pCanRxQueueGC = PDMQueueGCPtr(pData->pCanRxQueueHC);
-    if (pData->pSharedMMIOHC)
-        pData->pSharedMMIOGC += offDelta;
+    pData->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
+    pData->pXmitQueueRC  = PDMQueueRCPtr(pData->pXmitQueueR3);
+    pData->pCanRxQueueRC = PDMQueueRCPtr(pData->pCanRxQueueR3);
+    if (pData->pSharedMMIOR3)
+        pData->pSharedMMIORC += offDelta;
 #ifdef PCNET_NO_POLLING
-    *(RTHCUINTPTR *)&pData->pfnEMInterpretInstructionGC += offDelta;
+    pData->pfnEMInterpretInstructionRC += offDelta;
 #else
-    pData->pTimerPollGC  = TMTimerGCPtr(pData->pTimerPollHC);
+    pData->pTimerPollRC  = TMTimerRCPtr(pData->pTimerPollR3);
 #endif
     if (pData->fAm79C973)
-        pData->pTimerSoftIntGC = TMTimerGCPtr(pData->pTimerSoftIntHC);
+        pData->pTimerSoftIntRC = TMTimerRCPtr(pData->pTimerSoftIntR3);
 }
 
 
@@ -4615,9 +4630,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Assert(sizeof(pData->abSendBuf) == RT_ALIGN_Z(sizeof(pData->abSendBuf), 16));
 
     /*
+     * Init what's required to make the destructor safe.
+     */
+    pData->hEventOutOfRxSpace = NIL_RTSEMEVENT;
+    pData->hSendEventSem = NIL_RTSEMEVENT;
+
+    /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0CableConnected\0Am79C973\0LineSpeed\0GCEnabled\0R0Enabled\0PrivIfEnabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0" "CableConnected\0" "Am79C973\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for pcnet device"));
 
@@ -4628,39 +4649,29 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"MAC\" value"));
-    rc = CFGMR3QueryBool(pCfgHandle, "CableConnected", &pData->fLinkUp);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fLinkUp = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "CableConnected", &pData->fLinkUp, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"CableConnected\" value"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "Am79C973", &pData->fAm79C973);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fAm79C973 = false;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "Am79C973", &pData->fAm79C973, false);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Am79C973\" value"));
 
-    rc = CFGMR3QueryU32(pCfgHandle, "LineSpeed", &pData->u32LinkSpeed);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->u32LinkSpeed = 1000000;    /* 1GBit/s (in kbps units)*/
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryU32Def(pCfgHandle, "LineSpeed", &pData->u32LinkSpeed, 1000000); /* 1GBit/s (in kbps units)*/
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"LineSpeed\" value"));
 
 #ifdef PCNET_GC_ENABLED
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pData->fGCEnabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &pData->fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pData->fR0Enabled, true);
+    if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
@@ -4673,8 +4684,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize data (most of it anyway).
      */
-    pData->pDevInsHC                        = pDevIns;
-    pData->pDevInsGC                        = PDMDEVINS_2_GCPTR(pDevIns);
+    pData->pDevInsR3                        = pDevIns;
+    pData->pDevInsR0                        = PDMDEVINS_2_R0PTR(pDevIns);
+    pData->pDevInsRC                        = PDMDEVINS_2_RCPTR(pDevIns);
     pData->Led.u32Magic                     = PDMLED_MAGIC;
     /* IBase */
     pData->IBase.pfnQueryInterface          = pcnetQueryInterface;
@@ -4744,21 +4756,20 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     if (fPrivIfEnabled)
     {
-        RTRCPTR pRCMapping;
-
         /*
          * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
          * should not care if there is an additional PCI ressource but just in case we made this configurable.
          */
-        rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pData->pSharedMMIOHC, "PCNetShMem");
+        rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pData->pSharedMMIOR3, "PCNetShMem");
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pRCMapping);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pData->pSharedMMIORC);
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
-        pData->pSharedMMIOGC = pRCMapping;
+        pData->pSharedMMIOR0 = (uintptr_t)pData->pSharedMMIOR3; /** @todo #1865: Map MMIO2 into ring-0. */
+
         pcnetInitSharedMemory(pData);
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,
                                           PCI_ADDRESS_SPACE_MEM, pcnetMMIOSharedMap);
@@ -4767,47 +4778,36 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
 
 #ifdef PCNET_NO_POLLING
+    /*
+     * Resolve the R0 and RC handlers.
+     */
     rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pData->pfnEMInterpretInstructionR0);
     if (VBOX_SUCCESS(rc))
-    {
-        /*
-         * Resolve the GC handler.
-         */
-        RTGCPTR pfnHandlerGC;
-        rc = PDMR3GetSymbolGCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionGC);
-    }
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("PDMR3GetSymbolGCLazy -> %Vrc\n", rc));
-        return rc;
-    }
+        rc = PDMR3GetSymbolGCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionRC);
+    AssertLogRelMsgRCReturn(rc, ("PDMR3GetSymbolGCLazy(EMInterpretInstruction) -> %Vrc\n", rc), rc);
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer,
-                                "PCNet Poll Timer", &pData->pTimerPollHC);
+                                "PCNet Poll Timer", &pData->pTimerPollR3);
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("pfnTMTimerCreate pcnetTimer -> %Vrc\n", rc));
         return rc;
-    }
+    pData->pTimerPollR0 = TMTimerR0Ptr(pData->pTimerPollR3);
+    pData->pTimerPollRC = TMTimerRCPtr(pData->pTimerPollR3);
 #endif
     if (pData->fAm79C973)
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt,
-                                    "PCNet SoftInt Timer", &pData->pTimerSoftIntHC);
-        if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("pfnTMTimerCreate pcnetTimerSoftInt -> %Vrc\n", rc));
+                                    "PCNet SoftInt Timer", &pData->pTimerSoftIntR3);
+        if (RT_FAILURE(rc))
             return rc;
-        }
+        pData->pTimerSoftIntR0 = TMTimerR0Ptr(pData->pTimerSoftIntR3);
+        pData->pTimerSoftIntRC = TMTimerRCPtr(pData->pTimerSoftIntR3);
     }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore,
                                 "PCNet Restore Timer", &pData->pTimerRestore);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("pfnTMTimerCreate pcnetTimerRestore -> %Vrc\n", rc));
+    if (RT_FAILURE(rc))
         return rc;
-    }
+
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
                               PCNET_SAVEDSTATE_VERSION, sizeof(*pData),
                               pcnetSavePrep, pcnetSaveExec, NULL,
@@ -4817,7 +4817,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /*
      * Initialize critical section.
-     * This must of course be done before attaching drivers or anything else which can call us back..
+     * This must of course be done before attaching drivers or anything else which can call us back.
      */
     char szName[24];
     RTStrPrintf(szName, sizeof(szName), "PCNet#%d", iInstance);
@@ -4832,19 +4832,21 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create the transmit queue.
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetXmitQueueConsumer, true, &pData->pXmitQueueHC);
+                                 pcnetXmitQueueConsumer, true, &pData->pXmitQueueR3);
     if (VBOX_FAILURE(rc))
         return rc;
-    pData->pXmitQueueGC = PDMQueueGCPtr(pData->pXmitQueueHC);
+    pData->pXmitQueueR0 = PDMQueueR0Ptr(pData->pXmitQueueR3);
+    pData->pXmitQueueRC = PDMQueueRCPtr(pData->pXmitQueueR3);
 
     /*
      * Create the RX notifer signaller.
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetCanRxQueueConsumer, true, &pData->pCanRxQueueHC);
+                                 pcnetCanRxQueueConsumer, true, &pData->pCanRxQueueR3);
     if (VBOX_FAILURE(rc))
         return rc;
-    pData->pCanRxQueueGC = PDMQueueGCPtr(pData->pCanRxQueueHC);
+    pData->pCanRxQueueR0 = PDMQueueR0Ptr(pData->pCanRxQueueR3);
+    pData->pCanRxQueueRC = PDMQueueRCPtr(pData->pCanRxQueueR3);
 
     /*
      * Register the info item.
@@ -4907,12 +4909,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPDMThreadCreate(pDevIns, &pData->pSendThread, pData, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
     AssertRCReturn(rc, rc);
 
-    unsigned i;
-    NOREF(i);
-
 #ifdef PCNET_QUEUE_SEND_PACKETS
     pData->apXmitRingBuffer[0] = (uint8_t *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * MAX_FRAME);
-    for (i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
+    for (unsigned i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
         pData->apXmitRingBuffer[i] = pData->apXmitRingBuffer[0] + i*MAX_FRAME;
 #endif
 
@@ -4947,11 +4946,12 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in GC",     "/Devices/PCNet%d/TmdStoreGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
 
-    for (i = 0; i < ELEMENTS(pData->aStatXmitFlush) - 1; i++)
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(pData->aStatXmitFlush) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
 
-    for (i = 0; i < ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
+    for (i = 0; i < RT_ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,  "",                                   "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,      "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
 
