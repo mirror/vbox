@@ -152,9 +152,9 @@ struct RTCState {
     /** Pointer to the device instance - R0 Ptr. */
     PPDMDEVINSR0 pDevInsR0;
     /** The periodic timer (rtcTimerPeriodic) - R0 Ptr. */
-    PTMTIMERR0 pSecondTimerR0;
-    /** The second timer (rtcTimerSecond) - R0 Ptr. */
     PTMTIMERR0 pPeriodicTimerR0;
+    /** The second timer (rtcTimerSecond) - R0 Ptr. */
+    PTMTIMERR0 pSecondTimerR0;
     /** The second second timer (rtcTimerSecond2) - R0 Ptr. */
     PTMTIMERR0 pSecondTimer2R0;
 
@@ -177,6 +177,8 @@ struct RTCState {
     uint32_t cRelLogEntries;
     /** The current/previous timer period. Used to prevent flooding changes. */
     int32_t CurPeriod;
+
+#
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
