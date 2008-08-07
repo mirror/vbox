@@ -178,7 +178,7 @@ struct RTCState {
     /** The current/previous timer period. Used to prevent flooding changes. */
     int32_t CurPeriod;
 
-#
+    uint32_t alignment1;
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
