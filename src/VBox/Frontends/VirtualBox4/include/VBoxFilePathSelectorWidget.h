@@ -26,32 +26,25 @@
 #include "QIWithRetranslateUI.h"
 
 /* Qt includes */
-#include <QWidget>
+#include <QComboBox>
 
-#ifdef Q_WS_MAC
-#define VBOX_USE_COMBOBOX_PATH_SELECTOR
-#endif /* Q_WS_MAC */
-
-class QLabel;
-class QToolButton;
 class QFileIconProvider;
-class QComboBox;
-class QILabel;
+class QAction;
 
-class VBoxFilePathSelectorWidget: public QIWithRetranslateUI<QWidget>
+class VBoxFilePathSelectorWidget: public QIWithRetranslateUI<QComboBox>
 {
     Q_OBJECT;
 
 public:
 
-    enum SelectorMode 
-    { 
+    enum SelectorMode
+    {
         PathMode = 0,
         FileMode
     };
 
-    VBoxFilePathSelectorWidget (QWidget *aParent = NULL);
-    ~VBoxFilePathSelectorWidget();
+    VBoxFilePathSelectorWidget (QWidget *aParent = 0);
+   ~VBoxFilePathSelectorWidget();
 
     void setMode (SelectorMode aMode);
     SelectorMode mode() const;
@@ -59,9 +52,9 @@ public:
     void setResetEnabled (bool aEnabled);
     bool isResetEnabled () const;
 
-    void setPathWhatsThis (const QString &aText);
-    void setSelectorWhatsThis (const QString &aText);
-    void setResetWhatsThis (const QString &aText);
+    void setNoneToolTip (const QString &aText);
+    void setSelectToolTip (const QString &aText);
+    void setResetToolTip (const QString &aText);
 
     bool isModified() const;
 
@@ -77,33 +70,28 @@ signals:
 
 protected:
 
+    void resizeEvent (QResizeEvent *aEvent);
     void retranslateUi();
 
 private slots:
-     
-    void cbActivated (int aIndex);
+
+    void onActivated (int aIndex);
+    void copyToClipboard();
 
 private:
 
-    void init();
     QIcon defaultIcon() const;
-    QString filePath (const QString &aName, bool bLast) const;
+    QString filePath() const;
+    QString shrinkText (int aWidth) const;
+    void refreshText();
 
     /* Private member vars */
-    SelectorMode mMode;
-    QString      mPath;
-    QString      mNoneStr;
-
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    QComboBox   *mCbPath;
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    QLabel      *mLbIcon;
-    QILabel     *mLbPath;
-    QToolButton *mTbSelect;
-    QToolButton *mTbReset;
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
-
     QFileIconProvider *mIconProvider;
+    QAction *mCopyAction;
+    SelectorMode mMode;
+    QString mPath;
+    QString mNoneStr;
+    QString mNoneTip;
 };
 
 #endif /* __VBoxFilePathSelectorWidget_h__ */
