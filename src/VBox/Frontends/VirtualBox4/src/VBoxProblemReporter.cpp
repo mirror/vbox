@@ -101,8 +101,7 @@ public:
             /* Start refresh timer */
             int id = startTimer (aRefreshInterval);
 
-            /* Show the progress dialog */
-            show();
+            /* The progress dialog is automatically shown after the duration is over */
 
             /* Enter the modal loop */
             mEventLoop->exec();
