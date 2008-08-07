@@ -30,6 +30,8 @@
 /* Qt includes */
 #include <QLabel>
 
+class QAction;
+
 class QILabelPrivate: public QLabel
 {
     Q_OBJECT;
@@ -134,6 +136,7 @@ private:
     static QRegExp mElideRegExp;
     QSize mOwnSizeHint;
     bool mStartDragging;
+    QAction *mCopyAction;
 };
 
 #endif // __QILabel_p_h__
