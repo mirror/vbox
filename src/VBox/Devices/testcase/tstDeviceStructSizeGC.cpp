@@ -556,13 +556,15 @@ int main()
     GEN_CHECK_OFF(APICState, initial_count);
     GEN_CHECK_OFF(APICState, initial_count_load_time);
     GEN_CHECK_OFF(APICState, next_time);
-    GEN_CHECK_OFF(APICState, pDevInsHC);
+    GEN_CHECK_OFF(APICState, pDevInsR3);
     GEN_CHECK_OFF(APICState, pApicHlpR3);
-    GEN_CHECK_OFF(APICState, pTimerHC);
-    GEN_CHECK_OFF(APICState, pDevInsGC);
-    GEN_CHECK_OFF(APICState, pApicHlpGC);
-    GEN_CHECK_OFF(APICState, pTimerGC);
+    GEN_CHECK_OFF(APICState, pTimerR3);
+    GEN_CHECK_OFF(APICState, pDevInsR0);
     GEN_CHECK_OFF(APICState, pApicHlpR0);
+    GEN_CHECK_OFF(APICState, pTimerR0);
+    GEN_CHECK_OFF(APICState, pDevInsRC);
+    GEN_CHECK_OFF(APICState, pApicHlpRC);
+    GEN_CHECK_OFF(APICState, pTimerRC);
     GEN_CHECK_OFF(APICState, ulTPRPatchAttempts);
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(APICState, StatMMIOReadGC);
@@ -576,11 +578,12 @@ int main()
     GEN_CHECK_OFF(IOAPICState, ioredtbl);
     GEN_CHECK_OFF(IOAPICState, ioredtbl[1]);
     GEN_CHECK_OFF(IOAPICState, ioredtbl[IOAPIC_NUM_PINS - 1]);
-    GEN_CHECK_OFF(IOAPICState, pDevInsHC);
+    GEN_CHECK_OFF(IOAPICState, pDevInsR3);
     GEN_CHECK_OFF(IOAPICState, pIoApicHlpR3);
-    GEN_CHECK_OFF(IOAPICState, pDevInsGC);
-    GEN_CHECK_OFF(IOAPICState, pIoApicHlpGC);
+    GEN_CHECK_OFF(IOAPICState, pDevInsR0);
     GEN_CHECK_OFF(IOAPICState, pIoApicHlpR0);
+    GEN_CHECK_OFF(IOAPICState, pDevInsRC);
+    GEN_CHECK_OFF(IOAPICState, pIoApicHlpRC);
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(IOAPICState, StatMMIOReadGC);
     GEN_CHECK_OFF(IOAPICState, StatSetIrqHC);

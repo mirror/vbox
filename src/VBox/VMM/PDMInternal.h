@@ -383,58 +383,58 @@ typedef struct PDMPIC
  */
 typedef struct PDMAPIC
 {
-    /** Pointer to the APIC device instance - HC Ptr. */
+    /** Pointer to the APIC device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
-    /** @copydoc PDMAPICREG::pfnGetInterruptHC */
+    /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
     DECLR3CALLBACKMEMBER(int,       pfnGetInterruptR3,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
     DECLR3CALLBACKMEMBER(bool,      pfnHasPendingIrqR3,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetBaseHC */
+    /** @copydoc PDMAPICREG::pfnSetBaseR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetBaseR3,(PPDMDEVINS pDevIns, uint64_t u64Base));
-    /** @copydoc PDMAPICREG::pfnGetBaseHC */
+    /** @copydoc PDMAPICREG::pfnGetBaseR3 */
     DECLR3CALLBACKMEMBER(uint64_t,  pfnGetBaseR3,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetTPRHC */
+    /** @copydoc PDMAPICREG::pfnSetTPRR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetTPRR3,(PPDMDEVINS pDevIns, uint8_t u8TPR));
-    /** @copydoc PDMAPICREG::pfnGetTPRHC */
+    /** @copydoc PDMAPICREG::pfnGetTPRR3 */
     DECLR3CALLBACKMEMBER(uint8_t,   pfnGetTPRR3,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnBusDeliverHC */
+    /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
     DECLR3CALLBACKMEMBER(void,      pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /** Pointer to the APIC device instance - R0. */
     R0PTRTYPE(PPDMDEVINS)           pDevInsR0;
-    /** @copydoc PDMAPICREG::pfnGetInterruptHC */
+    /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
     DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
     DECLR0CALLBACKMEMBER(bool,      pfnHasPendingIrqR0,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetBaseHC */
+    /** @copydoc PDMAPICREG::pfnSetBaseR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetBaseR0,(PPDMDEVINS pDevIns, uint64_t u64Base));
-    /** @copydoc PDMAPICREG::pfnGetBaseHC */
+    /** @copydoc PDMAPICREG::pfnGetBaseR3 */
     DECLR0CALLBACKMEMBER(uint64_t,  pfnGetBaseR0,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetTPRHC */
+    /** @copydoc PDMAPICREG::pfnSetTPRR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetTPRR0,(PPDMDEVINS pDevIns, uint8_t u8TPR));
-    /** @copydoc PDMAPICREG::pfnGetTPRHC */
+    /** @copydoc PDMAPICREG::pfnGetTPRR3 */
     DECLR0CALLBACKMEMBER(uint8_t,   pfnGetTPRR0,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnBusDeliverHC */
+    /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
     DECLR0CALLBACKMEMBER(void,      pfnBusDeliverR0,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-    /** Pointer to the APIC device instance - GC Ptr. */
-    PPDMDEVINSGC                    pDevInsGC;
-    /** @copydoc PDMAPICREG::pfnGetInterruptHC */
-    DECLGCCALLBACKMEMBER(int,       pfnGetInterruptGC,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnHasPendingIrqHC */
-    DECLGCCALLBACKMEMBER(bool,      pfnHasPendingIrqGC,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetBaseHC */
-    DECLGCCALLBACKMEMBER(void,      pfnSetBaseGC,(PPDMDEVINS pDevIns, uint64_t u64Base));
-    /** @copydoc PDMAPICREG::pfnGetBaseHC */
-    DECLGCCALLBACKMEMBER(uint64_t,  pfnGetBaseGC,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnSetTPRHC */
-    DECLGCCALLBACKMEMBER(void,      pfnSetTPRGC,(PPDMDEVINS pDevIns, uint8_t u8TPR));
-    /** @copydoc PDMAPICREG::pfnGetTPRHC */
-    DECLGCCALLBACKMEMBER(uint8_t,   pfnGetTPRGC,(PPDMDEVINS pDevIns));
-    /** @copydoc PDMAPICREG::pfnBusDeliverHC */
-    DECLGCCALLBACKMEMBER(void,      pfnBusDeliverGC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    /** Pointer to the APIC device instance - RC Ptr. */
+    PPDMDEVINSRC                    pDevInsRC;
+    /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
+    DECLRCCALLBACKMEMBER(int,       pfnGetInterruptRC,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
+    DECLRCCALLBACKMEMBER(bool,      pfnHasPendingIrqRC,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnSetBaseR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnSetBaseRC,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    /** @copydoc PDMAPICREG::pfnGetBaseR3 */
+    DECLRCCALLBACKMEMBER(uint64_t,  pfnGetBaseRC,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnSetTPRR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnSetTPRRC,(PPDMDEVINS pDevIns, uint8_t u8TPR));
+    /** @copydoc PDMAPICREG::pfnGetTPRR3 */
+    DECLRCCALLBACKMEMBER(uint8_t,   pfnGetTPRRC,(PPDMDEVINS pDevIns));
+    /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnBusDeliverRC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 } PDMAPIC;
 
@@ -444,20 +444,20 @@ typedef struct PDMAPIC
  */
 typedef struct PDMIOAPIC
 {
-    /** Pointer to the APIC device instance - HC Ptr. */
+    /** Pointer to the APIC device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqHC */
+    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /** Pointer to the PIC device instance - R0. */
     R0PTRTYPE(PPDMDEVINS)   pDevInsR0;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqHC */
+    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /** Pointer to the APIC device instance - GC Ptr. */
-    PPDMDEVINSGC                    pDevInsGC;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqHC */
-    DECLGCCALLBACKMEMBER(void,      pfnSetIrqGC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    PPDMDEVINSGC                    pDevInsRC;
+    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
+    DECLGCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 } PDMIOAPIC;
 
 
