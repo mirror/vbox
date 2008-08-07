@@ -274,24 +274,24 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * The registered APIC.
      */
-    if (pVM->pdm.s.Apic.pDevInsGC)
+    if (pVM->pdm.s.Apic.pDevInsRC)
     {
-        pVM->pdm.s.Apic.pDevInsGC           += offDelta;
-        pVM->pdm.s.Apic.pfnGetInterruptGC   += offDelta;
-        pVM->pdm.s.Apic.pfnSetBaseGC        += offDelta;
-        pVM->pdm.s.Apic.pfnGetBaseGC        += offDelta;
-        pVM->pdm.s.Apic.pfnSetTPRGC         += offDelta;
-        pVM->pdm.s.Apic.pfnGetTPRGC         += offDelta;
-        pVM->pdm.s.Apic.pfnBusDeliverGC     += offDelta;
+        pVM->pdm.s.Apic.pDevInsRC           += offDelta;
+        pVM->pdm.s.Apic.pfnGetInterruptRC   += offDelta;
+        pVM->pdm.s.Apic.pfnSetBaseRC        += offDelta;
+        pVM->pdm.s.Apic.pfnGetBaseRC        += offDelta;
+        pVM->pdm.s.Apic.pfnSetTPRRC         += offDelta;
+        pVM->pdm.s.Apic.pfnGetTPRRC         += offDelta;
+        pVM->pdm.s.Apic.pfnBusDeliverRC     += offDelta;
     }
 
     /*
      * The registered I/O APIC.
      */
-    if (pVM->pdm.s.IoApic.pDevInsGC)
+    if (pVM->pdm.s.IoApic.pDevInsRC)
     {
-        pVM->pdm.s.IoApic.pDevInsGC         += offDelta;
-        pVM->pdm.s.IoApic.pfnSetIrqGC       += offDelta;
+        pVM->pdm.s.IoApic.pDevInsRC         += offDelta;
+        pVM->pdm.s.IoApic.pfnSetIrqRC       += offDelta;
     }
 
     /*

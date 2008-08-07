@@ -52,9 +52,9 @@ PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
     if (VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC))
     {
         VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_APIC);
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnGetInterrupt));
-        int i = pVM->pdm.s.Apic.CTXALLSUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt));
+        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
@@ -109,10 +109,10 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
         rc = VINF_SUCCESS;
     }
 
-    if (pVM->pdm.s.IoApic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.IoApic.CTXALLSUFF(pfnSetIrq));
-        pVM->pdm.s.IoApic.CTXALLSUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTXALLSUFF(pDevIns), u8Irq, u8Level);
+        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level);
         rc = VINF_SUCCESS;
     }
 
@@ -131,11 +131,11 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  */
 PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
 {
-    if (pVM->pdm.s.IoApic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.IoApic.CTXALLSUFF(pfnSetIrq));
+        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
         pdmLock(pVM);
-        pVM->pdm.s.IoApic.CTXALLSUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTXALLSUFF(pDevIns), u8Irq, u8Level);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -152,11 +152,11 @@ PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  */
 PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
 {
-    if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnSetBase));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetBase));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTXALLSUFF(pfnSetBase)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns), u64Base);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), u64Base);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -173,11 +173,11 @@ PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
  */
 PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
 {
-    if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnGetBase));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase));
         pdmLock(pVM);
-        *pu64Base = pVM->pdm.s.Apic.CTXALLSUFF(pfnGetBase)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+        *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -195,11 +195,11 @@ PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
  */
 PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
 {
-    if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnSetTPR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
         pdmLock(pVM);
-        *pfPending = pVM->pdm.s.Apic.CTXALLSUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -216,11 +216,11 @@ PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
  */
 PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
 {
-    if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnSetTPR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTXALLSUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns), u8TPR);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), u8TPR);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -238,13 +238,13 @@ PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
 */
 PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
 {
-    if (pVM->pdm.s.Apic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTXALLSUFF(pfnGetTPR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
         pdmLock(pVM);
-        *pu8TPR = pVM->pdm.s.Apic.CTXALLSUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         if (pfPending)
-            *pfPending = pVM->pdm.s.Apic.CTXALLSUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTXALLSUFF(pDevIns));
+            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }

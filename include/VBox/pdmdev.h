@@ -940,7 +940,7 @@ typedef struct PDMAPICREG
      * @returns Pending interrupt number.
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns));
 
     /**
      * Check if the APIC has a pending interrupt/if a TPR change would active one
@@ -948,7 +948,7 @@ typedef struct PDMAPICREG
      * @returns Pending interrupt yes/no
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns));
 
     /**
      * Set the APIC base.
@@ -956,7 +956,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   u64Base         The new base.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetBaseHC,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    DECLR3CALLBACKMEMBER(void, pfnSetBaseR3,(PPDMDEVINS pDevIns, uint64_t u64Base));
 
     /**
      * Get the APIC base.
@@ -964,7 +964,7 @@ typedef struct PDMAPICREG
      * @returns Current base.
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseR3,(PPDMDEVINS pDevIns));
 
     /**
      * Set the TPR (task priority register).
@@ -972,7 +972,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   u8TPR           The new TPR.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetTPRHC,(PPDMDEVINS pDevIns, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, uint8_t u8TPR));
 
     /**
      * Get the TPR (task priority register).
@@ -981,7 +981,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   pfPending       Pending interrupt state (out).
      */
-    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns));
 
     /**
      * Private interface between the IOAPIC and APIC.
@@ -1001,23 +1001,23 @@ typedef struct PDMAPICREG
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLR3CALLBACKMEMBER(void, pfnBusDeliverHC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR3CALLBACKMEMBER(void, pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                 uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-    /** The name of the GC GetInterrupt entry point. */
-    const char         *pszGetInterruptGC;
-    /** The name of the GC HasPendingIrq entry point. */
-    const char         *pszHasPendingIrqGC;
-    /** The name of the GC SetBase entry point. */
-    const char         *pszSetBaseGC;
-    /** The name of the GC GetBase entry point. */
-    const char         *pszGetBaseGC;
-    /** The name of the GC SetTPR entry point. */
-    const char         *pszSetTPRGC;
-    /** The name of the GC GetTPR entry point. */
-    const char         *pszGetTPRGC;
-    /** The name of the GC BusDeliver entry point. */
-    const char         *pszBusDeliverGC;
+    /** The name of the RC GetInterrupt entry point. */
+    const char         *pszGetInterruptRC;
+    /** The name of the RC HasPendingIrq entry point. */
+    const char         *pszHasPendingIrqRC;
+    /** The name of the RC SetBase entry point. */
+    const char         *pszSetBaseRC;
+    /** The name of the RC GetBase entry point. */
+    const char         *pszGetBaseRC;
+    /** The name of the RC SetTPR entry point. */
+    const char         *pszSetTPRRC;
+    /** The name of the RC GetTPR entry point. */
+    const char         *pszGetTPRRC;
+    /** The name of the RC BusDeliver entry point. */
+    const char         *pszBusDeliverRC;
 
     /** The name of the R0 GetInterrupt entry point. */
     const char         *pszGetInterruptR0;
@@ -1043,11 +1043,11 @@ typedef PDMAPICREG *PPDMAPICREG;
 
 
 /**
- * APIC GC helpers.
+ * APIC RC helpers.
  */
-typedef struct PDMAPICHLPGC
+typedef struct PDMAPICHLPRC
 {
-    /** Structure version. PDM_APICHLPGC_VERSION defines the current version. */
+    /** Structure version. PDM_APICHLPRC_VERSION defines the current version. */
     uint32_t                u32Version;
 
     /**
@@ -1055,14 +1055,14 @@ typedef struct PDMAPICHLPGC
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLGCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLGCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
@@ -1070,7 +1070,7 @@ typedef struct PDMAPICHLPGC
      * @param   pDevIns         Device instance of the APIC.
      * @param   fEnabled        If true the bit is set, else cleared.
      */
-    DECLGCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
+    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
 
     /**
      * Acquires the PDM lock.
@@ -1080,25 +1080,25 @@ typedef struct PDMAPICHLPGC
      * @param   pDevIns         The APIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLGCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The APIC device instance.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
-} PDMAPICHLPGC;
+} PDMAPICHLPRC;
 /** Pointer to APIC GC helpers. */
-typedef RCPTRTYPE(PDMAPICHLPGC *) PPDMAPICHLPGC;
+typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 /** Pointer to const APIC helpers. */
-typedef RCPTRTYPE(const PDMAPICHLPGC *) PCPDMAPICHLPGC;
+typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
-/** Current PDMAPICHLPGC version number. */
-#define PDM_APICHLPGC_VERSION   0x60010000
+/** Current PDMAPICHLPRC version number. */
+#define PDM_APICHLPRC_VERSION   0x60010000
 
 
 /**
@@ -1160,7 +1160,7 @@ typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 #define PDM_APICHLPR0_VERSION   0x60010000
 
 /**
- * APIC HC helpers.
+ * APIC R3 helpers.
  */
 typedef struct PDMAPICHLPR3
 {
@@ -1207,15 +1207,15 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
-     * Gets the address of the GC APIC helpers.
+     * Gets the address of the RC APIC helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the RC helpers.
      *
      * @returns GC pointer to the APIC helpers.
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(PCPDMAPICHLPGC, pfnGetGCHelpers,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(PCPDMAPICHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the R0 APIC helpers.
@@ -1255,10 +1255,10 @@ typedef struct PDMIOAPICREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /** The name of the GC SetIrq entry point. */
-    const char         *pszSetIrqGC;
+    const char         *pszSetIrqRC;
 
     /** The name of the R0 SetIrq entry point. */
     const char         *pszSetIrqR0;
@@ -1271,11 +1271,11 @@ typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 
 /**
- * IOAPIC GC helpers.
+ * IOAPIC RC helpers.
  */
-typedef struct PDMIOAPICHLPGC
+typedef struct PDMIOAPICHLPRC
 {
-    /** Structure version. PDM_IOAPICHLPGC_VERSION defines the current version. */
+    /** Structure version. PDM_IOAPICHLPRC_VERSION defines the current version. */
     uint32_t                u32Version;
 
     /**
@@ -1292,7 +1292,7 @@ typedef struct PDMIOAPICHLPGC
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLGCCALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLRCCALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /**
@@ -1303,25 +1303,25 @@ typedef struct PDMIOAPICHLPGC
      * @param   pDevIns         The IOAPIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLGCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The IOAPIC device instance.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
-} PDMIOAPICHLPGC;
-/** Pointer to IOAPIC GC helpers. */
-typedef RCPTRTYPE(PDMAPICHLPGC *)PPDMIOAPICHLPGC;
+} PDMIOAPICHLPRC;
+/** Pointer to IOAPIC RC helpers. */
+typedef RCPTRTYPE(PDMIOAPICHLPRC *) PPDMIOAPICHLPRC;
 /** Pointer to const IOAPIC helpers. */
-typedef RCPTRTYPE(const PDMIOAPICHLPGC *) PCPDMIOAPICHLPGC;
+typedef RCPTRTYPE(const PDMIOAPICHLPRC *) PCPDMIOAPICHLPRC;
 
-/** Current PDMIOAPICHLPGC version number. */
-#define PDM_IOAPICHLPGC_VERSION   0xfe010000
+/** Current PDMIOAPICHLPRC version number. */
+#define PDM_IOAPICHLPRC_VERSION   0xfe010000
 
 
 /**
@@ -1370,7 +1370,7 @@ typedef struct PDMIOAPICHLPR0
     uint32_t                u32TheEnd;
 } PDMIOAPICHLPR0;
 /** Pointer to IOAPIC R0 helpers. */
-typedef R0PTRTYPE(PDMAPICHLPGC *) PPDMIOAPICHLPR0;
+typedef R0PTRTYPE(PDMIOAPICHLPR0 *) PPDMIOAPICHLPR0;
 /** Pointer to const IOAPIC helpers. */
 typedef R0PTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
 
@@ -1420,15 +1420,15 @@ typedef struct PDMIOAPICHLPR3
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
-     * Gets the address of the GC IOAPIC helpers.
+     * Gets the address of the RC IOAPIC helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the RC helpers.
      *
-     * @returns GC pointer to the IOAPIC helpers.
+     * @returns RC pointer to the IOAPIC helpers.
      * @param   pDevIns         Device instance of the IOAPIC.
      */
-    DECLR3CALLBACKMEMBER(PCPDMIOAPICHLPGC, pfnGetGCHelpers,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(PCPDMIOAPICHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the R0 IOAPIC helpers.
