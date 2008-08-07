@@ -52,8 +52,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-
-#include "vl_vbox.h"
+#include <iprt/string.h>
 
 struct RTCState;
 typedef struct RTCState RTCState;
@@ -63,10 +62,11 @@ typedef struct RTCState RTCState;
 #define RTC_CRC_HIGH    0x2e
 #define RTC_CRC_LOW     0x2f
 
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -76,6 +76,10 @@ PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 __END_DECLS
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /*#define DEBUG_CMOS*/
 
 #define RTC_SECONDS             0
@@ -103,6 +107,10 @@ __END_DECLS
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /** @todo Replace struct my_tm with RTTIME. */
 struct my_tm
 {
@@ -470,71 +478,6 @@ static void rtc_set_date(RTCState *s, const struct my_tm *tm)
     rtc_copy_date(s);
 }
 
-static void rtc_save(QEMUFile *f, void *opaque)
-{
-    RTCState *s = (RTCState*)opaque;
-
-    qemu_put_buffer(f, s->cmos_data, 128);
-    qemu_put_8s(f, &s->cmos_index);
-
-    qemu_put_be32s(f, &s->current_tm.tm_sec);
-    qemu_put_be32s(f, &s->current_tm.tm_min);
-    qemu_put_be32s(f, &s->current_tm.tm_hour);
-    qemu_put_be32s(f, &s->current_tm.tm_wday);
-    qemu_put_be32s(f, &s->current_tm.tm_mday);
-    qemu_put_be32s(f, &s->current_tm.tm_mon);
-    qemu_put_be32s(f, &s->current_tm.tm_year);
-
-    qemu_put_timer(f, s->CTXSUFF(pPeriodicTimer));
-    qemu_put_be64s(f, &s->next_periodic_time);
-
-    qemu_put_be64s(f, &s->next_second_time);
-    qemu_put_timer(f, s->CTXSUFF(pSecondTimer));
-    qemu_put_timer(f, s->CTXSUFF(pSecondTimer2));
-
-}
-
-static int rtc_load(QEMUFile *f, void *opaque, int version_id)
-{
-    RTCState *s = (RTCState*)opaque;
-
-    if (version_id != 1)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-
-    qemu_get_buffer(f, s->cmos_data, 128);
-    qemu_get_8s(f, &s->cmos_index);
-
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_sec);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_min);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_hour);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_wday);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_mday);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_mon);
-    qemu_get_be32s(f, (uint32_t *)&s->current_tm.tm_year);
-
-    qemu_get_timer(f, s->CTXSUFF(pPeriodicTimer));
-
-    qemu_get_be64s(f, (uint64_t *)&s->next_periodic_time);
-
-    qemu_get_be64s(f, (uint64_t *)&s->next_second_time);
-    qemu_get_timer(f, s->CTXSUFF(pSecondTimer));
-    qemu_get_timer(f, s->CTXSUFF(pSecondTimer2));
-
-    int period_code = s->cmos_data[RTC_REG_A] & 0x0f;
-    if (    period_code != 0
-        &&  (s->cmos_data[RTC_REG_B] & REG_B_PIE)) {
-        if (period_code <= 2)
-            period_code += 7;
-        int period = 1 << (period_code - 1);
-        LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
-        s->CurPeriod = period;
-    } else {
-        LogRel(("RTC: stopped the periodic timer (restore)\n"));
-        s->CurPeriod = 0;
-    }
-    s->cRelLogEntries = 0;
-    return 0;
-}
 #endif /* IN_RING3 */
 
 /* -=-=-=-=-=- wrappers -=-=-=-=-=- */
@@ -628,8 +571,27 @@ PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    RTCState *pData = PDMINS2DATA(pDevIns, RTCState *);
-    rtc_save(pSSMHandle, pData);
+    RTCState *pThis = PDMINS2DATA(pDevIns, RTCState *);
+
+    SSMR3PutMem(pSSMHandle, pThis->cmos_data, 128);
+    SSMR3PutU8(pSSMHandle, pThis->cmos_index);
+
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_sec);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_min);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_hour);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_wday);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_mday);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_mon);
+    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_year);
+
+    TMR3TimerSave(pThis->CTXSUFF(pPeriodicTimer), pSSMHandle);
+
+    SSMR3PutS64(pSSMHandle, pThis->next_periodic_time);
+
+    SSMR3PutS64(pSSMHandle, pThis->next_second_time);
+    TMR3TimerSave(pThis->CTXSUFF(pSecondTimer), pSSMHandle);
+    TMR3TimerSave(pThis->CTXSUFF(pSecondTimer2), pSSMHandle);
+
     return VINF_SUCCESS;
 }
 
@@ -644,8 +606,44 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    RTCState *pData = PDMINS2DATA(pDevIns, RTCState *);
-    return rtc_load(pSSMHandle, pData, u32Version);
+    RTCState *pThis = PDMINS2DATA(pDevIns, RTCState *);
+
+    if (u32Version != 1)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    SSMR3GetMem(pSSMHandle, pThis->cmos_data, 128);
+    SSMR3GetU8(pSSMHandle, &pThis->cmos_index);
+
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_sec);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_min);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_hour);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_wday);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_mday);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_mon);
+    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_year);
+
+    TMR3TimerLoad(pThis->CTXSUFF(pPeriodicTimer), pSSMHandle);
+
+    SSMR3GetS64(pSSMHandle, &pThis->next_periodic_time);
+
+    SSMR3GetS64(pSSMHandle, &pThis->next_second_time);
+    TMR3TimerLoad(pThis->CTXSUFF(pSecondTimer), pSSMHandle);
+    TMR3TimerLoad(pThis->CTXSUFF(pSecondTimer2), pSSMHandle);
+
+    int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
+    if (    period_code != 0
+        &&  (pThis->cmos_data[RTC_REG_B] & REG_B_PIE)) {
+        if (period_code <= 2)
+            period_code += 7;
+        int period = 1 << (period_code - 1);
+        LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
+        pThis->CurPeriod = period;
+    } else {
+        LogRel(("RTC: stopped the periodic timer (restore)\n"));
+        pThis->CurPeriod = 0;
+    }
+    pThis->cRelLogEntries = 0;
+    return VINF_SUCCESS;
 }
 
 
