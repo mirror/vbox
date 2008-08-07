@@ -20,20 +20,19 @@
  */
 
 #define LOG_GROUP LOG_GROUP_DEV_ACPI
-
 #include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
-#include <iprt/alloc.h>
-#include <iprt/string.h>
+# include <iprt/alloc.h>
+# include <iprt/string.h>
 #endif /* IN_RING3 */
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
-#ifdef  LOG_ENABLED
-#define DEBUG_ACPI
+#ifdef LOG_ENABLED
+# define DEBUG_ACPI
 #endif
 
 /* the compiled DSL */
@@ -732,7 +731,7 @@ static void update_gpe0 (ACPIState *s, uint32_t sts, uint32_t en)
 static int acpiPowerDown (ACPIState *s)
 {
     int rc = PDMDevHlpVMPowerOff(s->pDevIns);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         AssertMsgFailed (("Could not power down the VM. rc = %Vrc\n", rc));
     return rc;
 }
@@ -1446,7 +1445,7 @@ static DECLCALLBACK(int) acpi_load_state (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     rc = SSMR3GetStruct (pSSMHandle, s, &g_AcpiSavedStateFields[0]);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         acpiFetchBatteryStatus (s);
         acpiFetchBatteryInfo (s);
@@ -1499,7 +1498,7 @@ static int acpiPlantTables (ACPIState *s)
     xsdt_tbl_len += cAddr*8;  /* each entry: 64 bits phys. address. */
 
     rc = CFGMR3QueryU64 (s->pDevIns->pCfgHandle, "RamSize", &s->u64RamSize);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(s->pDevIns, rc,
                                 N_("Configuration error: Querying "
                                    "\"RamSize\" as integer failed"));
@@ -1546,7 +1545,7 @@ static int acpiPlantTables (ACPIState *s)
     }
 
     rc = acpiSetupRSDT (s, rsdt_addr + addend, cAddr, rsdt_addrs);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     return acpiSetupXSDT (s, xsdt_addr + addend, cAddr, rsdt_addrs);
 }
@@ -1584,7 +1583,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = CFGMR3QueryU8 (pCfgHandle, "IOAPIC", &s->u8UseIOApic);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         s->u8UseIOApic = 1;
-    else if (VBOX_FAILURE (rc))
+    else if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
@@ -1592,21 +1591,21 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = CFGMR3QueryU8 (pCfgHandle, "FdcEnabled", &s->u8UseFdc);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         s->u8UseFdc = 1;
-    else if (VBOX_FAILURE (rc))
+    else if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"FdcEnabled\""));
 
     rc = CFGMR3QueryBool (pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fGCEnabled = true;
-    else if (VBOX_FAILURE (rc))
+    else if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"GCEnabled\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("configuration error: failed to read R0Enabled as boolean"));
 
@@ -1617,18 +1616,18 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("Can not find space for RSDP. ACPI is disabled"));
 
     rc = acpiPlantTables (s);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpROMRegister (pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage, false /* fShadow */, "ACPI RSDP");
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
 #define R(addr, cnt, writer, reader, description) \
     do {                                                                     \
         rc = PDMDevHlpIOPortRegister (pDevIns, addr, cnt, s, writer, reader, \
                                       NULL, NULL, description);              \
-        if (VBOX_FAILURE (rc))                                               \
+        if (RT_FAILURE (rc))                                               \
             return rc;                                                       \
     } while (0)
 #define L (GPE0_BLK_LEN / 2)
@@ -1670,7 +1669,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
 
     rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
@@ -1711,12 +1710,12 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     dev->config[0x3c] = SCI_INT;
 
     rc = PDMDevHlpPCIRegister (pDevIns, dev);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 4, sizeof(*s),
                                NULL, acpi_save_state, NULL, NULL, acpi_load_state,  NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1733,7 +1732,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     * Get the corresponding connector interface
     */
    rc = PDMDevHlpDriverAttach (pDevIns, 0, &s->IBase, &s->pDrvBase, "ACPI Driver Port");
-   if (VBOX_SUCCESS (rc))
+   if (RT_SUCCESS (rc))
    {
        s->pDrv = (PPDMIACPICONNECTOR)s->pDrvBase->pfnQueryInterface (s->pDrvBase,
                                                                      PDMINTERFACE_ACPI_CONNECTOR);
