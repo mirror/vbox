@@ -488,8 +488,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
-	generic/RTMpGetCurFrequency-generic.cpp \
-	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -512,7 +510,10 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
-	r3/solaris/alloc-solaris.cpp
+	r3/solaris/alloc-solaris.cpp \
+	r3/solaris/mp-solaris.cpp
+
+VBoxRT_LIBS.solaris += kstat
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
