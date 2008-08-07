@@ -299,10 +299,10 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     for (unsigned i = 0; i < ELEMENTS(pVM->pdm.s.aPciBuses); i++)
     {
-        if (pVM->pdm.s.aPciBuses[i].pDevInsGC)
+        if (pVM->pdm.s.aPciBuses[i].pDevInsRC)
         {
-            pVM->pdm.s.aPciBuses[i].pDevInsGC   += offDelta;
-            pVM->pdm.s.aPciBuses[i].pfnSetIrqGC += offDelta;
+            pVM->pdm.s.aPciBuses[i].pDevInsRC   += offDelta;
+            pVM->pdm.s.aPciBuses[i].pfnSetIrqRC += offDelta;
         }
     }
 

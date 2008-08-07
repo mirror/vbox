@@ -2354,11 +2354,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMHC;
     VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterHC=%p, .pfnIORegionRegisterHC=%p, .pfnSetIrqHC=%p, "
-             ".pfnSaveExecHC=%p, .pfnLoadExecHC=%p, .pfnFakePCIBIOSHC=%p, .pszSetIrqGC=%p:{%s}} ppPciHlpR3=%p\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterHC,
-             pPciBusReg->pfnIORegionRegisterHC, pPciBusReg->pfnSetIrqHC, pPciBusReg->pfnSaveExecHC, pPciBusReg->pfnLoadExecHC,
-             pPciBusReg->pfnFakePCIBIOSHC, pPciBusReg->pszSetIrqGC, pPciBusReg->pszSetIrqGC, ppPciHlpR3));
+    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterR3=%p, .pfnIORegionRegisterR3=%p, .pfnSetIrqR3=%p, "
+             ".pfnSaveExecR3=%p, .pfnLoadExecR3=%p, .pfnFakePCIBIOSR3=%p, .pszSetIrqRC=%p:{%s}, .pszSetIrqR0=%p:{%s}} ppPciHlpR3=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterR3,
+             pPciBusReg->pfnIORegionRegisterR3, pPciBusReg->pfnSetIrqR3, pPciBusReg->pfnSaveExecR3, pPciBusReg->pfnLoadExecR3,
+             pPciBusReg->pfnFakePCIBIOSR3, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqR0, pPciBusReg->pszSetIrqR0, ppPciHlpR3));
 
     /*
      * Validate the structure.
@@ -2369,26 +2369,26 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
         LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-    if (    !pPciBusReg->pfnRegisterHC
-        ||  !pPciBusReg->pfnIORegionRegisterHC
-        ||  !pPciBusReg->pfnSetIrqHC
-        ||  !pPciBusReg->pfnSaveExecHC
-        ||  !pPciBusReg->pfnLoadExecHC
-        ||  !pPciBusReg->pfnFakePCIBIOSHC)
+    if (    !pPciBusReg->pfnRegisterR3
+        ||  !pPciBusReg->pfnIORegionRegisterR3
+        ||  !pPciBusReg->pfnSetIrqR3
+        ||  !pPciBusReg->pfnSaveExecR3
+        ||  !pPciBusReg->pfnLoadExecR3
+        ||  !pPciBusReg->pfnFakePCIBIOSR3)
     {
-        Assert(pPciBusReg->pfnRegisterHC);
-        Assert(pPciBusReg->pfnIORegionRegisterHC);
-        Assert(pPciBusReg->pfnSetIrqHC);
-        Assert(pPciBusReg->pfnSaveExecHC);
-        Assert(pPciBusReg->pfnLoadExecHC);
-        Assert(pPciBusReg->pfnFakePCIBIOSHC);
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (HC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        Assert(pPciBusReg->pfnRegisterR3);
+        Assert(pPciBusReg->pfnIORegionRegisterR3);
+        Assert(pPciBusReg->pfnSetIrqR3);
+        Assert(pPciBusReg->pfnSaveExecR3);
+        Assert(pPciBusReg->pfnLoadExecR3);
+        Assert(pPciBusReg->pfnFakePCIBIOSR3);
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-    if (    pPciBusReg->pszSetIrqGC
-        &&  !VALID_PTR(pPciBusReg->pszSetIrqGC))
+    if (    pPciBusReg->pszSetIrqRC
+        &&  !VALID_PTR(pPciBusReg->pszSetIrqRC))
     {
-        Assert(VALID_PTR(pPciBusReg->pszSetIrqGC));
+        Assert(VALID_PTR(pPciBusReg->pszSetIrqRC));
         LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -2422,23 +2422,23 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     PPDMPCIBUS pPciBus = &pVM->pdm.s.aPciBuses[iBus];
 
     /*
-     * Resolve and init the GC bits.
+     * Resolve and init the RC bits.
      */
-    if (pPciBusReg->pszSetIrqGC)
+    if (pPciBusReg->pszSetIrqRC)
     {
-        int rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqGC, &pPciBus->pfnSetIrqGC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqGC, rc));
+        int rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqRC, &pPciBus->pfnSetIrqRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqRC, rc));
         if (VBOX_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
-        pPciBus->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
+        pPciBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     }
     else
     {
-        pPciBus->pfnSetIrqGC = 0;
-        pPciBus->pDevInsGC   = 0;
+        pPciBus->pfnSetIrqRC = 0;
+        pPciBus->pDevInsRC   = 0;
     }
 
     /*
@@ -2462,17 +2462,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     }
 
     /*
-     * Init the HC bits.
+     * Init the R3 bits.
      */
     pPciBus->iBus                    = iBus;
     pPciBus->pDevInsR3               = pDevIns;
-    pPciBus->pfnRegisterR3           = pPciBusReg->pfnRegisterHC;
-    pPciBus->pfnIORegionRegisterR3   = pPciBusReg->pfnIORegionRegisterHC;
-    pPciBus->pfnSetConfigCallbacksR3 = pPciBusReg->pfnSetConfigCallbacksHC;
-    pPciBus->pfnSetIrqR3             = pPciBusReg->pfnSetIrqHC;
-    pPciBus->pfnSaveExecR3           = pPciBusReg->pfnSaveExecHC;
-    pPciBus->pfnLoadExecR3           = pPciBusReg->pfnLoadExecHC;
-    pPciBus->pfnFakePCIBIOSR3        = pPciBusReg->pfnFakePCIBIOSHC;
+    pPciBus->pfnRegisterR3           = pPciBusReg->pfnRegisterR3;
+    pPciBus->pfnIORegionRegisterR3   = pPciBusReg->pfnIORegionRegisterR3;
+    pPciBus->pfnSetConfigCallbacksR3 = pPciBusReg->pfnSetConfigCallbacksR3;
+    pPciBus->pfnSetIrqR3             = pPciBusReg->pfnSetIrqR3;
+    pPciBus->pfnSaveExecR3           = pPciBusReg->pfnSaveExecR3;
+    pPciBus->pfnLoadExecR3           = pPciBusReg->pfnLoadExecR3;
+    pPciBus->pfnFakePCIBIOSR3        = pPciBusReg->pfnFakePCIBIOSR3;
 
     Log(("PDM: Registered PCI bus device '%s'/%d pDevIns=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pDevIns));
 

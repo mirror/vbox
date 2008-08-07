@@ -1482,14 +1482,14 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
-    PciBusReg.pfnRegisterHC           = pciRegister;
-    PciBusReg.pfnIORegionRegisterHC   = pciIORegionRegister;
-    PciBusReg.pfnSetConfigCallbacksHC = pciSetConfigCallbacks;
-    PciBusReg.pfnSetIrqHC             = pciSetIrq;
-    PciBusReg.pfnSaveExecHC           = pciGenericSaveExec;
-    PciBusReg.pfnLoadExecHC           = pciGenericLoadExec;
-    PciBusReg.pfnFakePCIBIOSHC        = pciFakePCIBIOS;
-    PciBusReg.pszSetIrqGC             = fGCEnabled ? "pciSetIrq" : NULL;
+    PciBusReg.pfnRegisterR3           = pciRegister;
+    PciBusReg.pfnIORegionRegisterR3   = pciIORegionRegister;
+    PciBusReg.pfnSetConfigCallbacksR3 = pciSetConfigCallbacks;
+    PciBusReg.pfnSetIrqR3             = pciSetIrq;
+    PciBusReg.pfnSaveExecR3           = pciGenericSaveExec;
+    PciBusReg.pfnLoadExecR3           = pciGenericLoadExec;
+    PciBusReg.pfnFakePCIBIOSR3        = pciFakePCIBIOS;
+    PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
     rc = pDevIns->pDevHlp->pfnPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
     if (VBOX_FAILURE(rc))
