@@ -295,6 +295,8 @@ public:
                            const QString &errorID,
                            const QString &errorMsg);
 
+    static QString formatRC (HRESULT aRC);
+
     static QString formatErrorInfo (const COMErrorInfo &aInfo,
                                     HRESULT aWrapperRC = S_OK);
 
