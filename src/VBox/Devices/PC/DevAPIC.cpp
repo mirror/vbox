@@ -1678,31 +1678,24 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0" "GCEnabled\0" "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBool (pCfgHandle, "IOAPIC", &fIOAPIC);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fIOAPIC = true;
-    else if (VBOX_FAILURE (rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIOAPIC, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
-    Log(("APIC: fGCEnabled=%d\n", fGCEnabled));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
-    Log(("APIC: fR0Enabled=%d\n", fR0Enabled));
+    Log(("APIC: fR0Enabled=%RTbool fGCEnabled=%RTbool fIOAPIC=%RTbool\n", fR0Enabled, fGCEnabled, fIOAPIC));
 
     /*
      * Init the data.
@@ -1763,9 +1756,9 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     Assert(pDevIns->pDevHlp->pfnAPICRegister);
     rc = pDevIns->pDevHlp->pfnAPICRegister(pDevIns, &ApicReg, &pData->pApicHlpR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("APICRegister -> %Vrc\n", rc));
+        AssertLogRelMsgFailed(("APICRegister -> %Vrc\n", rc));
         return rc;
     }
 
@@ -1794,7 +1787,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     rc = PDMDevHlpMMIORegister(pDevIns, pData->apicbase & ~0xfff, 0x1000, pData,
                                apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (fGCEnabled) {
@@ -1802,7 +1795,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
         rc = PDMDevHlpMMIORegisterGC(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -1811,7 +1804,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
         rc = PDMDevHlpMMIORegisterR0(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -1820,7 +1813,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicTimer,
                                 "APIC Timer", &pData->CTX_SUFF(pTimer));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pData->pTimerR0 = TMTimerR0Ptr(pData->CTX_SUFF(pTimer));
     pData->pTimerRC = TMTimerRCPtr(pData->CTX_SUFF(pTimer));
@@ -1830,7 +1823,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */,
                               sizeof(*pData), NULL, apicSaveExec, NULL, NULL, apicLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifdef VBOX_WITH_STATISTICS
@@ -2026,24 +2019,19 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0" "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
-    Log(("IOAPIC: fGCEnabled=%d\n", fGCEnabled));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
-    Log(("IOAPIC: fR0Enabled=%d\n", fR0Enabled));
+    Log(("IOAPIC: fR0Enabled=%RTbool fGCEnabled=%RTbool\n", fR0Enabled, fGCEnabled));
 
     /*
      * Initialize the state data.
@@ -2062,7 +2050,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     IoApicReg.pszSetIrqRC = fGCEnabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pszSetIrqR0 = fR0Enabled ? "ioapicSetIrq" : NULL;
     rc = pDevIns->pDevHlp->pfnIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("IOAPICRegister -> %Vrc\n", rc));
         return rc;
@@ -2073,7 +2061,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     rc = PDMDevHlpMMIORegister(pDevIns, 0xfec00000, 0x1000, s,
                                ioapicMMIOWrite, ioapicMMIORead, NULL, "I/O APIC Memory");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (fGCEnabled) {
@@ -2081,7 +2069,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         rc = PDMDevHlpMMIORegisterGC(pDevIns, 0xfec00000, 0x1000, 0,
                                      "ioapicMMIOWrite", "ioapicMMIORead", NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2090,13 +2078,13 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         rc = PDMDevHlpMMIORegisterR0(pDevIns, 0xfec00000, 0x1000, 0,
                                      "ioapicMMIOWrite", "ioapicMMIORead", NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */,
                               sizeof(*s), NULL, ioapicSaveExec, NULL, NULL, ioapicLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifdef VBOX_WITH_STATISTICS
