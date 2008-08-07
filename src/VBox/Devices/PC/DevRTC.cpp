@@ -54,6 +54,8 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+#include "Builtins.h"
+
 struct RTCState;
 typedef struct RTCState RTCState;
 
