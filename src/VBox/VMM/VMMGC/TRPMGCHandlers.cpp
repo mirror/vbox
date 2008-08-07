@@ -88,7 +88,7 @@ typedef struct TRPMGCHYPER
      * @param   pRegFrame       The register frame.
      * @param   uUser           The user argument.
      */
-    DECLGCCALLBACKMEMBER(int, pfnHandler, (PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser));
+    DECLRCCALLBACKMEMBER(int, pfnHandler, (PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser));
     /** Whatever the handler desires to put here. */
     uintptr_t uUser;
 } TRPMGCHYPER;
