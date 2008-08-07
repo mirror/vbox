@@ -510,19 +510,23 @@ int main()
     GEN_CHECK_OFF(RTCState, current_tm.tm_wday);
     GEN_CHECK_OFF(RTCState, current_tm.tm_yday);
     GEN_CHECK_OFF(RTCState, irq);
-    GEN_CHECK_OFF(RTCState, pPeriodicTimerHC);
-    GEN_CHECK_OFF(RTCState, pPeriodicTimerGC);
+    GEN_CHECK_OFF(RTCState, pPeriodicTimerR0);
+    GEN_CHECK_OFF(RTCState, pPeriodicTimerR3);
+    GEN_CHECK_OFF(RTCState, pPeriodicTimerRC);
     GEN_CHECK_OFF(RTCState, next_periodic_time);
     GEN_CHECK_OFF(RTCState, next_second_time);
-    GEN_CHECK_OFF(RTCState, pSecondTimerHC);
-    GEN_CHECK_OFF(RTCState, pSecondTimerGC);
-    GEN_CHECK_OFF(RTCState, pSecondTimer2HC);
-    GEN_CHECK_OFF(RTCState, pSecondTimer2GC);
-    GEN_CHECK_OFF(RTCState, pDevInsHC);
-    GEN_CHECK_OFF(RTCState, pDevInsGC);
+    GEN_CHECK_OFF(RTCState, pSecondTimerR0);
+    GEN_CHECK_OFF(RTCState, pSecondTimerR3);
+    GEN_CHECK_OFF(RTCState, pSecondTimerRC);
+    GEN_CHECK_OFF(RTCState, pSecondTimer2R0);
+    GEN_CHECK_OFF(RTCState, pSecondTimer2R3);
+    GEN_CHECK_OFF(RTCState, pSecondTimer2RC);
+    GEN_CHECK_OFF(RTCState, pDevInsR0);
+    GEN_CHECK_OFF(RTCState, pDevInsR3);
+    GEN_CHECK_OFF(RTCState, pDevInsRC);
     GEN_CHECK_OFF(RTCState, fUTC);
     GEN_CHECK_OFF(RTCState, RtcReg);
-    GEN_CHECK_OFF(RTCState, pRtcHlpHC);
+    GEN_CHECK_OFF(RTCState, pRtcHlpR3);
 
     /* PC/apic.c */
     GEN_CHECK_SIZE(APICState);
