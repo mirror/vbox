@@ -826,35 +826,27 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Init the data.
      */
-    rc = CFGMR3QueryU8(pCfgHandle, "Irq", &u8Irq);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        u8Irq = 8;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryU8Def(pCfgHandle, "Irq", &u8Irq, 8);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
 
-    rc = CFGMR3QueryU16(pCfgHandle, "Base", &u16Base);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        u16Base = 0x70;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryU16Def(pCfgHandle, "Base", &u16Base, 0x70);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
-    Log(("CMOS: fGCEnabled=%d fR0Enabled=%d\n", fGCEnabled, fR0Enabled));
+    Log(("RTC: Irq=%#x Base=%#x fGCEnabled=%RTbool fR0Enabled=%RTbool\n", u8Irq, u16Base, fGCEnabled, fR0Enabled));
 
 
     pData->pDevInsR3            = pDevIns;
