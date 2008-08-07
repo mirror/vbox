@@ -472,32 +472,32 @@ typedef struct PDMPCIBUS
 
     /** Pointer to PCI Bus device instance. */
     PPDMDEVINSR3                    pDevInsR3;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqHC */
+    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
-    /** @copydoc PDMPCIBUSREG::pfnRegisterHC */
+    /** @copydoc PDMPCIBUSREG::pfnRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
-    /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterHC */
+    /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
                                                            PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
-    /** @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC */
+    /** @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead,
                                                              PPFNPCICONFIGREAD ppfnReadOld, PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
-    /** @copydoc PDMPCIBUSREG::pfnSaveExecHC */
+    /** @copydoc PDMPCIBUSREG::pfnSaveExecR3 */
     DECLR3CALLBACKMEMBER(int,       pfnSaveExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
-    /** @copydoc PDMPCIBUSREG::pfnLoadExecHC */
+    /** @copydoc PDMPCIBUSREG::pfnLoadExecR3 */
     DECLR3CALLBACKMEMBER(int,       pfnLoadExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
-    /** @copydoc PDMPCIBUSREG::pfnFakePCIBIOSHC */
+    /** @copydoc PDMPCIBUSREG::pfnFakePCIBIOSR3 */
     DECLR3CALLBACKMEMBER(int,       pfnFakePCIBIOSR3,(PPDMDEVINS pDevIns));
 
     /** Pointer to the PIC device instance - R0. */
     R0PTRTYPE(PPDMDEVINS)           pDevInsR0;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqHC */
+    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 
     /** Pointer to PCI Bus device instance. */
-    PPDMDEVINSGC                    pDevInsGC;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqHC */
-    DECLRCCALLBACKMEMBER(void,      pfnSetIrqGC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
+    PPDMDEVINSGC                    pDevInsRC;
+    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 } PDMPCIBUS;
 
 

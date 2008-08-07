@@ -417,7 +417,7 @@ typedef struct PDMPCIBUSREG
      * @param   iDev            The device number ((dev << 3) | function) the device should have on the bus.
      *                          If negative, the pci bus device will assign one.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
+    DECLR3CALLBACKMEMBER(int, pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
 
     /**
      * Registers a I/O region (memory mapped or I/O ports) for a PCI device.
@@ -430,7 +430,7 @@ typedef struct PDMPCIBUSREG
      * @param   iType           PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
      * @param   pfnCallback     Callback for doing the mapping.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
      * Register PCI configuration space read/write callbacks.
@@ -447,7 +447,7 @@ typedef struct PDMPCIBUSREG
      *                          to call default PCI config write function. Can be NULL.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
+    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                         PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
 
     /**
@@ -458,7 +458,7 @@ typedef struct PDMPCIBUSREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
+    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 
     /**
      * Saves a state of the PCI device.
@@ -468,7 +468,7 @@ typedef struct PDMPCIBUSREG
      * @param   pPciDev         Pointer to PCI device.
      * @param   pSSMHandle      The handle to save the state to.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSaveExecHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
+    DECLR3CALLBACKMEMBER(int, pfnSaveExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
 
     /**
      * Loads a saved PCI device state.
@@ -478,7 +478,7 @@ typedef struct PDMPCIBUSREG
      * @param   pPciDev         Pointer to PCI device.
      * @param   pSSMHandle      The handle to the saved state.
      */
-    DECLR3CALLBACKMEMBER(int, pfnLoadExecHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
+    DECLR3CALLBACKMEMBER(int, pfnLoadExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
 
     /**
      * Called to perform the job of the bios.
@@ -488,10 +488,10 @@ typedef struct PDMPCIBUSREG
      * @returns VBox status.
      * @param   pDevIns     Device instance of the first bus.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFakePCIBIOSHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int, pfnFakePCIBIOSR3,(PPDMDEVINS pDevIns));
 
-    /** The name of the SetIrq GC entry point. */
-    const char         *pszSetIrqGC;
+    /** The name of the SetIrq RC entry point. */
+    const char         *pszSetIrqRC;
 
     /** The name of the SetIrq R0 entry point. */
     const char         *pszSetIrqR0;

@@ -219,10 +219,10 @@ static DECLCALLBACK(void) pdmGCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
     PPDMPCIBUS  pPciBus = pDevIns->Internal.s.pPciBusGC;
     if (    pPciDev
         &&  pPciBus
-        &&  pPciBus->pDevInsGC)
+        &&  pPciBus->pDevInsRC)
     {
         pdmLock(pVM);
-        pPciBus->pfnSetIrqGC(pPciBus->pDevInsGC, pPciDev, iIrq, iLevel);
+        pPciBus->pfnSetIrqRC(pPciBus->pDevInsRC, pPciDev, iIrq, iLevel);
         pdmUnlock(pVM);
     }
     else
