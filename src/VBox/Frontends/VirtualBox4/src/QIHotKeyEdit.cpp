@@ -119,7 +119,7 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
     clear();
 
     setFrameStyle (QFrame::StyledPanel | Sunken);
-    setAlignment (Qt::AlignHCenter | Qt::AlignBottom);
+    setAlignment (Qt::AlignCenter);
     setFocusPolicy (Qt::StrongFocus);
     setAutoFillBackground (true);
 
