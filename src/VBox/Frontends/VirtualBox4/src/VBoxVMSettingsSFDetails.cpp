@@ -57,7 +57,7 @@ VBoxVMSettingsSFDetails::VBoxVMSettingsSFDetails (DialogType aType,
 
      /* Applying language settings */
     retranslateUi();
-    
+
     /* Validate the initial fields */
     validate();
 
@@ -114,6 +114,9 @@ void VBoxVMSettingsSFDetails::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxVMSettingsSFDetails::retranslateUi (this);
 
+    mPsPath->setNoneToolTip (tr ("No shared folder path is currently selected."));
+    mPsPath->setSelectToolTip (tr ("Selects shared folder path."));
+
     switch (mType)
     {
         case AddType:
@@ -135,7 +138,7 @@ void VBoxVMSettingsSFDetails::validate()
     SFolderName pair = qMakePair (mLeName->text(), resultType);
 
     mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!mPsPath->path().isEmpty() &&
-                                                           !mLeName->text().trimmed().isEmpty() && 
+                                                           !mLeName->text().trimmed().isEmpty() &&
                                                            !mLeName->text().contains(" ") &&
                                                            !mUsedNames.contains (pair));
 }

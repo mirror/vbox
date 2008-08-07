@@ -21,32 +21,49 @@
  */
 
 #include "VBoxFilePathSelectorWidget.h"
-#include "VBoxGlobal.h"
-#include "QILabel.h"
 
 /* Qt includes */
-#include <QFileIconProvider>
+#include <QAction>
+#include <QApplication>
+#include <QClipboard>
 #include <QDir>
+#include <QFileIconProvider>
 
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-# include <QComboBox>
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-# include <QLabel>
-# include <QToolButton>
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
-
-enum 
+enum
 {
     PathId = 0,
     SelectId,
     ResetId
 };
 
-VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent /* = NULL */)
-    : QIWithRetranslateUI<QWidget> (aParent)
+VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent /* = 0 */)
+    : QIWithRetranslateUI<QComboBox> (aParent)
+    , mIconProvider (new QFileIconProvider())
+    , mCopyAction (new QAction (this))
     , mMode (PathMode)
 {
-    init();
+    /* Populate items */
+    insertItem (PathId, "");
+    insertItem (SelectId, "");
+    insertItem (ResetId, "");
+
+    /* Setup context menu */
+    addAction (mCopyAction);
+    mCopyAction->setShortcut (QKeySequence (QKeySequence::Copy));
+    mCopyAction->setShortcutContext (Qt::WidgetShortcut);
+
+    /* Setup connections */
+    connect (this, SIGNAL (activated (int)), this, SLOT (onActivated (int)));
+    connect (mCopyAction, SIGNAL (triggered (bool)), this, SLOT (copyToClipboard()));
+
+    /* Applying language settings */
+    retranslateUi();
+
+    /* Initial Setup */
+    setContextMenuPolicy (Qt::ActionsContextMenu);
+    setMinimumWidth (200);
+    /* Set path to None */
+    setPath (QString::null);
 }
 
 VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
@@ -66,54 +83,36 @@ VBoxFilePathSelectorWidget::SelectorMode VBoxFilePathSelectorWidget::mode() cons
 
 void VBoxFilePathSelectorWidget::setResetEnabled (bool aEnabled)
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    if (!aEnabled &&
-        mCbPath->count() - 1 == ResetId)
-        mCbPath->removeItem (ResetId);
-    else
-    if (aEnabled &&
-        mCbPath->count() - 1  == ResetId - 1)
-        mCbPath->insertItem (ResetId, "");
+    if (!aEnabled && count() - 1 == ResetId)
+        removeItem (ResetId);
+    else if (aEnabled && count() - 1 == ResetId - 1)
+        insertItem (ResetId, "");
     retranslateUi();
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mTbReset->setVisible (aEnabled);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
 }
 
 bool VBoxFilePathSelectorWidget::isResetEnabled () const
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    return (mCbPath->count() - 1  == ResetId);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    return mTbReset->isVisible();
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    return (count() - 1  == ResetId);
 }
 
-void VBoxFilePathSelectorWidget::setPathWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setNoneToolTip (const QString &aText)
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    NOREF (aText);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mLbPath->setWhatsThis (aText);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    mNoneTip = aText;
+    if (mPath.isNull())
+    {
+        setItemData (PathId, mNoneTip, Qt::ToolTipRole);
+        setToolTip (mNoneTip);
+    }
 }
 
-void VBoxFilePathSelectorWidget::setSelectorWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setSelectToolTip (const QString &aText)
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    mCbPath->setItemData (SelectId, aText, Qt::WhatsThisRole);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mTbSelect->setWhatsThis (aText);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    setItemData (SelectId, aText, Qt::ToolTipRole);
 }
 
-void VBoxFilePathSelectorWidget::setResetWhatsThis (const QString &aText)
+void VBoxFilePathSelectorWidget::setResetToolTip (const QString &aText)
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    mCbPath->setItemData (ResetId, aText, Qt::WhatsThisRole);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mTbReset->setWhatsThis (aText);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    setItemData (ResetId, aText, Qt::ToolTipRole);
 }
 
 bool VBoxFilePathSelectorWidget::isModified() const
@@ -123,23 +122,18 @@ bool VBoxFilePathSelectorWidget::isModified() const
 
 void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
 {
-    mPath = aPath;
-    QString tmpPath (aPath);
-    QIcon icon;
-    QFileInfo fi (tmpPath);
-    if (fi.exists())
-        icon = mIconProvider->icon (fi);
-    else
-        icon = defaultIcon();
-    if (tmpPath.isEmpty())
-        tmpPath = mNoneStr;
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    mCbPath->setItemText (PathId, filePath (tmpPath, true));
-    mCbPath->setItemIcon (PathId, icon);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mLbPath->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (tmpPath));
-    mLbIcon->setPixmap (icon.pixmap (16, 16));
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    mPath = aPath.isEmpty() ? QString::null : aPath;
+
+    /* Attach corresponding icon */
+    setItemIcon (PathId, QFileInfo (mPath).exists() ?
+                         mIconProvider->icon (QFileInfo (mPath)) :
+                         defaultIcon());
+
+    /* Store full path as tooltip */
+    setToolTip (filePath());
+    setItemData (PathId, toolTip(), Qt::ToolTipRole);
+
+    refreshText();
 }
 
 QString VBoxFilePathSelectorWidget::path() const
@@ -147,80 +141,59 @@ QString VBoxFilePathSelectorWidget::path() const
     return mPath;
 }
 
+void VBoxFilePathSelectorWidget::resizeEvent (QResizeEvent *aEvent)
+{
+    QIWithRetranslateUI<QComboBox>::resizeEvent (aEvent);
+    refreshText();
+}
+
 void VBoxFilePathSelectorWidget::retranslateUi()
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
+    /* Retranslate 'path' item */
     mNoneStr = tr ("None");
-    mCbPath->setItemText (SelectId, tr ("Other..."));
-    if (mCbPath->count() - 1 == ResetId)
-        mCbPath->setItemText (ResetId, tr ("Reset"));
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    if (mPath.isNull())
+    {
+        setItemText (PathId, mNoneStr);
+        setItemData (PathId, mNoneTip, Qt::ToolTipRole);
+        setToolTip (mNoneTip);
+    }
+
+    /* Retranslate 'select' item */
+    setItemText (SelectId, tr ("Other..."));
+
+    /* Retranslate 'reset' item */
+    if (count() - 1 == ResetId)
+        setItemText (ResetId, tr ("Reset"));
+
+    /* Retranslate copy action */
+    mCopyAction->setText (tr ("&Copy"));
 }
 
-void VBoxFilePathSelectorWidget::cbActivated (int aIndex)
+void VBoxFilePathSelectorWidget::onActivated (int aIndex)
 {
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-   switch (aIndex)
-   {
-       case SelectId:
-           {
-               emit selectPath();
-               break;
-           }
-       case ResetId:
-           {
-               emit resetPath();
-               break;
-           }
-   }
-   mCbPath->setCurrentIndex (PathId);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-   NOREF (aIndex);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
+    switch (aIndex)
+    {
+        case SelectId:
+        {
+            emit selectPath();
+            break;
+        }
+        case ResetId:
+        {
+            emit resetPath();
+            break;
+        }
+        default:
+            break;
+    }
+    setCurrentIndex (PathId);
 }
 
-void VBoxFilePathSelectorWidget::init()
+void VBoxFilePathSelectorWidget::copyToClipboard()
 {
-    mIconProvider = new QFileIconProvider();
-    QHBoxLayout *layout = new QHBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (layout, 0);
-#ifdef VBOX_USE_COMBOBOX_PATH_SELECTOR
-    mCbPath = new QComboBox();
-    mCbPath->setMinimumWidth (200);
-    mCbPath->insertItem (PathId, "");
-    mCbPath->insertItem (SelectId, "");
-    mCbPath->insertItem (ResetId, "");
-    connect (mCbPath, SIGNAL (activated (int)),
-             this, SLOT (cbActivated (int)));
-    layout->addWidget (mCbPath);
-#else /* VBOX_USE_COMBOBOX_PATH_SELECTOR */
-    mLbIcon = new QLabel();
-    mLbPath = new QILabel();
-    mLbPath->setSizePolicy (QSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed));
-    mLbPath->setMinimumWidth (180);
-    mLbPath->setFullSizeSelection (true);
-    mTbSelect = new QToolButton();
-    mTbSelect->setIcon (QIcon (":/select_file_16px.png"));
-    mTbSelect->setAutoRaise (true);
-    connect (mTbSelect, SIGNAL (clicked ()),
-             this, SIGNAL (selectPath()));
-    mTbReset = new QToolButton();
-    mTbReset->setIcon (QIcon (":/eraser_16px.png"));
-    mTbReset->setAutoRaise (true);
-    connect (mTbReset, SIGNAL (clicked ()),
-             this, SIGNAL (resetPath()));
-    
-    layout->addWidget (mLbIcon);
-    layout->addWidget (mLbPath);
-    layout->addWidget (mTbSelect);
-    layout->addWidget (mTbReset);
-#endif /* !VBOX_USE_COMBOBOX_PATH_SELECTOR */
-
-     /* Applying language settings */
-    retranslateUi();
-
-    /* Set to none */
-    setPath ("");
+    QString text = itemData (PathId, Qt::ToolTipRole).toString();
+    QApplication::clipboard()->setText (text, QClipboard::Clipboard);
+    QApplication::clipboard()->setText (text, QClipboard::Selection);
 }
 
 QIcon VBoxFilePathSelectorWidget::defaultIcon() const
@@ -229,29 +202,78 @@ QIcon VBoxFilePathSelectorWidget::defaultIcon() const
         return mIconProvider->icon (QFileIconProvider::Folder);
     else
         return mIconProvider->icon (QFileIconProvider::File);
-}  
+}
 
-QString VBoxFilePathSelectorWidget::filePath (const QString &aName, bool bLast) const
+QString VBoxFilePathSelectorWidget::filePath() const
 {
-    if (!aName.isEmpty())
+    if (!mPath.isNull())
     {
         if (mMode == PathMode)
-        {
-            QDir dir (aName);
-            if (bLast)
-                return dir.dirName();
-            else
-                return dir.path();
-        }
+            return QDir (mPath).path();
         else
-        {
-            QFileInfo fi (aName);
-            if (bLast)
-                return fi.fileName();
-            else
-                return fi.filePath();
-        }
+            return QFileInfo (mPath).filePath();
     }
-    return "";
-}  
+
+    return mNoneTip;
+}
+
+QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
+{
+    /* Full text stored in toolTip */
+    QString fullText = toolTip();
+    if (fullText.isEmpty())
+        return fullText;
+
+    int oldSize = fontMetrics().width (fullText);
+    int indentSize = fontMetrics().width ("...x");
+
+    /* Compress text */
+    int start = 0;
+    int finish = 0;
+    int position = 0;
+    int textWidth = 0;
+    do {
+        textWidth = fontMetrics().width (fullText);
+        if (textWidth + indentSize > aWidth)
+        {
+            start = 0;
+            finish = fullText.length();
+
+            /* Selecting remove position */
+            QRegExp regExp ("([\\\\/][^\\\\^/]+[\\\\/]?$)");
+            int newFinish = regExp.indexIn (fullText);
+            if (newFinish != -1)
+                finish = newFinish;
+            position = (finish - start) / 2;
+
+            if (position == finish)
+               break;
+
+            fullText.remove (position, 1);
+        }
+    } while (textWidth + indentSize > aWidth);
+
+    fullText.insert (position, "...");
+    int newSize = fontMetrics().width (fullText);
+
+    return newSize < oldSize ? fullText : toolTip();
+}
+
+void VBoxFilePathSelectorWidget::refreshText()
+{
+    if (mPath.isNull())
+    {
+        if (itemText (PathId) != mNoneStr)
+            setItemText (PathId, mNoneStr);
+    }
+    else
+    {
+        /* Compress text in combobox */
+        QStyleOptionComboBox options;
+        options.initFrom (this);
+        QRect rect = QApplication::style()->subControlRect (
+            QStyle::CC_ComboBox, &options, QStyle::SC_ComboBoxEditField);
+        setItemText (PathId, shrinkText (rect.width() - iconSize().width()));
+    }
+}
 

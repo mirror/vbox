@@ -53,7 +53,7 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
 }
 
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
-                                           VBoxGlobalSettings &)
+                                       VBoxGlobalSettings &)
 {
     if (mPsVdi->isModified())
         aProps.SetDefaultVDIFolder (mPsVdi->path());
@@ -75,24 +75,27 @@ void VBoxGLSettingsGeneral::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
 
-    mPsVdi->setPathWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
-    mPsVdi->setSelectorWhatsThis (tr ("Opens a dialog to select the default VDI folder."));
-    mPsVdi->setResetWhatsThis (tr ("Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
+    mPsVdi->setWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
+    mPsVdi->setNoneToolTip (tr ("The actual default path will be displayed after accepting the changes and opening this dialog again."));
+    mPsVdi->setSelectToolTip (tr ("Opens a dialog to select the default VDI folder."));
+    mPsVdi->setResetToolTip (tr ("Resets the VDI folder path to the default value."));
 
-    mPsMach->setPathWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
-    mPsMach->setSelectorWhatsThis (tr ("Opens a dialog to select the default virtual machine folder."));
-    mPsMach->setResetWhatsThis (tr ("Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again."));
+    mPsMach->setWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
+    mPsMach->setNoneToolTip (tr ("The actual default path will be displayed after accepting the changes and opening this dialog again."));
+    mPsMach->setSelectToolTip (tr ("Opens a dialog to select the default virtual machine folder."));
+    mPsMach->setResetToolTip (tr ("Resets the virtual machine folder path to the default value."));
 
-    mPsVRDP->setPathWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
-    mPsVRDP->setSelectorWhatsThis (tr ("Opens a dialog to select the VRDP authentication library file."));
-    mPsVRDP->setResetWhatsThis (tr ("Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again."));
+    mPsVRDP->setWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
+    mPsVRDP->setNoneToolTip (tr ("The actual default library file will be displayed after accepting the changes and opening this dialog again."));
+    mPsVRDP->setSelectToolTip (tr ("Opens a dialog to select the VRDP authentication library file."));
+    mPsVRDP->setResetToolTip (tr ("Resets the authentication library file to the default value."));
 }
 
 void VBoxGLSettingsGeneral::onResetFolderClicked()
 {
     VBoxFilePathSelectorWidget *ps = qobject_cast<VBoxFilePathSelectorWidget*> (sender());
     Assert (ps);
-    ps->setPath ("");
+    ps->setPath (QString::null);
 }
 
 void VBoxGLSettingsGeneral::onSelectFolderClicked()
