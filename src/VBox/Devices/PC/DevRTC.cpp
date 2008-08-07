@@ -133,6 +133,8 @@ struct RTCState {
     uint8_t Alignment0[7];
     struct my_tm current_tm;
     int32_t irq;
+    uint32_t alignment0;
+
     /* periodic timer */
     int64_t next_periodic_time;
     /* second update */
