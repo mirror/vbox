@@ -1989,6 +1989,56 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     NOREF (rc);
 }
 
+/**
+ * Formats the given COM result code as a human-readable string.
+ *
+ * If a mnemonic name for the given result code is found, a string in format
+ * "MNEMONIC_NAME (0x12345678)" is returned where the hex number is the result
+ * code as is. If no mnemonic name is found, then the raw hex number only is
+ * returned (w/o parenthesis).
+ *
+ * @param aRC   COM result code to format.
+ */
+/* static */
+QString VBoxProblemReporter::formatRC (HRESULT aRC)
+{
+    QString str;
+
+    PCRTCOMERRMSG msg = NULL;
+    const char *errMsg = NULL;
+
+    /* first, try as is (only set bit 31 bit for warnings) */
+    if (SUCCEEDED_WARNING (aRC))
+        msg = RTErrCOMGet (aRC | 0x80000000);
+    else
+        msg = RTErrCOMGet (aRC);
+
+    if (msg != NULL)
+        errMsg = msg->pszDefine;
+
+#if defined (Q_WS_WIN)
+
+    PCRTWINERRMSG winMsg = NULL;
+
+    /* if not found, try again using RTErrWinGet with masked off top 16bit */
+    if (msg == NULL)
+    {
+        winMsg = RTErrWinGet (aRC & 0xFFFF);
+
+        if (winMsg != NULL)
+            errMsg = winMsg->pszDefine;
+    }
+
+#endif
+
+    if (errMsg != NULL && *errMsg != '\0')
+        str.sprintf ("%s (0x%08X)", errMsg, aRC);
+    else
+        str.sprintf ("0x%08X", aRC);
+
+    return str;
+}
+
 /* static */
 QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &aInfo,
                                               HRESULT aWrapperRC /* = S_OK */)
@@ -2021,7 +2071,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
         haveResultCode = aInfo.isFullAvailable();
         bool haveComponent = true;
         bool haveInterfaceID = true;
-#else // !Q_WS_WIN
+#else /* defined (Q_WS_WIN) */
         haveResultCode = true;
         bool haveComponent = aInfo.isFullAvailable();
         bool haveInterfaceID = aInfo.isFullAvailable();
@@ -2029,27 +2079,9 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
 
         if (haveResultCode)
         {
-#if defined (Q_WS_WIN)
-            /* format the error code */
-            PCRTWINERRMSG msg = NULL;
-            /* first, try as is (only set bit 31 bit for warnings) */
-            if (SUCCEEDED_WARNING (aInfo.resultCode()))
-                msg = RTErrWinGet (aInfo.resultCode() | 0x80000000);
-            else
-                msg = RTErrWinGet (aInfo.resultCode());
-            /* try again with masked off top 16bit if not found */
-            if (msg == NULL || !msg->iCode)
-                msg = RTErrWinGet (aInfo.resultCode() & 0xFFFF);
-            if (msg != NULL)
-                formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
-                    .arg (tr ("Result&nbsp;Code: ", "error info"))
-                    .arg (msg->pszDefine)
-                    .arg (QString().sprintf ("%08X", uint (aInfo.resultCode())));
-            else
-#endif
-            formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
+            formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
                 .arg (tr ("Result&nbsp;Code: ", "error info"))
-                .arg (QString().sprintf ("%08X", uint (aInfo.resultCode())));
+                .arg (formatRC (aInfo.resultCode()));
         }
 
         if (haveComponent)
@@ -2078,28 +2110,11 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
     if (FAILED (aWrapperRC) &&
         (!haveResultCode || aWrapperRC != aInfo.resultCode()))
     {
-#if defined (Q_WS_WIN)
-        /* format the error code */
-        PCRTWINERRMSG msg = NULL;
-        /* first, try as is (only set bit 31 bit for warnings) */
-        if (SUCCEEDED_WARNING (aWrapperRC))
-            msg = RTErrWinGet (aWrapperRC | 0x80000000);
-        else
-            msg = RTErrWinGet (aWrapperRC);
-        /* try again with masked off top 16bit if not found */
-        if (msg == NULL || !msg->iCode)
-            msg = RTErrWinGet (aWrapperRC & 0xFFFF);
-        if (msg != NULL)
-            formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
-                .arg (tr ("Callee&nbsp;RC: ", "error info"))
-                .arg (msg->pszDefine)
-                .arg (QString().sprintf ("%08X", uint (aWrapperRC)));
-        else
-#endif
-        formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
+        formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
             .arg (tr ("Callee&nbsp;RC: ", "error info"))
-            .arg (QString().sprintf ("%08X", uint (aWrapperRC)));
+            .arg (formatRC (aWrapperRC));
     }
+
     formatted += "</table>";
 
     if (aInfo.next())
