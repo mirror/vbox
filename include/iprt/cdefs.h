@@ -587,8 +587,6 @@
 #else
 # define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
 #endif
-/** @deprecated */
-#define DECLGCCALLBACKMEMBER(type, name, args) DECLRCCALLBACKMEMBER(type, name, args)
 
 /** @def DECLR0CALLBACKMEMBER
  * How to declare an call back function pointer member - R0 Ptr.
