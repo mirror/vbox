@@ -14,8 +14,9 @@ SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_KCHMVIEWER
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-2.6),)
-  include $(PATH_SUB_CURRENT)/kchmviewer-2.6/Makefile.kmk
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
+  # subdirectory currently not possible because of _QT_MOCHDRS
+  SUBDIRS_AFTER += kchmviewer-4.3
  endif
 endif
 ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
