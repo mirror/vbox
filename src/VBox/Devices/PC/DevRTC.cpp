@@ -480,7 +480,7 @@ static void rtc_set_date(RTCState *s, const struct my_tm *tm)
 
 #endif /* IN_RING3 */
 
-/* -=-=-=-=-=- wrappers -=-=-=-=-=- */
+/* -=-=-=-=-=- wrappers / stuff -=-=-=-=-=- */
 
 /**
  * Port I/O Handler for IN operations.
@@ -498,7 +498,7 @@ PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     NOREF(pvUser);
     if (cb == 1)
     {
-        *pu32 = cmos_ioport_read(PDMINS2DATA(pDevIns, RTCState *), Port);
+        *pu32 = cmos_ioport_read(PDMINS_2_DATA(pDevIns, RTCState *), Port);
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;
@@ -520,7 +520,7 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 {
     NOREF(pvUser);
     if (cb == 1)
-        cmos_ioport_write(PDMINS2DATA(pDevIns, RTCState *), Port, u32);
+        cmos_ioport_write(PDMINS_2_DATA(pDevIns, RTCState *), Port, u32);
     return VINF_SUCCESS;
 }
 
@@ -533,7 +533,7 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    rtc_periodic_timer(PDMINS2DATA(pDevIns, RTCState *));
+    rtc_periodic_timer(PDMINS_2_DATA(pDevIns, RTCState *));
 }
 
 
@@ -545,7 +545,7 @@ PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    rtc_update_second(PDMINS2DATA(pDevIns, RTCState *));
+    rtc_update_second(PDMINS_2_DATA(pDevIns, RTCState *));
 }
 
 
@@ -557,7 +557,7 @@ PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    rtc_update_second2(PDMINS2DATA(pDevIns, RTCState *));
+    rtc_update_second2(PDMINS_2_DATA(pDevIns, RTCState *));
 }
 
 
@@ -571,7 +571,7 @@ PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    RTCState *pThis = PDMINS2DATA(pDevIns, RTCState *);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
     SSMR3PutMem(pSSMHandle, pThis->cmos_data, 128);
     SSMR3PutU8(pSSMHandle, pThis->cmos_index);
@@ -606,7 +606,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    RTCState *pThis = PDMINS2DATA(pDevIns, RTCState *);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
     if (u32Version != 1)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -676,8 +676,8 @@ static void rtcCalcCRC(RTCState *pData)
  */
 static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
-    RTCState *pData = PDMINS2DATA(pDevIns, RTCState *);
-    if (iReg < ELEMENTS(pData->cmos_data))
+    RTCState *pData = PDMINS_2_DATA(pDevIns, RTCState *);
+    if (iReg < RT_ELEMENTS(pData->cmos_data))
     {
         pData->cmos_data[iReg] = u8Value;
 
@@ -703,8 +703,8 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
  */
 static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
-    RTCState   *pData = PDMINS2DATA(pDevIns, RTCState *);
-    if (iReg < ELEMENTS(pData->cmos_data))
+    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
+    if (iReg < RT_ELEMENTS(pData->cmos_data))
     {
         *pu8Value = pData->cmos_data[iReg];
         return VINF_SUCCESS;
@@ -720,7 +720,7 @@ static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t 
 static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 {
     /** @todo this should be (re)done at power on if we didn't load a state... */
-    RTCState   *pData = PDMINS2DATA(pDevIns, RTCState *);
+    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
 
     /*
      * Set the CMOS date/time.
@@ -767,7 +767,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RTCState *pThis = PDMINS2DATA(pDevIns, RTCState *);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
     pThis->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
     pThis->pPeriodicTimerGC = TMTimerGCPtr(pThis->pPeriodicTimerHC);
@@ -791,7 +791,7 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    RTCState   *pData = PDMINS2DATA(pDevIns, RTCState *);
+    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
     int         rc;
     uint8_t     u8Irq;
     uint16_t    u16Base;
@@ -811,28 +811,28 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = CFGMR3QueryU8(pCfgHandle, "Irq", &u8Irq);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u8Irq = 8;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
 
     rc = CFGMR3QueryU16(pCfgHandle, "Base", &u16Base);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u16Base = 0x70;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
@@ -853,19 +853,19 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Create timers, arm them, register I/O Ports and save state.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerHC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
@@ -874,32 +874,32 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     TMTimerSet(pData->CTXSUFF(pSecondTimer2), pData->next_second_time);
 
     rc = PDMDevHlpIOPortRegister(pDevIns, u16Base, 2, NULL, rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, u16Base, 2, 0, "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, u16Base, 2, 0, "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pData),
                               NULL, rtcSaveExec, NULL,
                               NULL, rtcLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Register ourselves as the RTC with PDM.
      */
     rc = pDevIns->pDevHlp->pfnRTCRegister(pDevIns, &pData->RtcReg, &pData->pRtcHlpHC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
