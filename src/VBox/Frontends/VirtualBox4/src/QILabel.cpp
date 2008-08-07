@@ -359,10 +359,11 @@ void QILabelPrivate::contextMenuEvent (QContextMenuEvent *aEvent)
     if (mFullSizeSeclection)
     {
         /* Create a context menu for the copy to clipboard action. */
-        QMenu *menu = new QMenu();
-        menu->addAction (tr ("&Copy") + "\t" + QString (QKeySequence (QKeySequence::Copy)), this, SLOT (copy()));
-        menu->exec (aEvent->globalPos());
-    }else
+        QMenu menu;
+        mCopyAction->setText (tr ("&Copy"));
+        menu.addAction (mCopyAction);
+        menu.exec (aEvent->globalPos());
+    } else
         QLabel::contextMenuEvent (aEvent);
 }
 
@@ -415,6 +416,13 @@ void QILabelPrivate::init()
     setFullSizeSelection (false);
     /* Open links with the QDesktopService */
     setOpenExternalLinks (true);
+
+    /* Create invisible copy action */
+    mCopyAction = new QAction (this);
+    addAction (mCopyAction);
+    mCopyAction->setShortcut (QKeySequence (QKeySequence::Copy));
+    mCopyAction->setShortcutContext (Qt::WidgetShortcut);
+    connect (mCopyAction, SIGNAL (triggered()), this, SLOT (copy()));
 }
 
 void QILabelPrivate::updateText()
