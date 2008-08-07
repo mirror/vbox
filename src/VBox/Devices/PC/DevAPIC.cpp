@@ -363,7 +363,7 @@ void cpu_set_apic_base(CPUState *env, uint64_t val)
 #else /* VBOX */
 PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     Log(("cpu_set_apic_base: %016RX64\n", val));
 
     /** @todo If this change is valid immediately, then we should change the MMIO registration! */
@@ -445,21 +445,21 @@ static inline void reset_bit(uint32_t *tab, int index)
 
 PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     Log(("apicGetBase: %016llx\n", (uint64_t)s->apicbase));
     return s->apicbase;
 }
 
 PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, uint8_t val)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, s->tpr, (val & 0x0f) << 4));
     apic_update_tpr(s, (val & 0x0f) << 4);
 }
 
 PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     Log2(("apicGetTPR: returns %#x\n", s->tpr >> 4));
     return s->tpr >> 4;
 }
@@ -472,7 +472,7 @@ PDMBOTHCBDECL(void) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, u
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     LogFlow(("apicBusDeliverCallback: s=%p pDevIns=%p u8Dest=%#x u8DestMode=%#x u8DeliveryMode=%#x iVector=%#x u8Polarity=%#x u8TriggerMode=%#x\n",
              s, pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     apic_bus_deliver(s, apic_get_delivery_bitmask(s, u8Dest, u8DestMode),
@@ -564,7 +564,7 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
 {
     int irrv, ppr;
 
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     if (!s)
         return false;
 
@@ -766,7 +766,7 @@ int apic_get_interrupt(CPUState *env)
 #else /* VBOX */
 PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
 #endif /* VBOX */
     int intno;
 
@@ -860,7 +860,7 @@ static void apic_timer(void *opaque)
 #else /* VBOX */
 static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     s->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
 #endif /* VBOX */
 
@@ -1540,7 +1540,7 @@ IOAPICState *ioapic_init(void)
 
 PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
 
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIORead));
     switch (cb)
@@ -1586,7 +1586,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 
 PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
 
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIOWrite));
     switch (cb)
@@ -1619,7 +1619,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  */
 static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     apic_save(pSSMHandle, s);
     return TMR3TimerSave(s->CTX_SUFF(pTimer), pSSMHandle);
 }
@@ -1629,7 +1629,7 @@ static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     if (apic_load(pSSMHandle, s, u32Version)) {
         AssertFailed();
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -1642,7 +1642,7 @@ static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
  */
 static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 {
-    APICState *s = PDMINS2DATA(pDevIns, APICState *);
+    APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
     s->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
     apic_reset(s);
     /* Clear any pending APIC interrupt action flag. */
@@ -1655,7 +1655,7 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    APICState *pData = PDMINS2DATA(pDevIns, APICState *);
+    APICState *pData = PDMINS_2_DATA(pDevIns, APICState *);
     pData->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
     pData->pApicHlpRC = pData->pApicHlpR3->pfnGetRCHelpers(pDevIns);
     pData->pTimerRC   = TMTimerRCPtr(pData->CTX_SUFF(pTimer));
@@ -1666,7 +1666,7 @@ static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    APICState      *pData = PDMINS2DATA(pDevIns, APICState *);
+    APICState      *pData = PDMINS_2_DATA(pDevIns, APICState *);
     PDMAPICREG      ApicReg;
     int             rc;
     int             i;
@@ -1897,7 +1897,7 @@ const PDMDEVREG g_DeviceAPIC =
 
 PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     IOAPIC_LOCK(s, VINF_IOM_HC_MMIO_READ);
 
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIORead));
@@ -1926,7 +1926,7 @@ PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 
 PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIOWrite));
     switch (cb)
@@ -1948,7 +1948,7 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-    IOAPICState *pThis = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
     STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
     LogFlow(("ioapicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     ioapic_set_irq(pThis, iIrq, iLevel);
@@ -1962,7 +1962,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
  */
 static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     ioapic_save(pSSMHandle, s);
     return VINF_SUCCESS;
 }
@@ -1972,7 +1972,7 @@ static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandl
  */
 static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
     if (ioapic_load(pSSMHandle, s, u32Version)) {
         AssertFailed();
@@ -1987,7 +1987,7 @@ static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandl
  */
 static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     s->pIoApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
     ioapic_reset(s);
     IOAPIC_UNLOCK(s);
@@ -1998,7 +1998,7 @@ static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ioapicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     s->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     s->pIoApicHlpRC = s->pIoApicHlpR3->pfnGetRCHelpers(pDevIns);
 }
@@ -2008,7 +2008,7 @@ static DECLCALLBACK(void) ioapicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    IOAPICState *s = PDMINS2DATA(pDevIns, IOAPICState *);
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     PDMIOAPICREG IoApicReg;
     bool         fGCEnabled;
     bool         fR0Enabled;
