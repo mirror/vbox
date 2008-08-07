@@ -519,7 +519,7 @@ typedef struct PDMPCIHLPRC
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnIsaSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void,  pfnIsaSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
      * Set an I/O-APIC IRQ.
@@ -529,7 +529,7 @@ typedef struct PDMPCIHLPRC
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
      * Acquires the PDM lock.
@@ -539,14 +539,14 @@ typedef struct PDMPCIHLPRC
      * @param   pDevIns         The PCI device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLGCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The PCI device instance.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
@@ -761,14 +761,14 @@ typedef struct PDMPICHLPGC
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLGCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLGCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Acquires the PDM lock.
@@ -778,14 +778,14 @@ typedef struct PDMPICHLPGC
      * @param   pDevIns         The PIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLGCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The PIC device instance.
      */
-    DECLGCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -2693,7 +2693,7 @@ typedef struct PDMDEVHLPGC
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
-    DECLGCCALLBACKMEMBER(void, pfnPCISetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void, pfnPCISetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
      * Set ISA IRQ for a device.
@@ -2703,7 +2703,7 @@ typedef struct PDMDEVHLPGC
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
-    DECLGCCALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
      * Read physical memory.
@@ -2713,7 +2713,7 @@ typedef struct PDMDEVHLPGC
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
      */
-    DECLGCCALLBACKMEMBER(void, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLRCCALLBACKMEMBER(void, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
      * Write to physical memory.
@@ -2723,7 +2723,7 @@ typedef struct PDMDEVHLPGC
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
      */
-    DECLGCCALLBACKMEMBER(void, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLRCCALLBACKMEMBER(void, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -2733,7 +2733,7 @@ typedef struct PDMDEVHLPGC
      * @param   pDevIns         Device instance.
      * @thread  The emulation thread.
      */
-    DECLGCCALLBACKMEMBER(bool, pfnA20IsEnabled,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(bool, pfnA20IsEnabled,(PPDMDEVINS pDevIns));
 
     /**
      * Set the VM error message
@@ -2745,7 +2745,7 @@ typedef struct PDMDEVHLPGC
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLGCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...));
 
     /**
      * Set the VM error message
@@ -2757,7 +2757,7 @@ typedef struct PDMDEVHLPGC
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLGCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
 
     /**
      * Set the VM runtime error message
@@ -2769,7 +2769,7 @@ typedef struct PDMDEVHLPGC
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLGCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
 
     /**
      * Set the VM runtime error message
@@ -2781,7 +2781,7 @@ typedef struct PDMDEVHLPGC
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLGCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
 
     /**
      * Set parameters for pending MMIO patch operation
@@ -2791,7 +2791,7 @@ typedef struct PDMDEVHLPGC
      * @param   GCPhys          MMIO physical address
      * @param   pCachedData     GC pointer to cached data
      */
-    DECLGCCALLBACKMEMBER(int, pfnPATMSetMMIOPatchInfo,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData));
+    DECLRCCALLBACKMEMBER(int, pfnPATMSetMMIOPatchInfo,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
