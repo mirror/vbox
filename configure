@@ -1296,6 +1296,20 @@ check_qt4()
       fi
     else
       # do it the old way (e.g. user has specified QT4DIR)
+      cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <QtGlobal>
+extern "C" int main(void)
+{
+  printf("found version %s", QT_VERSION_STR);
+#if QT_VERSION >= 0x040300
+  printf(", OK.\n");
+  return 0;
+  printf(", expected version 4.3.0 or higher\n");
+  return 1;
+#endif
+}
+EOF
       for q in $QT4DIR; do
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
@@ -1367,6 +1381,9 @@ EOF
       log_failure "not found"
       fail
     fi
+  else
+    log_failure "not found"
+    fail
   fi
 }
 
