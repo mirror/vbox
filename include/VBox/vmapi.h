@@ -92,17 +92,6 @@ __BEGIN_DECLS
 # define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)(pvInVM) )
 #endif
 
-/** @def VM_HOST_ADDR
- * Converts guest address of data within the VM structure to the equivalent
- * host address.
- *
- * @returns host virtual address.
- * @param   pVM     Pointer to the VM.
- * @param   pvInVM  GC Pointer within the VM.
- * @deprecated
- */
-#define VM_HOST_ADDR(pVM, pvInVM)     ( (RTHCPTR)((RTHCUINTPTR)pVM->pVMHC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
-
 
 
 /**
