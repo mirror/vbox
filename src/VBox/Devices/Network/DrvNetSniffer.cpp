@@ -258,7 +258,7 @@ static DECLCALLBACK(int) drvNetSnifferSetLinkState(PPDMINETWORKCONFIG pInterface
 static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNETSNIFFER pThis = PDMINS2DATA(pDrvIns, PDRVNETSNIFFER);
+    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -285,7 +285,7 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, PD
  */
 static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVNETSNIFFER pThis = PDMINS2DATA(pDrvIns, PDRVNETSNIFFER);
+    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
 
     if (RTCritSectIsInitialized(&pThis->Lock))
         RTCritSectDelete(&pThis->Lock);
@@ -310,7 +310,7 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVNETSNIFFER pThis = PDMINS2DATA(pDrvIns, PDRVNETSNIFFER);
+    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     LogFlow(("drvNetSnifferConstruct:\n"));
 
     /*

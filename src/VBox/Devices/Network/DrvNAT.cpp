@@ -219,7 +219,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
  */
 static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 {
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     fd_set  ReadFDs;
     fd_set  WriteFDs;
     fd_set  XcptFDs;
@@ -309,7 +309,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -332,7 +332,7 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERF
  */
 static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
     LogFlow(("drvNATDestruct:\n"));
 
@@ -451,7 +451,7 @@ static void drvNATSetMac(PDRVNAT pData)
  */
 static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
 {
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     drvNATSetMac(pData);
     return VINF_SUCCESS;
 }
@@ -462,7 +462,7 @@ static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandl
  */
 static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
 {
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     drvNATSetMac(pData);
 }
 
@@ -479,7 +479,7 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT pData = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     char szNetAddr[16];
     char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
     LogFlow(("drvNATConstruct:\n"));

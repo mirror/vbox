@@ -186,7 +186,7 @@ static DECLCALLBACK(void) drvTAPW32NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     HANDLE  haWait[2];
     DWORD   rc = ERROR_SUCCESS, dwNumberOfBytesTransferred;
 
@@ -259,7 +259,7 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /** @todo this isn't a safe method to notify the async thread; it might be using the instance
      *        data after we've been destroyed; could wait for it to terminate, but that's not
@@ -287,7 +287,7 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD p
 static DECLCALLBACK(void *) drvTAPW32QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -310,7 +310,7 @@ static DECLCALLBACK(void *) drvTAPW32QueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
 {
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     TAP_MEDIASTATUS mediastatus;
     DWORD dwLength;
 
@@ -339,7 +339,7 @@ static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /*
      * Init the static parts.

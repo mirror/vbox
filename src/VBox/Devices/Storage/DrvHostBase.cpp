@@ -542,7 +542,7 @@ static DECLCALLBACK(bool) drvHostBaseIsLocked(PPDMIMOUNT pInterface)
 static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTBASE   pThis = PDMINS2DATA(pDrvIns, PDRVHOSTBASE);
+    PDRVHOSTBASE   pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -1478,7 +1478,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
  */
 static DECLCALLBACK(int) drvHostBaseLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
-    PDRVHOSTBASE pThis = PDMINS2DATA(pDrvIns, PDRVHOSTBASE);
+    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: drvHostBaseMediaThread:\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance));
     RTCritSectEnter(&pThis->CritSect);
 
@@ -1500,7 +1500,7 @@ static DECLCALLBACK(int) drvHostBaseLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM
 /** @copydoc FNPDMDRVDESTRUCT */
 DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTBASE pThis = PDMINS2DATA(pDrvIns, PDRVHOSTBASE);
+    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: drvHostBaseDestruct: iInstance=%d\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pDrvIns->iInstance));
 
     /*
@@ -1667,7 +1667,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
  */
 int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE enmType)
 {
-    PDRVHOSTBASE pThis = PDMINS2DATA(pDrvIns, PDRVHOSTBASE);
+    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: DRVHostBaseInitData: iInstance=%d\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pDrvIns->iInstance));
 
     /*

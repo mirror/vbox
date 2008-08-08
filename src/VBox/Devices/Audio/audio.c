@@ -1928,7 +1928,7 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface,
                                                    PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIO  pData = PDMINS2DATA(pDrvIns, PDRVAUDIO);
+    PDRVAUDIO  pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -1979,7 +1979,7 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     int rc;
-    PDRVAUDIO pData = PDMINS2DATA(pDrvIns, PDRVAUDIO);
+    PDRVAUDIO pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     char *drvname;
 
     LogFlow(("drvAUDIOConstruct:\n"));

@@ -93,7 +93,7 @@ typedef struct DRVCHAR
 static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVCHAR    pData = PDMINS2DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR    pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -299,7 +299,7 @@ static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool Request
  */
 static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVCHAR pData = PDMINS2DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
@@ -361,7 +361,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
  */
 static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVCHAR     pData = PDMINS2DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR     pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 

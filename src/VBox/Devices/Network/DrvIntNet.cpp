@@ -575,7 +575,7 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
 static DECLCALLBACK(void *) drvIntNetQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -596,7 +596,7 @@ static DECLCALLBACK(void *) drvIntNetQueryInterface(PPDMIBASE pInterface, PDMINT
 static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerOff\n"));
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
@@ -613,7 +613,7 @@ static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerResume\n"));
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
@@ -632,7 +632,7 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerSuspend\n"));
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
@@ -649,7 +649,7 @@ static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerOn\n"));
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
@@ -671,7 +671,7 @@ static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetDestruct\n"));
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     /*
      * Indicate to the thread that it's time to quit.
@@ -728,7 +728,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     /*
      * Init the static parts.

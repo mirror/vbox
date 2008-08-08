@@ -219,7 +219,7 @@ static DECLCALLBACK(void) drvTAPOs2NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  */
 static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS_2_DATA(pDrvIns, PDRVTAPOS2);
 
     /*
      * No initialization work to do, just return immediately.
@@ -306,7 +306,7 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
  */
 static DECLCALLBACK(int) drvTAPOs2WakeupReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS_2_DATA(pDrvIns, PDRVTAPOS2);
     LogFlow(("%s: WakeupReceiveThread\n", pThis->szName));
 
     /* cancel any pending reads */
@@ -335,7 +335,7 @@ static DECLCALLBACK(int) drvTAPOs2WakeupReceiveThread(PPDMDRVINS pDrvIns, PPDMTH
 static DECLCALLBACK(void *) drvTAPOs2QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS_2_DATA(pDrvIns, PDRVTAPOS2);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -358,7 +358,7 @@ static DECLCALLBACK(void *) drvTAPOs2QueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
 {
-    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS_2_DATA(pDrvIns, PDRVTAPOS2);
     LogFlow(("%s: Destruct\n", pThis->szName));
 
     /* PDM will destroy the thread for us, it's suspended right now. */
@@ -403,7 +403,7 @@ static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS_2_DATA(pDrvIns, PDRVTAPOS2);
 
     /*
      * Init the static parts.

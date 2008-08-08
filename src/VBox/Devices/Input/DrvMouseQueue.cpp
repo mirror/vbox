@@ -86,7 +86,7 @@ typedef struct DRVMOUSEQUEUEITEM
 static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMOUSEQUEUE pDrv = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -151,7 +151,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
  */
 static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     PDRVMOUSEQUEUEITEM    pItem = (PDRVMOUSEQUEUEITEM)pItemCore;
     int rc = pData->pUpPort->pfnPutEvent(pData->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->fButtonStates);
     return RT_SUCCESS(rc);
@@ -168,7 +168,7 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
  */
 static DECLCALLBACK(void) drvMouseQueuePowerOn(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     pData->fInactive = false;
 }
 
@@ -181,7 +181,7 @@ static DECLCALLBACK(void) drvMouseQueuePowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueReset(PPDMDRVINS pDrvIns)
 {
-    //PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    //PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
 }
 
@@ -194,7 +194,7 @@ static DECLCALLBACK(void)  drvMouseQueueReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueSuspend(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     pData->fInactive = true;
 }
 
@@ -207,7 +207,7 @@ static DECLCALLBACK(void)  drvMouseQueueSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueResume(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     pData->fInactive = false;
 }
 
@@ -219,7 +219,7 @@ static DECLCALLBACK(void)  drvMouseQueueResume(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvMouseQueuePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     pData->fInactive = true;
 }
 
@@ -236,7 +236,7 @@ static DECLCALLBACK(void) drvMouseQueuePowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMOUSEQUEUE pDrv = PDMINS2DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     LogFlow(("drvMouseQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*

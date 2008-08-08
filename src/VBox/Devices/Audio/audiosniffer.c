@@ -162,7 +162,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
 {
     int rc = VINF_SUCCESS;
 
-    AUDIOSNIFFERSTATE *pData = PDMINS2DATA(pDevIns, AUDIOSNIFFERSTATE *);
+    AUDIOSNIFFERSTATE *pData = PDMINS_2_DATA(pDevIns, AUDIOSNIFFERSTATE *);
 
     Assert(iInstance == 0);
 

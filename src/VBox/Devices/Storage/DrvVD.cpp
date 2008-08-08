@@ -52,7 +52,7 @@
 
 /** Converts a pointer to PDMDRVINS::IBase to a PVBOXDISK. */
 #define PDMIBASE_2_VBOXDISK(pInterface) \
-    ( PDMINS2DATA(PDMIBASE_2_DRVINS(pInterface), PVBOXDISK) )
+    ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PVBOXDISK) )
 
 /** Converts a pointer to VBOXDISK::IMediaAsync to a PVBOXDISK. */
 #define PDMIMEDIAASYNC_2_VBOXDISK(pInterface) \
@@ -463,7 +463,7 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface,
                                                 PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -499,7 +499,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                         PCFGMNODE pCfgHandle)
 {
     LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     int rc = VINF_SUCCESS;
     char *pszName = NULL;   /**< The path of the disk image file. */
     char *pszFormat = NULL; /**< The format backed to use for this image. */
@@ -833,7 +833,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
     int rc;
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
 
     if (pData->pCache)
@@ -854,7 +854,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     if (!VDIsReadOnly(pData->pDisk))
     {
         unsigned uOpenFlags;
@@ -876,7 +876,7 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     if (pData->fTempReadOnly)
     {
         unsigned uOpenFlags;
@@ -892,7 +892,7 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK pData = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
     /*
      * We must close the disk here to ensure that

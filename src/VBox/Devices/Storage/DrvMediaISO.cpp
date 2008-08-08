@@ -43,7 +43,7 @@
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PVBOXHDD. */
-#define PDMIBASE_2_DRVMEDIAISO(pInterface)  ( PDMINS2DATA(PDMIBASE_2_DRVINS(pInterface), PDRVMEDIAISO) )
+#define PDMIBASE_2_DRVMEDIAISO(pInterface)  ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PDRVMEDIAISO) )
 
 
 
@@ -98,7 +98,7 @@ static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMI
  */
 static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMEDIAISO pData = PDMINS2DATA(pDrvIns, PDRVMEDIAISO);
+    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
 
     /*
      * Init the static parts.
@@ -160,7 +160,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
  */
 static DECLCALLBACK(void) drvMediaISODestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMEDIAISO pData = PDMINS2DATA(pDrvIns, PDRVMEDIAISO);
+    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     LogFlow(("drvMediaISODestruct: '%s'\n", pData->pszFilename));
 
     if (pData->File != NIL_RTFILE)
@@ -301,7 +301,7 @@ static DECLCALLBACK(bool) drvMediaISOIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVMEDIAISO pData = PDMINS2DATA(pDrvIns, PDRVMEDIAISO);
+    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:

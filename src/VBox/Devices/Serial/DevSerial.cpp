@@ -486,7 +486,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
 PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                                      RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -519,7 +519,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                     RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -549,7 +549,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
                                         PSSMHANDLE pSSMHandle)
 {
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
 
     SSMR3PutU16(pSSMHandle, pData->divider);
     SSMR3PutU8(pSSMHandle, pData->rbr);
@@ -581,7 +581,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
 {
     int          rc;
     uint32_t     u32;
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
 
     if (u32Version != SERIAL_SAVED_STATE_VERSION)
     {
@@ -631,7 +631,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
  */
 static DECLCALLBACK(void) serialRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
     pData->pDevInsGC   = PDMDEVINS_2_GCPTR(pDevIns);
 }
 
@@ -688,7 +688,7 @@ static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, PDMINTERF
  */
 static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
 {
-    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+    SerialState *pData = PDMINS_2_DATA(pDevIns, SerialState *);
 
     RTSemEventDestroy(pData->ReceiveSem);
     pData->ReceiveSem = NIL_RTSEMEVENT;
@@ -716,7 +716,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
                                          PCFGMNODE pCfgHandle)
 {
     int            rc;
-    SerialState   *pData = PDMINS2DATA(pDevIns, SerialState*);
+    SerialState   *pData = PDMINS_2_DATA(pDevIns, SerialState*);
     uint16_t       io_base;
     uint8_t        irq_lvl;
 

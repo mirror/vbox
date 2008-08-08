@@ -283,7 +283,7 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 
 static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState *);
 
     if (!pData->fBackdoorLogDisabled && cb == 1 && Port == RTLOG_DEBUG_PORT)
     {
@@ -339,7 +339,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorWrite(PPDMDEVINS pDevIns, void *p
     NOREF(pvUser);
     if (cb == 4)
     {
-        VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
+        VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState *);
         switch (u32)
         {
             case 0:
@@ -371,7 +371,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
     NOREF(pvUser);
     if (cb == 4)
     {
-        VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
+        VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState *);
         RTTIMESPEC now;
 
         if (pData->fTimesyncBackdoorLo)
@@ -1992,7 +1992,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
  */
 static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState*);
     SSMR3PutU32(pSSMHandle, pData->hypervisorSize);
     SSMR3PutU32(pSSMHandle, pData->mouseCapabilities);
     SSMR3PutU32(pSSMHandle, pData->mouseXAbs);
@@ -2030,7 +2030,7 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
     /** @todo The code load code is assuming we're always loaded into a fresh VM. */
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState*);
     if (   SSM_VERSION_MAJOR_CHANGED(u32Version, VMMDEV_SSM_VERSION)
         || (SSM_VERSION_MINOR(u32Version) < 6))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -2105,7 +2105,7 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
  */
 static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
 #ifdef VBOX_HGCM
     vmmdevHGCMLoadStateDone (pData, pSSMHandle);
@@ -2144,7 +2144,7 @@ static void vmmdevInitRam(VMMDevState *pData)
 static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     int rc;
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState *);
 
     Assert(iInstance == 0);
 
@@ -2331,7 +2331,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
  */
 static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 {
-    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+    VMMDevState *pData = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
     /*
      * Reset the mouse integration feature bit
