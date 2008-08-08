@@ -427,7 +427,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         int rc = RTSemEventWait(pData->SendSem, RT_INDEFINITE_WAIT);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         /*
@@ -466,13 +466,13 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
 #endif
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
                 pData->iSendQueueTail++;
                 pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
             }
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Serial Write failed with %Vrc; terminating send thread\n", pDrvIns->iInstance, rc));
                 return VINF_SUCCESS;
@@ -572,7 +572,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 continue;
             }
             rc = RTFileRead(pData->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Read failed with %Vrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
                 break;
@@ -637,7 +637,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     if (dwNewStatusLinesState & MS_CTS_ON)
                         uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_CTS;
                     rc = pData->pDrvCharPort->pfnNotifyStatusLinesChanged(pData->pDrvCharPort, uNewStatusLinesState);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         /* Notifying device failed, continue but log it */
                         LogRel(("HostSerial#%d: Notifying device failed with error %Vrc; continuing.\n", pDrvIns->iInstance, rc));
@@ -659,7 +659,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             /* Send data to the guest. */
             size_t cbProcessed = cbRemaining;
             rc = pData->pDrvCharPort->pfnNotifyRead(pData->pDrvCharPort, pbBuffer, &cbProcessed);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed); Assert(cbProcessed <= cbRemaining);
                 pbBuffer += cbProcessed;
@@ -801,7 +801,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
     if (rc < 0)
         goto ioctl_error;
 
-    /* 
+    /*
      * Change current level on the RTS pin to make the ioctl call return in the
      * monitor thread.
      */
@@ -920,7 +920,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     /* Device */
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "DevicePath", &pData->pszDevicePath);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query for \"DevicePath\" string returned %Vra.\n", rc));
         return rc;
@@ -967,7 +967,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
 #endif
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pData->pszDevicePath, rc));
         switch (rc)
@@ -1028,20 +1028,20 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pRecvThread, pData, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "SerRecv");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create receive thread"), pDrvIns->iInstance);
 
     rc = RTSemEventCreate(&pData->SendSem);
     AssertRC(rc);
 
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pSendThread, pData, drvHostSerialSendThread, drvHostSerialWakeupSendThread, 0, RTTHREADTYPE_IO, "SerSend");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
 
 #if defined(RT_OS_LINUX)
     /* Linux needs a separate thread which monitors the status lines. */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
 #endif
 

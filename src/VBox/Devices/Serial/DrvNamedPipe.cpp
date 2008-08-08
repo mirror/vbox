@@ -141,7 +141,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             }
         }
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("drvNamedPipeRead: FileRead returned %Vrc fShutdown=%d\n", rc, pData->fShutdown));
             if (    !pData->fShutdown
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         else
             cbWritten = *cbWrite;
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (    rc == VERR_EOF
                 ||  rc == VERR_BROKEN_PIPE)
@@ -441,7 +441,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     }
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Vrc.\n", rc));
         goto out;
@@ -450,7 +450,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 
     bool fIsServer;
     rc = CFGMR3QueryBool(pCfgHandle, "IsServer", &fIsServer);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Vrc.\n", rc));
         goto out;
@@ -473,7 +473,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         AssertRC(rc);
 
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
-        if VBOX_FAILURE(rc)
+        if RT_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread"), pDrvIns->iInstance);
 
     }
@@ -513,7 +513,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
             return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, N_("NamedPipe#%d failed to bind to local socket %s"), pDrvIns->iInstance, pszLocation);
         pData->LocalSocketServer = s;
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
-        if VBOX_FAILURE(rc)
+        if RT_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread"), pDrvIns->iInstance);
     }
     else
@@ -526,7 +526,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 #endif /* !RT_OS_WINDOWS */
 
 out:
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (pszLocation)
             MMR3HeapFree(pszLocation);
@@ -581,7 +581,7 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
 #ifdef RT_OS_WINDOWS
     if (pData->NamedPipe != INVALID_HANDLE_VALUE)
     {
-        if (pData->fIsServer) 
+        if (pData->fIsServer)
         {
             FlushFileBuffers(pData->NamedPipe);
             DisconnectNamedPipe(pData->NamedPipe);

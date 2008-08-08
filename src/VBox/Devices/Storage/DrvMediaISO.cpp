@@ -127,7 +127,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
     char *pszName;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Path\" from the config"));
 
     /*
@@ -135,7 +135,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     rc = RTFileOpen(&pData->File, pszName,
                     RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("drvMediaISOConstruct: ISO image '%s' opened successfully.\n", pszName));
         pData->pszFilename = pszName;
@@ -181,7 +181,7 @@ static DECLCALLBACK(uint64_t) drvMediaISOGetSize(PPDMIMEDIA pInterface)
 
     uint64_t cbFile;
     int rc = RTFileGetSize(pData->File, &cbFile);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("drvMediaISOGetSize: returns %lld (%s)\n", cbFile, pData->pszFilename));
         return cbFile;
@@ -237,10 +237,10 @@ static DECLCALLBACK(int) drvMediaISORead(PPDMIMEDIA pInterface, uint64_t off, vo
      * Seek to the position and read.
      */
     int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTFileRead(pData->File, pvBuf, cbRead, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log2(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
                   "%16.*Vhxd\n",

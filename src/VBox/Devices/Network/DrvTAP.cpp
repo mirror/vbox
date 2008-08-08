@@ -283,7 +283,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
              *        RTFileRead() operation will return with VERR_TRY_AGAIN in any case. */
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Wait for the device to have space for this frame.
@@ -931,7 +931,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      */
 #if defined(RT_OS_SOLARIS)   /** @todo Other platforms' TAP code should be moved here from ConsoleImpl & VBoxBFE. */
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPSetupApplication", &pData->pszSetupApplication);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!RTPathExists(pData->pszSetupApplication))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
@@ -941,7 +941,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPTerminateApplication", &pData->pszTerminateApplication);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!RTPathExists(pData->pszTerminateApplication))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
@@ -952,19 +952,19 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
 # ifdef VBOX_WITH_CROSSBOW
     rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pData->MacAddress, sizeof(pData->MacAddress));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: Failed to query \"MAC\""));
 # endif
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pData->pszDeviceName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         pData->fStatic = false;
 
     /* Obtain the device name from the setup application (if none was specified). */
     if (pData->pszSetupApplication)
     {
         rc = drvTAPSetupApplication(pData);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                        N_("Error running TAP setup application. rc=%d"), rc);
     }
@@ -982,14 +982,14 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 # else
     rc = SolarisTAPAttach(pData);
 # endif
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #else /* !RT_OS_SOLARIS */
 
     int32_t iFile;
     rc = CFGMR3QueryS32(pCfgHandle, "FileHandle", &iFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed"));
     pData->FileDevice = (RTFILE)iFile;

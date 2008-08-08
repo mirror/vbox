@@ -377,10 +377,10 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
             rc = CFGMR3QueryBool(pNode, "UDP", &fUDP);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fUDP = false;
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
                 return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean failed"), iInstance);
         }
-        else if (VBOX_SUCCESS(rc))
+        else if (RT_SUCCESS(rc))
         {
             if (!RTStrICmp(szProtocol, "TCP"))
                 fUDP = false;
@@ -395,13 +395,13 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
         /* host port */
         int32_t iHostPort;
         rc = CFGMR3QueryS32(pNode, "HostPort", &iHostPort);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer failed"), iInstance);
 
         /* guest port */
         int32_t iGuestPort;
         rc = CFGMR3QueryS32(pNode, "GuestPort", &iGuestPort);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer failed"), iInstance);
 
         /* guest address */
@@ -410,7 +410,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             RTStrPrintf(szGuestIP, sizeof(szGuestIP), "%d.%d.%d.%d",
                         (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00) >> 8, (Network & 0xE0) | 15);
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string failed"), iInstance);
         struct in_addr GuestIP;
         if (!inet_aton(szGuestIP, &GuestIP))
@@ -513,14 +513,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     int rc = CFGMR3QueryBool(pCfgHandle, "PassDomain", &fPassDomain);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPassDomain = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean failed"), pDrvIns->iInstance);
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "TFTPPrefix", &pData->pszTFTPPrefix);
-    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"TFTPPrefix\" string failed"), pDrvIns->iInstance);
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "BootFile", &pData->pszBootFile);
-    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string failed"), pDrvIns->iInstance);
 
     /*
@@ -539,7 +539,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryString(pCfgHandle, "Network", szNetwork, sizeof(szNetwork));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTStrPrintf(szNetwork, sizeof(szNetwork), "10.0.%d.0/24", pDrvIns->iInstance + 2);
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Network\" string failed"), pDrvIns->iInstance);
 
     RTIPV4ADDR Network;
@@ -555,18 +555,18 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * The slirp lock..
      */
     rc = RTCritSectInit(&pData->CritSect);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #if 0
     rc = RTSemEventCreate(&g_EventSem);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Start the select thread. (it'll block on the sem)
          */
         g_fThreadTerm = false;
         rc = RTThreadCreate(&g_ThreadSelect, drvNATSelectThread, 0, NULL, "NATSEL");
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
 #endif
 #ifndef VBOX_NAT_SOURCES
@@ -574,10 +574,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
              * Initialize slirp.
              */
             rc = slirp_init(&pData->pNATState, &szNetAddr[0], Netmask, fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle, Network);
-                if (VBOX_SUCCESS(rc2))
+                if (RT_SUCCESS(rc2))
                 {
                     /*
                      * Register a load done notification to get the MAC address into the slirp

@@ -1017,7 +1017,7 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
             SSMR3PutU32(pSSMHandle, i);
             SSMR3PutMem(pSSMHandle, pDev->config, sizeof(pDev->config));
             rc = SSMR3PutS32(pSSMHandle, pDev->Int.s.iIrq);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
     }
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
     /* separator */
     rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 != (uint32_t)~0)
         AssertMsgFailedReturn(("u32=%#x\n", u32), rc);
@@ -1073,7 +1073,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
         /* index / terminator */
         rc = SSMR3GetU32(pSSMHandle, &u32);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (u32 == (uint32_t)~0)
             break;
@@ -1099,7 +1099,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         /* get the data */
         SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
         rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.iIrq);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* check that it's still around. */
@@ -1388,7 +1388,7 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
     if (rc != VINF_SUCCESS)
     {
         AssertMsgFailed(("Writing to PIC failed!\n"));
-        return VBOX_SUCCESS(rc) ? VERR_INTERNAL_ERROR : rc;
+        return RT_SUCCESS(rc) ? VERR_INTERNAL_ERROR : rc;
     }
 
     /*
@@ -1444,21 +1444,21 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* query whether we got an IOAPIC */
     bool fUseIoApic;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fUseIoApic, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
 
     /* check if RC code is enabled. */
     bool fGCEnabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
 
     /* check if R0 code is enabled. */
     bool fR0Enabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("PCI: fUseIoApic=%RTbool fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fUseIoApic, fGCEnabled, fR0Enabled));
@@ -1491,7 +1491,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
     rc = pDevIns->pDevHlp->pfnPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
     if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
@@ -1535,14 +1535,14 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register I/O ports and save state.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cf8, 1, NULL, pciIOPortAddressWrite, pciIOPortAddressRead, NULL, NULL, "i440FX (PCI)");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cfc, 4, NULL, pciIOPortDataWrite, pciIOPortDataRead, NULL, NULL, "i440FX (PCI)");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpSSMRegister(pDevIns, "pci", iInstance, 2, sizeof(*pBus),
                               NULL, pciSaveExec, NULL, NULL, pciLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;

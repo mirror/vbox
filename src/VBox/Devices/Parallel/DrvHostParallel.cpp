@@ -152,7 +152,7 @@ static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInte
             //ppdev_mode = IEEE1284_MODE_ECP;
             break;
     }
- 
+
     ioctl(pData->FileDevice, PPSETMODE, &ppdev_mode);
 
     return VINF_SUCCESS;
@@ -300,7 +300,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      */
     /* Device */
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "DevicePath", &pData->pszDevicePath);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query for \"DevicePath\" string returned %Vra.\n", rc));
         return rc;
@@ -310,18 +310,18 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      * Open the device
      */
     rc = RTFileOpen(&pData->FileDevice, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
-    if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"), 
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"),
                                    pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
      * Try to get exclusive access to parallel port
      */
-    rc = ioctl(pData->FileDevice, PPEXCL);     
+    rc = ioctl(pData->FileDevice, PPEXCL);
     if (rc < 0)
-        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, 
+        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not get exclusive access for parallel port '%s'"
-                                      "Be sure that no other process or driver accesses this port"), 
+                                      "Be sure that no other process or driver accesses this port"),
                                    pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
@@ -329,9 +329,9 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      */
     rc = ioctl(pData->FileDevice, PPCLAIM);
     if (rc < 0)
-        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, 
+        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not claim parallel port '%s'"
-                                      "Be sure that no other process or driver accesses this port"), 
+                                      "Be sure that no other process or driver accesses this port"),
                                    pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
@@ -339,7 +339,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      */
     pData->pDrvHostParallelPort = (PPDMIHOSTPARALLELPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_PARALLEL_PORT);
     if (!pData->pDrvHostParallelPort)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"), 
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"),
                                    pDrvIns->iInstance);
 
     /*
@@ -358,9 +358,9 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Start waiting for interrupts.
      */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0, 
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0,
                                   RTTHREADTYPE_IO, "ParMon");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
 
     return VINF_SUCCESS;

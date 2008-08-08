@@ -298,7 +298,7 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     AssertRC(rc);
     LogBird(("ata: %x: signalling\n", pCtl->IOPortBase1));
     rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogBird(("ata: %x: schedule failed, rc=%Vrc\n", pCtl->IOPortBase1, rc));
         rc = RTSemEventSignal(pCtl->AsyncIOSem);
@@ -742,7 +742,7 @@ static bool ataIdentifySS(ATADevState *s)
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer == 512);
     rc = s->pDrvBlock ? s->pDrvBlock->pfnGetUuid(s->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (VBOX_FAILURE(rc) || RTUuidIsNull(&Uuid))
+    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
     {
         PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
         /* Generate a predictable serial for drives which don't have a UUID. */
@@ -866,7 +866,7 @@ static bool atapiIdentifySS(ATADevState *s)
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer == 512);
     rc = s->pDrvBlock ? s->pDrvBlock->pfnGetUuid(s->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (VBOX_FAILURE(rc) || RTUuidIsNull(&Uuid))
+    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
     {
         PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
         /* Generate a predictable serial for drives which don't have a UUID. */
@@ -1121,7 +1121,7 @@ static bool ataReadSectorsSS(ATADevState *s)
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
     rc = ataReadSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
         if (s->cbElementaryTransfer == s->cbTotalTransfer)
@@ -1168,7 +1168,7 @@ static bool ataWriteSectorsSS(ATADevState *s)
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
     rc = ataWriteSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
         if (!s->cbTotalTransfer)
@@ -1275,7 +1275,7 @@ static void atapiPassthroughCmdBT(ATADevState *s)
             aModeSenseCmd[8] = cbTransfer & 0xff;
             aModeSenseCmd[9] = 0; /* control */
             rc = s->pDrvBlock->pfnSendCmd(s->pDrvBlock, aModeSenseCmd, PDMBLOCKTXDIR_FROM_DEVICE, aModeSenseResult, &cbTransfer, &uDummySense, 500);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 atapiCmdError(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_NONE);
                 return;
@@ -1360,7 +1360,7 @@ static bool atapiReadSS(ATADevState *s)
                     *pbBuf++ = 0x01; /* mode 1 data */
                     /* data */
                     rc = s->pDrvBlock->pfnRead(s->pDrvBlock, (uint64_t)i * 2048, pbBuf, 2048);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     pbBuf += 2048;
                     /* ECC */
@@ -1378,7 +1378,7 @@ static bool atapiReadSS(ATADevState *s)
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         s->Led.Actual.s.fReading = 0;
         STAM_REL_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
@@ -1538,7 +1538,7 @@ static bool atapiPassthroughSS(ATADevState *s)
         }
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
         {
@@ -2267,7 +2267,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         /** @todo rc = s->pDrvMount->pfnLoadMedia(s->pDrvMount) */
                         break;
                 }
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     atapiCmdOK(s);
                 else
                     atapiCmdError(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED);
@@ -3807,7 +3807,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         while (pCtl->fRedoIdle)
         {
             rc = RTSemEventWait(pCtl->SuspendIOSem, RT_INDEFINITE_WAIT);
-            if (VBOX_FAILURE(rc) || pCtl->fShutdown)
+            if (RT_FAILURE(rc) || pCtl->fShutdown)
                 break;
 
             pCtl->fRedoIdle = false;
@@ -3819,7 +3819,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
             LogBird(("ata: %x: going to sleep...\n", pCtl->IOPortBase1));
             rc = RTSemEventWait(pCtl->AsyncIOSem, RT_INDEFINITE_WAIT);
             LogBird(("ata: %x: waking up\n", pCtl->IOPortBase1));
-            if (VBOX_FAILURE(rc) || pCtl->fShutdown)
+            if (RT_FAILURE(rc) || pCtl->fShutdown)
                 break;
 
             pReq = ataAsyncIOGetCurrentRequest(pCtl);
@@ -4969,7 +4969,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
         for (unsigned i = 0; i < RT_ELEMENTS(pData->aCts); i++)
         {
             rc = RTThreadWait(pData->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
-            AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
         }
     }
     else
@@ -5102,7 +5102,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * 512;
         Assert(!pIf->pbIOBufferR3);
         rc = MMHyperAlloc(pVM, pIf->cbIOBuffer, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferR3);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return VERR_NO_MEMORY;
         pIf->pbIOBufferR0 = MMHyperR3ToR0(pVM, pIf->pbIOBufferR3);
         pIf->pbIOBufferRC = MMHyperR3ToRC(pVM, pIf->pbIOBufferR3);
@@ -5195,12 +5195,12 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
      * required as well as optional.
      */
     rc = PDMDevHlpDriverAttach(pDevIns, pIf->iLUN, &pIf->IBase, &pIf->pDrvBase, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = ataConfigLun(pDevIns, pIf);
     else
         AssertMsgFailed(("Failed to attach LUN#%d. rc=%Vrc\n", pIf->iLUN, rc));
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         pIf->pDrvBase = NULL;
         pIf->pDrvBlock = NULL;
@@ -5487,7 +5487,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
     SSMR3GetBool(pSSMHandle, &pData->fPIIX4);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
     {
@@ -5542,26 +5542,26 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("PIIX3 configuration error: unknown option specified"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
 
     rc = CFGMR3QueryU32Def(pCfgHandle, "IRQDelay", &DelayIRQMillies, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "PIIX4", &pData->fPIIX4, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read PIIX4 as boolean"));
     Log(("%s: fPIIX4=%d\n", __FUNCTION__, pData->fPIIX4));
@@ -5630,12 +5630,12 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      *      device the slot next to itself.
      */
     rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 cannot register PCI device"));
     AssertMsg(pData->dev.devfn == 9 || iInstance != 0, ("pData->dev.devfn=%d\n", pData->dev.devfn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ataBMDMAIORangeMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 cannot register PCI I/O region for BMDMA"));
 
@@ -5647,14 +5647,14 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         rc = PDMDevHlpIOPortRegister(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTHCPTR)i,
                                      ataIOPortWrite1, ataIOPortRead1, ataIOPortWriteStr1, ataIOPortReadStr1, "ATA I/O Base 1");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers"));
 
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterGC(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
                                            "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers (GC)"));
         }
 
@@ -5667,27 +5667,27 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTR0PTR)i,
                                            "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
 #endif
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, "PIIX3 cannot register I/O handlers (R0).");
         }
 
         rc = PDMDevHlpIOPortRegister(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTHCPTR)i,
                                      ataIOPortWrite2, ataIOPortRead2, NULL, NULL, "ATA I/O Base 2");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
 
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterGC(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
                                            "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
         }
         if (fR0Enabled)
         {
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
                                            "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)"));
         }
 
@@ -5727,7 +5727,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         char szName[24];
         RTStrPrintf(szName, sizeof(szName), "ATA%d", i);
         rc = PDMDevHlpCritSectInit(pDevIns, &pData->aCts[i].lock, szName);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot initialize critical section"));
     }
 
@@ -5735,7 +5735,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Attach status driver (optional).
      */
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->IBase, &pBase, "Status Port");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pData->pLedsConnector = (PDMILEDCONNECTORS *)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
@@ -5782,7 +5782,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             ATADevState *pIf = &pCtl->aIfs[j];
 
             rc = PDMDevHlpDriverAttach(pDevIns, pIf->iLUN, &pIf->IBase, &pIf->pDrvBase, s_apszDescs[i][j]);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = ataConfigLun(pDevIns, pIf);
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
@@ -5816,7 +5816,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                               ATA_SAVED_STATE_VERSION, sizeof(*pData) + cbTotalBuffer,
                               ataSaveLoadPrep, ataSaveExec, NULL,
                               ataSaveLoadPrep, ataLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register save state handlers"));
 
     /*

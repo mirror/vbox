@@ -156,7 +156,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
     for(;;)
     {
         int rc = RTSemEventWait(pData->SendSem, RT_INDEFINITE_WAIT);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         /*
@@ -170,7 +170,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
                 size_t cbProcessed = 1;
 
                 rc = pData->pDrvStream->pfnWrite(pData->pDrvStream, &pData->aSendQueue[pData->iSendQueueTail], &cbProcessed);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     Assert(cbProcessed);
                     pData->iSendQueueTail++;
@@ -225,7 +225,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             {
                 cbRemaining = sizeof(aBuffer);
                 rc = pData->pDrvStream->pfnRead(pData->pDrvStream, aBuffer, &cbRemaining);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     LogFlow(("Read failed with %Vrc\n", rc));
                     break;
@@ -243,7 +243,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             /* Send data to guest. */
             cbProcessed = cbRemaining;
             rc = pData->pDrvCharPort->pfnNotifyRead(pData->pDrvCharPort, pBuffer, &cbProcessed);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
                 pBuffer += cbProcessed;
@@ -326,21 +326,21 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     PPDMIBASE pBase;
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc; /* Don't call PDMDrvHlpVMSetError here as we assume that the driver already set an appropriate error */
     pData->pDrvStream = (PPDMISTREAM)pBase->pfnQueryInterface(pBase, PDMINTERFACE_STREAM);
     if (!pData->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
     rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharRecv");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
 
     rc = RTSemEventCreate(&pData->SendSem);
     AssertRC(rc);
 
     rc = RTThreadCreate(&pData->SendThread, drvCharSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharSend");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
 
 

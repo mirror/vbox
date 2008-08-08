@@ -145,7 +145,7 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
    return pDrvVD->pDrvTransportAsync->pfnClose(pDrvVD->pDrvTransportAsync, pStorage);
 }
 
-static DECLCALLBACK(int) drvvdAsyncIORead(void *pvUser, void *pStorage, uint64_t uOffset, 
+static DECLCALLBACK(int) drvvdAsyncIORead(void *pvUser, void *pStorage, uint64_t uOffset,
                                           size_t cbRead, void *pvBuf, size_t *pcbRead)
 {
     PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
@@ -157,7 +157,7 @@ static DECLCALLBACK(int) drvvdAsyncIORead(void *pvUser, void *pStorage, uint64_t
                                                           uOffset, pvBuf, cbRead, pcbRead);
 }
 
-static DECLCALLBACK(int) drvvdAsyncIOWrite(void *pvUser, void *pStorage, uint64_t uOffset, 
+static DECLCALLBACK(int) drvvdAsyncIOWrite(void *pvUser, void *pStorage, uint64_t uOffset,
                                            size_t cbWrite, const void *pvBuf, size_t *pcbWritten)
 {
     PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
@@ -277,7 +277,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
              off, pvBuf, cbRead));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDRead(pData->pDisk, off, pvBuf, cbRead);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Vhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
@@ -336,7 +336,7 @@ static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDGetPCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("%s: geometry not available.\n", __FUNCTION__));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
@@ -365,7 +365,7 @@ static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDGetLCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("%s: geometry not available.\n", __FUNCTION__));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
@@ -401,7 +401,7 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 *   Async Media interface methods                                              *
 *******************************************************************************/
 
-static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset, 
+static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
                                         PPDMDATASEG paSeg, unsigned cSeg,
                                         size_t cbRead, void *pvUser)
 {
@@ -434,7 +434,7 @@ static DECLCALLBACK(int) drvvdTasksCompleteNotify(PPDMITRANSPORTASYNCPORT pInter
     PVBOXDISK pData = PDMITRANSPORTASYNCPORT_2_VBOXDISK(pInterface);
     PDRVVDASYNCTASK pDrvVDAsyncTask = (PDRVVDASYNCTASK)pvUser;
     int rc = VINF_VDI_ASYNC_IO_FINISHED;
-   
+
     /* Having a completion callback for a task is not mandatory. */
     if (pDrvVDAsyncTask->pfnCompleted)
         rc = pDrvVDAsyncTask->pfnCompleted(pDrvVDAsyncTask->pvUser);
@@ -579,7 +579,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /* Try to attach async media port interface above.*/
     pData->pDrvMediaAsyncPort = (PPDMIMEDIAASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MEDIA_ASYNC_PORT);
 
-    /* 
+    /*
      * Attach the async transport driver below of the device above us implements the
      * async interface.
      */
@@ -591,13 +591,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
         if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
-            /* 
+            /*
              * Though the device supports async I/O the backend seems to not support it.
              * Revert to non async I/O.
              */
             pData->pDrvMediaAsyncPort = NULL;
         }
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Failed to attach async transport driver below rc=%Vrc\n", rc));
         }
@@ -655,7 +655,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /*
      * Open the images.
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /** @todo TEMP! later the iSCSI config callbacks won't be included here */
         rc = VDCreate(&pData->VDIConfig, &pData->pDisk);
@@ -663,13 +663,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     }
 
     unsigned cImages = iLevel;
-    while (pCurNode && VBOX_SUCCESS(rc))
+    while (pCurNode && RT_SUCCESS(rc))
     {
         /*
          * Read the image configuration.
          */
         rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                   N_("DrvVD: Configuration error: Querying \"Path\" as string failed"));
@@ -677,7 +677,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
 
         rc = CFGMR3QueryStringAlloc(pCfgHandle, "Format", &pszFormat);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                   N_("DrvVD: Configuration error: Querying \"Format\" as string failed"));
@@ -689,7 +689,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fReadOnly = false;
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
@@ -699,7 +699,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = CFGMR3QueryBool(pCfgHandle, "HonorZeroWrites", &fHonorZeroWrites);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fHonorZeroWrites = false;
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
@@ -741,7 +741,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = VDOpen(pData->pDisk, pszFormat, pszName, uOpenFlags);
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             Log(("%s: %d - Opened '%s' in %s mode\n", __FUNCTION__,
                  iLevel, pszName,
                  VDIsReadOnly(pData->pDisk) ? "read-only" : "read-write"));
@@ -762,7 +762,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         pCurNode = CFGMR3GetParent(pCurNode);
     }
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (VALID_PTR(pData->pDisk))
         {
@@ -775,7 +775,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             MMR3HeapFree(pszFormat);
     }
 
-    /* 
+    /*
      * Check for async I/O support. Every opened image has to support
      * it.
      */
@@ -789,14 +789,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         if (vdBackendInfo.uBackendCaps & VD_CAP_ASYNC)
         {
-            /* 
+            /*
              * Backend indicates support for at least some files.
              * Check if current file is supported with async I/O)
              */
             rc = VDImageIsAsyncIOSupported(pData->pDisk, i, &pData->fAsyncIOSupported);
             AssertRC(rc);
 
-            /* 
+            /*
              * Check if current image is supported.
              * If not we can stop checking because
              * at least one does not support it.
@@ -894,7 +894,7 @@ static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
 
-    /* 
+    /*
      * We must close the disk here to ensure that
      * the backend closes all files before the
      * async transport driver is destructed.

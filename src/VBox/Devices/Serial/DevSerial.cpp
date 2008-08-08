@@ -410,7 +410,7 @@ static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *
         /* If a character is still in the read queue, then wait for it to be emptied. */
         PDMCritSectLeave(&pData->CritSect);
         rc = RTSemEventWait(pData->ReceiveSem, 250);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
@@ -604,7 +604,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetBool(pSSMHandle, &pData->msr_changed);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (u32 != ~0U)
@@ -737,14 +737,14 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &pData->fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
@@ -765,7 +765,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     char szName[24];
     RTStrPrintf(szName, sizeof(szName), "Serial#%d", iInstance);
     rc = PDMDevHlpCritSectInit(pDevIns, &pData->CritSect, szName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
@@ -777,7 +777,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         else if (iInstance == 1)
             irq_lvl = 3;
     }
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
 
@@ -789,7 +789,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         else if (iInstance == 1)
             io_base = 0x2f8;
     }
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
@@ -813,20 +813,20 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     pData->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
     pData->dev.config[0x3d] = 1;    /* interrupt pin 0 */
     rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     /*
      * Register the PCI I/O ports.
      */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, serialIOPortRegionMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #else /* !VBOX_SERIAL_PCI */
     pData->base = io_base;
     rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, 0,
                                  serialIOPortWrite, serialIOPortRead,
                                  NULL, NULL, "SERIAL");
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     if (pData->fGCEnabled)
@@ -842,7 +842,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /* Attach the char driver and get the interfaces. For now no run-time
      * changes are supported. */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Serial Char");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pData->pDrvChar = (PDMICHAR *)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_CHAR);
         if (!pData->pDrvChar)
@@ -878,7 +878,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         serialLoadExec,         /* pfnLoadExec */
         NULL                    /* pfnLoadDone */
         );
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;

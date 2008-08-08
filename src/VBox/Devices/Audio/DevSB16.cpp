@@ -1746,30 +1746,30 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Read config data.
      */
     rc = CFGMR3QuerySIntDef(pCfgHandle, "IRQ", &s->irq, 5);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA", &s->dma, 1);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA\" value"));
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA16", &s->hdma, 5);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA16\" value"));
 
     RTIOPORT Port;
     rc = CFGMR3QueryPortDef(pCfgHandle, "Port", &Port, 0x220);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Port\" value"));
     s->port = Port;
 
     uint16_t u16Version;
     rc = CFGMR3QueryU16Def(pCfgHandle, "Version", &u16Version, 0x0405);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Version\" value"));
     s->ver = u16Version;
@@ -1794,36 +1794,36 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create timer, register & attach stuff.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16Timer, "SB16 timer", &s->pTimer);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("pfnTMTimerCreate -> %Vrc\n", rc), rc);
 
     rc = PDMDevHlpIOPortRegister(pDevIns, s->port + 0x04,  2, s,
                                  mixer_write, mixer_read, NULL, NULL, "SB16");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, s->port + 0x06, 10, s,
                                  dsp_write, dsp_read, NULL, NULL, "SB16");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = PDMDevHlpDMARegister(pDevIns, s->hdma, SB_read_DMA, s);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpDMARegister(pDevIns, s->dma, SB_read_DMA, s);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     s->can_write = 1;
 
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, SB16_SSM_VERSION,
                               sizeof(*s), NULL, SaveExec, NULL, NULL, LoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("sb16: No attached driver!\n"));
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("Failed to attach SB16 LUN #0! rc=%Vrc\n", rc), rc);
 
     AUD_register_card("sb16", &s->card);

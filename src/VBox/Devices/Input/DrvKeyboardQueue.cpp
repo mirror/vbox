@@ -166,7 +166,7 @@ static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
     PDRVKBDQUEUEITEM    pItem = (PDRVKBDQUEUEITEM)pItemCore;
     int rc = pData->pUpPort->pfnPutEvent(pData->pUpPort, pItem->u8KeyCode);
-    return VBOX_SUCCESS(rc);
+    return RT_SUCCESS(rc);
 }
 
 
@@ -283,7 +283,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     PPDMIBASE pDownBase;
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pDownBase);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
         return rc;
@@ -302,7 +302,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     rc = CFGMR3QueryU32(pCfgHandle, "Interval", &cMilliesInterval);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cMilliesInterval = 0;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: 32-bit \"Interval\" -> rc=%Vrc\n", rc));
         return rc;
@@ -312,14 +312,14 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     rc = CFGMR3QueryU32(pCfgHandle, "QueueSize", &cItems);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cItems = 128;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: 32-bit \"QueueSize\" -> rc=%Vrc\n", rc));
         return rc;
     }
 
     rc = pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, sizeof(DRVKBDQUEUEITEM), cItems, cMilliesInterval, drvKbdQueueConsumer, &pDrv->pQueue);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Vrc\n", cItems, cMilliesInterval, rc));
         return rc;

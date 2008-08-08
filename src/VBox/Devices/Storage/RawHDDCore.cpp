@@ -110,7 +110,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
                     uOpenFlags & VD_OPEN_FLAGS_READONLY
                      ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
                      : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
          * choice of retrying the open if it failed. */
@@ -119,7 +119,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     pImage->File = File;
 
     rc = RTFileGetSize(pImage->File, &pImage->cbSize);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto out;
     if (pImage->cbSize % 512)
     {
@@ -129,7 +129,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     pImage->enmImageType = VD_IMAGE_TYPE_FIXED;
 
 out:
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         rawFreeImage(pImage, false);
     return rc;
 }
@@ -166,7 +166,7 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     /* Create image file. */
     rc = RTFileOpen(&File, pImage->pszFilename,
                     RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
         goto out;
@@ -176,7 +176,7 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     /* Check the free space on the disk and leave early if there is not
      * sufficient space available. */
     rc = RTFsQuerySizes(pImage->pszFilename, NULL, &cbFree, NULL, NULL);
-    if (VBOX_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
+    if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
     {
         rc = rawError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
         goto out;
@@ -185,7 +185,7 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     /* Allocate & commit whole file if fixed image, it must be more
      * effective than expanding file by write operations. */
     rc = RTFileSetSize(File, cbSize);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
         goto out;
@@ -209,7 +209,7 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
         unsigned cbChunk = (unsigned)RT_MIN(cbSize, cbBuf);
 
         rc = RTFileWriteAt(File, uOff, pvBuf, cbChunk, NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
             goto out;
@@ -222,13 +222,13 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
             rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
                              uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100),
                              pvUser);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto out;
         }
     }
     RTMemTmpFree(pvBuf);
 
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */,
                     uPercentStart + uPercentSpan * 98 / 100, pvUser);
 
@@ -238,11 +238,11 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     rc = rawFlushImage(pImage);
 
 out:
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */,
                     uPercentStart + uPercentSpan, pvUser);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         rawFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
     return rc;
 }
@@ -345,7 +345,7 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     rc = rawOpenImage(pImage, uOpenFlags);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         *ppBackendData = pImage;
 
 out:
@@ -403,7 +403,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* So far the image is opened in read/write mode. Make sure the
          * image is opened in read-only mode if the caller requested that. */
@@ -411,7 +411,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
         {
             rawFreeImage(pImage, false);
             rc = rawOpenImage(pImage, uOpenFlags);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto out;
         }
         *ppBackendData = pImage;
@@ -584,7 +584,7 @@ static uint64_t rawGetFileSize(void *pBackendData)
         if (pImage->File != NIL_RTFILE)
         {
             int rc = RTFileGetSize(pImage->File, &cbFile);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
     }
