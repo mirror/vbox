@@ -1169,8 +1169,6 @@ typedef union RTUUID
         uint16_t    u16ClockSeq;
         uint8_t     au8Node[6];
     } Gen;
-    /** @deprecated */
-    unsigned char aUuid[16];
 } RTUUID;
 /** Pointer to UUID data. */
 typedef RTUUID *PRTUUID;
