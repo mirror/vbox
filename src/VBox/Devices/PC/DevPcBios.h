@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC BIOS Device Header.
+ * DevPcBios - PC BIOS Device, header shared with the BIOS code.
  */
 
 /*
