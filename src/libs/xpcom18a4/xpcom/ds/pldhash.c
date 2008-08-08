@@ -606,7 +606,13 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
     PRBool didRemove;
     PLDHashEntryHdr *entry;
     PLDHashOperator op;
+#ifdef VBOX
+    PRUint32 generation;
+    char *entryStore;
 
+    generation = table->generation;
+    entryStore = table->entryStore;
+#endif
     entryAddr = table->entryStore;
     entrySize = table->entrySize;
     capacity = PL_DHASH_TABLE_SIZE(table);
@@ -617,6 +623,26 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
         entry = (PLDHashEntryHdr *)entryAddr;
         if (ENTRY_IS_LIVE(entry)) {
             op = etor(table, entry, i++, arg);
+#ifdef VBOX
+            /*
+             * Adjust pointers if entryStore was reallocated as a result
+             * of an add or remove performed by the enumerator. It is
+             * probably not supposed to do this, but since it does we'll
+             * simply deal with it.
+             *
+             * This happens during ipcDConnectService::OnClientStateChange()
+             * / ipcDConnectService::DeleteInstance() now.
+             */
+            if (generation != table->generation)
+            {
+                entryAddr += table->entryStore - entryStore;
+                entryStore = table->entryStore;
+                entry = (PLDHashEntryHdr *)entryAddr;
+                capacity = PL_DHASH_TABLE_SIZE(table);
+                entryLimit = table->entryStore + capacity * entrySize;
+            }
+
+#endif
             if (op & PL_DHASH_REMOVE) {
                 METER(table->stats.removeEnums++);
                 PL_DHashTableRawRemove(table, entry);
