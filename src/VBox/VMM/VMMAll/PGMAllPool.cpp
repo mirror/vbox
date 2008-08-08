@@ -442,10 +442,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), 
-                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, 
+                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     /* Note: hardcoded PAE implementation dependency */
-                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx, 
+                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw);
                         uShw.pPDPae->a[iShw].u = 0;
                     }
@@ -471,10 +471,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), 
-                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, 
+                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     /* Note: hardcoded PAE implementation dependency */
-                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx, 
+                                    (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw2 + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw2);
                         uShw.pPDPae->a[iShw2].u = 0;
                     }
@@ -534,9 +534,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), 
-                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, 
-                                    pPage->idx, 
+                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
+                                    pPage->idx,
                                     iShw);
                         uShw.pPDPae->a[iShw].u = 0;
                     }
@@ -560,9 +560,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), 
-                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK, 
-                                    pPage->idx, 
+                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
+                                    pPage->idx,
                                     iShw2);
                         uShw.pPDPae->a[iShw2].u = 0;
                     }
@@ -1491,7 +1491,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
                                           GCPhysPage, GCPhysPage + (PAGE_SIZE - 1),
                                           pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                           pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
-                                          pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pPage),
+                                          pPool->pfnAccessHandlerGC, MMHyperCCToRC(pVM, pPage),
                                           pPool->pszAccessHandler);
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
@@ -1567,7 +1567,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
                                                    pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pNewHead),
                                                    pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pNewHead),
-                                                   pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pNewHead),
+                                                   pPool->pfnAccessHandlerGC, MMHyperCCToRC(pVM, pNewHead),
                                                    pPool->pszAccessHandler);
             AssertFatalRCSuccess(rc);
             pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
@@ -3533,7 +3533,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
             int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
                                                        pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                                        pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
-                                                       pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pPage),
+                                                       pPool->pfnAccessHandlerGC, MMHyperCCToRC(pVM, pPage),
                                                        pPool->pszAccessHandler);
             AssertFatalRCSuccess(rc);
 # ifdef PGMPOOL_WITH_CACHE

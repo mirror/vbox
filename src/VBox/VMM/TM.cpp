@@ -251,7 +251,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacyAsync;
     }
 
-    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
     /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
@@ -751,11 +751,11 @@ TMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     int rc;
     LogFlow(("TMR3Relocate\n"));
 
-    pVM->tm.s.pvGIPGC = MMHyperR3ToGC(pVM, pVM->tm.s.pvGIPR3);
-    pVM->tm.s.paTimerQueuesGC = MMHyperR3ToGC(pVM, pVM->tm.s.paTimerQueuesR3);
+    pVM->tm.s.pvGIPGC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
+    pVM->tm.s.paTimerQueuesGC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
     pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pVM->tm.s.paTimerQueuesR3);
 
-    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertFatal(pVM->tm.s.VirtualGetRawDataGC.pu64Prev);
     rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
     AssertFatalRC(rc);

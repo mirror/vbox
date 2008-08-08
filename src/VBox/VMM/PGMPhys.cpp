@@ -97,19 +97,19 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
     PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesR3;
     pNew->pNextR3 = pRam;
     pNew->pNextR0 = pRam ? MMHyperCCToR0(pVM, pRam) : NIL_RTR0PTR;
-    pNew->pNextGC = pRam ? MMHyperCCToGC(pVM, pRam) : NIL_RTGCPTR;
+    pNew->pNextGC = pRam ? MMHyperCCToRC(pVM, pRam) : NIL_RTGCPTR;
 
     if (pPrev)
     {
         pPrev->pNextR3 = pNew;
         pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
-        pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
+        pPrev->pNextGC = MMHyperCCToRC(pVM, pNew);
     }
     else
     {
         pVM->pgm.s.pRamRangesR3 = pNew;
         pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
-        pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
+        pVM->pgm.s.pRamRangesGC = MMHyperCCToRC(pVM, pNew);
     }
 
     pgmUnlock(pVM);
@@ -134,14 +134,14 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     {
         pPrev->pNextR3 = pNext;
         pPrev->pNextR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
-        pPrev->pNextGC = pNext ? MMHyperCCToGC(pVM, pNext) : NIL_RTGCPTR;
+        pPrev->pNextGC = pNext ? MMHyperCCToRC(pVM, pNext) : NIL_RTGCPTR;
     }
     else
     {
         Assert(pVM->pgm.s.pRamRangesR3 == pRam);
         pVM->pgm.s.pRamRangesR3 = pNext;
         pVM->pgm.s.pRamRangesR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
-        pVM->pgm.s.pRamRangesGC = pNext ? MMHyperCCToGC(pVM, pNext) : NIL_RTGCPTR;
+        pVM->pgm.s.pRamRangesGC = pNext ? MMHyperCCToRC(pVM, pNext) : NIL_RTGCPTR;
     }
 
     pgmUnlock(pVM);
@@ -251,7 +251,7 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     /* Allocate memory for chunk to HC ptr lookup array. */
     rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
     AssertRCReturn(rc, rc);
-    pNew->pavHCChunkGC = MMHyperCCToGC(pVM, pNew->pavHCChunkHC);
+    pNew->pavHCChunkGC = MMHyperCCToRC(pVM, pNew->pavHCChunkHC);
     pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
 
 #endif
@@ -1295,7 +1295,7 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                               NULL, NULL,
 #endif
                                               NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
-                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToGC(pVM, pRomNew), pszDesc);
+                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
             if (RT_SUCCESS(rc))
             {
                 pgmLock(pVM);
@@ -1342,19 +1342,19 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                      */
                     pRomNew->pNextR3 = pRom;
                     pRomNew->pNextR0 = pRom ? MMHyperCCToR0(pVM, pRom) : NIL_RTR0PTR;
-                    pRomNew->pNextGC = pRom ? MMHyperCCToGC(pVM, pRom) : NIL_RTGCPTR;
+                    pRomNew->pNextGC = pRom ? MMHyperCCToRC(pVM, pRom) : NIL_RTGCPTR;
 
                     if (pRomPrev)
                     {
                         pRomPrev->pNextR3 = pRomNew;
                         pRomPrev->pNextR0 = MMHyperCCToR0(pVM, pRomNew);
-                        pRomPrev->pNextGC = MMHyperCCToGC(pVM, pRomNew);
+                        pRomPrev->pNextGC = MMHyperCCToRC(pVM, pRomNew);
                     }
                     else
                     {
                         pVM->pgm.s.pRomRangesR3 = pRomNew;
                         pVM->pgm.s.pRomRangesR0 = MMHyperCCToR0(pVM, pRomNew);
-                        pVM->pgm.s.pRomRangesGC = MMHyperCCToGC(pVM, pRomNew);
+                        pVM->pgm.s.pRomRangesGC = MMHyperCCToRC(pVM, pRomNew);
                     }
 
                     REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false); /** @todo fix shadowing and REM. */
@@ -1817,7 +1817,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         pgmLock(pVM);
         pNew->pNextR3 = pCur;
         pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
-        pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : NIL_RTGCPTR;
+        pNew->pNextGC = pCur ? MMHyperCCToRC(pVM, pCur) : NIL_RTGCPTR;
         if (pPrev)
         {
             pPrev->pNextR3 = pNew;

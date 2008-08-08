@@ -1196,7 +1196,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     }
     if (VBOX_SUCCESS(rc))
     {
-        pVM->pgm.s.pvZeroPgGC = MMHyperR3ToGC(pVM, pVM->pgm.s.pvZeroPgR3);
+        pVM->pgm.s.pvZeroPgGC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
         AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTHCPHYS);
         pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
@@ -1857,10 +1857,10 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pgm.s.pRamRangesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pRamRangesR3);
         for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur->pNextR3; pCur = pCur->pNextR3)
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-            pCur->pNextGC = MMHyperR3ToGC(pVM, pCur->pNextR3);
+            pCur->pNextGC = MMHyperR3ToRC(pVM, pCur->pNextR3);
 #else
         {
-            pCur->pNextGC = MMHyperR3ToGC(pVM, pCur->pNextR3);
+            pCur->pNextGC = MMHyperR3ToRC(pVM, pCur->pNextR3);
             if (pCur->pavHCChunkGC)
                 pCur->pavHCChunkGC = MMHyperHC2GC(pVM, pCur->pavHCChunkHC);
         }
@@ -1880,8 +1880,8 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         for (RTHCUINT i = 0; i < pCur->cPTs; i++)
         {
-            pCur->aPTs[i].pPTGC = MMHyperR3ToGC(pVM, pCur->aPTs[i].pPTR3);
-            pCur->aPTs[i].paPaePTsGC = MMHyperR3ToGC(pVM, pCur->aPTs[i].paPaePTsR3);
+            pCur->aPTs[i].pPTGC = MMHyperR3ToRC(pVM, pCur->aPTs[i].pPTR3);
+            pCur->aPTs[i].paPaePTsGC = MMHyperR3ToRC(pVM, pCur->aPTs[i].paPaePTsR3);
         }
     }
 
@@ -1994,7 +1994,7 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     pVM->pgm.s.cbMappingFixed    = 0;
 
     /* Exit the guest paging mode before the pgm pool gets reset.
-     * Important to clean up the amd64 case. 
+     * Important to clean up the amd64 case.
      */
     int rc = PGM_GST_PFN(Exit, pVM)(pVM);
     AssertRC(rc);

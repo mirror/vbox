@@ -163,7 +163,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
          * 32-bit.
          */
         pNew->aPTs[i].pPTR3    = (PX86PT)pbPTs;
-        pNew->aPTs[i].pPTGC    = MMHyperR3ToGC(pVM, pNew->aPTs[i].pPTR3);
+        pNew->aPTs[i].pPTGC    = MMHyperR3ToRC(pVM, pNew->aPTs[i].pPTR3);
         pNew->aPTs[i].pPTR0    = MMHyperR3ToR0(pVM, pNew->aPTs[i].pPTR3);
         pNew->aPTs[i].HCPhysPT = MMR3HyperHCVirt2HCPhys(pVM, pNew->aPTs[i].pPTR3);
         pbPTs += PAGE_SIZE;
@@ -176,7 +176,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
         pNew->aPTs[i].HCPhysPaePT0 = MMR3HyperHCVirt2HCPhys(pVM, pbPTs);
         pNew->aPTs[i].HCPhysPaePT1 = MMR3HyperHCVirt2HCPhys(pVM, pbPTs + PAGE_SIZE);
         pNew->aPTs[i].paPaePTsR3 = (PX86PTPAE)pbPTs;
-        pNew->aPTs[i].paPaePTsGC = MMHyperR3ToGC(pVM, pbPTs);
+        pNew->aPTs[i].paPaePTsGC = MMHyperR3ToRC(pVM, pbPTs);
         pNew->aPTs[i].paPaePTsR0 = MMHyperR3ToR0(pVM, pbPTs);
         pbPTs += PAGE_SIZE * 2;
         Log4(("PGMR3MapPT: i=%d: paPaePTsHC=%p paPaePTsGC=%p HCPhysPaePT0=%RHp HCPhysPaePT1=%RHp\n",
@@ -188,18 +188,18 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      * Insert the new mapping.
      */
     pNew->pNextR3 = pCur;
-    pNew->pNextGC = pCur ? MMHyperR3ToGC(pVM, pCur) : 0;
+    pNew->pNextGC = pCur ? MMHyperR3ToRC(pVM, pCur) : 0;
     pNew->pNextR0 = pCur ? MMHyperR3ToR0(pVM, pCur) : 0;
     if (pPrev)
     {
         pPrev->pNextR3 = pNew;
-        pPrev->pNextGC = MMHyperR3ToGC(pVM, pNew);
+        pPrev->pNextGC = MMHyperR3ToRC(pVM, pNew);
         pPrev->pNextR0 = MMHyperR3ToR0(pVM, pNew);
     }
     else
     {
         pVM->pgm.s.pMappingsR3 = pNew;
-        pVM->pgm.s.pMappingsGC = MMHyperR3ToGC(pVM, pNew);
+        pVM->pgm.s.pMappingsGC = MMHyperR3ToRC(pVM, pNew);
         pVM->pgm.s.pMappingsR0 = MMHyperR3ToR0(pVM, pNew);
     }
 
@@ -846,7 +846,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
             pMapping->pNextGC = pPrev->pNextGC;
             pMapping->pNextR0 = pPrev->pNextR0;
             pPrev->pNextR3 = pMapping;
-            pPrev->pNextGC = MMHyperR3ToGC(pVM, pMapping);
+            pPrev->pNextGC = MMHyperR3ToRC(pVM, pMapping);
             pPrev->pNextR0 = MMHyperR3ToR0(pVM, pMapping);
         }
         else
@@ -854,7 +854,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
             pMapping->pNextGC = pVM->pgm.s.pMappingsGC;
             pMapping->pNextR0 = pVM->pgm.s.pMappingsR0;
             pVM->pgm.s.pMappingsR3 = pMapping;
-            pVM->pgm.s.pMappingsGC = MMHyperR3ToGC(pVM, pMapping);
+            pVM->pgm.s.pMappingsGC = MMHyperR3ToRC(pVM, pMapping);
             pVM->pgm.s.pMappingsR0 = MMHyperR3ToR0(pVM, pMapping);
         }
     }

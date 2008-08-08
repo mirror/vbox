@@ -69,7 +69,7 @@ CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
     {
         pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
         pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreGC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToGC(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreGC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
     }
 }
 
