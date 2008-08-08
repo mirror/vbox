@@ -3675,7 +3675,7 @@ static int vmdkCheckIfValid(const char *pszFilename)
     vmdkFreeImage(pImage, false);
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3736,7 +3736,7 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
         *ppBackendData = pImage;
 
 out:
-    LogFlowFunc(("returns %Vrc (pBackendData=%#p)\n", rc, *ppBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
@@ -3823,7 +3823,7 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
 
 out:
-    LogFlowFunc(("returns %Vrc (pBackendData=%#p)\n", rc, *ppBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
@@ -4054,7 +4054,7 @@ out:
         RTMemTmpFree(apszNewName);
     if (apszNewLines)
         RTMemTmpFree(apszNewLines);
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4070,7 +4070,7 @@ static int vmdkClose(void *pBackendData, bool fDelete)
     if (pImage)
         vmdkFreeImage(pImage, fDelete);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4144,7 +4144,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     *pcbActuallyRead = cbToRead;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4255,7 +4255,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         *pcbWriteProcess = cbToWrite;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4269,7 +4269,7 @@ static int vmdkFlush(void *pBackendData)
     Assert(pImage);
 
     rc = vmdkFlushImage(pImage);
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4302,7 +4302,7 @@ static int vmdkGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc enmImageType=%u\n", rc, *penmImageType));
+    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
     return rc;
 }
 
@@ -4373,7 +4373,7 @@ static int vmdkGetPCHSGeometry(void *pBackendData,
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
 }
 
@@ -4405,7 +4405,7 @@ static int vmdkSetPCHSGeometry(void *pBackendData,
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4432,7 +4432,7 @@ static int vmdkGetLCHSGeometry(void *pBackendData,
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
@@ -4464,7 +4464,7 @@ static int vmdkSetLCHSGeometry(void *pBackendData,
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4524,7 +4524,7 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     rc = vmdkOpenImage(pImage, uOpenFlags);
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4559,7 +4559,7 @@ static int vmdkGetComment(void *pBackendData, char *pszComment,
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc comment='%s'\n", rc, pszComment));
+    LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
     return rc;
 }
 
@@ -4584,7 +4584,7 @@ static int vmdkSetComment(void *pBackendData, const char *pszComment)
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4605,7 +4605,7 @@ static int vmdkGetUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -4636,7 +4636,7 @@ static int vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4657,7 +4657,7 @@ static int vmdkGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -4687,7 +4687,7 @@ static int vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4708,7 +4708,7 @@ static int vmdkGetParentUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -4738,7 +4738,7 @@ static int vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4759,7 +4759,7 @@ static int vmdkGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -4789,7 +4789,7 @@ static int vmdkSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -4816,35 +4816,35 @@ static void vmdkDump(void *pBackendData)
 static int vmdkGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int vmdkGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int vmdkSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int vmdkGetParentFilename(void *pvBackendData, char **ppszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int vmdkSetParentFilename(void *pvBackendData, const char *pszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -4927,7 +4927,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                                                                        cbToRead, &pTask);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("Preparing read failed rc=%Vrc\n", rc));
+                    AssertMsgFailed(("Preparing read failed rc=%Rrc\n", rc));
                     goto out;
                 }
 
@@ -4999,11 +4999,11 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                                                                 pImage->apTask, cTasksToSubmit,
                                                                 NULL, pvUser,
                                                                 NULL /* Nothing required after read. */);
-        AssertMsg(RT_SUCCESS(rc), ("Failed to enqueue tasks rc=%Vrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc), ("Failed to enqueue tasks rc=%Rrc\n", rc));
     }
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -5063,7 +5063,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                                                                          cbToWrite, &pTask);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("Preparing read failed rc=%Vrc\n", rc));
+                    AssertMsgFailed(("Preparing read failed rc=%Rrc\n", rc));
                     goto out;
                 }
 
@@ -5135,11 +5135,11 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                                                                 pImage->apTask, cTasksToSubmit,
                                                                 NULL, pvUser,
                                                                 NULL /* Nothing required after read. */);
-        AssertMsg(RT_SUCCESS(rc), ("Failed to enqueue tasks rc=%Vrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc), ("Failed to enqueue tasks rc=%Rrc\n", rc));
     }
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 
 }

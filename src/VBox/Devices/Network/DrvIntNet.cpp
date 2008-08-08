@@ -387,7 +387,7 @@ static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
     int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    LogFlow(("drvIntNetAsyncIoWaitForSpace: returns %Vrc\n", rc));
+    LogFlow(("drvIntNetAsyncIoWaitForSpace: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -463,7 +463,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                     if (RT_FAILURE(rc))
                     {
                         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                        LogFlow(("drvIntNetAsyncIoRun: returns %Vrc (wait-for-space)\n", rc));
+                        LogFlow(("drvIntNetAsyncIoRun: returns %Rrc (wait-for-space)\n", rc));
                         return rc;
                     }
                 }
@@ -500,7 +500,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
             &&  rc != VERR_TIMEOUT
             &&  rc != VERR_INTERRUPTED)
         {
-            LogFlow(("drvIntNetAsyncIoRun: returns %Vrc\n", rc));
+            LogFlow(("drvIntNetAsyncIoRun: returns %Rrc\n", rc));
             return rc;
         }
         STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -535,7 +535,7 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
                 if (    RT_FAILURE(rc)
                     &&  rc != VERR_TIMEOUT)
                 {
-                    LogFlow(("drvIntNetAsyncIoThread: returns %Vrc\n", rc));
+                    LogFlow(("drvIntNetAsyncIoThread: returns %Rrc\n", rc));
                     return rc;
                 }
                 break;
@@ -547,7 +547,7 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
                 if (    rc != VERR_STATE_CHANGED
                     &&  RT_FAILURE(rc))
                 {
-                    LogFlow(("drvIntNetAsyncIoThread: returns %Vrc\n", rc));
+                    LogFlow(("drvIntNetAsyncIoThread: returns %Rrc\n", rc));
                     return rc;
                 }
                 break;

@@ -187,7 +187,7 @@ static DECLCALLBACK(uint64_t) drvMediaISOGetSize(PPDMIMEDIA pInterface)
         return cbFile;
     }
 
-    AssertMsgFailed(("Error querying ISO file size, rc=%Vrc. (%s)\n", rc, pThis->pszFilename));
+    AssertMsgFailed(("Error querying ISO file size, rc=%Rrc. (%s)\n", rc, pThis->pszFilename));
     return 0;
 }
 
@@ -248,12 +248,12 @@ static DECLCALLBACK(int) drvMediaISORead(PPDMIMEDIA pInterface, uint64_t off, vo
                   cbRead, pvBuf));
         }
         else
-            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
+            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
                              pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
-    LogFlow(("drvMediaISORead: returns %Vrc\n", rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+    LogFlow(("drvMediaISORead: returns %Rrc\n", rc));
     return rc;
 }
 

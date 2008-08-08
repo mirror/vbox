@@ -347,7 +347,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         RTStrPrintf(pThis->szFilename, sizeof(pThis->szFilename), "./VBox-%x.pcap", RTProcSelf());
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to query \"File\", rc=%Vrc.\n", rc));
+        AssertMsgFailed(("Failed to query \"File\", rc=%Rrc.\n", rc));
         return rc;
     }
 
@@ -389,7 +389,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     }
     else
     {
-        AssertMsgFailed(("Failed to attach to driver below! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -407,7 +407,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
                     RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to create file '%s' for writing. rc=%Vrc\n", pThis->szFilename, rc));
+        AssertMsgFailed(("Failed to create file '%s' for writing. rc=%Rrc\n", pThis->szFilename, rc));
         return rc;
     }
 

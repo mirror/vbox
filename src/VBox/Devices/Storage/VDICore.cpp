@@ -559,7 +559,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
         &&  pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
-    Log(("vdiCreateImage: done, filename=\"%s\", rc=%Vrc\n", pszFilename, rc));
+    Log(("vdiCreateImage: done, filename=\"%s\", rc=%Rrc\n", pszFilename, rc));
 
     return rc;
 }
@@ -795,7 +795,7 @@ l_open_failed:
 #endif
     RTFileClose(pImage->File);
     RTMemFree(pImage);
-    Log(("vdiOpenImage: failed, filename=\"%s\", rc=%Vrc\n", pszFilename, rc));
+    Log(("vdiOpenImage: failed, filename=\"%s\", rc=%Rrc\n", pszFilename, rc));
     return rc;
 }
 
@@ -832,7 +832,7 @@ static int vdiUpdateHeader(PVDIIMAGEDESC pImage)
                 break;
         }
     }
-    AssertMsgRC(rc, ("vdiUpdateHeader failed, filename=\"%s\" rc=%Vrc\n", pImage->szFilename, rc));
+    AssertMsgRC(rc, ("vdiUpdateHeader failed, filename=\"%s\" rc=%Rrc\n", pImage->szFilename, rc));
     return rc;
 }
 
@@ -855,7 +855,7 @@ static int vdiUpdateBlockInfo(PVDIIMAGEDESC pImage, unsigned uBlock)
                              &pImage->paBlocks[uBlock],
                              sizeof(VDIIMAGEBLOCKPOINTER),
                              NULL);
-        AssertMsgRC(rc, ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Vrc\n",
+        AssertMsgRC(rc, ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Rrc\n",
                          uBlock, pImage->szFilename, rc));
     }
     return rc;
@@ -877,7 +877,7 @@ static int vdiUpdateBlocks(PVDIIMAGEDESC pImage)
                              pImage->paBlocks,
                              sizeof(VDIIMAGEBLOCKPOINTER) * getImageBlocks(&pImage->Header),
                              NULL);
-        AssertMsgRC(rc, ("vdiUpdateBlocks failed, filename=\"%s\", rc=%Vrc\n",
+        AssertMsgRC(rc, ("vdiUpdateBlocks failed, filename=\"%s\", rc=%Rrc\n",
                          pImage->szFilename, rc));
     }
     return rc;
@@ -954,7 +954,7 @@ void VDIFlushImage(PVDIIMAGEDESC pImage)
 
         /* Save header. */
         int rc = vdiUpdateHeader(pImage);
-        AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Vrc\n",
+        AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Rrc\n",
                          pImage->szFilename, rc));
         RTFileFlush(pImage->File);
     }
@@ -1000,7 +1000,7 @@ static int vdiReadInBlock(PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offRea
         if (RT_SUCCESS(rc))
             rc = RTFileRead(pImage->File, pvBuf, cbToRead, NULL);
         if (RT_FAILURE(rc))
-            Log(("vdiReadInBlock: rc=%Vrc filename=\"%s\" uBlock=%u offRead=%u cbToRead=%u u64Offset=%llu\n",
+            Log(("vdiReadInBlock: rc=%Rrc filename=\"%s\" uBlock=%u offRead=%u cbToRead=%u u64Offset=%llu\n",
                  rc, pImage->szFilename, uBlock, offRead, cbToRead, u64Offset));
         return rc;
     }
@@ -1103,7 +1103,7 @@ static int vdiFillBlockByZeroes(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned u
     rc = RTFileSeek(pImage->File, u64Offset, RTFILE_SEEK_BEGIN, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("vdiFillBlockByZeroes: seek rc=%Vrc filename=\"%s\" uBlock=%u u64Offset=%llu\n",
+        Log(("vdiFillBlockByZeroes: seek rc=%Rrc filename=\"%s\" uBlock=%u u64Offset=%llu\n",
              rc, pImage->szFilename, uBlock, u64Offset));
         return rc;
     }
@@ -1122,7 +1122,7 @@ static int vdiFillBlockByZeroes(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned u
         rc = RTFileWrite(pImage->File, pvBuf, to_fill, NULL);
         if (RT_FAILURE(rc))
         {
-            Log(("vdiFillBlockByZeroes: write rc=%Vrc filename=\"%s\" uBlock=%u u64Offset=%llu cbFill=%u to_fill=%u\n",
+            Log(("vdiFillBlockByZeroes: write rc=%Rrc filename=\"%s\" uBlock=%u u64Offset=%llu cbFill=%u to_fill=%u\n",
                  rc, pImage->szFilename, uBlock, u64Offset, cbFill, to_fill));
             break;
         }
@@ -1179,7 +1179,7 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
         rc = RTFileSetSize(pImage->File, u64Size);
         if (RT_FAILURE(rc))
         {
-            Log(("vdiWriteInBlock: set size rc=%Vrc filename=\"%s\" uBlock=%u u64Size=%llu\n",
+            Log(("vdiWriteInBlock: set size rc=%Rrc filename=\"%s\" uBlock=%u u64Size=%llu\n",
                  rc, pImage->szFilename, uBlock, u64Size));
             return rc;
         }
@@ -1214,11 +1214,11 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
     {
         rc = RTFileWrite(pImage->File, pvBuf, cbToWrite, NULL);
         if (RT_FAILURE(rc))
-            Log(("vdiWriteInBlock: write rc=%Vrc filename=\"%s\" uBlock=%u offWrite=%u u64Offset=%llu cbToWrite=%u\n",
+            Log(("vdiWriteInBlock: write rc=%Rrc filename=\"%s\" uBlock=%u offWrite=%u u64Offset=%llu cbToWrite=%u\n",
                  rc, pImage->szFilename, uBlock, offWrite, u64Offset, cbToWrite));
     }
     else
-        Log(("vdiWriteInBlock: seek rc=%Vrc filename=\"%s\" uBlock=%u offWrite=%u u64Offset=%llu\n",
+        Log(("vdiWriteInBlock: seek rc=%Rrc filename=\"%s\" uBlock=%u offWrite=%u u64Offset=%llu\n",
              rc, pImage->szFilename, uBlock, offWrite, u64Offset));
 
     return rc;
@@ -1640,7 +1640,7 @@ static int vdiCommitToImage(PVDIDISK pDisk, PVDIIMAGEDESC pDstImage,
         if (RT_FAILURE(rc2))
         {
             rc = rc2;
-            Log(("vdiCommitToImage: set size (truncate) rc=%Vrc filename=\"%s\"\n",
+            Log(("vdiCommitToImage: set size (truncate) rc=%Rrc filename=\"%s\"\n",
                  rc, pImage->szFilename));
         }
 
@@ -1649,7 +1649,7 @@ static int vdiCommitToImage(PVDIDISK pDisk, PVDIIMAGEDESC pDstImage,
         if (RT_FAILURE(rc2))
         {
             rc = rc2;
-            Log(("vdiCommitToImage: update blocks and header rc=%Vrc filename=\"%s\"\n",
+            Log(("vdiCommitToImage: update blocks and header rc=%Rrc filename=\"%s\"\n",
                  rc, pImage->szFilename));
         }
     }
@@ -1660,7 +1660,7 @@ static int vdiCommitToImage(PVDIDISK pDisk, PVDIIMAGEDESC pDstImage,
        /* Note: commiting is non breakable operation, skipping rc here. */
     }
 
-    Log(("vdiCommitToImage: done, rc=%Vrc\n", rc));
+    Log(("vdiCommitToImage: done, rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -1729,7 +1729,7 @@ VBOXDDU_DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PV
         vdiCloseImage(pImage);
     }
 
-    LogFlow(("VDICheckImage: returns %Vrc\n", rc));
+    LogFlow(("VDICheckImage: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1768,7 +1768,7 @@ VBOXDDU_DECL(int) VDISetImageComment(const char *pszFilename, const char *pszCom
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDISetImageComment: vdiOpenImage rc=%Vrc filename=\"%s\"!\n", rc, pszFilename));
+        Log(("VDISetImageComment: vdiOpenImage rc=%Rrc filename=\"%s\"!\n", rc, pszFilename));
         return rc;
     }
     if (!pImage->fReadOnly)
@@ -1784,7 +1784,7 @@ VBOXDDU_DECL(int) VDISetImageComment(const char *pszFilename, const char *pszCom
 
             /* write out new the header */
             rc = vdiUpdateHeader(pImage);
-            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Vrc\n",
+            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Rrc\n",
                              pImage->szFilename, rc));
         }
         else
@@ -1832,7 +1832,7 @@ VBOXDDU_DECL(int) VDICreateBaseImage(const char *pszFilename, VDIIMAGETYPE enmTy
 
     int rc = vdiCreateImage(pszFilename, enmType, VDI_IMAGE_FLAGS_DEFAULT, cbSize, pszComment, NULL,
                             pfnProgress, pvUser);
-    LogFlow(("VDICreateBaseImage: returns %Vrc for filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDICreateBaseImage: returns %Rrc for filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -1872,7 +1872,7 @@ VBOXDDU_DECL(int) VDICreateDifferenceImage(const char *pszFilename, const char *
                             pfnProgress, pvUser);
         vdiCloseImage(pParent);
     }
-    LogFlow(("VDICreateDifferenceImage: returns %Vrc for filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDICreateDifferenceImage: returns %Rrc for filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -1897,7 +1897,7 @@ VBOXDDU_DECL(int) VDIDeleteImage(const char *pszFilename)
     if (RT_SUCCESS(rc))
         rc = RTFileDelete(pszFilename);
 
-    LogFlow(("VDIDeleteImage: returns %Vrc for filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDIDeleteImage: returns %Rrc for filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -1940,7 +1940,7 @@ VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFil
     int rc = vdiOpenImage(&pImage, pszSrcFilename, VDI_OPEN_FLAGS_READONLY, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDICopyImage: src image \"%s\" open failed rc=%Vrc\n", pszSrcFilename, rc));
+        Log(("VDICopyImage: src image \"%s\" open failed rc=%Rrc\n", pszSrcFilename, rc));
         return rc;
     }
 
@@ -2064,7 +2064,7 @@ VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFil
 
     vdiCloseImage(pImage);
 
-    LogFlow(("VDICopyImage: returns %Vrc for pszSrcFilename=\"%s\" pszDstFilename=\"%s\"\n",
+    LogFlow(("VDICopyImage: returns %Rrc for pszSrcFilename=\"%s\" pszDstFilename=\"%s\"\n",
              rc, pszSrcFilename, pszDstFilename));
     return rc;
 }
@@ -2093,7 +2093,7 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIShrinkImage: vdiOpenImage rc=%Vrc filename=\"%s\"\n", rc, pszFilename));
+        Log(("VDIShrinkImage: vdiOpenImage rc=%Rrc filename=\"%s\"\n", rc, pszFilename));
         return rc;
     }
     if (pImage->fReadOnly)
@@ -2115,7 +2115,7 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
     rc = RTFileGetSize(pImage->File, &cbFile);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIShrinkImage: RTFileGetSize rc=%Vrc for file=\"%s\"\n", rc, pszFilename));
+        Log(("VDIShrinkImage: RTFileGetSize rc=%Rrc for file=\"%s\"\n", rc, pszFilename));
         vdiCloseImage(pImage);
         return rc;
     }
@@ -2183,14 +2183,14 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
                 rc = RTFileSeek(pImage->File, u64Offset, RTFILE_SEEK_BEGIN, NULL);
                 if (RT_FAILURE(rc))
                 {
-                    Log(("VDIShrinkImage: seek rc=%Vrc filename=\"%s\" uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                    Log(("VDIShrinkImage: seek rc=%Rrc filename=\"%s\" uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
                          rc, pImage->szFilename, uBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                     break;
                 }
                 rc = RTFileRead(pImage->File, pvBuf, cbBlock, NULL);
                 if (RT_FAILURE(rc))
                 {
-                    Log(("VDIShrinkImage: read rc=%Vrc filename=\"%s\" cbBlock=%u uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                    Log(("VDIShrinkImage: read rc=%Rrc filename=\"%s\" cbBlock=%u uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
                          rc, pImage->szFilename, cbBlock, uBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                     break;
                 }
@@ -2208,14 +2208,14 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
                         rc = RTFileSeek(pImage->File, u64Offset, RTFILE_SEEK_BEGIN, NULL);
                         if (RT_FAILURE(rc))
                         {
-                            Log(("VDIShrinkImage: seek(2) rc=%Vrc filename=\"%s\" uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                            Log(("VDIShrinkImage: seek(2) rc=%Rrc filename=\"%s\" uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
                                  rc, pImage->szFilename, uBlockWrite, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                             break;
                         }
                         rc = RTFileWrite(pImage->File, pvBuf, cbBlock, NULL);
                         if (RT_FAILURE(rc))
                         {
-                            Log(("VDIShrinkImage: write rc=%Vrc filename=\"%s\" cbBlock=%u uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                            Log(("VDIShrinkImage: write rc=%Rrc filename=\"%s\" cbBlock=%u uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
                                  rc, pImage->szFilename, cbBlock, uBlockWrite, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                             break;
                         }
@@ -2256,7 +2256,7 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
             rc = RTFileSetSize(pImage->File,
                                pImage->offStartData + ((uint64_t)uBlockWrite << pImage->uShiftIndex2Offset));
             if (RT_FAILURE(rc))
-                Log(("VDIShrinkImage: RTFileSetSize rc=%Vrc\n", rc));
+                Log(("VDIShrinkImage: RTFileSetSize rc=%Rrc\n", rc));
         }
         cBlocksAllocated2 = uBlockWrite;
     }
@@ -2282,7 +2282,7 @@ VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgr
     RTMemTmpFree(paBlocks2);
     vdiCloseImage(pImage);
 
-    LogFlow(("VDIShrinkImage: returns %Vrc for filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDIShrinkImage: returns %Rrc for filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -2311,7 +2311,7 @@ VBOXDDU_DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProg
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIConvertImage: vdiOpenImage rc=%Vrc filename=\"%s\"\n", rc, pszFilename));
+        Log(("VDIConvertImage: vdiOpenImage rc=%Rrc filename=\"%s\"\n", rc, pszFilename));
         return rc;
     }
 
@@ -2485,7 +2485,7 @@ VBOXDDU_DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProg
 l_conversion_failed:
     vdiCloseImage(pImage);
 
-    LogFlow(("VDIConvertImage: returns %Vrc for filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDIConvertImage: returns %Rrc for filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -2520,7 +2520,7 @@ VBOXDDU_DECL(int) VDIGetImageUUIDs(const char *pszFilename,
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIGetImageUUIDs: vdiOpenImage rc=%Vrc filename=\"%s\"\n", rc, pszFilename));
+        Log(("VDIGetImageUUIDs: vdiOpenImage rc=%Rrc filename=\"%s\"\n", rc, pszFilename));
         return rc;
     }
 
@@ -2596,7 +2596,7 @@ VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDISetImageUUIDs: vdiOpenImage rc=%Vrc filename=\"%s\"\n", rc, pszFilename));
+        Log(("VDISetImageUUIDs: vdiOpenImage rc=%Rrc filename=\"%s\"\n", rc, pszFilename));
         return rc;
     }
     if (!pImage->fReadOnly)
@@ -2617,7 +2617,7 @@ VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
 
             /* write out new header */
             rc = vdiUpdateHeader(pImage);
-            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Vrc\n",
+            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Rrc\n",
                              pImage->szFilename, rc));
         }
         /* Make it possible to clone old VDIs. */
@@ -2633,7 +2633,7 @@ VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
 
             /* write out new header */
             rc = vdiUpdateHeader(pImage);
-            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Vrc\n",
+            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Rrc\n",
                              pImage->szFilename, rc));
         }
         else
@@ -2680,7 +2680,7 @@ VBOXDDU_DECL(int) VDIMergeImage(const char *pszFilenameFrom, const char *pszFile
     int rc = vdiOpenImage(&pImageFrom, pszFilenameFrom, VDI_OPEN_FLAGS_READONLY, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIMergeImage: vdiOpenImage rc=%Vrc pstFilenameFrom=\"%s\"\n", rc, pszFilenameFrom));
+        Log(("VDIMergeImage: vdiOpenImage rc=%Rrc pstFilenameFrom=\"%s\"\n", rc, pszFilenameFrom));
         return rc;
     }
 
@@ -2688,7 +2688,7 @@ VBOXDDU_DECL(int) VDIMergeImage(const char *pszFilenameFrom, const char *pszFile
     rc = vdiOpenImage(&pImageTo, pszFilenameTo, VDI_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("VDIMergeImage: vdiOpenImage rc=%Vrc pszFilenameTo=\"%s\"\n", rc, pszFilenameTo));
+        Log(("VDIMergeImage: vdiOpenImage rc=%Rrc pszFilenameTo=\"%s\"\n", rc, pszFilenameTo));
         vdiCloseImage(pImageFrom);
         return rc;
     }
@@ -2749,7 +2749,7 @@ VBOXDDU_DECL(int) VDIMergeImage(const char *pszFilenameFrom, const char *pszFile
     vdiCloseImage(pImageFrom);
     vdiCloseImage(pImageTo);
 
-    Log(("VDIMergeImage: done, returning with rc = %Vrc\n", rc));
+    Log(("VDIMergeImage: done, returning with rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2968,7 +2968,7 @@ VBOXDDU_DECL(int) VDIDiskGetLCHSGeometry(PVDIDISK pDisk, PPDMMEDIAGEOMETRY pLCHS
         else
             rc = VERR_VDI_GEOMETRY_NOT_SET;
 
-        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+        LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
         return rc;
     }
 
@@ -3007,7 +3007,7 @@ VBOXDDU_DECL(int) VDIDiskSetLCHSGeometry(PVDIDISK pDisk, PCPDMMEDIAGEOMETRY pLCH
             /* Update header information in base image file. */
             rc = vdiUpdateReadOnlyHeader(pDisk->pBase);
         }
-        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+        LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
         return rc;
     }
 
@@ -3371,7 +3371,7 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
     }
 #endif
 
-    Log(("vdiChangeImageMode: Image \"%s\" mode change failed with rc=%Vrc, mode is %s\n",
+    Log(("vdiChangeImageMode: Image \"%s\" mode change failed with rc=%Rrc, mode is %s\n",
          pImage->szFilename, rc, (pImage->fReadOnly) ? "read-only" : "read/write"));
 
     return rc;
@@ -3465,7 +3465,7 @@ VBOXDDU_DECL(int) VDIDiskOpenImage(PVDIDISK pDisk, const char *pszFilename, unsi
             vdiCloseImage(pImage);
     }
 
-    LogFlow(("VDIDiskOpenImage: returns %Vrc\n", rc));
+    LogFlow(("VDIDiskOpenImage: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3584,7 +3584,7 @@ VBOXDDU_DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgres
         rc = vdiChangeImageMode(pImage->pPrev, false);
         if (RT_FAILURE(rc))
         {
-            Log(("VDIDiskCommitLastDiff: can't switch previous image into r/w mode, rc=%Vrc\n", rc));
+            Log(("VDIDiskCommitLastDiff: can't switch previous image into r/w mode, rc=%Rrc\n", rc));
             return rc;
         }
     }
@@ -3600,7 +3600,7 @@ VBOXDDU_DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgres
     {
         /* Failed! Close all images, can't work with VHDD at all. */
         VDIDiskCloseAllImages(pDisk);
-        AssertMsgFailed(("Fatal: commit failed, rc=%Vrc\n", rc));
+        AssertMsgFailed(("Fatal: commit failed, rc=%Rrc\n", rc));
     }
 
     return rc;
@@ -3650,7 +3650,7 @@ VBOXDDU_DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *p
         if (RT_FAILURE(rc))
             VDIDeleteImage(pszFilename);
     }
-    LogFlow(("VDIDiskCreateOpenDifferenceImage: returns %Vrc, filename=\"%s\"\n", rc, pszFilename));
+    LogFlow(("VDIDiskCreateOpenDifferenceImage: returns %Rrc, filename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 

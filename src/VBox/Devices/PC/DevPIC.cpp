@@ -972,7 +972,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     Assert(pDevIns->pDevHlp->pfnPICRegister);
     rc = pDevIns->pDevHlp->pfnPICRegister(pDevIns, &PicReg, &pThis->pPicHlpR3);
-    AssertLogRelMsgRCReturn(rc, ("PICRegister -> %Vrc\n", rc), rc);
+    AssertLogRelMsgRCReturn(rc, ("PICRegister -> %Rrc\n", rc), rc);
     if (fGCEnabled)
         pThis->pPicHlpRC = pThis->pPicHlpR3->pfnGetRCHelpers(pDevIns);
     if (fR0Enabled)

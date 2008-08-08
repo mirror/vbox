@@ -198,7 +198,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
      }
 
      RTCritSectLeave(&pThis->CritSect);
-     LogFlow(("drvHostDvdUnmount: returns %Vrc\n", rc));
+     LogFlow(("drvHostDvdUnmount: returns %Rrc\n", rc));
      return rc;
 }
 
@@ -264,7 +264,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 
 #endif
 
-    LogFlow(("drvHostDvdDoLock(, fLock=%RTbool): returns %Vrc\n", fLock, rc));
+    LogFlow(("drvHostDvdDoLock(, fLock=%RTbool): returns %Rrc\n", fLock, rc));
     return rc;
 }
 
@@ -471,7 +471,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
                 cgc.sense->sense_key = SCSI_SENSE_ILLEGAL_REQUEST;
             *pbStat = cgc.sense->sense_key;
             rc = RTErrConvertFromErrno(errno);
-            Log2(("%s: error status %d, rc=%Vrc\n", __FUNCTION__, cgc.stat, rc));
+            Log2(("%s: error status %d, rc=%Rrc\n", __FUNCTION__, cgc.stat, rc));
         }
     }
     Log2(("%s: after ioctl: cgc.buflen=%d txlen=%d\n", __FUNCTION__, cgc.buflen, *pcbBuf));
@@ -540,7 +540,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
         {
             *pbStat = aSense[2] & 0x0f;
             rc = RTErrConvertFromErrno(errno);
-            Log2(("%s: error status. rc=%Vrc\n", __FUNCTION__, rc));
+            Log2(("%s: error status. rc=%Rrc\n", __FUNCTION__, rc));
         }
         else
             *pbStat = 0;
@@ -608,7 +608,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
 #else
 # error "Unsupported platform."
 #endif
-    LogFlow(("%s: rc=%Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: rc=%Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -764,7 +764,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         pThis->fKeepInstance = false;
     }
 
-    LogFlow(("drvHostDvdConstruct: returns %Vrc\n", rc));
+    LogFlow(("drvHostDvdConstruct: returns %Rrc\n", rc));
     return rc;
 }
 

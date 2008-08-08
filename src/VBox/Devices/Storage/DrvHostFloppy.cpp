@@ -80,7 +80,7 @@ static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t 
     if (rc)
     {
         rc = RTErrConvertFromErrno (errno);
-        Log(("DrvHostFloppy: FDFLUSH ioctl(%s) failed, errno=%d rc=%Vrc\n", pThis->pszDevice, errno, rc));
+        Log(("DrvHostFloppy: FDFLUSH ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
         return rc;
     }
 
@@ -89,7 +89,7 @@ static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t 
     if (rc)
     {
         rc = RTErrConvertFromErrno(errno);
-        Log(("DrvHostFloppy: FDGETDRVSTAT ioctl(%s) failed, errno=%d rc=%Vrc\n", pThis->pszDevice, errno, rc));
+        Log(("DrvHostFloppy: FDGETDRVSTAT ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
         return rc;
     }
     pThis->fReadOnly = !(DrvStat.flags & FD_DISK_WRITABLE);
@@ -189,7 +189,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         pThis->Base.fKeepInstance = false;
     }
 
-    LogFlow(("drvHostFloppyConstruct: returns %Vrc\n", rc));
+    LogFlow(("drvHostFloppyConstruct: returns %Rrc\n", rc));
     return rc;
 }
 

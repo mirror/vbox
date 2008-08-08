@@ -3445,7 +3445,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pThis->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatAPROMRead, a);
-    LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
     return rc;
 }
 
@@ -3483,7 +3483,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
         AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
         rc = VINF_SUCCESS;
     }
-    LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, u32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_WRITE)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
@@ -3524,7 +3524,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pThis->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTXSUFF(StatIORead), a);
-    Log2(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
+    Log2(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_READ)
         LogFlow(("#%d pcnetIOPortRead/critsect failed in GC => HC\n", PCNET_INST_NR));
@@ -3566,7 +3566,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pThis->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTXSUFF(StatIOWrite), a);
-    Log2(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, u32, cb, rc));
+    Log2(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_WRITE)
         LogFlow(("#%d pcnetIOPortWrite/critsect failed in GC => HC\n", PCNET_INST_NR));
@@ -3618,7 +3618,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     else
         memset(pv, 0, cb);
 
-    LogFlow(("#%d pcnetMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Vrc\n",
+    LogFlow(("#%d pcnetMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
              PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_MMIO_READ)
@@ -3670,7 +3670,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
 
         STAM_PROFILE_ADV_STOP(&pThis->CTXSUFF(StatMMIOWrite), a);
     }
-    LogFlow(("#%d pcnetMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Vrc\n",
+    LogFlow(("#%d pcnetMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
              PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_MMIO_WRITE)
@@ -4784,7 +4784,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pThis->pfnEMInterpretInstructionR0);
     if (RT_SUCCESS(rc))
         rc = PDMR3GetSymbolGCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pThis->pfnEMInterpretInstructionRC);
-    AssertLogRelMsgRCReturn(rc, ("PDMR3GetSymbolGCLazy(EMInterpretInstruction) -> %Vrc\n", rc), rc);
+    AssertLogRelMsgRCReturn(rc, ("PDMR3GetSymbolGCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer,
                                 "PCNet Poll Timer", &pThis->pTimerPollR3);
@@ -4863,7 +4863,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return rc;
     }
 

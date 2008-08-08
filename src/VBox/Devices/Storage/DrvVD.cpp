@@ -280,7 +280,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     if (RT_SUCCESS(rc))
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Vhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -295,7 +295,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Vhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
     int rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -305,7 +305,7 @@ static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDFlush(pThis->pDisk);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -341,7 +341,7 @@ static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
         Log(("%s: geometry not available.\n", __FUNCTION__));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
-    LogFlow(("%s: returns %Vrc (CHS=%d/%d/%d)\n", __FUNCTION__,
+    LogFlow(("%s: returns %Rrc (CHS=%d/%d/%d)\n", __FUNCTION__,
              rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
 }
@@ -354,7 +354,7 @@ static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
              pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -370,7 +370,7 @@ static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
         Log(("%s: geometry not available.\n", __FUNCTION__));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
-    LogFlow(("%s: returns %Vrc (CHS=%d/%d/%d)\n", __FUNCTION__,
+    LogFlow(("%s: returns %Rrc (CHS=%d/%d/%d)\n", __FUNCTION__,
              rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
@@ -383,7 +383,7 @@ static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
              pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -393,7 +393,7 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDGetUuid(pThis->pDisk, 0, pUuid);
-    LogFlow(("%s: returns %Vrc ({%Vuuid})\n", __FUNCTION__, rc, pUuid));
+    LogFlow(("%s: returns %Rrc ({%Vuuid})\n", __FUNCTION__, rc, pUuid));
     return rc;
 }
 
@@ -409,7 +409,7 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
              uOffset, paSeg, cSeg, cbRead, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
     int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg, pvUser);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -421,7 +421,7 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
              uOffset, paSeg, cSeg, cbWrite, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
     int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg, pvUser);
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -599,7 +599,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("Failed to attach async transport driver below rc=%Vrc\n", rc));
+            AssertMsgFailed(("Failed to attach async transport driver below rc=%Rrc\n", rc));
         }
         else
         {
@@ -747,7 +747,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
         else
         {
-           AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
+           AssertMsgFailed(("Failed to open image '%s' rc=%Rrc\n", pszName, rc));
            break;
         }
 
@@ -815,10 +815,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     if (pThis->fAsyncIOSupported)
     {
         rc = RTCacheCreate(&pThis->pCache, 0, sizeof(DRVVDASYNCTASK), RTOBJCACHE_PROTECT_INSERT);
-        AssertMsg(RT_SUCCESS(rc), ("Failed to create cache rc=%Vrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc), ("Failed to create cache rc=%Rrc\n", rc));
     }
 
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 

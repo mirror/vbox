@@ -1366,7 +1366,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     if (cb == 1)
     {
         int rc = kbd_write_command(PDMINS_2_DATA(pDevIns, KBDState *), Port, u32);
-        Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Vrc\n", Port, cb, u32, rc));
+        Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Rrc\n", Port, cb, u32, rc));
         return rc;
     }
     AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
@@ -1539,7 +1539,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 pThis->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pThis->Keyboard.pDrvBase->pfnQueryInterface(pThis->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
                 if (!pThis->Keyboard.pDrv)
                 {
-                    AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Vrc\n", rc));
+                    AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Rrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
             }
@@ -1549,7 +1549,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Vrc\n", rc));
+                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Rrc\n", rc));
             break;
 
         /* LUN #1: aux/mouse */
@@ -1560,7 +1560,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 pThis->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pThis->Mouse.pDrvBase->pfnQueryInterface(pThis->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
                 if (!pThis->Mouse.pDrv)
                 {
-                    AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Vrc\n", rc));
+                    AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Rrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
             }
@@ -1570,7 +1570,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertLogRelMsgFailed(("Failed to attach LUN #1! rc=%Vrc\n", rc));
+                AssertLogRelMsgFailed(("Failed to attach LUN #1! rc=%Rrc\n", rc));
             break;
 
         default:

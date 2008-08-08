@@ -114,7 +114,7 @@ static DECLCALLBACK(int) vdiBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDI
 {
     PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
     int rc = VDIDiskSetLCHSGeometry(pThis, pLCHSGeometry);
-    LogFlow(("%s: returns %Vrc (%d,%d,%d)\n", __FUNCTION__, rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    LogFlow(("%s: returns %Rrc (%d,%d,%d)\n", __FUNCTION__, rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
@@ -133,7 +133,7 @@ static DECLCALLBACK(int) vdiRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBu
         Log2(("vdiRead: off=%#llx pvBuf=%p cbRead=%d\n"
               "%.*Vhxd\n",
               off, pvBuf, cbRead, cbRead, pvBuf));
-    LogFlow(("vdiRead: returns %Vrc\n", rc));
+    LogFlow(("vdiRead: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -151,7 +151,7 @@ static DECLCALLBACK(int) vdiWrite(PPDMIMEDIA pInterface, uint64_t off, const voi
           "%.*Vhxd\n",
           off, pvBuf, cbWrite, cbWrite, pvBuf));
     int rc = VDIDiskWrite(pThis, off, pvBuf, cbWrite);
-    LogFlow(("vdiWrite: returns %Vrc\n", rc));
+    LogFlow(("vdiWrite: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -167,7 +167,7 @@ static DECLCALLBACK(int) vdiFlush(PPDMIMEDIA pInterface)
     PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
     VDIFlushImage(pThis->pLast);
     int rc = VINF_SUCCESS;
-    LogFlow(("vdiFlush: returns %Vrc\n", rc));
+    LogFlow(("vdiFlush: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -177,7 +177,7 @@ static DECLCALLBACK(int) vdiGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
     int rc = VDIDiskGetImageUuid(pThis, 0, pUuid);
-    LogFlow(("vdiGetUuid: returns %Vrc ({%Vuuid})\n", rc, pUuid));
+    LogFlow(("vdiGetUuid: returns %Rrc ({%Vuuid})\n", rc, pUuid));
     return rc;
 }
 
@@ -376,7 +376,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             Log(("vdiConstruct: %d - Opened '%s' in %s mode\n",
                  iLevel, pszName, VDIDiskIsReadOnly(pThis) ? "read-only" : "read-write"));
         else
-            AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
+            AssertMsgFailed(("Failed to open image '%s' rc=%Rrc\n", pszName, rc));
         MMR3HeapFree(pszName);
 
         /* next */

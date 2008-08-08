@@ -3646,7 +3646,7 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *p
     rc = vgaLFBAccess(pVM, pThis, GCPhys, 0);
     if (RT_SUCCESS(rc))
         return VINF_PGM_HANDLER_DO_DEFAULT;
-    AssertMsg(rc <= VINF_SUCCESS, ("rc=%Vrc\n", rc));
+    AssertMsg(rc <= VINF_SUCCESS, ("rc=%Rrc\n", rc));
     return rc;
 }
 #endif /* IN_RING3 */
@@ -4582,7 +4582,7 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
     else
         rc = VERR_INVALID_PARAMETER;
 
-    LogFlow(("vgaPortDisplayBlt: returns %Vrc\n", rc));
+    LogFlow(("vgaPortDisplayBlt: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -5063,7 +5063,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 }
                 else
                 {
-                    AssertMsgFailed(("LUN #0 doesn't have a display connector interface! rc=%Vrc\n", rc));
+                    AssertMsgFailed(("LUN #0 doesn't have a display connector interface! rc=%Rrc\n", rc));
                     pThis->pDrvBase = NULL;
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
@@ -5074,7 +5074,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Vrc\n", rc));
+                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Rrc\n", rc));
             return rc;
         }
 
@@ -5227,7 +5227,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMR3GetSymbolGCLazy(pVM, pDevIns->pDevReg->szGCMod, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);
     if (RT_FAILURE(rc))
     {
-        AssertReleaseMsgFailed(("PDMR3GetSymbolGC(, %s, \"vgaGCLFBAccessHandler\",) -> %Vrc\n", pDevIns->pDevReg->szGCMod, rc));
+        AssertReleaseMsgFailed(("PDMR3GetSymbolGC(, %s, \"vgaGCLFBAccessHandler\",) -> %Rrc\n", pDevIns->pDevReg->szGCMod, rc));
         return rc;
     }
 
@@ -5616,7 +5616,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             }
             else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
             {
-                AssertMsgFailed(("CFGMR3QueryStringAlloc(,'%s',) -> %Vrc\n", szExtraDataKey, rc));
+                AssertMsgFailed(("CFGMR3QueryStringAlloc(,'%s',) -> %Rrc\n", szExtraDataKey, rc));
                 return rc;
             }
         } /* foreach custom mode key */
@@ -5721,7 +5721,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             /*
              * Ignore failure and fall back to the default logo.
              */
-            LogRel(("vgaR3Construct: Failed to open logo file '%s', rc=%Vrc!\n", pThis->pszLogoFile, rc));
+            LogRel(("vgaR3Construct: Failed to open logo file '%s', rc=%Rrc!\n", pThis->pszLogoFile, rc));
             if (FileLogo != NIL_RTFILE)
                 RTFileClose(FileLogo);
             FileLogo = NIL_RTFILE;
@@ -5758,7 +5758,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", LogoHdr.cbLogo, rc));
+                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", LogoHdr.cbLogo, rc));
                 pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
                 memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
             }
@@ -5769,14 +5769,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = vbeParseBitmap(pThis);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("vbeParseBitmap() -> %Vrc\n", rc));
+            AssertMsgFailed(("vbeParseBitmap() -> %Rrc\n", rc));
             pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
             memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
         }
 
         rc = vbeParseBitmap(pThis);
         if (RT_FAILURE(rc))
-            AssertReleaseMsgFailed(("Internal bitmap failed! vbeParseBitmap() -> %Vrc\n", rc));
+            AssertReleaseMsgFailed(("Internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));
 
         rc = VINF_SUCCESS;
     }

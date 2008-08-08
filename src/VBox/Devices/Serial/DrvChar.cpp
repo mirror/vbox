@@ -184,7 +184,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
                 }
                 else
                 {
-                    LogFlow(("Write failed with %Vrc; skipping\n", rc));
+                    LogFlow(("Write failed with %Rrc; skipping\n", rc));
                     break;
                 }
             }
@@ -227,7 +227,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
                 rc = pThis->pDrvStream->pfnRead(pThis->pDrvStream, aBuffer, &cbRemaining);
                 if (RT_FAILURE(rc))
                 {
-                    LogFlow(("Read failed with %Vrc\n", rc));
+                    LogFlow(("Read failed with %Rrc\n", rc));
                     break;
                 }
             }
@@ -258,7 +258,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             }
             else
             {
-                LogFlow(("NotifyRead failed with %Vrc\n", rc));
+                LogFlow(("NotifyRead failed with %Rrc\n", rc));
                 break;
             }
         }
