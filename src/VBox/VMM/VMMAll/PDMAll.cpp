@@ -70,9 +70,9 @@ PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
     if (VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC))
     {
         VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_PIC);
-        Assert(pVM->pdm.s.Pic.CTXALLSUFF(pDevIns));
-        Assert(pVM->pdm.s.Pic.CTXALLSUFF(pfnGetInterrupt));
-        int i = pVM->pdm.s.Pic.CTXALLSUFF(pfnGetInterrupt)(pVM->pdm.s.Pic.CTXALLSUFF(pDevIns));
+        Assert(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
+        Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt));
+        int i = pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
@@ -102,10 +102,10 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
     pdmLock(pVM);
 
     int rc = VERR_PDM_NO_PIC_INSTANCE;
-    if (pVM->pdm.s.Pic.CTXALLSUFF(pDevIns))
+    if (pVM->pdm.s.Pic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Pic.CTXALLSUFF(pfnSetIrq));
-        pVM->pdm.s.Pic.CTXALLSUFF(pfnSetIrq)(pVM->pdm.s.Pic.CTXALLSUFF(pDevIns), u8Irq, u8Level);
+        Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq));
+        pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns), u8Irq, u8Level);
         rc = VINF_SUCCESS;
     }
 

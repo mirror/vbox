@@ -670,7 +670,7 @@ typedef struct PDMPCIHLPR3
      * Gets the address of the R0 PCI Bus helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the R0 helpers.
      *
      * @returns R0 pointer to the PCI Bus helpers.
      * @param   pDevIns         Device instance of the PCI Bus.
@@ -684,7 +684,7 @@ typedef struct PDMPCIHLPR3
      * @returns VINF_SUCCESS on success.
      * @returns Fatal error on failure.
      * @param   pDevIns         The PCI device instance.
-     * @param   rc              Dummy for making the interface identical to the GC and R0 versions.
+     * @param   rc              Dummy for making the interface identical to the RC and R0 versions.
      */
     DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -722,7 +722,7 @@ typedef struct PDMPICREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
      * Get a pending interrupt.
@@ -730,12 +730,12 @@ typedef struct PDMPICREG
      * @returns Pending interrupt number.
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptHC,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns));
 
-    /** The name of the GC SetIrq entry point. */
-    const char         *pszSetIrqGC;
-    /** The name of the GC GetInterrupt entry point. */
-    const char         *pszGetInterruptGC;
+    /** The name of the RC SetIrq entry point. */
+    const char         *pszSetIrqRC;
+    /** The name of the RC GetInterrupt entry point. */
+    const char         *pszGetInterruptRC;
 
     /** The name of the R0 SetIrq entry point. */
     const char         *pszSetIrqR0;
@@ -749,11 +749,11 @@ typedef PDMPICREG *PPDMPICREG;
 #define PDM_PICREG_VERSION      0xe0020000
 
 /**
- * PIC GC helpers.
+ * PIC RC helpers.
  */
-typedef struct PDMPICHLPGC
+typedef struct PDMPICHLPRC
 {
-    /** Structure version. PDM_PICHLPGC_VERSION defines the current version. */
+    /** Structure version. PDM_PICHLPRC_VERSION defines the current version. */
     uint32_t                u32Version;
 
     /**
@@ -789,15 +789,15 @@ typedef struct PDMPICHLPGC
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
-} PDMPICHLPGC;
+} PDMPICHLPRC;
 
-/** Pointer to PIC GC helpers. */
-typedef RCPTRTYPE(PDMPICHLPGC *) PPDMPICHLPGC;
-/** Pointer to const PIC GC helpers. */
-typedef RCPTRTYPE(const PDMPICHLPGC *) PCPDMPICHLPGC;
+/** Pointer to PIC RC helpers. */
+typedef RCPTRTYPE(PDMPICHLPRC *) PPDMPICHLPRC;
+/** Pointer to const PIC RC helpers. */
+typedef RCPTRTYPE(const PDMPICHLPRC *) PCPDMPICHLPRC;
 
-/** Current PDMPICHLPGC version number. */
-#define PDM_PICHLPGC_VERSION  0xfc010000
+/** Current PDMPICHLPRC version number. */
+#define PDM_PICHLPRC_VERSION  0xfc010000
 
 
 /**
@@ -852,7 +852,7 @@ typedef R0PTRTYPE(const PDMPICHLPR0 *) PCPDMPICHLPR0;
 #define PDM_PICHLPR0_VERSION  0xfc010000
 
 /**
- * PIC HC helpers.
+ * PIC R3 helpers.
  */
 typedef struct PDMPICHLPR3
 {
@@ -879,7 +879,7 @@ typedef struct PDMPICHLPR3
      * @returns VINF_SUCCESS on success.
      * @returns Fatal error on failure.
      * @param   pDevIns         The PIC device instance.
-     * @param   rc              Dummy for making the interface identical to the GC and R0 versions.
+     * @param   rc              Dummy for making the interface identical to the RC and R0 versions.
      */
     DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -891,21 +891,21 @@ typedef struct PDMPICHLPR3
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
-     * Gets the address of the GC PIC helpers.
+     * Gets the address of the RC PIC helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the RC helpers.
      *
-     * @returns GC pointer to the PIC helpers.
+     * @returns RC pointer to the PIC helpers.
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLR3CALLBACKMEMBER(PCPDMPICHLPGC, pfnGetGCHelpers,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(PCPDMPICHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the R0 PIC helpers.
      *
      * This should be called at both construction and relocation time
-     * to obtain the correct address of the GC helpers.
+     * to obtain the correct address of the R0 helpers.
      *
      * @returns R0 pointer to the PIC helpers.
      * @param   pDevIns         Device instance of the PIC.
@@ -916,9 +916,9 @@ typedef struct PDMPICHLPR3
     uint32_t                u32TheEnd;
 } PDMPICHLPR3;
 
-/** Pointer to PIC HC helpers. */
+/** Pointer to PIC R3 helpers. */
 typedef R3PTRTYPE(PDMPICHLPR3 *) PPDMPICHLPR3;
-/** Pointer to const PIC HC helpers. */
+/** Pointer to const PIC R3 helpers. */
 typedef R3PTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
 
 /** Current PDMPICHLPR3 version number. */
@@ -1281,7 +1281,7 @@ typedef struct PDMIOAPICHLPRC
     /**
      * Private interface between the IOAPIC and APIC.
      *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverHC.
+     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the IOAPIC.
@@ -1335,7 +1335,7 @@ typedef struct PDMIOAPICHLPR0
     /**
      * Private interface between the IOAPIC and APIC.
      *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverHC.
+     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the IOAPIC.
@@ -1378,7 +1378,7 @@ typedef R0PTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
 #define PDM_IOAPICHLPR0_VERSION   0xfe010000
 
 /**
- * IOAPIC HC helpers.
+ * IOAPIC R3 helpers.
  */
 typedef struct PDMIOAPICHLPR3
 {
@@ -1388,7 +1388,7 @@ typedef struct PDMIOAPICHLPR3
     /**
      * Private interface between the IOAPIC and APIC.
      *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverHC.
+     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the IOAPIC.
@@ -1444,7 +1444,7 @@ typedef struct PDMIOAPICHLPR3
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOAPICHLPR3;
-/** Pointer to IOAPIC HC helpers. */
+/** Pointer to IOAPIC R3 helpers. */
 typedef R3PTRTYPE(PDMIOAPICHLPR3 *) PPDMIOAPICHLPR3;
 /** Pointer to const IOAPIC helpers. */
 typedef R3PTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;

@@ -367,14 +367,14 @@ typedef struct PDMPIC
     /** @copydoc PDMPICREG::pfnGetInterruptHC */
     DECLR0CALLBACKMEMBER(int, pfnGetInterruptR0,(PPDMDEVINS pDevIns));
 
-    /** Pointer to the PIC device instance - GC. */
-    RCPTRTYPE(PPDMDEVINS)   pDevInsGC;
+    /** Pointer to the PIC device instance - RC. */
+    RCPTRTYPE(PPDMDEVINS)   pDevInsRC;
     /** @copydoc PDMPICREG::pfnSetIrqHC */
-    DECLRCCALLBACKMEMBER(void, pfnSetIrqGC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void, pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptHC */
-    DECLRCCALLBACKMEMBER(int, pfnGetInterruptGC,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(int, pfnGetInterruptRC,(PPDMDEVINS pDevIns));
     /** Alignment padding. */
-    RTRCPTR                 GCPtrPadding;
+    RTRCPTR                 RCPtrPadding;
 } PDMPIC;
 
 
@@ -454,8 +454,8 @@ typedef struct PDMIOAPIC
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
-    /** Pointer to the APIC device instance - GC Ptr. */
-    PPDMDEVINSGC                    pDevInsRC;
+    /** Pointer to the APIC device instance - RC Ptr. */
+    PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 } PDMIOAPIC;
@@ -495,7 +495,7 @@ typedef struct PDMPCIBUS
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 
     /** Pointer to PCI Bus device instance. */
-    PPDMDEVINSGC                    pDevInsRC;
+    PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 } PDMPCIBUS;
