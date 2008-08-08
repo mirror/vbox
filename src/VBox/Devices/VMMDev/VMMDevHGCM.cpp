@@ -249,7 +249,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
         rc = PDMDevHlpPhysGCPtr2GCPhys(pDevIns, GCPtr, &GCPhys);
 
-        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %VGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
+        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
 
         if (RT_FAILURE (rc))
         {
@@ -295,7 +295,7 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
                              PAGE_SIZE - pLinPtr->cbOffsetFirstPage:
                              PAGE_SIZE;
 
-        Log(("vmmdevHGCMWriteLinPtr: page %d: dst %VGp, src %p, cbWrite %d\n", iPage, GCPhysDst, pu8Src, cbWrite));
+        Log(("vmmdevHGCMWriteLinPtr: page %d: dst %RGp, src %p, cbWrite %d\n", iPage, GCPhysDst, pu8Src, cbWrite));
 
         iPage++;
 
@@ -596,7 +596,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                          AssertFailed();
                          /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
 
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %VGp\n", physAddr));
+                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
                          break;
                      }
 
@@ -698,7 +698,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                          AssertFailed();
                          /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
 
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %VGp\n", physAddr));
+                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
                          break;
                      }
 
@@ -1178,7 +1178,7 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
         {
             PVBOXHGCMCMD pNext = pIter->pNext;
 
-            LogFlowFunc (("Saving %VGp\n", pIter->GCPhys));
+            LogFlowFunc (("Saving %RGp\n", pIter->GCPhys));
             rc = SSMR3PutGCPhys(pSSM, pIter->GCPhys);
             AssertRCReturn(rc, rc);
 
@@ -1219,7 +1219,7 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
         rc = SSMR3GetU32(pSSM, &cbSize);
         AssertRCReturn(rc, rc);
 
-        LogFlowFunc (("Restoring %VGp size %x bytes\n", GCPhys, cbSize));
+        LogFlowFunc (("Restoring %RGp size %x bytes\n", GCPhys, cbSize));
 
         PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (sizeof (struct VBOXHGCMCMD));
         AssertReturn(pCmd, VERR_NO_MEMORY);
