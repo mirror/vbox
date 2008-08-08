@@ -3027,12 +3027,6 @@ typedef struct PDMDEVINS
 #define PDMDEV_SET_RUNTIME_ERROR(pDevIns, fFatal, pszErrorID, pszError) \
     PDMDevHlpVMSetRuntimeError(pDevIns, fFatal, pszErrorID, "%s", pszError)
 
-/** @def PDMDEVINS_2_GCPTR
- * Converts a PDM Device instance pointer a GC PDM Device instance pointer.
- * @deprecated Use PDMDEVINS_2_RCPTR.
- */
-#define PDMDEVINS_2_GCPTR(pDevIns)  PDMDEVINS_2_RCPTR(pDevIns)
-
 /** @def PDMDEVINS_2_RCPTR
  * Converts a PDM Device instance pointer a RC PDM Device instance pointer.
  */
