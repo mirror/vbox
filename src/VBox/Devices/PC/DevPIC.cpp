@@ -26,8 +26,9 @@
 #include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
-#include "../vl_vbox.h"
+#include "../Builtins.h"
 
 
 /*******************************************************************************
@@ -640,57 +641,7 @@ static uint32_t pic_ioport_read(void *opaque, uint32_t addr1, int *pRC)
 
 
 
-#ifdef IN_RING3
-
-static void pic_save(QEMUFile *f, void *opaque)
-{
-    PicState *s = (PicState*)opaque;
-
-    qemu_put_8s(f, &s->last_irr);
-    qemu_put_8s(f, &s->irr);
-    qemu_put_8s(f, &s->imr);
-    qemu_put_8s(f, &s->isr);
-    qemu_put_8s(f, &s->priority_add);
-    qemu_put_8s(f, &s->irq_base);
-    qemu_put_8s(f, &s->read_reg_select);
-    qemu_put_8s(f, &s->poll);
-    qemu_put_8s(f, &s->special_mask);
-    qemu_put_8s(f, &s->init_state);
-    qemu_put_8s(f, &s->auto_eoi);
-    qemu_put_8s(f, &s->rotate_on_auto_eoi);
-    qemu_put_8s(f, &s->special_fully_nested_mode);
-    qemu_put_8s(f, &s->init4);
-    qemu_put_8s(f, &s->elcr);
-}
-
-static int pic_load(QEMUFile *f, void *opaque, int version_id)
-{
-    PicState *s = (PicState*)opaque;
-
-    if (version_id != 1)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-
-    qemu_get_8s(f, &s->last_irr);
-    qemu_get_8s(f, &s->irr);
-    qemu_get_8s(f, &s->imr);
-    qemu_get_8s(f, &s->isr);
-    qemu_get_8s(f, &s->priority_add);
-    qemu_get_8s(f, &s->irq_base);
-    qemu_get_8s(f, &s->read_reg_select);
-    qemu_get_8s(f, &s->poll);
-    qemu_get_8s(f, &s->special_mask);
-    qemu_get_8s(f, &s->init_state);
-    qemu_get_8s(f, &s->auto_eoi);
-    qemu_get_8s(f, &s->rotate_on_auto_eoi);
-    qemu_get_8s(f, &s->special_fully_nested_mode);
-    qemu_get_8s(f, &s->init4);
-    qemu_get_8s(f, &s->elcr);
-    return 0;
-}
-#endif /* IN_RING3 */
-
-
-/* -=-=-=-=-=- wrappers -=-=-=-=-=- */
+/* -=-=-=-=-=- wrappers / stuff -=-=-=-=-=- */
 
 /**
  * Port I/O Handler for IN operations.
@@ -848,8 +799,24 @@ static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 static DECLCALLBACK(int) picSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
-    pic_save(pSSMHandle, &pThis->aPics[0]);
-    pic_save(pSSMHandle, &pThis->aPics[1]);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
+    {
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].last_irr);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].irr);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].imr);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].isr);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].priority_add);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].irq_base);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].read_reg_select);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].poll);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].special_mask);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].init_state);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].auto_eoi);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].rotate_on_auto_eoi);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].special_fully_nested_mode);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].init4);
+        SSMR3PutU8(pSSMHandle, pThis->aPics[i].elcr);
+    }
     return VINF_SUCCESS;
 }
 
@@ -864,11 +831,30 @@ static DECLCALLBACK(int) picSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
-    int rc = pic_load(pSSMHandle, &pThis->aPics[0], u32Version);
-    if (RT_SUCCESS(rc))
-        rc = pic_load(pSSMHandle, &pThis->aPics[1], u32Version);
-    return rc;
+    PDEVPIC pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
+
+    if (u32Version != 1)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
+    {
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].last_irr);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].irr);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].imr);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].isr);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].priority_add);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].irq_base);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].read_reg_select);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].poll);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].special_mask);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].init_state);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].auto_eoi);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].rotate_on_auto_eoi);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].special_fully_nested_mode);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].init4);
+        SSMR3GetU8(pSSMHandle, &pThis->aPics[i].elcr);
+    }
+    return VINF_SUCCESS;
 }
 
 
