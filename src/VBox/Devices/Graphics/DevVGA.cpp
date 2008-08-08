@@ -1230,7 +1230,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #else
             if (addr >= s->vram_size)
             {
-                AssertMsgFailed(("addr=%VGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
+                AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
                                  addr, s->bank_offset, memory_map_mode));
                 return VINF_SUCCESS;
             }
@@ -1271,7 +1271,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #else
             if (addr >= s->vram_size)
             {
-                AssertMsgFailed(("addr=%VGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
+                AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
                                  addr, s->bank_offset, memory_map_mode));
                 return VINF_SUCCESS;
             }
@@ -1295,7 +1295,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #else
         if (addr * 4 >= s->vram_size)
         {
-            AssertMsgFailed(("addr=%VGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
+            AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
                              addr * 4, s->bank_offset, memory_map_mode));
             return VINF_SUCCESS;
         }
@@ -3254,7 +3254,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 #else
         if (GCPhysAddr + cItems * cbItem >= pThis->vram_size)
         {
-            AssertMsgFailed(("GCPhysAddr=%VGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
+            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
             return VINF_SUCCESS;
         }
 #endif
@@ -3277,7 +3277,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 #else
         if (GCPhysAddr * 2 + cItems * cbItem >= pThis->vram_size)
         {
-            AssertMsgFailed(("GCPhysAddr=%VGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
+            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
             return VINF_SUCCESS;
         }
 #endif
@@ -3299,7 +3299,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 #else
         if (GCPhysAddr + cItems * cbItem >= pThis->vram_size)
         {
-            AssertMsgFailed(("GCPhysAddr=%VGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
+            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
             return VINF_SUCCESS;
         }
 #endif
@@ -4775,7 +4775,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    LogFlow(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%VGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    LogFlow(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     AssertReturn(iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
 
     if (GCPhysAddress != NIL_RTGCPHYS)
