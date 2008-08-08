@@ -1302,7 +1302,6 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
 
 static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
-    PPCIIOREGION pRegion;
 
     /*
      * Validate.
@@ -1323,11 +1322,11 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
     /*
      * Register the I/O region.
      */
-    pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-    pRegion->addr       = ~0U;
-    pRegion->size       = cbRegion;
-    pRegion->type       = enmType;
-    pRegion->map_func   = pfnCallback;
+    PPCIIOREGION pRegion = &pPciDev->Int.s.aIORegions[iRegion];
+    pRegion->addr        = ~0U;
+    pRegion->size        = cbRegion;
+    pRegion->type        = enmType;
+    pRegion->map_func    = pfnCallback;
     return VINF_SUCCESS;
 }
 
@@ -1368,7 +1367,7 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
      * Set the start addresses.
      */
     pGlobals->pci_bios_io_addr  = 0xc000;
-    pGlobals->pci_bios_mem_addr = 0xf0000000;
+    pGlobals->pci_bios_mem_addr = UINT32_C(0xf0000000);
 
     /*
      * Activate IRQ mappings.
