@@ -507,7 +507,7 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 255, 8, MM_TAG_STAM, (void **)&pVM->trpm.s.paStatForwardedIRQR3);
     AssertRCReturn(rc, rc);
-    pVM->trpm.s.paStatForwardedIRQGC = MMHyperR3ToGC(pVM, pVM->trpm.s.paStatForwardedIRQR3);
+    pVM->trpm.s.paStatForwardedIRQGC = MMHyperR3ToRC(pVM, pVM->trpm.s.paStatForwardedIRQR3);
     pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
     for (unsigned i = 0; i < 255; i++)
         STAMR3RegisterF(pVM, &pVM->trpm.s.paStatForwardedIRQR3[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
