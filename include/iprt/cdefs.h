@@ -427,22 +427,6 @@
 # define GCSTRING(pR0String)    ("<GC_STRING>")
 #endif
 
-/** @def HCSTRING
- * Macro which in GC will return a dummy string while in HC will return
- * the parameter.
- *
- * This is typically used to wrap description strings in structures shared
- * between HC and GC. The intention is to avoid the \#ifdef IN_GC kludge.
- *
- * @param   pHCString   The HC string. Only referenced in HC.
- * @deprecated Use R3STRING or R0STRING instead.
- */
-#ifdef IN_GC
-# define HCSTRING(pHCString)    ("<HC_STRING>")
-#else
-# define HCSTRING(pHCString)    (pHCString)
-#endif
-
 
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.

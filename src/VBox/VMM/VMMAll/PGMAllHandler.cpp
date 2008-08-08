@@ -85,7 +85,7 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
                                           R3PTRTYPE(const char *) pszDesc)
 {
     Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%VGp GCPhysLast=%VGp pfnHandlerR3=%VHv pvUserR3=%VHv pfnHandlerR0=%VHv pvUserR0=%VHv pfnHandlerGC=%VRv pvUserGC=%VRv pszDesc=%s\n",
-          enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, HCSTRING(pszDesc)));
+          enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, R3STRING(pszDesc)));
 
     /*
      * Validate input.
@@ -293,7 +293,7 @@ PGMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
     if (pCur)
     {
         LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %#VGp-%#VGp %s\n",
-                 pCur->Core.Key, pCur->Core.KeyLast, HCSTRING(pCur->pszDesc)));
+                 pCur->Core.Key, pCur->Core.KeyLast, R3STRING(pCur->pszDesc)));
 
         /*
          * Clear the page bits and notify the REM about this change.
@@ -1263,7 +1263,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         &&  pVirt->aPhysToVirt[0].Core.Key != NIL_RTGCPHYS)
     {
         AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
-                         pVirt->aPhysToVirt[0].Core.Key, pVirt->GCPtr, HCSTRING(pVirt->pszDesc)));
+                         pVirt->aPhysToVirt[0].Core.Key, pVirt->GCPtr, R3STRING(pVirt->pszDesc)));
         pState->cErrors++;
     }
 
@@ -1271,7 +1271,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         &&  pVirt->aPhysToVirt[pVirt->cPages - 1].Core.Key != NIL_RTGCPHYS)
     {
         AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
-                         pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast, pVirt->GCPtrLast, HCSTRING(pVirt->pszDesc)));
+                         pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast, pVirt->GCPtrLast, R3STRING(pVirt->pszDesc)));
         pState->cErrors++;
     }
 
@@ -1290,7 +1290,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
             if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
             {
                 AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysNew=~0 iPage=%#x %VGv %s\n",
-                                 pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+                                 pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
                 pState->cErrors++;
             }
             continue;
@@ -1300,7 +1300,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
         {
             AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysGst=%VGp iPage=%#x %VGv %s\n",
-                             pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+                             pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }
@@ -1309,7 +1309,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         if (!pPage)
         {
             AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%VGp iPage=%#x %VGv %s\n",
-                             GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+                             GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }
@@ -1317,7 +1317,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
             AssertMsgFailed(("virt handler state mismatch. HCPhys=%VHp GCPhysGst=%VGp iPage=%#x %VGv state=%d expected>=%d %s\n",
-                             pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, HCSTRING(pVirt->pszDesc)));
+                             pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }

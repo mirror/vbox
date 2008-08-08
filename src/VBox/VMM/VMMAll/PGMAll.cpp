@@ -187,15 +187,15 @@ typedef struct PGMHVUSTATE
 #define PGM_SHW_NAME(name)          PGM_SHW_NAME_AMD64(name)
 #include "PGMAllShw.h"
 
-/* Guest - protected mode */ 
-#define PGM_GST_TYPE                PGM_TYPE_PROT 
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name) 
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_PROT(name) 
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS 
-#include "PGMAllBth.h" 
-#undef BTH_PGMPOOLKIND_PT_FOR_PT 
-#undef PGM_BTH_NAME 
-#undef PGM_GST_TYPE 
+/* Guest - protected mode */
+#define PGM_GST_TYPE                PGM_TYPE_PROT
+#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_PROT(name)
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#include "PGMAllBth.h"
+#undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef PGM_BTH_NAME
+#undef PGM_GST_TYPE
 #undef PGM_GST_NAME
 
 /* Guest - AMD64 mode */
@@ -937,11 +937,11 @@ PGMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
     /* The PDPT was cached or created; hook it up now. */
-    pPml4e->u |=   pShwPage->Core.Key 
+    pPml4e->u |=   pShwPage->Core.Key
                 | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);    
+    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
 
     /* Allocate page directory if not present. */
@@ -1392,7 +1392,7 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
 }
 
 /**
- * Performs and schedules necessary updates following a CR3 load or reload, 
+ * Performs and schedules necessary updates following a CR3 load or reload,
  * without actually flushing the TLB as with PGMFlushTLB.
  *
  * This will normally involve mapping the guest PD or nPDPT
@@ -1711,7 +1711,7 @@ PGMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
             int rc = PGMGstGetPage(pVM, (RTGCPTR)GCPtr, NULL, NULL);
             if (rc != VERR_PAGE_TABLE_NOT_PRESENT)
             {
-                AssertMsgFailed(("Conflict at %VGv with %s\n", GCPtr, HCSTRING(pMapping->pszDesc)));
+                AssertMsgFailed(("Conflict at %VGv with %s\n", GCPtr, R3STRING(pMapping->pszDesc)));
                 cErrors++;
                 break;
             }
