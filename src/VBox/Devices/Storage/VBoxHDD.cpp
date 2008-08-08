@@ -177,7 +177,7 @@ static DECLCALLBACK(int) vdiGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
     int rc = VDIDiskGetImageUuid(pThis, 0, pUuid);
-    LogFlow(("vdiGetUuid: returns %Rrc ({%Vuuid})\n", rc, pUuid));
+    LogFlow(("vdiGetUuid: returns %Rrc ({%RTuuid})\n", rc, pUuid));
     return rc;
 }
 

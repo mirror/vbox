@@ -1464,14 +1464,14 @@ static int vdiGetUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
 static int vdiSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1519,14 +1519,14 @@ static int vdiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
 static int vdiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1574,14 +1574,14 @@ static int vdiGetParentUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
 static int vdiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1629,14 +1629,14 @@ static int vdiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
 static int vdiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1691,11 +1691,11 @@ static void vdiDump(void *pBackendData)
     if (pg)
         RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
                     pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
-    RTLogPrintf("Header: uuidCreation={%Vuuid}\n", getImageCreationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidModification={%Vuuid}\n", getImageModificationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidParent={%Vuuid}\n", getImageParentUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidCreation={%RTuuid}\n", getImageCreationUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidModification={%RTuuid}\n", getImageModificationUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidParent={%RTuuid}\n", getImageParentUUID(&pImage->Header));
     if (GET_MAJOR_HEADER_VERSION(&pImage->Header) >= 1)
-        RTLogPrintf("Header: uuidParentModification={%Vuuid}\n", getImageParentModificationUUID(&pImage->Header));
+        RTLogPrintf("Header: uuidParentModification={%RTuuid}\n", getImageParentModificationUUID(&pImage->Header));
     RTLogPrintf("Image:  fFlags=%08X offStartBlocks=%u offStartData=%u\n",
                 pImage->uImageFlags, pImage->offStartBlocks, pImage->offStartData);
     RTLogPrintf("Image:  uBlockMask=%08X cbTotalBlockData=%u uShiftOffset2Index=%u offStartBlockData=%u\n",

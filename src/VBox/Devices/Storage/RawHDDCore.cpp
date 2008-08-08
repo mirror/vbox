@@ -827,18 +827,18 @@ static int rawGetUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
 static int rawSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
 
-    LogFlowFunc(("%Vuuid\n", pUuid));
+    LogFlowFunc(("%RTuuid\n", pUuid));
     Assert(pImage);
 
     if (pImage)
@@ -869,14 +869,14 @@ static int rawGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
 static int rawSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
 
@@ -910,14 +910,14 @@ static int rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
 static int rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
 
@@ -951,14 +951,14 @@ static int rawGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
 static int rawSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
 

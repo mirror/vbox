@@ -1696,7 +1696,7 @@ VBOXDDU_DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PV
     int rc = vdiOpenImage(&pImage, pszFilename, VDI_OPEN_FLAGS_READONLY, NULL);
     if (RT_SUCCESS(rc))
     {
-        Log(("VDICheckImage: filename=\"%s\" version=%08X type=%X cbDisk=%llu uuid={%Vuuid}\n",
+        Log(("VDICheckImage: filename=\"%s\" version=%08X type=%X cbDisk=%llu uuid={%RTuuid}\n",
              pszFilename,
              pImage->PreHeader.u32Version,
              getImageType(&pImage->Header),
@@ -3243,7 +3243,7 @@ VBOXDDU_DECL(int) VDIDiskGetImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
     if (pImage)
     {
         *pUuid = *getImageCreationUUID(&pImage->Header);
-        LogFlow(("VDIDiskGetImageUuid: returns VINF_SUCCESS, uuid={%Vuuid} nImage=%d\n",
+        LogFlow(("VDIDiskGetImageUuid: returns VINF_SUCCESS, uuid={%RTuuid} nImage=%d\n",
                  pUuid, nImage));
         return VINF_SUCCESS;
     }
@@ -3274,7 +3274,7 @@ VBOXDDU_DECL(int) VDIDiskGetImageModificationUuid(PVDIDISK pDisk, int nImage, PR
     if (pImage)
     {
         *pUuid = *getImageModificationUUID(&pImage->Header);
-        LogFlow(("VDIDiskGetImageModificationUuid: returns VINF_SUCCESS, uuid={%Vuuid} nImage=%d\n",
+        LogFlow(("VDIDiskGetImageModificationUuid: returns VINF_SUCCESS, uuid={%RTuuid} nImage=%d\n",
                  pUuid, nImage));
         return VINF_SUCCESS;
     }
@@ -3303,7 +3303,7 @@ VBOXDDU_DECL(int) VDIDiskGetParentImageUuid(PVDIDISK pDisk, int nImage, PRTUUID 
     if (pImage)
     {
         *pUuid = *getImageParentUUID(&pImage->Header);
-        LogFlow(("VDIDiskGetParentImageUuid: returns VINF_SUCCESS, *pUuid={%Vuuid} nImage=%d\n",
+        LogFlow(("VDIDiskGetParentImageUuid: returns VINF_SUCCESS, *pUuid={%RTuuid} nImage=%d\n",
                  pUuid, nImage));
         return VINF_SUCCESS;
     }
@@ -3683,11 +3683,11 @@ static void vdiDumpImage(PVDIIMAGEDESC pImage)
     if (pg)
         RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
                     pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
-    RTLogPrintf("Header: uuidCreation={%Vuuid}\n", getImageCreationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidModification={%Vuuid}\n", getImageModificationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidParent={%Vuuid}\n", getImageParentUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidCreation={%RTuuid}\n", getImageCreationUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidModification={%RTuuid}\n", getImageModificationUUID(&pImage->Header));
+    RTLogPrintf("Header: uuidParent={%RTuuid}\n", getImageParentUUID(&pImage->Header));
     if (GET_MAJOR_HEADER_VERSION(&pImage->Header) >= 1)
-        RTLogPrintf("Header: uuidParentModification={%Vuuid}\n", getImageParentModificationUUID(&pImage->Header));
+        RTLogPrintf("Header: uuidParentModification={%RTuuid}\n", getImageParentModificationUUID(&pImage->Header));
     RTLogPrintf("Image:  fFlags=%08X offStartBlocks=%u offStartData=%u\n",
                 pImage->fFlags, pImage->offStartBlocks, pImage->offStartData);
     RTLogPrintf("Image:  uBlockMask=%08X uShiftIndex2Offset=%u uShiftOffset2Index=%u offStartBlockData=%u\n",

@@ -1370,7 +1370,7 @@ static int vmdkDescDDBSetUuid(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 {
     char *pszUuid;
 
-    int rc = RTStrAPrintf(&pszUuid, "\"%Vuuid\"", pUuid);
+    int rc = RTStrAPrintf(&pszUuid, "\"%RTuuid\"", pUuid);
     if (RT_FAILURE(rc))
         return rc;
     rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey,
@@ -4605,18 +4605,18 @@ static int vmdkGetUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
 static int vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    LogFlowFunc(("%Vuuid\n", pUuid));
+    LogFlowFunc(("%RTuuid\n", pUuid));
     Assert(pImage);
 
     if (pImage)
@@ -4657,14 +4657,14 @@ static int vmdkGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
 static int vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
@@ -4708,14 +4708,14 @@ static int vmdkGetParentUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
 static int vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
@@ -4759,14 +4759,14 @@ static int vmdkGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
 static int vmdkSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pBackendData=%#p Uuid=%Vuuid\n", pBackendData, pUuid));
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
@@ -4805,10 +4805,10 @@ static void vmdkDump(void *pBackendData)
                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
                     VMDK_BYTE2SECTOR(pImage->cbSize));
-        RTLogPrintf("Header: uuidCreation={%Vuuid}\n", &pImage->ImageUuid);
-        RTLogPrintf("Header: uuidModification={%Vuuid}\n", &pImage->ModificationUuid);
-        RTLogPrintf("Header: uuidParent={%Vuuid}\n", &pImage->ParentUuid);
-        RTLogPrintf("Header: uuidParentModification={%Vuuid}\n", &pImage->ParentModificationUuid);
+        RTLogPrintf("Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
+        RTLogPrintf("Header: uuidModification={%RTuuid}\n", &pImage->ModificationUuid);
+        RTLogPrintf("Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
+        RTLogPrintf("Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
     }
 }
 

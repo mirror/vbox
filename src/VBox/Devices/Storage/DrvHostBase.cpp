@@ -313,7 +313,7 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid
 
     *pUuid = pThis->Uuid;
 
-    LogFlow(("%s-%d: drvHostBaseGetUuid: returns VINF_SUCCESS *pUuid=%Vuuid\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pUuid));
+    LogFlow(("%s-%d: drvHostBaseGetUuid: returns VINF_SUCCESS *pUuid=%RTuuid\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pUuid));
     return VINF_SUCCESS;
 }
 
@@ -1862,7 +1862,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     PPDMDRVINS pDrvIns = pThis->pDrvIns;
 
     /* log config summary */
-    Log(("%s-%d: pszDevice='%s' (%s) cMilliesPoller=%d fReadOnlyConfig=%d fLocked=%d fBIOSVisible=%d Uuid=%Vuuid\n",
+    Log(("%s-%d: pszDevice='%s' (%s) cMilliesPoller=%d fReadOnlyConfig=%d fLocked=%d fBIOSVisible=%d Uuid=%RTuuid\n",
          pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pThis->pszDevice, pThis->pszDeviceOpen, pThis->cMilliesPoller,
          pThis->fReadOnlyConfig, pThis->fLocked, pThis->fBiosVisible, &pThis->Uuid));
 
