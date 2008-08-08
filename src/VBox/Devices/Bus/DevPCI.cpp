@@ -1437,9 +1437,6 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PPCIBUS         pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     PDMPCIBUSREG    PciBusReg;
     int             rc;
-    bool            fGCEnabled;
-    bool            fR0Enabled;
-    bool            fUseIoApic;
     Assert(iInstance == 0);
 
     /*
@@ -1449,18 +1446,21 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* query whether we got an IOAPIC */
+    bool fUseIoApic;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fUseIoApic, false);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
 
     /* check if RC code is enabled. */
+    bool fGCEnabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
 
     /* check if R0 code is enabled. */
+    bool fR0Enabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -1535,10 +1535,10 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register I/O ports and save state.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xcf8, 1, NULL, pciIOPortAddressWrite, pciIOPortAddressRead, NULL, NULL, "i440FX (PCI)");
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cf8, 1, NULL, pciIOPortAddressWrite, pciIOPortAddressRead, NULL, NULL, "i440FX (PCI)");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xcfc, 4, NULL, pciIOPortDataWrite, pciIOPortDataRead, NULL, NULL, "i440FX (PCI)");
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cfc, 4, NULL, pciIOPortDataWrite, pciIOPortDataRead, NULL, NULL, "i440FX (PCI)");
     if (VBOX_FAILURE(rc))
         return rc;
     rc = PDMDevHlpSSMRegister(pDevIns, "pci", iInstance, 2, sizeof(*pBus),
