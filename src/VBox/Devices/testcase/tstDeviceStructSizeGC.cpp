@@ -464,10 +464,12 @@ int main()
 
     /* PC/DevPit-i8254.cpp */
     GEN_CHECK_SIZE(PITChannelState);
-    GEN_CHECK_OFF(PITChannelState, pPitHC);
-    GEN_CHECK_OFF(PITChannelState, pTimerHC);
-    GEN_CHECK_OFF(PITChannelState, pPitGC);
-    GEN_CHECK_OFF(PITChannelState, pTimerGC);
+    GEN_CHECK_OFF(PITChannelState, pPitR3);
+    GEN_CHECK_OFF(PITChannelState, pTimerR3);
+    GEN_CHECK_OFF(PITChannelState, pPitR0);
+    GEN_CHECK_OFF(PITChannelState, pTimerR0);
+    GEN_CHECK_OFF(PITChannelState, pPitRC);
+    GEN_CHECK_OFF(PITChannelState, pTimerRC);
     GEN_CHECK_OFF(PITChannelState, u64ReloadTS);
     GEN_CHECK_OFF(PITChannelState, u64NextTS);
     GEN_CHECK_OFF(PITChannelState, count_load_time);
