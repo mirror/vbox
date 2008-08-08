@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC Architechture Device.
+ * DevPcArch - PC Architechture Device.
  */
 
 /*
@@ -25,14 +25,12 @@
 #define LOG_GROUP LOG_GROUP_DEV_PC_ARCH
 #include <VBox/pdmdev.h>
 #include <VBox/mm.h>
-
 #include <VBox/log.h>
-#include <iprt/assert.h>
 #include <VBox/err.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
 
-#include <string.h>
-
-#include "Builtins.h"
+#include "../Builtins.h"
 
 
 /*******************************************************************************
@@ -257,6 +255,7 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Reserve ROM/MMIO areas:
      * 1. 0x000a0000-0x000fffff
      * 2. 0xfff80000-0xffffffff
+     * Note: This will be removed before long.
      */
     rc = PDMDevHlpPhysReserve(pDevIns, 0x000a0000, 0x50000, "Low ROM Region");
     if (VBOX_FAILURE(rc))
