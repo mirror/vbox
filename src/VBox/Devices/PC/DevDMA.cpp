@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DMA Controller Device.
+ * DevDMA - DMA Controller Device.
  */
 
 /*
