@@ -194,7 +194,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     /*
      * Solaris has sysconf.
      */
-    int cCpus = sysconf(_SC_NPROCESSORS_MAX)
+    int cCpus = sysconf(_SC_NPROCESSORS_MAX);
     if (cCpus < 0)
         cCpus = sysconf(_SC_NPROCESSORS_CONF);
     return cCpus;
