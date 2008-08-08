@@ -50,15 +50,6 @@
  * @{
  */
 
-/** @deprecated
- * @{ */
-typedef RTHCPHYS    VBOXHCPHYS;
-typedef VBOXHCPHYS *PVBOXHCPHYS;
-#define NILVBOXHCPHYS NIL_RTHCPHYS
-typedef RTHCPTR     VBOXHCPTR;
-typedef VBOXHCPTR  *PVBOXHCPTR;
-/** @} */
-
 /** @} */
 
 
