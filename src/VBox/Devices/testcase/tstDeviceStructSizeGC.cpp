@@ -763,8 +763,12 @@ int main()
     GEN_CHECK_SIZE(OHCI);
     GEN_CHECK_OFF(OHCI, PciDev);
     GEN_CHECK_OFF(OHCI, MMIOBase);
-    GEN_CHECK_OFF(OHCI, pEndOfFrameTimerHC);
-    GEN_CHECK_OFF(OHCI, pEndOfFrameTimerGC);
+    GEN_CHECK_OFF(OHCI, pEndOfFrameTimerR3);
+    GEN_CHECK_OFF(OHCI, pEndOfFrameTimerR0);
+    GEN_CHECK_OFF(OHCI, pEndOfFrameTimerRC);
+    GEN_CHECK_OFF(OHCI, pDevInsR3);
+    GEN_CHECK_OFF(OHCI, pDevInsR0);
+    GEN_CHECK_OFF(OHCI, pDevInsRC);
     GEN_CHECK_OFF(OHCI, SofTime);
     //GEN_CHECK_OFF(OHCI, dqic:3);
     //GEN_CHECK_OFF(OHCI, fno:1);
@@ -798,8 +802,6 @@ int main()
     GEN_CHECK_OFF(OHCI, aInDoneQueue[0].GCPhysTD);
     GEN_CHECK_OFF(OHCI, aInDoneQueue[1]);
     GEN_CHECK_OFF(OHCI, u32FmDoneQueueTail);
-    GEN_CHECK_OFF(OHCI, pDevInsHC);
-    GEN_CHECK_OFF(OHCI, pDevInsGC);
     GEN_CHECK_OFF(OHCI, pLoad);
 # ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(OHCI, StatCanceledIsocUrbs);
