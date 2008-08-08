@@ -79,7 +79,7 @@ typedef struct IOMMMIORANGE
     /** Pointer to user argument. */
     RCPTRTYPE(void *)           pvUserGC;
     /** Pointer to device instance. */
-    PPDMDEVINSGC                pDevInsGC;
+    PPDMDEVINSRC                pDevInsGC;
     /** Pointer to write callback function. */
     RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
     /** Pointer to read callback function. */

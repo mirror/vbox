@@ -224,7 +224,7 @@ typedef struct KBDState {
 
 #ifdef VBOX
     /** Pointer to the device instance - RC. */
-    PPDMDEVINSGC                pDevInsRC;
+    PPDMDEVINSRC                pDevInsRC;
     /** Pointer to the device instance - R3 . */
     PPDMDEVINSR3                pDevInsR3;
     /** Pointer to the device instance. */
