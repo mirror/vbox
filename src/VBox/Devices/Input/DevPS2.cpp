@@ -1119,19 +1119,19 @@ static void kbd_save(QEMUFile* f, void* opaque)
      */
     cItems = s->queue.count;
     SSMR3PutU32(f, cItems);
-    for (i = s->queue.rptr; cItems-- > 0; i = (i + 1) % ELEMENTS(s->queue.data))
+    for (i = s->queue.rptr; cItems-- > 0; i = (i + 1) % RT_ELEMENTS(s->queue.data))
         SSMR3PutU8(f, s->queue.data[i]);
     Log(("kbd_save: %d keyboard queue items stored\n", s->queue.count));
 
     cItems = s->mouse_command_queue.count;
     SSMR3PutU32(f, cItems);
-    for (i = s->mouse_command_queue.rptr; cItems-- > 0; i = (i + 1) % ELEMENTS(s->mouse_command_queue.data))
+    for (i = s->mouse_command_queue.rptr; cItems-- > 0; i = (i + 1) % RT_ELEMENTS(s->mouse_command_queue.data))
         SSMR3PutU8(f, s->mouse_command_queue.data[i]);
     Log(("kbd_save: %d mouse command queue items stored\n", s->mouse_command_queue.count));
 
     cItems = s->mouse_event_queue.count;
     SSMR3PutU32(f, cItems);
-    for (i = s->mouse_event_queue.rptr; cItems-- > 0; i = (i + 1) % ELEMENTS(s->mouse_event_queue.data))
+    for (i = s->mouse_event_queue.rptr; cItems-- > 0; i = (i + 1) % RT_ELEMENTS(s->mouse_event_queue.data))
         SSMR3PutU8(f, s->mouse_event_queue.data[i]);
     Log(("kbd_save: %d mouse event queue items stored\n", s->mouse_event_queue.count));
 
@@ -1187,7 +1187,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     rc = SSMR3GetU32(f, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 > ELEMENTS(s->queue.data))
+    if (u32 > RT_ELEMENTS(s->queue.data))
     {
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -1198,14 +1198,14 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
         if (RT_FAILURE(rc))
             return rc;
     }
-    s->queue.wptr = u32 % ELEMENTS(s->queue.data);
+    s->queue.wptr = u32 % RT_ELEMENTS(s->queue.data);
     s->queue.count = u32;
     Log(("kbd_load: %d keyboard queue items loaded\n", u32));
 
     rc = SSMR3GetU32(f, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 > ELEMENTS(s->mouse_command_queue.data))
+    if (u32 > RT_ELEMENTS(s->mouse_command_queue.data))
     {
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -1216,14 +1216,14 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
         if (RT_FAILURE(rc))
             return rc;
     }
-    s->mouse_command_queue.wptr = u32 % ELEMENTS(s->mouse_command_queue.data);
+    s->mouse_command_queue.wptr = u32 % RT_ELEMENTS(s->mouse_command_queue.data);
     s->mouse_command_queue.count = u32;
     Log(("kbd_load: %d mouse command queue items loaded\n", u32));
 
     rc = SSMR3GetU32(f, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 > ELEMENTS(s->mouse_event_queue.data))
+    if (u32 > RT_ELEMENTS(s->mouse_event_queue.data))
     {
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -1234,7 +1234,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
         if (RT_FAILURE(rc))
             return rc;
     }
-    s->mouse_event_queue.wptr = u32 % ELEMENTS(s->mouse_event_queue.data);
+    s->mouse_event_queue.wptr = u32 % RT_ELEMENTS(s->mouse_event_queue.data);
     s->mouse_event_queue.count = u32;
     Log(("kbd_load: %d mouse event queue items loaded\n", u32));
 

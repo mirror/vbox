@@ -215,7 +215,7 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
         aFDs[1].fd      = pData->WakeupPipeR;
         aFDs[1].events  = POLLIN | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
-        rc = poll(aFDs, ELEMENTS(aFDs), -1);
+        rc = poll(aFDs, RT_ELEMENTS(aFDs), -1);
         if (rc < 0)
         {
             AssertMsgFailed(("poll failed with rc=%d\n", RTErrConvertFromErrno(errno)));

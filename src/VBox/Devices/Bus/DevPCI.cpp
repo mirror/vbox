@@ -1008,7 +1008,7 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     /*
      * Iterate all the devices.
      */
-    for (i = 0; i < ELEMENTS(pData->devices); i++)
+    for (i = 0; i < RT_ELEMENTS(pData->devices); i++)
     {
         PPCIDEVICE pDev = pData->devices[i];
         if (pDev)
@@ -1077,7 +1077,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             return rc;
         if (u32 == (uint32_t)~0)
             break;
-        if (    u32 >= ELEMENTS(pData->devices)
+        if (    u32 >= RT_ELEMENTS(pData->devices)
             ||  u32 < i)
         {
             AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
@@ -1186,7 +1186,7 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
      */
     if (    !pszName
         ||  !pPciDev
-        ||  iDev >= (int)ELEMENTS(pBus->devices)
+        ||  iDev >= (int)RT_ELEMENTS(pBus->devices)
         ||  (iDev >= 0 && iDev <= 8))
     {
         AssertMsgFailed(("Invalid argument! pszName=%s pPciDev=%p iDev=%d\n", pszName, pPciDev, iDev));
@@ -1208,7 +1208,7 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
         else
         {
             Assert(!(pBus->iDevSearch % 8));
-            for (iDev = pBus->iDevSearch; iDev < (int)ELEMENTS(pBus->devices); iDev += 8)
+            for (iDev = pBus->iDevSearch; iDev < (int)RT_ELEMENTS(pBus->devices); iDev += 8)
                 if (    !pBus->devices[iDev]
                     &&  !pBus->devices[iDev + 1]
                     &&  !pBus->devices[iDev + 2]
@@ -1218,7 +1218,7 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
                     &&  !pBus->devices[iDev + 6]
                     &&  !pBus->devices[iDev + 7])
                     break;
-            if (iDev >= (int)ELEMENTS(pBus->devices))
+            if (iDev >= (int)RT_ELEMENTS(pBus->devices))
             {
                 AssertMsgFailed(("Couldn't find free spot!\n"));
                 return VERR_PDM_TOO_PCI_MANY_DEVICES;
@@ -1260,7 +1260,7 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
             }
 
             /* Find free slot for the device(s) we're moving and move them. */
-            for (iDevRel = pBus->iDevSearch; iDevRel < (int)ELEMENTS(pBus->devices); iDevRel += 8)
+            for (iDevRel = pBus->iDevSearch; iDevRel < (int)RT_ELEMENTS(pBus->devices); iDevRel += 8)
             {
                 if (    !pBus->devices[iDevRel]
                     &&  !pBus->devices[iDevRel + 1]
@@ -1394,7 +1394,7 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Init the devices.
      */
-    for (i = 0; i < ELEMENTS(pBus->devices); i++)
+    for (i = 0; i < RT_ELEMENTS(pBus->devices); i++)
     {
         if (pBus->devices[i])
         {

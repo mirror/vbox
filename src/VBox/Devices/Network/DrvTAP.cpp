@@ -257,7 +257,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         aFDs[1].revents = 0;
         STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
         errno=0;
-        int rc = poll(&aFDs[0], ELEMENTS(aFDs), -1 /* infinite */);
+        int rc = poll(&aFDs[0], RT_ELEMENTS(aFDs), -1 /* infinite */);
 
         /* this might have changed in the meantime */
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
