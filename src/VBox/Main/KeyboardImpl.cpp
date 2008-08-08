@@ -214,7 +214,7 @@ STDMETHODIMP Keyboard::PutCAD()
 DECLCALLBACK(void *)  Keyboard::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINKEYBOARD pDrv = PDMINS2DATA(pDrvIns, PDRVMAINKEYBOARD);
+    PDRVMAINKEYBOARD pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -235,7 +235,7 @@ DECLCALLBACK(void *)  Keyboard::drvQueryInterface(PPDMIBASE pInterface, PDMINTER
  */
 DECLCALLBACK(void) Keyboard::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMAINKEYBOARD pData = PDMINS2DATA(pDrvIns, PDRVMAINKEYBOARD);
+    PDRVMAINKEYBOARD pData = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pKeyboard)
     {
@@ -265,7 +265,7 @@ DECLCALLBACK(void) keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInterface, PD
  */
 DECLCALLBACK(int) Keyboard::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMAINKEYBOARD pData = PDMINS2DATA(pDrvIns, PDRVMAINKEYBOARD);
+    PDRVMAINKEYBOARD pData = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*

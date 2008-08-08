@@ -125,7 +125,7 @@ DECLCALLBACK(void) iface_AudioVolumeOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface, 
 DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIOSNIFFER pDrv = PDMINS2DATA(pDrvIns, PDRVAUDIOSNIFFER);
+    PDRVAUDIOSNIFFER pDrv = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -146,7 +146,7 @@ DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, PDMIN
  */
 DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVAUDIOSNIFFER pData = PDMINS2DATA(pDrvIns, PDRVAUDIOSNIFFER);
+    PDRVAUDIOSNIFFER pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
     LogFlow(("AudioSniffer::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pAudioSniffer)
     {
@@ -167,7 +167,7 @@ DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVAUDIOSNIFFER pData = PDMINS2DATA(pDrvIns, PDRVAUDIOSNIFFER);
+    PDRVAUDIOSNIFFER pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
 
     LogFlow(("AudioSniffer::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
