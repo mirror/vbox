@@ -162,7 +162,7 @@ typedef RCPTRTYPE(struct TMTIMER *) PTMTIMERRC;
 typedef PTMTIMERRC *PPTMTIMERRC;
 
 /** Pointer to a timer. */
-typedef CTXALLSUFF(PTMTIMER)   PTMTIMER;
+typedef CTX_SUFF(PTMTIMER)     PTMTIMER;
 /** Pointer to a pointer to a timer. */
 typedef PTMTIMER              *PPTMTIMER;
 
