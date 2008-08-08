@@ -111,25 +111,25 @@ static DECLCALLBACK(int) drvTAPW32Send(PPDMINETWORKCONNECTOR pInterface, const v
     OVERLAPPED overlapped;
     DWORD      cbBytesWritten;
     int        rc;
-    PDRVTAP    pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
+    PDRVTAP    pThis = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     Log2(("drvTAPW32Send%d: pvBuf=%p cb=%#x\n"
-          "%.*Vhxd\n", pData->pDrvIns->iInstance, pvBuf, cb, cb, pvBuf));
+          "%.*Vhxd\n", pThis->pDrvIns->iInstance, pvBuf, cb, cb, pvBuf));
 
 #ifdef DEBUG
-    pData->dwLastReadTime = timeGetTime();
-    Log(("drvTAPW32Send %d bytes at %08x - delta %x\n", cb, pData->dwLastReadTime, pData->dwLastReadTime - pData->dwLastWriteTime));
+    pThis->dwLastReadTime = timeGetTime();
+    Log(("drvTAPW32Send %d bytes at %08x - delta %x\n", cb, pThis->dwLastReadTime, pThis->dwLastReadTime - pThis->dwLastWriteTime));
 #endif
 
-    STAM_COUNTER_INC(&pData->StatPktSent);
-    STAM_COUNTER_ADD(&pData->StatPktSentBytes, cb);
-    STAM_PROFILE_ADV_START(&pData->StatTransmit, a);
+    STAM_COUNTER_INC(&pThis->StatPktSent);
+    STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
+    STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
 
     memset(&overlapped, 0, sizeof(overlapped));
-    overlapped.hEvent = pData->hEventWrite;
+    overlapped.hEvent = pThis->hEventWrite;
 
     rc = VINF_SUCCESS;
-    if (WriteFile(pData->hFile, pvBuf, cb, &cbBytesWritten, &overlapped) == FALSE)
+    if (WriteFile(pThis->hFile, pvBuf, cb, &cbBytesWritten, &overlapped) == FALSE)
     {
         if (GetLastError() == ERROR_IO_PENDING)
         {
@@ -144,7 +144,7 @@ static DECLCALLBACK(int) drvTAPW32Send(PPDMINETWORKCONNECTOR pInterface, const v
             rc = RTErrConvertFromWin32(GetLastError());
         }
     }
-    STAM_PROFILE_ADV_STOP(&pData->StatTransmit, a);
+    STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
     AssertRC(rc);
     return rc;
 }
@@ -186,25 +186,25 @@ static DECLCALLBACK(void) drvTAPW32NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     HANDLE  haWait[2];
     DWORD   rc = ERROR_SUCCESS, dwNumberOfBytesTransferred;
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    Assert(pData);
-    haWait[0] = pData->hEventRead;
-    haWait[1] = pData->hHaltAsyncEventSem;
+    Assert(pThis);
+    haWait[0] = pThis->hEventRead;
+    haWait[1] = pThis->hHaltAsyncEventSem;
 
     while(1)
     {
         BOOL  bRet;
 
-        memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
-        pData->overlappedRead.hEvent = pData->hEventRead;
-        bRet = ReadFile(pData->hFile, pData->readBuffer, sizeof(pData->readBuffer),
-                        &dwNumberOfBytesTransferred, &pData->overlappedRead);
+        memset(&pThis->overlappedRead, 0, sizeof(pThis->overlappedRead));
+        pThis->overlappedRead.hEvent = pThis->hEventRead;
+        bRet = ReadFile(pThis->hFile, pThis->readBuffer, sizeof(pThis->readBuffer),
+                        &dwNumberOfBytesTransferred, &pThis->overlappedRead);
         if (bRet == FALSE)
         {
             rc = GetLastError();
@@ -218,7 +218,7 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
             if (rc != WAIT_OBJECT_0)
                 break;  /* asked to quit or fatal error. */
 
-            rc = GetOverlappedResult(pData->hFile, &pData->overlappedRead, &dwNumberOfBytesTransferred, FALSE);
+            rc = GetOverlappedResult(pThis->hFile, &pThis->overlappedRead, &dwNumberOfBytesTransferred, FALSE);
             Assert(rc == TRUE);
 
             /* If GetOverlappedResult() returned with TRUE, the operation was finished successfully */
@@ -229,22 +229,22 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
          * means that we were woken up during a VM state transition. Drop the
          * current packet and wait for the next one.
          */
-        rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
+        rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
             continue;
 
-        STAM_COUNTER_INC(&pData->StatPktRecv);
-        STAM_COUNTER_ADD(&pData->StatPktRecvBytes, dwNumberOfBytesTransferred);
+        STAM_COUNTER_INC(&pThis->StatPktRecv);
+        STAM_COUNTER_ADD(&pThis->StatPktRecvBytes, dwNumberOfBytesTransferred);
 #ifdef DEBUG
-        pData->dwLastWriteTime = timeGetTime();
+        pThis->dwLastWriteTime = timeGetTime();
         Log(("drvTAPW32AsyncIo %d bytes at %08x - delta %x\n", dwNumberOfBytesTransferred,
-             pData->dwLastWriteTime, pData->dwLastWriteTime - pData->dwLastReadTime));
+             pThis->dwLastWriteTime, pThis->dwLastWriteTime - pThis->dwLastReadTime));
 #endif
-        rc = pData->pPort->pfnReceive(pData->pPort, pData->readBuffer, dwNumberOfBytesTransferred);
+        rc = pThis->pPort->pfnReceive(pThis->pPort, pThis->readBuffer, dwNumberOfBytesTransferred);
         AssertRC(rc);
     }
 
-    SetEvent(pData->hHaltAsyncEventSem);
+    SetEvent(pThis->hHaltAsyncEventSem);
     Log(("drvTAPW32AsyncIo: exit thread!!\n"));
     return VINF_SUCCESS;
 }
@@ -259,18 +259,18 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /** @todo this isn't a safe method to notify the async thread; it might be using the instance
      *        data after we've been destroyed; could wait for it to terminate, but that's not
      *        without risks either.
      */
-    SetEvent(pData->hHaltAsyncEventSem);
+    SetEvent(pThis->hHaltAsyncEventSem);
 
     /* Yield or else our async thread will never acquire the event semaphore */
     RTThreadSleep(16);
     /* Wait for the async thread to quit; up to half a second */
-    WaitForSingleObject(pData->hHaltAsyncEventSem, 500);
+    WaitForSingleObject(pThis->hHaltAsyncEventSem, 500);
 
     return VINF_SUCCESS;
 }
@@ -287,13 +287,13 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD p
 static DECLCALLBACK(void *) drvTAPW32QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pData->INetworkConnector;
+            return &pThis->INetworkConnector;
         default:
             return NULL;
     }
@@ -310,20 +310,20 @@ static DECLCALLBACK(void *) drvTAPW32QueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     TAP_MEDIASTATUS mediastatus;
     DWORD dwLength;
 
     LogFlow(("drvTAPW32Destruct\n"));
 
     mediastatus.fConnect = FALSE;
-    BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS,
+    BOOL ret = DeviceIoControl(pThis->hFile, TAP_IOCTL_SET_MEDIA_STATUS,
                                &mediastatus, sizeof(mediastatus), NULL, 0, &dwLength, NULL);
     Assert(ret);
 
-    CloseHandle(pData->hEventWrite);
-    CancelIo(pData->hFile);
-    CloseHandle(pData->hFile);
+    CloseHandle(pThis->hEventWrite);
+    CancelIo(pThis->hFile);
+    CloseHandle(pThis->hFile);
 }
 
 
@@ -339,19 +339,19 @@ static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->hFile                        = INVALID_HANDLE_VALUE;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->hFile                        = INVALID_HANDLE_VALUE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPW32QueryInterface;
     /* INetwork */
-    pData->INetworkConnector.pfnSend                = drvTAPW32Send;
-    pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPW32SetPromiscuousMode;
-    pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPW32NotifyLinkChanged;
+    pThis->INetworkConnector.pfnSend                = drvTAPW32Send;
+    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvTAPW32SetPromiscuousMode;
+    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvTAPW32NotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -370,8 +370,8 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Query the network port interface.
      */
-    pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
-    if (!pData->pPort)
+    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't export the network port interface"));
 
@@ -396,10 +396,10 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
 
     RTStrPrintfEx(NULL, NULL, szFullDriverName, sizeof(szFullDriverName), "\\\\.\\Global\\%s.tap", szDriverGUID);
 
-    pData->hFile = CreateFile(szFullDriverName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+    pThis->hFile = CreateFile(szFullDriverName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
                               FILE_ATTRIBUTE_SYSTEM | FILE_FLAG_OVERLAPPED, 0);
 
-    if (pData->hFile == INVALID_HANDLE_VALUE)
+    if (pThis->hFile == INVALID_HANDLE_VALUE)
     {
         rc = GetLastError();
 
@@ -411,58 +411,58 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                                 N_("Failed to open Host Interface Networking device driver"));
     }
 
-    BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_GET_VERSION, &pData->tapVersion, sizeof (pData->tapVersion),
-                               &pData->tapVersion, sizeof(pData->tapVersion), &length, NULL);
+    BOOL ret = DeviceIoControl(pThis->hFile, TAP_IOCTL_GET_VERSION, &pThis->tapVersion, sizeof (pThis->tapVersion),
+                               &pThis->tapVersion, sizeof(pThis->tapVersion), &length, NULL);
     if (ret == FALSE)
     {
-        CloseHandle(pData->hFile);
+        CloseHandle(pThis->hFile);
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
                                 N_("Failed to get the Host Interface Networking device driver version"));;
     }
-    LogRel(("TAP version %d.%d\n", pData->tapVersion.major, pData->tapVersion.minor));
+    LogRel(("TAP version %d.%d\n", pThis->tapVersion.major, pThis->tapVersion.minor));
 
     /* Must be at least version 8.1 */
-    if (    pData->tapVersion.major != 8
-        ||  pData->tapVersion.minor < 1)
+    if (    pThis->tapVersion.major != 8
+        ||  pThis->tapVersion.minor < 1)
     {
-        CloseHandle(pData->hFile);
+        CloseHandle(pThis->hFile);
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
                                 N_("Invalid Host Interface Networking device driver version"));;
     }
 
     mediastatus.fConnect = TRUE;
-    ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS, &mediastatus, sizeof(mediastatus), NULL, 0, &length, NULL);
+    ret = DeviceIoControl(pThis->hFile, TAP_IOCTL_SET_MEDIA_STATUS, &mediastatus, sizeof(mediastatus), NULL, 0, &length, NULL);
     if (ret == FALSE)
     {
-        CloseHandle(pData->hFile);
+        CloseHandle(pThis->hFile);
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
 
     if (pszHostDriver)
         MMR3HeapFree(pszHostDriver);
 
-    pData->hEventWrite = CreateEvent(NULL, FALSE, FALSE, NULL);
-    pData->hEventRead  = CreateEvent(NULL, FALSE, FALSE, NULL);
-    memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
+    pThis->hEventWrite = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pThis->hEventRead  = CreateEvent(NULL, FALSE, FALSE, NULL);
+    memset(&pThis->overlappedRead, 0, sizeof(pThis->overlappedRead));
 
-    pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
-    Assert(pData->hHaltAsyncEventSem != NULL);
+    pThis->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
+    Assert(pThis->hHaltAsyncEventSem != NULL);
 
     /* Create asynchronous thread */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPW32AsyncIoThread, drvTAPW32AsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvTAPW32AsyncIoThread, drvTAPW32AsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSent,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of sent packets.",         "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSentBytes, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Number of sent bytes.",           "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecv,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of received packets.",     "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Number of received bytes.",       "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatRecvOverflows,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSent,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of sent packets.",         "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSentBytes, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Number of sent bytes.",           "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecv,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of received packets.",     "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecvBytes, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Number of received bytes.",       "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatRecvOverflows,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
 #endif
 
     return rc;

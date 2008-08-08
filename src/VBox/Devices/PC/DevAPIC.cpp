@@ -1655,10 +1655,10 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    APICState *pData = PDMINS_2_DATA(pDevIns, APICState *);
-    pData->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
-    pData->pApicHlpRC = pData->pApicHlpR3->pfnGetRCHelpers(pDevIns);
-    pData->pTimerRC   = TMTimerRCPtr(pData->CTX_SUFF(pTimer));
+    APICState *pThis = PDMINS_2_DATA(pDevIns, APICState *);
+    pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pApicHlpRC = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
+    pThis->pTimerRC   = TMTimerRCPtr(pThis->CTX_SUFF(pTimer));
 }
 
 /**
@@ -1666,7 +1666,7 @@ static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    APICState      *pData = PDMINS_2_DATA(pDevIns, APICState *);
+    APICState      *pThis = PDMINS_2_DATA(pDevIns, APICState *);
     PDMAPICREG      ApicReg;
     int             rc;
     int             i;
@@ -1700,13 +1700,13 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Init the data.
      */
-    pData->pDevInsR3 = pDevIns;
-    pData->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pData->apicbase  = UINT32_C(0xfee00000) | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->apicbase  = UINT32_C(0xfee00000) | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
     for (i = 0; i < APIC_LVT_NB; i++)
-        pData->lvt[i] = 1 << 16; /* mask LVT */
-    pData->spurious_vec = 0xff;
+        pThis->lvt[i] = 1 << 16; /* mask LVT */
+    pThis->spurious_vec = 0xff;
 
     /*
      * Register the APIC.
@@ -1755,7 +1755,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     Assert(pDevIns->pDevHlp->pfnAPICRegister);
-    rc = pDevIns->pDevHlp->pfnAPICRegister(pDevIns, &ApicReg, &pData->pApicHlpR3);
+    rc = pDevIns->pDevHlp->pfnAPICRegister(pDevIns, &ApicReg, &pThis->pApicHlpR3);
     if (RT_FAILURE(rc))
     {
         AssertLogRelMsgFailed(("APICRegister -> %Vrc\n", rc));
@@ -1778,31 +1778,31 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                 && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
         {
             LogRel(("Activating Local APIC\n"));
-            pData->pApicHlpR3->pfnChangeFeature(pDevIns, true);
+            pThis->pApicHlpR3->pfnChangeFeature(pDevIns, true);
         }
     }
 
     /*
      * Register the MMIO range.
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, pData->apicbase & ~0xfff, 0x1000, pData,
+    rc = PDMDevHlpMMIORegister(pDevIns, pThis->apicbase & ~0xfff, 0x1000, pThis,
                                apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
 
     if (fGCEnabled) {
-        pData->pApicHlpRC = pData->pApicHlpR3->pfnGetRCHelpers(pDevIns);
+        pThis->pApicHlpRC = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterGC(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
+        rc = PDMDevHlpMMIORegisterGC(pDevIns, pThis->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
 
     if (fR0Enabled) {
-        pData->pApicHlpR0 = pData->pApicHlpR3->pfnGetR0Helpers(pDevIns);
+        pThis->pApicHlpR0 = pThis->pApicHlpR3->pfnGetR0Helpers(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, pThis->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
@@ -1812,17 +1812,17 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Create the APIC timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicTimer,
-                                "APIC Timer", &pData->CTX_SUFF(pTimer));
+                                "APIC Timer", &pThis->CTX_SUFF(pTimer));
     if (RT_FAILURE(rc))
         return rc;
-    pData->pTimerR0 = TMTimerR0Ptr(pData->CTX_SUFF(pTimer));
-    pData->pTimerRC = TMTimerRCPtr(pData->CTX_SUFF(pTimer));
+    pThis->pTimerR0 = TMTimerR0Ptr(pThis->CTX_SUFF(pTimer));
+    pThis->pTimerRC = TMTimerRCPtr(pThis->CTX_SUFF(pTimer));
 
     /*
      * Saved state.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */,
-                              sizeof(*pData), NULL, apicSaveExec, NULL, NULL, apicLoadExec, NULL);
+                              sizeof(*pThis), NULL, apicSaveExec, NULL, NULL, apicLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1830,11 +1830,11 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOReadGC,     STAMTYPE_COUNTER,  "/PDM/APIC/MMIOReadGC",   STAMUNIT_OCCURENCES, "Number of APIC MMIO reads in GC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOReadHC,     STAMTYPE_COUNTER,  "/PDM/APIC/MMIOReadHC",   STAMUNIT_OCCURENCES, "Number of APIC MMIO reads in HC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOWriteGC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteGC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in GC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOWriteHC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteHC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in HC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pData->StatClearedActiveIrq, STAMTYPE_COUNTER,  "/PDM/APIC/Masked/ActiveIRQ",  STAMUNIT_OCCURENCES, "Number of cleared irqs.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOReadGC,     STAMTYPE_COUNTER,  "/PDM/APIC/MMIOReadGC",   STAMUNIT_OCCURENCES, "Number of APIC MMIO reads in GC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOReadHC,     STAMTYPE_COUNTER,  "/PDM/APIC/MMIOReadHC",   STAMUNIT_OCCURENCES, "Number of APIC MMIO reads in HC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOWriteGC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteGC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in GC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOWriteHC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteHC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in HC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveIrq, STAMTYPE_COUNTER,  "/PDM/APIC/Masked/ActiveIRQ",  STAMUNIT_OCCURENCES, "Number of cleared irqs.");
 #endif
 
     return VINF_SUCCESS;

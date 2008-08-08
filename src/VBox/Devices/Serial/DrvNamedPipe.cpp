@@ -102,17 +102,17 @@ typedef struct DRVNAMEDPIPE
 static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, size_t *cbRead)
 {
     int rc = VINF_SUCCESS;
-    PDRVNAMEDPIPE pData = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
-    LogFlow(("%s: pvBuf=%p cbRead=%#x (%s)\n", __FUNCTION__, pvBuf, cbRead, pData->pszLocation));
+    PDRVNAMEDPIPE pThis = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
+    LogFlow(("%s: pvBuf=%p cbRead=%#x (%s)\n", __FUNCTION__, pvBuf, cbRead, pThis->pszLocation));
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
+    if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
     {
         DWORD cbReallyRead;
-        pData->OverlappedRead.Offset     = 0;
-        pData->OverlappedRead.OffsetHigh = 0;
-        if (!ReadFile(pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pData->OverlappedRead))
+        pThis->OverlappedRead.Offset     = 0;
+        pThis->OverlappedRead.OffsetHigh = 0;
+        if (!ReadFile(pThis->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pThis->OverlappedRead))
         {
             DWORD uError = GetLastError();
 
@@ -132,7 +132,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                     uError = 0;
 
                     /* Wait for incoming bytes. */
-                    if (GetOverlappedResult(pData->NamedPipe, &pData->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
+                    if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
                         uError = GetLastError();
                 }
 
@@ -143,20 +143,20 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
 
         if (RT_FAILURE(rc))
         {
-            Log(("drvNamedPipeRead: FileRead returned %Vrc fShutdown=%d\n", rc, pData->fShutdown));
-            if (    !pData->fShutdown
+            Log(("drvNamedPipeRead: FileRead returned %Vrc fShutdown=%d\n", rc, pThis->fShutdown));
+            if (    !pThis->fShutdown
                 &&  (   rc == VERR_EOF
                      || rc == VERR_BROKEN_PIPE
                     )
                )
 
             {
-                FlushFileBuffers(pData->NamedPipe);
-                DisconnectNamedPipe(pData->NamedPipe);
-                if (!pData->fIsServer)
+                FlushFileBuffers(pThis->NamedPipe);
+                DisconnectNamedPipe(pThis->NamedPipe);
+                if (!pThis->fIsServer)
                 {
-                    CloseHandle(pData->NamedPipe);
-                    pData->NamedPipe = INVALID_HANDLE_VALUE;
+                    CloseHandle(pThis->NamedPipe);
+                    pThis->NamedPipe = INVALID_HANDLE_VALUE;
                 }
                 /* pretend success */
                 rc = VINF_SUCCESS;
@@ -166,14 +166,14 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         *cbRead = (size_t)cbReallyRead;
     }
 #else /* !RT_OS_WINDOWS */
-    if (pData->LocalSocket != NIL_RTSOCKET)
+    if (pThis->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbReallyRead;
-        cbReallyRead = recv(pData->LocalSocket, pvBuf, *cbRead, 0);
+        cbReallyRead = recv(pThis->LocalSocket, pvBuf, *cbRead, 0);
         if (cbReallyRead == 0)
         {
-            RTSOCKET tmp = pData->LocalSocket;
-            pData->LocalSocket = NIL_RTSOCKET;
+            RTSOCKET tmp = pThis->LocalSocket;
+            pThis->LocalSocket = NIL_RTSOCKET;
             close(tmp);
         }
         else if (cbReallyRead == -1)
@@ -199,17 +199,17 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
 static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite)
 {
     int rc = VINF_SUCCESS;
-    PDRVNAMEDPIPE pData = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
-    LogFlow(("%s: pvBuf=%p cbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, cbWrite, pData->pszLocation));
+    PDRVNAMEDPIPE pThis = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
+    LogFlow(("%s: pvBuf=%p cbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, cbWrite, pThis->pszLocation));
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
+    if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
     {
         unsigned cbWritten;
-        pData->OverlappedWrite.Offset     = 0;
-        pData->OverlappedWrite.OffsetHigh = 0;
-        if (!WriteFile(pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->OverlappedWrite))
+        pThis->OverlappedWrite.Offset     = 0;
+        pThis->OverlappedWrite.OffsetHigh = 0;
+        if (!WriteFile(pThis->NamedPipe, pvBuf, *cbWrite, NULL, &pThis->OverlappedWrite))
         {
             DWORD uError = GetLastError();
 
@@ -228,7 +228,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             else
             {
                 /* Wait for the write to complete. */
-                if (GetOverlappedResult(pData->NamedPipe, &pData->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
+                if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
                     uError = GetLastError();
             }
         }
@@ -240,12 +240,12 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             if (    rc == VERR_EOF
                 ||  rc == VERR_BROKEN_PIPE)
             {
-                FlushFileBuffers(pData->NamedPipe);
-                DisconnectNamedPipe(pData->NamedPipe);
-                if (!pData->fIsServer)
+                FlushFileBuffers(pThis->NamedPipe);
+                DisconnectNamedPipe(pThis->NamedPipe);
+                if (!pThis->fIsServer)
                 {
-                    CloseHandle(pData->NamedPipe);
-                    pData->NamedPipe = INVALID_HANDLE_VALUE;
+                    CloseHandle(pThis->NamedPipe);
+                    pThis->NamedPipe = INVALID_HANDLE_VALUE;
                 }
                 /* pretend success */
                 rc = VINF_SUCCESS;
@@ -255,14 +255,14 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         *cbWrite = cbWritten;
     }
 #else /* !RT_OS_WINDOWS */
-    if (pData->LocalSocket != NIL_RTSOCKET)
+    if (pThis->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbWritten;
-        cbWritten = send(pData->LocalSocket, pvBuf, *cbWrite, 0);
+        cbWritten = send(pThis->LocalSocket, pvBuf, *cbWrite, 0);
         if (cbWritten == 0)
         {
-            RTSOCKET tmp = pData->LocalSocket;
-            pData->LocalSocket = NIL_RTSOCKET;
+            RTSOCKET tmp = pThis->LocalSocket;
+            pThis->LocalSocket = NIL_RTSOCKET;
             close(tmp);
         }
         else if (cbWritten == -1)
@@ -315,14 +315,14 @@ static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, PDM
  */
 static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PDRVNAMEDPIPE   pData = (PDRVNAMEDPIPE)pvUser;
+    PDRVNAMEDPIPE   pThis = (PDRVNAMEDPIPE)pvUser;
     int             rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
-    HANDLE          NamedPipe = pData->NamedPipe;
+    HANDLE          NamedPipe = pThis->NamedPipe;
     HANDLE          hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 #endif
 
-    while (RT_LIKELY(!pData->fShutdown))
+    while (RT_LIKELY(!pThis->fShutdown))
     {
 #ifdef RT_OS_WINDOWS
         OVERLAPPED overlapped;
@@ -332,7 +332,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 
         BOOL fConnected = ConnectNamedPipe(NamedPipe, &overlapped);
         if (    !fConnected
-            &&  !pData->fShutdown)
+            &&  !pThis->fShutdown)
         {
             DWORD hrc = GetLastError();
 
@@ -341,48 +341,48 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                 DWORD dummy;
 
                 hrc = 0;
-                if (GetOverlappedResult(pData->NamedPipe, &overlapped, &dummy, TRUE) == FALSE)
+                if (GetOverlappedResult(pThis->NamedPipe, &overlapped, &dummy, TRUE) == FALSE)
                     hrc = GetLastError();
 
             }
 
-            if (pData->fShutdown)
+            if (pThis->fShutdown)
                 break;
 
             if (hrc == ERROR_PIPE_CONNECTED)
             {
-                RTSemEventWait(pData->ListenSem, 250);
+                RTSemEventWait(pThis->ListenSem, 250);
             }
             else if (hrc != ERROR_SUCCESS)
             {
                 rc = RTErrConvertFromWin32(hrc);
-                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
+                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
                 break;
             }
         }
 #else /* !RT_OS_WINDOWS */
-        if (listen(pData->LocalSocketServer, 0) == -1)
+        if (listen(pThis->LocalSocketServer, 0) == -1)
         {
             rc = RTErrConvertFromErrno(errno);
-            LogRel(("NamedPipe%d: listen failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
+            LogRel(("NamedPipe%d: listen failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
             break;
         }
-        int s = accept(pData->LocalSocketServer, NULL, NULL);
+        int s = accept(pThis->LocalSocketServer, NULL, NULL);
         if (s == -1)
         {
             rc = RTErrConvertFromErrno(errno);
-            LogRel(("NamedPipe%d: accept failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
+            LogRel(("NamedPipe%d: accept failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
             break;
         }
         else
         {
-            if (pData->LocalSocket != NIL_RTSOCKET)
+            if (pThis->LocalSocket != NIL_RTSOCKET)
             {
-                LogRel(("NamedPipe%d: only single connection supported\n", pData->pDrvIns->iInstance));
+                LogRel(("NamedPipe%d: only single connection supported\n", pThis->pDrvIns->iInstance));
                 close(s);
             }
             else
-                pData->LocalSocket = s;
+                pThis->LocalSocket = s;
         }
 #endif /* !RT_OS_WINDOWS */
     }
@@ -390,7 +390,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 #ifdef RT_OS_WINDOWS
     CloseHandle(hEvent);
 #endif
-    pData->ListenThread = NIL_RTTHREAD;
+    pThis->ListenThread = NIL_RTTHREAD;
     return VINF_SUCCESS;
 }
 
@@ -409,27 +409,27 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 {
     int rc;
     char *pszLocation = NULL;
-    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->pszLocation                  = NULL;
-    pData->fIsServer                    = false;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->pszLocation                  = NULL;
+    pThis->fIsServer                    = false;
 #ifdef RT_OS_WINDOWS
-    pData->NamedPipe                    = INVALID_HANDLE_VALUE;
+    pThis->NamedPipe                    = INVALID_HANDLE_VALUE;
 #else /* !RT_OS_WINDOWS */
-    pData->LocalSocketServer            = NIL_RTSOCKET;
-    pData->LocalSocket                  = NIL_RTSOCKET;
+    pThis->LocalSocketServer            = NIL_RTSOCKET;
+    pThis->LocalSocket                  = NIL_RTSOCKET;
 #endif /* !RT_OS_WINDOWS */
-    pData->ListenThread                 = NIL_RTTHREAD;
-    pData->fShutdown                    = false;
+    pThis->ListenThread                 = NIL_RTTHREAD;
+    pThis->fShutdown                    = false;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNamedPipeQueryInterface;
     /* IStream */
-    pData->IStream.pfnRead              = drvNamedPipeRead;
-    pData->IStream.pfnWrite             = drvNamedPipeWrite;
+    pThis->IStream.pfnRead              = drvNamedPipeRead;
+    pThis->IStream.pfnWrite             = drvNamedPipeWrite;
 
     /*
      * Read the configuration.
@@ -446,7 +446,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Vrc.\n", rc));
         goto out;
     }
-    pData->pszLocation = pszLocation;
+    pThis->pszLocation = pszLocation;
 
     bool fIsServer;
     rc = CFGMR3QueryBool(pCfgHandle, "IsServer", &fIsServer);
@@ -455,24 +455,24 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Vrc.\n", rc));
         goto out;
     }
-    pData->fIsServer = fIsServer;
+    pThis->fIsServer = fIsServer;
 
 #ifdef RT_OS_WINDOWS
     if (fIsServer)
     {
-        HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
+        HANDLE hPipe = CreateNamedPipe(pThis->pszLocation, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
         if (hPipe == INVALID_HANDLE_VALUE)
         {
             rc = RTErrConvertFromWin32(GetLastError());
-            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pData->pDrvIns->iInstance));
+            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pThis->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to create named pipe %s"), pDrvIns->iInstance, pszLocation);
         }
-        pData->NamedPipe = hPipe;
+        pThis->NamedPipe = hPipe;
 
-        rc = RTSemEventCreate(&pData->ListenSem);
+        rc = RTSemEventCreate(&pThis->ListenSem);
         AssertRC(rc);
 
-        rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
+        rc = RTThreadCreate(&pThis->ListenThread, drvNamedPipeListenLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
         if RT_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread"), pDrvIns->iInstance);
 
@@ -480,20 +480,20 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     else
     {
         /* Connect to the named pipe. */
-        HANDLE hPipe = CreateFile(pData->pszLocation, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+        HANDLE hPipe = CreateFile(pThis->pszLocation, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
         if (hPipe == INVALID_HANDLE_VALUE)
         {
             rc = RTErrConvertFromWin32(GetLastError());
-            LogRel(("NamedPipe%d: CreateFile failed rc=%Vrc\n", pData->pDrvIns->iInstance));
+            LogRel(("NamedPipe%d: CreateFile failed rc=%Vrc\n", pThis->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
         }
-        pData->NamedPipe = hPipe;
+        pThis->NamedPipe = hPipe;
     }
 
-    memset(&pData->OverlappedWrite, 0, sizeof(pData->OverlappedWrite));
-    memset(&pData->OverlappedRead, 0, sizeof(pData->OverlappedRead));
-    pData->OverlappedWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    pData->OverlappedRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    memset(&pThis->OverlappedWrite, 0, sizeof(pThis->OverlappedWrite));
+    memset(&pThis->OverlappedRead, 0, sizeof(pThis->OverlappedRead));
+    pThis->OverlappedWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    pThis->OverlappedRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 #else /* !RT_OS_WINDOWS */
     int s;
     struct sockaddr_un addr;
@@ -511,8 +511,8 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         RTFileDelete(pszLocation);
         if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) == -1)
             return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, N_("NamedPipe#%d failed to bind to local socket %s"), pDrvIns->iInstance, pszLocation);
-        pData->LocalSocketServer = s;
-        rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
+        pThis->LocalSocketServer = s;
+        rc = RTThreadCreate(&pThis->ListenThread, drvNamedPipeListenLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
         if RT_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread"), pDrvIns->iInstance);
     }
@@ -521,7 +521,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         /* Connect to the local socket. */
         if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) == -1)
             return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, N_("NamedPipe#%d failed to connect to local socket %s"), pDrvIns->iInstance, pszLocation);
-        pData->LocalSocket = s;
+        pThis->LocalSocket = s;
     }
 #endif /* !RT_OS_WINDOWS */
 
@@ -549,18 +549,18 @@ out:
  */
 static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
-    if (pData->ListenThread)
+    if (pThis->ListenThread)
     {
-        RTThreadWait(pData->ListenThread, 250, NULL);
-        if (pData->ListenThread != NIL_RTTHREAD)
+        RTThreadWait(pThis->ListenThread, 250, NULL);
+        if (pThis->ListenThread != NIL_RTTHREAD)
             LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
     }
 
-    if (pData->pszLocation)
-        MMR3HeapFree(pData->pszLocation);
+    if (pThis->pszLocation)
+        MMR3HeapFree(pThis->pszLocation);
 }
 
 
@@ -573,43 +573,43 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
-    pData->fShutdown = true;
+    pThis->fShutdown = true;
 
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
+    if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
     {
-        if (pData->fIsServer)
+        if (pThis->fIsServer)
         {
-            FlushFileBuffers(pData->NamedPipe);
-            DisconnectNamedPipe(pData->NamedPipe);
+            FlushFileBuffers(pThis->NamedPipe);
+            DisconnectNamedPipe(pThis->NamedPipe);
         }
 
-        CloseHandle(pData->NamedPipe);
-        pData->NamedPipe = INVALID_HANDLE_VALUE;
-        CloseHandle(pData->OverlappedRead.hEvent);
-        CloseHandle(pData->OverlappedWrite.hEvent);
+        CloseHandle(pThis->NamedPipe);
+        pThis->NamedPipe = INVALID_HANDLE_VALUE;
+        CloseHandle(pThis->OverlappedRead.hEvent);
+        CloseHandle(pThis->OverlappedWrite.hEvent);
     }
-    if (pData->fIsServer)
+    if (pThis->fIsServer)
     {
         /* Wake up listen thread */
-        RTSemEventSignal(pData->ListenSem);
-        RTSemEventDestroy(pData->ListenSem);
+        RTSemEventSignal(pThis->ListenSem);
+        RTSemEventDestroy(pThis->ListenSem);
     }
 #else /* !RT_OS_WINDOWS */
-    if (pData->fIsServer)
+    if (pThis->fIsServer)
     {
-        if (pData->LocalSocketServer != NIL_RTSOCKET)
-            close(pData->LocalSocketServer);
-        if (pData->pszLocation)
-            RTFileDelete(pData->pszLocation);
+        if (pThis->LocalSocketServer != NIL_RTSOCKET)
+            close(pThis->LocalSocketServer);
+        if (pThis->pszLocation)
+            RTFileDelete(pThis->pszLocation);
     }
     else
     {
-        if (pData->LocalSocket != NIL_RTSOCKET)
-            close(pData->LocalSocket);
+        if (pThis->LocalSocket != NIL_RTSOCKET)
+            close(pThis->LocalSocket);
     }
 #endif /* !RT_OS_WINDOWS */
 }

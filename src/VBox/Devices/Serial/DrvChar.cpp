@@ -93,13 +93,13 @@ typedef struct DRVCHAR
 static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVCHAR    pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR    pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_CHAR:
-            return &pData->IChar;
+            return &pThis->IChar;
         default:
             return NULL;
     }
@@ -111,29 +111,29 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, PDMINTER
 /** @copydoc PDMICHAR::pfnWrite */
 static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite)
 {
-    PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface);
+    PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface);
     const char *pBuffer = (const char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
     for (uint32_t i=0;i<cbWrite;i++)
     {
-        uint32_t idx = pData->iSendQueueHead;
+        uint32_t idx = pThis->iSendQueueHead;
 
-        pData->aSendQueue[idx] = pBuffer[i];
+        pThis->aSendQueue[idx] = pBuffer[i];
         idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
-        STAM_COUNTER_INC(&pData->StatBytesWritten);
-        ASMAtomicXchgU32(&pData->iSendQueueHead, idx);
+        STAM_COUNTER_INC(&pThis->StatBytesWritten);
+        ASMAtomicXchgU32(&pThis->iSendQueueHead, idx);
     }
-    RTSemEventSignal(pData->SendSem);
+    RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
 }
 
 /** @copydoc PDMICHAR::pfnSetParameters */
 static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
-    /*PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface); - unused*/
+    /*PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface); - unused*/
 
     LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
     return VINF_SUCCESS;
@@ -151,30 +151,30 @@ static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, unsigned Bps
  */
 static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PDRVCHAR pData = (PDRVCHAR)pvUser;
+    PDRVCHAR pThis = (PDRVCHAR)pvUser;
 
     for(;;)
     {
-        int rc = RTSemEventWait(pData->SendSem, RT_INDEFINITE_WAIT);
+        int rc = RTSemEventWait(pThis->SendSem, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
             break;
 
         /*
          * Write the character to the attached stream (if present).
          */
-        if (    !pData->fShutdown
-            &&  pData->pDrvStream)
+        if (    !pThis->fShutdown
+            &&  pThis->pDrvStream)
         {
-            while (pData->iSendQueueTail != pData->iSendQueueHead)
+            while (pThis->iSendQueueTail != pThis->iSendQueueHead)
             {
                 size_t cbProcessed = 1;
 
-                rc = pData->pDrvStream->pfnWrite(pData->pDrvStream, &pData->aSendQueue[pData->iSendQueueTail], &cbProcessed);
+                rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &pThis->aSendQueue[pThis->iSendQueueTail], &cbProcessed);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(cbProcessed);
-                    pData->iSendQueueTail++;
-                    pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
+                    pThis->iSendQueueTail++;
+                    pThis->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
                 }
                 else if (rc == VERR_TIMEOUT)
                 {
@@ -193,7 +193,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
             break;
     }
 
-    pData->SendThread = NIL_RTTHREAD;
+    pThis->SendThread = NIL_RTTHREAD;
 
     return VINF_SUCCESS;
 }
@@ -209,22 +209,22 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
  */
 static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PDRVCHAR pData = (PDRVCHAR)pvUser;
+    PDRVCHAR pThis = (PDRVCHAR)pvUser;
     char aBuffer[256], *pBuffer;
     size_t cbRemaining, cbProcessed;
     int rc;
 
     cbRemaining = 0;
     pBuffer = aBuffer;
-    while (!pData->fShutdown)
+    while (!pThis->fShutdown)
     {
         if (!cbRemaining)
         {
             /* Get block of data from stream driver. */
-            if (pData->pDrvStream)
+            if (pThis->pDrvStream)
             {
                 cbRemaining = sizeof(aBuffer);
-                rc = pData->pDrvStream->pfnRead(pData->pDrvStream, aBuffer, &cbRemaining);
+                rc = pThis->pDrvStream->pfnRead(pThis->pDrvStream, aBuffer, &cbRemaining);
                 if (RT_FAILURE(rc))
                 {
                     LogFlow(("Read failed with %Vrc\n", rc));
@@ -242,13 +242,13 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
         {
             /* Send data to guest. */
             cbProcessed = cbRemaining;
-            rc = pData->pDrvCharPort->pfnNotifyRead(pData->pDrvCharPort, pBuffer, &cbProcessed);
+            rc = pThis->pDrvCharPort->pfnNotifyRead(pThis->pDrvCharPort, pBuffer, &cbProcessed);
             if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
                 pBuffer += cbProcessed;
                 cbRemaining -= cbProcessed;
-                STAM_COUNTER_ADD(&pData->StatBytesRead, cbProcessed);
+                STAM_COUNTER_ADD(&pThis->StatBytesRead, cbProcessed);
             }
             else if (rc == VERR_TIMEOUT)
             {
@@ -264,7 +264,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
         }
     }
 
-    pData->ReceiveThread = NIL_RTTHREAD;
+    pThis->ReceiveThread = NIL_RTTHREAD;
 
     return VINF_SUCCESS;
 }
@@ -299,26 +299,26 @@ static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool Request
  */
 static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVCHAR pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
      * Init basic data members and interfaces.
      */
-    pData->ReceiveThread                    = NIL_RTTHREAD;
-    pData->fShutdown                        = false;
+    pThis->ReceiveThread                    = NIL_RTTHREAD;
+    pThis->fShutdown                        = false;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvCharQueryInterface;
     /* IChar. */
-    pData->IChar.pfnWrite                   = drvCharWrite;
-    pData->IChar.pfnSetParameters           = drvCharSetParameters;
-    pData->IChar.pfnSetModemLines           = drvCharSetModemLines;
+    pThis->IChar.pfnWrite                   = drvCharWrite;
+    pThis->IChar.pfnSetParameters           = drvCharSetParameters;
+    pThis->IChar.pfnSetModemLines           = drvCharSetModemLines;
 
     /*
      * Get the ICharPort interface of the above driver/device.
      */
-    pData->pDrvCharPort = (PPDMICHARPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_CHAR_PORT);
-    if (!pData->pDrvCharPort)
+    pThis->pDrvCharPort = (PPDMICHARPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_CHAR_PORT);
+    if (!pThis->pDrvCharPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Char#%d has no char port interface above"), pDrvIns->iInstance);
 
     /*
@@ -328,24 +328,24 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
     if (RT_FAILURE(rc))
         return rc; /* Don't call PDMDrvHlpVMSetError here as we assume that the driver already set an appropriate error */
-    pData->pDrvStream = (PPDMISTREAM)pBase->pfnQueryInterface(pBase, PDMINTERFACE_STREAM);
-    if (!pData->pDrvStream)
+    pThis->pDrvStream = (PPDMISTREAM)pBase->pfnQueryInterface(pBase, PDMINTERFACE_STREAM);
+    if (!pThis->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
-    rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharRecv");
+    rc = RTThreadCreate(&pThis->ReceiveThread, drvCharReceiveLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharRecv");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
 
-    rc = RTSemEventCreate(&pData->SendSem);
+    rc = RTSemEventCreate(&pThis->SendSem);
     AssertRC(rc);
 
-    rc = RTThreadCreate(&pData->SendThread, drvCharSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharSend");
+    rc = RTThreadCreate(&pThis->SendThread, drvCharSendLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharSend");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
 
 
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -361,29 +361,29 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
  */
 static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVCHAR     pData = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
+    PDRVCHAR     pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
-    pData->fShutdown = true;
-    if (pData->ReceiveThread)
+    pThis->fShutdown = true;
+    if (pThis->ReceiveThread)
     {
-        RTThreadWait(pData->ReceiveThread, 1000, NULL);
-        if (pData->ReceiveThread != NIL_RTTHREAD)
+        RTThreadWait(pThis->ReceiveThread, 1000, NULL);
+        if (pThis->ReceiveThread != NIL_RTTHREAD)
             LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
     }
 
     /* Empty the send queue */
-    pData->iSendQueueTail = pData->iSendQueueHead = 0;
+    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
 
-    RTSemEventSignal(pData->SendSem);
-    RTSemEventDestroy(pData->SendSem);
-    pData->SendSem = NIL_RTSEMEVENT;
+    RTSemEventSignal(pThis->SendSem);
+    RTSemEventDestroy(pThis->SendSem);
+    pThis->SendSem = NIL_RTSEMEVENT;
 
-    if (pData->SendThread)
+    if (pThis->SendThread)
     {
-        RTThreadWait(pData->SendThread, 1000, NULL);
-        if (pData->SendThread != NIL_RTTHREAD)
+        RTThreadWait(pThis->SendThread, 1000, NULL);
+        if (pThis->SendThread != NIL_RTTHREAD)
             LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
     }
 }

@@ -101,26 +101,26 @@ static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMI
  */
 static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->File                         = NIL_RTFILE;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->File                         = NIL_RTFILE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvRawImageQueryInterface;
     /* IMedia */
-    pData->IMedia.pfnRead               = drvRawImageRead;
-    pData->IMedia.pfnWrite              = drvRawImageWrite;
-    pData->IMedia.pfnFlush              = drvRawImageFlush;
-    pData->IMedia.pfnGetSize            = drvRawImageGetSize;
-    pData->IMedia.pfnGetUuid            = drvRawImageGetUuid;
-    pData->IMedia.pfnIsReadOnly         = drvRawImageIsReadOnly;
-    pData->IMedia.pfnBiosGetPCHSGeometry = drvRawImageBiosGetPCHSGeometry;
-    pData->IMedia.pfnBiosSetPCHSGeometry = drvRawImageBiosSetPCHSGeometry;
-    pData->IMedia.pfnBiosGetLCHSGeometry = drvRawImageBiosGetLCHSGeometry;
-    pData->IMedia.pfnBiosSetLCHSGeometry = drvRawImageBiosSetLCHSGeometry;
+    pThis->IMedia.pfnRead               = drvRawImageRead;
+    pThis->IMedia.pfnWrite              = drvRawImageWrite;
+    pThis->IMedia.pfnFlush              = drvRawImageFlush;
+    pThis->IMedia.pfnGetSize            = drvRawImageGetSize;
+    pThis->IMedia.pfnGetUuid            = drvRawImageGetUuid;
+    pThis->IMedia.pfnIsReadOnly         = drvRawImageIsReadOnly;
+    pThis->IMedia.pfnBiosGetPCHSGeometry = drvRawImageBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry = drvRawImageBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry = drvRawImageBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry = drvRawImageBiosSetLCHSGeometry;
 
     /*
      * Read the configuration.
@@ -139,23 +139,23 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Open the image.
      */
-    rc = RTFileOpen(&pData->File, pszName,
+    rc = RTFileOpen(&pThis->File, pszName,
                     RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
-        pData->pszFilename = pszName;
-        pData->fReadOnly = false;
+        pThis->pszFilename = pszName;
+        pThis->fReadOnly = false;
     }
     else
     {
-        rc = RTFileOpen(&pData->File, pszName,
+        rc = RTFileOpen(&pThis->File, pszName,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
-            pData->pszFilename = pszName;
-            pData->fReadOnly = true;
+            pThis->pszFilename = pszName;
+            pThis->fReadOnly = true;
         }
         else
         {
@@ -178,34 +178,34 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
  */
 static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
-    LogFlow(("drvRawImageDestruct: '%s'\n", pData->pszFilename));
+    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+    LogFlow(("drvRawImageDestruct: '%s'\n", pThis->pszFilename));
 
-    if (pData->File != NIL_RTFILE)
+    if (pThis->File != NIL_RTFILE)
     {
-        RTFileClose(pData->File);
-        pData->File = NIL_RTFILE;
+        RTFileClose(pThis->File);
+        pThis->File = NIL_RTFILE;
     }
-    if (pData->pszFilename)
-        MMR3HeapFree(pData->pszFilename);
+    if (pThis->pszFilename)
+        MMR3HeapFree(pThis->pszFilename);
 }
 
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
 {
-    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
-    LogFlow(("drvRawImageGetSize: '%s'\n", pData->pszFilename));
+    PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    LogFlow(("drvRawImageGetSize: '%s'\n", pThis->pszFilename));
 
     uint64_t cbFile;
-    int rc = RTFileGetSize(pData->File, &cbFile);
+    int rc = RTFileGetSize(pThis->File, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        LogFlow(("drvRawImageGetSize: returns %lld (%s)\n", cbFile, pData->pszFilename));
+        LogFlow(("drvRawImageGetSize: returns %lld (%s)\n", cbFile, pThis->pszFilename));
         return cbFile;
     }
 
-    AssertMsgFailed(("Error querying Raw image file size, rc=%Vrc. (%s)\n", rc, pData->pszFilename));
+    AssertMsgFailed(("Error querying Raw image file size, rc=%Vrc. (%s)\n", rc, pThis->pszFilename));
     return 0;
 }
 
@@ -245,32 +245,32 @@ static DECLCALLBACK(int) drvRawImageBiosSetLCHSGeometry(PPDMIMEDIA pInterface, P
  */
 static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
-    LogFlow(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pData->pszFilename));
+    PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    LogFlow(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pThis->pszFilename));
 
-    Assert(pData->File);
+    Assert(pThis->File);
     Assert(pvBuf);
 
     /*
      * Seek to the position and read.
      */
-    int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileRead(pData->File, pvBuf, cbRead, NULL);
+        rc = RTFileRead(pThis->File, pvBuf, cbRead, NULL);
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
                   "%16.*Vhxd\n",
-                  off, pvBuf, cbRead, pData->pszFilename,
+                  off, pvBuf, cbRead, pThis->pszFilename,
                   cbRead, pvBuf));
         }
         else
             AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
-                             pData->File, pvBuf, cbRead, rc, off, pData->pszFilename));
+                             pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pData->File, off, rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
     LogFlow(("drvRawImageRead: returns %Vrc\n", rc));
     return rc;
 }
@@ -279,32 +279,32 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
 /** @copydoc PDMIMEDIA::pfnWrite */
 static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
-    LogFlow(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n", off, pvBuf, cbWrite, pData->pszFilename));
+    PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    LogFlow(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n", off, pvBuf, cbWrite, pThis->pszFilename));
 
-    Assert(pData->File);
+    Assert(pThis->File);
     Assert(pvBuf);
 
     /*
      * Seek to the position and write.
      */
-    int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileWrite(pData->File, pvBuf, cbWrite, NULL);
+        rc = RTFileWrite(pThis->File, pvBuf, cbWrite, NULL);
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n"
                   "%16.*Vhxd\n",
-                  off, pvBuf, cbWrite, pData->pszFilename,
+                  off, pvBuf, cbWrite, pThis->pszFilename,
                   cbWrite, pvBuf));
         }
         else
             AssertMsgFailed(("RTFileWrite(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
-                             pData->File, pvBuf, cbWrite, rc, off, pData->pszFilename));
+                             pThis->File, pvBuf, cbWrite, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pData->File, off, rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
     LogFlow(("drvRawImageWrite: returns %Vrc\n", rc));
     return rc;
 }
@@ -313,11 +313,11 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
 /** @copydoc PDMIMEDIA::pfnFlush */
 static DECLCALLBACK(int) drvRawImageFlush(PPDMIMEDIA pInterface)
 {
-    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
-    LogFlow(("drvRawImageFlush: (%s)\n", pData->pszFilename));
+    PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    LogFlow(("drvRawImageFlush: (%s)\n", pThis->pszFilename));
 
-    Assert(pData->File != NIL_RTFILE);
-    int rc = RTFileFlush(pData->File);
+    Assert(pThis->File != NIL_RTFILE);
+    int rc = RTFileFlush(pThis->File);
     LogFlow(("drvRawImageFlush: returns %Vrc\n", rc));
     return rc;
 }
@@ -334,8 +334,8 @@ static DECLCALLBACK(int) drvRawImageGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
 static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 {
-    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
-    return pData->fReadOnly;
+    PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    return pThis->fReadOnly;
 }
 
 
@@ -351,13 +351,13 @@ static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_MEDIA:
-            return &pData->IMedia;
+            return &pThis->IMedia;
         default:
             return NULL;
     }

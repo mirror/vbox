@@ -55,8 +55,8 @@
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) vdiGetSize(PPDMIMEDIA pInterface)
 {
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    uint64_t cb = VDIDiskGetSize(pData);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    uint64_t cb = VDIDiskGetSize(pThis);
     LogFlow(("vdiGetSize: returns %#llx (%llu)\n", cb, cb));
     return cb;
 }
@@ -93,8 +93,8 @@ static DECLCALLBACK(int) vdiBiosSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDI
  */
 static DECLCALLBACK(int) vdiBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskGetLCHSGeometry(pData, pLCHSGeometry);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    int rc = VDIDiskGetLCHSGeometry(pThis, pLCHSGeometry);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
@@ -112,8 +112,8 @@ static DECLCALLBACK(int) vdiBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIA
  */
 static DECLCALLBACK(int) vdiBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskSetLCHSGeometry(pData, pLCHSGeometry);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    int rc = VDIDiskSetLCHSGeometry(pThis, pLCHSGeometry);
     LogFlow(("%s: returns %Vrc (%d,%d,%d)\n", __FUNCTION__, rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
@@ -127,8 +127,8 @@ static DECLCALLBACK(int) vdiBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDI
 static DECLCALLBACK(int) vdiRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
     LogFlow(("vdiRead: off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskRead(pData, off, pvBuf, cbRead);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    int rc = VDIDiskRead(pThis, off, pvBuf, cbRead);
     if (RT_SUCCESS(rc))
         Log2(("vdiRead: off=%#llx pvBuf=%p cbRead=%d\n"
               "%.*Vhxd\n",
@@ -146,11 +146,11 @@ static DECLCALLBACK(int) vdiRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBu
 static DECLCALLBACK(int) vdiWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     LogFlow(("vdiWrite: off=%#llx pvBuf=%p cbWrite=%d\n", off, pvBuf, cbWrite));
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
     Log2(("vdiWrite: off=%#llx pvBuf=%p cbWrite=%d\n"
           "%.*Vhxd\n",
           off, pvBuf, cbWrite, cbWrite, pvBuf));
-    int rc = VDIDiskWrite(pData, off, pvBuf, cbWrite);
+    int rc = VDIDiskWrite(pThis, off, pvBuf, cbWrite);
     LogFlow(("vdiWrite: returns %Vrc\n", rc));
     return rc;
 }
@@ -164,8 +164,8 @@ static DECLCALLBACK(int) vdiWrite(PPDMIMEDIA pInterface, uint64_t off, const voi
 static DECLCALLBACK(int) vdiFlush(PPDMIMEDIA pInterface)
 {
     LogFlow(("vdiFlush:\n"));
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    VDIFlushImage(pData->pLast);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    VDIFlushImage(pThis->pLast);
     int rc = VINF_SUCCESS;
     LogFlow(("vdiFlush: returns %Vrc\n", rc));
     return rc;
@@ -175,8 +175,8 @@ static DECLCALLBACK(int) vdiFlush(PPDMIMEDIA pInterface)
 /** @copydoc PDMIMEDIA::pfnGetUuid */
 static DECLCALLBACK(int) vdiGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskGetImageUuid(pData, 0, pUuid);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    int rc = VDIDiskGetImageUuid(pThis, 0, pUuid);
     LogFlow(("vdiGetUuid: returns %Vrc ({%Vuuid})\n", rc, pUuid));
     return rc;
 }
@@ -185,9 +185,9 @@ static DECLCALLBACK(int) vdiGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
 static DECLCALLBACK(bool) vdiIsReadOnly(PPDMIMEDIA pInterface)
 {
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    LogFlow(("vdiIsReadOnly: returns %d\n", VDIDiskIsReadOnly(pData)));
-    return VDIDiskIsReadOnly(pData);
+    PVDIDISK pThis = PDMIMEDIA_2_VDIDISK(pInterface);
+    LogFlow(("vdiIsReadOnly: returns %d\n", VDIDiskIsReadOnly(pThis)));
+    return VDIDiskIsReadOnly(pThis);
 }
 
 
@@ -203,13 +203,13 @@ static DECLCALLBACK(bool) vdiIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) vdiQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pThis = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_MEDIA:
-            return &pData->IMedia;
+            return &pThis->IMedia;
         default:
             return NULL;
     }
@@ -226,10 +226,10 @@ static DECLCALLBACK(void) vdiResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiSuspend:\n"));
 #if 1 //#ifdef DEBUG_dmik
-    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
-    if (!(pData->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
+    PVDIDISK pThis = PDMINS_2_DATA(pDrvIns, PVDIDISK);
+    if (!(pThis->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
     {
-        int rc = vdiChangeImageMode(pData->pLast, false);
+        int rc = vdiChangeImageMode(pThis->pLast, false);
         AssertRC(rc);
     }
 #endif
@@ -247,10 +247,10 @@ static DECLCALLBACK(void) vdiSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiSuspend:\n"));
 #if 1 // #ifdef DEBUG_dmik
-    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
-    if (!(pData->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
+    PVDIDISK pThis = PDMINS_2_DATA(pDrvIns, PVDIDISK);
+    if (!(pThis->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
     {
-        int rc = vdiChangeImageMode(pData->pLast, true);
+        int rc = vdiChangeImageMode(pThis->pLast, true);
         AssertRC(rc);
     }
 #endif
@@ -268,8 +268,8 @@ static DECLCALLBACK(void) vdiSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) vdiDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiDestruct:\n"));
-    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
-    VDIDiskCloseAllImages(pData);
+    PVDIDISK pThis = PDMINS_2_DATA(pDrvIns, PVDIDISK);
+    VDIDiskCloseAllImages(pThis);
 }
 
 
@@ -286,7 +286,7 @@ static DECLCALLBACK(void) vdiDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     LogFlow(("vdiConstruct:\n"));
-    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pThis = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     char *pszName;      /**< The path of the disk image file. */
     bool fReadOnly;     /**< True if the media is readonly. */
     bool fHonorZeroWrites = false;
@@ -295,21 +295,21 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
      * Init the static parts.
      */
     pDrvIns->IBase.pfnQueryInterface    = vdiQueryInterface;
-    pData->pDrvIns = pDrvIns;
+    pThis->pDrvIns = pDrvIns;
 
-    vdiInitVDIDisk(pData);
+    vdiInitVDIDisk(pThis);
 
     /* IMedia */
-    pData->IMedia.pfnRead               = vdiRead;
-    pData->IMedia.pfnWrite              = vdiWrite;
-    pData->IMedia.pfnFlush              = vdiFlush;
-    pData->IMedia.pfnGetSize            = vdiGetSize;
-    pData->IMedia.pfnGetUuid            = vdiGetUuid;
-    pData->IMedia.pfnIsReadOnly         = vdiIsReadOnly;
-    pData->IMedia.pfnBiosGetPCHSGeometry = vdiBiosGetPCHSGeometry;
-    pData->IMedia.pfnBiosSetPCHSGeometry = vdiBiosSetPCHSGeometry;
-    pData->IMedia.pfnBiosGetLCHSGeometry = vdiBiosGetLCHSGeometry;
-    pData->IMedia.pfnBiosSetLCHSGeometry = vdiBiosSetLCHSGeometry;
+    pThis->IMedia.pfnRead               = vdiRead;
+    pThis->IMedia.pfnWrite              = vdiWrite;
+    pThis->IMedia.pfnFlush              = vdiFlush;
+    pThis->IMedia.pfnGetSize            = vdiGetSize;
+    pThis->IMedia.pfnGetUuid            = vdiGetUuid;
+    pThis->IMedia.pfnIsReadOnly         = vdiIsReadOnly;
+    pThis->IMedia.pfnBiosGetPCHSGeometry = vdiBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry = vdiBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry = vdiBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry = vdiBiosSetLCHSGeometry;
 
     /*
      * Validate configuration and find the great to the level of umpteen grandparent.
@@ -370,11 +370,11 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         /*
          * Open the image.
          */
-        rc = VDIDiskOpenImage(pData, pszName, fReadOnly ? VDI_OPEN_FLAGS_READONLY
+        rc = VDIDiskOpenImage(pThis, pszName, fReadOnly ? VDI_OPEN_FLAGS_READONLY
                                                         : VDI_OPEN_FLAGS_NORMAL);
         if (RT_SUCCESS(rc))
             Log(("vdiConstruct: %d - Opened '%s' in %s mode\n",
-                 iLevel, pszName, VDIDiskIsReadOnly(pData) ? "read-only" : "read-write"));
+                 iLevel, pszName, VDIDiskIsReadOnly(pThis) ? "read-only" : "read-write"));
         else
             AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
         MMR3HeapFree(pszName);
@@ -386,7 +386,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
     /* If any of the images has the flag set, handle zero writes like normal. */
     if (RT_SUCCESS(rc))
-        pData->fHonorZeroWrites = fHonorZeroWrites;
+        pThis->fHonorZeroWrites = fHonorZeroWrites;
 
     /* On failure, vdiDestruct will be called, so no need to clean up here. */
 

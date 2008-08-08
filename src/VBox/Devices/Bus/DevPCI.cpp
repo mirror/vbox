@@ -995,22 +995,22 @@ static DECLCALLBACK(int) pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciD
 static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     uint32_t    i;
-    PPCIBUS     pData = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    PPCIGLOBALS pGlobals = PCIBUS_2_PCIGLOBALS(pData);
+    PPCIBUS     pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    PPCIGLOBALS pGlobals = PCIBUS_2_PCIGLOBALS(pThis);
 
     /*
      * Bus state data.
      */
-    SSMR3PutU32(pSSMHandle, pData->uConfigReg);
+    SSMR3PutU32(pSSMHandle, pThis->uConfigReg);
     SSMR3PutBool(pSSMHandle, pGlobals->fUseIoApic);
     SSMR3PutU32(pSSMHandle, ~0);        /* separator */
 
     /*
      * Iterate all the devices.
      */
-    for (i = 0; i < RT_ELEMENTS(pData->devices); i++)
+    for (i = 0; i < RT_ELEMENTS(pThis->devices); i++)
     {
-        PPCIDEVICE pDev = pData->devices[i];
+        PPCIDEVICE pDev = pThis->devices[i];
         if (pDev)
         {
             int rc;
@@ -1034,8 +1034,8 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PPCIBUS     pData = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    PPCIGLOBALS  pGlobals = PCIBUS_2_PCIGLOBALS(pData);
+    PPCIBUS     pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    PPCIGLOBALS  pGlobals = PCIBUS_2_PCIGLOBALS(pThis);
     uint32_t    u32;
     uint32_t    i;
     int         rc;
@@ -1052,7 +1052,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
     /*
      * Bus state data.
      */
-    SSMR3GetU32(pSSMHandle, &pData->uConfigReg);
+    SSMR3GetU32(pSSMHandle, &pThis->uConfigReg);
     if (u32Version > 1)
         SSMR3GetBool(pSSMHandle, &pGlobals->fUseIoApic);
 
@@ -1077,7 +1077,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             return rc;
         if (u32 == (uint32_t)~0)
             break;
-        if (    u32 >= RT_ELEMENTS(pData->devices)
+        if (    u32 >= RT_ELEMENTS(pThis->devices)
             ||  u32 < i)
         {
             AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
@@ -1087,10 +1087,10 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         /* skip forward to the device checking that no new devices are present. */
         for (; i < u32; i++)
         {
-            if (pData->devices[i])
+            if (pThis->devices[i])
             {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name,
-                        PCIDevGetVendorId(pData->devices[i]), PCIDevGetDeviceId(pData->devices[i])));
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pThis->devices[i]->name,
+                        PCIDevGetVendorId(pThis->devices[i]), PCIDevGetDeviceId(pThis->devices[i])));
                 if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
                     AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
             }
@@ -1103,7 +1103,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             return rc;
 
         /* check that it's still around. */
-        pDev = pData->devices[i];
+        pDev = pThis->devices[i];
         if (!pDev)
         {
             LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,

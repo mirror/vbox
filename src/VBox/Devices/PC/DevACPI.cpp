@@ -1465,13 +1465,13 @@ static DECLCALLBACK(int) acpi_load_state (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
  */
 static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
-    ACPIState *pData = (ACPIState*)((uintptr_t)pInterface - RT_OFFSETOF(ACPIState, IBase));
+    ACPIState *pThis = (ACPIState*)((uintptr_t)pInterface - RT_OFFSETOF(ACPIState, IBase));
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
-            return &pData->IBase;
+            return &pThis->IBase;
         case PDMINTERFACE_ACPI_PORT:
-            return &pData->IACPIPort;
+            return &pThis->IACPIPort;
         default:
             return NULL;
     }

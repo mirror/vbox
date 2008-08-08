@@ -672,17 +672,17 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 /**
  * Calculate and update the standard CMOS checksum.
  *
- * @param   pData       Pointer to the RTC state data.
+ * @param   pThis       Pointer to the RTC state data.
  */
-static void rtcCalcCRC(RTCState *pData)
+static void rtcCalcCRC(RTCState *pThis)
 {
     uint16_t u16;
     unsigned i;
 
     for (i = RTC_CRC_START, u16 = 0; i <= RTC_CRC_LAST; i++)
-        u16 += pData->cmos_data[i];
-    pData->cmos_data[RTC_CRC_LOW] = u16 & 0xff;
-    pData->cmos_data[RTC_CRC_HIGH] = (u16 >> 8) & 0xff;
+        u16 += pThis->cmos_data[i];
+    pThis->cmos_data[RTC_CRC_LOW] = u16 & 0xff;
+    pThis->cmos_data[RTC_CRC_HIGH] = (u16 >> 8) & 0xff;
 }
 
 
@@ -696,15 +696,15 @@ static void rtcCalcCRC(RTCState *pData)
  */
 static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
-    RTCState *pData = PDMINS_2_DATA(pDevIns, RTCState *);
-    if (iReg < RT_ELEMENTS(pData->cmos_data))
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
-        pData->cmos_data[iReg] = u8Value;
+        pThis->cmos_data[iReg] = u8Value;
 
         /* does it require checksum update? */
         if (    iReg >= RTC_CRC_START
             &&  iReg <= RTC_CRC_LAST)
-            rtcCalcCRC(pData);
+            rtcCalcCRC(pThis);
 
         return VINF_SUCCESS;
     }
@@ -723,10 +723,10 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
  */
 static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
-    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
-    if (iReg < RT_ELEMENTS(pData->cmos_data))
+    RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
-        *pu8Value = pData->cmos_data[iReg];
+        *pu8Value = pThis->cmos_data[iReg];
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("iReg=%d\n", iReg));
@@ -740,7 +740,7 @@ static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t 
 static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 {
     /** @todo this should be (re)done at power on if we didn't load a state... */
-    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
+    RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
     /*
      * Set the CMOS date/time.
@@ -748,7 +748,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     RTTIMESPEC  Now;
     PDMDevHlpUTCNow(pDevIns, &Now);
     RTTIME Time;
-    if (pData->fUTC)
+    if (pThis->fUTC)
         RTTimeExplode(&Time, &Now);
     else
         RTTimeLocalExplode(&Time, &Now);
@@ -764,18 +764,18 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     Tm.tm_min  = Time.u8Minute;
     Tm.tm_sec  = Time.u8Second;
 
-    rtc_set_date(pData, &Tm);
+    rtc_set_date(pThis, &Tm);
 
-    int iYear = to_bcd(pData, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based */
-    rtc_set_memory(pData, 0x32, iYear);                                     /* 32h - Century Byte (BCD value for the century */
-    rtc_set_memory(pData, 0x37, iYear);                                     /* 37h - (IBM PS/2) Date Century Byte */
+    int iYear = to_bcd(pThis, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based */
+    rtc_set_memory(pThis, 0x32, iYear);                                     /* 32h - Century Byte (BCD value for the century */
+    rtc_set_memory(pThis, 0x37, iYear);                                     /* 37h - (IBM PS/2) Date Century Byte */
 
     /*
      * Recalculate the checksum just in case.
      */
-    rtcCalcCRC(pData);
+    rtcCalcCRC(pThis);
 
-    Log(("CMOS: \n%16.128Vhxd\n", pData->cmos_data));
+    Log(("CMOS: \n%16.128Vhxd\n", pThis->cmos_data));
     return VINF_SUCCESS;
 }
 
@@ -811,7 +811,7 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    RTCState   *pData = PDMINS_2_DATA(pDevIns, RTCState *);
+    RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
     int         rc;
     uint8_t     u8Irq;
     uint16_t    u16Base;
@@ -851,40 +851,40 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     Log(("RTC: Irq=%#x Base=%#x fGCEnabled=%RTbool fR0Enabled=%RTbool\n", u8Irq, u16Base, fGCEnabled, fR0Enabled));
 
 
-    pData->pDevInsR3            = pDevIns;
-    pData->pDevInsR0            = PDMDEVINS_2_R0PTR(pDevIns);
-    pData->pDevInsRC            = PDMDEVINS_2_RCPTR(pDevIns);
-    pData->irq                  = u8Irq;
-    pData->cmos_data[RTC_REG_A] = 0x26;
-    pData->cmos_data[RTC_REG_B] = 0x02;
-    pData->cmos_data[RTC_REG_C] = 0x00;
-    pData->cmos_data[RTC_REG_D] = 0x80;
-    pData->RtcReg.u32Version    = PDM_RTCREG_VERSION;
-    pData->RtcReg.pfnRead       = rtcCMOSRead;
-    pData->RtcReg.pfnWrite      = rtcCMOSWrite;
+    pThis->pDevInsR3            = pDevIns;
+    pThis->pDevInsR0            = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC            = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->irq                  = u8Irq;
+    pThis->cmos_data[RTC_REG_A] = 0x26;
+    pThis->cmos_data[RTC_REG_B] = 0x02;
+    pThis->cmos_data[RTC_REG_C] = 0x00;
+    pThis->cmos_data[RTC_REG_D] = 0x80;
+    pThis->RtcReg.u32Version    = PDM_RTCREG_VERSION;
+    pThis->RtcReg.pfnRead       = rtcCMOSRead;
+    pThis->RtcReg.pfnWrite      = rtcCMOSWrite;
 
     /*
      * Create timers, arm them, register I/O Ports and save state.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerR3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pThis->pPeriodicTimerR3);
     if (RT_FAILURE(rc))
         return rc;
-    pData->pPeriodicTimerR0 = TMTimerR0Ptr(pData->pPeriodicTimerR3);
-    pData->pPeriodicTimerRC = TMTimerRCPtr(pData->pPeriodicTimerR3);
+    pThis->pPeriodicTimerR0 = TMTimerR0Ptr(pThis->pPeriodicTimerR3);
+    pThis->pPeriodicTimerRC = TMTimerRCPtr(pThis->pPeriodicTimerR3);
 
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond,   "MC146818 RTC/CMOS - Second", &pData->pSecondTimerR3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond,   "MC146818 RTC/CMOS - Second", &pThis->pSecondTimerR3);
     if (RT_FAILURE(rc))
         return rc;
-    pData->pSecondTimerR0 = TMTimerR0Ptr(pData->pSecondTimerR3);
-    pData->pSecondTimerRC = TMTimerRCPtr(pData->pSecondTimerR3);
+    pThis->pSecondTimerR0 = TMTimerR0Ptr(pThis->pSecondTimerR3);
+    pThis->pSecondTimerRC = TMTimerRCPtr(pThis->pSecondTimerR3);
 
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2,  "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2R3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2,  "MC146818 RTC/CMOS - Second2", &pThis->pSecondTimer2R3);
     if (RT_FAILURE(rc))
         return rc;
-    pData->pSecondTimer2R0 = TMTimerR0Ptr(pData->pSecondTimer2R3);
-    pData->pSecondTimer2RC = TMTimerRCPtr(pData->pSecondTimer2R3);
-    pData->next_second_time = TMTimerGet(pData->CTX_SUFF(pSecondTimer2)) + (TMTimerGetFreq(pData->CTX_SUFF(pSecondTimer2)) * 99) / 100;
-    rc = TMTimerSet(pData->CTX_SUFF(pSecondTimer2), pData->next_second_time);
+    pThis->pSecondTimer2R0 = TMTimerR0Ptr(pThis->pSecondTimer2R3);
+    pThis->pSecondTimer2RC = TMTimerRCPtr(pThis->pSecondTimer2R3);
+    pThis->next_second_time = TMTimerGet(pThis->CTX_SUFF(pSecondTimer2)) + (TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer2)) * 99) / 100;
+    rc = TMTimerSet(pThis->CTX_SUFF(pSecondTimer2), pThis->next_second_time);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -904,7 +904,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pData),
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pThis),
                               NULL, rtcSaveExec, NULL,
                               NULL, rtcLoadExec, NULL);
     if (RT_FAILURE(rc))
@@ -913,7 +913,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register ourselves as the RTC/CMOS with PDM.
      */
-    rc = pDevIns->pDevHlp->pfnRTCRegister(pDevIns, &pData->RtcReg, &pData->pRtcHlpR3);
+    rc = pDevIns->pDevHlp->pfnRTCRegister(pDevIns, &pThis->RtcReg, &pThis->pRtcHlpR3);
     if (RT_FAILURE(rc))
         return rc;
 

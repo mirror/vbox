@@ -112,12 +112,12 @@ DECLCALLBACK(bool) sniffer_run_out (HWVoiceOut *hw, void *pvSamples, unsigned cS
 
 static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio)
 {
-    AUDIOSNIFFERSTATE *pData = IAUDIOSNIFFERPORT_2_AUDIOSNIFFERSTATE(pInterface);
+    AUDIOSNIFFERSTATE *pThis = IAUDIOSNIFFERPORT_2_AUDIOSNIFFERSTATE(pInterface);
 
-    Assert(g_pData == pData);
+    Assert(g_pData == pThis);
 
-    pData->fEnabled = fEnable;
-    pData->fKeepHostAudio = fKeepHostAudio;
+    pThis->fEnabled = fEnable;
+    pThis->fKeepHostAudio = fKeepHostAudio;
 
     return VINF_SUCCESS;
 }
@@ -132,14 +132,14 @@ static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEn
  */
 static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
-    AUDIOSNIFFERSTATE *pData = (AUDIOSNIFFERSTATE *)((uintptr_t)pInterface - RT_OFFSETOF(AUDIOSNIFFERSTATE, Base));
+    AUDIOSNIFFERSTATE *pThis = (AUDIOSNIFFERSTATE *)((uintptr_t)pInterface - RT_OFFSETOF(AUDIOSNIFFERSTATE, Base));
 
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
-            return &pData->Base;
+            return &pThis->Base;
         case PDMINTERFACE_AUDIO_SNIFFER_PORT:
-            return &pData->Port;
+            return &pThis->Port;
         default:
             return NULL;
     }
@@ -162,7 +162,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
 {
     int rc = VINF_SUCCESS;
 
-    AUDIOSNIFFERSTATE *pData = PDMINS_2_DATA(pDevIns, AUDIOSNIFFERSTATE *);
+    AUDIOSNIFFERSTATE *pThis = PDMINS_2_DATA(pDevIns, AUDIOSNIFFERSTATE *);
 
     Assert(iInstance == 0);
 
@@ -177,29 +177,29 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
     /*
      * Initialize data.
      */
-    pData->fEnabled = false;
-    pData->fKeepHostAudio = true;
-    pData->pDrv = NULL;
+    pThis->fEnabled = false;
+    pThis->fKeepHostAudio = true;
+    pThis->pDrv = NULL;
 
     /*
      * Interfaces
      */
     /* Base */
-    pData->Base.pfnQueryInterface = iface_QueryInterface;
+    pThis->Base.pfnQueryInterface = iface_QueryInterface;
 
     /* Audio Sniffer port */
-    pData->Port.pfnSetup = iface_Setup;
+    pThis->Port.pfnSetup = iface_Setup;
 
     /*
      * Get the corresponding connector interface
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "Audio Sniffer Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Base, &pThis->pDrvBase, "Audio Sniffer Port");
 
     if (RT_SUCCESS(rc))
     {
-        pData->pDrv = (PPDMIAUDIOSNIFFERCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR);
+        pThis->pDrv = (PPDMIAUDIOSNIFFERCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR);
 
-        if (!pData->pDrv)
+        if (!pThis->pDrv)
         {
             AssertMsgFailed(("LUN #0 doesn't have a Audio Sniffer connector interface rc=%Vrc\n", rc));
             rc = VERR_PDM_MISSING_INTERFACE;
@@ -218,12 +218,12 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
     if (RT_SUCCESS (rc))
     {
         /* Save PDM device instance data for future reference. */
-        pData->pDevIns = pDevIns;
+        pThis->pDevIns = pDevIns;
 
         /* Save the pointer to created instance in the global variable, so other
          * functions could reach it.
          */
-        g_pData = pData;
+        g_pData = pThis;
     }
 
     return rc;

@@ -151,9 +151,9 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
  */
 static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
+    PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     PDRVMOUSEQUEUEITEM    pItem = (PDRVMOUSEQUEUEITEM)pItemCore;
-    int rc = pData->pUpPort->pfnPutEvent(pData->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->fButtonStates);
+    int rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->fButtonStates);
     return RT_SUCCESS(rc);
 }
 
@@ -168,8 +168,8 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
  */
 static DECLCALLBACK(void) drvMouseQueuePowerOn(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
-    pData->fInactive = false;
+    PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
+    pThis->fInactive = false;
 }
 
 
@@ -181,7 +181,7 @@ static DECLCALLBACK(void) drvMouseQueuePowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueReset(PPDMDRVINS pDrvIns)
 {
-    //PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    //PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
 }
 
@@ -194,8 +194,8 @@ static DECLCALLBACK(void)  drvMouseQueueReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueSuspend(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
-    pData->fInactive = true;
+    PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
+    pThis->fInactive = true;
 }
 
 
@@ -207,8 +207,8 @@ static DECLCALLBACK(void)  drvMouseQueueSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvMouseQueueResume(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
-    pData->fInactive = false;
+    PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
+    pThis->fInactive = false;
 }
 
 
@@ -219,8 +219,8 @@ static DECLCALLBACK(void)  drvMouseQueueResume(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvMouseQueuePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVMOUSEQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
-    pData->fInactive = true;
+    PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
+    pThis->fInactive = true;
 }
 
 
