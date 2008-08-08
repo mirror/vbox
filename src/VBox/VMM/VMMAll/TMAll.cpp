@@ -388,13 +388,13 @@ TMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
          */
         TMTIMERSTATE enmState = pTimer->enmState;
         Log2(("TMTimerDestroy: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
-              pTimer, tmTimerState(enmState), HCSTRING(pTimer->pszDesc), cRetries));
+              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED:
                 if (!VM_IS_EMT(pTimer->CTXALLSUFF(pVM)))
                 {
-                    AssertMsgFailed(("Attempted timer destruction from other thread while expire pending! (%s)\n", HCSTRING(pTimer->pszDesc)));
+                    AssertMsgFailed(("Attempted timer destruction from other thread while expire pending! (%s)\n", R3STRING(pTimer->pszDesc)));
                     return VERR_INVALID_PARAMETER;
                 }
                 /* fall thru */
@@ -425,7 +425,7 @@ TMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
 
             case TMTIMERSTATE_PENDING_DESTROY:
             case TMTIMERSTATE_PENDING_STOP_DESTROY:
-                AssertMsgFailed(("How many times do you think you can destroy the same timer... (%s)\n", HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("How many times do you think you can destroy the same timer... (%s)\n", R3STRING(pTimer->pszDesc)));
                 return VERR_INVALID_PARAMETER;
 
             case TMTIMERSTATE_PENDING_RESCHEDULE:
@@ -456,15 +456,15 @@ TMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
              * Invalid states.
              */
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_INVALID_STATE;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_UNKNOWN_STATE;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, HCSTRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     return VERR_INTERNAL_ERROR;
 }
 
@@ -489,7 +489,7 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
          */
         TMTIMERSTATE    enmState = pTimer->enmState;
         Log2(("TMTimerSet: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%llu\n",
-              pTimer, tmTimerState(enmState), HCSTRING(pTimer->pszDesc), cRetries, u64Expire));
+              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire));
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED:
@@ -565,15 +565,15 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
             case TMTIMERSTATE_PENDING_DESTROY:
             case TMTIMERSTATE_PENDING_STOP_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_INVALID_STATE;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_UNKNOWN_STATE;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, HCSTRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     STAM_PROFILE_STOP(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerSet), a);
     return VERR_INTERNAL_ERROR;
 }
@@ -695,7 +695,7 @@ TMDECL(int) TMTimerStop(PTMTIMER pTimer)
          */
         TMTIMERSTATE    enmState = pTimer->enmState;
         Log2(("TMTimerStop: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
-              pTimer, tmTimerState(enmState), HCSTRING(pTimer->pszDesc), cRetries));
+              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED:
@@ -752,15 +752,15 @@ TMDECL(int) TMTimerStop(PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_DESTROY:
             case TMTIMERSTATE_PENDING_STOP_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_INVALID_STATE;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_UNKNOWN_STATE;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, HCSTRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     STAM_PROFILE_STOP(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerStop), a);
     return VERR_INTERNAL_ERROR;
 }
@@ -797,7 +797,7 @@ TMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
             return ~(uint64_t)0;
     }
     //Log2(("TMTimerGet: returns %llu (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-    //      u64, pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+    //      u64, pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
     return u64;
 }
 
@@ -1080,14 +1080,14 @@ TMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_STOP:
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                      pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
                 return ~(uint64_t)0;
 
             case TMTIMERSTATE_ACTIVE:
             case TMTIMERSTATE_PENDING_RESCHEDULE:
             case TMTIMERSTATE_PENDING_SCHEDULE:
                 Log2(("TMTimerGetExpire: returns %llu (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer->u64Expire, pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                      pTimer->u64Expire, pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
                 return pTimer->u64Expire;
 
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
@@ -1104,19 +1104,19 @@ TMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_DESTROY:
             case TMTIMERSTATE_PENDING_STOP_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                      pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
                 return ~(uint64_t)0;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return ~(uint64_t)0;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, HCSTRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-          pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+          pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
     return ~(uint64_t)0;
 }
 
@@ -1138,7 +1138,7 @@ TMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
         case TMTIMERSTATE_PENDING_STOP:
         case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
             Log2(("TMTimerIsActive: returns false (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
             return false;
 
         case TMTIMERSTATE_ACTIVE:
@@ -1147,7 +1147,7 @@ TMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
         case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
             Log2(("TMTimerIsActive: returns true (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
             return true;
 
         /*
@@ -1156,12 +1156,12 @@ TMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
         case TMTIMERSTATE_PENDING_DESTROY:
         case TMTIMERSTATE_PENDING_STOP_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertMsgFailed(("Invalid timer state %s (%s)\n", tmTimerState(enmState), HCSTRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Invalid timer state %s (%s)\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
             Log2(("TMTimerIsActive: returns false (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), HCSTRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
             return false;
         default:
-            AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, HCSTRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
             return false;
     }
 }
@@ -1423,7 +1423,7 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
          * Do the scheduling.
          */
         Log2(("tmTimerQueueSchedule: pTimer=%p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, HCSTRING(pTimer->pszDesc)));
+              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, R3STRING(pTimer->pszDesc)));
         tmTimerQueueScheduleOne(pQueue, pTimer);
         Log2(("tmTimerQueueSchedule: new %s\n", tmTimerState(pTimer->enmState)));
     } /* foreach timer in current schedule batch. */

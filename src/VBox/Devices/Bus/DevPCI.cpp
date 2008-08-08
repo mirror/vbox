@@ -538,19 +538,19 @@ static void apic_set_irq(PPCIBUS pBus, PCIDevice *pci_dev, int irq_num1, int lev
         apic_irq = irq_num + 0x10;
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
         Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d\n",
-              HCSTRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
+              R3STRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
 
         if ((level & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
             *p = (*p & ~(1 << shift));
             apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
             Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
-                  HCSTRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
+                  R3STRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
             pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
         }
     } else {
         Log3(("apic_set_irq: %s: irq_num1=%d level=%d acpi_irq=%d\n",
-              HCSTRING(pci_dev->name), irq_num1, level, acpi_irq));
+              R3STRING(pci_dev->name), irq_num1, level, acpi_irq));
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), acpi_irq, level);
     }
 }
@@ -651,7 +651,7 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
         pic_level |= pGlobals->acpi_irq_level;
 
     Log3(("piix3_set_irq: %s: iLevel=%d iIrq=%d pic_irq=%d pic_level=%d\n",
-          HCSTRING(pPciDev->name), iLevel, iIrq, pic_irq, pic_level));
+          R3STRING(pPciDev->name), iLevel, iIrq, pic_irq, pic_level));
     pBus->CTX_SUFF(pPciHlp)->pfnIsaSetIrq(pBus->CTX_SUFF(pDevIns), pic_irq, pic_level);
 
     /** @todo optimize pci irq flip-flop some rainy day. */
