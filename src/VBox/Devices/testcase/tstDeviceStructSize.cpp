@@ -29,41 +29,43 @@
 
 #define VBOX_DEVICE_STRUCT_TESTCASE
 #undef LOG_GROUP
-#include "Bus/DevPCI.cpp"
+#include "../Bus/DevPCI.cpp"
 #undef LOG_GROUP
-#include "Graphics/DevVGA.cpp"
+#include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
-#include "Input/DevPS2.cpp"
+#include "../Input/DevPS2.cpp"
 #undef LOG_GROUP
-#include "Network/DevPCNet.cpp"
+#include "../Network/DevPCNet.cpp"
 #undef LOG_GROUP
-#include "PC/DevACPI.cpp"
+#include "../PC/DevACPI.cpp"
 #undef LOG_GROUP
-#include "PC/DevPIC.cpp"
+#include "../PC/DevPIC.cpp"
 #undef LOG_GROUP
-#include "PC/DevPit-i8254.cpp"
+#include "../PC/DevPit-i8254.cpp"
 #undef LOG_GROUP
-#include "PC/DevRTC.cpp"
+#include "../PC/DevRTC.cpp"
 #undef LOG_GROUP
-#include "PC/DevAPIC.cpp"
+#include "../PC/DevAPIC.cpp"
 #undef LOG_GROUP
-#include "Storage/DevATA.cpp"
+#include "../Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB
 # undef LOG_GROUP
-# include "USB/DevOHCI.cpp"
-# include "USB/DevEHCI.cpp"
+# include "../USB/DevOHCI.cpp"
+# include "../USB/DevEHCI.cpp"
 #endif
 #undef LOG_GROUP
-#include "VMMDev/VBoxDev.cpp"
+#include "../VMMDev/VBoxDev.cpp"
 #undef LOG_GROUP
-#include "Serial/DevSerial.cpp"
+#include "../Parallel/DevParallel.cpp"
+#undef LOG_GROUP
+#include "../Serial/DevSerial.cpp"
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
-# include "Storage/DevAHCI.cpp"
+# include "../Storage/DevAHCI.cpp"
 #endif
 #ifdef VBOX_WITH_E1000
 # undef LOG_GROUP
-# include "Network/DevE1000.cpp"
+# include "../Network/DevE1000.cpp"
 #endif
 
 #include <stdio.h>
