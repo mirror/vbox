@@ -256,9 +256,9 @@ int main()
     GEN_CHECK_OFF(PDM, Pic.pDevInsR0);
     GEN_CHECK_OFF(PDM, Pic.pfnSetIrqR0);
     GEN_CHECK_OFF(PDM, Pic.pfnGetInterruptR0);
-    GEN_CHECK_OFF(PDM, Pic.pDevInsGC);
-    GEN_CHECK_OFF(PDM, Pic.pfnSetIrqGC);
-    GEN_CHECK_OFF(PDM, Pic.pfnGetInterruptGC);
+    GEN_CHECK_OFF(PDM, Pic.pDevInsRC);
+    GEN_CHECK_OFF(PDM, Pic.pfnSetIrqRC);
+    GEN_CHECK_OFF(PDM, Pic.pfnGetInterruptRC);
     GEN_CHECK_OFF(PDM, Apic);
     GEN_CHECK_OFF(PDM, Apic.pDevInsR3);
     GEN_CHECK_OFF(PDM, Apic.pfnGetInterruptR3);

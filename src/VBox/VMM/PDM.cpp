@@ -264,11 +264,11 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * The registered PIC.
      */
-    if (pVM->pdm.s.Pic.pDevInsGC)
+    if (pVM->pdm.s.Pic.pDevInsRC)
     {
-        pVM->pdm.s.Pic.pDevInsGC            += offDelta;
-        pVM->pdm.s.Pic.pfnSetIrqGC          += offDelta;
-        pVM->pdm.s.Pic.pfnGetInterruptGC    += offDelta;
+        pVM->pdm.s.Pic.pDevInsRC            += offDelta;
+        pVM->pdm.s.Pic.pfnSetIrqRC          += offDelta;
+        pVM->pdm.s.Pic.pfnGetInterruptRC    += offDelta;
     }
 
     /*
