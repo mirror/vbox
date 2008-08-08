@@ -260,15 +260,14 @@ $(PATH_BIN)/VirtualBox-SDK.zip:            \
 		$(PATH_TARGET)/archive/sdk \
 		$(VBOX_VERSION_STAMP)      \
 		$(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING)
-	$(call MSG_L1,Making separate SDK delivery $@) 
-	$(QUIET)cd $(PATH_TARGET)/archive && \
-          zip -r $@ sdk >/dev/null
-	$(QUIET)rm -rf  $(PATH_TARGET)/archive/sdk
+	$(call MSG_L1,Making separate SDK delivery $@)
+	$(QUIET)$(REDIRECT) -C $(PATH_TARGET)/archive -- zip -r9 $@ sdk
+	$(QUIET)$(RM) -Rf -- $(PATH_TARGET)/archive/sdk
 
 $(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING): $(PATH_TARGET)/archive
 	$(call MSG_INST_SYM,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)rm -rf $@
+	$(QUIET)$(RM) -Rf -- $@
 	$(QUIET)$(LN_SYMLINK) $< $@
 
 $(PATH_BIN)/VBoxAddIF.sh: VBoxAddIF.sh $(VBOX_VERSION_STAMP)
