@@ -35,14 +35,15 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 
-#include "Builtins.h"
-#include "Builtins2.h"
+#include "../Builtins.h"
+#include "../Builtins2.h"
 #include "DevPcBios.h"
 
 
-/*
+/** @page pg_devbios_cmos_assign    CMOS Assignments (BIOS)
+ *
  * The BIOS uses a CMOS to store configuration data.
- * It is currently used as followed:
+ * It is currently used as follows:
  *
  *     Base memory:
  *          0x15
@@ -86,6 +87,7 @@
  *     Fourth Sata HDD:
  *          0x58 - 0x5f
  */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -284,7 +286,7 @@ static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
     if (!pBlock)
         return VERR_INVALID_PARAMETER;
     rc = pBlock->pfnRead(pBlock, 0, aMBR, sizeof(aMBR));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     /* Test MBR magic number. */
     if (aMBR[510] != 0x55 || aMBR[511] != 0xaa)
@@ -389,12 +391,12 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
         pBlock = (PPDMIBLOCK)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK);
         /* No LCHS geometry, autodetect and set. */
         rc = biosGuessDiskLCHS(pBlock, &LCHSGeometry);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /* Try if PCHS geometry works, otherwise fall back. */
             rc = pHardDisk->pfnGetPCHSGeometry(pHardDisk, &LCHSGeometry);
         }
-        if (   VBOX_FAILURE(rc)
+        if (   RT_FAILURE(rc)
             || LCHSGeometry.cCylinders == 0
             || LCHSGeometry.cCylinders > 1024
             || LCHSGeometry.cHeads == 0
@@ -449,9 +451,9 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
  *
  * @todo r=bird: This is a rather silly function since the conversion is 1:1.
  */
-static uint8_t getBiosBootCode(PDEVPCBIOS pData, unsigned iOrder)
+static uint8_t getBiosBootCode(PDEVPCBIOS pThis, unsigned iOrder)
 {
-    switch (pData->aenmBootDevice[iOrder])
+    switch (pThis->aenmBootDevice[iOrder])
     {
         case DEVPCBIOSBOOT_NONE:
             return 0;
@@ -464,7 +466,7 @@ static uint8_t getBiosBootCode(PDEVPCBIOS pData, unsigned iOrder)
         case DEVPCBIOSBOOT_LAN:
             return 4;
         default:
-            AssertMsgFailed(("aenmBootDevice[%d]=%d\n", iOrder, pData->aenmBootDevice[iOrder]));
+            AssertMsgFailed(("aenmBootDevice[%d]=%d\n", iOrder, pThis->aenmBootDevice[iOrder]));
             return 0;
     }
 }
@@ -481,7 +483,7 @@ static uint8_t getBiosBootCode(PDEVPCBIOS pData, unsigned iOrder)
  */
 static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
 {
-    PDEVPCBIOS      pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS      pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     uint32_t        u32;
     unsigned        i;
     PVM             pVM = PDMDevHlpGetVM(pDevIns);
@@ -494,21 +496,21 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      * Memory sizes.
      */
     /* base memory. */
-    u32 = pData->cbRam > 640 ? 640 : (uint32_t)pData->cbRam / _1K;
+    u32 = pThis->cbRam > 640 ? 640 : (uint32_t)pThis->cbRam / _1K;
     pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
 
     /* Extended memory, up to 65MB */
-    u32 = pData->cbRam >= 65 * _1M ? 0xffff : ((uint32_t)pData->cbRam - _1M) / _1K;
+    u32 = pThis->cbRam >= 65 * _1M ? 0xffff : ((uint32_t)pThis->cbRam - _1M) / _1K;
     pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
     pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
-    if (pData->cbRam > 16 * _1M)
+    if (pThis->cbRam > 16 * _1M)
     {
-        u32 = (uint32_t)( (pData->cbRam - 16 * _1M) / _64K );
+        u32 = (uint32_t)( (pThis->cbRam - 16 * _1M) / _64K );
         u32 = RT_MIN(u32, 0xffff);
     }
     else
@@ -522,10 +524,10 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      * See rombios.c line ~7215 (int19_function).
      */
 
-    uint8_t reg3d = getBiosBootCode(pData, 0) | (getBiosBootCode(pData, 1) << 4);
-    uint8_t reg38 = /* pcbiosCmosRead(pDevIns, 0x38) | */ getBiosBootCode(pData, 2) << 4;
+    uint8_t reg3d = getBiosBootCode(pThis, 0) | (getBiosBootCode(pThis, 1) << 4);
+    uint8_t reg38 = /* pcbiosCmosRead(pDevIns, 0x38) | */ getBiosBootCode(pThis, 2) << 4;
     /* This is an extension. Bochs BIOS normally supports only 3 boot devices. */
-    uint8_t reg3c = getBiosBootCode(pData, 3) | (pData->uBootDelay << 4);
+    uint8_t reg3c = getBiosBootCode(pThis, 3) | (pThis->uBootDelay << 4);
     pcbiosCmosWrite(pDevIns, 0x3d, reg3d);
     pcbiosCmosWrite(pDevIns, 0x38, reg38);
     pcbiosCmosWrite(pDevIns, 0x3c, reg3c);
@@ -533,16 +535,16 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * PXE debug option.
      */
-    pcbiosCmosWrite(pDevIns, 0x3f, pData->u8PXEDebug);
+    pcbiosCmosWrite(pDevIns, 0x3f, pThis->u8PXEDebug);
 
     /*
      * Floppy drive type.
      */
-    for (i = 0; i < ELEMENTS(apFDs); i++)
+    for (i = 0; i < RT_ELEMENTS(apFDs); i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pVM, pData->pszFDDevice, 0, i, &pBase);
-        if (VBOX_SUCCESS(rc))
+        int rc = PDMR3QueryLun(pVM, pThis->pszFDDevice, 0, i, &pBase);
+        if (RT_SUCCESS(rc))
             apFDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
     }
     u32 = 0;
@@ -585,11 +587,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Harddisks.
      */
-    for (i = 0; i < ELEMENTS(apHDs); i++)
+    for (i = 0; i < RT_ELEMENTS(apHDs); i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pVM, pData->pszHDDevice, 0, i, &pBase);
-        if (VBOX_SUCCESS(rc))
+        int rc = PDMR3QueryLun(pVM, pThis->pszHDDevice, 0, i, &pBase);
+        if (RT_SUCCESS(rc))
             apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
         if (   apHDs[i]
             && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
@@ -640,17 +642,17 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Sata Harddisks.
      */
-    if (pData->pszSataDevice)
+    if (pThis->pszSataDevice)
     {
         /* Clear pointers to IDE controller. */
-        for (i = 0; i < ELEMENTS(apHDs); i++)
+        for (i = 0; i < RT_ELEMENTS(apHDs); i++)
             apHDs[i] = NULL;
 
-        for (i = 0; i < ELEMENTS(apHDs); i++)
+        for (i = 0; i < RT_ELEMENTS(apHDs); i++)
         {
             PPDMIBASE pBase;
-            int rc = PDMR3QueryLun(pVM, pData->pszSataDevice, 0, pData->iSataHDLUN[i], &pBase);
-            if (VBOX_SUCCESS(rc))
+            int rc = PDMR3QueryLun(pVM, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
+            if (RT_SUCCESS(rc))
                 apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
             if (   apHDs[i]
                 && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
@@ -750,7 +752,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         &&  (   Port == 0x402
              || Port == 0x403))
     {
-        PDEVPCBIOS pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
         /* The raw version. */
         switch (u32)
         {
@@ -763,21 +765,21 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         /* The readable, buffered version. */
         if (u32 == '\n' || u32 == '\r')
         {
-            pData->szMsg[pData->iMsg] = '\0';
-            if (pData->iMsg)
-                Log(("pcbios: %s\n", pData->szMsg));
-            pData->iMsg = 0;
+            pThis->szMsg[pThis->iMsg] = '\0';
+            if (pThis->iMsg)
+                Log(("pcbios: %s\n", pThis->szMsg));
+            pThis->iMsg = 0;
         }
         else
         {
-            if (pData->iMsg >= sizeof(pData->szMsg)-1)
+            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
             {
-                pData->szMsg[pData->iMsg] = '\0';
-                Log(("pcbios: %s\n", pData->szMsg));
-                pData->iMsg = 0;
+                pThis->szMsg[pThis->iMsg] = '\0';
+                Log(("pcbios: %s\n", pThis->szMsg));
+                pThis->iMsg = 0;
             }
-            pData->szMsg[pData->iMsg] = (char )u32;
-            pData->szMsg[++pData->iMsg] = '\0';
+            pThis->szMsg[pThis->iMsg] = (char )u32;
+            pThis->szMsg[++pThis->iMsg] = '\0';
         }
         return VINF_SUCCESS;
     }
@@ -788,19 +790,19 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     if (cb == 1 && Port == 0x8900)
     {
         static const unsigned char szShutdown[] = "Shutdown";
-        PDEVPCBIOS pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
-        if (u32 == szShutdown[pData->iShutdown])
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+        if (u32 == szShutdown[pThis->iShutdown])
         {
-            pData->iShutdown++;
-            if (pData->iShutdown == 8)
+            pThis->iShutdown++;
+            if (pThis->iShutdown == 8)
             {
-                pData->iShutdown = 0;
+                pThis->iShutdown = 0;
                 LogRel(("8900h shutdown request.\n"));
                 return PDMDevHlpVMPowerOff(pDevIns);
             }
         }
         else
-            pData->iShutdown = 0;
+            pThis->iShutdown = 0;
         return VINF_SUCCESS;
     }
 
@@ -844,7 +846,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
         rc = CFGMR3QueryStringAlloc(pCfgHandle, name, & variable); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             variable = MMR3HeapStrDup(PDMDevHlpGetVM(pDevIns), MM_TAG_CFGM, default_value); \
-        else if (VBOX_FAILURE(rc)) \
+        else if (RT_FAILURE(rc)) \
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
                     N_("Configuration error: Querying \"" name "\" as a string failed")); \
     } while (0)
@@ -853,7 +855,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
         rc = CFGMR3QueryS32(pCfgHandle, name, & variable); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             variable = default_value; \
-        else if (VBOX_FAILURE(rc)) \
+        else if (RT_FAILURE(rc)) \
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
                     N_("Configuration error: Querying \"" name "\" as a Int failed")); \
     } while (0)
@@ -876,7 +878,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiSystemUuid", &pszDmiSystemUuid);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pszDmiSystemUuid = NULL;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
     READCFGSTR("DmiSystemFamily",    pszDmiSystemFamily,    "Virtual Machine");
@@ -950,7 +952,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     if (pszDmiSystemUuid)
     {
         int rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Invalid UUID for DMI tables specified"));
         uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
@@ -1142,11 +1144,11 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
  */
 static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 {
-    PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosReset:\n"));
 
-    if (pData->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + VBOX_DMI_TABLE_SIZE);
+    if (pThis->u8IOAPIC)
+        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE);
 }
 
 
@@ -1160,34 +1162,34 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
 {
-    PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosDestruct:\n"));
 
     /*
      * Free MM heap pointers.
      */
-    if (pData->pu8PcBios)
+    if (pThis->pu8PcBios)
     {
-        MMR3HeapFree(pData->pu8PcBios);
-        pData->pu8PcBios = NULL;
+        MMR3HeapFree(pThis->pu8PcBios);
+        pThis->pu8PcBios = NULL;
     }
 
-    if (pData->pszPcBiosFile)
+    if (pThis->pszPcBiosFile)
     {
-        MMR3HeapFree(pData->pszPcBiosFile);
-        pData->pszPcBiosFile = NULL;
+        MMR3HeapFree(pThis->pszPcBiosFile);
+        pThis->pszPcBiosFile = NULL;
     }
 
-    if (pData->pu8LanBoot)
+    if (pThis->pu8LanBoot)
     {
-        MMR3HeapFree(pData->pu8LanBoot);
-        pData->pu8LanBoot = NULL;
+        MMR3HeapFree(pThis->pu8LanBoot);
+        pThis->pu8LanBoot = NULL;
     }
 
-    if (pData->pszLanBootFile)
+    if (pThis->pszLanBootFile)
     {
-        MMR3HeapFree(pData->pszLanBootFile);
-        pData->pszLanBootFile = NULL;
+        MMR3HeapFree(pThis->pszLanBootFile);
+        pThis->pszLanBootFile = NULL;
     }
 
     return VINF_SUCCESS;
@@ -1206,7 +1208,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
 {
     char *psz;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, pszParam, &psz);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"%s\" as a string failed"),
                                    pszParam);
@@ -1247,7 +1249,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
 static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     unsigned    i;
-    PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     int         rc;
     int         cb;
 
@@ -1294,55 +1296,53 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init the data.
      */
-    rc = CFGMR3QueryU64(pCfgHandle, "RamSize", &pData->cbRam);
-    if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryU64(pCfgHandle, "RamSize", &pThis->cbRam);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
 
-    rc = CFGMR3QueryU8 (pCfgHandle, "IOAPIC", &pData->u8IOAPIC);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->u8IOAPIC = 1;
-    else if (VBOX_FAILURE (rc))
+    rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
+    if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
-    Assert(ELEMENTS(s_apszBootDevices) == ELEMENTS(pData->aenmBootDevice));
-    for (i = 0; i < ELEMENTS(pData->aenmBootDevice); i++)
+    Assert(RT_ELEMENTS(s_apszBootDevices) == RT_ELEMENTS(pThis->aenmBootDevice));
+    for (i = 0; i < RT_ELEMENTS(pThis->aenmBootDevice); i++)
     {
-        rc = pcbiosBootFromCfg(pDevIns, pCfgHandle, s_apszBootDevices[i], &pData->aenmBootDevice[i]);
-        if (VBOX_FAILURE(rc))
+        rc = pcbiosBootFromCfg(pDevIns, pCfgHandle, s_apszBootDevices[i], &pThis->aenmBootDevice[i]);
+        if (RT_FAILURE(rc))
             return rc;
     }
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "HardDiskDevice", &pData->pszHDDevice);
-    if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "HardDiskDevice", &pThis->pszHDDevice);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"HardDiskDevice\" as a string failed"));
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "FloppyDevice", &pData->pszFDDevice);
-    if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "FloppyDevice", &pThis->pszFDDevice);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FloppyDevice\" as a string failed"));
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "SataHardDiskDevice", &pData->pszSataDevice);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "SataHardDiskDevice", &pThis->pszSataDevice);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->pszSataDevice = NULL;
-    else if (VBOX_FAILURE(rc))
+        pThis->pszSataDevice = NULL;
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"SataHardDiskDevice\" as a string failed"));
 
-    if (pData->pszSataDevice)
+    if (pThis->pszSataDevice)
     {
         static const char * const s_apszSataDisks[] =
             { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
-        Assert(ELEMENTS(s_apszSataDisks) == ELEMENTS(pData->iSataHDLUN));
-        for (i = 0; i < ELEMENTS(pData->iSataHDLUN); i++)
+        Assert(RT_ELEMENTS(s_apszSataDisks) == RT_ELEMENTS(pThis->iSataHDLUN));
+        for (i = 0; i < RT_ELEMENTS(pThis->iSataHDLUN); i++)
         {
-            rc = CFGMR3QueryU32(pCfgHandle, s_apszSataDisks[i], &pData->iSataHDLUN[i]);
+            rc = CFGMR3QueryU32(pCfgHandle, s_apszSataDisks[i], &pThis->iSataHDLUN[i]);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                pData->iSataHDLUN[i] = i;
-            else if (VBOX_FAILURE(rc))
+                pThis->iSataHDLUN[i] = i;
+            else if (RT_FAILURE(rc))
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                            N_("Configuration error: Querying \"%s\" as a string failed"), s_apszSataDisks);
         }
@@ -1352,11 +1352,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x400, 4, NULL, pcbiosIOPortWrite, pcbiosIOPortRead,
                                  NULL, NULL, "Bochs PC BIOS - Panic & Debug");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x8900, 1, NULL, pcbiosIOPortWrite, pcbiosIOPortRead,
                                  NULL, NULL, "Bochs PC BIOS - Shutdown");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1364,7 +1364,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     RTUUID  uuid;
     rc = CFGMR3QueryBytes(pCfgHandle, "UUID", &uuid, sizeof(uuid));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
 
@@ -1373,42 +1373,40 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, VBOX_DMI_TABLE_SIZE, &uuid, pCfgHandle);
-    if (VBOX_FAILURE(rc))
+    rc = pcbiosPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &uuid, pCfgHandle);
+    if (RT_FAILURE(rc))
         return rc;
-    if (pData->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + VBOX_DMI_TABLE_SIZE);
+    if (pThis->u8IOAPIC)
+        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE);
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pData->au8DMIPage, false /* fShadow */, "DMI tables");
-    if (VBOX_FAILURE(rc))
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, false /* fShadow */, "DMI tables");
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Read the PXE debug logging option.
      */
-    rc = CFGMR3QueryU8(pCfgHandle, "PXEDebug", &pData->u8PXEDebug);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->u8PXEDebug = 0;
-    else if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryU8Def(pCfgHandle, "PXEDebug", &pThis->u8PXEDebug, false);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
 
     /*
      * Get the system BIOS ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "BiosRom", &pData->pszPcBiosFile);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "BiosRom", &pThis->pszPcBiosFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pData->pszPcBiosFile = NULL;
+        pThis->pszPcBiosFile = NULL;
         rc = VINF_SUCCESS;
     }
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"BiosRom\" as a string failed"));
-    else if (!*pData->pszPcBiosFile)
+    else if (!*pThis->pszPcBiosFile)
     {
-        MMR3HeapFree(pData->pszPcBiosFile);
-        pData->pszPcBiosFile = NULL;
+        MMR3HeapFree(pThis->pszPcBiosFile);
+        pThis->pszPcBiosFile = NULL;
     }
 
     const uint8_t *pu8PcBiosBinary = NULL;
@@ -1417,52 +1415,52 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Determine the system BIOS ROM size, open specified ROM file in the process.
      */
     RTFILE FilePcBios = NIL_RTFILE;
-    if (pData->pszPcBiosFile)
+    if (pThis->pszPcBiosFile)
     {
-        rc = RTFileOpen(&FilePcBios, pData->pszPcBiosFile,
+        rc = RTFileOpen(&FilePcBios, pThis->pszPcBiosFile,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(FilePcBios, &pData->cbPcBios);
-            if (VBOX_SUCCESS(rc))
+            rc = RTFileGetSize(FilePcBios, &pThis->cbPcBios);
+            if (RT_SUCCESS(rc))
             {
                 /* The following checks should be in sync the AssertReleaseMsg's below. */
-                if (    RT_ALIGN(pData->cbPcBios, _64K) != pData->cbPcBios
-                    ||  pData->cbPcBios > 32 * _64K
-                    ||  pData->cbPcBios < _64K)
+                if (    RT_ALIGN(pThis->cbPcBios, _64K) != pThis->cbPcBios
+                    ||  pThis->cbPcBios > 32 * _64K
+                    ||  pThis->cbPcBios < _64K)
                     rc = VERR_TOO_MUCH_DATA;
             }
         }
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /*
              * In case of failure simply fall back to the built-in BIOS ROM.
              */
-            Log(("pcbiosConstruct: Failed to open system BIOS ROM file '%s', rc=%Vrc!\n", pData->pszPcBiosFile, rc));
+            Log(("pcbiosConstruct: Failed to open system BIOS ROM file '%s', rc=%Vrc!\n", pThis->pszPcBiosFile, rc));
             RTFileClose(FilePcBios);
             FilePcBios = NIL_RTFILE;
-            MMR3HeapFree(pData->pszPcBiosFile);
-            pData->pszPcBiosFile = NULL;
+            MMR3HeapFree(pThis->pszPcBiosFile);
+            pThis->pszPcBiosFile = NULL;
         }
     }
 
     /*
      * Attempt to get the system BIOS ROM data from file.
      */
-    if (pData->pszPcBiosFile)
+    if (pThis->pszPcBiosFile)
     {
         /*
          * Allocate buffer for the system BIOS ROM data.
          */
-        pData->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pData->cbPcBios);
-        if (pData->pu8PcBios)
+        pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbPcBios);
+        if (pThis->pu8PcBios)
         {
-            rc = RTFileRead(FilePcBios, pData->pu8PcBios, pData->cbPcBios, NULL);
-            if (VBOX_FAILURE(rc))
+            rc = RTFileRead(FilePcBios, pThis->pu8PcBios, pThis->cbPcBios, NULL);
+            if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", pData->cbPcBios, rc));
-                MMR3HeapFree(pData->pu8PcBios);
-                pData->pu8PcBios = NULL;
+                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", pThis->cbPcBios, rc));
+                MMR3HeapFree(pThis->pu8PcBios);
+                pThis->pu8PcBios = NULL;
             }
             rc = VINF_SUCCESS;
         }
@@ -1470,7 +1468,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = VERR_NO_MEMORY;
     }
     else
-        pData->pu8PcBios = NULL;
+        pThis->pu8PcBios = NULL;
 
     /* cleanup */
     if (FilePcBios != NIL_RTFILE)
@@ -1479,15 +1477,15 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* If we were unable to get the data from file for whatever reason, fall
      * back to the built-in ROM image.
      */
-    if (pData->pu8PcBios == NULL)
+    if (pThis->pu8PcBios == NULL)
     {
         pu8PcBiosBinary = g_abPcBiosBinary;
         cbPcBiosBinary  = g_cbPcBiosBinary;
     }
     else
     {
-        pu8PcBiosBinary = pData->pu8PcBios;
-        cbPcBiosBinary  = pData->cbPcBios;
+        pu8PcBiosBinary = pThis->pu8PcBios;
+        cbPcBiosBinary  = pThis->cbPcBios;
     }
 
     /*
@@ -1503,11 +1501,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb],
                               false /* fShadow */, "PC BIOS - 0xfffff");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary,
                               false /* fShadow */, "PC BIOS - 0xffffffff");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifndef VBOX_OSE
@@ -1516,7 +1514,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     AssertReleaseMsg(g_cbVmiBiosBinary == _4K, ("cbVmiBiosBinary=%#x\n", g_cbVmiBiosBinary));
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_VMI_BIOS_BASE, g_cbVmiBiosBinary, g_abVmiBiosBinary, false, "VMI BIOS");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
 
@@ -1528,19 +1526,19 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the LAN boot ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "LanBootRom", &pData->pszLanBootFile);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "LanBootRom", &pThis->pszLanBootFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pData->pszLanBootFile = NULL;
+        pThis->pszLanBootFile = NULL;
         rc = VINF_SUCCESS;
     }
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LanBootRom\" as a string failed"));
-    else if (!*pData->pszLanBootFile)
+    else if (!*pThis->pszLanBootFile)
     {
-        MMR3HeapFree(pData->pszLanBootFile);
-        pData->pszLanBootFile = NULL;
+        MMR3HeapFree(pThis->pszLanBootFile);
+        pThis->pszLanBootFile = NULL;
     }
 
     uint64_t cbFileLanBoot;
@@ -1551,50 +1549,50 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Determine the LAN boot ROM size, open specified ROM file in the process.
      */
     RTFILE FileLanBoot = NIL_RTFILE;
-    if (pData->pszLanBootFile)
+    if (pThis->pszLanBootFile)
     {
-        rc = RTFileOpen(&FileLanBoot, pData->pszLanBootFile,
+        rc = RTFileOpen(&FileLanBoot, pThis->pszLanBootFile,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = RTFileGetSize(FileLanBoot, &cbFileLanBoot);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 if (    RT_ALIGN(cbFileLanBoot, _4K) != cbFileLanBoot
                     ||  cbFileLanBoot > _64K)
                     rc = VERR_TOO_MUCH_DATA;
             }
         }
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /*
              * Ignore failure and fall back to the built-in LAN boot ROM.
              */
-            Log(("pcbiosConstruct: Failed to open LAN boot ROM file '%s', rc=%Vrc!\n", pData->pszLanBootFile, rc));
+            Log(("pcbiosConstruct: Failed to open LAN boot ROM file '%s', rc=%Vrc!\n", pThis->pszLanBootFile, rc));
             RTFileClose(FileLanBoot);
             FileLanBoot = NIL_RTFILE;
-            MMR3HeapFree(pData->pszLanBootFile);
-            pData->pszLanBootFile = NULL;
+            MMR3HeapFree(pThis->pszLanBootFile);
+            pThis->pszLanBootFile = NULL;
         }
     }
 
     /*
      * Get the LAN boot ROM data.
      */
-    if (pData->pszLanBootFile)
+    if (pThis->pszLanBootFile)
     {
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
-        pData->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbFileLanBoot);
-        if (pData->pu8LanBoot)
+        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbFileLanBoot);
+        if (pThis->pu8LanBoot)
         {
-            rc = RTFileRead(FileLanBoot, pData->pu8LanBoot, cbFileLanBoot, NULL);
-            if (VBOX_FAILURE(rc))
+            rc = RTFileRead(FileLanBoot, pThis->pu8LanBoot, cbFileLanBoot, NULL);
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", cbFileLanBoot, rc));
-                MMR3HeapFree(pData->pu8LanBoot);
-                pData->pu8LanBoot = NULL;
+                MMR3HeapFree(pThis->pu8LanBoot);
+                pThis->pu8LanBoot = NULL;
             }
             rc = VINF_SUCCESS;
         }
@@ -1602,7 +1600,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = VERR_NO_MEMORY;
     }
     else
-        pData->pu8LanBoot = NULL;
+        pThis->pu8LanBoot = NULL;
 
     /* cleanup */
     if (FileLanBoot != NIL_RTFILE)
@@ -1611,14 +1609,14 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* If we were unable to get the data from file for whatever reason, fall
      * back to the built-in LAN boot ROM image.
      */
-    if (pData->pu8LanBoot == NULL)
+    if (pThis->pu8LanBoot == NULL)
     {
         pu8LanBootBinary = g_abNetBiosBinary;
         cbLanBootBinary  = g_cbNetBiosBinary;
     }
     else
     {
-        pu8LanBootBinary = pData->pu8LanBoot;
+        pu8LanBootBinary = pThis->pu8LanBoot;
         cbLanBootBinary  = cbFileLanBoot;
     }
 
@@ -1631,20 +1629,12 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
                                   true /* fShadow */, "Net Boot ROM");
 
-    rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        pData->uBootDelay = 0;
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        if (VBOX_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc,
+    rc = CFGMR3QueryU8Def(pCfgHandle, "DelayBoot", &pThis->uBootDelay, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                     N_("Configuration error: Querying \"DelayBoot\" as integer failed"));
-        if (pData->uBootDelay > 15)
-            pData->uBootDelay = 15;
-    }
+    if (pThis->uBootDelay > 15)
+        pThis->uBootDelay = 15;
 
     return rc;
 }
