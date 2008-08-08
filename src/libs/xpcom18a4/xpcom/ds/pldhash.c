@@ -632,6 +632,9 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
              *
              * This happens during ipcDConnectService::OnClientStateChange()
              * / ipcDConnectService::DeleteInstance() now.
+             *
+             * On second thought, this isn't a really good solution since
+             * the entries may be reordered...
              */
             if (generation != table->generation)
             {
