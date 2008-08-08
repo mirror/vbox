@@ -1759,7 +1759,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(void) acpiRelocate (PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     ACPIState *s = PDMINS_2_DATA (pDevIns, ACPIState *);
-    s->tsRC = TMTimerGCPtr (s->CTX_SUFF(ts));
+    s->tsRC = TMTimerRCPtr (s->CTX_SUFF(ts));
 }
 
 static DECLCALLBACK(void) acpiReset (PPDMDEVINS pDevIns)
