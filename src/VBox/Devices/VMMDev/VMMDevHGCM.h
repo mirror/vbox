@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VMMDevHGCM_h__
-#define __VMMDevHGCM_h__
+#ifndef ___VMMDev_VMMDevHGCM_h
+#define ___VMMDev_VMMDevHGCM_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -43,4 +43,5 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
 int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
 __END_DECLS
 
-#endif /* __VMMDevHGCM_h__ */
+#endif /* !___VMMDev_VMMDevHGCM_h */
+

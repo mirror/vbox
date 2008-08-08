@@ -19,15 +19,17 @@
  * additional information or have any questions.
  */
 
-/* #define LOG_ENABLED */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+/* #define LOG_ENABLED */
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
-#include <VBox/log.h>
-
 #include <VBox/VBoxDev.h>
 #include <VBox/VBoxGuest.h>
+#include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/mm.h>
 #include <VBox/pgm.h>
@@ -38,15 +40,18 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 #ifndef IN_GC
-#include <iprt/mem.h>
+# include <iprt/mem.h>
 #endif
 
 #include "VMMDevState.h"
-
 #ifdef VBOX_HGCM
-#include "VMMDevHGCM.h"
+# include "VMMDevHGCM.h"
 #endif
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define PCIDEV_2_VMMDEVSTATE(pPciDev)              ( (VMMDevState *)(pPciDev) )
 #define VMMDEVSTATE_2_DEVINS(pVMMDevState)         ( (pVMMDevState)->pDevIns )
 
@@ -122,17 +127,17 @@ static void vmmdevSetIRQ_Legacy_EMT (VMMDevState *pVMMDevState)
     /* Filter unsupported events */
     uint32_t u32EventFlags =
         pVMMDevState->u32HostEventFlags
-        & pVMMDevState->pVMMDevRAMHC->V.V1_03.u32GuestEventMask;
+        & pVMMDevState->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
 
     Log(("vmmdevSetIRQ: u32EventFlags = 0x%08X, "
          "pVMMDevState->u32HostEventFlags = 0x%08X, "
-         "pVMMDevState->pVMMDevRAMHC->u32GuestEventMask = 0x%08X\n",
+         "pVMMDevState->pVMMDevRAMR3->u32GuestEventMask = 0x%08X\n",
          u32EventFlags,
          pVMMDevState->u32HostEventFlags,
-         pVMMDevState->pVMMDevRAMHC->V.V1_03.u32GuestEventMask));
+         pVMMDevState->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
 
     /* Move event flags to VMMDev RAM */
-    pVMMDevState->pVMMDevRAMHC->V.V1_03.u32HostEvents = u32EventFlags;
+    pVMMDevState->pVMMDevRAMR3->V.V1_03.u32HostEvents = u32EventFlags;
 
     if (u32EventFlags)
     {
@@ -159,7 +164,7 @@ static void vmmdevMaybeSetIRQ_EMT (VMMDevState *pVMMDevState)
 
     if (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask)
     {
-        pVMMDevState->pVMMDevRAMHC->V.V1_04.fHaveEvents = true;
+        pVMMDevState->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
         PDMDevHlpPCISetIrqNoWait (pDevIns, 0, 1);
         Log3(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
     }
@@ -278,9 +283,6 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
-
 static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
@@ -291,10 +293,10 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
         /* The raw version. */
         switch (u32)
         {
-            case '\r': Log2(("vmmdev: <return>\n")); break;
-            case '\n': Log2(("vmmdev: <newline>\n")); break;
-            case '\t': Log2(("vmmdev: <tab>\n")); break;
-            default:   Log2(("vmmdev: %c (%02x)\n", u32, u32)); break;
+            case '\r': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <return>\n")); break;
+            case '\n': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <newline>\n")); break;
+            case '\t': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <tab>\n")); break;
+            default:   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: %c (%02x)\n", u32, u32)); break;
         }
 
         /* The readable, buffered version. */
@@ -310,7 +312,7 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
             {
                 pThis->szMsg[pThis->iMsg] = '\0';
-                LogRel(("Guest Log: %s\n", pThis->szMsg));
+                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
                 pThis->iMsg = 0;
             }
             pThis->szMsg[pThis->iMsg] = (char )u32;
@@ -319,8 +321,6 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
     }
     return VINF_SUCCESS;
 }
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEV_VMM
 
 #ifdef TIMESYNC_BACKDOOR
 /**
@@ -375,9 +375,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
         RTTIMESPEC now;
 
         if (pThis->fTimesyncBackdoorLo)
-        {
-            *pu32 = (uint32_t)(pThis->hostTime & (uint64_t)0xFFFFFFFF);
-        }
+            *pu32 = (uint32_t)pThis->hostTime;
         else
         {
             pThis->hostTime = RTTimeSpecGetMilli(PDMDevHlpUTCNow(pDevIns, &now));
@@ -980,7 +978,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
 
                     pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
-                    pThis->pVMMDevRAMHC->V.V1_04.fHaveEvents = false;
+                    pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = false;
                     PDMDevHlpPCISetIrqNoWait (pThis->pDevIns, 0, 0);
                 }
                 pRequestHeader->rc = VINF_SUCCESS;
@@ -1152,7 +1150,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     LogFlow(("VMMDevReq_VideoAccelEnable ptr->u32Enable = %d\n", ptr->u32Enable));
 
                     pRequestHeader->rc = ptr->u32Enable?
-                        pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, true, &pThis->pVMMDevRAMHC->vbvaMemory):
+                        pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, true, &pThis->pVMMDevRAMR3->vbvaMemory):
                         pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, false, NULL);
 
                     if (   ptr->u32Enable
@@ -1607,7 +1605,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     int rc;
 
     AssertReturn(iRegion == 1 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
-    Assert(pThis->pVMMDevRAMHC != NULL);
+    Assert(pThis->pVMMDevRAMR3 != NULL);
 
     if (GCPhysAddress != NIL_RTGCPHYS)
     {
@@ -2003,8 +2001,8 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3PutU32(pSSMHandle, pThis->u32GuestFilterMask);
     SSMR3PutU32(pSSMHandle, pThis->u32HostEventFlags);
     // here be dragons (probably)
-//    SSMR3PutBool(pSSMHandle, pThis->pVMMDevRAMHC->V.V1_04.fHaveEvents);
-    SSMR3PutMem(pSSMHandle, &pThis->pVMMDevRAMHC->V, sizeof (pThis->pVMMDevRAMHC->V));
+//    SSMR3PutBool(pSSMHandle, pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents);
+    SSMR3PutMem(pSSMHandle, &pThis->pVMMDevRAMR3->V, sizeof (pThis->pVMMDevRAMR3->V));
 
     SSMR3PutMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3PutU32(pSSMHandle, pThis->fu32AdditionsOk);
@@ -2044,9 +2042,9 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetU32(pSSMHandle, &pThis->u32NewGuestFilterMask);
     SSMR3GetU32(pSSMHandle, &pThis->u32GuestFilterMask);
     SSMR3GetU32(pSSMHandle, &pThis->u32HostEventFlags);
-//    SSMR3GetBool(pSSMHandle, &pThis->pVMMDevRAMHC->fHaveEvents);
+//    SSMR3GetBool(pSSMHandle, &pThis->pVMMDevRAMR3->fHaveEvents);
     // here be dragons (probably)
-    SSMR3GetMem(pSSMHandle, &pThis->pVMMDevRAMHC->V, sizeof (pThis->pVMMDevRAMHC->V));
+    SSMR3GetMem(pSSMHandle, &pThis->pVMMDevRAMR3->V, sizeof (pThis->pVMMDevRAMR3->V));
 
     SSMR3GetMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3GetU32(pSSMHandle, &pThis->fu32AdditionsOk);
@@ -2079,7 +2077,7 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     if (    pThis->u32VideoAccelEnabled
         &&  pThis->pDrv)
     {
-        pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMHC->vbvaMemory);
+        pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMR3->vbvaMemory);
     }
 
     if (pThis->fu32AdditionsOk)
@@ -2123,9 +2121,9 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  */
 static void vmmdevInitRam(VMMDevState *pThis)
 {
-    memset(pThis->pVMMDevRAMHC, 0, sizeof(VMMDevMemory));
-    pThis->pVMMDevRAMHC->u32Size = sizeof(VMMDevMemory);
-    pThis->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
+    memset(pThis->pVMMDevRAMR3, 0, sizeof(VMMDevMemory));
+    pThis->pVMMDevRAMR3->u32Size = sizeof(VMMDevMemory);
+    pThis->pVMMDevRAMR3->u32Version = VMMDEV_MEMORY_VERSION;
 }
 
 /**
@@ -2151,27 +2149,21 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0BackdoorLogDisabled\0KeepCredentials\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0" "BackdoorLogDisabled\0" "KeepCredentials\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fGetHostTimeDisabled = false;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fBackdoorLogDisabled = false;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled, false);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "KeepCredentials", &pThis->fKeepCredentials);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fKeepCredentials = false;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "KeepCredentials", &pThis->fKeepCredentials, false);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
@@ -2224,7 +2216,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->HGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
-    /** @todo convert this into a config parameter like we do everywhere else.*/
+    /** @todo convert this into a config parameter like we do everywhere else! */
     pThis->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
 
     /*
@@ -2244,7 +2236,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Allocate and initialize the MMIO2 memory.
      */
-    rc = PDMDevHlpMMIO2Register(pDevIns, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0, (void **)&pThis->pVMMDevRAMHC, "VMMDev");
+    rc = PDMDevHlpMMIO2Register(pDevIns, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0, (void **)&pThis->pVMMDevRAMR3, "VMMDev");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
@@ -2349,7 +2341,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pThis->u32HostEventFlags = 0;
 
     /* re-initialize the VMMDev memory */
-    if (pThis->pVMMDevRAMHC)
+    if (pThis->pVMMDevRAMR3)
         vmmdevInitRam(pThis);
 
     /* credentials have to go away (by default) */
