@@ -178,7 +178,7 @@ int audioLoadAlsaLib(void)
         LogRelFunc(("Failed to load library %s\n", VBOX_ALSA_LIB));
         return rc;
     }
-    for (i=0; i<ELEMENTS(SharedFuncs); i++)
+    for (i=0; i<RT_ELEMENTS(SharedFuncs); i++)
     {
         rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void**)SharedFuncs[i].fn);
         if (RT_FAILURE(rc))
