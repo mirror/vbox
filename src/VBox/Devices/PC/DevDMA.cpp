@@ -91,8 +91,6 @@ typedef PFNDMATRANSFERHANDLER DMA_transfer_handler;
 #endif
 #else /* VBOX */
 
-#ifdef LOG_ENABLED
-#endif
 # ifdef LOG_ENABLED
 #   define DEBUG_DMA
     static void DMA_DPRINTF (const char *fmt, ...)
@@ -108,10 +106,10 @@ typedef PFNDMATRANSFERHANDLER DMA_transfer_handler;
   DECLINLINE(void) DMA_DPRINTF(const char *pszFmt, ...) {}
 # endif
 
-#define dolog DMA_DPRINTF
-#define lwarn DMA_DPRINTF
-#define linfo DMA_DPRINTF
-#define ldebug DMA_DPRINTF
+# define dolog DMA_DPRINTF
+# define lwarn DMA_DPRINTF
+# define linfo DMA_DPRINTF
+# define ldebug DMA_DPRINTF
 
 #endif /* VBOX */
 
