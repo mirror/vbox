@@ -35,6 +35,10 @@
 
 #include "../Builtins.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define PARALLEL_SAVED_STATE_VERSION 1
 
 /* defines for accessing the register bits */
@@ -85,6 +89,9 @@
 #define LPT_ECP_FIFO_DEPTH 2
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct ParallelState
 {
     /** Access critical section. */
@@ -137,10 +144,14 @@ typedef DEVPARALLELSTATE ParallelState;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-#define PDMIHOSTPARALLELPORT_2_PARALLELSTATE(pInstance)   ( (ParallelState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ParallelState, IHostParallelPort)) )
+#define PDMIHOSTPARALLELPORT_2_PARALLELSTATE(pInstance) ( (ParallelState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ParallelState, IHostParallelPort)) )
 #define PDMIHOSTDEVICEPORT_2_PARALLELSTATE(pInstance)   ( (ParallelState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ParallelState, IHostDevicePort)) )
-#define PDMIBASE_2_PARALLELSTATE(pInstance)       ( (ParallelState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ParallelState, IBase)) )
+#define PDMIBASE_2_PARALLELSTATE(pInstance)             ( (ParallelState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ParallelState, IBase)) )
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -149,6 +160,7 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 #endif
 __END_DECLS
+
 
 #ifdef IN_RING3
 static void parallel_set_irq(ParallelState *s)
