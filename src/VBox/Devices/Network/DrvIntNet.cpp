@@ -846,30 +846,35 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     if (fSharedMacOnWire)
         OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
 
-    /** @cfgm{ReceiveBufferSize, uint32_t, 234 KB}
+    /** @cfgm{ReceiveBufferSize, uint32_t, 218 KB}
      * The size of the receive buffer.
      */
     rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbRecv = 234 * _1K ;
+        OpenReq.cbRecv = 218 * _1K ;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
-    /** @cfgm{SendBufferSize, uint32_t, 17 KB}
+    /** @cfgm{SendBufferSize, uint32_t, 36 KB}
      * The size of the send (transmit) buffer.
+     * This should be more than twice the size of the larges frame size because
+     * the ring buffer is very simple and doesn't support splitting up frames
+     * nor inserting padding. So, if this is too close to the frame size the
+     * header will fragment the buffer such that the frame won't fit on either
+     * side of it and the code will get very upset about it all.
      */
     rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbSend = 17*_1K;
+        OpenReq.cbSend = 36*_1K;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
     if (OpenReq.cbSend < 32)
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: The \"SendBufferSize\" value is too small"));
-    if (OpenReq.cbSend < 1536*2 + 64)
-        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 64));
+    if (OpenReq.cbSend < 16384*2 + 64)
+        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 16384*2 + 64));
 
     /** @cfgm{IsService, boolean, true}
      * This alterns the way the thread is suspended and resumed. When it's being used by
