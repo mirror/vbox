@@ -28,7 +28,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -44,70 +43,148 @@
 #include <iprt/string.h>
 #include <iprt/alloc.h>
 #include <iprt/log.h>
+#include <iprt/once.h>
+#include <iprt/critsect.h>
 
-static kstat_ctl_t *g_kc;
-static kstat_t    **g_cpuInfo;
-static RTCPUID      g_nCPUs;
 
-void rtLookupCpuInfoStats()
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Initialization serializing (rtMpSolarisOnce). */
+static RTONCE       g_MpSolarisOnce = RTONCE_INITIALIZER;
+/** Critical section serializing access to kstat. */
+static RTCRITSECT   g_MpSolarisCritSect;
+/** The kstat handle. */
+static kstat_ctl_t *g_pKsCtl;
+/** Array pointing to the cpu_info instances. */
+static kstat_t    **g_papCpuInfo;
+/** The number of entries in g_papCpuInfo */
+static RTCPUID      g_capCpuInfo;
+
+
+/**
+ * Run once function that initializes the kstats we need here.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser1     Unused.
+ * @param   pvUser2     Unused.
+ */
+static DECLCALLBACK(int) rtMpSolarisOnce(void *pvUser1, void *pvUser2)
 {
-    g_kc = kstat_open();
-    if (!g_kc)
-    {
-        Log(("kstat_open() -> %d\n", errno));
-        return;
-    }
+    int rc = VINF_SUCCESS;
+    NOREF(pvUser1); NOREF(pvUser2);
 
-    g_nCPUs = RTMpGetCount();
-    g_cpuInfo = (kstat_t**)RTMemAlloc(g_nCPUs * sizeof(kstat_t*));
-    if (!g_cpuInfo)
+    /*
+     * Open kstat and find the cpu_info entries for each of the CPUs.
+     */
+    g_pKsCtl = kstat_open();
+    if (g_pKsCtl)
     {
-        Log(("RTMemAlloc() -> NULL\n"));
-        return;
-    }
-
-    RTCPUID i = 0;
-    kstat_t *ksp;
-    for (ksp = g_kc->kc_chain; ksp != NULL; ksp = ksp->ks_next)
-    {
-        if (strcmp(ksp->ks_module, "cpu_info") == 0)
+        g_capCpuInfo = RTMpGetCount();
+        g_papCpuInfo = (kstat_t **)RTMemAlloc(g_capCpuInfo * sizeof(kstat_t *));
+        if (g_papCpuInfo)
         {
-            g_cpuInfo[i++] = ksp;
-        }
-        Assert(i <= g_nCPUs);
-    }
-}
+            rc = RTCritSectInit(&g_MpSolarisCritSect);
+            if (RT_SUCCESS(rc))
+            {
+                RTCPUID i = 0;
+                for (kstat_t *pKsp = g_pKsCtl->kc_chain; pKsp != NULL; pKsp = pKsp->ks_next)
+                {
+                    if (!strcmp(pKsp->ks_module, "cpu_info"))
+                    {
+                        AssertBreak(i < g_capCpuInfo);
+                        g_papCpuInfo[i++] = pKsp;
+                        /** @todo ks_instance == cpu_id (/usr/src/uts/common/os/cpu.c)? Check this and fix it ASAP. */
+                    }
+                }
 
-static uint64_t rtMpGetFrequency(RTCPUID idCpu, char *statName)
-{
-    if (!g_kc)
-        rtLookupCpuInfoStats();
+                return VINF_SUCCESS;
+            }
 
-    if (idCpu < g_nCPUs && g_cpuInfo[idCpu])
-        if (kstat_read(g_kc, g_cpuInfo[idCpu], 0) != -1)
-        {
-            kstat_named_t *kn;
-            kn = (kstat_named_t *)kstat_data_lookup(g_cpuInfo[idCpu], statName);
-            if (kn)
-                return kn->value.ul;
-            else
-                Log(("kstat_data_lookup(%s) -> %d\n", statName, errno));
+            /* bail out, we failed. */
+            RTMemFree(g_papCpuInfo);
         }
         else
-            Log(("kstat_read() -> %d\n", errno));
+            rc = VERR_NO_MEMORY;
+        kstat_close(g_pKsCtl);
+        g_pKsCtl = NULL;
+    }
     else
-        Log(("invalid idCpu: %d\n", idCpu));
+    {
+        rc = RTErrConvertFromErrno(errno);
+        if (RT_SUCCESS(rc))
+            rc = VERR_INTERNAL_ERROR;
+        Log(("kstat_open() -> %d (%Rrc)\n", errno, rc));
+    }
 
-    return 0;
+    return rc;
+}
+
+
+/**
+ * Worker for RTMpGetCurFrequency and RTMpGetMaxFrequency.
+ *
+ * @returns The desired frequency on success, 0 on failure.
+ *
+ * @param   idCpu           The CPU ID.
+ * @param   pszStatName     The cpu_info stat name.
+ */
+static uint64_t rtMpSolarisGetFrequency(RTCPUID idCpu, char *pszStatName)
+{
+    uint64_t u64 = 0;
+    int rc = RTOnce(&g_MpSolarisOnce, rtMpSolarisOnce, NULL, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        if (    idCpu < g_capCpuInfo
+            &&  g_papCpuInfo[idCpu])
+        {
+            rc = RTCritSectEnter(&g_MpSolarisCritSect);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                if (kstat_read(g_pKsCtl, g_papCpuInfo[idCpu], 0) != -1)
+                {
+                    kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(g_papCpuInfo[idCpu], pszStatName);
+                    if (pStat)
+                    {
+                        Assert(pStat->data_type == KSTAT_DATA_UINT64 || pStat->data_type == KSTAT_DATA_LONG);
+                        switch (pStat->data_type)
+                        {
+                            case KSTAT_DATA_UINT64: u64 = pStat->value.ui64; break; /* current_clock_Hz */
+                            case KSTAT_DATA_INT32:  u64 = pStat->value.i32;  break; /* clock_MHz */
+
+                            /* just in case... */
+                            case KSTAT_DATA_UINT32: u64 = pStat->value.ui32; break;
+                            case KSTAT_DATA_INT64:  u64 = pStat->value.i64;  break;
+                            default:
+                                AssertMsgFailed(("%d\n", pStat->data_type));
+                                break;
+                        }
+                    }
+                    else
+                        Log(("kstat_data_lookup(%s) -> %d\n", pszStatName, errno));
+                }
+                else
+                    Log(("kstat_read() -> %d\n", errno));
+                RTCritSectLeave(&g_MpSolarisCritSect);
+            }
+        }
+        else
+            Log(("invalid idCpu: %d (g_capCpuInfo=%d)\n", (int)idCpu, (int)g_capCpuInfo));
+    }
+
+    return u64;
 }
 
 
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
-    return rtMpGetFrequency(idCpu, "current_clock_Hz") / 1000000;
+    return rtMpSolarisGetFrequency(idCpu, "current_clock_Hz") / 1000000;
 }
+
 
 RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
-    return rtMpGetFrequency(idCpu, "clock_MHz");
+    return rtMpSolarisGetFrequency(idCpu, "clock_MHz");
 }
+
