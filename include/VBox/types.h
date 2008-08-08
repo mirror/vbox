@@ -139,8 +139,6 @@ typedef R3PTRTYPE(PPDMDEVINS) PPDMDEVINSR3;
 typedef R0PTRTYPE(PPDMDEVINS) PPDMDEVINSR0;
 /** RC pointer to a PDM Device Instance. */
 typedef RCPTRTYPE(PPDMDEVINS) PPDMDEVINSRC;
-/** @deprecated */
-typedef PPDMDEVINSRC PPDMDEVINSGC;
 
 /** Pointer to a PDM USB Device Instance. */
 typedef struct PDMUSBINS *PPDMUSBINS;
