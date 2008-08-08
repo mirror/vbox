@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * PCI Internal header - Only for hiding bits of PCIDEVICE.
+ * DevPCI - PCI Internal header - Only for hiding bits of PCIDEVICE.
  */
 
 /*
