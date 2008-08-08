@@ -2702,6 +2702,9 @@ static int handleList(int argc, char *argv[],
         RTTimeSpecToString(&timeSpec, pszTime, sizeof(pszTime));
         RTPrintf("Host time: %s\n", pszTime);
 
+        ULONG processorOnlineCount = 0;
+        CHECK_ERROR (Host, COMGETTER(ProcessorOnlineCount)(&processorOnlineCount));
+        RTPrintf("Processor online count: %lu\n", processorOnlineCount);
         ULONG processorCount = 0;
         CHECK_ERROR (Host, COMGETTER(ProcessorCount)(&processorCount));
         RTPrintf("Processor count: %lu\n", processorCount);
