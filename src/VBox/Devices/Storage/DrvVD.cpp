@@ -393,7 +393,7 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDGetUuid(pThis->pDisk, 0, pUuid);
-    LogFlow(("%s: returns %Rrc ({%Vuuid})\n", __FUNCTION__, rc, pUuid));
+    LogFlow(("%s: returns %Rrc ({%RTuuid})\n", __FUNCTION__, rc, pUuid));
     return rc;
 }
 

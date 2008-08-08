@@ -3139,7 +3139,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
         rc = pImage->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3156,7 +3156,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
 {
     int rc;
 
-    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%Vuuid}\n",
+    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
     do
     {
@@ -3216,7 +3216,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
                                                      pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3233,7 +3233,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
 {
     int rc;
 
-    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%Vuuid}\n",
+    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
     do
     {
@@ -3295,7 +3295,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         rc = pImage->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3312,7 +3312,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
 {
     int rc;
 
-    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%Vuuid}\n",
+    LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
     do
     {
