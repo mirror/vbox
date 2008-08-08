@@ -4975,7 +4975,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="D56DC1AF-8D1B-4A06-86D7-26016E0E2B74"
+     uuid="489fb370-c227-4d43-9761-ceb28484fd9f"
      wsmap="managed"
      >
     <desc>
@@ -5045,6 +5045,10 @@
 
     <attribute name="processorCount" type="unsigned long" readonly="yes">
       <desc>Number of (logical) CPUs installed in the host system.</desc>
+    </attribute>
+
+    <attribute name="processorOnlineCount" type="unsigned long" readonly="yes">
+      <desc>Number of (logical) CPUs online in the host system.</desc>
     </attribute>
 
     <method name="getProcessorSpeed">

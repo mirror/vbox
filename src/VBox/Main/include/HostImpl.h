@@ -81,6 +81,7 @@ public:
     STDMETHOD(COMGETTER(USBDeviceFilters))(IHostUSBDeviceFilterCollection ** aUSBDeviceFilters);
     STDMETHOD(COMGETTER(NetworkInterfaces))(IHostNetworkInterfaceCollection **networkInterfaces);
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
+    STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);
     STDMETHOD(GetProcessorSpeed)(ULONG cpuId, ULONG *speed);
     STDMETHOD(GetProcessorDescription)(ULONG cpuId, BSTR *description);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *size);
