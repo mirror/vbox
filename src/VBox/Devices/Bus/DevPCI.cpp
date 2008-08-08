@@ -1433,10 +1433,7 @@ static DECLCALLBACK(void) pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PPCIGLOBALS     pGlobals = DEVINS_2_PCIGLOBALS(pDevIns);
-    PPCIBUS         pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    PDMPCIBUSREG    PciBusReg;
-    int             rc;
+    int rc;
     Assert(iInstance == 0);
 
     /*
@@ -1470,6 +1467,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Init data and register the PCI bus.
      */
+    PPCIGLOBALS pGlobals = DEVINS_2_PCIGLOBALS(pDevIns);
     pGlobals->pci_mem_base        = 0;
     pGlobals->pci_bios_io_addr    = 0xc000;
     pGlobals->pci_bios_mem_addr   = 0xf0000000;
@@ -1477,10 +1475,12 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pGlobals->fUseIoApic          = fUseIoApic;
     memset(&pGlobals->pci_apic_irq_levels, 0, sizeof(pGlobals->pci_apic_irq_levels));
 
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
+    PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = pciRegister;
     PciBusReg.pfnIORegionRegisterR3   = pciIORegionRegister;
