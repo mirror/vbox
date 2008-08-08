@@ -445,7 +445,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         return VERR_IOM_IOPORT_UNUSED;
     }
 
-    PITState *pit = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pit = PDMINS_2_DATA(pDevIns, PITState *);
     int ret;
     PITChannelState *s = &pit->channels[Port];
     if (s->status_latched)
@@ -523,7 +523,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     if (cb != 1)
         return VINF_SUCCESS;
 
-    PITState *pit = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pit = PDMINS_2_DATA(pDevIns, PITState *);
     Port &= 3;
     if (Port == 3)
     {
@@ -550,7 +550,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         if (channel == 3)
         {
             /* read-back command */
-            for (channel = 0; channel < ELEMENTS(pit->channels); channel++)
+            for (channel = 0; channel < RT_ELEMENTS(pit->channels); channel++)
             {
                 PITChannelState *s = &pit->channels[channel];
                 if (u32 & (2 << channel)) {
@@ -637,7 +637,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     NOREF(pvUser);
     if (cb == 1)
     {
-        PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+        PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
         const uint64_t u64Now = TMTimerGet(pData->channels[0].CTX_SUFF(pTimer));
         Assert(TMTimerGetFreq(pData->channels[0].CTX_SUFF(pTimer)) == 1000000000); /* lazy bird. */
 
@@ -686,7 +686,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     if (cb == 1)
     {
-        PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+        PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
         pData->speaker_data_on = (u32 >> 1) & 1;
         pit_set_gate(pData, 2, u32 & 1);
     }
@@ -704,10 +704,10 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
 
-    for (i = 0; i < ELEMENTS(pData->channels); i++)
+    for (i = 0; i < RT_ELEMENTS(pData->channels); i++)
     {
         PITChannelState *s = &pData->channels[i];
         SSMR3PutU32(pSSMHandle, s->count);
@@ -749,13 +749,13 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
 
     if (u32Version != PIT_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    for (i = 0; i < ELEMENTS(pData->channels); i++)
+    for (i = 0; i < RT_ELEMENTS(pData->channels); i++)
     {
         PITChannelState *s = &pData->channels[i];
         SSMR3GetU32(pSSMHandle, &s->count);
@@ -801,7 +801,7 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  */
 static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
     PITChannelState *s = &pData->channels[0];
     STAM_PROFILE_ADV_START(&s->CTX_SUFF(pPit)->StatPITHandler, a);
     pit_irq_timer_update(s, s->next_transition_time);
@@ -818,7 +818,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  */
 static DECLCALLBACK(void) pitRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
     LogFlow(("pitRelocate: \n"));
 
@@ -842,11 +842,11 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
 {
-    PITState *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState *pData = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
     LogFlow(("pitReset: \n"));
 
-    for (i = 0; i < ELEMENTS(pData->channels); i++)
+    for (i = 0; i < RT_ELEMENTS(pData->channels); i++)
     {
         PITChannelState *s = &pData->channels[i];
 
@@ -878,9 +878,9 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PITState   *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState   *pData = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned    i;
-    for (i = 0; i < ELEMENTS(pData->channels); i++)
+    for (i = 0; i < RT_ELEMENTS(pData->channels); i++)
     {
         const PITChannelState *pCh = &pData->channels[i];
 
@@ -925,7 +925,7 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PITState   *pData = PDMINS2DATA(pDevIns, PITState *);
+    PITState   *pData = PDMINS_2_DATA(pDevIns, PITState *);
     int         rc;
     uint8_t     u8Irq;
     uint16_t    u16Base;
@@ -945,27 +945,27 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Init the data.
      */
     rc = CFGMR3QueryU8Def(pCfgHandle, "Irq", &u8Irq, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
 
     rc = CFGMR3QueryU16Def(pCfgHandle, "Base", &u16Base, 0x40);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "SpeakerEnabled", &fSpeaker, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"SpeakerEnabled\" as a bool failed"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"GCEnabled\" as a bool failed"));
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
@@ -983,39 +983,36 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, pitTimer, "i8254 Programmable Interval Timer",
                                 &pData->channels[0].pTimerR3);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
+    if (RT_FAILURE(rc))
         return rc;
-    }
     pData->channels[0].pTimerRC = TMTimerRCPtr(pData->channels[0].pTimerR3);
     pData->channels[0].pTimerR0 = TMTimerR0Ptr(pData->channels[0].pTimerR3);
 
     rc = PDMDevHlpIOPortRegister(pDevIns, u16Base, 4, NULL, pitIOPortWrite, pitIOPortRead, NULL, NULL, "i8254 Programmable Interval Timer");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     if (fSpeaker)
     {
         rc = PDMDevHlpIOPortRegister(pDevIns, 0x61, 1, NULL, pitIOPortSpeakerWrite, pitIOPortSpeakerRead, NULL, NULL, "PC Speaker");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0x61, 1, 0, NULL, "pitIOPortSpeakerRead", NULL, NULL, "PC Speaker");
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
     }
@@ -1023,7 +1020,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, PIT_SAVED_STATE_VERSION, sizeof(*pData),
                                           NULL, pitSaveExec, NULL,
                                           NULL, pitLoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
