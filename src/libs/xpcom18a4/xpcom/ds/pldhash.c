@@ -435,6 +435,12 @@ ChangeTable(PLDHashTable *table, int deltaLog2)
     PLDHashGetKey getKey;
     PLDHashMoveEntry moveEntry;
 
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
+    PR_ASSERT(table->generation != PR_UINT32_MAX);
+    if (table->generation == PR_UINT32_MAX)
+        return PR_FALSE;
+#endif
+
     /* Look, but don't touch, until we succeed in getting new entry store. */
     oldLog2 = PL_DHASH_BITS - table->hashShift;
     newLog2 = oldLog2 + deltaLog2;
@@ -453,6 +459,10 @@ ChangeTable(PLDHashTable *table, int deltaLog2)
     table->hashShift = PL_DHASH_BITS - newLog2;
     table->removedCount = 0;
     table->generation++;
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
+    if (table->generation == PR_UINT32_MAX)
+        table->generation++;
+#endif
 
     /* Assign the new entry store to table. */
     memset(newEntryStore, 0, nbytes);
@@ -563,6 +573,10 @@ PL_DHashTableOperate(PLDHashTable *table, const void *key, PLDHashOperator op)
             /* Shrink if alpha is <= .25 and table isn't too small already. */
             size = PL_DHASH_TABLE_SIZE(table);
             if (size > PL_DHASH_MIN_SIZE &&
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
+            /** @todo This is where IPC screws up, avoid the assertion in ChangeTable until it's fixed. */
+                table->generation != PR_UINT32_MAX &&
+#endif
                 table->entryCount <= MIN_LOAD(table, size)) {
                 METER(table->stats.shrinks++);
                 (void) ChangeTable(table, -1);
@@ -606,13 +620,22 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
     PRBool didRemove;
     PLDHashEntryHdr *entry;
     PLDHashOperator op;
-#ifdef VBOX
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
     PRUint32 generation;
-    char *entryStore;
 
+    /*
+     * The hack! Set generation to PR_UINT32_MAX during the enumeration so
+     * we can prevent ChangeTable from being called.
+     *
+     * This happens during ipcDConnectService::OnClientStateChange()
+     * / ipcDConnectService::DeleteInstance() now when running
+     * java clienttest list hostinfo and vboxwebsrv crashes. It's quite
+     * likely that the IPC code isn't following the rules here, but it
+     * looks more difficult to fix that just hacking this hash code.
+     */
     generation = table->generation;
-    entryStore = table->entryStore;
-#endif
+    table->generation = PR_UINT32_MAX;
+#endif /* VBOX */
     entryAddr = table->entryStore;
     entrySize = table->entrySize;
     capacity = PL_DHASH_TABLE_SIZE(table);
@@ -623,28 +646,8 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
         entry = (PLDHashEntryHdr *)entryAddr;
         if (ENTRY_IS_LIVE(entry)) {
             op = etor(table, entry, i++, arg);
-#ifdef VBOX
-            /*
-             * Adjust pointers if entryStore was reallocated as a result
-             * of an add or remove performed by the enumerator. It is
-             * probably not supposed to do this, but since it does we'll
-             * simply deal with it.
-             *
-             * This happens during ipcDConnectService::OnClientStateChange()
-             * / ipcDConnectService::DeleteInstance() now.
-             *
-             * On second thought, this isn't a really good solution since
-             * the entries may be reordered...
-             */
-            if (generation != table->generation)
-            {
-                entryAddr += table->entryStore - entryStore;
-                entryStore = table->entryStore;
-                entry = (PLDHashEntryHdr *)entryAddr;
-                capacity = PL_DHASH_TABLE_SIZE(table);
-                entryLimit = table->entryStore + capacity * entrySize;
-            }
-
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
+            PR_ASSERT(table->generation == PR_UINT32_MAX);
 #endif
             if (op & PL_DHASH_REMOVE) {
                 METER(table->stats.removeEnums++);
@@ -656,6 +659,9 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
         }
         entryAddr += entrySize;
     }
+#ifdef VBOX /* HACK ALERT! generation == PR_UINT32_MAX during enumeration. */
+    table->generation = generation;
+#endif
 
     /*
      * Shrink or compress if a quarter or more of all entries are removed, or
