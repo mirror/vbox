@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMMDev - Guest <-> VMM/Host communication device, Internal header.
+ * VMMDev - Guest <-> VMM/Host communication device, internal header.
  */
 
 /*
