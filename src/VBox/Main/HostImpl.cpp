@@ -98,8 +98,6 @@ extern "C" char *getfullrawname(char *);
 #include <VBox/usb.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
-/** @todo the following line becomes obsolete after switching to Mp runtime functions */
-#include <iprt/system.h>
 #include <iprt/mp.h>
 #include <iprt/time.h>
 #include <iprt/param.h>
@@ -681,9 +679,23 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    *count = RTSystemProcessorGetCount();
-    /** @todo after implementing the Mp runtime on all platforms replace with
-     * *count = RTMpGetOnlineCount(); */
+    *count = RTMpGetCount();
+    return S_OK;
+}
+
+/**
+ * Returns the number of online logical processors
+ *
+ * @returns COM status code
+ * @param   count address of result variable
+ */
+STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *count)
+{
+    if (!count)
+        return E_POINTER;
+    AutoWriteLock alock (this);
+    CHECK_READY();
+    *count = RTMpGetOnlineCount();
     return S_OK;
 }
 
