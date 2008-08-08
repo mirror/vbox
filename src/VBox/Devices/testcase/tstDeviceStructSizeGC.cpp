@@ -39,41 +39,43 @@
 *******************************************************************************/
 #define VBOX_DEVICE_STRUCT_TESTCASE
 #undef LOG_GROUP
-#include "Bus/DevPCI.cpp" /* must be first! */
+#include "../Bus/DevPCI.cpp" /* must be first! */
 #undef LOG_GROUP
-#include "Graphics/DevVGA.cpp"
+#include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
-#include "Input/DevPS2.cpp"
+#include "../Input/DevPS2.cpp"
 #undef LOG_GROUP
-#include "Network/DevPCNet.cpp"
+#include "../Network/DevPCNet.cpp"
 #undef LOG_GROUP
-#include "PC/DevACPI.cpp"
+#include "../PC/DevACPI.cpp"
 #undef LOG_GROUP
-#include "PC/DevPIC.cpp"
+#include "../PC/DevPIC.cpp"
 #undef LOG_GROUP
-#include "PC/DevPit-i8254.cpp"
+#include "../PC/DevPit-i8254.cpp"
 #undef LOG_GROUP
-#include "PC/DevRTC.cpp"
+#include "../PC/DevRTC.cpp"
 #undef LOG_GROUP
-#include "PC/DevAPIC.cpp"
+#include "../PC/DevAPIC.cpp"
 #undef LOG_GROUP
-#include "Storage/DevATA.cpp"
+#include "../Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB
 # undef LOG_GROUP
-# include "USB/DevOHCI.cpp"
-# include "USB/DevEHCI.cpp"
+# include "../USB/DevOHCI.cpp"
+# include "../USB/DevEHCI.cpp"
 #endif
 #undef LOG_GROUP
-#include "VMMDev/VBoxDev.cpp"
+#include "../VMMDev/VBoxDev.cpp"
 #undef LOG_GROUP
-#include "Serial/DevSerial.cpp"
+#include "../Parallel/DevParallel.cpp"
+#undef LOG_GROUP
+#include "../Serial/DevSerial.cpp"
 #ifdef VBOX_WITH_AHCI
-#undef LOG_GROUP
-#include "Storage/DevAHCI.cpp"
+# undef LOG_GROUP
+# include "../Storage/DevAHCI.cpp"
 #endif
 #ifdef VBOX_WITH_E1000
-#undef LOG_GROUP
-#include "Network/DevE1000.cpp"
+# undef LOG_GROUP
+# include "../Network/DevE1000.cpp"
 #endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
@@ -854,6 +856,33 @@ int main()
 #endif /* VBOX_WITH_USB */
 
     /* VMMDev/VBoxDev.cpp */
+
+    /* Parallel/DevParallel.cpp */
+    GEN_CHECK_SIZE(ParallelState);
+    GEN_CHECK_OFF(ParallelState, pDevInsR3);
+    GEN_CHECK_OFF(ParallelState, pDevInsR0);
+    GEN_CHECK_OFF(ParallelState, pDevInsRC);
+    GEN_CHECK_OFF(ParallelState, IBase);
+    GEN_CHECK_OFF(ParallelState, IHostParallelPort);
+    GEN_CHECK_OFF(ParallelState, pDrvHostParallelConnector);
+    GEN_CHECK_OFF(ParallelState, ReceiveSem);
+    GEN_CHECK_OFF(ParallelState, reg_data);
+    GEN_CHECK_OFF(ParallelState, reg_status);
+    GEN_CHECK_OFF(ParallelState, reg_control);
+    GEN_CHECK_OFF(ParallelState, reg_epp_addr);
+    GEN_CHECK_OFF(ParallelState, reg_epp_data);
+    GEN_CHECK_OFF(ParallelState, reg_ecp_ecr);
+    GEN_CHECK_OFF(ParallelState, reg_ecp_base_plus_400h);
+    GEN_CHECK_OFF(ParallelState, reg_ecp_config_b);
+    GEN_CHECK_OFF(ParallelState, ecp_fifo);
+    GEN_CHECK_OFF(ParallelState, ecp_fifo[1]);
+    GEN_CHECK_OFF(ParallelState, act_fifo_pos_write);
+    GEN_CHECK_OFF(ParallelState, act_fifo_pos_read);
+    GEN_CHECK_OFF(ParallelState, irq);
+    GEN_CHECK_OFF(ParallelState, epp_timeout);
+    GEN_CHECK_OFF(ParallelState, fGCEnabled);
+    GEN_CHECK_OFF(ParallelState, fR0Enabled);
+    GEN_CHECK_OFF(ParallelState, base);
 
     /* Serial/DevSerial.cpp */
     GEN_CHECK_SIZE(SerialState);
