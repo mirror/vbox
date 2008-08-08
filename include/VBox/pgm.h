@@ -52,17 +52,6 @@ __BEGIN_DECLS
 #define PGM_DYNAMIC_CHUNK_BASE_MASK     (~(RTGCPHYS)PGM_DYNAMIC_CHUNK_OFFSET_MASK)
 
 
-/** Page flags used for PGMHyperSetPageFlags
- * @deprecated
- * @{ */
-#define PGMPAGE_READ                1
-#define PGMPAGE_WRITE               2
-#define PGMPAGE_USER                4
-#define PGMPAGE_SYSTEM              8
-#define PGMPAGE_NOTPRESENT          16
-/** @} */
-
-
 /**
  * FNPGMRELOCATE callback mode.
  */
