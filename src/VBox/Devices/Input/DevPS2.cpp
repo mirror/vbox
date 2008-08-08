@@ -1426,13 +1426,13 @@ static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
-    KBDState *pData = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Keyboard.Base));
+    KBDState *pThis = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Keyboard.Base));
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
-            return &pData->Keyboard.Base;
+            return &pThis->Keyboard.Base;
         case PDMINTERFACE_KEYBOARD_PORT:
-            return &pData->Keyboard.Port;
+            return &pThis->Keyboard.Port;
         default:
             return NULL;
     }
@@ -1453,8 +1453,8 @@ static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, PDM
  */
 static DECLCALLBACK(int) kbdKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode)
 {
-    KBDState *pData = IKEYBOARDPORT_2_KBDSTATE(pInterface);
-    pc_kbd_put_keycode(pData, u8KeyCode);
+    KBDState *pThis = IKEYBOARDPORT_2_KBDSTATE(pInterface);
+    pc_kbd_put_keycode(pThis, u8KeyCode);
     return VINF_SUCCESS;
 }
 
@@ -1471,13 +1471,13 @@ static DECLCALLBACK(int) kbdKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint8
  */
 static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
-    KBDState *pData = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Mouse.Base));
+    KBDState *pThis = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Mouse.Base));
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
-            return &pData->Mouse.Base;
+            return &pThis->Mouse.Base;
         case PDMINTERFACE_MOUSE_PORT:
-            return &pData->Mouse.Port;
+            return &pThis->Mouse.Port;
         default:
             return NULL;
     }
@@ -1501,8 +1501,8 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, uint32_t fButtonStates)
 {
-    KBDState *pData = IMOUSEPORT_2_KBDSTATE(pInterface);
-    pc_kbd_mouse_event(pData, i32DeltaX, i32DeltaY, i32DeltaZ, fButtonStates);
+    KBDState *pThis = IMOUSEPORT_2_KBDSTATE(pInterface);
+    pc_kbd_mouse_event(pThis, i32DeltaX, i32DeltaY, i32DeltaZ, fButtonStates);
     return VINF_SUCCESS;
 }
 
@@ -1528,16 +1528,16 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32
 static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
     int         rc;
-    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     switch (iLUN)
     {
         /* LUN #0: keyboard */
         case 0:
-            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Keyboard.Base, &pData->Keyboard.pDrvBase, "Keyboard Port");
+            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Keyboard.Base, &pThis->Keyboard.pDrvBase, "Keyboard Port");
             if (RT_SUCCESS(rc))
             {
-                pData->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pData->Keyboard.pDrvBase->pfnQueryInterface(pData->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
-                if (!pData->Keyboard.pDrv)
+                pThis->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pThis->Keyboard.pDrvBase->pfnQueryInterface(pThis->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
+                if (!pThis->Keyboard.pDrv)
                 {
                     AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Vrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
@@ -1554,11 +1554,11 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 
         /* LUN #1: aux/mouse */
         case 1:
-            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Mouse.Base, &pData->Mouse.pDrvBase, "Aux (Mouse) Port");
+            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Mouse.Base, &pThis->Mouse.pDrvBase, "Aux (Mouse) Port");
             if (RT_SUCCESS(rc))
             {
-                pData->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pData->Mouse.pDrvBase->pfnQueryInterface(pData->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
-                if (!pData->Mouse.pDrv)
+                pThis->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pThis->Mouse.pDrvBase->pfnQueryInterface(pThis->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
+                if (!pThis->Mouse.pDrv)
                 {
                     AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Vrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
@@ -1602,19 +1602,19 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     /*
      * Reset the interfaces and update the controller state.
      */
-    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     switch (iLUN)
     {
         /* LUN #0: keyboard */
         case 0:
-            pData->Keyboard.pDrv = NULL;
-            pData->Keyboard.pDrvBase = NULL;
+            pThis->Keyboard.pDrv = NULL;
+            pThis->Keyboard.pDrvBase = NULL;
             break;
 
         /* LUN #1: aux/mouse */
         case 1:
-            pData->Mouse.pDrv = NULL;
-            pData->Mouse.pDrvBase = NULL;
+            pThis->Mouse.pDrv = NULL;
+            pThis->Mouse.pDrvBase = NULL;
             break;
 
         default:
@@ -1629,8 +1629,8 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
  */
 static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
-    pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
 
@@ -1649,7 +1649,7 @@ static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    KBDState   *pData = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     int         rc;
     bool        fGCEnabled;
     bool        fR0Enabled;
@@ -1672,14 +1672,14 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Initialize the interfaces.
      */
-    pData->pDevInsR3 = pDevIns;
-    pData->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pData->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pData->Keyboard.Base.pfnQueryInterface  = kbdKeyboardQueryInterface;
-    pData->Keyboard.Port.pfnPutEvent        = kbdKeyboardPutEvent;
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->Keyboard.Base.pfnQueryInterface  = kbdKeyboardQueryInterface;
+    pThis->Keyboard.Port.pfnPutEvent        = kbdKeyboardPutEvent;
 
-    pData->Mouse.Base.pfnQueryInterface     = kbdMouseQueryInterface;
-    pData->Mouse.Port.pfnPutEvent           = kbdMousePutEvent;
+    pThis->Mouse.Base.pfnQueryInterface     = kbdMouseQueryInterface;
+    pThis->Mouse.Port.pfnPutEvent           = kbdMousePutEvent;
 
     /*
      * Register I/O ports, save state, keyboard event handler and mouse event handlers.
@@ -1708,7 +1708,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         if (RT_FAILURE(rc))
             return rc;
     }
-    rc = PDMDevHlpSSMRegister(pDevIns, g_DevicePS2KeyboardMouse.szDeviceName, iInstance, PCKBD_SAVED_STATE_VERSION, sizeof(*pData),
+    rc = PDMDevHlpSSMRegister(pDevIns, g_DevicePS2KeyboardMouse.szDeviceName, iInstance, PCKBD_SAVED_STATE_VERSION, sizeof(*pThis),
                               NULL, kbdSaveExec, NULL,
                               NULL, kbdLoadExec, NULL);
     if (RT_FAILURE(rc))

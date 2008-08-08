@@ -150,10 +150,10 @@ typedef struct DRVTAP
 *******************************************************************************/
 #ifdef RT_OS_SOLARIS
 # ifdef VBOX_WITH_CROSSBOW
-static int              SolarisOpenVNIC(PDRVTAP pData);
+static int              SolarisOpenVNIC(PDRVTAP pThis);
 static int              SolarisDLPIErr2VBoxErr(int rc);
 # else
-static int              SolarisTAPAttach(PDRVTAP pData);
+static int              SolarisTAPAttach(PDRVTAP pThis);
 # endif
 #endif
 
@@ -169,24 +169,24 @@ static int              SolarisTAPAttach(PDRVTAP pData);
  */
 static DECLCALLBACK(int) drvTAPSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
-    STAM_COUNTER_INC(&pData->StatPktSent);
-    STAM_COUNTER_ADD(&pData->StatPktSentBytes, cb);
-    STAM_PROFILE_START(&pData->StatTransmit, a);
+    PDRVTAP pThis = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
+    STAM_COUNTER_INC(&pThis->StatPktSent);
+    STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
+    STAM_PROFILE_START(&pThis->StatTransmit, a);
 
 #ifdef LOG_ENABLED
     uint64_t u64Now = RTTimeProgramNanoTS();
     LogFlow(("drvTAPSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-             cb, u64Now, u64Now - pData->u64LastReceiveTS, u64Now - pData->u64LastTransferTS));
-    pData->u64LastTransferTS = u64Now;
+             cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+    pThis->u64LastTransferTS = u64Now;
 #endif
     Log2(("drvTAPSend: pvBuf=%p cb=%#x\n"
           "%.*Vhxd\n",
           pvBuf, cb, cb, pvBuf));
 
-    int rc = RTFileWrite(pData->FileDevice, pvBuf, cb, NULL);
+    int rc = RTFileWrite(pThis->FileDevice, pvBuf, cb, NULL);
 
-    STAM_PROFILE_STOP(&pData->StatTransmit, a);
+    STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     AssertRC(rc);
     return rc;
 }
@@ -232,13 +232,13 @@ static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
  */
 static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
-    LogFlow(("drvTAPAsyncIoThread: pData=%p\n", pData));
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    LogFlow(("drvTAPAsyncIoThread: pThis=%p\n", pThis));
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    STAM_PROFILE_ADV_START(&pData->StatReceive, a);
+    STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
     /*
      * Polling loop.
@@ -249,13 +249,13 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * Wait for something to become available.
          */
         struct pollfd aFDs[2];
-        aFDs[0].fd      = pData->FileDevice;
+        aFDs[0].fd      = pThis->FileDevice;
         aFDs[0].events  = POLLIN | POLLPRI;
         aFDs[0].revents = 0;
-        aFDs[1].fd      = pData->PipeRead;
+        aFDs[1].fd      = pThis->PipeRead;
         aFDs[1].events  = POLLIN | POLLPRI | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
-        STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
+        STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
         errno=0;
         int rc = poll(&aFDs[0], RT_ELEMENTS(aFDs), -1 /* infinite */);
 
@@ -263,7 +263,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
             break;
 
-        STAM_PROFILE_ADV_START(&pData->StatReceive, a);
+        STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
         if (    rc > 0
             &&  (aFDs[0].revents & (POLLIN | POLLPRI))
             &&  !aFDs[1].revents)
@@ -275,13 +275,13 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             size_t cbRead = 0;
 #ifdef VBOX_WITH_CROSSBOW
             cbRead = sizeof(achBuf);
-            rc = g_pfnLibDlpiRecv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
+            rc = g_pfnLibDlpiRecv(pThis->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
             rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
 #else
             /** @note At least on Linux we will never receive more than one network packet
              *        after poll() returned successfully. I don't know why but a second
              *        RTFileRead() operation will return with VERR_TRY_AGAIN in any case. */
-            rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
+            rc = RTFileRead(pThis->FileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
             if (RT_SUCCESS(rc))
             {
@@ -298,9 +298,9 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *    of deadlocking because the guest could be waiting for a receive
                  *    overflow error to allocate more receive buffers
                  */
-                STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
-                int rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
-                STAM_PROFILE_ADV_START(&pData->StatReceive, a);
+                STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
+                int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+                STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
                 /*
                  * A return code != VINF_SUCCESS means that we were woken up during a VM
@@ -315,13 +315,13 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #ifdef LOG_ENABLED
                 uint64_t u64Now = RTTimeProgramNanoTS();
                 LogFlow(("drvTAPAsyncIoThread: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-                         cbRead, u64Now, u64Now - pData->u64LastReceiveTS, u64Now - pData->u64LastTransferTS));
-                pData->u64LastReceiveTS = u64Now;
+                         cbRead, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+                pThis->u64LastReceiveTS = u64Now;
 #endif
                 Log2(("drvTAPAsyncIoThread: cbRead=%#x\n" "%.*Vhxd\n", cbRead, cbRead, achBuf));
-                STAM_COUNTER_INC(&pData->StatPktRecv);
-                STAM_COUNTER_ADD(&pData->StatPktRecvBytes, cbRead);
-                rc = pData->pPort->pfnReceive(pData->pPort, achBuf, cbRead);
+                STAM_COUNTER_INC(&pThis->StatPktRecv);
+                STAM_COUNTER_ADD(&pThis->StatPktRecvBytes, cbRead);
+                rc = pThis->pPort->pfnReceive(pThis->pPort, achBuf, cbRead);
                 AssertRC(rc);
             }
             else
@@ -342,7 +342,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /* drain the pipe */
             char ch;
             size_t cbRead;
-            RTFileRead(pData->PipeRead, &ch, 1, &cbRead);
+            RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
         }
         else
         {
@@ -362,7 +362,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
 
     LogFlow(("drvTAPAsyncIoThread: returns %Vrc\n", VINF_SUCCESS));
-    STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
+    STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
     return VINF_SUCCESS;
 }
 
@@ -376,9 +376,9 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  */
 static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
-    int rc = RTFileWrite(pData->PipeWrite, "", 1, NULL);
+    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
     AssertRC(rc);
 
     return VINF_SUCCESS;
@@ -390,16 +390,16 @@ static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  * Calls OS-specific TAP setup application/script.
  *
  * @returns VBox error code.
- * @param   pData           The instance data.
+ * @param   pThis           The instance data.
  */
-static int drvTAPSetupApplication(PDRVTAP pData)
+static int drvTAPSetupApplication(PDRVTAP pThis)
 {
     char szCommand[4096];
 
 #ifdef VBOX_WITH_CROSSBOW
     /* Convert MAC address bytes to string (required by Solaris' dladm). */
     char *pszHex = "0123456789abcdef";
-    uint8_t *pMacAddr8 = pData->MacAddress.au8;
+    uint8_t *pMacAddr8 = pThis->MacAddress.au8;
     char szMacAddress[3 * sizeof(RTMAC)];
     for (unsigned int i = 0; i < sizeof(RTMAC); i++)
     {
@@ -410,11 +410,11 @@ static int drvTAPSetupApplication(PDRVTAP pData)
     }
     szMacAddress[sizeof(szMacAddress) - 1] =  0;
 
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s %s", pData->pszSetupApplication,
-            szMacAddress, pData->fStatic ? pData->pszDeviceName : "");
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s %s", pThis->pszSetupApplication,
+            szMacAddress, pThis->fStatic ? pThis->pszDeviceName : "");
 #else
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pData->pszSetupApplication,
-            pData->fStatic ? pData->pszDeviceName : "");
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pThis->pszSetupApplication,
+            pThis->fStatic ? pThis->pszDeviceName : "");
 #endif
 
     /* Pipe open the setup application. */
@@ -422,11 +422,11 @@ static int drvTAPSetupApplication(PDRVTAP pData)
     FILE* pfSetupHandle = popen(szCommand, "r");
     if (pfSetupHandle == 0)
     {
-        LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pData->pDrvIns->iInstance,
-              pData->pszSetupApplication, strerror(errno)));
+        LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pThis->pDrvIns->iInstance,
+              pThis->pszSetupApplication, strerror(errno)));
         return VERR_HOSTIF_INIT_FAILED;
     }
-    if (!pData->fStatic)
+    if (!pThis->fStatic)
     {
         /* Obtain device name from setup application. */
         char acBuffer[64];
@@ -443,7 +443,7 @@ static int drvTAPSetupApplication(PDRVTAP pData)
         }
         /* Overwrite the terminating newline character. */
         acBuffer[cBufSize - 1] = 0;
-        RTStrAPrintf(&pData->pszDeviceName, "%s", acBuffer);
+        RTStrAPrintf(&pThis->pszDeviceName, "%s", acBuffer);
     }
     int rc = pclose(pfSetupHandle);
     if (!WIFEXITED(rc))
@@ -464,16 +464,16 @@ static int drvTAPSetupApplication(PDRVTAP pData)
  * Calls OS-specific TAP terminate application/script.
  *
  * @returns VBox error code.
- * @param   pData           The instance data.
+ * @param   pThis           The instance data.
  */
-static int drvTAPTerminateApplication(PDRVTAP pData)
+static int drvTAPTerminateApplication(PDRVTAP pThis)
 {
     char *pszArgs[3];
-    pszArgs[0] = pData->pszTerminateApplication;
-    pszArgs[1] = pData->pszDeviceName;
+    pszArgs[0] = pThis->pszTerminateApplication;
+    pszArgs[1] = pThis->pszDeviceName;
     pszArgs[2] = NULL;
 
-    Log2(("Starting TAP terminate application: %s %s\n", pData->pszTerminateApplication, pData->pszDeviceName));
+    Log2(("Starting TAP terminate application: %s %s\n", pThis->pszTerminateApplication, pThis->pszDeviceName));
     RTPROCESS pid = NIL_RTPROCESS;
     int rc = RTProcCreate(pszArgs[0], pszArgs, RTENV_DEFAULT, 0, &pid);
     if (RT_SUCCESS(rc))
@@ -486,16 +486,16 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
                 &&  Status.enmReason == RTPROCEXITREASON_NORMAL)
                 return VINF_SUCCESS;
 
-            LogRel(("TAP#%d: Error running TAP terminate application: %s\n", pData->pDrvIns->iInstance, pData->pszTerminateApplication));
+            LogRel(("TAP#%d: Error running TAP terminate application: %s\n", pThis->pDrvIns->iInstance, pThis->pszTerminateApplication));
         }
         else
-            LogRel(("TAP#%d: RTProcWait failed for: %s\n", pData->pDrvIns->iInstance, pData->pszTerminateApplication));
+            LogRel(("TAP#%d: RTProcWait failed for: %s\n", pThis->pDrvIns->iInstance, pThis->pszTerminateApplication));
     }
     else
     {
         /* Bad. RTProcCreate() failed! */
-        LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pData->pDrvIns->iInstance,
-              pData->pszTerminateApplication, strerror(errno)));
+        LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pThis->pDrvIns->iInstance,
+              pThis->pszTerminateApplication, strerror(errno)));
     }
     return VERR_HOSTIF_TERM_FAILED;
 }
@@ -509,71 +509,71 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
  * Crossbow: Open & configure the virtual NIC.
  *
  * @returns VBox error code.
- * @param   pData           The instance data.
+ * @param   pThis           The instance data.
  */
-static int SolarisOpenVNIC(PDRVTAP pData)
+static int SolarisOpenVNIC(PDRVTAP pThis)
 {
     /*
      * Open & bind the NIC using the datalink provider routine.
      */
-    int rc = g_pfnLibDlpiOpen(pData->pszDeviceName, &pData->pDeviceHandle, DLPI_RAW);
+    int rc = g_pfnLibDlpiOpen(pThis->pszDeviceName, &pThis->pDeviceHandle, DLPI_RAW);
     if (rc != DLPI_SUCCESS)
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                           N_("Failed to open VNIC \"%s\" in raw mode"), pData->pszDeviceName);
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                           N_("Failed to open VNIC \"%s\" in raw mode"), pThis->pszDeviceName);
 
     dlpi_info_t vnicInfo;
-    rc = g_pfnLibDlpiInfo(pData->pDeviceHandle, &vnicInfo, 0);
+    rc = g_pfnLibDlpiInfo(pThis->pDeviceHandle, &vnicInfo, 0);
     if (rc == DLPI_SUCCESS)
     {
         if (vnicInfo.di_mactype == DL_ETHER)
         {
-            rc = g_pfnLibDlpiBind(pData->pDeviceHandle, DLPI_ANY_SAP, NULL);
+            rc = g_pfnLibDlpiBind(pThis->pDeviceHandle, DLPI_ANY_SAP, NULL);
             if (rc == DLPI_SUCCESS)
             {
-                rc = g_pfnLibDlpiSetPhysAddr(pData->pDeviceHandle, DL_CURR_PHYS_ADDR, &pData->MacAddress, ETHERADDRL);
+                rc = g_pfnLibDlpiSetPhysAddr(pThis->pDeviceHandle, DL_CURR_PHYS_ADDR, &pThis->MacAddress, ETHERADDRL);
                 if (rc == DLPI_SUCCESS)
                 {
-                    rc = g_pfnLibDlpiPromiscon(pData->pDeviceHandle, DL_PROMISC_SAP);
+                    rc = g_pfnLibDlpiPromiscon(pThis->pDeviceHandle, DL_PROMISC_SAP);
                     if (rc == DLPI_SUCCESS)
                     {
                         /* Need to use DL_PROMIS_PHYS (not multicast) as we cannot be sure what the guest needs. */
-                        rc = g_pfnLibDlpiPromiscon(pData->pDeviceHandle, DL_PROMISC_PHYS);
+                        rc = g_pfnLibDlpiPromiscon(pThis->pDeviceHandle, DL_PROMISC_PHYS);
                         if (rc == DLPI_SUCCESS)
                         {
-                            pData->FileDevice = g_pfnLibDlpiFd(pData->pDeviceHandle);
-                            if (pData->FileDevice >= 0)
+                            pThis->FileDevice = g_pfnLibDlpiFd(pThis->pDeviceHandle);
+                            if (pThis->FileDevice >= 0)
                             {
-                                Log(("SolarisOpenVNIC: %s -> %d\n", pData->pszDeviceName, pData->FileDevice));
+                                Log(("SolarisOpenVNIC: %s -> %d\n", pThis->pszDeviceName, pThis->FileDevice));
                                 return VINF_SUCCESS;
                             }
 
-                            rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                                      N_("Failed to obtain file descriptor for VNIC"));
                         }
                         else
-                            rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                                      N_("Failed to set appropriate promiscous mode"));
                     }
                     else
-                        rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                        rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                                  N_("Failed to activate promiscous mode for VNIC"));
                 }
                 else
-                    rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                    rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                              N_("Failed to set physical address for VNIC"));
             }
             else
-                rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                          N_("Failed to bind VNIC"));
         }
         else
-            rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                          N_("VNIC type is not ethernet"));
     }
     else
-        rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+        rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                          N_("Failed to obtain VNIC info"));
-    g_pfnLibDlpiClose(pData->pDeviceHandle);
+    g_pfnLibDlpiClose(pThis->pDeviceHandle);
     return rc;
 }
 
@@ -624,30 +624,30 @@ static int SolarisDLPIErr2VBoxErr(int rc)
  * Creates/Attaches TAP device to IP.
  *
  * @returns VBox error code.
- * @param   pData            The instance data.
+ * @param   pThis            The instance data.
  */
-static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
+static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
 {
-    LogFlow(("SolarisTapAttach: pData=%p\n", pData));
+    LogFlow(("SolarisTapAttach: pThis=%p\n", pThis));
 
 
     int IPFileDes = open("/dev/udp", O_RDWR, 0);
     if (IPFileDes < 0)
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open /dev/udp. errno=%d"), errno);
 
     int TapFileDes = open("/dev/tap", O_RDWR, 0);
     if (TapFileDes < 0)
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open /dev/tap for TAP. errno=%d"), errno);
 
     /* Use the PPA from the ifname if possible (e.g "tap2", then use 2 as PPA) */
     int iPPA = -1;
-    if (pData->pszDeviceName)
+    if (pThis->pszDeviceName)
     {
-        size_t cch = strlen(pData->pszDeviceName);
-        if (cch > 1 && isdigit(pData->pszDeviceName[cch - 1]) != 0)
-            iPPA = pData->pszDeviceName[cch - 1] - '0';
+        size_t cch = strlen(pThis->pszDeviceName);
+        if (cch > 1 && isdigit(pThis->pszDeviceName[cch - 1]) != 0)
+            iPPA = pThis->pszDeviceName[cch - 1] - '0';
     }
 
     struct strioctl ioIF;
@@ -659,62 +659,62 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
     if (iPPA < 0)
     {
         close(TapFileDes);
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to get new interface. errno=%d"), errno);
     }
 
     int InterfaceFD = open("/dev/tap", O_RDWR, 0);
     if (!InterfaceFD)
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open interface /dev/tap. errno=%d"), errno);
 
     if (ioctl(InterfaceFD, I_PUSH, "ip") == -1)
     {
         close(InterfaceFD);
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to push IP. errno=%d"), errno);
     }
 
     struct lifreq ifReq;
     memset(&ifReq, 0, sizeof(ifReq));
     if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
-        LogRel(("TAP#%d: Failed to get interface flags.\n", pData->pDrvIns->iInstance));
+        LogRel(("TAP#%d: Failed to get interface flags.\n", pThis->pDrvIns->iInstance));
 
     ifReq.lifr_ppa = iPPA;
-    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pData->pszDeviceName);
+    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
 
     if (ioctl(InterfaceFD, SIOCSLIFNAME, &ifReq) == -1)
-        LogRel(("TAP#%d: Failed to set PPA. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to set PPA. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
     if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
-        LogRel(("TAP#%d: Failed to get interface flags after setting PPA. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to get interface flags after setting PPA. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
 #ifdef VBOX_SOLARIS_TAP_ARP
     /* Interface */
     if (ioctl(InterfaceFD, I_PUSH, "arp") == -1)
-        LogRel(("TAP#%d: Failed to push ARP to Interface FD. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to push ARP to Interface FD. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
     /* IP */
     if (ioctl(IPFileDes, I_POP, NULL) == -1)
-        LogRel(("TAP#%d: Failed I_POP from IP FD. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed I_POP from IP FD. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
     if (ioctl(IPFileDes, I_PUSH, "arp") == -1)
-        LogRel(("TAP#%d: Failed to push ARP to IP FD. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to push ARP to IP FD. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
     /* ARP */
     int ARPFileDes = open("/dev/tap", O_RDWR, 0);
     if (ARPFileDes < 0)
-        LogRel(("TAP#%d: Failed to open for /dev/tap for ARP. errno=%d", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to open for /dev/tap for ARP. errno=%d", pThis->pDrvIns->iInstance, errno));
 
     if (ioctl(ARPFileDes, I_PUSH, "arp") == -1)
-        LogRel(("TAP#%d: Failed to push ARP to ARP FD. errno=%d\n", pData->pDrvIns->iInstance, errno));
+        LogRel(("TAP#%d: Failed to push ARP to ARP FD. errno=%d\n", pThis->pDrvIns->iInstance, errno));
 
     ioIF.ic_cmd = SIOCSLIFNAME;
     ioIF.ic_timout = 0;
     ioIF.ic_len = sizeof(ifReq);
     ioIF.ic_dp = (char *)&ifReq;
     if (ioctl(ARPFileDes, I_STR, &ioIF) == -1)
-        LogRel(("TAP#%d: Failed to set interface name to ARP.\n", pData->pDrvIns->iInstance));
+        LogRel(("TAP#%d: Failed to set interface name to ARP.\n", pThis->pDrvIns->iInstance));
 #endif
 
     /* We must use I_LINK and not I_PLINK as I_PLINK makes the link persistent.
@@ -728,15 +728,15 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
 #ifdef VBOX_SOLARIS_TAP_ARP
         close(ARPFileDes);
 #endif
-        LogRel(("TAP#%d: Cannot link TAP device to IP.\n", pData->pDrvIns->iInstance));
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+        LogRel(("TAP#%d: Cannot link TAP device to IP.\n", pThis->pDrvIns->iInstance));
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                     N_("Failed to link TAP device to IP. Check TAP interface name. errno=%d"), errno);
     }
 
 #ifdef VBOX_SOLARIS_TAP_ARP
     int ARPMuxID = ioctl(IPFileDes, I_LINK, ARPFileDes);
     if (ARPMuxID == -1)
-        LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pData->pDrvIns->iInstance));
+        LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pThis->pDrvIns->iInstance));
 
     close(ARPFileDes);
 #endif
@@ -744,7 +744,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
 
     /* Reuse ifReq */
     memset(&ifReq, 0, sizeof(ifReq));
-    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pData->pszDeviceName);
+    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
     ifReq.lifr_ip_muxid  = IPMuxID;
 #ifdef VBOX_SOLARIS_TAP_ARP
     ifReq.lifr_arp_muxid = ARPMuxID;
@@ -757,13 +757,13 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
 #endif
         ioctl(IPFileDes, I_PUNLINK, IPMuxID);
         close(IPFileDes);
-        LogRel(("TAP#%d: Failed to set Mux ID.\n", pData->pDrvIns->iInstance));
-        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+        LogRel(("TAP#%d: Failed to set Mux ID.\n", pThis->pDrvIns->iInstance));
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to set Mux ID. Check TAP interface name. errno=%d"), errno);
     }
 
-    pData->FileDevice = (RTFILE)TapFileDes;
-    pData->IPFileDevice = (RTFILE)IPFileDes;
+    pThis->FileDevice = (RTFILE)TapFileDes;
+    pThis->IPFileDevice = (RTFILE)IPFileDes;
 
     return VINF_SUCCESS;
 }
@@ -784,13 +784,13 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pData)
 static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pData->INetworkConnector;
+            return &pThis->INetworkConnector;
         default:
             return NULL;
     }
@@ -808,39 +808,39 @@ static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, PDMINTERF
 static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvTAPDestruct\n"));
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /*
      * Terminate the control pipe.
      */
-    if (pData->PipeWrite != NIL_RTFILE)
+    if (pThis->PipeWrite != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->PipeWrite);
+        int rc = RTFileClose(pThis->PipeWrite);
         AssertRC(rc);
-        pData->PipeWrite = NIL_RTFILE;
+        pThis->PipeWrite = NIL_RTFILE;
     }
-    if (pData->PipeRead != NIL_RTFILE)
+    if (pThis->PipeRead != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->PipeRead);
+        int rc = RTFileClose(pThis->PipeRead);
         AssertRC(rc);
-        pData->PipeRead = NIL_RTFILE;
+        pThis->PipeRead = NIL_RTFILE;
     }
 
 #ifdef RT_OS_SOLARIS
     /** @todo r=bird: This *does* need checking against ConsoleImpl2.cpp if used on non-solaris systems. */
-    if (pData->FileDevice != NIL_RTFILE)
+    if (pThis->FileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->FileDevice);
+        int rc = RTFileClose(pThis->FileDevice);
         AssertRC(rc);
-        pData->FileDevice = NIL_RTFILE;
+        pThis->FileDevice = NIL_RTFILE;
     }
 
 # ifndef VBOX_WITH_CROSSBOW
-    if (pData->IPFileDevice != NIL_RTFILE)
+    if (pThis->IPFileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->IPFileDevice);
+        int rc = RTFileClose(pThis->IPFileDevice);
         AssertRC(rc);
-        pData->IPFileDevice = NIL_RTFILE;
+        pThis->IPFileDevice = NIL_RTFILE;
     }
 # endif
 
@@ -848,21 +848,21 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
      * Call TerminateApplication after closing the device otherwise
      * TerminateApplication would not be able to unplumb it.
      */
-    if (pData->pszTerminateApplication)
-        drvTAPTerminateApplication(pData);
+    if (pThis->pszTerminateApplication)
+        drvTAPTerminateApplication(pThis);
 
 #endif  /* RT_OS_SOLARIS */
 
 #ifdef RT_OS_SOLARIS
-    if (!pData->fStatic)
-        RTStrFree(pData->pszDeviceName);    /* allocated by drvTAPSetupApplication */
+    if (!pThis->fStatic)
+        RTStrFree(pThis->pszDeviceName);    /* allocated by drvTAPSetupApplication */
     else
-        MMR3HeapFree(pData->pszDeviceName);
+        MMR3HeapFree(pThis->pszDeviceName);
 #else
-    MMR3HeapFree(pData->pszDeviceName);
+    MMR3HeapFree(pThis->pszDeviceName);
 #endif
-    MMR3HeapFree(pData->pszSetupApplication);
-    MMR3HeapFree(pData->pszTerminateApplication);
+    MMR3HeapFree(pThis->pszSetupApplication);
+    MMR3HeapFree(pThis->pszTerminateApplication);
 }
 
 
@@ -878,31 +878,31 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVTAP pData = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->FileDevice                   = NIL_RTFILE;
-    pData->pszDeviceName                = NULL;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->FileDevice                   = NIL_RTFILE;
+    pThis->pszDeviceName                = NULL;
 #ifdef RT_OS_SOLARIS
 # ifdef VBOX_WITH_CROSSBOW
-    pData->pDeviceHandle                = NULL;
+    pThis->pDeviceHandle                = NULL;
 # else
-    pData->IPFileDevice                 = NIL_RTFILE;
+    pThis->IPFileDevice                 = NIL_RTFILE;
 # endif
-    pData->fStatic                      = true;
+    pThis->fStatic                      = true;
 #endif
-    pData->pszSetupApplication          = NULL;
-    pData->pszTerminateApplication      = NULL;
+    pThis->pszSetupApplication          = NULL;
+    pThis->pszTerminateApplication      = NULL;
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
-    pData->INetworkConnector.pfnSend                = drvTAPSend;
-    pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPSetPromiscuousMode;
-    pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPNotifyLinkChanged;
+    pThis->INetworkConnector.pfnSend                = drvTAPSend;
+    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvTAPSetPromiscuousMode;
+    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvTAPNotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -921,8 +921,8 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Query the network port interface.
      */
-    pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
-    if (!pData->pPort)
+    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: The above device/driver didn't export the network port interface"));
 
@@ -930,40 +930,40 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Read the configuration.
      */
 #if defined(RT_OS_SOLARIS)   /** @todo Other platforms' TAP code should be moved here from ConsoleImpl & VBoxBFE. */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPSetupApplication", &pData->pszSetupApplication);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPSetupApplication", &pThis->pszSetupApplication);
     if (RT_SUCCESS(rc))
     {
-        if (!RTPathExists(pData->pszSetupApplication))
+        if (!RTPathExists(pThis->pszSetupApplication))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                       N_("Invalid TAP setup program path: %s"), pData->pszSetupApplication);
+                                       N_("Invalid TAP setup program path: %s"), pThis->pszSetupApplication);
     }
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPTerminateApplication", &pData->pszTerminateApplication);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPTerminateApplication", &pThis->pszTerminateApplication);
     if (RT_SUCCESS(rc))
     {
-        if (!RTPathExists(pData->pszTerminateApplication))
+        if (!RTPathExists(pThis->pszTerminateApplication))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                       N_("Invalid TAP terminate program path: %s"), pData->pszTerminateApplication);
+                                       N_("Invalid TAP terminate program path: %s"), pThis->pszTerminateApplication);
     }
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
 # ifdef VBOX_WITH_CROSSBOW
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pData->MacAddress, sizeof(pData->MacAddress));
+    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pThis->MacAddress, sizeof(pThis->MacAddress));
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: Failed to query \"MAC\""));
 # endif
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pData->pszDeviceName);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pThis->pszDeviceName);
     if (RT_FAILURE(rc))
-        pData->fStatic = false;
+        pThis->fStatic = false;
 
     /* Obtain the device name from the setup application (if none was specified). */
-    if (pData->pszSetupApplication)
+    if (pThis->pszSetupApplication)
     {
-        rc = drvTAPSetupApplication(pData);
+        rc = drvTAPSetupApplication(pThis);
         if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                        N_("Error running TAP setup application. rc=%d"), rc);
@@ -978,9 +978,9 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                        N_("Failed to load library %s required for host interface networking."), LIB_DLPI);
     }
-    rc = SolarisOpenVNIC(pData);
+    rc = SolarisOpenVNIC(pThis);
 # else
-    rc = SolarisTAPAttach(pData);
+    rc = SolarisTAPAttach(pThis);
 # endif
     if (RT_FAILURE(rc))
         return rc;
@@ -992,10 +992,10 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed"));
-    pData->FileDevice = (RTFILE)iFile;
-    if (!RTFileIsValid(pData->FileDevice))
+    pThis->FileDevice = (RTFILE)iFile;
+    if (!RTFileIsValid(pThis->FileDevice))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
-                                   N_("The TAP file handle %RTfile is not valid"), pData->FileDevice);
+                                   N_("The TAP file handle %RTfile is not valid"), pThis->FileDevice);
 #endif /* !RT_OS_SOLARIS */
 
     /*
@@ -1004,11 +1004,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * We should actually query if it's a TAP device, but I haven't
      * found any way to do that.
      */
-    if (fcntl(pData->FileDevice, F_SETFL, O_NONBLOCK) == -1)
+    if (fcntl(pThis->FileDevice, F_SETFL, O_NONBLOCK) == -1)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Configuration error: Failed to configure /dev/net/tun. errno=%d"), errno);
     /** @todo determine device name. This can be done by reading the link /proc/<pid>/fd/<fd> */
-    Log(("drvTAPContruct: %d (from fd)\n", pData->FileDevice));
+    Log(("drvTAPContruct: %d (from fd)\n", pThis->FileDevice));
     rc = VINF_SUCCESS;
 
     /*
@@ -1025,25 +1025,25 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         AssertRC(rc);
         return rc;
     }
-    pData->PipeRead = fds[0];
-    pData->PipeWrite = fds[1];
+    pThis->PipeRead = fds[0];
+    pThis->PipeWrite = fds[1];
 
     /*
      * Create the async I/O thread.
      */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPAsyncIoThread, drvTapAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvTAPAsyncIoThread, drvTapAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSent,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of sent packets.",          "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSentBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of sent bytes.",            "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecv,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of received packets.",      "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSent,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of sent packets.",          "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSentBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of sent bytes.",            "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecv,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of received packets.",      "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;

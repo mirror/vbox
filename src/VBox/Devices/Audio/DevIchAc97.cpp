@@ -1389,23 +1389,23 @@ static DECLCALLBACK(int) ichac97IOPortMap (PPCIDEVICE pPciDev, int iRegion,
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
-    PCIAC97LinkState *pData = PCIDEV_2_ICHAC97STATE(pPciDev);
+    PCIAC97LinkState *pThis = PCIDEV_2_ICHAC97STATE(pPciDev);
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
 
     if (iRegion == 0)
-        rc = PDMDevHlpIOPortRegister (pDevIns, Port, 256, pData,
+        rc = PDMDevHlpIOPortRegister (pDevIns, Port, 256, pThis,
                                       ichac97IOPortNAMWrite, ichac97IOPortNAMRead,
                                       NULL, NULL, "ICHAC97 NAM");
     else
-        rc = PDMDevHlpIOPortRegister (pDevIns, Port, 64, pData,
+        rc = PDMDevHlpIOPortRegister (pDevIns, Port, 64, pThis,
                                       ichac97IOPortNABMWrite, ichac97IOPortNABMRead,
                                       NULL, NULL, "ICHAC97 NABM");
     if (RT_FAILURE(rc))
         return rc;
 
-    pData->ac97.IOPortBase[iRegion] = Port;
+    pThis->ac97.IOPortBase[iRegion] = Port;
     return VINF_SUCCESS;
 }
 
@@ -1418,10 +1418,10 @@ static DECLCALLBACK(int) ichac97IOPortMap (PPCIDEVICE pPciDev, int iRegion,
  */
 static DECLCALLBACK(int) ichac97SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
     size_t  i;
     uint8_t active[LAST_INDEX];
-    AC97LinkState *s = &pData->ac97;
+    AC97LinkState *s = &pThis->ac97;
 
     SSMR3PutU32 (pSSMHandle, s->glob_cnt);
     SSMR3PutU32 (pSSMHandle, s->glob_sta);
@@ -1462,10 +1462,10 @@ static DECLCALLBACK(int) ichac97SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
 static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
                                           uint32_t u32Version)
 {
-    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
     size_t  i;
     uint8_t active[LAST_INDEX];
-    AC97LinkState *s = &pData->ac97;
+    AC97LinkState *s = &pThis->ac97;
 
     if (u32Version != AC97_SSM_VERSION)
     {
@@ -1521,21 +1521,21 @@ static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
  */
 static DECLCALLBACK(void)  ac97Reset (PPDMDEVINS pDevIns)
 {
-    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
+    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
 
     /*
      * Reset the device state (will need pDrv later).
      */
-    reset_bm_regs (&pData->ac97, &pData->ac97.bm_regs[0]);
-    reset_bm_regs (&pData->ac97, &pData->ac97.bm_regs[1]);
-    reset_bm_regs (&pData->ac97, &pData->ac97.bm_regs[2]);
+    reset_bm_regs (&pThis->ac97, &pThis->ac97.bm_regs[0]);
+    reset_bm_regs (&pThis->ac97, &pThis->ac97.bm_regs[1]);
+    reset_bm_regs (&pThis->ac97, &pThis->ac97.bm_regs[2]);
 
     /*
      * Reset the mixer too. The Windows XP driver seems to rely on
      * this. At least it wants to read the vendor id before it resets
      * the codec manually.
      */
-    mixer_reset (&pData->ac97);
+    mixer_reset (&pThis->ac97);
 }
 
 /**
@@ -1550,14 +1550,14 @@ static DECLCALLBACK(void)  ac97Reset (PPDMDEVINS pDevIns)
 static DECLCALLBACK(void *) ichac97QueryInterface (struct PDMIBASE *pInterface,
                                                    PDMINTERFACE enmInterface)
 {
-    PCIAC97LinkState *pData =
+    PCIAC97LinkState *pThis =
         (PCIAC97LinkState *)((uintptr_t)pInterface
                              - RT_OFFSETOF(PCIAC97LinkState, ac97.IBase));
-    Assert(&pData->ac97.IBase == pInterface);
+    Assert(&pThis->ac97.IBase == pInterface);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
-            return &pData->ac97.IBase;
+            return &pThis->ac97.IBase;
         default:
             return NULL;
     }
@@ -1584,8 +1584,8 @@ static DECLCALLBACK(void *) ichac97QueryInterface (struct PDMIBASE *pInterface,
 static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                                            PCFGMNODE pCfgHandle)
 {
-    PCIAC97LinkState *pData = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
-    AC97LinkState    *s     = &pData->ac97;
+    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
+    AC97LinkState    *s     = &pThis->ac97;
     int               rc;
 
     Assert(iInstance == 0);
@@ -1598,29 +1598,29 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
-    PCIDevSetVendorId           (&pData->dev, 0x8086); /* 00 ro - intel. */             Assert (pData->dev.config[0x00] == 0x86); Assert (pData->dev.config[0x01] == 0x80);
-    PCIDevSetDeviceId           (&pData->dev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */Assert (pData->dev.config[0x02] == 0x15); Assert (pData->dev.config[0x03] == 0x24);
-    PCIDevSetCommand            (&pData->dev, 0x0000); /* 04 rw,ro - pcicmd. */         Assert (pData->dev.config[0x04] == 0x00); Assert (pData->dev.config[0x05] == 0x00);
-    PCIDevSetStatus             (&pData->dev, 0x0280); /* 06 rwc?,ro? - pcists. */      Assert (pData->dev.config[0x06] == 0x80); Assert (pData->dev.config[0x07] == 0x02);
-    PCIDevSetRevisionId         (&pData->dev, 0x01);   /* 08 ro - rid. */               Assert (pData->dev.config[0x08] == 0x01);
-    PCIDevSetClassProg          (&pData->dev, 0x00);   /* 09 ro - pi. */                Assert (pData->dev.config[0x09] == 0x00);
-    PCIDevSetClassSub           (&pData->dev, 0x01);   /* 0a ro - scc; 01 == Audio. */  Assert (pData->dev.config[0x0a] == 0x01);
-    PCIDevSetClassBase          (&pData->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert (pData->dev.config[0x0b] == 0x04);
-    PCIDevSetHeaderType         (&pData->dev, 0x00);   /* 0e ro - headtyp. */           Assert (pData->dev.config[0x0e] == 0x00);
-    PCIDevSetBaseAddress        (&pData->dev, 0,       /* 10 rw - nambar - native audio mixer base. */
-                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pData->dev.config[0x10] == 0x01); Assert (pData->dev.config[0x11] == 0x00); Assert (pData->dev.config[0x12] == 0x00); Assert (pData->dev.config[0x13] == 0x00);
-    PCIDevSetBaseAddress        (&pData->dev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
-                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pData->dev.config[0x14] == 0x01); Assert (pData->dev.config[0x15] == 0x00); Assert (pData->dev.config[0x16] == 0x00); Assert (pData->dev.config[0x17] == 0x00);
-    PCIDevSetSubSystemVendorId  (&pData->dev, 0x8086); /* 2c ro - intel.) */            Assert (pData->dev.config[0x2c] == 0x86); Assert (pData->dev.config[0x2d] == 0x80);
-    PCIDevSetSubSystemId        (&pData->dev, 0x0000); /* 2e ro. */                     Assert (pData->dev.config[0x2e] == 0x00); Assert (pData->dev.config[0x2f] == 0x00);
-    PCIDevSetInterruptLine      (&pData->dev, 0x00);   /* 3c rw. */                     Assert (pData->dev.config[0x3c] == 0x00);
-    PCIDevSetInterruptPin       (&pData->dev, 0x01);   /* 3d ro - INTA#. */             Assert (pData->dev.config[0x3d] == 0x01);
+    PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */             Assert (pThis->dev.config[0x00] == 0x86); Assert (pThis->dev.config[0x01] == 0x80);
+    PCIDevSetDeviceId           (&pThis->dev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */Assert (pThis->dev.config[0x02] == 0x15); Assert (pThis->dev.config[0x03] == 0x24);
+    PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */         Assert (pThis->dev.config[0x04] == 0x00); Assert (pThis->dev.config[0x05] == 0x00);
+    PCIDevSetStatus             (&pThis->dev, 0x0280); /* 06 rwc?,ro? - pcists. */      Assert (pThis->dev.config[0x06] == 0x80); Assert (pThis->dev.config[0x07] == 0x02);
+    PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */               Assert (pThis->dev.config[0x08] == 0x01);
+    PCIDevSetClassProg          (&pThis->dev, 0x00);   /* 09 ro - pi. */                Assert (pThis->dev.config[0x09] == 0x00);
+    PCIDevSetClassSub           (&pThis->dev, 0x01);   /* 0a ro - scc; 01 == Audio. */  Assert (pThis->dev.config[0x0a] == 0x01);
+    PCIDevSetClassBase          (&pThis->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert (pThis->dev.config[0x0b] == 0x04);
+    PCIDevSetHeaderType         (&pThis->dev, 0x00);   /* 0e ro - headtyp. */           Assert (pThis->dev.config[0x0e] == 0x00);
+    PCIDevSetBaseAddress        (&pThis->dev, 0,       /* 10 rw - nambar - native audio mixer base. */
+                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pThis->dev.config[0x10] == 0x01); Assert (pThis->dev.config[0x11] == 0x00); Assert (pThis->dev.config[0x12] == 0x00); Assert (pThis->dev.config[0x13] == 0x00);
+    PCIDevSetBaseAddress        (&pThis->dev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
+                                 true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert (pThis->dev.config[0x14] == 0x01); Assert (pThis->dev.config[0x15] == 0x00); Assert (pThis->dev.config[0x16] == 0x00); Assert (pThis->dev.config[0x17] == 0x00);
+    PCIDevSetSubSystemVendorId  (&pThis->dev, 0x8086); /* 2c ro - intel.) */            Assert (pThis->dev.config[0x2c] == 0x86); Assert (pThis->dev.config[0x2d] == 0x80);
+    PCIDevSetSubSystemId        (&pThis->dev, 0x0000); /* 2e ro. */                     Assert (pThis->dev.config[0x2e] == 0x00); Assert (pThis->dev.config[0x2f] == 0x00);
+    PCIDevSetInterruptLine      (&pThis->dev, 0x00);   /* 3c rw. */                     Assert (pThis->dev.config[0x3c] == 0x00);
+    PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */             Assert (pThis->dev.config[0x3d] == 0x01);
 
     /*
      * Register the PCI device, it's I/O regions, the timer and the
      * saved state item.
      */
-    rc = PDMDevHlpPCIRegister (pDevIns, &pData->dev);
+    rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
     if (RT_FAILURE (rc))
         return rc;
 
@@ -1635,7 +1635,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         return rc;
 
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName,
-                               iInstance, AC97_SSM_VERSION, sizeof(*pData),
+                               iInstance, AC97_SSM_VERSION, sizeof(*pThis),
                                NULL, ichac97SaveExec, NULL,
                                NULL, ichac97LoadExec, NULL);
     if (RT_FAILURE (rc))

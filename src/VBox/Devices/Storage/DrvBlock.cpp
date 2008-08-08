@@ -126,18 +126,18 @@ typedef struct DRVBLOCK
 /** @copydoc PDMIBLOCK::pfnRead */
 static DECLCALLBACK(int) drvblockRead(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMedia->pfnRead(pData->pDrvMedia, off, pvBuf, cbRead);
+    int rc = pThis->pDrvMedia->pfnRead(pThis->pDrvMedia, off, pvBuf, cbRead);
     return rc;
 }
 
@@ -145,26 +145,26 @@ static DECLCALLBACK(int) drvblockRead(PPDMIBLOCK pInterface, uint64_t off, void 
 /** @copydoc PDMIBLOCK::pfnWrite */
 static DECLCALLBACK(int) drvblockWrite(PPDMIBLOCK pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMedia->pfnWrite(pData->pDrvMedia, off, pvBuf, cbWrite);
+    int rc = pThis->pDrvMedia->pfnWrite(pThis->pDrvMedia, off, pvBuf, cbWrite);
 #ifdef VBOX_PERIODIC_FLUSH
-    if (pData->cbFlushInterval)
+    if (pThis->cbFlushInterval)
     {
-        pData->cbDataWritten += cbWrite;
-        if (pData->cbDataWritten > pData->cbFlushInterval)
+        pThis->cbDataWritten += cbWrite;
+        if (pThis->cbDataWritten > pThis->cbFlushInterval)
         {
-            pData->cbDataWritten = 0;
-            pData->pDrvMedia->pfnFlush(pData->pDrvMedia);
+            pThis->cbDataWritten = 0;
+            pThis->pDrvMedia->pfnFlush(pThis->pDrvMedia);
         }
     }
 #endif /* VBOX_PERIODIC_FLUSH */
@@ -176,23 +176,23 @@ static DECLCALLBACK(int) drvblockWrite(PPDMIBLOCK pInterface, uint64_t off, cons
 /** @copydoc PDMIBLOCK::pfnFlush */
 static DECLCALLBACK(int) drvblockFlush(PPDMIBLOCK pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
 #ifdef VBOX_IGNORE_FLUSH
-    if (pData->fIgnoreFlush)
+    if (pThis->fIgnoreFlush)
         return VINF_SUCCESS;
 #endif /* VBOX_IGNORE_FLUSH */
 
-    int rc = pData->pDrvMedia->pfnFlush(pData->pDrvMedia);
+    int rc = pThis->pDrvMedia->pfnFlush(pThis->pDrvMedia);
     if (rc == VERR_NOT_IMPLEMENTED)
         rc = VINF_SUCCESS;
     return rc;
@@ -202,15 +202,15 @@ static DECLCALLBACK(int) drvblockFlush(PPDMIBLOCK pInterface)
 /** @copydoc PDMIBLOCK::pfnIsReadOnly */
 static DECLCALLBACK(bool) drvblockIsReadOnly(PPDMIBLOCK pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
         return false;
 
-    bool fRc = pData->pDrvMedia->pfnIsReadOnly(pData->pDrvMedia);
+    bool fRc = pThis->pDrvMedia->pfnIsReadOnly(pThis->pDrvMedia);
     return fRc;
 }
 
@@ -218,15 +218,15 @@ static DECLCALLBACK(bool) drvblockIsReadOnly(PPDMIBLOCK pInterface)
 /** @copydoc PDMIBLOCK::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvblockGetSize(PPDMIBLOCK pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
         return 0;
 
-    uint64_t cb = pData->pDrvMedia->pfnGetSize(pData->pDrvMedia);
+    uint64_t cb = pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
     LogFlow(("drvblockGetSize: returns %llu\n", cb));
     return cb;
 }
@@ -235,21 +235,21 @@ static DECLCALLBACK(uint64_t) drvblockGetSize(PPDMIBLOCK pInterface)
 /** @copydoc PDMIBLOCK::pfnGetType */
 static DECLCALLBACK(PDMBLOCKTYPE) drvblockGetType(PPDMIBLOCK pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
-    LogFlow(("drvblockGetType: returns %d\n", pData->enmType));
-    return pData->enmType;
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    LogFlow(("drvblockGetType: returns %d\n", pThis->enmType));
+    return pThis->enmType;
 }
 
 
 /** @copydoc PDMIBLOCK::pfnGetUuid */
 static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
 {
-    PDRVBLOCK pData = PDMIBLOCK_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Copy the uuid.
      */
-    *pUuid = pData->Uuid;
+    *pUuid = pThis->Uuid;
     return VINF_SUCCESS;
 }
 
@@ -261,18 +261,18 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
 /** @copydoc PDMIBLOCKASYNC::pfnRead */
 static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser)
 {
-    PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMediaAsync)
+    if (!pThis->pDrvMediaAsync)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMediaAsync->pfnStartRead(pData->pDrvMediaAsync, off, pSeg, cSeg, cbRead, pvUser);
+    int rc = pThis->pDrvMediaAsync->pfnStartRead(pThis->pDrvMediaAsync, off, pSeg, cSeg, cbRead, pvUser);
     return rc;
 }
 
@@ -280,18 +280,18 @@ static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint
 /** @copydoc PDMIBLOCKASYNC::pfnWrite */
 static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser)
 {
-    PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMediaAsync)
+    if (!pThis->pDrvMediaAsync)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMediaAsync->pfnStartWrite(pData->pDrvMediaAsync, off, pSeg, cSeg, cbWrite, pvUser);
+    int rc = pThis->pDrvMediaAsync->pfnStartWrite(pThis->pDrvMediaAsync, off, pSeg, cSeg, cbWrite, pvUser);
 
     return rc;
 }
@@ -303,9 +303,9 @@ static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uin
 
 static DECLCALLBACK(int) drvblockAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser)
 {
-    PDRVBLOCK pData = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
 
-    return pData->pDrvBlockAsyncPort->pfnTransferCompleteNotify(pData->pDrvBlockAsyncPort, pvUser);
+    return pThis->pDrvBlockAsyncPort->pfnTransferCompleteNotify(pThis->pDrvBlockAsyncPort, pvUser);
 }
 
 /* -=-=-=-=- IBlockBios -=-=-=-=- */
@@ -317,35 +317,35 @@ static DECLCALLBACK(int) drvblockAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT
 /** @copydoc PDMIBLOCKBIOS::pfnGetPCHSGeometry */
 static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
         return VERR_PDM_MEDIA_NOT_MOUNTED;
 
     /*
      * Use configured/cached values if present.
      */
-    if (    pData->PCHSGeometry.cCylinders > 0
-        &&  pData->PCHSGeometry.cHeads > 0
-        &&  pData->PCHSGeometry.cSectors > 0)
+    if (    pThis->PCHSGeometry.cCylinders > 0
+        &&  pThis->PCHSGeometry.cHeads > 0
+        &&  pThis->PCHSGeometry.cSectors > 0)
     {
-        *pPCHSGeometry = pData->PCHSGeometry;
-        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pData->PCHSGeometry.cCylinders, pData->PCHSGeometry.cHeads, pData->PCHSGeometry.cSectors));
+        *pPCHSGeometry = pThis->PCHSGeometry;
+        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
         return VINF_SUCCESS;
     }
 
     /*
      * Call media.
      */
-    int rc = pData->pDrvMedia->pfnBiosGetPCHSGeometry(pData->pDrvMedia, &pData->PCHSGeometry);
+    int rc = pThis->pDrvMedia->pfnBiosGetPCHSGeometry(pThis->pDrvMedia, &pThis->PCHSGeometry);
 
     if (RT_SUCCESS(rc))
     {
-        *pPCHSGeometry = pData->PCHSGeometry;
-        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->PCHSGeometry.cCylinders, pData->PCHSGeometry.cHeads, pData->PCHSGeometry.cSectors));
+        *pPCHSGeometry = pThis->PCHSGeometry;
+        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
     {
@@ -360,12 +360,12 @@ static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
 static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     LogFlow(("%s: cCylinders=%d cHeads=%d cSectors=%d\n", __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
@@ -374,12 +374,12 @@ static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
     /*
      * Call media. Ignore the not implemented return code.
      */
-    int rc = pData->pDrvMedia->pfnBiosSetPCHSGeometry(pData->pDrvMedia, pPCHSGeometry);
+    int rc = pThis->pDrvMedia->pfnBiosSetPCHSGeometry(pThis->pDrvMedia, pPCHSGeometry);
 
     if (    RT_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
-        pData->PCHSGeometry = *pPCHSGeometry;
+        pThis->PCHSGeometry = *pPCHSGeometry;
         rc = VINF_SUCCESS;
     }
     return rc;
@@ -389,35 +389,35 @@ static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
 /** @copydoc PDMIBLOCKBIOS::pfnGetLCHSGeometry */
 static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
         return VERR_PDM_MEDIA_NOT_MOUNTED;
 
     /*
      * Use configured/cached values if present.
      */
-    if (    pData->LCHSGeometry.cCylinders > 0
-        &&  pData->LCHSGeometry.cHeads > 0
-        &&  pData->LCHSGeometry.cSectors > 0)
+    if (    pThis->LCHSGeometry.cCylinders > 0
+        &&  pThis->LCHSGeometry.cHeads > 0
+        &&  pThis->LCHSGeometry.cSectors > 0)
     {
-        *pLCHSGeometry = pData->LCHSGeometry;
-        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pData->LCHSGeometry.cCylinders, pData->LCHSGeometry.cHeads, pData->LCHSGeometry.cSectors));
+        *pLCHSGeometry = pThis->LCHSGeometry;
+        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
         return VINF_SUCCESS;
     }
 
     /*
      * Call media.
      */
-    int rc = pData->pDrvMedia->pfnBiosGetLCHSGeometry(pData->pDrvMedia, &pData->LCHSGeometry);
+    int rc = pThis->pDrvMedia->pfnBiosGetLCHSGeometry(pThis->pDrvMedia, &pThis->LCHSGeometry);
 
     if (RT_SUCCESS(rc))
     {
-        *pLCHSGeometry = pData->LCHSGeometry;
-        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->LCHSGeometry.cCylinders, pData->LCHSGeometry.cHeads, pData->LCHSGeometry.cSectors));
+        *pLCHSGeometry = pThis->LCHSGeometry;
+        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
     {
@@ -432,12 +432,12 @@ static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
 static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     LogFlow(("%s: cCylinders=%d cHeads=%d cSectors=%d\n", __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         AssertMsgFailed(("Invalid state! Not mounted!\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
@@ -446,12 +446,12 @@ static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
     /*
      * Call media. Ignore the not implemented return code.
      */
-    int rc = pData->pDrvMedia->pfnBiosSetLCHSGeometry(pData->pDrvMedia, pLCHSGeometry);
+    int rc = pThis->pDrvMedia->pfnBiosSetLCHSGeometry(pThis->pDrvMedia, pLCHSGeometry);
 
     if (    RT_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
-        pData->LCHSGeometry = *pLCHSGeometry;
+        pThis->LCHSGeometry = *pLCHSGeometry;
         rc = VINF_SUCCESS;
     }
     return rc;
@@ -461,18 +461,18 @@ static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
 /** @copydoc PDMIBLOCKBIOS::pfnIsVisible */
 static DECLCALLBACK(bool) drvblockIsVisible(PPDMIBLOCKBIOS pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
-    LogFlow(("drvblockIsVisible: returns %d\n", pData->fBiosVisible));
-    return pData->fBiosVisible;
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    LogFlow(("drvblockIsVisible: returns %d\n", pThis->fBiosVisible));
+    return pThis->fBiosVisible;
 }
 
 
 /** @copydoc PDMIBLOCKBIOS::pfnGetType */
 static DECLCALLBACK(PDMBLOCKTYPE) drvblockBiosGetType(PPDMIBLOCKBIOS pInterface)
 {
-    PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
-    LogFlow(("drvblockBiosGetType: returns %d\n", pData->enmType));
-    return pData->enmType;
+    PDRVBLOCK pThis = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
+    LogFlow(("drvblockBiosGetType: returns %d\n", pThis->enmType));
+    return pThis->enmType;
 }
 
 
@@ -487,12 +487,12 @@ static DECLCALLBACK(PDMBLOCKTYPE) drvblockBiosGetType(PPDMIBLOCKBIOS pInterface)
 static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFilename, const char *pszCoreDriver)
 {
     LogFlow(("drvblockMount: pszFilename=%p:{%s} pszCoreDriver=%p:{%s}\n", pszFilename, pszFilename, pszCoreDriver, pszCoreDriver));
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
 
     /*
      * Validate state.
      */
-    if (pData->pDrvMedia)
+    if (pThis->pDrvMedia)
     {
         AssertMsgFailed(("Already mounted\n"));
         return VERR_PDM_MEDIA_MOUNTED;
@@ -503,7 +503,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      */
     if (pszFilename)
     {
-        int rc = pData->pDrvIns->pDrvHlp->pfnMountPrepare(pData->pDrvIns, pszFilename, pszCoreDriver);
+        int rc = pThis->pDrvIns->pDrvHlp->pfnMountPrepare(pThis->pDrvIns, pszFilename, pszCoreDriver);
         if (RT_FAILURE(rc))
         {
             Log(("drvblockMount: Prepare failed for \"%s\" rc=%Vrc\n", pszFilename, rc));
@@ -515,35 +515,35 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      * Attach the media driver and query it's interface.
      */
     PPDMIBASE pBase;
-    int rc = pData->pDrvIns->pDrvHlp->pfnAttach(pData->pDrvIns, &pBase);
+    int rc = pThis->pDrvIns->pDrvHlp->pfnAttach(pThis->pDrvIns, &pBase);
     if (RT_FAILURE(rc))
     {
         Log(("drvblockMount: Attach failed rc=%Vrc\n", rc));
         return rc;
     }
 
-    pData->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
-    if (pData->pDrvMedia)
+    pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
+    if (pThis->pDrvMedia)
     {
         /*
          * Initialize state.
          */
-        pData->fLocked = false;
-        pData->PCHSGeometry.cCylinders  = 0;
-        pData->PCHSGeometry.cHeads      = 0;
-        pData->PCHSGeometry.cSectors    = 0;
-        pData->LCHSGeometry.cCylinders  = 0;
-        pData->LCHSGeometry.cHeads      = 0;
-        pData->LCHSGeometry.cSectors    = 0;
+        pThis->fLocked = false;
+        pThis->PCHSGeometry.cCylinders  = 0;
+        pThis->PCHSGeometry.cHeads      = 0;
+        pThis->PCHSGeometry.cSectors    = 0;
+        pThis->LCHSGeometry.cCylinders  = 0;
+        pThis->LCHSGeometry.cHeads      = 0;
+        pThis->LCHSGeometry.cSectors    = 0;
 #ifdef VBOX_PERIODIC_FLUSH
-        pData->cbDataWritten = 0;
+        pThis->cbDataWritten = 0;
 #endif /* VBOX_PERIODIC_FLUSH */
 
         /*
          * Notify driver/device above us.
          */
-        if (pData->pDrvMountNotify)
-            pData->pDrvMountNotify->pfnMountNotify(pData->pDrvMountNotify);
+        if (pThis->pDrvMountNotify)
+            pThis->pDrvMountNotify->pfnMountNotify(pThis->pDrvMountNotify);
         Log(("drvblockMount: Success\n"));
         return VINF_SUCCESS;
     }
@@ -554,9 +554,9 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      * Failed, detatch the media driver.
      */
     AssertMsgFailed(("No media interface!\n"));
-    int rc2 = pData->pDrvIns->pDrvHlp->pfnDetach(pData->pDrvIns);
+    int rc2 = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns);
     AssertRC(rc2);
-    pData->pDrvMedia = NULL;
+    pThis->pDrvMedia = NULL;
     return rc;
 }
 
@@ -564,41 +564,41 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
 /** @copydoc PDMIMOUNT::pfnUnmount */
 static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
 {
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
 
     /*
      * Validate state.
      */
-    if (!pData->pDrvMedia)
+    if (!pThis->pDrvMedia)
     {
         Log(("drvblockUmount: Not mounted\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
-    if (pData->fLocked && !fForce)
+    if (pThis->fLocked && !fForce)
     {
         Log(("drvblockUmount: Locked\n"));
         return VERR_PDM_MEDIA_LOCKED;
     }
 
     /* Media is no longer locked even if it was previously. */
-    pData->fLocked = false;
+    pThis->fLocked = false;
 
     /*
      * Detach the media driver and query it's interface.
      */
-    int rc = pData->pDrvIns->pDrvHlp->pfnDetach(pData->pDrvIns);
+    int rc = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns);
     if (RT_FAILURE(rc))
     {
         Log(("drvblockUnmount: Detach failed rc=%Vrc\n", rc));
         return rc;
     }
-    Assert(!pData->pDrvMedia);
+    Assert(!pThis->pDrvMedia);
 
     /*
      * Notify driver/device above us.
      */
-    if (pData->pDrvMountNotify)
-        pData->pDrvMountNotify->pfnUnmountNotify(pData->pDrvMountNotify);
+    if (pThis->pDrvMountNotify)
+        pThis->pDrvMountNotify->pfnUnmountNotify(pThis->pDrvMountNotify);
     Log(("drvblockUnmount: success\n"));
     return VINF_SUCCESS;
 }
@@ -607,33 +607,33 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
 /** @copydoc PDMIMOUNT::pfnIsMounted */
 static DECLCALLBACK(bool) drvblockIsMounted(PPDMIMOUNT pInterface)
 {
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
-    return pData->pDrvMedia != NULL;
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    return pThis->pDrvMedia != NULL;
 }
 
 /** @copydoc PDMIMOUNT::pfnLock */
 static DECLCALLBACK(int) drvblockLock(PPDMIMOUNT pInterface)
 {
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
-    Log(("drvblockLock: %d -> %d\n", pData->fLocked, true));
-    pData->fLocked = true;
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    Log(("drvblockLock: %d -> %d\n", pThis->fLocked, true));
+    pThis->fLocked = true;
     return VINF_SUCCESS;
 }
 
 /** @copydoc PDMIMOUNT::pfnUnlock */
 static DECLCALLBACK(int) drvblockUnlock(PPDMIMOUNT pInterface)
 {
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
-    Log(("drvblockUnlock: %d -> %d\n", pData->fLocked, false));
-    pData->fLocked = false;
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    Log(("drvblockUnlock: %d -> %d\n", pThis->fLocked, false));
+    pThis->fLocked = false;
     return VINF_SUCCESS;
 }
 
 /** @copydoc PDMIMOUNT::pfnIsLocked */
 static DECLCALLBACK(bool) drvblockIsLocked(PPDMIMOUNT pInterface)
 {
-    PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
-    return pData->fLocked;
+    PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
+    return pThis->fLocked;
 }
 
 
@@ -643,21 +643,21 @@ static DECLCALLBACK(bool) drvblockIsLocked(PPDMIMOUNT pInterface)
 static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVBLOCK   pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK   pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_BLOCK:
-            return &pData->IBlock;
+            return &pThis->IBlock;
         case PDMINTERFACE_BLOCK_BIOS:
-            return pData->fBiosVisible ? &pData->IBlockBios : NULL;
+            return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
         case PDMINTERFACE_MOUNT:
-            return pData->fMountable ? &pData->IMount : NULL;
+            return pThis->fMountable ? &pThis->IMount : NULL;
         case PDMINTERFACE_BLOCK_ASYNC:
-            return pData->pDrvMediaAsync ? &pData->IBlockAsync : NULL;
+            return pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL;
         case PDMINTERFACE_MEDIA_ASYNC_PORT:
-            return pData->pDrvBlockAsyncPort ? &pData->IMediaAsyncPort : NULL;
+            return pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL;
         default:
             return NULL;
     }
@@ -669,9 +669,9 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINT
 /** @copydoc FNPDMDRVDETACH. */
 static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
 {
-    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
-    pData->pDrvMedia = NULL;
-    pData->pDrvMediaAsync = NULL;
+    PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
+    pThis->pDrvMedia = NULL;
+    pThis->pDrvMediaAsync = NULL;
 }
 
 /**
@@ -682,9 +682,9 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
 {
-    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
 
-    pData->fLocked = false;
+    pThis->fLocked = false;
 }
 
 /**
@@ -699,7 +699,7 @@ static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     LogFlow(("drvblockConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
@@ -715,55 +715,55 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /*
      * Initialize most of the data members.
      */
-    pData->pDrvIns                          = pDrvIns;
+    pThis->pDrvIns                          = pDrvIns;
 
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvblockQueryInterface;
 
     /* IBlock. */
-    pData->IBlock.pfnRead                   = drvblockRead;
-    pData->IBlock.pfnWrite                  = drvblockWrite;
-    pData->IBlock.pfnFlush                  = drvblockFlush;
-    pData->IBlock.pfnIsReadOnly             = drvblockIsReadOnly;
-    pData->IBlock.pfnGetSize                = drvblockGetSize;
-    pData->IBlock.pfnGetType                = drvblockGetType;
-    pData->IBlock.pfnGetUuid                = drvblockGetUuid;
+    pThis->IBlock.pfnRead                   = drvblockRead;
+    pThis->IBlock.pfnWrite                  = drvblockWrite;
+    pThis->IBlock.pfnFlush                  = drvblockFlush;
+    pThis->IBlock.pfnIsReadOnly             = drvblockIsReadOnly;
+    pThis->IBlock.pfnGetSize                = drvblockGetSize;
+    pThis->IBlock.pfnGetType                = drvblockGetType;
+    pThis->IBlock.pfnGetUuid                = drvblockGetUuid;
 
     /* IBlockBios. */
-    pData->IBlockBios.pfnGetPCHSGeometry    = drvblockGetPCHSGeometry;
-    pData->IBlockBios.pfnSetPCHSGeometry    = drvblockSetPCHSGeometry;
-    pData->IBlockBios.pfnGetLCHSGeometry    = drvblockGetLCHSGeometry;
-    pData->IBlockBios.pfnSetLCHSGeometry    = drvblockSetLCHSGeometry;
-    pData->IBlockBios.pfnIsVisible          = drvblockIsVisible;
-    pData->IBlockBios.pfnGetType            = drvblockBiosGetType;
+    pThis->IBlockBios.pfnGetPCHSGeometry    = drvblockGetPCHSGeometry;
+    pThis->IBlockBios.pfnSetPCHSGeometry    = drvblockSetPCHSGeometry;
+    pThis->IBlockBios.pfnGetLCHSGeometry    = drvblockGetLCHSGeometry;
+    pThis->IBlockBios.pfnSetLCHSGeometry    = drvblockSetLCHSGeometry;
+    pThis->IBlockBios.pfnIsVisible          = drvblockIsVisible;
+    pThis->IBlockBios.pfnGetType            = drvblockBiosGetType;
 
     /* IMount. */
-    pData->IMount.pfnMount                  = drvblockMount;
-    pData->IMount.pfnUnmount                = drvblockUnmount;
-    pData->IMount.pfnIsMounted              = drvblockIsMounted;
-    pData->IMount.pfnLock                   = drvblockLock;
-    pData->IMount.pfnUnlock                 = drvblockUnlock;
-    pData->IMount.pfnIsLocked               = drvblockIsLocked;
+    pThis->IMount.pfnMount                  = drvblockMount;
+    pThis->IMount.pfnUnmount                = drvblockUnmount;
+    pThis->IMount.pfnIsMounted              = drvblockIsMounted;
+    pThis->IMount.pfnLock                   = drvblockLock;
+    pThis->IMount.pfnUnlock                 = drvblockUnlock;
+    pThis->IMount.pfnIsLocked               = drvblockIsLocked;
 
     /* IBlockAsync. */
-    pData->IBlockAsync.pfnStartRead         = drvblockAsyncReadStart;
-    pData->IBlockAsync.pfnStartWrite        = drvblockAsyncWriteStart;
+    pThis->IBlockAsync.pfnStartRead         = drvblockAsyncReadStart;
+    pThis->IBlockAsync.pfnStartWrite        = drvblockAsyncWriteStart;
 
     /* IMediaAsyncPort. */
-    pData->IMediaAsyncPort.pfnTransferCompleteNotify  = drvblockAsyncTransferCompleteNotify;
+    pThis->IMediaAsyncPort.pfnTransferCompleteNotify  = drvblockAsyncTransferCompleteNotify;
 
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
      */
-    pData->pDrvBlockPort = (PPDMIBLOCKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_PORT);
-    if (!pData->pDrvBlockPort)
+    pThis->pDrvBlockPort = (PPDMIBLOCKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_PORT);
+    if (!pThis->pDrvBlockPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("No block port interface above"));
 
     /* Try to get the optional async block port interface above. */
-    pData->pDrvBlockAsyncPort = (PPDMIBLOCKASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_ASYNC_PORT);
+    pThis->pDrvBlockAsyncPort = (PPDMIBLOCKASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_ASYNC_PORT);
 
-    pData->pDrvMountNotify = (PPDMIMOUNTNOTIFY)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUNT_NOTIFY);
+    pThis->pDrvMountNotify = (PPDMIMOUNTNOTIFY)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUNT_NOTIFY);
 
     /*
      * Query configuration.
@@ -774,21 +774,21 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the type"));
     if (!strcmp(psz, "HardDisk"))
-        pData->enmType = PDMBLOCKTYPE_HARD_DISK;
+        pThis->enmType = PDMBLOCKTYPE_HARD_DISK;
     else if (!strcmp(psz, "DVD"))
-        pData->enmType = PDMBLOCKTYPE_DVD;
+        pThis->enmType = PDMBLOCKTYPE_DVD;
     else if (!strcmp(psz, "CDROM"))
-        pData->enmType = PDMBLOCKTYPE_CDROM;
+        pThis->enmType = PDMBLOCKTYPE_CDROM;
     else if (!strcmp(psz, "Floppy 2.88"))
-        pData->enmType = PDMBLOCKTYPE_FLOPPY_2_88;
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_2_88;
     else if (!strcmp(psz, "Floppy 1.44"))
-        pData->enmType = PDMBLOCKTYPE_FLOPPY_1_44;
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_1_44;
     else if (!strcmp(psz, "Floppy 1.20"))
-        pData->enmType = PDMBLOCKTYPE_FLOPPY_1_20;
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_1_20;
     else if (!strcmp(psz, "Floppy 720"))
-        pData->enmType = PDMBLOCKTYPE_FLOPPY_720;
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_720;
     else if (!strcmp(psz, "Floppy 360"))
-        pData->enmType = PDMBLOCKTYPE_FLOPPY_360;
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_360;
     else
     {
         PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_BLOCK_UNKNOWN_TYPE, RT_SRC_POS,
@@ -796,48 +796,48 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         MMR3HeapFree(psz);
         return VERR_PDM_BLOCK_UNKNOWN_TYPE;
     }
-    Log2(("drvblockConstruct: enmType=%d\n", pData->enmType));
+    Log2(("drvblockConstruct: enmType=%d\n", pThis->enmType));
     MMR3HeapFree(psz); psz = NULL;
 
     /* Mountable */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "Mountable", &pData->fMountable, false);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "Mountable", &pThis->fMountable, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Mountable\" from the config"));
 
     /* Locked */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "Locked", &pData->fLocked, false);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "Locked", &pThis->fLocked, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Locked\" from the config"));
 
     /* BIOS visible */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "BIOSVisible", &pData->fBiosVisible, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "BIOSVisible", &pThis->fBiosVisible, true);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"BIOSVisible\" from the config"));
 
     /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Cylinders", &pData->LCHSGeometry.cCylinders, 0);
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Cylinders", &pThis->LCHSGeometry.cCylinders, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Cylinders\" from the config"));
 
     /* Heads */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Heads", &pData->LCHSGeometry.cHeads, 0);
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Heads", &pThis->LCHSGeometry.cHeads, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Heads\" from the config"));
 
     /* Sectors */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Sectors", &pData->LCHSGeometry.cSectors, 0);
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Sectors", &pThis->LCHSGeometry.cSectors, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Sectors\" from the config"));
 
     /* Uuid */
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Uuid", &psz);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        RTUuidClear(&pData->Uuid);
+        RTUuidClear(&pThis->Uuid);
     else if (RT_SUCCESS(rc))
     {
-        rc = RTUuidFromStr(&pData->Uuid, psz);
+        rc = RTUuidFromStr(&pThis->Uuid, psz);
         if (RT_FAILURE(rc))
         {
             PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "%s",
@@ -851,13 +851,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Uuid\" from the config"));
 
 #ifdef VBOX_PERIODIC_FLUSH
-    rc = CFGMR3QueryU32Def(pCfgHandle, "FlushInterval", &pData->cbFlushInterval, 0);
+    rc = CFGMR3QueryU32Def(pCfgHandle, "FlushInterval", &pThis->cbFlushInterval, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"FlushInterval\" from the config"));
 #endif /* VBOX_PERIODIC_FLUSH */
 
 #ifdef VBOX_IGNORE_FLUSH
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreFlush", &pData->fIgnoreFlush, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreFlush", &pThis->fIgnoreFlush, true);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlush\" from the config"));
 #endif /* VBOX_IGNORE_FLUSH */
@@ -868,25 +868,25 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     PPDMIBASE pBase;
     rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
     if (    rc == VERR_PDM_NO_ATTACHED_DRIVER
-        &&  pData->enmType != PDMBLOCKTYPE_HARD_DISK)
+        &&  pThis->enmType != PDMBLOCKTYPE_HARD_DISK)
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
     {
         AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
         return rc;
     }
-    pData->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
-    if (!pData->pDrvMedia)
+    pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
+    if (!pThis->pDrvMedia)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                 N_("No media or async media interface below"));
 
     /* Try to get the optional async interface. */
-    pData->pDrvMediaAsync = (PPDMIMEDIAASYNC)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA_ASYNC);
+    pThis->pDrvMediaAsync = (PPDMIMEDIAASYNC)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA_ASYNC);
 
-    if (RTUuidIsNull(&pData->Uuid))
+    if (RTUuidIsNull(&pThis->Uuid))
     {
-        if (pData->enmType == PDMBLOCKTYPE_HARD_DISK)
-            pData->pDrvMedia->pfnGetUuid(pData->pDrvMedia, &pData->Uuid);
+        if (pThis->enmType == PDMBLOCKTYPE_HARD_DISK)
+            pThis->pDrvMedia->pfnGetUuid(pThis->pDrvMedia, &pThis->Uuid);
     }
 
     return VINF_SUCCESS;

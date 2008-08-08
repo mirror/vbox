@@ -1928,13 +1928,13 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface,
                                                    PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIO  pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    PDRVAUDIO  pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_AUDIO_CONNECTOR:
-            return &pData->IAudioConnector;
+            return &pThis->IAudioConnector;
         default:
             return NULL;
     }
@@ -1979,7 +1979,7 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     int rc;
-    PDRVAUDIO pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     char *drvname;
 
     LogFlow(("drvAUDIOConstruct:\n"));
@@ -1992,11 +1992,11 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                    = pDrvIns;
+    pThis->pDrvIns                    = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface  = drvAudioQueryInterface;
     /* IAudio */
-    /* pData->IAudioConnector.pfn; */
+    /* pThis->IAudioConnector.pfn; */
 
     glob_audio_state.pDrvIns = pDrvIns;
 

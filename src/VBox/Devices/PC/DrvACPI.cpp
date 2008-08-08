@@ -72,13 +72,13 @@ typedef struct DRVACPI
 static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVACPI pData = PDMINS_2_DATA(pDrvIns, PDRVACPI);
+    PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_ACPI_CONNECTOR:
-            return &pData->IACPIConnector;
+            return &pThis->IACPIConnector;
         default:
             return NULL;
     }
@@ -441,17 +441,17 @@ static DECLCALLBACK(void) drvACPIDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVACPI pData = PDMINS_2_DATA(pDrvIns, PDRVACPI);
+    PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                              = pDrvIns;
+    pThis->pDrvIns                              = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface            = drvACPIQueryInterface;
     /* IACPIConnector */
-    pData->IACPIConnector.pfnQueryPowerSource   = drvACPIQueryPowerSource;
-    pData->IACPIConnector.pfnQueryBatteryStatus = drvACPIQueryBatteryStatus;
+    pThis->IACPIConnector.pfnQueryPowerSource   = drvACPIQueryPowerSource;
+    pThis->IACPIConnector.pfnQueryBatteryStatus = drvACPIQueryBatteryStatus;
 
     /*
      * Validate the config.
@@ -472,9 +472,9 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Query the ACPI port interface.
      */
-    pData->pPort = (PPDMIACPIPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
+    pThis->pPort = (PPDMIACPIPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
                                                                       PDMINTERFACE_ACPI_PORT);
-    if (!pData->pPort)
+    if (!pThis->pPort)
     {
         AssertMsgFailed(("Configuration error: "
                          "the above device/driver didn't export the ACPI port interface!\n"));

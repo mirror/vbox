@@ -93,13 +93,13 @@ typedef struct DRVHOSTPARALLEL
 static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTPARALLEL    pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL    pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_HOST_PARALLEL_CONNECTOR:
-            return &pData->IHostParallelConnector;
+            return &pThis->IHostParallelConnector;
         default:
             return NULL;
     }
@@ -110,12 +110,12 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 /** @copydoc PDMICHAR::pfnWrite */
 static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *cbWrite)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     const unsigned char *pBuffer = (const unsigned char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, *cbWrite));
 
-    ioctl(pData->FileDevice, PPWDATA, pBuffer);
+    ioctl(pThis->FileDevice, PPWDATA, pBuffer);
     *cbWrite = 1;
 
     return VINF_SUCCESS;
@@ -123,12 +123,12 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
 
 static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t *cbRead)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     unsigned char *pBuffer = (unsigned char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbRead=%d\n", __FUNCTION__, pvBuf, cbRead));
 
-    ioctl(pData->FileDevice, PPRDATA, pBuffer);
+    ioctl(pThis->FileDevice, PPRDATA, pBuffer);
     *cbRead = 1;
 
     return VINF_SUCCESS;
@@ -136,7 +136,7 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
 
 static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE enmMode)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     int ppdev_mode;
 
     LogFlow(("%s: mode=%d\n", __FUNCTION__, enmMode));
@@ -153,28 +153,28 @@ static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInte
             break;
     }
 
-    ioctl(pData->FileDevice, PPSETMODE, &ppdev_mode);
+    ioctl(pThis->FileDevice, PPSETMODE, &ppdev_mode);
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
 
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
-    ioctl(pData->FileDevice, PPWCONTROL, &fReg);
+    ioctl(pThis->FileDevice, PPWCONTROL, &fReg);
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     uint8_t fReg;
 
-    ioctl(pData->FileDevice, PPRCONTROL, &fReg);
+    ioctl(pThis->FileDevice, PPRCONTROL, &fReg);
 
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
@@ -185,10 +185,10 @@ static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR p
 
 static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     uint8_t fReg;
 
-    ioctl(pData->FileDevice, PPRSTATUS, &fReg);
+    ioctl(pThis->FileDevice, PPRSTATUS, &fReg);
 
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
@@ -199,7 +199,7 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
 
 static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     struct pollfd aFDs[2];
 
     /*
@@ -209,10 +209,10 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
     {
         int rc;
 
-        aFDs[0].fd      = pData->FileDevice;
+        aFDs[0].fd      = pThis->FileDevice;
         aFDs[0].events  = POLLIN;
         aFDs[0].revents = 0;
-        aFDs[1].fd      = pData->WakeupPipeR;
+        aFDs[1].fd      = pThis->WakeupPipeR;
         aFDs[1].events  = POLLIN | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
         rc = poll(aFDs, RT_ELEMENTS(aFDs), -1);
@@ -231,12 +231,12 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
             /* notification to terminate -- drain the pipe */
             char ch;
             size_t cbRead;
-            RTFileRead(pData->WakeupPipeR, &ch, 1, &cbRead);
+            RTFileRead(pThis->WakeupPipeR, &ch, 1, &cbRead);
             continue;
         }
 
         /* Interrupt occured. */
-        rc = pData->pDrvHostParallelPort->pfnNotifyInterrupt(pData->pDrvHostParallelPort);
+        rc = pThis->pDrvHostParallelPort->pfnNotifyInterrupt(pThis->pDrvHostParallelPort);
         AssertRC(rc);
     }
 
@@ -252,9 +252,9 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
  */
 static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
 
-    return RTFileWrite(pData->WakeupPipeW, "", 1, NULL);
+    return RTFileWrite(pThis->WakeupPipeW, "", 1, NULL);
 }
 
 /**
@@ -271,7 +271,7 @@ static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, 
  */
 static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
@@ -288,18 +288,18 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface               = drvHostParallelQueryInterface;
     /* IHostParallelConnector. */
-    pData->IHostParallelConnector.pfnWrite         = drvHostParallelWrite;
-    pData->IHostParallelConnector.pfnRead          = drvHostParallelRead;
-    pData->IHostParallelConnector.pfnSetMode       = drvHostParallelSetMode;
-    pData->IHostParallelConnector.pfnWriteControl  = drvHostParallelWriteControl;
-    pData->IHostParallelConnector.pfnReadControl   = drvHostParallelReadControl;
-    pData->IHostParallelConnector.pfnReadStatus    = drvHostParallelReadStatus;
+    pThis->IHostParallelConnector.pfnWrite         = drvHostParallelWrite;
+    pThis->IHostParallelConnector.pfnRead          = drvHostParallelRead;
+    pThis->IHostParallelConnector.pfnSetMode       = drvHostParallelSetMode;
+    pThis->IHostParallelConnector.pfnWriteControl  = drvHostParallelWriteControl;
+    pThis->IHostParallelConnector.pfnReadControl   = drvHostParallelReadControl;
+    pThis->IHostParallelConnector.pfnReadStatus    = drvHostParallelReadStatus;
 
     /*
      * Query configuration.
      */
     /* Device */
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "DevicePath", &pData->pszDevicePath);
+    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "DevicePath", &pThis->pszDevicePath);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query for \"DevicePath\" string returned %Vra.\n", rc));
@@ -309,36 +309,36 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Open the device
      */
-    rc = RTFileOpen(&pData->FileDevice, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
+    rc = RTFileOpen(&pThis->FileDevice, pThis->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"),
-                                   pDrvIns->iInstance, pData->pszDevicePath);
+                                   pDrvIns->iInstance, pThis->pszDevicePath);
 
     /*
      * Try to get exclusive access to parallel port
      */
-    rc = ioctl(pData->FileDevice, PPEXCL);
+    rc = ioctl(pThis->FileDevice, PPEXCL);
     if (rc < 0)
         return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not get exclusive access for parallel port '%s'"
                                       "Be sure that no other process or driver accesses this port"),
-                                   pDrvIns->iInstance, pData->pszDevicePath);
+                                   pDrvIns->iInstance, pThis->pszDevicePath);
 
     /*
      * Claim the parallel port
      */
-    rc = ioctl(pData->FileDevice, PPCLAIM);
+    rc = ioctl(pThis->FileDevice, PPCLAIM);
     if (rc < 0)
         return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not claim parallel port '%s'"
                                       "Be sure that no other process or driver accesses this port"),
-                                   pDrvIns->iInstance, pData->pszDevicePath);
+                                   pDrvIns->iInstance, pThis->pszDevicePath);
 
     /*
      * Get the IHostParallelPort interface of the above driver/device.
      */
-    pData->pDrvHostParallelPort = (PPDMIHOSTPARALLELPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_PARALLEL_PORT);
-    if (!pData->pDrvHostParallelPort)
+    pThis->pDrvHostParallelPort = (PPDMIHOSTPARALLELPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_PARALLEL_PORT);
+    if (!pThis->pDrvHostParallelPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"),
                                    pDrvIns->iInstance);
 
@@ -352,13 +352,13 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         AssertRC(rc);
         return rc;
     }
-    pData->WakeupPipeR = aFDs[0];
-    pData->WakeupPipeW = aFDs[1];
+    pThis->WakeupPipeR = aFDs[0];
+    pThis->WakeupPipeW = aFDs[1];
 
     /*
      * Start waiting for interrupts.
      */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0,
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0,
                                   RTTHREADTYPE_IO, "ParMon");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
@@ -377,29 +377,29 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
-    ioctl(pData->FileDevice, PPRELEASE);
+    ioctl(pThis->FileDevice, PPRELEASE);
 
-    if (pData->WakeupPipeW != NIL_RTFILE)
+    if (pThis->WakeupPipeW != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->WakeupPipeW);
+        int rc = RTFileClose(pThis->WakeupPipeW);
         AssertRC(rc);
-        pData->WakeupPipeW = NIL_RTFILE;
+        pThis->WakeupPipeW = NIL_RTFILE;
     }
-    if (pData->WakeupPipeR != NIL_RTFILE)
+    if (pThis->WakeupPipeR != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->WakeupPipeR);
+        int rc = RTFileClose(pThis->WakeupPipeR);
         AssertRC(rc);
-        pData->WakeupPipeR = NIL_RTFILE;
+        pThis->WakeupPipeR = NIL_RTFILE;
     }
-    if (pData->FileDevice != NIL_RTFILE)
+    if (pThis->FileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pData->FileDevice);
+        int rc = RTFileClose(pThis->FileDevice);
         AssertRC(rc);
-        pData->FileDevice = NIL_RTFILE;
+        pThis->FileDevice = NIL_RTFILE;
     }
 }
 

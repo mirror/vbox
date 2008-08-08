@@ -98,26 +98,26 @@ static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMI
  */
 static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
+    PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->File                         = NIL_RTFILE;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->File                         = NIL_RTFILE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvMediaISOQueryInterface;
     /* IMedia */
-    pData->IMedia.pfnRead               = drvMediaISORead;
-    pData->IMedia.pfnWrite              = drvMediaISOWrite;
-    pData->IMedia.pfnFlush              = drvMediaISOFlush;
-    pData->IMedia.pfnGetSize            = drvMediaISOGetSize;
-    pData->IMedia.pfnGetUuid            = drvMediaISOGetUuid;
-    pData->IMedia.pfnIsReadOnly         = drvMediaISOIsReadOnly;
-    pData->IMedia.pfnBiosGetPCHSGeometry = drvMediaISOBiosGetPCHSGeometry;
-    pData->IMedia.pfnBiosSetPCHSGeometry = drvMediaISOBiosSetPCHSGeometry;
-    pData->IMedia.pfnBiosGetLCHSGeometry = drvMediaISOBiosGetLCHSGeometry;
-    pData->IMedia.pfnBiosSetLCHSGeometry = drvMediaISOBiosSetLCHSGeometry;
+    pThis->IMedia.pfnRead               = drvMediaISORead;
+    pThis->IMedia.pfnWrite              = drvMediaISOWrite;
+    pThis->IMedia.pfnFlush              = drvMediaISOFlush;
+    pThis->IMedia.pfnGetSize            = drvMediaISOGetSize;
+    pThis->IMedia.pfnGetUuid            = drvMediaISOGetUuid;
+    pThis->IMedia.pfnIsReadOnly         = drvMediaISOIsReadOnly;
+    pThis->IMedia.pfnBiosGetPCHSGeometry = drvMediaISOBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry = drvMediaISOBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry = drvMediaISOBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry = drvMediaISOBiosSetLCHSGeometry;
 
     /*
      * Read the configuration.
@@ -133,12 +133,12 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Open the image.
      */
-    rc = RTFileOpen(&pData->File, pszName,
+    rc = RTFileOpen(&pThis->File, pszName,
                     RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvMediaISOConstruct: ISO image '%s' opened successfully.\n", pszName));
-        pData->pszFilename = pszName;
+        pThis->pszFilename = pszName;
     }
     else
     {
@@ -160,34 +160,34 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
  */
 static DECLCALLBACK(void) drvMediaISODestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
-    LogFlow(("drvMediaISODestruct: '%s'\n", pData->pszFilename));
+    PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
+    LogFlow(("drvMediaISODestruct: '%s'\n", pThis->pszFilename));
 
-    if (pData->File != NIL_RTFILE)
+    if (pThis->File != NIL_RTFILE)
     {
-        RTFileClose(pData->File);
-        pData->File = NIL_RTFILE;
+        RTFileClose(pThis->File);
+        pThis->File = NIL_RTFILE;
     }
-    if (pData->pszFilename)
-        MMR3HeapFree(pData->pszFilename);
+    if (pThis->pszFilename)
+        MMR3HeapFree(pThis->pszFilename);
 }
 
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvMediaISOGetSize(PPDMIMEDIA pInterface)
 {
-    PDRVMEDIAISO pData = PDMIMEDIA_2_DRVMEDIAISO(pInterface);
-    LogFlow(("drvMediaISOGetSize: '%s'\n", pData->pszFilename));
+    PDRVMEDIAISO pThis = PDMIMEDIA_2_DRVMEDIAISO(pInterface);
+    LogFlow(("drvMediaISOGetSize: '%s'\n", pThis->pszFilename));
 
     uint64_t cbFile;
-    int rc = RTFileGetSize(pData->File, &cbFile);
+    int rc = RTFileGetSize(pThis->File, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        LogFlow(("drvMediaISOGetSize: returns %lld (%s)\n", cbFile, pData->pszFilename));
+        LogFlow(("drvMediaISOGetSize: returns %lld (%s)\n", cbFile, pThis->pszFilename));
         return cbFile;
     }
 
-    AssertMsgFailed(("Error querying ISO file size, rc=%Vrc. (%s)\n", rc, pData->pszFilename));
+    AssertMsgFailed(("Error querying ISO file size, rc=%Vrc. (%s)\n", rc, pThis->pszFilename));
     return 0;
 }
 
@@ -227,32 +227,32 @@ static DECLCALLBACK(int) drvMediaISOBiosSetLCHSGeometry(PPDMIMEDIA pInterface, P
  */
 static DECLCALLBACK(int) drvMediaISORead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVMEDIAISO pData = PDMIMEDIA_2_DRVMEDIAISO(pInterface);
-    LogFlow(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pData->pszFilename));
+    PDRVMEDIAISO pThis = PDMIMEDIA_2_DRVMEDIAISO(pInterface);
+    LogFlow(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pThis->pszFilename));
 
-    Assert(pData->File);
+    Assert(pThis->File);
     Assert(pvBuf);
 
     /*
      * Seek to the position and read.
      */
-    int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileRead(pData->File, pvBuf, cbRead, NULL);
+        rc = RTFileRead(pThis->File, pvBuf, cbRead, NULL);
         if (RT_SUCCESS(rc))
         {
             Log2(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
                   "%16.*Vhxd\n",
-                  off, pvBuf, cbRead, pData->pszFilename,
+                  off, pvBuf, cbRead, pThis->pszFilename,
                   cbRead, pvBuf));
         }
         else
             AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
-                             pData->File, pvBuf, cbRead, rc, off, pData->pszFilename));
+                             pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pData->File, off, rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
     LogFlow(("drvMediaISORead: returns %Vrc\n", rc));
     return rc;
 }
@@ -301,13 +301,13 @@ static DECLCALLBACK(bool) drvMediaISOIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVMEDIAISO pData = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
+    PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_MEDIA:
-            return &pData->IMedia;
+            return &pThis->IMedia;
         default:
             return NULL;
     }

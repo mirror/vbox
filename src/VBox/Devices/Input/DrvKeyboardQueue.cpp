@@ -163,9 +163,9 @@ static DECLCALLBACK(void) drvKbdPassThruLedsChange(PPDMIKEYBOARDCONNECTOR pInter
  */
 static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
 {
-    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     PDRVKBDQUEUEITEM    pItem = (PDRVKBDQUEUEITEM)pItemCore;
-    int rc = pData->pUpPort->pfnPutEvent(pData->pUpPort, pItem->u8KeyCode);
+    int rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->u8KeyCode);
     return RT_SUCCESS(rc);
 }
 
@@ -180,8 +180,8 @@ static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
  */
 static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE    pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pData->fInactive = false;
+    PDRVKBDQUEUE    pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    pThis->fInactive = false;
 }
 
 
@@ -193,7 +193,7 @@ static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
 {
-    //PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    //PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
 }
 
@@ -206,8 +206,8 @@ static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pData->fInactive = true;
+    PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    pThis->fInactive = true;
 }
 
 
@@ -219,8 +219,8 @@ static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pData->fInactive = false;
+    PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    pThis->fInactive = false;
 }
 
 
@@ -231,8 +231,8 @@ static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvKbdQueuePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pData->fInactive = true;
+    PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    pThis->fInactive = true;
 }
 
 
