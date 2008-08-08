@@ -271,7 +271,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pDownBase);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
+        AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
         return rc;
     }
     pDrv->pDownConnector = (PPDMIMOUSECONNECTOR)pDownBase->pfnQueryInterface(pDownBase, PDMINTERFACE_MOUSE_CONNECTOR);
