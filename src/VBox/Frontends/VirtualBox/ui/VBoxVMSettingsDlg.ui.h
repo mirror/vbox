@@ -2179,7 +2179,7 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     page->setValidator (wval);
     page->revalidate();
 
-#ifdef Q_WS_WIN || defined Q_OS_MAC
+#if defined Q_WS_WIN || defined Q_OS_MAC
 
     /* fix focus order (make sure the Host Interface list UI goes after the
      * last network adapter UI item) */
