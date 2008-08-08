@@ -513,8 +513,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp
 
-VBoxRT_LIBS.solaris += kstat
-
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
 
@@ -698,6 +696,8 @@ VBoxRT_LIBS.darwin             = \
 	iconv
 VBoxRT_LIBS.freebsd            = \
 	iconv
+VBoxRT_LIBS.solaris            = \
+	kstat
 VBoxRT_LIBPATH.freebsd         = \
 	/usr/local/lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name @executable_path/VBoxRT.dylib
