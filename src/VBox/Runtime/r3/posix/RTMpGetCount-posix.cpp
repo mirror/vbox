@@ -43,15 +43,26 @@
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    int cCpus; NOREF(cCpus);
-
     /*
      * The sysconf way (linux and others).
      */
-#ifdef _SC_NPROCESSORS_ONLN
-    cCpus = sysconf(_SC_NPROCESSORS_ONLN);
-    if (cCpus >= 1)
-        return cCpus;
+#if defined(_SC_NPROCESSORS_MAX) || defined(_SC_NPROCESSORS_CONF) || defined(_SC_NPROCESSORS_ONLN)
+    int cCpusSC = -1;
+# ifdef _SC_NPROCESSORS_MAX
+    int cMax = sysconf(_SC_NPROCESSORS_MAX);
+    cCpusSC = RT_MAX(cCpusSC, cMax);
+# endif
+# ifdef _SC_NPROCESSORS_CONF
+    int cConf = sysconf(_SC_NPROCESSORS_CONF);
+    cCpusSC = RT_MAX(cCpusSC, cConf);
+# endif
+# ifdef _SC_NPROCESSORS_ONLN
+    int cOnln = sysconf(_SC_NPROCESSORS_ONLN);
+    cCpusSC = RT_MAX(cCpusSC, cOnln);
+# endif
+    Assert(cCpusSC > 0);
+    if (cCpusSC > 0)
+        return cCpusSC;
 #endif
 
     /*
@@ -61,9 +72,9 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     int aiMib[2];
     aiMib[0] = CTL_HW;
     aiMib[1] = HW_NCPU;
-    cCpus = -1;
+    int cCpus = -1;
     size_t cb = sizeof(cCpus);
-    int rc = sysctl(aiMib, ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
+    int rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
     if (rc != -1 && cCpus >= 1)
         return cCpus;
 #endif
