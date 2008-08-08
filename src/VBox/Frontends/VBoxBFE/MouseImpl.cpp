@@ -186,7 +186,7 @@ int Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG buttonState)
 DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINMOUSE pDrv = PDMINS2DATA(pDrvIns, PDRVMAINMOUSE);
+    PDRVMAINMOUSE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -207,7 +207,7 @@ DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
  */
 DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    //PDRVMAINMOUSE pData = PDMINS2DATA(pDrvIns, PDRVMAINMOUSE);
+    //PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("Mouse::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 }
 
@@ -224,7 +224,7 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMAINMOUSE pData = PDMINS2DATA(pDrvIns, PDRVMAINMOUSE);
+    PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("drvMainMouse_Construct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*

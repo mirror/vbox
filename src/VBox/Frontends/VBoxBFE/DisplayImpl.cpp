@@ -147,7 +147,7 @@ int VMDisplay::handleDisplayResize (int w, int h)
     {
         LogFlow(("VMDisplay::handleDisplayResize: external framebuffer wants us to wait!\n"));
 
-        /* Note: The previously obtained framebuffer lock must be preserved. 
+        /* Note: The previously obtained framebuffer lock must be preserved.
          *       The EMT keeps the framebuffer lock until the resize process completes.
          */
 
@@ -177,7 +177,7 @@ void VMDisplay::handleResizeCompletedEMT (void)
     {
         /* Framebuffer has completed the resize. Update the connector data. */
         updateDisplayData();
-    
+
         mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, true);
 
         /* Unlock framebuffer. */
@@ -488,7 +488,7 @@ DECLCALLBACK(void) VMDisplay::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
     VMDisplay *pDisplay = pDrv->pDisplay;
 
     uint32_t u32ResizeStatus = pDisplay->mu32ResizeStatus;
-    
+
     if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
     {
 #ifdef DEBUG_sunlover
@@ -1187,7 +1187,7 @@ void VMDisplay::VideoAccelFlush (void)
 DECLCALLBACK(void *)  VMDisplay::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINDISPLAY pDrv = PDMINS2DATA(pDrvIns, PDRVMAINDISPLAY);
+    PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -1212,7 +1212,7 @@ DECLCALLBACK(void *)  VMDisplay::drvQueryInterface(PPDMIBASE pInterface, PDMINTE
  */
 DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMAINDISPLAY pData = PDMINS2DATA(pDrvIns, PDRVMAINDISPLAY);
+    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogFlow(("VMDisplay::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
 
