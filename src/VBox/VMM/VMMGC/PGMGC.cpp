@@ -265,7 +265,7 @@ PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 2] == HCPhys
         ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 3] == HCPhys)
     {
-        static const uint8_t au8Trans[MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT][ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache)] =
+        static const uint8_t au8Trans[MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT][RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache)] =
         {
             { 0, 5, 6, 7 },
             { 0, 1, 6, 7 },
@@ -276,8 +276,8 @@ PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
             { 4, 5, 6, 3 },
             { 4, 5, 6, 7 },
         };
-        Assert(ELEMENTS(au8Trans) == 8);
-        Assert(ELEMENTS(au8Trans[0]) == 4);
+        Assert(RT_ELEMENTS(au8Trans) == 8);
+        Assert(RT_ELEMENTS(au8Trans[0]) == 4);
         int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
         void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
         *ppv = pv;
@@ -285,7 +285,7 @@ PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         //Log(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
         return VINF_SUCCESS;
     }
-    Assert(ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
+    Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
     STAM_COUNTER_INC(&pVM->pgm.s.StatDynMapCacheMisses);
 
     /*
@@ -295,7 +295,7 @@ PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
     Assert((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 8);
 
-    pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
+    pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
     pVM->pgm.s.paDynPageMapPaePTEsGC[iPage].u   =           HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
 

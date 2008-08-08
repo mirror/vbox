@@ -59,7 +59,7 @@ TRPMGCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDL
     /*
      * Validate input.
      */
-    if (iTrap >= ELEMENTS(pVM->trpm.s.aTmpTrapHandlers))
+    if (iTrap >= RT_ELEMENTS(pVM->trpm.s.aTmpTrapHandlers))
     {
         AssertMsgFailed(("Trap handler iTrap=%u is out of range!\n", iTrap));
         return VERR_INVALID_PARAMETER;
@@ -119,7 +119,7 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 #if 0
     /** @note this causes problems in Windows XP as instructions following the update can be dangerous (str eax has been seen) */
     /** @note not going back to ring 3 could make the code scanner miss them. */
-    /* Check if we can handle the write here. */    
+    /* Check if we can handle the write here. */
     if (     iGate != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
         &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iGate)) /* Passthru gates need special attention too. */
     {

@@ -48,7 +48,7 @@
 static int g_cErrors = 0;
 
 
-/** 
+/**
  * Testings va_list passing in VMSetRuntimeError.
  */
 static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, bool fFatal, const char *pszErrorId, const char *pszFormat, va_list va)
@@ -118,8 +118,8 @@ static DECLCALLBACK(int) PassVACallback(PVM pVM, unsigned u4K, unsigned u1G, con
 }
 
 
-/** 
- * Functions that tests passing a va_list * argument in a request, 
+/**
+ * Functions that tests passing a va_list * argument in a request,
  * similar to VMSetRuntimeError.
  */
 static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
@@ -128,9 +128,9 @@ static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
     void *pvVA = &va;
 #else
     va_list va2;
-    va_copy(va2, va); 
+    va_copy(va2, va);
     void *pvVA = va2;
-#endif 
+#endif
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
@@ -141,12 +141,12 @@ static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
 
 #if 1
     va_end(va2);
-#endif 
+#endif
 }
 
 
-/** 
- * Functions that tests passing a va_list * argument in a request, 
+/**
+ * Functions that tests passing a va_list * argument in a request,
  * similar to VMSetRuntimeError.
  */
 static void PassVA(PVM pVM, const char *pszFormat, ...)
@@ -180,7 +180,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
     for (unsigned i = 0; i < 100000; i++)
     {
         PVMREQ          apReq[17];
-        const unsigned  cReqs = i % ELEMENTS(apReq);
+        const unsigned  cReqs = i % RT_ELEMENTS(apReq);
         unsigned        iReq;
         for (iReq = 0; iReq < cReqs; iReq++)
         {

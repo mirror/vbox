@@ -302,7 +302,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             return rc;
 
         unsigned iPTE = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        while (iPTE < ELEMENTS(pPT->a))
+        while (iPTE < RT_ELEMENTS(pPT->a))
         {
             if (pPT->a[iPTE].n.u1Present)
             {

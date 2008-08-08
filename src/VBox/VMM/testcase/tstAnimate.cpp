@@ -175,7 +175,7 @@ static int scriptCommand(PVM pVM, const char *pszIn, size_t cch)
         };
 
         rc = -1;
-        for (unsigned i = 0; i < ELEMENTS(aVars); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(aVars); i++)
         {
             if (!strcmp(psz, aVars[i].pszVar))
             {

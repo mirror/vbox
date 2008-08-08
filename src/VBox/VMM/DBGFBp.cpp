@@ -67,16 +67,16 @@ int dbgfR3BpInit(PVM pVM)
      * Init structures.
      */
     unsigned i;
-    for (i = 0; i < ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+    for (i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
     {
         pVM->dbgf.s.aHwBreakpoints[i].iBp = i;
         pVM->dbgf.s.aHwBreakpoints[i].enmType = DBGFBPTYPE_FREE;
         pVM->dbgf.s.aHwBreakpoints[i].u.Reg.iReg = i;
     }
 
-    for (i = 0; i < ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
+    for (i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
     {
-        pVM->dbgf.s.aBreakpoints[i].iBp = i + ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
+        pVM->dbgf.s.aBreakpoints[i].iBp = i + RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
         pVM->dbgf.s.aBreakpoints[i].enmType = DBGFBPTYPE_FREE;
     }
 
@@ -109,14 +109,14 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
     switch (enmType)
     {
         case DBGFBPTYPE_REG:
-            cBps = ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
+            cBps = RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
             paBps = &pVM->dbgf.s.aHwBreakpoints[0];
             pcBpsCur = &pVM->dbgf.s.cHwBreakpoints;
             break;
 
         case DBGFBPTYPE_INT3:
         case DBGFBPTYPE_REM:
-            cBps = ELEMENTS(pVM->dbgf.s.aBreakpoints);
+            cBps = RT_ELEMENTS(pVM->dbgf.s.aBreakpoints);
             paBps = &pVM->dbgf.s.aBreakpoints[0];
             pcBpsCur = &pVM->dbgf.s.cBreakpoints;
             break;
@@ -155,12 +155,12 @@ static PDBGFBP dbgfR3BpGet(PVM pVM, RTUINT iBp)
 {
     /* Find it. */
     PDBGFBP pBp;
-    if (iBp < ELEMENTS(pVM->dbgf.s.aHwBreakpoints))
+    if (iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints))
         pBp = &pVM->dbgf.s.aHwBreakpoints[iBp];
     else
     {
-        iBp -= ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
-        if (iBp >= ELEMENTS(pVM->dbgf.s.aBreakpoints))
+        iBp -= RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
+        if (iBp >= RT_ELEMENTS(pVM->dbgf.s.aBreakpoints))
             return NULL;
         pBp = &pVM->dbgf.s.aBreakpoints[iBp];
     }
@@ -204,13 +204,13 @@ static PDBGFBP dbgfR3BpGetByAddr(PVM pVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr)
     switch (enmType)
     {
         case DBGFBPTYPE_REG:
-            cBps = ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
+            cBps = RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
             paBps = &pVM->dbgf.s.aHwBreakpoints[0];
             break;
 
         case DBGFBPTYPE_INT3:
         case DBGFBPTYPE_REM:
-            cBps = ELEMENTS(pVM->dbgf.s.aBreakpoints);
+            cBps = RT_ELEMENTS(pVM->dbgf.s.aBreakpoints);
             paBps = &pVM->dbgf.s.aBreakpoints[0];
             break;
 
@@ -956,7 +956,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *
      * Enumerate the hardware breakpoints.
      */
     unsigned i;
-    for (i = 0; i < ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+    for (i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
         if (pVM->dbgf.s.aHwBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pVM, pvUser, &pVM->dbgf.s.aHwBreakpoints[i]);
@@ -967,7 +967,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *
     /*
      * Enumerate the other breakpoints.
      */
-    for (i = 0; i < ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
+    for (i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
         if (pVM->dbgf.s.aBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pVM, pvUser, &pVM->dbgf.s.aBreakpoints[i]);

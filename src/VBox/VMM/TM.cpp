@@ -646,7 +646,7 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
     static const unsigned   s_auSleep[5] = { 50, 30, 30, 40, 40 };
     uint64_t                au64Samples[5];
     unsigned                i;
-    for (i = 0; i < ELEMENTS(au64Samples); i++)
+    for (i = 0; i < RT_ELEMENTS(au64Samples); i++)
     {
         unsigned    cMillies;
         int         cTries   = 5;
@@ -673,7 +673,7 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
      */
     unsigned iHigh = 0;
     unsigned iLow = 0;
-    for (i = 1; i < ELEMENTS(au64Samples); i++)
+    for (i = 1; i < RT_ELEMENTS(au64Samples); i++)
     {
         if (au64Samples[i] < au64Samples[iLow])
             iLow = i;
@@ -684,9 +684,9 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
     au64Samples[iHigh] = 0;
 
     u64Hz = au64Samples[0];
-    for (i = 1; i < ELEMENTS(au64Samples); i++)
+    for (i = 1; i < RT_ELEMENTS(au64Samples); i++)
         u64Hz += au64Samples[i];
-    u64Hz /= ELEMENTS(au64Samples) - 2;
+    u64Hz /= RT_ELEMENTS(au64Samples) - 2;
 
     return u64Hz;
 }

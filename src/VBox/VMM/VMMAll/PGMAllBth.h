@@ -1606,7 +1606,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 #  else
                         const unsigned  offPTSrc  = 0;
 #  endif
-                        const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, ELEMENTS(pPTDst->a));
+                        const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, RT_ELEMENTS(pPTDst->a));
                         if (iPTDst < PGM_SYNC_NR_PAGES / 2)
                             iPTDst = 0;
                         else
@@ -1807,7 +1807,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
          * deal with locality.
          */
         unsigned        iPTDst    = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, ELEMENTS(pPTDst->a));
+        const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, RT_ELEMENTS(pPTDst->a));
         if (iPTDst < PGM_SYNC_NR_PAGES / 2)
             iPTDst = 0;
         else
@@ -2407,14 +2407,14 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 # ifdef PGM_SYNC_N_PAGES
                 unsigned        iPTBase   = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                 unsigned        iPTDst    = iPTBase;
-                const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, ELEMENTS(pPTDst->a));
+                const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, RT_ELEMENTS(pPTDst->a));
                 if (iPTDst <= PGM_SYNC_NR_PAGES / 2)
                     iPTDst = 0;
                 else
                     iPTDst -= PGM_SYNC_NR_PAGES / 2;
 # else /* !PGM_SYNC_N_PAGES */
                 unsigned        iPTDst    = 0;
-                const unsigned  iPTDstEnd = ELEMENTS(pPTDst->a);
+                const unsigned  iPTDstEnd = RT_ELEMENTS(pPTDst->a);
 # endif /* !PGM_SYNC_N_PAGES */
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
@@ -2507,7 +2507,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             PPGMRAMRANGE      pRam   = CTXALLSUFF(pVM->pgm.s.pRamRanges);
             unsigned          iPTDst = 0;
-            while (iPTDst < ELEMENTS(pPTDst->a))
+            while (iPTDst < RT_ELEMENTS(pPTDst->a))
             {
                 /* Advance ram range list. */
                 while (pRam && GCPhys > pRam->GCPhysLast)
@@ -2572,7 +2572,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                         GCPhys += PAGE_SIZE;
                         iHCPage++;
                         iPTDst++;
-                    } while (   iPTDst < ELEMENTS(pPTDst->a)
+                    } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys <= pRam->GCPhysLast);
                 }
                 else if (pRam)
@@ -2583,13 +2583,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                         pPTDst->a[iPTDst].u = 0; /* MMIO or invalid page, we must handle them manually. */
                         GCPhys += PAGE_SIZE;
                         iPTDst++;
-                    } while (   iPTDst < ELEMENTS(pPTDst->a)
+                    } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys < pRam->GCPhys);
                 }
                 else
                 {
                     Log(("Invalid pages at %VGp (2)\n", GCPhys));
-                    for ( ; iPTDst < ELEMENTS(pPTDst->a); iPTDst++)
+                    for ( ; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
                         pPTDst->a[iPTDst].u = 0; /* MMIO or invalid page, we must handle them manually. */
                 }
             } /* while more PTEs */
@@ -3020,7 +3020,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3Handlers), h);
     PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3Handlers), h);
-#endif 
+#endif
 
 #ifdef PGMPOOL_WITH_MONITORING
     int rc = pgmPoolSyncCR3(pVM);
@@ -3140,7 +3140,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 {
                     LogFlow(("SyncCR3: guest PDPE %d not present; clear shw pdpe\n", iPdpte));
  	                /* for each page directory entry */
- 	                for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
+ 	                for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
  	                {
  	                    if (   pPDEDst[iPD].n.u1Present
  	                        && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
@@ -3182,13 +3182,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             pPdpeDst = &pPdptDst->a[iPdpte];
 
             /* Fetch the pgm pool shadow descriptor if the shadow pdpte is present. */
-            if (!pPdpeDst->n.u1Present) 
+            if (!pPdpeDst->n.u1Present)
                 continue;   /* next PDPTE */
 
             pShwPde      = pgmPoolGetPage(pPool, pPdpeDst->u & X86_PDPE_PG_MASK);
             GCPhysPdeSrc = PdpeSrc.u & X86_PDPE_PG_MASK;
 
-            /* Anything significant changed? */            
+            /* Anything significant changed? */
             if (    PdpeSrc.n.u1Present != pPdpeDst->n.u1Present
                 ||  GCPhysPdeSrc != pShwPde->GCPhys)
             {
@@ -3211,7 +3211,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
         {
 #  endif /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
-            for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
+            for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
             {
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
                 Assert(&pVM->pgm.s.CTXMID(p,32BitPD)->a[iPD] == pPDEDst);
@@ -3688,7 +3688,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
             pPdpeDst = &pPdptDst->a[iPdpte];
 
-            if (!pPdpeDst->n.u1Present) 
+            if (!pPdpeDst->n.u1Present)
             {
                 GCPtr += 512 * _2M;
                 continue;   /* next PDPTE */
@@ -3890,7 +3890,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                         const unsigned offPTSrc  = 0;
 # endif
                         for (unsigned iPT = 0, off = 0;
-                            iPT < ELEMENTS(pPTDst->a);
+                            iPT < RT_ELEMENTS(pPTDst->a);
                             iPT++, off += PAGE_SIZE)
                         {
                             const SHWPTE PteDst = pPTDst->a[iPT];
@@ -4132,7 +4132,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
                         /* iterate the page table. */
                         for (unsigned iPT = 0, off = 0;
-                            iPT < ELEMENTS(pPTDst->a);
+                            iPT < RT_ELEMENTS(pPTDst->a);
                             iPT++, off += PAGE_SIZE, GCPhysGst += PAGE_SIZE)
                         {
                             const SHWPTE PteDst = pPTDst->a[iPT];

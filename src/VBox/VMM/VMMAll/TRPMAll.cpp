@@ -834,7 +834,7 @@ TRPMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap)
     /*
      * Validate.
      */
-    if (iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
+    if (iTrap >= RT_ELEMENTS(pVM->trpm.s.aIdt))
     {
         AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %d!\n", iTrap));
         return VERR_INVALID_PARAMETER;
