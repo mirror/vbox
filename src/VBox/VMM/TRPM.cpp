@@ -430,7 +430,7 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     AssertRelease(!(RT_OFFSETOF(VM, trpm.s) & 31));
     AssertRelease(!(RT_OFFSETOF(VM, trpm.s.aIdt) & 15));
     AssertRelease(sizeof(pVM->trpm.s) <= sizeof(pVM->trpm.padding));
-    AssertRelease(ELEMENTS(pVM->trpm.s.aGuestTrapHandler) == sizeof(pVM->trpm.s.au32IdtPatched)*8);
+    AssertRelease(RT_ELEMENTS(pVM->trpm.s.aGuestTrapHandler) == sizeof(pVM->trpm.s.au32IdtPatched)*8);
 
     /*
      * Initialize members.
@@ -572,7 +572,7 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     PVBOXIDTE pIdte = &pVM->trpm.s.aIdt[0];
     PVBOXIDTE_GENERIC pIdteTemplate = &g_aIdt[0];
-    for (unsigned i = 0; i < ELEMENTS(pVM->trpm.s.aIdt); i++, pIdte++, pIdteTemplate++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->trpm.s.aIdt); i++, pIdte++, pIdteTemplate++)
     {
         if (    pIdte->Gen.u1Present
             &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], i)
@@ -630,7 +630,7 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /* Relocate IDT handlers for forwarding guest traps/interrupts. */
-    for (uint32_t iTrap = 0; iTrap < ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
+    for (uint32_t iTrap = 0; iTrap < RT_ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
     {
         if (pVM->trpm.s.aGuestTrapHandler[iTrap] != TRPM_INVALID_HANDLER)
         {
@@ -747,7 +747,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save any trampoline gates.
      */
-    for (uint32_t iTrap = 0; iTrap < ELEMENTS(pTrpm->aGuestTrapHandler); iTrap++)
+    for (uint32_t iTrap = 0; iTrap < RT_ELEMENTS(pTrpm->aGuestTrapHandler); iTrap++)
     {
         if (pTrpm->aGuestTrapHandler[iTrap])
         {
@@ -846,7 +846,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
             return rc;
         if (iTrap == (uint32_t)~0)
             break;
-        if (    iTrap >= ELEMENTS(pTrpm->aIdt)
+        if (    iTrap >= RT_ELEMENTS(pTrpm->aIdt)
             ||  pTrpm->aGuestTrapHandler[iTrap])
         {
             AssertMsgFailed(("iTrap=%#x\n", iTrap));
@@ -1059,7 +1059,7 @@ TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerInterupt in VMMGC.gc!\n"));
 
     if (    iTrap < TRPM_HANDLER_INT_BASE
-        ||  iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
+        ||  iTrap >= RT_ELEMENTS(pVM->trpm.s.aIdt))
     {
         AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %#x!\n", iTrap));
         return VERR_INVALID_PARAMETER;
@@ -1108,7 +1108,7 @@ TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  */
 TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
 {
-    for (uint32_t iTrap = 0; iTrap < ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
+    for (uint32_t iTrap = 0; iTrap < RT_ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
     {
         if (pVM->trpm.s.aGuestTrapHandler[iTrap] == GCPtr)
             return iTrap;
@@ -1136,7 +1136,7 @@ TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
  */
 TRPMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
-    AssertReturn(iTrap < ELEMENTS(pVM->trpm.s.aIdt), TRPM_INVALID_HANDLER);
+    AssertReturn(iTrap < RT_ELEMENTS(pVM->trpm.s.aIdt), TRPM_INVALID_HANDLER);
 
     return pVM->trpm.s.aGuestTrapHandler[iTrap];
 }
@@ -1156,7 +1156,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHand
     /*
      * Validate.
      */
-    if (iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
+    if (iTrap >= RT_ELEMENTS(pVM->trpm.s.aIdt))
     {
         AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %d!\n", iTrap));
         return VERR_INVALID_PARAMETER;

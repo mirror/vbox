@@ -808,7 +808,7 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
     /*
      * Check poison.
      */
-    unsigned i = ELEMENTS(pHeap->aDelayedFrees);
+    unsigned i = RT_ELEMENTS(pHeap->aDelayedFrees);
     while (i-- > 0)
         if (pHeap->aDelayedFrees[i].offChunk)
         {
@@ -835,7 +835,7 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
     }
     pHeap->aDelayedFrees[pHeap->iDelayedFree].offChunk = (uintptr_t)pChunk - (uintptr_t)pHeap;
     pHeap->aDelayedFrees[pHeap->iDelayedFree].uCaller = (uintptr_t)ASMReturnAddress();
-    pHeap->iDelayedFree = (pHeap->iDelayedFree + 1) % ELEMENTS(pHeap->aDelayedFrees);
+    pHeap->iDelayedFree = (pHeap->iDelayedFree + 1) % RT_ELEMENTS(pHeap->aDelayedFrees);
 
 #else   /* !MMHYPER_HEAP_FREE_POISON */
     /*

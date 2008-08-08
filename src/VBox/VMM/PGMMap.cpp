@@ -893,7 +893,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
      * address space since that will break our GCPtrEnd assumptions.
      */
     const unsigned  cPTs = pMapping->cPTs;
-    unsigned        iPDNew = ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
+    unsigned        iPDNew = RT_ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
     while (iPDNew-- > 0)
     {
         if (pPDSrc->a[iPDNew].n.u1Present)
@@ -962,7 +962,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
          * address space since that will break our GCPtrEnd assumptions.
          */
         const unsigned  cPTs = pMapping->cb >> X86_PD_PAE_SHIFT;
-        unsigned        iPDNew = ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
+        unsigned        iPDNew = RT_ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
 
         while (iPDNew-- > 0)
         {
@@ -1149,7 +1149,7 @@ PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 
             unsigned iPT  = off >> X86_PD_SHIFT;
             unsigned iPTE = (off >> PAGE_SHIFT) & X86_PT_MASK;
-            while (cb > 0 && iPTE < ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
+            while (cb > 0 && iPTE < RT_ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
             {
                 if (!CTXALLSUFF(pCur->aPTs[iPT].paPaePTs)[iPTE / 512].a[iPTE % 512].n.u1Present)
                     return VERR_PAGE_NOT_PRESENT;

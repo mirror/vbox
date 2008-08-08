@@ -561,7 +561,7 @@ DBGFR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
         CPUMQueryGuestCtxPtr(pVM, &pCtx);
         RTGCPTR eip = pCtx->rip + pCtx->csHid.u64Base;
 #endif
-        for (iBp = 0; iBp < ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        for (iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
             if (    pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_REM
                 &&  pVM->dbgf.s.aBreakpoints[iBp].GCPtr == eip)
             {

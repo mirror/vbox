@@ -1129,7 +1129,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.pGstPaePDPTHC    = NULL;
     pVM->pgm.s.pGstPaePDPTGC    = 0;
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apGstPaePDsHC); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsHC); i++)
     {
         pVM->pgm.s.apGstPaePDsHC[i]             = NULL;
         pVM->pgm.s.apGstPaePDsGC[i]             = 0;
@@ -1249,7 +1249,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
         static bool fRegisteredCmds = false;
         if (!fRegisteredCmds)
         {
-            int rc = DBGCRegisterCommands(&g_aCmds[0], ELEMENTS(g_aCmds));
+            int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
             if (VBOX_SUCCESS(rc))
                 fRegisteredCmds = true;
         }
@@ -1351,22 +1351,22 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZeroPage(pVM->pgm.s.apInterPaePTs[1]);
 
     ASMMemZeroPage(pVM->pgm.s.pInterPaePDPT);
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
     {
         ASMMemZeroPage(pVM->pgm.s.apInterPaePDs[i]);
         pVM->pgm.s.pInterPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
                                           | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[i]);
     }
 
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePDPT64->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.pInterPaePDPT64->a); i++)
     {
-        const unsigned iPD = i % ELEMENTS(pVM->pgm.s.apInterPaePDs);
+        const unsigned iPD = i % RT_ELEMENTS(pVM->pgm.s.apInterPaePDs);
         pVM->pgm.s.pInterPaePDPT64->a[i].u = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A | PGM_PLXFLAGS_PERMANENT
                                             | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[iPD]);
     }
 
     RTHCPHYS HCPhysInterPaePDPT64 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64);
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
         pVM->pgm.s.pInterPaePML4->a[i].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A | PGM_PLXFLAGS_PERMANENT
                                          | HCPhysInterPaePDPT64;
 
@@ -1416,7 +1416,7 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCNestedRoot, PAGE_SIZE);
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
         pVM->pgm.s.pHCPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
@@ -1711,7 +1711,7 @@ PGMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     /*
      * Reserve space for mapping the paging pages into guest context.
      */
-    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + ELEMENTS(pVM->pgm.s.apHCPaePDs) + 1 + 2 + 2), "Paging", &GCPtr);
+    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + RT_ELEMENTS(pVM->pgm.s.apHCPaePDs) + 1 + 2 + 2), "Paging", &GCPtr);
     AssertRCReturn(rc, rc);
     pVM->pgm.s.pGC32BitPD = GCPtr;
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -1760,7 +1760,7 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     GCPtr += PAGE_SIZE;
     GCPtr += PAGE_SIZE; /* reserved page */
 
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         rc = PGMMap(pVM, GCPtr, pVM->pgm.s.aHCPhysPaePDs[i], PAGE_SIZE, 0);
         AssertRCReturn(rc, rc);
@@ -1795,7 +1795,7 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 
     /* init cache */
     RTHCPHYS HCPhysDummy = MMR3PageDummyHCPhys(pVM);
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache); i++)
         pVM->pgm.s.aHCPhysDynPageMapCache[i] = HCPhysDummy;
 
     for (unsigned i = 0; i < MM_HYPER_DYNAMIC_SIZE; i += PAGE_SIZE)
@@ -1828,8 +1828,8 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
     pVM->pgm.s.pGC32BitPD    += offDelta;
     pVM->pgm.s.pGuestPDGC    += offDelta;
-    AssertCompile(ELEMENTS(pVM->pgm.s.apGCPaePDs) == ELEMENTS(pVM->pgm.s.apGstPaePDsGC));
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apGCPaePDs) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsGC));
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
     {
         pVM->pgm.s.apGCPaePDs[i]    += offDelta;
         pVM->pgm.s.apGstPaePDsGC[i] += offDelta;
@@ -2538,7 +2538,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     /*
      * Iterate the page directory.
      */
-    for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
+    for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
     {
         X86PDE PdeSrc = pPDSrc->a[iPD];
         if (PdeSrc.n.u1Present)
@@ -3421,7 +3421,7 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
  */
 static int  pgmR3DumpHierarchyHCPaePT(PVM pVM, PX86PTPAE pPT, uint64_t u64Address, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
 {
-    for (unsigned i = 0; i < ELEMENTS(pPT->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
     {
         X86PTEPAE Pte = pPT->a[i];
         if (Pte.n.u1Present)
@@ -3474,7 +3474,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
     const bool fBigPagesSupported = fLongMode || !!(cr4 & X86_CR4_PSE);
 
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < ELEMENTS(pPD->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
     {
         X86PDEPAE Pde = pPD->a[i];
         if (Pde.n.u1Present)
@@ -3581,7 +3581,7 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
     }
 
     int rc = VINF_SUCCESS;
-    const unsigned c = fLongMode ? ELEMENTS(pPDPT->a) : X86_PG_PAE_PDPE_ENTRIES;
+    const unsigned c = fLongMode ? RT_ELEMENTS(pPDPT->a) : X86_PG_PAE_PDPE_ENTRIES;
     for (unsigned i = 0; i < c; i++)
     {
         X86PDPE Pdpe = pPDPT->a[i];
@@ -3650,7 +3650,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
     }
 
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < ELEMENTS(pPML4->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPML4->a); i++)
     {
         X86PML4E Pml4e = pPML4->a[i];
         if (Pml4e.n.u1Present)
@@ -3696,7 +3696,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
  */
 int  pgmR3DumpHierarchyHC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, PCDBGFINFOHLP pHlp)
 {
-    for (unsigned i = 0; i < ELEMENTS(pPT->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
     {
         X86PTE Pte = pPT->a[i];
         if (Pte.n.u1Present)
@@ -3742,7 +3742,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
     }
 
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < ELEMENTS(pPD->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
     {
         X86PDE Pde = pPD->a[i];
         if (Pde.n.u1Present)
@@ -3826,7 +3826,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
  */
 int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPHYS PhysSearch)
 {
-    for (unsigned i = 0; i < ELEMENTS(pPT->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
     {
         X86PTE Pte = pPT->a[i];
         if (Pte.n.u1Present)
@@ -3904,7 +3904,7 @@ PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
          cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
          cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address"));
 
-    for (unsigned i = 0; i < ELEMENTS(pPD->a); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
     {
         X86PDE Pde = pPD->a[i];
         if (Pde.n.u1Present)

@@ -905,7 +905,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMPollerRegister(PPDMDRVINS pDrvIns, PFNPD
 
     int rc = VINF_SUCCESS;
     PVM pVM = pDrvIns->Internal.s.pVM;
-    if (pVM->pdm.s.cPollers < ELEMENTS(pVM->pdm.s.apfnPollers))
+    if (pVM->pdm.s.cPollers < RT_ELEMENTS(pVM->pdm.s.apfnPollers))
     {
         pVM->pdm.s.apfnPollers[pVM->pdm.s.cPollers] = pfnPoller;
         pVM->pdm.s.aDrvInsPollers[pVM->pdm.s.cPollers] = pDrvIns;

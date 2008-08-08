@@ -147,8 +147,8 @@ static const DBGCVARDESC    g_aArgPat[] =
 static const DBGCCMD    g_aCmds[] =
 {
     /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "stats",      0,        1,        &g_aArgPat[0],      ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
-    { "statsreset", 0,        1,        &g_aArgPat[0],      ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
+    { "stats",      0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
+    { "statsreset", 0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
 };
 #endif
 
@@ -220,7 +220,7 @@ STAMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     static bool fRegisteredCmds = false;
     if (!fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], ELEMENTS(g_aCmds));
+        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (VBOX_SUCCESS(rc))
             fRegisteredCmds = true;
     }

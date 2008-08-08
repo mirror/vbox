@@ -188,7 +188,7 @@ PGMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
             {
                 unsigned iPT  = off >> X86_PD_SHIFT;
                 unsigned iPTE = (off >> PAGE_SHIFT) & X86_PT_MASK;
-                while (cb > 0 && iPTE < ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
+                while (cb > 0 && iPTE < RT_ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
                 {
                     /* 32-Bit */
                     CTXALLSUFF(pCur->aPTs[iPT].pPT)->a[iPTE].u &= fMask | X86_PTE_PG_MASK;

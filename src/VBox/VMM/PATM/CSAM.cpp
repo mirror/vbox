@@ -197,7 +197,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     static bool fRegisteredCmds = false;
     if (!fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], ELEMENTS(g_aCmds));
+        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (VBOX_SUCCESS(rc))
             fRegisteredCmds = true;
     }
@@ -2404,7 +2404,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
                 AssertRC(rc);   /* can't fail */
 
-                for (unsigned i=0;i<ELEMENTS(aOpenBsdPushCSOffset);i++)
+                for (unsigned i=0;i<RT_ELEMENTS(aOpenBsdPushCSOffset);i++)
                 {
                     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pHandler - aOpenBsdPushCSOffset[i], &cpu, NULL);
                     if (    rc == VINF_SUCCESS

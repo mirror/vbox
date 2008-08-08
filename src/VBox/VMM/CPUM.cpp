@@ -507,7 +507,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Load CPUID overrides from configuration.
      */
     PCPUMCPUID  pCpuId = &pCPUM->aGuestCpuIdStd[0];
-    uint32_t    cElements = ELEMENTS(pCPUM->aGuestCpuIdStd);
+    uint32_t    cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdStd);
     for (i=0;; )
     {
         while (cElements-- > 0)
@@ -731,13 +731,13 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pVM->cpum.s.fUseFlags);
     SSMR3PutU32(pSSM, pVM->cpum.s.fChanged);
 
-    SSMR3PutU32(pSSM, ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
 
-    SSMR3PutU32(pSSM, ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
 
-    SSMR3PutU32(pSSM, ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
 
     SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
@@ -784,12 +784,12 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     uint32_t cElements;
     int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
     /* Support old saved states with a smaller standard cpuid array. */
-    if (cElements > ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+    if (cElements > RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdStd[0]));
 
     rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
+    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
 
@@ -875,7 +875,7 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
         { "cy", "nc", X86_EFL_CF },
     };
     char *psz = pszEFlags;
-    for (unsigned i = 0; i < ELEMENTS(s_aFlags); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
     {
         const char *pszAdd = s_aFlags[i].fFlag & efl ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
         if (pszAdd)
@@ -1541,7 +1541,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     "\n"
                     "         RAW Extended CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i < ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdExt[i];
         ASMCpuId(0x80000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);

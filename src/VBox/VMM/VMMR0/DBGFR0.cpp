@@ -53,7 +53,7 @@ DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG
     if (uDr6 & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3))
     {
         Assert(X86_DR6_B0 == 1 && X86_DR6_B1 == 2 && X86_DR6_B2 == 4 && X86_DR6_B3 == 8);
-        for (unsigned iBp = 0; iBp < ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
             if (    (uDr6 & RT_BIT(iBp))
                 &&  pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
@@ -112,11 +112,11 @@ DBGFR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
     {
         RTGCPTR pPc;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
-                                              (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),                                              
+                                              (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),
                                               &pPc);
         AssertRCReturn(rc, rc);
 
-        for (unsigned iBp = 0; iBp < ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
         {
             if (    pVM->dbgf.s.aBreakpoints[iBp].GCPtr == (RTGCUINTPTR)pPc
                 &&  pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)

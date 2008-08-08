@@ -965,7 +965,7 @@ CPUMDECL(uint64_t) CPUMGetGuestEFER(PVM pVM)
 CPUMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     PCCPUMCPUID pCpuId;
-    if (iLeaf < ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+    if (iLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         pCpuId = &pVM->cpum.s.aGuestCpuIdStd[iLeaf];
     else if (iLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
         pCpuId = &pVM->cpum.s.aGuestCpuIdExt[iLeaf - UINT32_C(0x80000000)];

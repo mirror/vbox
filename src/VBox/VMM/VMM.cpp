@@ -224,7 +224,7 @@ static int vmmR3InitCoreCode(PVM pVM)
      * Calc the size.
      */
     unsigned cbCoreCode = 0;
-    for (unsigned iSwitcher = 0; iSwitcher < ELEMENTS(s_apSwitchers); iSwitcher++)
+    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
     {
         pVM->vmm.s.aoffSwitchers[iSwitcher] = cbCoreCode;
         PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
@@ -297,7 +297,7 @@ static int vmmR3InitCoreCode(PVM pVM)
         /*
          * copy the code.
          */
-        for (unsigned iSwitcher = 0; iSwitcher < ELEMENTS(s_apSwitchers); iSwitcher++)
+        for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
         {
             PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
             if (pSwitcher)
@@ -816,7 +816,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * All the switchers.
      */
-    for (unsigned iSwitcher = 0; iSwitcher < ELEMENTS(s_apSwitchers); iSwitcher++)
+    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
     {
         PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
         if (pSwitcher && pSwitcher->pfnRelocate)
@@ -2653,7 +2653,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         { "handlers",       "phys virt hyper stats" },
         { "cfgm",           NULL },
     };
-    for (unsigned i = 0; i < ELEMENTS(aInfo); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(aInfo); i++)
     {
         if (fDoneHyper && !strcmp(aInfo[i].pszInfo, "cpumhyper"))
             continue;

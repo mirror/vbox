@@ -989,7 +989,7 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
     char szEFlags[80];
     char *psz = szEFlags;
     uint32_t efl = pCtx->eflags.u32;
-    for (unsigned i = 0; i < ELEMENTS(aFlags); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(aFlags); i++)
     {
         const char *pszAdd = aFlags[i].fFlag & efl ? aFlags[i].pszSet : aFlags[i].pszClear;
         if (pszAdd)
