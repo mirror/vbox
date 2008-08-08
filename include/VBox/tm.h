@@ -171,7 +171,6 @@ typedef FNTMTIMEREXT *PFNTMTIMEREXT;
 TMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer);
 TMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer);
 TMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer);
-#define TMTimerGCPtr(pTimer) TMTimerRCPtr(pTimer) /**< @deprecated */
 TMDECL(int) TMTimerDestroy(PTMTIMER pTimer);
 TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire);
 TMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
