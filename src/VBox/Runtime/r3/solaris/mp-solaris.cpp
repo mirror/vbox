@@ -188,13 +188,18 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
     return rtMpSolarisGetFrequency(idCpu, "clock_MHz");
 }
 
+
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
     /*
      * Solaris has sysconf.
      */
-    return sysconf(_SC_NPROCESSORS_CONF);
+    int cCpus = sysconf(_SC_NPROCESSORS_MAX)
+    if (cCpus < 0)
+        cCpus = sysconf(_SC_NPROCESSORS_CONF);
+    return cCpus;
 }
+
 
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
