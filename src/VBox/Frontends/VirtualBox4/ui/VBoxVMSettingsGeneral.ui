@@ -727,7 +727,7 @@
             </sizepolicy>
            </property>
            <property name="whatsThis" >
-            <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</string>
+            <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V.</string>
            </property>
            <property name="text" >
             <string>Enable &amp;VT-x/AMD-V</string>
