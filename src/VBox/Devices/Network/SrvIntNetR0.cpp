@@ -609,8 +609,8 @@ DECLINLINE(bool) intnetR0IPv4AddrIsGood(RTNETADDRIPV4 Addr)
         return false;
 
     /* Unusual suspects. */
-    if (RT_UNLIKELY(     Addr.au8[0]        == 127  /* Loopback */
-                    ||  (Addr.au8[0] & 0xf0 == 224) /* Multicast */
+    if (RT_UNLIKELY(     Addr.au8[0]         == 127  /* Loopback */
+                    ||  (Addr.au8[0] & 0xf0) == 224 /* Multicast */
                     ))
         return false;
     return true;
