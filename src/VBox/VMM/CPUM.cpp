@@ -342,13 +342,13 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 
-    /* Cpuid 2: 
+    /* Cpuid 2:
      * Intel: Cache and TLB information
      * AMD:   Reserved
      * Safe to expose
      */
 
-    /* Cpuid 3: 
+    /* Cpuid 3:
      * Intel: EAX, EBX - reserved
      *        ECX, EDX - Processor Serial Number if available, otherwise reserved
      * AMD:   Reserved
@@ -357,7 +357,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     if (!(pCPUM->aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_PSN))
         pCPUM->aGuestCpuIdStd[3].ecx = pCPUM->aGuestCpuIdStd[3].edx = 0;
 
-    /* Cpuid 4: 
+    /* Cpuid 4:
      * Intel: Deterministic Cache Parameters Leaf
      *        Note: Depends on the ECX input! -> Feeling rather lazy now, so we just return 0
      * AMD:   Reserved
@@ -392,7 +392,7 @@ static int cpumR3CpuIdInit(PVM pVM)
              &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
              &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
 
-    /* Cpuid 0x800000005 & 0x800000006 contain information about L1, L2 & L3 cache and TLB identifiers. 
+    /* Cpuid 0x800000005 & 0x800000006 contain information about L1, L2 & L3 cache and TLB identifiers.
      * Safe to pass on to the guest.
      *
      * Intel: 0x800000005 reserved
@@ -401,7 +401,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      *        0x800000006 L2/L3 cache information
      */
 
-    /* Cpuid 0x800000007: 
+    /* Cpuid 0x800000007:
      * AMD:               EAX, EBX, ECX - reserved
      *                    EDX: Advanced Power Management Information
      * Intel:             Reserved
@@ -599,7 +599,7 @@ CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
      * Switcher pointers.
      */
     pVM->cpum.s.pCPUMGC = VM_GUEST_ADDR(pVM, &pVM->cpum.s);
-    pVM->cpum.s.pHyperCoreGC = MMHyperCCToGC(pVM, pVM->cpum.s.pHyperCoreR3);
+    pVM->cpum.s.pHyperCoreGC = MMHyperCCToRC(pVM, pVM->cpum.s.pHyperCoreR3);
     Assert(pVM->cpum.s.pHyperCoreGC != NIL_RTGCPTR);
 }
 
