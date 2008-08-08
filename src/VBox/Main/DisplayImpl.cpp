@@ -2366,7 +2366,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
 DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINDISPLAY pDrv = PDMINS2DATA(pDrvIns, PDRVMAINDISPLAY);
+    PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -2387,7 +2387,7 @@ DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, PDMINTERF
  */
 DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMAINDISPLAY pData = PDMINS2DATA(pDrvIns, PDRVMAINDISPLAY);
+    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pDisplay)
     {
@@ -2415,7 +2415,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMAINDISPLAY pData = PDMINS2DATA(pDrvIns, PDRVMAINDISPLAY);
+    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
 
     /*

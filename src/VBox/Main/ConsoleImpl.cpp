@@ -6929,7 +6929,7 @@ DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface,
 DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINSTATUS pDrv = PDMINS2DATA(pDrvIns, PDRVMAINSTATUS);
+    PDRVMAINSTATUS pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -6950,7 +6950,7 @@ DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, PD
  */
 DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMAINSTATUS pData = PDMINS2DATA(pDrvIns, PDRVMAINSTATUS);
+    PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
     if (pData->papLeds)
     {
@@ -6973,7 +6973,7 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVMAINSTATUS pData = PDMINS2DATA(pDrvIns, PDRVMAINSTATUS);
+    PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
     /*
