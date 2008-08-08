@@ -411,20 +411,20 @@
 # define R0STRING(pR0String)    ("<R0_STRING>")
 #endif
 
-/** @def GCSTRING
- * A macro which in R3 and R0 will return a dummy string while in GC it will return
+/** @def RCSTRING
+ * A macro which in R3 and R0 will return a dummy string while in RC it will return
  * the parameter.
  *
  * This is typically used to wrap description strings in structures shared
- * between R3, R0 and/or GC. The intention is to avoid the \#ifdef IN_GC mess.
+ * between R3, R0 and/or RC. The intention is to avoid the \#ifdef IN_RC mess.
  *
- * @param   pR0String   The GC string. Only referenced in GC.
+ * @param   pR0String   The RC string. Only referenced in RC.
  * @see R3STRING, R0STRING
  */
 #ifdef IN_GC
-# define GCSTRING(pR0String)    (pGCString)
+# define RCSTRING(pRCString)    (pRCString)
 #else
-# define GCSTRING(pR0String)    ("<GC_STRING>")
+# define RCSTRING(pRCString)    ("<RC_STRING>")
 #endif
 
 
