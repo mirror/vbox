@@ -271,7 +271,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /*
              * Read the frame.
              */
-            char achBuf[4096];
+            char achBuf[16384];
             size_t cbRead = 0;
 #ifdef VBOX_WITH_CROSSBOW
             cbRead = sizeof(achBuf);
@@ -285,7 +285,8 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #endif
             if (VBOX_SUCCESS(rc))
             {
-                AssertMsg(cbRead <= 1536, ("cbRead=%d\n", cbRead));
+                // Assertion removed to be able to support jumbo frames.
+                //AssertMsg(cbRead <= 1536, ("cbRead=%d\n", cbRead));
 
                 /*
                  * Wait for the device to have space for this frame.
