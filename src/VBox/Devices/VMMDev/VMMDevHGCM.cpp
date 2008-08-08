@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox Guest/VMM/host communication:
- * HGCM - Host-Guest Communication Manager device
+ * VMMDev - HGCM - Host-Guest Communication Manager Device.
  */
 
 /*
@@ -21,6 +20,7 @@
  */
 
 
+#define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -30,7 +30,6 @@
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
 
-#define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/log.h>
 
 #include "VMMDevHGCM.h"
