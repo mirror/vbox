@@ -497,7 +497,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
-	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
