@@ -40,17 +40,5 @@
 #include <VBox/pdmusb.h>
 #include <VBox/pdmsrv.h>
 
-/** Source position.
- * @deprecated Use RT_SRC_POS */
-#define PDM_SRC_POS         RT_SRC_POS
-
-/** Source position declaration.
- * @deprecated Use RT_SRC_POS_DECL */
-#define PDM_SRC_POS_DECL    RT_SRC_POS_DECL
-
-/** Source position arguments.
- * @deprecated Use RT_SRC_POS_ARGS */
-#define PDM_SRC_POS_ARGS    RT_SRC_POS_ARGS
-
 #endif
 
