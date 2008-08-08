@@ -226,7 +226,7 @@ static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns,
  */
 static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PDEVPCARCH  pData = PDMINS2DATA(pDevIns, PDEVPCARCH);
+    PDEVPCARCH  pThis = PDMINS_2_DATA(pDevIns, PDEVPCARCH);
     int         rc;
     Assert(iInstance == 0);
 
@@ -239,16 +239,16 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init the data.
      */
-    pData->pDevIns = pDevIns;
+    pThis->pDevIns = pDevIns;
 
     /*
      * Register I/O Ports
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, 0xF0, 0x10, NULL, pcarchIOPortFPUWrite, pcarchIOPortFPURead, NULL, NULL, "Math Co-Processor (DOS/OS2 mode)");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x92, 1, NULL, pcarchIOPortPS2SysControlPortAWrite, pcarchIOPortPS2SysControlPortARead, NULL, NULL, "PS/2 system control port A (A20 and more)");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -258,10 +258,10 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Note: This will be removed before long.
      */
     rc = PDMDevHlpPhysReserve(pDevIns, 0x000a0000, 0x50000, "Low ROM Region");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
