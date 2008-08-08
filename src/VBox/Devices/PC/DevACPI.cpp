@@ -608,7 +608,7 @@ static int acpiSetupXSDT (ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries
     for (unsigned int i = 0; i < nb_entries; ++i)
     {
         xsdt->u64Entry[i] = RT_H2LE_U64((uint64_t)addrs[i]);
-        Log(("Setup XSDT: [%d] = %VX64\n", i, xsdt->u64Entry[i]));
+        Log(("Setup XSDT: [%d] = %RX64\n", i, xsdt->u64Entry[i]));
     }
     xsdt->header.u8Checksum = acpiChecksum ((uint8_t*)xsdt, size);
     acpiPhyscpy (s, addr, xsdt, size);

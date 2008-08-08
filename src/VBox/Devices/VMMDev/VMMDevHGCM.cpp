@@ -228,7 +228,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
     uint32_t cPages = (u32Size + PAGE_SIZE - 1) / PAGE_SIZE;
 
-    Log(("vmmdevHGCMSaveLinPtr: parm %d: %VGv %d = %d pages\n", iParm, GCPtr, u32Size, cPages));
+    Log(("vmmdevHGCMSaveLinPtr: parm %d: %RGv %d = %d pages\n", iParm, GCPtr, u32Size, cPages));
 
     pLinPtr->iParm             = iParm;
     pLinPtr->cbOffsetFirstPage = (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
@@ -249,7 +249,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
         rc = PDMDevHlpPhysGCPtr2GCPhys(pDevIns, GCPtr, &GCPhys);
 
-        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
+        Log(("vmmdevHGCMSaveLinPtr: Page %d: %TGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
 
         if (RT_FAILURE (rc))
         {
@@ -641,7 +641,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                              }
                          }
 
-                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Rrc\n", linearAddr, rc));
+                         Log(("vmmdevHGCMCall: LinAddr guest parameter %RGv, rc = %Rrc\n", linearAddr, rc));
                          break;
                      }
 
@@ -743,7 +743,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                              }
                          }
 
-                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Rrc\n", linearAddr, rc));
+                         Log(("vmmdevHGCMCall: LinAddr guest parameter %RGv, rc = %Rrc\n", linearAddr, rc));
                          break;
                      }
 
