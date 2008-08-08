@@ -924,24 +924,20 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0" "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = true;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fR0Enabled = true;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
-    Log(("i8259: fGCEnabled=%d fR0Enabled=%d\n", fGCEnabled, fR0Enabled));
+    Log(("DevPIC: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
 
     /*
      * Init the data.
