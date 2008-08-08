@@ -872,7 +872,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
     {
-        AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
+        AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
         return rc;
     }
     pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);

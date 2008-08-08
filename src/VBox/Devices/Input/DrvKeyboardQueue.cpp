@@ -285,7 +285,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pDownBase);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
+        AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
         return rc;
     }
     pDrv->pDownConnector = (PPDMIKEYBOARDCONNECTOR)pDownBase->pfnQueryInterface(pDownBase, PDMINTERFACE_KEYBOARD_CONNECTOR);

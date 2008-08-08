@@ -922,7 +922,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "DevicePath", &pThis->pszDevicePath);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: query for \"DevicePath\" string returned %Vra.\n", rc));
+        AssertMsgFailed(("Configuration error: query for \"DevicePath\" string returned %Rra.\n", rc));
         return rc;
     }
 
