@@ -300,7 +300,7 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
     if (RT_FAILURE(rc))
     {
-        LogBird(("ata: %x: schedule failed, rc=%Vrc\n", pCtl->IOPortBase1, rc));
+        LogBird(("ata: %x: schedule failed, rc=%Rrc\n", pCtl->IOPortBase1, rc));
         rc = RTSemEventSignal(pCtl->AsyncIOSem);
         AssertRC(rc);
     }
@@ -1148,7 +1148,7 @@ static bool ataReadSectorsSS(ATADevState *s)
             return true;
         }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
-            LogRel(("PIIX3 ATA: LUN#%d: disk read error (rc=%Vrc iSector=%#RX64 cSectors=%#RX32)\n",
+            LogRel(("PIIX3 ATA: LUN#%d: disk read error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
         ataCmdError(s, ID_ERR);
     }
@@ -1195,7 +1195,7 @@ static bool ataWriteSectorsSS(ATADevState *s)
             return true;
         }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
-            LogRel(("PIIX3 ATA: LUN#%d: disk write error (rc=%Vrc iSector=%#RX64 cSectors=%#RX32)\n",
+            LogRel(("PIIX3 ATA: LUN#%d: disk write error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
         ataCmdError(s, ID_ERR);
     }
@@ -1578,7 +1578,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                         || u8Cmd == SCSI_READ_CAPACITY
                         || u8Cmd == SCSI_READ_TOC_PMA_ATIP))
                     break;
-                LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Vrc\n", s->iLUN, u8Cmd, uATAPISenseKey, rc));
+                LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Rrc\n", s->iLUN, u8Cmd, uATAPISenseKey, rc));
             } while (0);
         }
         atapiCmdError(s, uATAPISenseKey, 0);
@@ -4268,7 +4268,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
     /* This must be last, as it also signals thread exit to EMT. */
     pCtl->AsyncIOThread = NIL_RTTHREAD;
 
-    Log2(("%s: Ctl#%d: return %Vrc\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), rc));
+    Log2(("%s: Ctl#%d: return %Rrc\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), rc));
     return rc;
 }
 
@@ -5198,7 +5198,7 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
     if (RT_SUCCESS(rc))
         rc = ataConfigLun(pDevIns, pIf);
     else
-        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Vrc\n", pIf->iLUN, rc));
+        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
 
     if (RT_FAILURE(rc))
     {
@@ -5739,7 +5739,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->pLedsConnector = (PDMILEDCONNECTORS *)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot attach to status driver"));
     }
 
@@ -5796,7 +5796,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             }
             else
             {
-                AssertMsgFailed(("Failed to attach LUN#%d. rc=%Vrc\n", pIf->iLUN, rc));
+                AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
                 switch (rc)
                 {
                     case VERR_ACCESS_DENIED:

@@ -132,7 +132,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: query for \"Path\" string return %Vrc.\n", rc));
+        AssertMsgFailed(("Configuration error: query for \"Path\" string return %Rrc.\n", rc));
         return rc;
     }
 
@@ -159,7 +159,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         }
         else
         {
-            AssertMsgFailed(("Could not open Raw image file %s, rc=%Vrc\n", pszName, rc));
+            AssertMsgFailed(("Could not open Raw image file %s, rc=%Rrc\n", pszName, rc));
             MMR3HeapFree(pszName);
         }
     }
@@ -205,7 +205,7 @@ static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
         return cbFile;
     }
 
-    AssertMsgFailed(("Error querying Raw image file size, rc=%Vrc. (%s)\n", rc, pThis->pszFilename));
+    AssertMsgFailed(("Error querying Raw image file size, rc=%Rrc. (%s)\n", rc, pThis->pszFilename));
     return 0;
 }
 
@@ -266,12 +266,12 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
                   cbRead, pvBuf));
         }
         else
-            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
+            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
                              pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
-    LogFlow(("drvRawImageRead: returns %Vrc\n", rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+    LogFlow(("drvRawImageRead: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -300,12 +300,12 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
                   cbWrite, pvBuf));
         }
         else
-            AssertMsgFailed(("RTFileWrite(%d, %p, %#x) -> %Vrc (off=%#llx '%s')\n",
+            AssertMsgFailed(("RTFileWrite(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
                              pThis->File, pvBuf, cbWrite, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->File, off, rc));
-    LogFlow(("drvRawImageWrite: returns %Vrc\n", rc));
+        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+    LogFlow(("drvRawImageWrite: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -318,7 +318,7 @@ static DECLCALLBACK(int) drvRawImageFlush(PPDMIMEDIA pInterface)
 
     Assert(pThis->File != NIL_RTFILE);
     int rc = RTFileFlush(pThis->File);
-    LogFlow(("drvRawImageFlush: returns %Vrc\n", rc));
+    LogFlow(("drvRawImageFlush: returns %Rrc\n", rc));
     return rc;
 }
 

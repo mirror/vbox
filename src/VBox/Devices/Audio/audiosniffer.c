@@ -201,7 +201,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
 
         if (!pThis->pDrv)
         {
-            AssertMsgFailed(("LUN #0 doesn't have a Audio Sniffer connector interface rc=%Vrc\n", rc));
+            AssertMsgFailed(("LUN #0 doesn't have a Audio Sniffer connector interface rc=%Rrc\n", rc));
             rc = VERR_PDM_MISSING_INTERFACE;
         }
     }
@@ -212,7 +212,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
     }
     else
     {
-        AssertMsgFailed(("Failed to attach LUN #0. rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to attach LUN #0. rc=%Rrc\n", rc));
     }
 
     if (RT_SUCCESS (rc))

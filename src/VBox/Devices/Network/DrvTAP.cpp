@@ -326,7 +326,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             }
             else
             {
-                LogFlow(("drvTAPAsyncIoThread: RTFileRead -> %Vrc\n", rc));
+                LogFlow(("drvTAPAsyncIoThread: RTFileRead -> %Rrc\n", rc));
                 if (rc == VERR_INVALID_HANDLE)
                     break;
                 RTThreadYield();
@@ -361,7 +361,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     }
 
 
-    LogFlow(("drvTAPAsyncIoThread: returns %Vrc\n", VINF_SUCCESS));
+    LogFlow(("drvTAPAsyncIoThread: returns %Rrc\n", VINF_SUCCESS));
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
     return VINF_SUCCESS;
 }

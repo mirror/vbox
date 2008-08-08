@@ -137,13 +137,13 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                 }
 
                 rc = RTErrConvertFromWin32(uError);
-                Log(("drvNamedPipeRead: ReadFile returned %d (%Vrc)\n", uError, rc));
+                Log(("drvNamedPipeRead: ReadFile returned %d (%Rrc)\n", uError, rc));
             }
         }
 
         if (RT_FAILURE(rc))
         {
-            Log(("drvNamedPipeRead: FileRead returned %Vrc fShutdown=%d\n", rc, pThis->fShutdown));
+            Log(("drvNamedPipeRead: FileRead returned %Rrc fShutdown=%d\n", rc, pThis->fShutdown));
             if (    !pThis->fShutdown
                 &&  (   rc == VERR_EOF
                      || rc == VERR_BROKEN_PIPE
@@ -190,7 +190,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         *cbRead = 0;
     }
 
-    LogFlow(("%s: cbRead=%d returns %Vrc\n", __FUNCTION__, *cbRead, rc));
+    LogFlow(("%s: cbRead=%d returns %Rrc\n", __FUNCTION__, *cbRead, rc));
     return rc;
 }
 
@@ -223,7 +223,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             if (uError != ERROR_IO_PENDING)
             {
                 rc = RTErrConvertFromWin32(uError);
-                Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
+                Log(("drvNamedPipeWrite: WriteFile returned %d (%Rrc)\n", uError, rc));
             }
             else
             {
@@ -274,7 +274,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     }
 #endif /* !RT_OS_WINDOWS */
 
-    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -356,7 +356,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
             else if (hrc != ERROR_SUCCESS)
             {
                 rc = RTErrConvertFromWin32(hrc);
-                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
+                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Rrc\n", pThis->pDrvIns->iInstance, rc));
                 break;
             }
         }
@@ -364,14 +364,14 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
         if (listen(pThis->LocalSocketServer, 0) == -1)
         {
             rc = RTErrConvertFromErrno(errno);
-            LogRel(("NamedPipe%d: listen failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
+            LogRel(("NamedPipe%d: listen failed, rc=%Rrc\n", pThis->pDrvIns->iInstance, rc));
             break;
         }
         int s = accept(pThis->LocalSocketServer, NULL, NULL);
         if (s == -1)
         {
             rc = RTErrConvertFromErrno(errno);
-            LogRel(("NamedPipe%d: accept failed, rc=%Vrc\n", pThis->pDrvIns->iInstance, rc));
+            LogRel(("NamedPipe%d: accept failed, rc=%Rrc\n", pThis->pDrvIns->iInstance, rc));
             break;
         }
         else
@@ -443,7 +443,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Vrc.\n", rc));
+        AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc));
         goto out;
     }
     pThis->pszLocation = pszLocation;
@@ -452,7 +452,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     rc = CFGMR3QueryBool(pCfgHandle, "IsServer", &fIsServer);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Vrc.\n", rc));
+        AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Rrc.\n", rc));
         goto out;
     }
     pThis->fIsServer = fIsServer;
@@ -464,7 +464,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         if (hPipe == INVALID_HANDLE_VALUE)
         {
             rc = RTErrConvertFromWin32(GetLastError());
-            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pThis->pDrvIns->iInstance));
+            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Rrc\n", pThis->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to create named pipe %s"), pDrvIns->iInstance, pszLocation);
         }
         pThis->NamedPipe = hPipe;
@@ -484,7 +484,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         if (hPipe == INVALID_HANDLE_VALUE)
         {
             rc = RTErrConvertFromWin32(GetLastError());
-            LogRel(("NamedPipe%d: CreateFile failed rc=%Vrc\n", pThis->pDrvIns->iInstance));
+            LogRel(("NamedPipe%d: CreateFile failed rc=%Rrc\n", pThis->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
         }
         pThis->NamedPipe = hPipe;

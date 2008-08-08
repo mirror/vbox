@@ -301,7 +301,7 @@ static int rawCheckIfValid(const char *pszFilename)
     rc = VERR_VDI_INVALID_HEADER;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -349,7 +349,7 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
         *ppBackendData = pImage;
 
 out:
-    LogFlowFunc(("returns %Vrc (pBackendData=%#p)\n", rc, *ppBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
@@ -418,7 +418,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
 
 out:
-    LogFlowFunc(("returns %Vrc (pBackendData=%#p)\n", rc, *ppBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
@@ -428,7 +428,7 @@ static int rawRename(void *pBackendData, const char *pszFilename)
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
     int rc = VERR_NOT_IMPLEMENTED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -444,7 +444,7 @@ static int rawClose(void *pBackendData, bool fDelete)
     if (pImage)
         rawFreeImage(pImage, fDelete);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -471,7 +471,7 @@ static int rawRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     *pcbActuallyRead = cbToRead;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -506,7 +506,7 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         *pcbWriteProcess = cbToWrite;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -518,7 +518,7 @@ static int rawFlush(void *pBackendData)
     int rc;
 
     rc = rawFlushImage(pImage);
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -551,7 +551,7 @@ static int rawGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc enmImageType=%u\n", rc, *penmImageType));
+    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
     return rc;
 }
 
@@ -616,7 +616,7 @@ static int rawGetPCHSGeometry(void *pBackendData,
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
 }
 
@@ -645,7 +645,7 @@ static int rawSetPCHSGeometry(void *pBackendData,
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -672,7 +672,7 @@ static int rawGetLCHSGeometry(void *pBackendData,
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
@@ -701,7 +701,7 @@ static int rawSetLCHSGeometry(void *pBackendData,
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -761,7 +761,7 @@ static int rawSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     rc = rawOpenImage(pImage, uOpenFlags);
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -784,7 +784,7 @@ static int rawGetComment(void *pBackendData, char *pszComment,
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc comment='%s'\n", rc, pszComment));
+    LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
     return rc;
 }
 
@@ -809,7 +809,7 @@ static int rawSetComment(void *pBackendData, const char *pszComment)
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -827,7 +827,7 @@ static int rawGetUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -851,7 +851,7 @@ static int rawSetUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -869,7 +869,7 @@ static int rawGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -892,7 +892,7 @@ static int rawSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -910,7 +910,7 @@ static int rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -933,7 +933,7 @@ static int rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -951,7 +951,7 @@ static int rawGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc (%Vuuid)\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc (%Vuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -974,7 +974,7 @@ static int rawSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -996,35 +996,35 @@ static void rawDump(void *pBackendData)
 static int rawGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int rawGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int rawSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int rawGetParentFilename(void *pvBackendData, char **ppszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 static int rawSetParentFilename(void *pvBackendData, const char *pszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -1037,7 +1037,7 @@ static int rawAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                         PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1045,7 +1045,7 @@ static int rawAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                          PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 

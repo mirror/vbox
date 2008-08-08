@@ -345,12 +345,12 @@ static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
     if (RT_SUCCESS(rc))
     {
         *pPCHSGeometry = pThis->PCHSGeometry;
-        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
+        LogFlow(("%s: returns %Rrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
     {
         rc = VERR_PDM_GEOMETRY_NOT_SET;
-        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+        LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     }
     return rc;
 }
@@ -417,12 +417,12 @@ static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
     if (RT_SUCCESS(rc))
     {
         *pLCHSGeometry = pThis->LCHSGeometry;
-        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
+        LogFlow(("%s: returns %Rrc {%d,%d,%d}\n", __FUNCTION__, rc, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
     {
         rc = VERR_PDM_GEOMETRY_NOT_SET;
-        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+        LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     }
     return rc;
 }
@@ -506,7 +506,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
         int rc = pThis->pDrvIns->pDrvHlp->pfnMountPrepare(pThis->pDrvIns, pszFilename, pszCoreDriver);
         if (RT_FAILURE(rc))
         {
-            Log(("drvblockMount: Prepare failed for \"%s\" rc=%Vrc\n", pszFilename, rc));
+            Log(("drvblockMount: Prepare failed for \"%s\" rc=%Rrc\n", pszFilename, rc));
             return rc;
         }
     }
@@ -518,7 +518,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
     int rc = pThis->pDrvIns->pDrvHlp->pfnAttach(pThis->pDrvIns, &pBase);
     if (RT_FAILURE(rc))
     {
-        Log(("drvblockMount: Attach failed rc=%Vrc\n", rc));
+        Log(("drvblockMount: Attach failed rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -589,7 +589,7 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
     int rc = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns);
     if (RT_FAILURE(rc))
     {
-        Log(("drvblockUnmount: Detach failed rc=%Vrc\n", rc));
+        Log(("drvblockUnmount: Detach failed rc=%Rrc\n", rc));
         return rc;
     }
     Assert(!pThis->pDrvMedia);

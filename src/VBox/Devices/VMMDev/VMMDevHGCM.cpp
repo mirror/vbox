@@ -249,7 +249,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
         rc = PDMDevHlpPhysGCPtr2GCPhys(pDevIns, GCPtr, &GCPhys);
 
-        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %VGp. %Vrc\n", iPage, GCPtr, GCPhys, rc));
+        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %VGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
 
         if (RT_FAILURE (rc))
         {
@@ -641,7 +641,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                              }
                          }
 
-                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Vrc\n", linearAddr, rc));
+                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Rrc\n", linearAddr, rc));
                          break;
                      }
 
@@ -743,7 +743,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                              }
                          }
 
-                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Vrc\n", linearAddr, rc));
+                         Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Rrc\n", linearAddr, rc));
                          break;
                      }
 

@@ -784,7 +784,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         /* new reservation */
                         pRequestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
                                                               hypervisorInfo->hypervisorSize);
-                        LogRel(("Guest reported fixed hypervisor window at 0x%p (size = 0x%x, rc = %Vrc)\n",
+                        LogRel(("Guest reported fixed hypervisor window at 0x%p (size = 0x%x, rc = %Rrc)\n",
                                 hypervisorInfo->hypervisorStart,
                                 hypervisorInfo->hypervisorSize,
                                 pRequestHeader->rc));
@@ -2270,7 +2270,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pThis->pHGCMDrv = (PPDMIHGCMCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_HGCM_CONNECTOR);
         if (!pThis->pHGCMDrv)
         {
-            Log(("LUN #0 doesn't have a HGCM connector interface, HGCM is not supported. rc=%Vrc\n", rc));
+            Log(("LUN #0 doesn't have a HGCM connector interface, HGCM is not supported. rc=%Rrc\n", rc));
             /* this is not actually an error, just means that there is no support for HGCM */
         }
 #endif
@@ -2281,7 +2281,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         rc = VINF_SUCCESS;
     }
     else
-        AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Vrc\n", rc), rc);
+        AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Rrc\n", rc), rc);
 
     /*
      * Attach status driver for shared folders (optional).
@@ -2293,7 +2293,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
             pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return rc;
     }
 

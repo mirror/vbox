@@ -304,7 +304,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         cMilliesInterval = 0;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: 32-bit \"Interval\" -> rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: 32-bit \"Interval\" -> rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -314,14 +314,14 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         cItems = 128;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: 32-bit \"QueueSize\" -> rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: 32-bit \"QueueSize\" -> rc=%Rrc\n", rc));
         return rc;
     }
 
     rc = pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, sizeof(DRVKBDQUEUEITEM), cItems, cMilliesInterval, drvKbdQueueConsumer, &pDrv->pQueue);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Vrc\n", cItems, cMilliesInterval, rc));
+        AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Rrc\n", cItems, cMilliesInterval, rc));
         return rc;
     }
 

@@ -1375,7 +1375,7 @@ static int write_audio (SB16State *s, int nchan, int dma_pos,
 #else
         int rc = PDMDevHlpDMAReadMemory(s->pDevIns, nchan, tmpbuf, dma_pos,
                                         to_copy, &copied);
-        AssertMsgRC (rc, ("DMAReadMemory -> %Vrc\n", rc));
+        AssertMsgRC (rc, ("DMAReadMemory -> %Rrc\n", rc));
 #endif
 
         copied = AUD_write (s->voice, tmpbuf, copied);
@@ -1795,7 +1795,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16Timer, "SB16 timer", &s->pTimer);
     if (RT_FAILURE(rc))
-        AssertMsgFailedReturn(("pfnTMTimerCreate -> %Vrc\n", rc), rc);
+        AssertMsgFailedReturn(("pfnTMTimerCreate -> %Rrc\n", rc), rc);
 
     rc = PDMDevHlpIOPortRegister(pDevIns, s->port + 0x04,  2, s,
                                  mixer_write, mixer_read, NULL, NULL, "SB16");
@@ -1824,7 +1824,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("sb16: No attached driver!\n"));
     else if (RT_FAILURE(rc))
-        AssertMsgFailedReturn(("Failed to attach SB16 LUN #0! rc=%Vrc\n", rc), rc);
+        AssertMsgFailedReturn(("Failed to attach SB16 LUN #0! rc=%Rrc\n", rc), rc);
 
     AUD_register_card("sb16", &s->card);
     legacy_reset(s);

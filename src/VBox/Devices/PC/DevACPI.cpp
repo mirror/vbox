@@ -732,7 +732,7 @@ static int acpiPowerDown (ACPIState *s)
 {
     int rc = PDMDevHlpVMPowerOff(s->pDevIns);
     if (RT_FAILURE (rc))
-        AssertMsgFailed (("Could not power down the VM. rc = %Vrc\n", rc));
+        AssertMsgFailed (("Could not power down the VM. rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1671,7 +1671,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsR3);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
+        AssertMsgFailed(("pfnTMTimerCreate -> %Rrc\n", rc));
         return rc;
     }
 

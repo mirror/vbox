@@ -474,7 +474,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             }
             else if (RT_FAILURE(rc))
             {
-                LogRel(("HostSerial#%d: Serial Write failed with %Vrc; terminating send thread\n", pDrvIns->iInstance, rc));
+                LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
                 return VINF_SUCCESS;
             }
         }
@@ -574,7 +574,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
-                LogRel(("HostSerial#%d: Read failed with %Vrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
                 break;
             }
             cbRemaining = cbRead;
@@ -601,7 +601,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 }
                 else
                 {
-                    LogRel(("HostSerial#%d: Wait failed with error %Vrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(dwRet)));
+                    LogRel(("HostSerial#%d: Wait failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(dwRet)));
                     break;
                 }
             }
@@ -614,7 +614,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             {
                 if (!ReadFile(pThis->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &pThis->overlappedRecv))
                 {
-                    LogRel(("HostSerial#%d: Read failed with error %Vrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
+                    LogRel(("HostSerial#%d: Read failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
                     break;
                 }
                 cbRemaining = dwNumberOfBytesTransferred;
@@ -640,13 +640,13 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     if (RT_FAILURE(rc))
                     {
                         /* Notifying device failed, continue but log it */
-                        LogRel(("HostSerial#%d: Notifying device failed with error %Vrc; continuing.\n", pDrvIns->iInstance, rc));
+                        LogRel(("HostSerial#%d: Notifying device failed with error %Rrc; continuing.\n", pDrvIns->iInstance, rc));
                     }
                 }
                 else
                 {
                     /* Getting new state failed, continue but log it */
-                    LogRel(("HostSerial#%d: Getting status lines state failed with error %Vrc; continuing.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
+                    LogRel(("HostSerial#%d: Getting status lines state failed with error %Rrc; continuing.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
                 }
             }
 #endif
@@ -674,7 +674,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             }
             else
             {
-                LogRel(("HostSerial#%d: NotifyRead failed with %Vrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                LogRel(("HostSerial#%d: NotifyRead failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
                 break;
             }
         }
@@ -743,7 +743,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         {
 ioctl_error:
             PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                       N_("Ioctl failed for serial host device '%s' (%Vrc). The device will not work properly"),
+                                       N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                        pThis->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
         }
@@ -829,7 +829,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
 
 ioctl_error:
     PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                N_("Ioctl failed for serial host device '%s' (%Vrc). The device will not work properly"),
+                                N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                 pThis->pszDevicePath, RTErrConvertFromErrno(errno));
     return VINF_SUCCESS;
 }
@@ -969,7 +969,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pThis->pszDevicePath, rc));
+        AssertMsgFailed(("Could not open host device %s, rc=%Rrc\n", pThis->pszDevicePath, rc));
         switch (rc)
         {
             case VERR_ACCESS_DENIED:

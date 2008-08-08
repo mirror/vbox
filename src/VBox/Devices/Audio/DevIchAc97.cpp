@@ -1650,7 +1650,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         Log (("ac97: No attached driver!\n"));
     else if (RT_FAILURE (rc))
     {
-        AssertMsgFailed (("Failed to attach AC97 LUN #0! rc=%Vrc\n", rc));
+        AssertMsgFailed (("Failed to attach AC97 LUN #0! rc=%Rrc\n", rc));
         return rc;
     }
 

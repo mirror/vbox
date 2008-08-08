@@ -199,7 +199,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
                                 (void**)&pfnHDDFormatLoad);
             if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
             {
-                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
+                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
                 if (RT_SUCCESS(rc))
                     rc = VERR_SYMBOL_NOT_FOUND;
                 goto out;
@@ -717,7 +717,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
                 if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
                 {
-                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
+                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
                     if (RT_SUCCESS(rc))
                         rc = VERR_SYMBOL_NOT_FOUND;
                 }
@@ -757,7 +757,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             RTDirClose(pPluginDir);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc *pcEntriesUsed=%u\n", rc, cEntries));
+    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
     *pcEntriesUsed = cEntries;
     return rc;
 }
@@ -826,7 +826,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk)
         }
     } while (0);
 
-    LogFlowFunc(("returns %Vrc (pDisk=%#p)\n", rc, pDisk));
+    LogFlowFunc(("returns %Rrc (pDisk=%#p)\n", rc, pDisk));
     return rc;
 }
 
@@ -961,7 +961,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
                 if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
                 {
-                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
+                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
                     if (RT_SUCCESS(rc))
                         rc = VERR_SYMBOL_NOT_FOUND;
                 }
@@ -1016,7 +1016,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             RTDirClose(pPluginDir);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc *ppszFormat=\"%s\"\n", rc, *ppszFormat));
+    LogFlowFunc(("returns %Rrc *ppszFormat=\"%s\"\n", rc, *ppszFormat));
     return rc;
 }
 
@@ -1237,7 +1237,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1442,7 +1442,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1606,7 +1606,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1825,7 +1825,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL */, 100, pvUser);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2065,7 +2065,7 @@ movefail:
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2161,7 +2161,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         }
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2205,7 +2205,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
         Assert(!VALID_PTR(pDisk->pLast));
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2250,7 +2250,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         rc = vdReadHelper(pDisk, pImage, uOffset, pvBuf, cbRead);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2297,7 +2297,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         rc = vdWriteHelper(pDisk, pImage, uOffset, pvBuf, cbWrite);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2326,7 +2326,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         rc = pImage->Backend->pfnFlush(pImage->pvBackendData);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2484,7 +2484,7 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                                      pPCHSGeometry);
     } while (0);
 
-    LogFlowFunc(("%s: %Vrc (PCHS=%u/%u/%u)\n", __FUNCTION__, rc,
+    LogFlowFunc(("%s: %Rrc (PCHS=%u/%u/%u)\n", __FUNCTION__, rc,
                  pDisk->PCHSGeometry.cCylinders, pDisk->PCHSGeometry.cHeads,
                  pDisk->PCHSGeometry.cSectors));
     return rc;
@@ -2582,7 +2582,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         }
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2630,7 +2630,7 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                                      pLCHSGeometry);
     } while (0);
 
-    LogFlowFunc((": %Vrc (LCHS=%u/%u/%u)\n", rc,
+    LogFlowFunc((": %Rrc (LCHS=%u/%u/%u)\n", rc,
                  pDisk->LCHSGeometry.cCylinders, pDisk->LCHSGeometry.cHeads,
                  pDisk->LCHSGeometry.cSectors));
     return rc;
@@ -2728,7 +2728,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         }
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2765,7 +2765,7 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
         *puVersion = pImage->Backend->pfnGetVersion(pImage->pvBackendData);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc uVersion=%#x\n", rc, *puVersion));
+    LogFlowFunc(("returns %Rrc uVersion=%#x\n", rc, *puVersion));
     return rc;
 }
 
@@ -2809,7 +2809,7 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
             rc = VERR_VDI_INVALID_TYPE;
     } while (0);
 
-    LogFlowFunc(("returns %Vrc uenmType=%u\n", rc, *penmType));
+    LogFlowFunc(("returns %Rrc uenmType=%u\n", rc, *penmType));
     return rc;
 }
 
@@ -2855,7 +2855,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
             rc = VERR_VDI_INVALID_TYPE;
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2892,7 +2892,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
         *puImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc uImageFlags=%#x\n", rc, *puImageFlags));
+    LogFlowFunc(("returns %Rrc uImageFlags=%#x\n", rc, *puImageFlags));
     return rc;
 }
 
@@ -2929,7 +2929,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         *puOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc uOpenFlags=%#x\n", rc, *puOpenFlags));
+    LogFlowFunc(("returns %Rrc uOpenFlags=%#x\n", rc, *puOpenFlags));
     return rc;
 }
 
@@ -2968,7 +2968,7 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                                               uOpenFlags);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3023,7 +3023,7 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
         }
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, pszFilename=\"%s\"\n", rc, pszFilename));
+    LogFlowFunc(("returns %Rrc, pszFilename=\"%s\"\n", rc, pszFilename));
     return rc;
 }
 
@@ -3066,7 +3066,7 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
                                             cbComment);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, pszComment=\"%s\"\n", rc, pszComment));
+    LogFlowFunc(("returns %Rrc, pszComment=\"%s\"\n", rc, pszComment));
     return rc;
 }
 
@@ -3103,7 +3103,7 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
         rc = pImage->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3139,7 +3139,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
         rc = pImage->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3180,7 +3180,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
         rc = pImage->Backend->pfnSetUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3216,7 +3216,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
                                                      pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3259,7 +3259,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
                                                      pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3295,7 +3295,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         rc = pImage->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
+    LogFlowFunc(("returns %Rrc, Uuid={%Vuuid}\n", rc, pUuid));
     return rc;
 }
 
@@ -3337,7 +3337,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         rc = pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3399,7 +3399,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
             *pfAIOSupported = false;
     } while (0);
 
-    LogFlowFunc(("returns %Vrc, fAIOSupported=%u\n", rc, *pfAIOSupported));
+    LogFlowFunc(("returns %Rrc, fAIOSupported=%u\n", rc, *pfAIOSupported));
     return rc;
 }
 
@@ -3471,7 +3471,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3526,7 +3526,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                                             paSeg, cSeg, pvUser);
     } while (0);
 
-    LogFlowFunc(("returns %Vrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 
 }

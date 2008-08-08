@@ -1230,7 +1230,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
             if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
-                    ("Floppy: error getting sector %d, rc = %Vrc",
+                    ("Floppy: error getting sector %d, rc = %Rrc",
                      fd_sector (cur_drv), rc));
                 memset(fdctrl->fifo, 0, FD_SECTOR_LEN);
             }
@@ -1247,7 +1247,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                                                  fdctrl->data_pos,
                                                  len, &read);
                 dump (fdctrl->fifo + rel_pos, len);
-                AssertMsgRC (rc, ("DMAWriteMemory -> %Vrc\n", rc));
+                AssertMsgRC (rc, ("DMAWriteMemory -> %Rrc\n", rc));
             }
 #else
             DMA_write_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1265,7 +1265,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                                                 fdctrl->fifo + rel_pos,
                                                 fdctrl->data_pos,
                                                 len, &written);
-                AssertMsgRC (rc, ("DMAReadMemory -> %Vrc\n", rc));
+                AssertMsgRC (rc, ("DMAReadMemory -> %Rrc\n", rc));
             }
 #else
             DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1294,7 +1294,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
             cur_drv->Led.Actual.s.fWriting = 0;
 
             if (RT_FAILURE (rc)) {
-                AssertMsgFailed (("Floppy: error writing sector %d. rc=%Vrc",
+                AssertMsgFailed (("Floppy: error writing sector %d. rc=%Rrc",
                                   fd_sector (cur_drv), rc));
                 fdctrl_stop_transfer (fdctrl, 0x60, 0x00, 0x00);
                 goto transfer_error;
@@ -1312,7 +1312,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
                 rc = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
                                              fdctrl->data_pos, len, &read);
-                AssertMsg (RT_SUCCESS (rc), ("DMAReadMemory -> %Vrc\n", rc));
+                AssertMsg (RT_SUCCESS (rc), ("DMAReadMemory -> %Rrc\n", rc));
 #else
                 DMA_read_memory (nchan, tmpbuf, fdctrl->data_pos, len);
 #endif
@@ -1452,7 +1452,7 @@ transfer_error:
 
             if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
-                    ("Floppy: error getting sector %d. rc=%Vrc\n",
+                    ("Floppy: error getting sector %d. rc=%Rrc\n",
                      fd_sector(cur_drv), rc));
                 /* Sure, image size is too small... */
                 memset(fdctrl->fifo, 0, FD_SECTOR_LEN);
@@ -1494,7 +1494,7 @@ transfer_error:
 
                 if (RT_FAILURE (rc)) {
                     AssertMsgFailed (
-                        ("Floppy: error writting sector %d. rc=%Vrc\n",
+                        ("Floppy: error writting sector %d. rc=%Rrc\n",
                          fd_sector(cur_drv), rc));
                     fdctrl_stop_transfer(fdctrl, 0x60, 0x00, 0x00);
                     goto transfer_error;
@@ -1629,7 +1629,7 @@ static uint32_t fdctrl_read_data (fdctrl_t *fdctrl)
 
             if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
-                    ("Floppy: Failure to read sector %d. rc=%Vrc",
+                    ("Floppy: Failure to read sector %d. rc=%Rrc",
                      fd_sector (cur_drv), rc));
             }
 #else
@@ -1719,7 +1719,7 @@ static void fdctrl_format_sector (fdctrl_t *fdctrl)
         cur_drv->Led.Actual.s.fWriting = 0;
 
         if (RT_FAILURE (rc)) {
-            AssertMsgFailed (("Floppy: error formating sector %d. rc=%Vrc\n",
+            AssertMsgFailed (("Floppy: error formating sector %d. rc=%Rrc\n",
                               fd_sector (cur_drv), rc));
             fdctrl_stop_transfer(fdctrl, 0x60, 0x00, 0x00);
         }
@@ -1788,7 +1788,7 @@ static void fdctrl_write_data (fdctrl_t *fdctrl, uint32_t value)
 
             if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
-                    ("Floppy: failed to write sector %d. rc=%Vrc\n",
+                    ("Floppy: failed to write sector %d. rc=%Rrc\n",
                      fd_sector (cur_drv), rc));
             }
 #else
@@ -2620,7 +2620,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
         }
     } else {
         AssertMsg (rc == VERR_PDM_NO_ATTACHED_DRIVER,
-                   ("Failed to attach LUN#%d. rc=%Vrc\n", drv->iLUN, rc));
+                   ("Failed to attach LUN#%d. rc=%Rrc\n", drv->iLUN, rc));
         switch (rc) {
         case VERR_ACCESS_DENIED:
             /* Error already catched by DrvHostBase */
@@ -2641,7 +2641,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
         drv->pDrvBlockBios = NULL;
         drv->pDrvMount = NULL;
     }
-    LogFlow (("fdConfig: returns %Vrc\n", rc));
+    LogFlow (("fdConfig: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2685,12 +2685,12 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
 
     rc = fdConfig (drv, pDevIns);
     AssertMsg (rc != VERR_PDM_NO_ATTACHED_DRIVER,
-               ("Configuration error: failed to configure drive %d, rc=%Vrc\n", rc));
+               ("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc)) {
         fd_revalidate (drv);
     }
 
-    LogFlow (("floppyAttach: returns %Vrc\n", rc));
+    LogFlow (("floppyAttach: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2791,7 +2791,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         irq_lvl = 6;
     else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U8 IRQ, rc=%Vrc\n", rc));
+        AssertMsgFailed (("Configuration error: Failed to read U8 IRQ, rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -2799,7 +2799,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         dma_chann = 2;
     else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U8 DMA, rc=%Vrc\n", rc));
+        AssertMsgFailed (("Configuration error: Failed to read U8 DMA, rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -2807,7 +2807,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         io_base = 0x3f0;
     else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U16 IOBase, rc=%Vrc\n", rc));
+        AssertMsgFailed (("Configuration error: Failed to read U16 IOBase, rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -2815,7 +2815,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         mem_mapped = false;
     else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read bool value MemMapped rc=%Vrc\n", rc));
+        AssertMsgFailed (("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -2902,7 +2902,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         fdctrl->pLedsConnector =
             pBase->pfnQueryInterface (pBase, PDMINTERFACE_LED_CONNECTORS);
     } else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
-        AssertMsgFailed (("Failed to attach to status driver. rc=%Vrc\n",
+        AssertMsgFailed (("Failed to attach to status driver. rc=%Rrc\n",
                           rc));
         return rc;
     }
@@ -2915,7 +2915,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         rc = fdConfig (drv, pDevIns);
         if (    RT_FAILURE (rc)
             &&  rc != VERR_PDM_NO_ATTACHED_DRIVER) {
-            AssertMsgFailed (("Configuration error: failed to configure drive %d, rc=%Vrc\n", rc));
+            AssertMsgFailed (("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
             return rc;
         }
     }
