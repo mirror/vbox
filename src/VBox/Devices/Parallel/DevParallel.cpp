@@ -425,7 +425,7 @@ static DECLCALLBACK(int) parallelNotifyInterrupt(PPDMIHOSTPARALLELPORT pInterfac
 PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                                        RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -458,7 +458,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                       RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -492,7 +492,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser,
                                           RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -525,7 +525,7 @@ PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser,
                                          RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
     int          rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -556,7 +556,7 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(int) parallelSaveExec(PPDMDEVINS pDevIns,
                                           PSSMHANDLE pSSMHandle)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
 
     SSMR3PutU8(pSSMHandle, pData->reg_data);
     SSMR3PutU8(pSSMHandle, pData->reg_status);
@@ -581,7 +581,7 @@ static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
 {
     int          rc;
     uint32_t     u32;
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
 
     if (u32Version != PARALLEL_SAVED_STATE_VERSION)
     {
@@ -616,7 +616,7 @@ static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
  */
 static DECLCALLBACK(void) parallelRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
     pData->pDevInsGC     += offDelta;
 }
 
@@ -646,7 +646,7 @@ static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, PDMINTE
  */
 static DECLCALLBACK(int) parallelDestruct(PPDMDEVINS pDevIns)
 {
-    ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
+    ParallelState *pData = PDMINS_2_DATA(pDevIns, ParallelState *);
 
     PDMR3CritSectDelete(&pData->CritSect);
     RTSemEventDestroy(pData->ReceiveSem);
@@ -673,7 +673,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
                                            PCFGMNODE pCfgHandle)
 {
     int            rc;
-    ParallelState  *pData = PDMINS2DATA(pDevIns, ParallelState*);
+    ParallelState  *pData = PDMINS_2_DATA(pDevIns, ParallelState*);
     uint16_t       io_base;
     uint8_t        irq_lvl;
 

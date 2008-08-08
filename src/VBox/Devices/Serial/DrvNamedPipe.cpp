@@ -291,7 +291,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
 static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVNAMEDPIPE pDrv = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDRVNAMEDPIPE pDrv = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -409,7 +409,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 {
     int rc;
     char *pszLocation = NULL;
-    PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
 
     /*
      * Init the static parts.
@@ -549,7 +549,7 @@ out:
  */
 static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
     LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
 
     if (pData->ListenThread)
@@ -573,7 +573,7 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDRVNAMEDPIPE pData = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
     LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
 
     pData->fShutdown = true;

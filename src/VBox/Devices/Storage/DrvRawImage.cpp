@@ -44,7 +44,7 @@
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PVBOXHDD. */
-#define PDMIBASE_2_DRVRAWIMAGE(pInterface)  ( PDMINS2DATA(PDMIBASE_2_DRVINS(pInterface), PDRVRAWIMAGE) )
+#define PDMIBASE_2_DRVRAWIMAGE(pInterface)  ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PDRVRAWIMAGE) )
 
 
 
@@ -101,7 +101,7 @@ static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMI
  */
 static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVRAWIMAGE pData = PDMINS2DATA(pDrvIns, PDRVRAWIMAGE);
+    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
 
     /*
      * Init the static parts.
@@ -178,7 +178,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
  */
 static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVRAWIMAGE pData = PDMINS2DATA(pDrvIns, PDRVRAWIMAGE);
+    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
     LogFlow(("drvRawImageDestruct: '%s'\n", pData->pszFilename));
 
     if (pData->File != NIL_RTFILE)
@@ -351,7 +351,7 @@ static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVRAWIMAGE pData = PDMINS2DATA(pDrvIns, PDRVRAWIMAGE);
+    PDRVRAWIMAGE pData = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:

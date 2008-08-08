@@ -2344,7 +2344,7 @@ static void fdctrl_result_timer(void *opaque)
 #ifdef VBOX
 static DECLCALLBACK(void) fdc_timer (PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
-    fdctrl_t *fdctrl = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     fdctrl_result_timer (fdctrl);
 }
 
@@ -2380,7 +2380,7 @@ static DECLCALLBACK(int) fdc_io_read (PPDMDEVINS pDevIns,
 
 static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    fdctrl_t *s = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *s = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     QEMUFile *f = pSSMHandle;
     unsigned int i;
 
@@ -2431,7 +2431,7 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
                                    PSSMHANDLE pSSMHandle,
                                    uint32_t u32Version)
 {
-    fdctrl_t *s = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *s = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     QEMUFile *f = pSSMHandle;
     unsigned int i;
 
@@ -2658,7 +2658,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
 static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
                                      unsigned iLUN)
 {
-    fdctrl_t *fdctrl = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     fdrive_t *drv;
     int rc;
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
@@ -2706,7 +2706,7 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
 static DECLCALLBACK(void) fdcDetach (PPDMDEVINS pDevIns,
                                      unsigned iLUN)
 {
-    fdctrl_t *fdctrl = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
 
     switch (iLUN) {
@@ -2738,7 +2738,7 @@ static DECLCALLBACK(void) fdcDetach (PPDMDEVINS pDevIns,
  */
 static DECLCALLBACK(void) fdcReset (PPDMDEVINS pDevIns)
 {
-    fdctrl_t *fdctrl = PDMINS2DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     int i;
     LogFlow (("fdcReset:\n"));
 
@@ -2769,7 +2769,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
                                        PCFGMNODE pCfgHandle)
 {
     int            rc;
-    fdctrl_t       *fdctrl = PDMINS2DATA(pDevIns, fdctrl_t*);
+    fdctrl_t       *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t*);
     int            i;
     bool           mem_mapped;
     uint16_t       io_base;

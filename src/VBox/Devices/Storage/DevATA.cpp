@@ -88,7 +88,7 @@ typedef struct PCIATAState {
 #define PDMIMOUNTNOTIFY_2_ATASTATE(pInterface)  ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IMountNotify)) )
 #define PCIDEV_2_PCIATASTATE(pPciDev)           ( (PCIATAState *)(pPciDev) )
 
-#define ATACONTROLLER_IDX(pController) ( (pController) - PDMINS2DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
+#define ATACONTROLLER_IDX(pController) ( (pController) - PDMINS_2_DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -4371,7 +4371,7 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
 PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
 
@@ -4405,7 +4405,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
 
@@ -4495,7 +4495,7 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
  */
 static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
 {
-    PCIATAState *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
     {
@@ -4617,7 +4617,7 @@ static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
 PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
 
@@ -4649,7 +4649,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
 
@@ -4686,7 +4686,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
 
@@ -4743,7 +4743,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc;
 
@@ -4800,7 +4800,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
 
@@ -4824,7 +4824,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc;
 
@@ -4854,7 +4854,7 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     bool            fVMLocked;
     uint64_t        u64Start;
     PATACONTROLLER  pCtl;
@@ -4917,7 +4917,7 @@ DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
  */
 static DECLCALLBACK(void) ataRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PCIATAState *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
     {
@@ -4942,7 +4942,7 @@ static DECLCALLBACK(void) ataRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
     Log(("%s:\n", __FUNCTION__));
@@ -5000,7 +5000,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
-    PCIATAState    *pThis = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER  pCtl;
     ATADevState    *pIf;
     unsigned        iController;
@@ -5167,7 +5167,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
  */
 static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
-    PCIATAState    *pThis = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER  pCtl;
     ATADevState    *pIf;
     int             rc;
@@ -5232,7 +5232,7 @@ static DECLCALLBACK(void) ataSuspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ataResume(PPDMDEVINS pDevIns)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
     Log(("%s:\n", __FUNCTION__));
@@ -5272,7 +5272,7 @@ static DECLCALLBACK(void) ataPowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ataSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     /* sanity - the suspend notification will wait on the async stuff. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
@@ -5294,7 +5294,7 @@ static DECLCALLBACK(int) ataSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
     {
@@ -5380,7 +5380,7 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
     uint32_t        u32;
 
@@ -5515,7 +5515,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  */
 static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pData = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PPDMIBASE       pBase;
     int             rc;
     bool            fGCEnabled;

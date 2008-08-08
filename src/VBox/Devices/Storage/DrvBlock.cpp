@@ -643,7 +643,7 @@ static DECLCALLBACK(bool) drvblockIsLocked(PPDMIMOUNT pInterface)
 static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVBLOCK   pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK   pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -669,7 +669,7 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINT
 /** @copydoc FNPDMDRVDETACH. */
 static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
 {
-    PDRVBLOCK pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     pData->pDrvMedia = NULL;
     pData->pDrvMediaAsync = NULL;
 }
@@ -682,7 +682,7 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
 {
-    PDRVBLOCK pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
 
     pData->fLocked = false;
 }
@@ -699,7 +699,7 @@ static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVBLOCK pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
+    PDRVBLOCK pData = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     LogFlow(("drvblockConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*

@@ -145,7 +145,7 @@ typedef struct DRVHOSTSERIAL
 static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTSERIAL    pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL    pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -413,7 +413,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
  */
 static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -492,7 +492,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
  */
 static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc;
 
     rc = RTSemEventSignal(pData->SendSem);
@@ -521,7 +521,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMT
  */
 static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     uint8_t abBuffer[256];
     uint8_t *pbBuffer = NULL;
     size_t cbRemaining = 0; /* start by reading host data */
@@ -692,7 +692,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
  */
 static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 #ifdef RT_OS_LINUX
     return RTFileWrite(pData->WakeupPipeW, "", 1, NULL);
 #elif defined(RT_OS_WINDOWS)
@@ -719,7 +719,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
  */
 static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
     unsigned uStatusLinesToCheck = 0;
 
@@ -777,7 +777,7 @@ ioctl_error:
  */
 static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc;
     unsigned int uSerialLineFlags;
     unsigned int uSerialLineStatus;
@@ -897,7 +897,7 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool R
  */
 static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
@@ -1062,7 +1062,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
  */
 static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    PDRVHOSTSERIAL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 

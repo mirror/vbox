@@ -93,7 +93,7 @@ typedef struct DRVHOSTPARALLEL
 static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTPARALLEL    pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL    pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -199,7 +199,7 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
 
 static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     struct pollfd aFDs[2];
 
     /*
@@ -252,7 +252,7 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
  */
 static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
 
     return RTFileWrite(pData->WakeupPipeW, "", 1, NULL);
 }
@@ -271,7 +271,7 @@ static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, 
  */
 static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
@@ -377,7 +377,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pData = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 

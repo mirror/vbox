@@ -47,7 +47,7 @@
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PVDIDISK. */
-#define PDMIBASE_2_VDIDISK(pInterface)  ( PDMINS2DATA(PDMIBASE_2_DRVINS(pInterface), PVDIDISK) )
+#define PDMIBASE_2_VDIDISK(pInterface)  ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PVDIDISK) )
 
 
 
@@ -203,7 +203,7 @@ static DECLCALLBACK(bool) vdiIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(void *) vdiQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -226,7 +226,7 @@ static DECLCALLBACK(void) vdiResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiSuspend:\n"));
 #if 1 //#ifdef DEBUG_dmik
-    PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     if (!(pData->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
     {
         int rc = vdiChangeImageMode(pData->pLast, false);
@@ -247,7 +247,7 @@ static DECLCALLBACK(void) vdiSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiSuspend:\n"));
 #if 1 // #ifdef DEBUG_dmik
-    PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     if (!(pData->pLast->fOpen & VDI_OPEN_FLAGS_READONLY))
     {
         int rc = vdiChangeImageMode(pData->pLast, true);
@@ -268,7 +268,7 @@ static DECLCALLBACK(void) vdiSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) vdiDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("vdiDestruct:\n"));
-    PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     VDIDiskCloseAllImages(pData);
 }
 
@@ -286,7 +286,7 @@ static DECLCALLBACK(void) vdiDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     LogFlow(("vdiConstruct:\n"));
-    PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    PVDIDISK pData = PDMINS_2_DATA(pDrvIns, PVDIDISK);
     char *pszName;      /**< The path of the disk image file. */
     bool fReadOnly;     /**< True if the media is readonly. */
     bool fHonorZeroWrites = false;

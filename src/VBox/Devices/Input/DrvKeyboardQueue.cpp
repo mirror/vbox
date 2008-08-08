@@ -84,7 +84,7 @@ typedef struct DRVKBDQUEUEITEM
 static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVKBDQUEUE pDrv = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -163,7 +163,7 @@ static DECLCALLBACK(void) drvKbdPassThruLedsChange(PPDMIKEYBOARDCONNECTOR pInter
  */
 static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
 {
-    PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     PDRVKBDQUEUEITEM    pItem = (PDRVKBDQUEUEITEM)pItemCore;
     int rc = pData->pUpPort->pfnPutEvent(pData->pUpPort, pItem->u8KeyCode);
     return RT_SUCCESS(rc);
@@ -180,7 +180,7 @@ static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
  */
 static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE    pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE    pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     pData->fInactive = false;
 }
 
@@ -193,7 +193,7 @@ static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
 {
-    //PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    //PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
 }
 
@@ -206,7 +206,7 @@ static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     pData->fInactive = true;
 }
 
@@ -219,7 +219,7 @@ static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     pData->fInactive = false;
 }
 
@@ -231,7 +231,7 @@ static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvKbdQueuePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVKBDQUEUE        pData = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE        pData = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     pData->fInactive = true;
 }
 
@@ -248,7 +248,7 @@ static DECLCALLBACK(void) drvKbdQueuePowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVKBDQUEUE pDrv = PDMINS2DATA(pDrvIns, PDRVKBDQUEUE);
+    PDRVKBDQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     LogFlow(("drvKbdQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
