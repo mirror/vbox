@@ -1410,8 +1410,8 @@ static void pcnetUpdateRingHandlers(PCNetState *pThis)
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     int rc;
 
-    Log(("pcnetUpdateRingHandlers TD %VGp size %#x -> %VGp size %#x\n", pThis->TDRAPhysOld, pThis->cbTDRAOld, pThis->GCTDRA, pcnetTdraAddr(pThis, 0)));
-    Log(("pcnetUpdateRingHandlers RX %VGp size %#x -> %VGp size %#x\n", pThis->RDRAPhysOld, pThis->cbRDRAOld, pThis->GCRDRA, pcnetRdraAddr(pThis, 0)));
+    Log(("pcnetUpdateRingHandlers TD %RX32 size %#x -> %RX32 ?size? %#x\n", pThis->TDRAPhysOld, pThis->cbTDRAOld, pThis->GCTDRA, pcnetTdraAddr(pThis, 0)));
+    Log(("pcnetUpdateRingHandlers RX %RX32 size %#x -> %RX32 ?size? %#x\n", pThis->RDRAPhysOld, pThis->cbRDRAOld, pThis->GCRDRA, pcnetRdraAddr(pThis, 0)));
 
     /** @todo unregister order not correct! */
 
@@ -3901,7 +3901,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
      * Show info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "pcnet #%d: port=%RTiop mmio=%RGp mac-cfg=%.*Rhxs %s\n",
+                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%.*Rhxs %s\n",
                     pDevIns->iInstance,
                     pThis->IOPortBase, pThis->MMIOBase, sizeof(pThis->MacConfigured), &pThis->MacConfigured,
                     pThis->fAm79C973 ? "Am79C973" : "Am79C970A", pThis->fGCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
@@ -4027,7 +4027,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
             RMD rmd;
             pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
             pHlp->pfnPrintf(pHlp,
-                            "%04x %RGp:%c%c RBADR=%08RX32 BCNT=%03x MCNT=%03x "
+                            "%04x %RX32:%c%c RBADR=%08RX32 BCNT=%03x MCNT=%03x "
                             "OWN=%d ERR=%d FRAM=%d OFLO=%d CRC=%d BUFF=%d STP=%d ENP=%d BPE=%d "
                             "PAM=%d LAFM=%d BAM=%d RCC=%02x RPC=%02x ONES=%#x ZEROS=%d\n",
                             i, GCPhys, i + 1 == CSR_RCVRC(pThis) ? '*' : ' ', GCPhys == CSR_CRDA(pThis) ? '*' : ' ',
@@ -4067,7 +4067,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
             TMD tmd;
             pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, GCPhys), false);
             pHlp->pfnPrintf(pHlp,
-                            "%04x %RGp:%c%c TBADR=%08RX32 BCNT=%03x OWN=%d "
+                            "%04x %RX32:%c%c TBADR=%08RX32 BCNT=%03x OWN=%d "
                             "ERR=%d NOFCS=%d LTINT=%d ONE=%d DEF=%d STP=%d ENP=%d BPE=%d "
                             "BUFF=%d UFLO=%d EXDEF=%d LCOL=%d LCAR=%d RTRY=%d TDR=%03x TRC=%#x ONES=%#x\n"
                             ,
