@@ -900,8 +900,9 @@ int main()
     GEN_CHECK_OFF(SerialState, msr_changed);
     GEN_CHECK_OFF(SerialState, fGCEnabled);
     GEN_CHECK_OFF(SerialState, fR0Enabled);
-    GEN_CHECK_OFF(SerialState, pDevInsGC);
-    GEN_CHECK_OFF(SerialState, pDevInsHC);
+    GEN_CHECK_OFF(SerialState, pDevInsR3);
+    GEN_CHECK_OFF(SerialState, pDevInsR0);
+    GEN_CHECK_OFF(SerialState, pDevInsRC);
     GEN_CHECK_OFF(SerialState, IBase);
     GEN_CHECK_OFF(SerialState, ICharPort);
     GEN_CHECK_OFF(SerialState, pDrvBase);

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox serial device:
- * Serial communication port driver
+ * DevSerial - 16450 UART emulation.
  */
 
 /*
@@ -47,7 +46,6 @@
  *
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -59,14 +57,18 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 #undef VBOX_SERIAL_PCI /* The PCI variant has lots of problems: wrong IRQ line and wrong IO base assigned. */
 
 #ifdef VBOX_SERIAL_PCI
-#include <VBox/pci.h>
+# include <VBox/pci.h>
 #endif /* VBOX_SERIAL_PCI */
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define SERIAL_SAVED_STATE_VERSION  3
 
 #define UART_LCR_DLAB	            0x80	/* Divisor latch access bit */
@@ -114,18 +116,22 @@
 #define UART_LSR_OE	                0x02	/* Overrun error indicator */
 #define UART_LSR_DR	                0x01	/* Receiver data ready */
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 struct SerialState
 {
     /** Access critical section. */
     PDMCRITSECT                     CritSect;
 
-    /** Pointer to the device instance. */
-    R3PTRTYPE(PPDMDEVINS)           pDevInsHC;
-    /** Pointer to the device instance. */
-    RCPTRTYPE(PPDMDEVINS)           pDevInsGC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         Alignment0;
-#endif
+    /** Pointer to the device instance - R3 Ptr. */
+    PPDMDEVINSR3                    pDevInsR3;
+    /** Pointer to the device instance - R0 Ptr. */
+    PPDMDEVINSR0                    pDevInsR0;
+    /** Pointer to the device instance - RC Ptr. */
+    PPDMDEVINSRC                    pDevInsRC;
+    RTRCPTR                         Alignment0; /**< Alignment. */
     /** The base interface. */
     PDMIBASE                        IBase;
     /** The character port interface. */
@@ -174,12 +180,16 @@ struct SerialState
 #define PDMICHARPORT_2_SERIALSTATE(pInstance)   ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, ICharPort)) )
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 __END_DECLS
 
 #ifdef IN_RING3
+
 static void serial_update_irq(SerialState *s)
 {
     if ((s->lsr & UART_LSR_DR) && (s->ier & UART_IER_RDI)) {
@@ -193,18 +203,18 @@ static void serial_update_irq(SerialState *s)
     }
     if (s->iir != UART_IIR_NO_INT) {
         Log(("serial_update_irq %d 1\n", s->irq));
-#ifdef VBOX_SERIAL_PCI
-        PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 1);
-#else /* !VBOX_SERIAL_PCI */
-        PDMDevHlpISASetIrqNoWait(CTXSUFF(s->pDevIns), s->irq, 1);
-#endif /* !VBOX_SERIAL_PCI */
+# ifdef VBOX_SERIAL_PCI
+        PDMDevHlpPCISetIrqNoWait(s->CTX_SUFF(pDevIns), 0, 1);
+# else /* !VBOX_SERIAL_PCI */
+        PDMDevHlpISASetIrqNoWait(s->CTX_SUFF(pDevIns), s->irq, 1);
+# endif /* !VBOX_SERIAL_PCI */
     } else {
         Log(("serial_update_irq %d 0\n", s->irq));
-#ifdef VBOX_SERIAL_PCI
-        PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 0);
-#else /* !VBOX_SERIAL_PCI */
-        PDMDevHlpISASetIrqNoWait(CTXSUFF(s->pDevIns), s->irq, 0);
-#endif /* !VBOX_SERIAL_PCI */
+# ifdef VBOX_SERIAL_PCI
+        PDMDevHlpPCISetIrqNoWait(s->CTX_SUFF(pDevIns), 0, 0);
+# else /* !VBOX_SERIAL_PCI */
+        PDMDevHlpISASetIrqNoWait(s->CTX_SUFF(pDevIns), s->irq, 0);
+# endif /* !VBOX_SERIAL_PCI */
     }
 }
 
@@ -232,7 +242,8 @@ static void serial_update_parameters(SerialState *s)
     if (RT_LIKELY(s->pDrvChar))
         s->pDrvChar->pfnSetParameters(s->pDrvChar, speed, parity, data_bits, stop_bits);
 }
-#endif
+
+#endif /* IN_RING3 */
 
 static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 {
@@ -397,6 +408,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
 }
 
 #ifdef IN_RING3
+
 static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *pvBuf, size_t *pcbRead)
 {
     SerialState *pThis = PDMICHARPORT_2_SERIALSTATE(pInterface);
@@ -495,7 +507,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
         if (rc == VINF_SUCCESS)
         {
             Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
-            rc = serial_ioport_write (pThis, Port, u32);
+            rc = serial_ioport_write(pThis, Port, u32);
             PDMCritSectLeave(&pThis->CritSect);
         }
     }
@@ -527,7 +539,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
         rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
-            *pu32 = serial_ioport_read (pThis, Port, &rc);
+            *pu32 = serial_ioport_read(pThis, Port, &rc);
             Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
             PDMCritSectLeave(&pThis->CritSect);
         }
@@ -539,6 +551,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 }
 
 #ifdef IN_RING3
+
 /**
  * Saves a state of the serial port device.
  *
@@ -609,7 +622,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
 
     if (u32 != ~0U)
     {
-        AssertMsgFailed(("u32=%#x expected ~0\n", u32));
+        AssertLogRelMsgFailed(("u32=%#x expected ~0\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
     /* Be careful with pointers in the structure; they are not preserved
@@ -620,8 +633,11 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
         int rc = RTSemEventSignal(pThis->ReceiveSem);
         AssertRC(rc);
     }
-    pThis->pDevInsHC = pDevIns;
-    pThis->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
+
+    /* this isn't strictly necessary but cannot hurt... */
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -632,7 +648,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
 static DECLCALLBACK(void) serialRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
-    pThis->pDevInsGC   = PDMDEVINS_2_GCPTR(pDevIns);
+    pThis->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
 #ifdef VBOX_SERIAL_PCI
@@ -722,31 +738,17 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
 
     Assert(iInstance < 4);
 
-    pThis->pDevInsHC = pDevIns;
-    pThis->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
-
     /*
-     * Validate configuration.
+     * Initialize the instance data.
+     * (Do this early or the destructor might choke on something!)
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0"))
-    {
-        AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    }
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pThis->fGCEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fGCEnabled = true;
-    else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"GCEnabled\" value"));
-
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &pThis->fR0Enabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fR0Enabled = true;
-    else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"R0Enabled\" value"));
+    pThis->lsr = UART_LSR_TEMT | UART_LSR_THRE;
+    pThis->iir = UART_IIR_NO_INT;
+    pThis->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
 
     /* IBase */
     pThis->IBase.pfnQueryInterface = serialQueryInterface;
@@ -755,52 +757,8 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     pThis->ICharPort.pfnNotifyRead = serialNotifyRead;
     pThis->ICharPort.pfnNotifyStatusLinesChanged = serialNotifyStatusLinesChanged;
 
-    rc = RTSemEventCreate(&pThis->ReceiveSem);
-    AssertRC(rc);
-
-    /*
-     * Initialize critical section.
-     * This must of course be done before attaching drivers or anything else which can call us back..
-     */
-    char szName[24];
-    RTStrPrintf(szName, sizeof(szName), "Serial#%d", iInstance);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, szName);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        /* Provide sensible defaults. */
-        if (iInstance == 0)
-            irq_lvl = 4;
-        else if (iInstance == 1)
-            irq_lvl = 3;
-    }
-    else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IRQ\" value"));
-
-    rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        if (iInstance == 0)
-            io_base = 0x3f8;
-        else if (iInstance == 1)
-            io_base = 0x2f8;
-    }
-    else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IOBase\" value"));
-
-    Log(("serialConstruct instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
-
-    pThis->irq = irq_lvl;
-    pThis->lsr = UART_LSR_TEMT | UART_LSR_THRE;
-    pThis->iir = UART_IIR_NO_INT;
-    pThis->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
 #ifdef VBOX_SERIAL_PCI
-    pThis->base = -1;
+    /* the PCI device */
     pThis->dev.config[0x00] = 0xee; /* Vendor: ??? */
     pThis->dev.config[0x01] = 0x80;
     pThis->dev.config[0x02] = 0x01; /* Device: ??? */
@@ -812,21 +770,98 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     pThis->dev.config[0x0e] = 0x00; /* Header type: standard */
     pThis->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
     pThis->dev.config[0x3d] = 1;    /* interrupt pin 0 */
+#endif /* VBOX_SERIAL_PCI */
+
+    /*
+     * Validate and read the configuration.
+     */
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0"))
+    {
+        AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
+        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+    }
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"GCEnabled\" value"));
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"R0Enabled\" value"));
+
+    rc = CFGMR3QueryU8(pCfgHandle, "IRQ", &irq_lvl);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        /* Provide sensible defaults. */
+        if (iInstance == 0)
+            irq_lvl = 4;
+        else if (iInstance == 1)
+            irq_lvl = 3;
+        else
+            AssertReleaseFailed(); /* irq_lvl is undefined. */
+    }
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"IRQ\" value"));
+
+    rc = CFGMR3QueryU16(pCfgHandle, "IOBase", &io_base);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        if (iInstance == 0)
+            io_base = 0x3f8;
+        else if (iInstance == 1)
+            io_base = 0x2f8;
+        else
+            AssertReleaseFailed(); /* io_base is undefined */
+    }
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"IOBase\" value"));
+
+    Log(("DevSerial: instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
+
+    pThis->irq = irq_lvl;
+#ifdef VBOX_SERIAL_PCI
+    pThis->base = -1;
+#else
+    pThis->base = io_base;
+#endif
+
+    /*
+     * Initialize critical section and the semaphore.
+     * This must of course be done before attaching drivers or anything else which can call us back..
+     */
+    char szName[24];
+    RTStrPrintf(szName, sizeof(szName), "Serial#%d", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, szName);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTSemEventCreate(&pThis->ReceiveSem);
+    AssertRC(rc);
+
+#ifdef VBOX_SERIAL_PCI
+    /*
+     * Register the PCI Device and region.
+     */
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
         return rc;
-    /*
-     * Register the PCI I/O ports.
-     */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, serialIOPortRegionMap);
     if (RT_FAILURE(rc))
         return rc;
+
 #else /* !VBOX_SERIAL_PCI */
+    /*
+     * Register the I/O ports.
+     */
     pThis->base = io_base;
     rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, 0,
                                  serialIOPortWrite, serialIOPortRead,
                                  NULL, NULL, "SERIAL");
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (pThis->fGCEnabled)
@@ -836,36 +871,12 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (pThis->fR0Enabled)
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base, 8, 0, "serialIOPortWrite",
                                       "serialIOPortRead", NULL, NULL, "Serial");
-
 #endif /* !VBOX_SERIAL_PCI */
 
-    /* Attach the char driver and get the interfaces. For now no run-time
-     * changes are supported. */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
-    if (RT_SUCCESS(rc))
-    {
-        pThis->pDrvChar = (PDMICHAR *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_CHAR);
-        if (!pThis->pDrvChar)
-        {
-            AssertMsgFailed(("Configuration error: instance %d has no char interface!\n", iInstance));
-            return VERR_PDM_MISSING_INTERFACE;
-        }
-        /** @todo provide read notification interface!!!! */
-    }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        pThis->pDrvBase = NULL;
-        pThis->pDrvChar = NULL;
-        LogRel(("Serial%d: no unit\n", iInstance));
-    }
-    else
-    {
-        AssertMsgFailed(("Serial%d: Failed to attach to char driver. rc=%Vrc\n", iInstance, rc));
-        /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
-        return rc;
-    }
-
-    rc = PDMDevHlpSSMRegister (
+    /*
+     * Saved state.
+     */
+    rc = PDMDevHlpSSMRegister(
         pDevIns,                /* pDevIns */
         pDevIns->pDevReg->szDeviceName, /* pszName */
         iInstance,              /* u32Instance */
@@ -881,8 +892,37 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Attach the char driver and get the interfaces.
+     * For now no run-time changes are supported.
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pDrvChar = (PDMICHAR *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_CHAR);
+        if (!pThis->pDrvChar)
+        {
+            AssertLogRelMsgFailed(("Configuration error: instance %d has no char interface!\n", iInstance));
+            return VERR_PDM_MISSING_INTERFACE;
+        }
+        /** @todo provide read notification interface!!!! */
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        pThis->pDrvBase = NULL;
+        pThis->pDrvChar = NULL;
+        LogRel(("Serial%d: no unit\n", iInstance));
+    }
+    else
+    {
+        AssertLogRelMsgFailed(("Serial%d: Failed to attach to char driver. rc=%Vrc\n", iInstance, rc));
+        /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
+        return rc;
+    }
+
     return VINF_SUCCESS;
 }
+
 
 /**
  * The device registration structure.
