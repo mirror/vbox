@@ -49,12 +49,6 @@
  */
 #define PDMINS_2_DATA(pIns, type)   ( (type)(void *)&(pIns)->achInstanceData[0] )
 
-/** @def PDMINS2DATA
- * Converts a PDM Device, USB Device, or Driver instance pointer to a pointer to the instance data.
- * @deprecated  Use PDMINS_2_DATA.
- */
-#define PDMINS2DATA(pIns, type)     PDMINS_2_DATA(pIns, type)
-
 /** @def PDMINS2DATA_RCPTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a RC pointer to the instance data.
  */
