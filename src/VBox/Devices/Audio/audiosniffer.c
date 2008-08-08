@@ -195,7 +195,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
      */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "Audio Sniffer Port");
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pData->pDrv = (PPDMIAUDIOSNIFFERCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR);
 
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
         AssertMsgFailed(("Failed to attach LUN #0. rc=%Vrc\n", rc));
     }
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         /* Save PDM device instance data for future reference. */
         pData->pDevIns = pDevIns;

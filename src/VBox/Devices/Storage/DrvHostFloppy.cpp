@@ -123,7 +123,7 @@ static DECLCALLBACK(int) drvHostFloppyPoll(PDRVHOSTBASE pThis)
         if (pThis->fMediaPresent)
             DRVHostBaseMediaNotPresent(pThis);
         rc = DRVHostBaseMediaPresent(pThis);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             pThisFloppy->fPrevDiskIn = fDiskIn;
             RTCritSectLeave(&pThis->CritSect);
@@ -161,7 +161,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Init instance data.
      */
     int rc = DRVHostBaseInitData(pDrvIns, pCfgHandle, PDMBLOCKTYPE_FLOPPY_1_44);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Override stuff.
@@ -176,7 +176,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
          */
         rc = DRVHostBaseInitFinish(&pThis->Base);
     }
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (!pThis->Base.fAttachFailError)
         {

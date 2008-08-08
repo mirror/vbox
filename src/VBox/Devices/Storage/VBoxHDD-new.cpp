@@ -191,16 +191,16 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
 
         /* Try to load the plugin (RTldrLoad takes care of the suffix). */
         rc = RTLdrLoad(pszPluginName, &hPlugin);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
 
             rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME,
                                 (void**)&pfnHDDFormatLoad);
-            if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+            if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
             {
                 LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = VERR_SYMBOL_NOT_FOUND;
                 goto out;
             }
@@ -208,7 +208,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
             /* Get the function table. */
             PVBOXHDDBACKEND pBE;
             rc = pfnHDDFormatLoad(&pBE);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto out;
             /* Check if the sizes match. If not this plugin is too old. */
             if (pBE->cbSize != sizeof(VBOXHDDBACKEND))
@@ -229,7 +229,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
     }
 
 out:
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (hPlugin != NIL_RTLDRMOD)
             RTLdrClose(hPlugin);
@@ -343,7 +343,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         cbRead -= cbThisRead;
         uOffset += cbThisRead;
         pvBuf = (char *)pvBuf + cbThisRead;
-    } while (cbRead != 0 && VBOX_SUCCESS(rc));
+    } while (cbRead != 0 && RT_SUCCESS(rc));
 
     return rc;
 }
@@ -406,7 +406,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     {
         rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead, pvTmp,
                           cbPreRead);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -443,7 +443,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
                               uOffset + cbThisWrite + cbWriteCopy,
                               (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
                               cbReadImage);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         /* Zero out the remainder of this block. Will never be visible, as this
          * is beyond the limit of the image. */
@@ -502,7 +502,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
      * be modified by the write or not. */
     rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead, pvTmp,
                       cbPreRead + cbThisWrite + cbPostRead - cbFill);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* Check if the write would modify anything in this block. */
@@ -594,14 +594,14 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
                                            pvBuf, pvTmp);
             }
             RTMemTmpFree(pvTmp);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
         }
 
         cbWrite -= cbThisWrite;
         uOffset += cbThisWrite;
         pvBuf = (char *)pvBuf + cbThisWrite;
-    } while (cbWrite != 0 && VBOX_SUCCESS(rc));
+    } while (cbWrite != 0 && RT_SUCCESS(rc));
 
     return rc;
 }
@@ -655,20 +655,20 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 break;
             }
         }
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         /* Then enumerate plugin backends. */
         char szPath[RTPATH_MAX];
         rc = RTPathSharedLibs(szPath, sizeof(szPath));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         /* To get all entries with VBoxHDD as prefix. */
         char *pszPluginFilter;
         rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
                           VBOX_HDDFORMAT_PLUGIN_PREFIX);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             rc = VERR_NO_MEMORY;
             break;
@@ -676,7 +676,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
         /* The plugins are in the same directory as the other shared libs. */
         rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         PRTDIRENTRY pPluginDirEntry = NULL;
@@ -701,10 +701,10 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
                 /* Retry. */
                 rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     break;
             }
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
                 break;
 
             /* We got the new entry. */
@@ -712,21 +712,21 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 continue;
 
             rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+                if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
                 {
                     LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                         rc = VERR_SYMBOL_NOT_FOUND;
                 }
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Get the function table. */
                     rc = pfnHDDFormatLoad(&pBackend);
-                    if (VBOX_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+                    if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
                     {
                         char *pszName = RTStrDup(pBackend->pszBackendName);
                         if (!pszName)
@@ -884,7 +884,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             if (aBackends[i]->pfnCheckIfValid)
             {
                 rc = aBackends[i]->pfnCheckIfValid(pszFilename);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     fPluginFound = true;
                     /* Copy the name into the new string. */
@@ -905,14 +905,14 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
         /* Then check if plugin backends support this file format. */
         char szPath[RTPATH_MAX];
         rc = RTPathSharedLibs(szPath, sizeof(szPath));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         /* To get all entries with VBoxHDD as prefix. */
         char *pszPluginFilter;
         rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
                           VBOX_HDDFORMAT_PLUGIN_PREFIX);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             rc = VERR_NO_MEMORY;
             break;
@@ -920,7 +920,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 
         /* The plugins are in the same directory as the other shared libs. */
         rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         PRTDIRENTRY pPluginDirEntry = NULL;
@@ -945,10 +945,10 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
                 /* Retry. */
                 rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     break;
             }
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
                 break;
 
             /* We got the new entry. */
@@ -956,26 +956,26 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 continue;
 
             rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+                if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
                 {
                     LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                         rc = VERR_SYMBOL_NOT_FOUND;
                 }
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Get the function table. */
                     rc = pfnHDDFormatLoad(&pBackend);
-                    if (VBOX_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+                    if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
                     {
 
                         /* Check if the plugin can handle this file. */
                         rc = pBackend->pfnCheckIfValid(pszFilename);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             fPluginFound = true;
                             rc = VINF_SUCCESS;
@@ -1079,7 +1079,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
         {
@@ -1094,7 +1094,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                                       pDisk->pInterfaces,
                                       &pImage->pvBackendData);
         /* If the open in read-write mode failed, retry in read-only mode. */
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY)
                 &&  (rc == VERR_ACCESS_DENIED
@@ -1107,7 +1107,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                                                | VD_OPEN_FLAGS_READONLY,
                                                pDisk->pInterfaces,
                                                &pImage->pvBackendData);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 rc = vdError(pDisk, rc, RT_SRC_POS,
                              N_("VD: error opening image file '%s'"), pszFilename);
@@ -1123,9 +1123,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
          * base image can be fixed or normal, all others must be normal or
          * diff images. Some image formats don't distinguish between normal
          * and diff images, so this must be corrected here. */
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             enmImageType = VD_IMAGE_TYPE_INVALID;
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             &&  !(uOpenFlags & VD_OPEN_FLAGS_INFO))
         {
             if (    pDisk->cImages == 0
@@ -1164,7 +1164,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         /* Cache PCHS geometry. */
         rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                   &pDisk->PCHSGeometry);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             pDisk->PCHSGeometry.cCylinders = 0;
             pDisk->PCHSGeometry.cHeads = 0;
@@ -1181,7 +1181,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         /* Cache LCHS geometry. */
         rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                   &pDisk->LCHSGeometry);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             pDisk->LCHSGeometry.cCylinders = 0;
             pDisk->LCHSGeometry.cHeads = 0;
@@ -1207,7 +1207,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             }
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
@@ -1224,7 +1224,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
     } while (0);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (pImage)
         {
@@ -1340,7 +1340,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
         {
@@ -1358,7 +1358,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                         pDisk->pInterfaces,
                                         &pImage->pvBackendData);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pImage->enmImageType = enmType;
 
@@ -1377,7 +1377,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             /* Cache PCHS geometry. */
             rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                       &pDisk->PCHSGeometry);
-            if (VBOX_FAILURE(rc2))
+            if (RT_FAILURE(rc2))
             {
                 pDisk->PCHSGeometry.cCylinders = 0;
                 pDisk->PCHSGeometry.cHeads = 0;
@@ -1394,7 +1394,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             /* Cache LCHS geometry. */
             rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                       &pDisk->LCHSGeometry);
-            if (VBOX_FAILURE(rc2))
+            if (RT_FAILURE(rc2))
             {
                 pDisk->LCHSGeometry.cCylinders = 0;
                 pDisk->LCHSGeometry.cHeads = 0;
@@ -1409,7 +1409,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             }
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
@@ -1426,7 +1426,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
     } while (0);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (pImage)
         {
@@ -1439,7 +1439,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -1511,7 +1511,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
         {
@@ -1531,7 +1531,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                         pDisk->pInterfaces,
                                         &pImage->pvBackendData);
 
-        if (VBOX_SUCCESS(rc) && pDisk->cImages != 0)
+        if (RT_SUCCESS(rc) && pDisk->cImages != 0)
         {
             pImage->enmImageType = VD_IMAGE_TYPE_DIFF;
 
@@ -1545,7 +1545,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
             }
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTUUID Uuid;
             RTTIMESPEC ts;
@@ -1553,27 +1553,27 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
             rc2 = pDisk->pLast->Backend->pfnGetUuid(pDisk->pLast->pvBackendData,
                                                     &Uuid);
-            if (VBOX_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, &Uuid);
             rc2 = pDisk->pLast->Backend->pfnGetModificationUuid(pDisk->pLast->pvBackendData,
                                                                 &Uuid);
-            if (VBOX_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentModificationUuid(pImage->pvBackendData,
                                                               &Uuid);
             rc2 = pDisk->pLast->Backend->pfnGetTimeStamp(pDisk->pLast->pvBackendData,
                                                              &ts);
-            if (VBOX_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentTimeStamp(pImage->pvBackendData, &ts);
 
             rc2 = pImage->Backend->pfnSetParentFilename(pImage->pvBackendData, pDisk->pLast->pszFilename);
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /** @todo optionally check UUIDs */
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
@@ -1590,7 +1590,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
     } while (0);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (pImage->hPlugin != NIL_RTLDRMOD)
             RTLdrClose(pImage->hPlugin);
@@ -1603,7 +1603,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -1655,7 +1655,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             uOpenFlags &= ~VD_OPEN_FLAGS_READONLY;
             rc = pImageTo->Backend->pfnSetOpenFlags(pImageTo->pvBackendData,
                                                     uOpenFlags);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
         }
 
@@ -1707,17 +1707,17 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                     if (rc != VERR_VDI_BLOCK_FREE)
                     {
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             break;
                         rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
                                            cbThisRead);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             break;
                     }
                     else
                         rc = VINF_SUCCESS;
                 }
-                else if (VBOX_FAILURE(rc))
+                else if (RT_FAILURE(rc))
                     break;
 
                 uOffset += cbThisRead;
@@ -1750,11 +1750,11 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 if (rc != VERR_VDI_BLOCK_FREE)
                 {
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
                                        cbThisRead);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                 }
                 else
@@ -1801,7 +1801,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             uOpenFlags |= VD_OPEN_FLAGS_READONLY;
             rc = pImageTo->Backend->pfnSetOpenFlags(pImageTo->pvBackendData,
                                                     uOpenFlags);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
         }
 
@@ -1822,7 +1822,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL */, 100, pvUser);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -1892,19 +1892,19 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         {
             /* Close the source image. */
             rc = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, false);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
 
             /* Open the source image in the destination container. */
             rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto movefail;
 
             pImageTo = pDiskTo->pLast;
 
             /* Rename the image. */
             rc = pImageTo->Backend->pfnRename(pImageTo->pvBackendData, pszFilename ? pszFilename : pImageTo->pszFilename);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto movefail;
 
             /* Cleanup the leftovers. */
@@ -1923,7 +1923,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 movefail:
             /* In case of failure, re-open the source image in the source container. */
             rc2 = VDOpen(pDiskFrom, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
-            if (VBOX_FAILURE(rc2))
+            if (RT_FAILURE(rc2))
                 /** @todo Uncertain what to do on error. If this happens pImageFrom and pImageTo are both closed. */
                 rc = rc2;
             break;
@@ -1973,7 +1973,7 @@ movefail:
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               uOpenFlagsFrom, NULL, NULL);
         }
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             break;
 
         pImageTo = pDiskTo->pLast;
@@ -1997,12 +1997,12 @@ movefail:
 
             rc = vdReadHelper(pDiskFrom, pImageFrom, uOffset, pvBuf,
                               cbThisRead);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
 
             rc = vdWriteHelper(pDiskTo, pImageTo, uOffset, pvBuf,
                                cbThisRead);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
 
             uOffset += cbThisRead;
@@ -2012,7 +2012,7 @@ movefail:
                 rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
                                  ((cbSize - cbRemaining) * 100) / cbSize,
                                  pvUser);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     break;
             }
         } while (uOffset < cbSize);
@@ -2039,7 +2039,7 @@ movefail:
         }
     } while (0);
 
-    if (VBOX_FAILURE(rc) && pImageTo)
+    if (RT_FAILURE(rc) && pImageTo)
     {
         /* Error detected, but new image created. Remove image from list. */
         vdRemoveImageFromList(pDiskTo, pImageTo);
@@ -2062,7 +2062,7 @@ movefail:
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (VBOX_SUCCESS(rc) && pfnProgress)
+    if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2129,7 +2129,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         /* Cache PCHS geometry. */
         rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                  &pDisk->PCHSGeometry);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             pDisk->PCHSGeometry.cCylinders = 0;
             pDisk->PCHSGeometry.cHeads = 0;
@@ -2146,7 +2146,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         /* Cache LCHS geometry. */
         rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                   &pDisk->LCHSGeometry);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             pDisk->LCHSGeometry.cCylinders = 0;
             pDisk->LCHSGeometry.cHeads = 0;
@@ -2190,7 +2190,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
             vdRemoveImageFromList(pDisk, pImage);
             /* Close image. */
             int rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
-            if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
             /* Free remaining resources related to the image. */
             if (pImage->hPlugin != NIL_RTLDRMOD)
@@ -2260,7 +2260,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
- * @param   uOffset         Offset of the first byte being 
+ * @param   uOffset         Offset of the first byte being
  *                          written from start of disk.
  * @param   pvBuf           Pointer to buffer for writing data.
  * @param   cbWrite         Number of bytes to write.
@@ -2546,7 +2546,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 /* Cache new geometry values in any case. */
                 int rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                               &pDisk->PCHSGeometry);
-                if (VBOX_FAILURE(rc2))
+                if (RT_FAILURE(rc2))
                 {
                     pDisk->PCHSGeometry.cCylinders = 0;
                     pDisk->PCHSGeometry.cHeads = 0;
@@ -2566,7 +2566,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             PDMMEDIAGEOMETRY PCHS;
             rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                      &PCHS);
-            if (    VBOX_FAILURE(rc)
+            if (    RT_FAILURE(rc)
                 ||  pPCHSGeometry->cCylinders != PCHS.cCylinders
                 ||  pPCHSGeometry->cHeads != PCHS.cHeads
                 ||  pPCHSGeometry->cSectors != PCHS.cSectors)
@@ -2692,7 +2692,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 /* Cache new geometry values in any case. */
                 int rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                               &pDisk->LCHSGeometry);
-                if (VBOX_FAILURE(rc2))
+                if (RT_FAILURE(rc2))
                 {
                     pDisk->LCHSGeometry.cCylinders = 0;
                     pDisk->LCHSGeometry.cHeads = 0;
@@ -2712,7 +2712,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             PDMMEDIAGEOMETRY LCHS;
             rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                      &LCHS);
-            if (    VBOX_FAILURE(rc)
+            if (    RT_FAILURE(rc)
                 ||  pLCHSGeometry->cCylinders != LCHS.cCylinders
                 ||  pLCHSGeometry->cHeads != LCHS.cHeads
                 ||  pLCHSGeometry->cSectors != LCHS.cSectors)
@@ -3414,7 +3414,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
  * @param   cSeg            Number of segments in the array.
  * @param   pvUser          User data which is passed on completion
  */
-VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead, 
+VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                               PPDMDATASEG paSeg, unsigned cSeg,
                               void *pvUser)
 {
@@ -3521,8 +3521,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
-        rc = pImage->Backend->pfnAsyncWrite(pImage->pvBackendData, 
-                                            uOffset, cbWrite, 
+        rc = pImage->Backend->pfnAsyncWrite(pImage->pvBackendData,
+                                            uOffset, cbWrite,
                                             paSeg, cSeg, pvUser);
     } while (0);
 

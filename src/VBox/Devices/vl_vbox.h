@@ -124,35 +124,35 @@ typedef struct SSMHANDLE QEMUFile;
 DECLINLINE(int) qemu_get_buffer(QEMUFile *f, uint8_t *buf, int size)
 {
     int rc = SSMR3GetMem(f, buf, size);
-    return VBOX_SUCCESS(rc) ? size : 0;
+    return RT_SUCCESS(rc) ? size : 0;
 }
 
 DECLINLINE(int) qemu_get_byte(QEMUFile *f)
 {
     uint8_t u8;
     int rc = SSMR3GetU8(f, &u8);
-    return VBOX_SUCCESS(rc) ? (int)u8 : -1;
+    return RT_SUCCESS(rc) ? (int)u8 : -1;
 }
 
 DECLINLINE(unsigned) qemu_get_be16(QEMUFile *f)
 {
     uint16_t u16;
     int rc = SSMR3GetU16(f, &u16);
-    return VBOX_SUCCESS(rc) ? u16 : ~0;
+    return RT_SUCCESS(rc) ? u16 : ~0;
 }
 
 DECLINLINE(unsigned) qemu_get_be32(QEMUFile *f)
 {
     uint32_t u32;
     int rc = SSMR3GetU32(f, &u32);
-    return VBOX_SUCCESS(rc) ? u32 : ~0;
+    return RT_SUCCESS(rc) ? u32 : ~0;
 }
 
 DECLINLINE(int64_t) qemu_get_be64(QEMUFile *f)
 {
     uint64_t u64;
     int rc = SSMR3GetU64(f, &u64);
-    return VBOX_SUCCESS(rc) ? u64 : ~0;
+    return RT_SUCCESS(rc) ? u64 : ~0;
 }
 
 #define qemu_put_timer(f, ts)   TMR3TimerSave((ts), (f))

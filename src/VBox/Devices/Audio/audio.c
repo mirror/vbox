@@ -1627,7 +1627,7 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
 
     rc = pDrvIns->pDrvHlp->pfnTMTimerCreate (pDrvIns, TMCLOCK_VIRTUAL,
                                              audio_timer_helper, "Audio timer", &s->ts);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     audio_process_options ("AUDIO", audio_options);
@@ -2001,15 +2001,15 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     glob_audio_state.pDrvIns = pDrvIns;
 
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "AudioDriver", &drvname);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "StreamName", &audio_streamname);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         audio_streamname = NULL;
 
     rc = AUD_init (pDrvIns, drvname);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     MMR3HeapFree (drvname);

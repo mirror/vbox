@@ -1185,7 +1185,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
      * Load the queues
      */
     rc = SSMR3GetU32(f, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 > ELEMENTS(s->queue.data))
     {
@@ -1195,7 +1195,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     for (i = 0; i < u32; i++)
     {
         rc = SSMR3GetU8(f, &s->queue.data[i]);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     s->queue.wptr = u32 % ELEMENTS(s->queue.data);
@@ -1203,7 +1203,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     Log(("kbd_load: %d keyboard queue items loaded\n", u32));
 
     rc = SSMR3GetU32(f, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 > ELEMENTS(s->mouse_command_queue.data))
     {
@@ -1213,7 +1213,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     for (i = 0; i < u32; i++)
     {
         rc = SSMR3GetU8(f, &s->mouse_command_queue.data[i]);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     s->mouse_command_queue.wptr = u32 % ELEMENTS(s->mouse_command_queue.data);
@@ -1221,7 +1221,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     Log(("kbd_load: %d mouse command queue items loaded\n", u32));
 
     rc = SSMR3GetU32(f, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 > ELEMENTS(s->mouse_event_queue.data))
     {
@@ -1231,7 +1231,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     for (i = 0; i < u32; i++)
     {
         rc = SSMR3GetU8(f, &s->mouse_event_queue.data[i]);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     s->mouse_event_queue.wptr = u32 % ELEMENTS(s->mouse_event_queue.data);
@@ -1240,7 +1240,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
 
     /* terminator */
     rc = SSMR3GetU32(f, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
     {

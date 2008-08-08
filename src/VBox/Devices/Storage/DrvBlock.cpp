@@ -342,7 +342,7 @@ static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
      */
     int rc = pData->pDrvMedia->pfnBiosGetPCHSGeometry(pData->pDrvMedia, &pData->PCHSGeometry);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *pPCHSGeometry = pData->PCHSGeometry;
         LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->PCHSGeometry.cCylinders, pData->PCHSGeometry.cHeads, pData->PCHSGeometry.cSectors));
@@ -376,7 +376,7 @@ static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
      */
     int rc = pData->pDrvMedia->pfnBiosSetPCHSGeometry(pData->pDrvMedia, pPCHSGeometry);
 
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
         pData->PCHSGeometry = *pPCHSGeometry;
@@ -414,7 +414,7 @@ static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
      */
     int rc = pData->pDrvMedia->pfnBiosGetLCHSGeometry(pData->pDrvMedia, &pData->LCHSGeometry);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *pLCHSGeometry = pData->LCHSGeometry;
         LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->LCHSGeometry.cCylinders, pData->LCHSGeometry.cHeads, pData->LCHSGeometry.cSectors));
@@ -448,7 +448,7 @@ static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
      */
     int rc = pData->pDrvMedia->pfnBiosSetLCHSGeometry(pData->pDrvMedia, pLCHSGeometry);
 
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
         pData->LCHSGeometry = *pLCHSGeometry;
@@ -504,7 +504,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
     if (pszFilename)
     {
         int rc = pData->pDrvIns->pDrvHlp->pfnMountPrepare(pData->pDrvIns, pszFilename, pszCoreDriver);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("drvblockMount: Prepare failed for \"%s\" rc=%Vrc\n", pszFilename, rc));
             return rc;
@@ -516,7 +516,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      */
     PPDMIBASE pBase;
     int rc = pData->pDrvIns->pDrvHlp->pfnAttach(pData->pDrvIns, &pBase);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("drvblockMount: Attach failed rc=%Vrc\n", rc));
         return rc;
@@ -587,7 +587,7 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
      * Detach the media driver and query it's interface.
      */
     int rc = pData->pDrvIns->pDrvHlp->pfnDetach(pData->pDrvIns);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("drvblockUnmount: Detach failed rc=%Vrc\n", rc));
         return rc;
@@ -771,7 +771,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /* type */
     char *psz;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Type", &psz);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the type"));
     if (!strcmp(psz, "HardDisk"))
         pData->enmType = PDMBLOCKTYPE_HARD_DISK;
@@ -801,44 +801,44 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
 
     /* Mountable */
     rc = CFGMR3QueryBoolDef(pCfgHandle, "Mountable", &pData->fMountable, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Mountable\" from the config"));
 
     /* Locked */
     rc = CFGMR3QueryBoolDef(pCfgHandle, "Locked", &pData->fLocked, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Locked\" from the config"));
 
     /* BIOS visible */
     rc = CFGMR3QueryBoolDef(pCfgHandle, "BIOSVisible", &pData->fBiosVisible, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"BIOSVisible\" from the config"));
 
     /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
     rc = CFGMR3QueryU32Def(pCfgHandle, "Cylinders", &pData->LCHSGeometry.cCylinders, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Cylinders\" from the config"));
 
     /* Heads */
     rc = CFGMR3QueryU32Def(pCfgHandle, "Heads", &pData->LCHSGeometry.cHeads, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Heads\" from the config"));
 
     /* Sectors */
     rc = CFGMR3QueryU32Def(pCfgHandle, "Sectors", &pData->LCHSGeometry.cSectors, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Sectors\" from the config"));
 
     /* Uuid */
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Uuid", &psz);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTUuidClear(&pData->Uuid);
-    else if (VBOX_SUCCESS(rc))
+    else if (RT_SUCCESS(rc))
     {
         rc = RTUuidFromStr(&pData->Uuid, psz);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "%s",
                                 N_("Uuid from string failed on \"%s\""), psz);
@@ -852,13 +852,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
 
 #ifdef VBOX_PERIODIC_FLUSH
     rc = CFGMR3QueryU32Def(pCfgHandle, "FlushInterval", &pData->cbFlushInterval, 0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"FlushInterval\" from the config"));
 #endif /* VBOX_PERIODIC_FLUSH */
 
 #ifdef VBOX_IGNORE_FLUSH
     rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreFlush", &pData->fIgnoreFlush, true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlush\" from the config"));
 #endif /* VBOX_IGNORE_FLUSH */
 
@@ -870,7 +870,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     if (    rc == VERR_PDM_NO_ATTACHED_DRIVER
         &&  pData->enmType != PDMBLOCKTYPE_HARD_DISK)
         return VINF_SUCCESS;
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Vra\n", rc));
         return rc;

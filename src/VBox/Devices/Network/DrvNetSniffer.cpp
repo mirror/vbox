@@ -345,7 +345,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     int rc = CFGMR3QueryString(pCfgHandle, "File", pThis->szFilename, sizeof(pThis->szFilename));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTStrPrintf(pThis->szFilename, sizeof(pThis->szFilename), "./VBox-%x.pcap", RTProcSelf());
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to query \"File\", rc=%Vrc.\n", rc));
         return rc;
@@ -378,7 +378,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBaseDown);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         pThis->pConnector = NULL;
-    else if (VBOX_SUCCESS(rc))
+    else if (RT_SUCCESS(rc))
     {
         pThis->pConnector = (PPDMINETWORKCONNECTOR)pBaseDown->pfnQueryInterface(pBaseDown, PDMINTERFACE_NETWORK_CONNECTOR);
         if (!pThis->pConnector)
@@ -397,7 +397,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Create the lock.
      */
     rc = RTCritSectInit(&pThis->Lock);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -405,7 +405,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     rc = RTFileOpen(&pThis->File, pThis->szFilename,
                     RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to create file '%s' for writing. rc=%Vrc\n", pThis->szFilename, rc));
         return rc;

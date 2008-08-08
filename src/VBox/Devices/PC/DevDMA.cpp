@@ -907,7 +907,7 @@ static DECLCALLBACK(int) DMAConstruct(PPDMDEVINS pDevIns,
 
 #if 0
     rc = CFGMR3QueryBool (pCfgHandle, "HighPageEnable", &high_page_enable);
-    if (VBOX_FAILURE (rc)) {
+    if (RT_FAILURE (rc)) {
         return rc;
     }
 #endif
@@ -927,13 +927,13 @@ static DECLCALLBACK(int) DMAConstruct(PPDMDEVINS pDevIns,
 
     Assert(pDevIns->pDevHlp->pfnDMARegister);
     rc = pDevIns->pDevHlp->pfnDMACRegister (pDevIns, &reg, &s->pHlp);
-    if (VBOX_FAILURE (rc)) {
+    if (RT_FAILURE (rc)) {
         return rc;
     }
 
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1, sizeof (*s),
                                NULL, SaveExec, NULL, NULL, LoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;

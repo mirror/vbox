@@ -380,7 +380,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
      */
     char *pszHostDriver = NULL;
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "HostInterfaceName", &pszHostDriver);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: query for \"HostInterfaceName\" failed"));
 
@@ -390,7 +390,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     char szDriverGUID[256] = {0};
 
     rc = CFGMR3QueryBytes(pCfgHandle, "GUID", szDriverGUID, sizeof(szDriverGUID));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: could not query GUID"));
 

@@ -95,7 +95,7 @@ static DECLCALLBACK(int) vdiBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIA
 {
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
     int rc = VDIDiskGetLCHSGeometry(pData, pLCHSGeometry);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
         return VINF_SUCCESS;
@@ -129,7 +129,7 @@ static DECLCALLBACK(int) vdiRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBu
     LogFlow(("vdiRead: off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
     int rc = VDIDiskRead(pData, off, pvBuf, cbRead);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         Log2(("vdiRead: off=%#llx pvBuf=%p cbRead=%d\n"
               "%.*Vhxd\n",
               off, pvBuf, cbRead, cbRead, pvBuf));
@@ -334,20 +334,20 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
      * Open the images.
      */
     int rc = VINF_SUCCESS;
-    while (pCurNode && VBOX_SUCCESS(rc))
+    while (pCurNode && RT_SUCCESS(rc))
     {
         /*
          * Read the image configuration.
          */
         int rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDRV_SET_ERROR(pDrvIns, rc,
                                     N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
 
         rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             fReadOnly = false;
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             MMR3HeapFree(pszName);
             return PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -359,7 +359,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             rc = CFGMR3QueryBool(pCfgHandle, "HonorZeroWrites", &fHonorZeroWrites);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fHonorZeroWrites = false;
-            else if (VBOX_FAILURE(rc))
+            else if (RT_FAILURE(rc))
             {
                 MMR3HeapFree(pszName);
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -372,7 +372,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
          */
         rc = VDIDiskOpenImage(pData, pszName, fReadOnly ? VDI_OPEN_FLAGS_READONLY
                                                         : VDI_OPEN_FLAGS_NORMAL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             Log(("vdiConstruct: %d - Opened '%s' in %s mode\n",
                  iLevel, pszName, VDIDiskIsReadOnly(pData) ? "read-only" : "read-write"));
         else
@@ -385,7 +385,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     }
 
     /* If any of the images has the flag set, handle zero writes like normal. */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pData->fHonorZeroWrites = fHonorZeroWrites;
 
     /* On failure, vdiDestruct will be called, so no need to clean up here. */

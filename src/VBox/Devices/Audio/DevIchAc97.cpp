@@ -1402,7 +1402,7 @@ static DECLCALLBACK(int) ichac97IOPortMap (PPCIDEVICE pPciDev, int iRegion,
         rc = PDMDevHlpIOPortRegister (pDevIns, Port, 64, pData,
                                       ichac97IOPortNABMWrite, ichac97IOPortNABMRead,
                                       NULL, NULL, "ICHAC97 NABM");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     pData->ac97.IOPortBase[iRegion] = Port;
@@ -1621,24 +1621,24 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
      * saved state item.
      */
     rc = PDMDevHlpPCIRegister (pDevIns, &pData->dev);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0, 256, PCI_ADDRESS_SPACE_IO,
                                        ichac97IOPortMap);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpPCIIORegionRegister (pDevIns, 1, 64, PCI_ADDRESS_SPACE_IO,
                                        ichac97IOPortMap);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName,
                                iInstance, AC97_SSM_VERSION, sizeof(*pData),
                                NULL, ichac97SaveExec, NULL,
                                NULL, ichac97LoadExec, NULL);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     /*
@@ -1648,7 +1648,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                                 &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log (("ac97: No attached driver!\n"));
-    else if (VBOX_FAILURE (rc))
+    else if (RT_FAILURE (rc))
     {
         AssertMsgFailed (("Failed to attach AC97 LUN #0! rc=%Vrc\n", rc));
         return rc;

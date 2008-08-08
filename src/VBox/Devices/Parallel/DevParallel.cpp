@@ -596,7 +596,7 @@ static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetU32(pSSMHandle, &pData->base);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (u32 != ~0U)
@@ -692,14 +692,14 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fGCEnabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &pData->fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fR0Enabled = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
@@ -719,20 +719,20 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     char szName[24];
     RTStrPrintf(szName, sizeof(szName), "Parallel#%d", iInstance);
     rc = PDMDevHlpCritSectInit(pDevIns, &pData->CritSect, szName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = CFGMR3QueryU8(pCfgHandle, "IRQ", &irq_lvl);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         irq_lvl = 7;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     rc = CFGMR3QueryU16(pCfgHandle, "IOBase", &io_base);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         io_base = 0x378;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
@@ -740,7 +740,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
 
     pData->irq = irq_lvl;
     pData->base = io_base;
-    
+
     /* Init parallel state */
     pData->reg_data = 0;
     pData->reg_ecp_ecr = LPT_ECP_ECR_CHIPMODE_COMPAT | LPT_ECP_ECR_FIFO_EMPTY;
@@ -750,7 +750,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, 0,
                                  parallelIOPortWrite, parallelIOPortRead,
                                  NULL, NULL, "PARALLEL");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #if 0
@@ -758,7 +758,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     rc = PDMDevHlpIOPortRegister(pDevIns, io_base+0x400, 8, 0,
                                  parallelIOPortWriteECP, parallelIOPortReadECP,
                                  NULL, NULL, "PARALLEL ECP");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
 
@@ -766,13 +766,13 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base, 8, 0, "parallelIOPortWrite",
                                       "parallelIOPortRead", NULL, NULL, "Parallel");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
 #if 0
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 #endif
     }
@@ -781,13 +781,13 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base, 8, 0, "parallelIOPortWrite",
                                       "parallelIOPortRead", NULL, NULL, "Parallel");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
 #if 0
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 #endif
     }
@@ -795,9 +795,9 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     /* Attach the parallel port driver and get the interfaces. For now no run-time
      * changes are supported. */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Parallel Host");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
-        pData->pDrvHostParallelConnector = (PDMIHOSTPARALLELCONNECTOR *)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, 
+        pData->pDrvHostParallelConnector = (PDMIHOSTPARALLELCONNECTOR *)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase,
                                                                                                            PDMINTERFACE_HOST_PARALLEL_CONNECTOR);
         if (!pData->pDrvHostParallelConnector)
         {
@@ -837,7 +837,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
         parallelLoadExec,               /* pfnLoadExec */
         NULL                            /* pfnLoadDone */
         );
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;

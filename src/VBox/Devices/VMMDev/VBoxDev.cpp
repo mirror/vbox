@@ -781,7 +781,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /* only if the client has queried the size before! */
                     uint32_t mappingsSize;
                     pRequestHeader->rc = PGMR3MappingsSize(pVM, &mappingsSize);
-                    if (VBOX_SUCCESS(pRequestHeader->rc) && hypervisorInfo->hypervisorSize == mappingsSize)
+                    if (RT_SUCCESS(pRequestHeader->rc) && hypervisorInfo->hypervisorSize == mappingsSize)
                     {
                         /* new reservation */
                         pRequestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
@@ -1156,7 +1156,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pData->pDrv->pfnVideoAccelEnable (pData->pDrv, false, NULL);
 
                     if (   ptr->u32Enable
-                        && VBOX_SUCCESS (pRequestHeader->rc))
+                        && RT_SUCCESS (pRequestHeader->rc))
                     {
                         ptr->fu32Status |= VBVA_F_STATUS_ENABLED;
 
@@ -2157,21 +2157,21 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = CFGMR3QueryBool(pCfgHandle, "GetHostTimeDisabled", &pData->fGetHostTimeDisabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fGetHostTimeDisabled = false;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "BackdoorLogDisabled", &pData->fBackdoorLogDisabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fBackdoorLogDisabled = false;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "KeepCredentials", &pData->fKeepCredentials);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fKeepCredentials = false;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
@@ -2254,22 +2254,22 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the PCI device.
      */
     rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (pData->dev.devfn == 32 || iInstance != 0)
         Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or no started by Main)\n", pData->dev.devfn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Get the corresponding connector interface
      */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "VMM Driver Port");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pData->pDrv = (PPDMIVMMDEVCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_VMMDEV_CONNECTOR);
         if (!pData->pDrv)
@@ -2296,7 +2296,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->Base, &pBase, "Status Port");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pData->SharedFolders.pLedsConnector = (PPDMILEDCONNECTORS)
             pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)

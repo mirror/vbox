@@ -130,7 +130,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
     char *pszName;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query for \"Path\" string return %Vrc.\n", rc));
         return rc;
@@ -141,7 +141,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     rc = RTFileOpen(&pData->File, pszName,
                     RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
         pData->pszFilename = pszName;
@@ -151,7 +151,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     {
         rc = RTFileOpen(&pData->File, pszName,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
             pData->pszFilename = pszName;
@@ -199,7 +199,7 @@ static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
 
     uint64_t cbFile;
     int rc = RTFileGetSize(pData->File, &cbFile);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("drvRawImageGetSize: returns %lld (%s)\n", cbFile, pData->pszFilename));
         return cbFile;
@@ -255,10 +255,10 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
      * Seek to the position and read.
      */
     int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTFileRead(pData->File, pvBuf, cbRead, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
                   "%16.*Vhxd\n",
@@ -289,10 +289,10 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
      * Seek to the position and write.
      */
     int rc = RTFileSeek(pData->File, off, RTFILE_SEEK_BEGIN, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTFileWrite(pData->File, pvBuf, cbWrite, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n"
                   "%16.*Vhxd\n",

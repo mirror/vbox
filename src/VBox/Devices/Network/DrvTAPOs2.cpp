@@ -449,7 +449,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = CFGMR3QueryString(pCfgHandle, "Device", &pThis->szDevice[0], sizeof(pThis->szDevice));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         strcpy(pThis->szDevice, "\\DEV\\TAP$");
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"Device\" failed"));
 
@@ -457,7 +457,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = CFGMR3QueryS32(pCfgHandle, "ConnectTo", &iConnectTo);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         iConnectTo = -1;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"ConnectTo\" failed"));
 
@@ -466,7 +466,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
      * Keep in mind that the destructor is always called!
      */
     rc = RTFileOpen(&pThis->hDevice, pThis->szDevice, RTFILE_O_DENY_NONE | RTFILE_O_READ);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to open tap device '%s'"), pThis->szDevice);
 
@@ -481,7 +481,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         rc = RTErrConvertFromOS2(orc);
     else if (Parm[0])
         rc = VERR_GENERAL_FAILURE;
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}"),
                                    orc, Parm[0], Parm[1]);
@@ -508,7 +508,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
             rc = RTErrConvertFromOS2(orc);
         else if (Parm[0])
             rc = VERR_GENERAL_FAILURE;
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                        N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}"),
                                        pThis->iLan, iConnectTo, orc, Parm[0], Parm[1]);

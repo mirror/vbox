@@ -1312,7 +1312,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
                 rc = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
                                              fdctrl->data_pos, len, &read);
-                AssertMsg (VBOX_SUCCESS (rc), ("DMAReadMemory -> %Vrc\n", rc));
+                AssertMsg (RT_SUCCESS (rc), ("DMAReadMemory -> %Vrc\n", rc));
 #else
                 DMA_read_memory (nchan, tmpbuf, fdctrl->data_pos, len);
 #endif
@@ -2578,7 +2578,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
      * Try attach the block device and get the interfaces.
      */
     rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, descs[drv->iLUN]);
-    if (VBOX_SUCCESS (rc)) {
+    if (RT_SUCCESS (rc)) {
         drv->pDrvBlock = drv->pDrvBase->pfnQueryInterface (
             drv->pDrvBase,
             PDMINTERFACE_BLOCK
@@ -2686,7 +2686,7 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
     rc = fdConfig (drv, pDevIns);
     AssertMsg (rc != VERR_PDM_NO_ATTACHED_DRIVER,
                ("Configuration error: failed to configure drive %d, rc=%Vrc\n", rc));
-    if (VBOX_SUCCESS(rc)) {
+    if (RT_SUCCESS(rc)) {
         fd_revalidate (drv);
     }
 
@@ -2898,7 +2898,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
      * Attach the status port (optional).
      */
     rc = PDMDevHlpDriverAttach (pDevIns, PDM_STATUS_LUN, &fdctrl->IBaseStatus, &pBase, "Status Port");
-    if (VBOX_SUCCESS (rc)) {
+    if (RT_SUCCESS (rc)) {
         fdctrl->pLedsConnector =
             pBase->pfnQueryInterface (pBase, PDMINTERFACE_LED_CONNECTORS);
     } else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
