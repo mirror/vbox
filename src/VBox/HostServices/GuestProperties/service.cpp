@@ -414,7 +414,7 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc) && (3 == cParms))
     {
         char *pszFlags;
-        uint32_t cchFlags;
+        uint32_t cchFlags = 0;
         rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
         for (size_t i = 0; (i < cchFlags - 1) && RT_SUCCESS(rc); ++i)
             if (pszFlags[i] != ' ')
@@ -575,7 +575,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * Get the HGCM function arguments.
  */
     char *paszPatterns = NULL, *pchBuf = NULL;
-    uint32_t cchPatterns, cchBuf;
+    uint32_t cchPatterns = 0, cchBuf = 0;
     LogFlowThisFunc(("\n"));
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* patterns */
