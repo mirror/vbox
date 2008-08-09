@@ -105,7 +105,7 @@ RTDECL(bool) RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbP
         return false;
     if (RT_UNLIKELY(pIpHdr->ip_hl * 4 < RTNETIPV4_MIN_LEN))
         return false;
-    if (RT_UNLIKELY(pIpHdr->ip_hl * 4 > cbHdrMax))
+    if (RT_UNLIKELY((size_t)pIpHdr->ip_hl * 4 > cbHdrMax))
     {
         Assert(pIpHdr->ip_hl * 4 > cbPktMax); /* You'll hit this if you mapped/copy too little of the header! */
         return false;
@@ -411,7 +411,7 @@ DECLINLINE(bool) rtNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr,
     size_t cb = RT_BE2H_U16(pUdpHdr->uh_ulen);
     if (RT_UNLIKELY(cb > cbPktMax))
         return false;
-    if (RT_UNLIKELY(cb > RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4))
+    if (RT_UNLIKELY(cb > (size_t)(RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4)))
         return false;
     return true;
 }
