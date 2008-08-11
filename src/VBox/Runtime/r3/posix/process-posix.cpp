@@ -37,8 +37,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <signal.h>
 #if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
 # define HAVE_POSIX_SPAWN 1
@@ -272,5 +274,115 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
 #   error "Port me!"
 #endif
     return NULL;
+}
+
+/**
+ * Daemonize the current process, making it a background process. The current
+ * process will exit if daemonizing is successful.
+ *
+ * @returns iprt status code.
+ * @param   fNoChDir    Pass false to change working directory to "/".
+ * @param   fNoClose    Pass false to redirect standard file streams to the null device.
+ * @param   pszPidfile  Path to a file to write the process id of the daemon
+ *                      process to. Daemonizing will fail if this file already
+ *                      exists or cannot be written. May be NULL.
+ */
+RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPidfile)
+{
+    /*
+     * Fork the child process in a new session and quit the parent.
+     *
+     * - fork once and create a new session (setsid). This will detach us
+     *   from the controlling tty meaning that we won't receive the SIGHUP
+     *   (or any other signal) sent to that session.
+     * - The SIGHUP signal is ignored because the session/parent may throw
+     *   us one before we get to the setsid.
+     * - When the parent exit(0) we will become an orphan and re-parented to
+     *   the init process.
+     * - Because of the sometimes unexpected semantics of assigning the
+     *   controlling tty automagically when a session leader first opens a tty,
+     *   we will fork() once more to get rid of the session leadership role.
+     */
+
+    /* We start off by opening the pidfile, so that we can fail straight away
+     * if it already exists. */
+    int fdPidfile = -1;
+    if (pszPidfile != NULL)
+    {
+        /* @note the exclusive create is not guaranteed on all file
+         * systems (e.g. NFSv2) */
+        if ((fdPidfile = open(pszPidfile, O_RDWR | O_CREAT | O_EXCL, 0644)) == -1)
+            return RTErrConvertFromErrno(errno);
+    }
+
+    /* Ignore SIGHUP straight away. */
+    struct sigaction OldSigAct;
+    struct sigaction SigAct;
+    memset(&SigAct, 0, sizeof(SigAct));
+    SigAct.sa_handler = SIG_IGN;
+    int rcSigAct = sigaction(SIGHUP, &SigAct, &OldSigAct);
+
+    /* First fork, to become independent process. */
+    pid_t pid = fork();
+    if (pid == -1)
+        return RTErrConvertFromErrno(errno);
+    if (pid != 0)
+    {
+        /* Parent exits, no longer necessary. Child creates gets reparented
+         * to the init process. */
+        exit(0);
+    }
+
+    /* Create new session, fix up the standard file descriptors and the
+     * current working directory. */
+    pid_t newpgid = setsid();
+    int SavedErrno = errno;
+    if (rcSigAct != -1)
+        sigaction(SIGHUP, &OldSigAct, NULL);
+    if (newpgid == -1)
+        return RTErrConvertFromErrno(SavedErrno);
+
+    if (!fNoClose)
+    {
+        /* Open stdin(0), stdout(1) and stderr(2) as /dev/null. */
+        int fd = open("/dev/null", O_RDWR);
+        if (fd == -1) /* paranoia */
+        {
+            close(STDIN_FILENO);
+            close(STDOUT_FILENO);
+            close(STDERR_FILENO);
+            fd = open("/dev/null", O_RDWR);
+        }
+        if (fd != -1)
+        {
+            dup2(fd, STDIN_FILENO);
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+            if (fd > 2)
+                close(fd);
+        }
+    }
+
+    if (!fNoChDir)
+        chdir("/");
+
+    /* Second fork to lose session leader status. */
+    pid = fork();
+    if (pid == -1)
+        return RTErrConvertFromErrno(errno);
+    if (pid != 0)
+    {
+        /* Write the pid file, this is done in the parent, before exiting. */
+        if (fdPidfile != -1)
+        {
+            char szBuf[256];
+            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
+            write(fdPidfile, szBuf, cbPid);
+            close(fdPidfile);
+        }
+        exit(0);
+    }
+
+    return VINF_SUCCESS;
 }
 

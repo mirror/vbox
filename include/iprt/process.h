@@ -226,6 +226,19 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
  */
 RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName);
 
+/**
+ * Daemonize the current process, making it a background process. The current
+ * process will exit if daemonizing is successful.
+ *
+ * @returns iprt status code.
+ * @param   fNoChDir    Pass false to change working directory to "/".
+ * @param   fNoClose    Pass false to redirect standard file streams to the null device.
+ * @param   pszPidfile  Path to a file to write the process id of the daemon
+ *                      process to. Daemonizing will fail if this file already
+ *                      exists or cannot be written. May be NULL.
+ */
+RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPidfile);
+
 #endif /* IN_RING3 */
 
 /** @} */
