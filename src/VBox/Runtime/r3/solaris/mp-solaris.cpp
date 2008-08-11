@@ -192,7 +192,7 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < RTCPUSET_MAX_CPUS ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
 }
 
 
@@ -238,7 +238,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
     RTCpuSetEmpty(pSet);
-    int cCpus = RTMpGetCount()
+    int cCpus = RTMpGetCount();
     while (cCpus-- > 0)
         RTCpuSetAdd(pSet, idCpu);
     return pSet;
