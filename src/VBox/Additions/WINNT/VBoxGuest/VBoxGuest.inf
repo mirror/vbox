@@ -43,7 +43,8 @@ VBox_CoInstaller_CopyFiles = 11 ; system32
 VBoxTray_CopyFiles = 11 ; system32
 
 [Manufacturer]
-%SUN_MFG% = VBoxGuest
+;x86 %SUN%=SUN
+;amd64 %SUN%=SUN, NTamd64
 
 [VBoxGuest]
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
@@ -84,7 +85,6 @@ vbcoinst.dll
 HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 
 [Strings]
-SUN_MFG = "Sun Microsystems, Inc."
 SUN = "Sun Microsystems, Inc."
 VBoxGuest.DeviceDesc = "VirtualBox Device"
 VBoxGuest_svcdesc = "VirtualBox Guest Driver"
