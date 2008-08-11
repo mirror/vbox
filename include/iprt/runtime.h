@@ -55,6 +55,7 @@
 #include <iprt/md5.h>
 #ifndef IN_GC
 # include <iprt/mem.h>
+# include <iprt/mp.h>
 #endif
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
