@@ -40,10 +40,6 @@
 *******************************************************************************/
 PFNRT g_VBoxRTDeps[] =
 {
-#ifdef __L4ENV__
-    (PFNRT)RTSystemProcessorGetActiveMask,
-    (PFNRT)RTSystemProcessorGetCount,
-#endif /* __L4ENV__ */
     (PFNRT)SUPInit,
     (PFNRT)SUPPageLock
 };
