@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <kstat.h>
+#include <sys/processor.h>
 
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
@@ -201,6 +202,14 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 }
 
 
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    int iStatus = p_online(idCpu, P_STATUS);
+    return iStatus == P_ONLINE
+        || iStatus == P_NOINTR;
+}
+
+
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
     /*
@@ -212,11 +221,11 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
-    /** @todo fix this! */
     RTCpuSetEmpty(pSet);
-    RTCPUID cMax = RTMpGetOnlineCount();
-    while (cMax-- > 0)
-        RTCpuSetAdd(pSet, cMax);
+    int cCpus = RTMpGetCount();
+    for (RTCPUID idCpu = 0; idCpu < cCpus; idCpu++)
+        if (RTMpIsCpuOnline(idCpu))
+            RTCpuSetAdd(pSet, cMax);
     return pSet;
 }
 
