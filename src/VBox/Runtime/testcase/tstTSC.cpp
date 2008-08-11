@@ -33,13 +33,14 @@
 *******************************************************************************/
 #include <iprt/runtime.h>
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 typedef struct TSCDATA
 {
     /** The TSC.  */
-    uint64_t volatile   TSC;           
+    uint64_t volatile   TSC;
     /** The APIC ID. */
     uint8_t volatile    u8ApicId;
     /** Did it succeed? */
@@ -50,6 +51,7 @@ typedef struct TSCDATA
     RTTHREAD            Thread;
 } TSCDATA, *PTSCDATA;
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -58,9 +60,9 @@ static volatile uint32_t g_cWaiting;
 /** The number of CPUs ready (in spin) to do the TSC read. */
 static volatile uint32_t g_cReady;
 /** The variable the CPUs are spinning on.
- * 0: Spin. 
- * 1: Go ahead. 
- * 2: You're too late, back to square one. */ 
+ * 0: Spin.
+ * 1: Go ahead.
+ * 2: You're too late, back to square one. */
 static volatile uint32_t g_u32Go;
 /** The number of CPUs that managed to read the TSC. */
 static volatile uint32_t g_cRead;
@@ -78,8 +80,8 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser);
 
 
 /**
- * Thread function for catching the other cpus. 
- *  
+ * Thread function for catching the other cpus.
+ *
  * @returns VINF_SUCCESS (we don't care).
  * @param   Thread  The thread handle.
  * @param   pvUser  PTSCDATA.
@@ -109,7 +111,7 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser)
             const uint8_t   ApicId1 = ASMGetApicId();
             const uint64_t  TSC1    = ASMReadTSC();
             const uint32_t  u32Go   = g_u32Go;
-            if (u32Go == 0) 
+            if (u32Go == 0)
                 continue;
 
             if (u32Go == 1)
@@ -121,7 +123,7 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser)
                 const uint64_t  TSC3    = ASMReadTSC();
                 const uint8_t   ApicId4 = ASMGetApicId();
 
-                if (    ApicId1 == ApicId2 
+                if (    ApicId1 == ApicId2
                     &&  ApicId1 == ApicId3
                     &&  ApicId1 == ApicId4
                     &&  TSC3 - TSC1 < 2250 /* WARNING: This is just a guess, increase if it doesn't work for you. */
@@ -145,7 +147,7 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser)
             break;
         }
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -157,8 +159,8 @@ int main()
     /*
      * This is only relevant to on SMP systems.
      */
-    const unsigned cCpus = RTSystemProcessorGetCount();
-    if (cCpus <= 1) 
+    const unsigned cCpus = RTMpGetOnlineCount();
+    if (cCpus <= 1)
     {
         RTPrintf("tstTSC: SKIPPED - Only relevant on SMP systems\n");
         return 0;
@@ -169,7 +171,7 @@ int main()
      */
     static TSCDATA s_aData[254];
     uint32_t i;
-    if (cCpus > RT_ELEMENTS(s_aData)) 
+    if (cCpus > RT_ELEMENTS(s_aData))
     {
         RTPrintf("tstTSC: FAILED - too many CPUs (%u)\n", cCpus);
         return 1;
@@ -253,7 +255,7 @@ int main()
             break;
         }
 
-        /* 
+        /*
          * Flip the "go" switch and do our readings.
          * We give the other threads the slack it takes to two extra TSC and APIC ID reads.
          */
@@ -272,7 +274,7 @@ int main()
         const uint8_t   ApicId6 = ASMGetApicId();
 
         /* Compose our own result. */
-        if (    ApicId1 == ApicId2 
+        if (    ApicId1 == ApicId2
             &&  ApicId1 == ApicId3
             &&  ApicId1 == ApicId4
             &&  ApicId1 == ApicId5
@@ -338,7 +340,7 @@ int main()
                      "-----------------------------------------\n");
             RTPrintf("%2d  %02x  %RX64\n", 0, s_aData[0].u8ApicId, s_aData[0].TSC);
             for (i = 1; i < cCpus; i++)
-                RTPrintf("%2d  %02x  %RX64  %s%lld\n", i, s_aData[i].u8ApicId, s_aData[i].TSC, 
+                RTPrintf("%2d  %02x  %RX64  %s%lld\n", i, s_aData[i].u8ApicId, s_aData[i].TSC,
                          s_aData[i].TSC > s_aData[0].TSC ? "+" : "", s_aData[i].TSC - s_aData[0].TSC);
             RTPrintf("(Needed %u attempt%s.)\n", cTries + 1, cTries ? "s" : "");
             break;
