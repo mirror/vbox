@@ -10283,7 +10283,7 @@
       </desc>
       <param name="username" type="wstring" dir="in"/>
       <param name="password" type="wstring" dir="in"/>
-      <param name="return" type="wstring" dir="return"/>
+      <param name="return" type="IVirtualBox" dir="return"/>
     </method>
 
     <method name="getSessionObject">
