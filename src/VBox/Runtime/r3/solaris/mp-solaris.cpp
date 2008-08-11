@@ -238,8 +238,8 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
     RTCpuSetEmpty(pSet);
-    int cCpus = RTMpGetCount();
-    while (cCpus-- > 0)
+    int idCpu = RTMpGetCount();
+    while (idCpu-- > 0)
         RTCpuSetAdd(pSet, idCpu);
     return pSet;
 }
