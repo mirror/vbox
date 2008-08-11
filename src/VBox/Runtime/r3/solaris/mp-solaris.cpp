@@ -257,10 +257,10 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
     RTCpuSetEmpty(pSet);
-    int cCpus = RTMpGetCount();
+    RTCPUID cCpus = RTMpGetCount();
     for (RTCPUID idCpu = 0; idCpu < cCpus; idCpu++)
         if (RTMpIsCpuOnline(idCpu))
-            RTCpuSetAdd(pSet, cMax);
+            RTCpuSetAdd(pSet, idCpu);
     return pSet;
 }
 
