@@ -29,7 +29,6 @@
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
 //#ifdef VBOX_WITH_RESOURCE_USAGE_API
-//#include <iprt/system.h>
 #include <iprt/timer.h>
 //#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
