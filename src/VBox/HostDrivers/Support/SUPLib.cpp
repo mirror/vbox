@@ -1223,10 +1223,11 @@ static int supInstallIDTE(void)
     else
     {
         /* SMP */
-        uint64_t        u64AffMaskSaved = RTThreadGetAffinity();
+        RTCPUSET        OnlineSet;
         uint64_t        u64AffMaskPatched = RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) & u64AffMaskSaved;
+        uint64_t        u64AffMaskSaved = RTThreadGetAffinity();
         unsigned        cCpusPatched = 0;
-        AssertLogRelReturn(cCpus < 64);
+        AssertLogRelReturn(cCpus < 64, VERR_INTERNAL_ERROR);
 
         for (int i = 0; i < 64; i++)
         {
