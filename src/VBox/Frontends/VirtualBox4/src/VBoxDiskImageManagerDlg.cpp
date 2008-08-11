@@ -27,7 +27,6 @@
 #include "VBoxProblemReporter.h"
 
 /* Qt includes */
-#include <QLabel>
 #include <QDir>
 #include <QFileInfo>
 #include <QHeaderView>
@@ -35,6 +34,7 @@
 #include <QPushButton>
 #include <QUrl>
 #include <QProgressBar>
+
 
 class AddVDMUrlsEvent: public QEvent
 {
@@ -108,7 +108,7 @@ public:
     void setToolTip (const QString& aToolTip)
     {
         mToolTip = aToolTip;
-        for (int i=0; i < treeWidget()->columnCount(); ++i)
+        for (int i = 0; i < treeWidget()->columnCount(); ++ i)
             QTreeWidgetItem::setToolTip (i, mToolTip);
     }
     const QString &toolTip() const { return mToolTip; }
@@ -169,6 +169,7 @@ protected:
     VBoxMedia::Status mStatus;
 };
 
+
 class DiskImageItemIterator : public QTreeWidgetItemIterator
 {
 public:
@@ -180,7 +181,7 @@ public:
     {
         QTreeWidgetItem *item = QTreeWidgetItemIterator::operator*();
         return item && item->type() == QITreeWidget::BasicItemType ?
-            static_cast<DiskImageItem*> (item) : NULL;
+            static_cast<DiskImageItem*> (item) : 0;
     }
 
     DiskImageItemIterator& operator++()
@@ -189,59 +190,41 @@ public:
     }
 };
 
-class InfoPaneLabel : public QILabel
-{
-public:
-
-    InfoPaneLabel (QWidget *aParent, QLabel *aLabel = 0)
-        : QILabel (aParent), mLabel (aLabel) {}
-
-    QLabel* label() const { return mLabel; }
-
-private:
-
-    /* Private member vars */
-    QLabel *mLabel;
-};
 
 class VBoxProgressBar: public QWidget
 {
+    Q_OBJECT;
+
 public:
 
     VBoxProgressBar (QWidget *aParent)
         : QWidget (aParent)
     {
+        mText = new QLabel (this);
+        mProgressBar = new QProgressBar (this);
+        mProgressBar->setTextVisible (false);
+
         QHBoxLayout *layout = new QHBoxLayout (this);
         VBoxGlobal::setLayoutMargin (layout, 0);
-        mText = new QLabel ();
         layout->addWidget (mText);
-        mProgressBar = new QProgressBar;
-        /* The text is provided by our own label */
-        mProgressBar->setTextVisible (false);
         layout->addWidget (mProgressBar);
     }
 
-public slots:
-
-    void setText (const QString& aText) { mText->setText (aText); }
+    void setText (const QString &aText) { mText->setText (aText); }
     void setValue (int aValue) { mProgressBar->setValue (aValue); }
-    void setMinimum (int aValue) { mProgressBar->setMinimum (aValue); }
     void setMaximum (int aValue) { mProgressBar->setMaximum (aValue); }
-    void setRange (int aMin, int aMax) { mProgressBar->setRange (aMin, aMax); }
-
-    QLabel *label() const { return mText; }
-    QProgressBar *progressBar() const { return mProgressBar; }
 
 private:
 
-    /* Private member vars */
-    QLabel       *mText;
+    QLabel *mText;
     QProgressBar *mProgressBar;
 };
 
-VBoxDiskImageManagerDlg *VBoxDiskImageManagerDlg::mModelessDialog = NULL;
 
-VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,  Qt::WindowFlags aFlags /* = 0 */)
+VBoxDiskImageManagerDlg* VBoxDiskImageManagerDlg::mModelessDialog = 0;
+
+VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = 0 */,
+                                                  Qt::WindowFlags aFlags /* = 0 */)
     : QIWithRetranslateUI2<QIMainDialog> (aParent, aFlags)
     , mType (VBoxDefs::InvalidType)
 {
@@ -260,18 +243,18 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     mIconFD = VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png");
 
     /* Setup tab widget icons */
-    twImages->setTabIcon (HDTab, mIconHD);
-    twImages->setTabIcon (CDTab, mIconCD);
-    twImages->setTabIcon (FDTab, mIconFD);
+    mTwImages->setTabIcon (HDTab, mIconHD);
+    mTwImages->setTabIcon (CDTab, mIconCD);
+    mTwImages->setTabIcon (FDTab, mIconFD);
 
-    connect (twImages, SIGNAL (currentChanged (int)),
+    connect (mTwImages, SIGNAL (currentChanged (int)),
              this, SLOT (processCurrentChanged (int)));
 
     /* Setup the tree view widgets */
     mHdsTree->header()->setResizeMode (0, QHeaderView::Stretch);
     mHdsTree->header()->setResizeMode (1, QHeaderView::ResizeToContents);
     mHdsTree->header()->setResizeMode (2, QHeaderView::ResizeToContents);
-    mHdsTree->setSortingEnabled(true);
+    mHdsTree->setSortingEnabled (true);
     mHdsTree->setSupportedDropActions (Qt::LinkAction);
     mHdsTree->installEventFilter (this);
     connect (mHdsTree, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -283,7 +266,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
 
     mCdsTree->header()->setResizeMode (0, QHeaderView::Stretch);
     mCdsTree->header()->setResizeMode (1, QHeaderView::ResizeToContents);
-    mCdsTree->setSortingEnabled(true);
+    mCdsTree->setSortingEnabled (true);
     mCdsTree->setSupportedDropActions (Qt::LinkAction);
     mCdsTree->installEventFilter (this);
     connect (mCdsTree, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -295,7 +278,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
 
     mFdsTree->header()->setResizeMode (0, QHeaderView::Stretch);
     mFdsTree->header()->setResizeMode (1, QHeaderView::ResizeToContents);
-    mFdsTree->setSortingEnabled(true);
+    mFdsTree->setSortingEnabled (true);
     mFdsTree->setSupportedDropActions (Qt::LinkAction);
     mFdsTree->installEventFilter (this);
     connect (mFdsTree, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -345,7 +328,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
         ":/refresh_22px.png", ":/refresh_16px.png",
         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 
-//    mActionsMenu->addAction (mEditAction);
+    // mActionsMenu->addAction (mEditAction);
     mActionsContextMenu->addAction (mRemoveAction);
     mActionsContextMenu->addAction (mReleaseAction);
 
@@ -381,7 +364,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     mActionsToolBar->addAction (mNewAction);
     mActionsToolBar->addAction (mAddAction);
     mActionsToolBar->addSeparator();
-//    mActionsToolBar->addAction (mEditAction);
+    // mActionsToolBar->addAction (mEditAction);
     mActionsToolBar->addAction (mRemoveAction);
     mActionsToolBar->addAction (mReleaseAction);
     mActionsToolBar->addSeparator();
@@ -392,36 +375,16 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
     mActionsMenu->addAction (mNewAction);
     mActionsMenu->addAction (mAddAction);
     mActionsMenu->addSeparator();
-//    mActionsMenu->addAction (mEditAction);
+    // mActionsMenu->addAction (mEditAction);
     mActionsMenu->addAction (mRemoveAction);
     mActionsMenu->addAction (mReleaseAction);
     mActionsMenu->addSeparator();
     mActionsMenu->addAction (mRefreshAction);
 
-//    qApp->installEventFilter (this);
-
-    /* Setup information pane layouts */
-    QGridLayout *hdsContainerLayout = new QGridLayout (mHdsContainer);
-    VBoxGlobal::setLayoutMargin (hdsContainerLayout, 5);
-    hdsContainerLayout->setSpacing (0);
-    QGridLayout *cdsContainerLayout = new QGridLayout (mCdsContainer);
-    VBoxGlobal::setLayoutMargin (cdsContainerLayout, 5);
-    cdsContainerLayout->setSpacing (0);
-    QGridLayout *fdsContainerLayout = new QGridLayout (mFdsContainer);
-    VBoxGlobal::setLayoutMargin (fdsContainerLayout, 5);
-    fdsContainerLayout->setSpacing (0);
-    /* Create info-pane for hd list-view */
-    createInfoString (mHdsPane1, mHdsContainer, false, 0, 0, 1, 3);
-    createInfoString (mHdsPane2, mHdsContainer,  true, 1, 0);
-    createInfoString (mHdsPane3, mHdsContainer, false, 1, 2);
-    createInfoString (mHdsPane4, mHdsContainer,  true, 2, 0);
-    createInfoString (mHdsPane5, mHdsContainer, false, 2, 2);
-    /* Create info-pane for cd list-view */
-    createInfoString (mCdsPane1, mCdsContainer, false, 0, 0);
-    createInfoString (mCdsPane2, mCdsContainer, false, 1, 0);
-    /* Create info-pane for fd list-view */
-    createInfoString (mFdsPane1, mFdsContainer, false, 0, 0);
-    createInfoString (mFdsPane2, mFdsContainer, false, 1, 0);
+    /* Setup information pane */
+    QList<QILabel*> paneList = findChildren<QILabel*>();
+    foreach (QILabel *infoPane, paneList)
+        infoPane->setFullSizeSelection (true);
 
     /* Enumeration progressbar creation */
     mProgressBar = new VBoxProgressBar (this);
@@ -440,15 +403,12 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = NULL */,
              this, SLOT (reject()));
     connect (mButtonBox, SIGNAL (helpRequested()),
              &vboxProblem(), SLOT (showHelpHelpDialog()));
-
-    /* Applying language settings */
-    retranslateUi();
 }
 
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
-                                     const QUuid &aTargetVMId /* = NULL */,
+                                     const QUuid &aTargetVMId /* = 0 */,
                                      bool aRefresh /* = true */,
-                                     CMachine aMachine /* = NULL */,
+                                     CMachine aMachine /* = 0 */,
                                      const QUuid &aHdId,
                                      const QUuid &aCdId,
                                      const QUuid &aFdId)
@@ -459,18 +419,15 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     mFdSelectedId = aFdId;
 
     mType = aType;
-    twImages->setTabEnabled (HDTab, mType & VBoxDefs::HD);
-    twImages->setTabEnabled (CDTab, mType & VBoxDefs::CD);
-    twImages->setTabEnabled (FDTab, mType & VBoxDefs::FD);
+    mTwImages->setTabEnabled (HDTab, mType & VBoxDefs::HD);
+    mTwImages->setTabEnabled (CDTab, mType & VBoxDefs::CD);
+    mTwImages->setTabEnabled (FDTab, mType & VBoxDefs::FD);
 
     mDoSelect = aDoSelect;
     if (!aTargetVMId.isNull())
         mTargetVMId = aTargetVMId;
 
-    if (mDoSelect)
-        mButtonBox->button (QDialogButtonBox::Ok)->setText (tr ("&Select"));
-    else
-        mButtonBox->button (QDialogButtonBox::Cancel)->setVisible (false);
+    mButtonBox->button (QDialogButtonBox::Cancel)->setVisible (mDoSelect);
 
     /* Listen to "media enumeration started" signals */
     connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),
@@ -526,6 +483,9 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     if (mFdsTree->selectedItems().isEmpty())
         if (QTreeWidgetItem *item = mFdsTree->topLevelItem (0))
             setCurrentItem (mFdsTree, item);
+
+    /* Applying language settings */
+    retranslateUi();
 }
 
 /* static */
@@ -534,10 +494,10 @@ void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
     if (!mModelessDialog)
     {
         mModelessDialog =
-            new VBoxDiskImageManagerDlg (NULL, Qt::Window);
+            new VBoxDiskImageManagerDlg (0, Qt::Window);
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (VBoxDefs::HD | VBoxDefs::CD | VBoxDefs::FD,
-                                false, NULL, aRefresh);
+                                false, 0, aRefresh);
 
         /* listen to events that may change the media status and refresh
          * the contents of the modeless dialog */
@@ -647,8 +607,8 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
         }
         case VBoxMedia::Error:
         {
-            /// @todo (r=dmik) paass a complete VBoxMedia instance here
-            //  to get the result of blabla.GetAccessible() call form CUnknown
+            /// @todo (r=dmik) pass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call from CUnknown
             tip = tr ("<nobr><b>%1</b></nobr><br>"
                       "Error checking media accessibility", "HDD")
                       .arg (location);
@@ -712,8 +672,8 @@ QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
         }
         case VBoxMedia::Error:
         {
-            /// @todo (r=dmik) paass a complete VBoxMedia instance here
-            //  to get the result of blabla.GetAccessible() call form CUnknown
+            /// @todo (r=dmik) pass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call from CUnknown
             tip = tr ("<nobr><b>%1</b></nobr><br>"
                       "Error checking media accessibility", "CD/DVD/Floppy")
                       .arg (location);
@@ -779,8 +739,8 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
         }
         case VBoxMedia::Error:
         {
-            /// @todo (r=dmik) paass a complete VBoxMedia instance here
-            //  to get the result of blabla.GetAccessible() call form CUnknown
+            /// @todo (r=dmik) pass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call from CUnknown
             tip = tr ("<nobr><b>%1</b></nobr><br>"
                       "Error checking media accessibility", "CD/DVD/Floppy")
                       .arg (location);
@@ -836,15 +796,18 @@ void VBoxDiskImageManagerDlg::retranslateUi()
     mReleaseAction->setStatusTip (tr ("Release the selected media by detaching it from the machine"));
     mRefreshAction->setStatusTip (tr ("Refresh the media list"));
 
-    mHdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
-    mHdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Disk Type")));
-    mHdsPane3->label()->setText (QString ("<nobr>&nbsp;&nbsp;%1:</nobr>").arg (tr ("Storage Type")));
-    mHdsPane4->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
-    mHdsPane5->label()->setText (QString ("<nobr>&nbsp;&nbsp;%1:</nobr>").arg (tr ("Snapshot")));
-    mCdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
-    mCdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
-    mFdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
-    mFdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    mNewAction->setToolTip (mNewAction->text().remove ('&') +
+        QString (" (%1)").arg (mNewAction->shortcut().toString()));
+    mAddAction->setToolTip (mAddAction->text().remove ('&') +
+        QString (" (%1)").arg (mAddAction->shortcut().toString()));
+    // mEditAction->setToolTip (mEditAction->text().remove ('&') +
+    //     QString (" (%1)").arg (mEditAction->shortcut().toString()));
+    mRemoveAction->setToolTip (mRemoveAction->text().remove ('&') +
+        QString (" (%1)").arg (mRemoveAction->shortcut().toString()));
+    mReleaseAction->setToolTip (mReleaseAction->text().remove ('&') +
+        QString (" (%1)").arg (mReleaseAction->shortcut().toString()));
+    mRefreshAction->setToolTip (mRefreshAction->text().remove ('&') +
+        QString (" (%1)").arg (mRefreshAction->shortcut().toString()));
 
     mProgressBar->setText (tr ("Checking accessibility"));
 #ifdef Q_WS_MAC
@@ -855,13 +818,16 @@ void VBoxDiskImageManagerDlg::retranslateUi()
     mButtonBox->setMinimumHeight (h + 12);
 #endif
 
+    if (mDoSelect)
+        mButtonBox->button (QDialogButtonBox::Ok)->setText (tr ("&Select"));
+
     if (mHdsTree->model()->rowCount() || mCdsTree->model()->rowCount() || mFdsTree->model()->rowCount())
         refreshAll();
 }
 
 void VBoxDiskImageManagerDlg::closeEvent (QCloseEvent *aEvent)
 {
-    mModelessDialog = NULL;
+    mModelessDialog = 0;
     aEvent->accept();
 }
 
@@ -870,37 +836,37 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
     switch (aEvent->type())
     {
         case QEvent::DragEnter:
+        {
+            QDragEnterEvent *deEvent = static_cast<QDragEnterEvent*> (aEvent);
+            if (deEvent->mimeData()->hasUrls())
             {
-                QDragEnterEvent *deEvent = static_cast<QDragEnterEvent*> (aEvent);
-                if (deEvent->mimeData()->hasUrls())
+                QList<QUrl> urls = deEvent->mimeData()->urls();
+                /* Sometimes urls has an empty Url entry. Filter them out. */
+                urls.removeAll (QUrl());
+                if (checkDndUrls (urls))
                 {
-                    QList<QUrl> urls = deEvent->mimeData()->urls();
-                    /* Sometimes urls has an empty Url entry. Filter them out. */
-                    urls.removeAll (QUrl());
-                    if (checkDndUrls (urls))
-                    {
-                        deEvent->setDropAction (Qt::LinkAction);
-                        deEvent->acceptProposedAction();
-                    }
+                    deEvent->setDropAction (Qt::LinkAction);
+                    deEvent->acceptProposedAction();
                 }
-                return true;
-                break;
             }
+            return true;
+            break;
+        }
         case QEvent::Drop:
+        {
+            QDropEvent *dEvent = static_cast<QDropEvent*> (aEvent);
+            if (dEvent->mimeData()->hasUrls())
             {
-                QDropEvent *dEvent = static_cast<QDropEvent*> (aEvent);
-                if (dEvent->mimeData()->hasUrls())
-                {
-                    QList<QUrl> urls = dEvent->mimeData()->urls();
-                    /* Sometimes urls has an empty Url entry. Filter them out. */
-                    urls.removeAll (QUrl());
-                    AddVDMUrlsEvent *event = new AddVDMUrlsEvent (urls);
-                    QApplication::postEvent (currentTreeWidget(), event);
-                    dEvent->acceptProposedAction();
-                }
-                return true;
-                break;
+                QList<QUrl> urls = dEvent->mimeData()->urls();
+                /* Sometimes urls has an empty Url entry. Filter them out. */
+                urls.removeAll (QUrl());
+                AddVDMUrlsEvent *event = new AddVDMUrlsEvent (urls);
+                QApplication::postEvent (currentTreeWidget(), event);
+                dEvent->acceptProposedAction();
             }
+            return true;
+            break;
+        }
         case VBoxDefs::AddVDMUrlsEventType:
         {
             if (aObject == currentTreeWidget())
@@ -917,36 +883,13 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
     return QIMainDialog::eventFilter (aObject, aEvent);
 }
 
-/* @todo: Currently not used (Ported from Qt3): */
-void VBoxDiskImageManagerDlg::machineStateChanged (const VBoxMachineStateChangeEvent &aEvent)
-{
-    /// @todo (r=dmik) IVirtualBoxCallback::OnMachineStateChange
-    //  must also expose the old state! In this case we won't need to cache
-    //  the state value in every class in GUI that uses this signal.
-
-    switch (aEvent.state)
-    {
-        case KMachineState_PoweredOff:
-        case KMachineState_Aborted:
-        case KMachineState_Saved:
-        case KMachineState_Starting:
-        case KMachineState_Restoring:
-        {
-            refreshAll();
-            break;
-        }
-        default:
-            break;
-    }
-}
-
 void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
 {
     /* Ignore non-interesting aMedia */
     if (!(mType & aMedia.type))
         return;
 
-    DiskImageItem *item = NULL;
+    DiskImageItem *item = 0;
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
@@ -992,7 +935,7 @@ void VBoxDiskImageManagerDlg::mediaUpdated (const VBoxMedia &aMedia)
     if (!(mType & aMedia.type))
         return;
 
-    DiskImageItem *item = NULL;
+    DiskImageItem *item = 0;
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
@@ -1047,17 +990,17 @@ void VBoxDiskImageManagerDlg::mediaRemoved (VBoxDefs::DiskType aType,
         const QIcon &set = aType == VBoxDefs::HD ? mIconHD :
                            aType == VBoxDefs::CD ? mIconCD :
                            aType == VBoxDefs::FD ? mIconFD : QIcon();
-        Assert (index != -1 && !set.isNull()); /* atype should be the correct one */
-        twImages->setTabIcon (index, set);
+        Assert (index != -1 && !set.isNull()); /* aType should be the correct one */
+        mTwImages->setTabIcon (index, set);
     }
 }
 
 void VBoxDiskImageManagerDlg::mediaEnumStarted()
 {
     /* Load default tab icons */
-    twImages->setTabIcon (HDTab, mIconHD);
-    twImages->setTabIcon (CDTab, mIconCD);
-    twImages->setTabIcon (FDTab, mIconFD);
+    mTwImages->setTabIcon (HDTab, mIconHD);
+    mTwImages->setTabIcon (CDTab, mIconCD);
+    mTwImages->setTabIcon (FDTab, mIconFD);
 
     /* Load current media list */
     const VBoxMediaList &list = vboxGlobal().currentMediaList();
@@ -1143,28 +1086,28 @@ void VBoxDiskImageManagerDlg::addImage()
     switch (type)
     {
         case VBoxDefs::HD:
-            {
-                filter = tr ("All hard disk images (*.vdi *.vmdk);;"
-                             "Virtual Disk images (*.vdi);;"
-                             "VMDK images (*.vmdk);;"
-                             "All files (*)");
-                title = tr ("Select a hard disk image file");
-                break;
-            }
+        {
+            filter = tr ("All hard disk images (*.vdi *.vmdk);;"
+                         "Virtual Disk images (*.vdi);;"
+                         "VMDK images (*.vmdk);;"
+                         "All files (*)");
+            title = tr ("Select a hard disk image file");
+            break;
+        }
         case VBoxDefs::CD:
-            {
-                filter = tr ("CD/DVD-ROM images (*.iso);;"
-                             "All files (*)");
-                title = tr ("Select a CD/DVD-ROM disk image file");
-                break;
-            }
+        {
+            filter = tr ("CD/DVD-ROM images (*.iso);;"
+                         "All files (*)");
+            title = tr ("Select a CD/DVD-ROM disk image file");
+            break;
+        }
         case VBoxDefs::FD:
-            {
-                filter = tr ("Floppy images (*.img);;"
-                             "All files (*)");
-                title = tr ("Select a floppy disk image file");
-                break;
-            }
+        {
+            filter = tr ("Floppy images (*.img);;"
+                         "All files (*)");
+            title = tr ("Select a floppy disk image file");
+            break;
+        }
         default:
             AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::DiskType.\n"));
             break;
@@ -1193,49 +1136,49 @@ void VBoxDiskImageManagerDlg::removeImage()
     switch (type)
     {
         case VBoxDefs::HD:
-            {
-                bool deleteImage = false;
+        {
+            bool deleteImage = false;
 
+            /// @todo When creation of VMDK is implemented, we should
+            /// enable image deletion for  them as well (use
+            /// GetStorageType() to define the correct cast).
+            CHardDisk disk = item->media().disk;
+            if (disk.GetStorageType() == KHardDiskStorageType_VirtualDiskImage &&
+                disk.GetParent().isNull() && /* must not be differencing (see below) */
+                item->status() == VBoxMedia::Ok)
+            {
+                int rc = vboxProblem().confirmHardDiskImageDeletion (this, src);
+                if (rc == QIMessageBox::Cancel)
+                    return;
+                deleteImage = rc == QIMessageBox::Yes;
+            }
+            else
+            {
+                /// @todo note that differencing images are always automatically
+                /// deleted when unregistered, but the following message box
+                /// doesn't mention it. I keep it as is for now because
+                /// implementing the portability feature will most likely change
+                /// this behavior (we'll update the message afterwards).
+                if (!vboxProblem().confirmHardDiskUnregister (this, src))
+                    return;
+            }
+
+            CHardDisk hd = mVBox.UnregisterHardDisk (uuid);
+            if (!mVBox.isOk())
+                vboxProblem().cannotUnregisterMedia (this, mVBox, type, src);
+            else if (deleteImage)
+            {
                 /// @todo When creation of VMDK is implemented, we should
                 /// enable image deletion for  them as well (use
                 /// GetStorageType() to define the correct cast).
-                CHardDisk disk = item->media().disk;
-                if (disk.GetStorageType() == KHardDiskStorageType_VirtualDiskImage &&
-                    disk.GetParent().isNull() && /* must not be differencing (see below) */
-                    item->status() == VBoxMedia::Ok)
-                {
-                    int rc = vboxProblem().confirmHardDiskImageDeletion (this, src);
-                    if (rc == QIMessageBox::Cancel)
-                        return;
-                    deleteImage = rc == QIMessageBox::Yes;
-                }
-                else
-                {
-                    /// @todo note that differencing images are always automatically
-                    /// deleted when unregistered, but the following message box
-                    /// doesn't mention it. I keep it as is for now because
-                    /// implementing the portability feature will most likely change
-                    /// this behavior (we'll update the message afterwards).
-                    if (!vboxProblem().confirmHardDiskUnregister (this, src))
-                        return;
-                }
-
-                CHardDisk hd = mVBox.UnregisterHardDisk (uuid);
-                if (!mVBox.isOk())
-                    vboxProblem().cannotUnregisterMedia (this, mVBox, type, src);
-                else if (deleteImage)
-                {
-                    /// @todo When creation of VMDK is implemented, we should
-                    /// enable image deletion for  them as well (use
-                    /// GetStorageType() to define the correct cast).
-                    CVirtualDiskImage vdi = CUnknown (hd);
-                    if (vdi.isOk())
-                        vdi.DeleteImage();
-                    if (!vdi.isOk())
-                        vboxProblem().cannotDeleteHardDiskImage (this, vdi);
-                }
-                break;
+                CVirtualDiskImage vdi = CUnknown (hd);
+                if (vdi.isOk())
+                    vdi.DeleteImage();
+                if (!vdi.isOk())
+                    vboxProblem().cannotDeleteHardDiskImage (this, vdi);
             }
+            break;
+        }
         case VBoxDefs::CD:
             mVBox.UnregisterDVDImage (uuid);
             break;
@@ -1266,63 +1209,63 @@ void VBoxDiskImageManagerDlg::releaseImage()
     {
         /* If it is a hard disk sub-item: */
         case VBoxDefs::HD:
+        {
+            CHardDisk hd = item->media().disk;
+            QUuid machineId = hd.GetMachineId();
+            if (vboxProblem().confirmReleaseImage (this,
+                mVBox.GetMachine (machineId).GetName()))
             {
-                CHardDisk hd = item->media().disk;
-                QUuid machineId = hd.GetMachineId();
-                if (vboxProblem().confirmReleaseImage (this,
-                                                       mVBox.GetMachine (machineId).GetName()))
-                {
-                    releaseDisk (machineId, itemId, VBoxDefs::HD);
-                    VBoxMedia media (item->media());
-                    media.status = hd.GetAccessible() ? VBoxMedia::Ok :
-                        hd.isOk() ? VBoxMedia::Inaccessible :
-                        VBoxMedia::Error;
-                    vboxGlobal().updateMedia (media);
-                }
-                break;
+                releaseDisk (machineId, itemId, VBoxDefs::HD);
+                VBoxMedia media (item->media());
+                media.status = hd.GetAccessible() ? VBoxMedia::Ok :
+                    hd.isOk() ? VBoxMedia::Inaccessible :
+                    VBoxMedia::Error;
+                vboxGlobal().updateMedia (media);
             }
+            break;
+        }
         /* If it is a cd/dvd sub-item: */
         case VBoxDefs::CD:
+        {
+            QString usage = item->totalUsage();
+            if (vboxProblem().confirmReleaseImage (this, usage))
             {
-                QString usage = item->totalUsage();
-                if (vboxProblem().confirmReleaseImage (this, usage))
-                {
-                    QStringList permMachines =
-                        mVBox.GetDVDImageUsage (itemId,
-                                               KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
-                    for (QStringList::Iterator it = permMachines.begin();
-                         it != permMachines.end(); ++it)
-                        releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
+                QStringList permMachines =
+                    mVBox.GetDVDImageUsage (itemId,
+                                           KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
+                for (QStringList::Iterator it = permMachines.begin();
+                     it != permMachines.end(); ++it)
+                    releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
 
-                    CDVDImage cd = mVBox.GetDVDImage (itemId);
-                    VBoxMedia media (item->media());
-                    media.status = cd.GetAccessible() ? VBoxMedia::Ok :
-                        cd.isOk() ? VBoxMedia::Inaccessible :
-                        VBoxMedia::Error;
-                    vboxGlobal().updateMedia (media);
-                }
+                CDVDImage cd = mVBox.GetDVDImage (itemId);
+                VBoxMedia media (item->media());
+                media.status = cd.GetAccessible() ? VBoxMedia::Ok :
+                    cd.isOk() ? VBoxMedia::Inaccessible :
+                    VBoxMedia::Error;
+                vboxGlobal().updateMedia (media);
             }
+        }
         /* If it is a floppy sub-item: */
         case VBoxDefs::FD:
+        {
+            QString usage = item->totalUsage();
+            if (vboxProblem().confirmReleaseImage (this, usage))
             {
-                QString usage = item->totalUsage();
-                if (vboxProblem().confirmReleaseImage (this, usage))
-                {
-                    QStringList permMachines =
-                        mVBox.GetFloppyImageUsage (itemId,
-                                                  KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
-                    for (QStringList::Iterator it = permMachines.begin();
-                         it != permMachines.end(); ++it)
-                        releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
+                QStringList permMachines =
+                    mVBox.GetFloppyImageUsage (itemId,
+                                              KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
+                for (QStringList::Iterator it = permMachines.begin();
+                     it != permMachines.end(); ++it)
+                    releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
 
-                    CFloppyImage fd = mVBox.GetFloppyImage (itemId);
-                    VBoxMedia media (item->media());
-                    media.status = fd.GetAccessible() ? VBoxMedia::Ok :
-                        fd.isOk() ? VBoxMedia::Inaccessible :
-                        VBoxMedia::Error;
-                    vboxGlobal().updateMedia (media);
-                }
+                CFloppyImage fd = mVBox.GetFloppyImage (itemId);
+                VBoxMedia media (item->media());
+                media.status = fd.GetAccessible() ? VBoxMedia::Ok :
+                    fd.isOk() ? VBoxMedia::Inaccessible :
+                    VBoxMedia::Error;
+                vboxGlobal().updateMedia (media);
             }
+        }
         default:
             AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::DiskType.\n"));
             break;
@@ -1395,7 +1338,7 @@ void VBoxDiskImageManagerDlg::releaseDisk (const QUuid &aMachineId,
 
 QTreeWidget* VBoxDiskImageManagerDlg::treeWidget (VBoxDefs::DiskType aType) const
 {
-    QTreeWidget* tree = NULL;
+    QTreeWidget* tree = 0;
     switch (aType)
     {
         case VBoxDefs::HD:
@@ -1417,7 +1360,7 @@ QTreeWidget* VBoxDiskImageManagerDlg::treeWidget (VBoxDefs::DiskType aType) cons
 VBoxDefs::DiskType VBoxDiskImageManagerDlg::currentTreeWidgetType() const
 {
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
-    switch (twImages->currentIndex ())
+    switch (mTwImages->currentIndex ())
     {
         case HDTab:
             type = VBoxDefs::HD;
@@ -1429,7 +1372,7 @@ VBoxDefs::DiskType VBoxDiskImageManagerDlg::currentTreeWidgetType() const
             type = VBoxDefs::FD;
             break;
         default:
-            AssertMsgFailed (("Page type %d unknown!\n", twImages->currentIndex ()));
+            AssertMsgFailed (("Page type %d unknown!\n", mTwImages->currentIndex ()));
             break;
     }
     return type;
@@ -1449,17 +1392,17 @@ QTreeWidgetItem *VBoxDiskImageManagerDlg::selectedItem (const QTreeWidget *aTree
     if (!selItems.isEmpty())
         return selItems.first();
     else
-        return NULL;
+        return 0;
 }
 
 
 DiskImageItem *VBoxDiskImageManagerDlg::toDiskImageItem (QTreeWidgetItem *aItem) const
 {
     /* Convert the QTreeWidgetItem to a DiskImageItem if it is valid. */
-    DiskImageItem *item = NULL;
+    DiskImageItem *item = 0;
     if (aItem &&
         aItem->type() == QITreeWidget::BasicItemType)
-        item = static_cast <DiskImageItem *> (aItem);
+        item = static_cast <DiskImageItem*> (aItem);
 
     return item;
 }
@@ -1479,24 +1422,11 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (int /* index = -1 */)
 {
     QTreeWidget *tree = currentTreeWidget();
     tree->setFocus();
-
-    /* Tab stop setup */
-    setTabOrder (mHdsTree, mHdsPane1);
-    setTabOrder (mHdsPane1, mHdsPane2);
-    setTabOrder (mHdsPane2, mHdsPane3);
-    setTabOrder (mHdsPane3, mHdsPane4);
-    setTabOrder (mHdsPane4, mHdsPane5);
-
-    setTabOrder (mCdsTree, mCdsPane1);
-    setTabOrder (mCdsPane1, mCdsPane2);
-
-    setTabOrder (mFdsTree, mFdsPane1);
-    setTabOrder (mFdsPane1, mFdsPane2);
-
     processCurrentChanged (tree->currentItem());
 }
 
-void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem /* = NULL */)
+void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
+                                                     QTreeWidgetItem *aPrevItem /* = 0 */)
 {
     DiskImageItem *item = toDiskImageItem (aItem);
 
@@ -1568,6 +1498,10 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem, QTr
     }
     else
         clearInfoPanes();
+
+    mHdsContainer->setEnabled (item);
+    mCdsContainer->setEnabled (item);
+    mFdsContainer->setEnabled (item);
 }
 
 void VBoxDiskImageManagerDlg::processDoubleClick (QTreeWidgetItem * /* aItem */, int /* aColumn */)
@@ -1662,9 +1596,9 @@ DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QTreeWidget *aTree,
                                                          DiskImageItem *aRoot,
                                                          const VBoxMedia &aMedia) const
 {
-    Assert (!(aTree == NULL && aRoot == NULL));
+    Assert (!(aTree == 0 && aRoot == 0));
 
-    DiskImageItem *item = NULL;
+    DiskImageItem *item = 0;
 
     if (aRoot)
         item = new DiskImageItem (aRoot);
@@ -1821,16 +1755,16 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
                                                     const QUuid &aId) const
 {
     if (aId.isNull())
-        return NULL;
+        return 0;
 
     DiskImageItemIterator iterator (aTree);
     while (*iterator)
     {
         if ((*iterator)->uuid() == aId)
             return *iterator;
-        ++iterator;
+        ++ iterator;
     }
-    return NULL;
+    return 0;
 }
 
 DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
@@ -1841,9 +1775,9 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QTreeWidget *aTree,
     {
         if ((*iterator)->status() == aStatus)
             return *iterator;
-        ++iterator;
+        ++ iterator;
     }
-    return NULL;
+    return 0;
 }
 
 bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
@@ -1855,58 +1789,58 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
     switch (currentTreeWidgetType())
     {
         case VBoxDefs::HD:
-            {
-                CHardDisk hd = aItem->media().disk;
-                QUuid machineId = hd.GetMachineId();
-                if (machineId.isNull() ||
-                    (mVBox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
-                     mVBox.GetMachine (machineId).GetState() != KMachineState_Aborted))
-                    return false;
-                break;
-            }
-        case VBoxDefs::CD:
-            {
-                /* Check if there is temporary usage: */
-                QStringList tempMachines =
-                    mVBox.GetDVDImageUsage (itemId,
-                                           KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
-                if (!tempMachines.isEmpty())
-                    return false;
-                /* Only permanently mounted .iso could be released */
-                QStringList permMachines =
-                    mVBox.GetDVDImageUsage (itemId,
-                                           KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
-                for (QStringList::Iterator it = permMachines.begin();
-                     it != permMachines.end(); ++it)
-                    if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
-                        mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
-                        return false;
-                break;
-            }
-        case VBoxDefs::FD:
-            {
-                /* Check if there is temporary usage: */
-                QStringList tempMachines =
-                    mVBox.GetFloppyImageUsage (itemId,
-                                              KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
-                if (!tempMachines.isEmpty())
-                    return false;
-                /* Only permanently mounted floppies could be released */
-                QStringList permMachines =
-                    mVBox.GetFloppyImageUsage (itemId,
-                                              KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
-                for (QStringList::Iterator it = permMachines.begin();
-                     it != permMachines.end(); ++it)
-                    if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
-                        mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
-                        return false;
-                break;
-            }
-        default:
-            {
+        {
+            CHardDisk hd = aItem->media().disk;
+            QUuid machineId = hd.GetMachineId();
+            if (machineId.isNull() ||
+                (mVBox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
+                 mVBox.GetMachine (machineId).GetState() != KMachineState_Aborted))
                 return false;
-                break;
-            }
+            break;
+        }
+        case VBoxDefs::CD:
+        {
+            /* Check if there is temporary usage: */
+            QStringList tempMachines =
+                mVBox.GetDVDImageUsage (itemId,
+                                       KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
+            if (!tempMachines.isEmpty())
+                return false;
+            /* Only permanently mounted .iso could be released */
+            QStringList permMachines =
+                mVBox.GetDVDImageUsage (itemId,
+                                       KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
+            for (QStringList::Iterator it = permMachines.begin();
+                 it != permMachines.end(); ++it)
+                if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                    mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
+                    return false;
+            break;
+        }
+        case VBoxDefs::FD:
+        {
+            /* Check if there is temporary usage: */
+            QStringList tempMachines =
+                mVBox.GetFloppyImageUsage (itemId,
+                                          KResourceUsage_Temporary).split (' ', QString::SkipEmptyParts);
+            if (!tempMachines.isEmpty())
+                return false;
+            /* Only permanently mounted floppies could be released */
+            QStringList permMachines =
+                mVBox.GetFloppyImageUsage (itemId,
+                                          KResourceUsage_Permanent).split (' ', QString::SkipEmptyParts);
+            for (QStringList::Iterator it = permMachines.begin();
+                 it != permMachines.end(); ++it)
+                if (mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                    mVBox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
+                    return false;
+            break;
+        }
+        default:
+        {
+            return false;
+            break;
+        }
     }
     return true;
 }
@@ -2000,39 +1934,6 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     mFdsTree->clear();
 }
 
-void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
-                                                QWidget *aRoot,
-                                                bool aLeftRightMargin,
-                                                int aRow, int aCol,
-                                                int aRowSpan /* = 1 */, int aColSpan /* = 1 */) const
-{
-    /* Create the label & the info pane itself */
-    QLabel *nameLabel = new QLabel (aRoot);
-    aInfo = new InfoPaneLabel (aRoot, nameLabel);
-
-    /* We would the full size selection mode */
-    aInfo->setFullSizeSelection (true);
-
-    /* Prevent the name columns from being expanded */
-    nameLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-    QGridLayout *rootLayout = qobject_cast<QGridLayout*> (aRoot->layout());
-    Assert (VALID_PTR (rootLayout));
-
-    /* Add the two widgets */
-    rootLayout->addWidget (nameLabel, aRow, aCol, 1, 1);
-    int margin = aInfo->style()->pixelMetric (QStyle::PM_LayoutHorizontalSpacing);
-#if QT_VERSION >= 0x040300
-    if (margin == -1)
-        margin = aInfo->style()->layoutSpacing (QSizePolicy::Label, QSizePolicy::Label, Qt::Horizontal);
-#endif /* QT_VERSION >= 0x040300 */
-    if (aLeftRightMargin)
-        aInfo->setContentsMargins (margin, 0, margin, 0);
-    else
-        aInfo->setContentsMargins (margin, 0, 0, 0);
-    rootLayout->addWidget (aInfo, aRow, aCol + 1, aRowSpan, aColSpan);
-}
-
 void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
                                                VBoxMedia::Status aStatus,
                                                VBoxDefs::DiskType aType) const
@@ -2048,7 +1949,7 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
                     aType == VBoxDefs::CD ? CDTab :
                     aType == VBoxDefs::FD ? FDTab : -1;
         Assert (index != -1); /* aType should be correct */
-        twImages->setTabIcon (index, icon);
+        mTwImages->setTabIcon (index, icon);
         aItem->treeWidget()->scrollToItem (aItem, QAbstractItemView::EnsureVisible);
     }
 }
@@ -2066,8 +1967,7 @@ QString VBoxDiskImageManagerDlg::DVDImageUsage (const QUuid &aId, QString &aSnap
     QString usage;
 
     for (QStringList::Iterator it = permMachines.begin();
-         it != permMachines.end();
-         ++it)
+         it != permMachines.end(); ++ it)
     {
         if (!usage.isEmpty())
             usage += ", ";
@@ -2079,8 +1979,7 @@ QString VBoxDiskImageManagerDlg::DVDImageUsage (const QUuid &aId, QString &aSnap
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
-         it != tempMachines.end();
-         ++it)
+         it != tempMachines.end(); ++ it)
     {
         /* Skip IDs that are in the permanent list */
         if (!permMachines.contains (*it))
@@ -2113,8 +2012,7 @@ QString VBoxDiskImageManagerDlg::FloppyImageUsage (const QUuid &aId, QString &aS
     QString usage;
 
     for (QStringList::Iterator it = permMachines.begin();
-         it != permMachines.end();
-         ++it)
+         it != permMachines.end(); ++ it)
     {
         if (!usage.isEmpty())
             usage += ", ";
@@ -2126,8 +2024,7 @@ QString VBoxDiskImageManagerDlg::FloppyImageUsage (const QUuid &aId, QString &aS
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
-         it != tempMachines.end();
-         ++it)
+         it != tempMachines.end(); ++ it)
     {
         /* Skip IDs that are in the permanent list */
         if (!permMachines.contains (*it))
@@ -2184,4 +2081,6 @@ void VBoxDiskImageManagerDlg::FloppyImageSnapshotUsage (const QUuid &aId, const 
     while (en.HasMore())
         FloppyImageSnapshotUsage (aId, en.GetNext(), aUsage);
 }
+
+#include "VBoxDiskImageManagerDlg.moc"
 
