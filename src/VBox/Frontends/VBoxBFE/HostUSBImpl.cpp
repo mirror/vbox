@@ -51,7 +51,6 @@
 #include <VBox/usb.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
-#include <iprt/system.h>
 #include <iprt/time.h>
 #include <stdio.h>
 
