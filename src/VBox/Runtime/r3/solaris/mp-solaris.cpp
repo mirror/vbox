@@ -208,3 +208,15 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
      */
     return sysconf(_SC_NPROCESSORS_ONLN);
 }
+
+
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
+{
+    /** @todo fix this! */
+    RTCpuSetEmpty(pSet);
+    RTCPUID cMax = RTMpGetOnlineCount();
+    while (cMax-- > 0)
+        RTCpuSetAdd(pSet, cMax);
+    return pSet;
+}
+
