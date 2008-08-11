@@ -5134,7 +5134,6 @@ static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN)
 static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     static bool s_fExpandDone = false;
-    bool        f;
     int         rc;
     unsigned i;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
@@ -5202,11 +5201,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    "VRamSize is too small, %#x, max %#x", pThis->vram_size, VGA_VRAM_MIN);
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &f, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
     AssertLogRelRCReturn(rc, rc);
-    Log(("VGA: fGCEnabled=%d\n", pThis->fGCEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &f, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
     AssertLogRelRCReturn(rc, rc);
     Log(("VGA: VRamSize=%#x fGCenabled=%RTbool fR0Enabled=%RTbool\n", pThis->vram_size, pThis->fGCEnabled, pThis->fR0Enabled));
 
