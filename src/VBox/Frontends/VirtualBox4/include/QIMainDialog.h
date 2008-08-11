@@ -58,6 +58,7 @@ public slots:
 protected:
 
     virtual bool event (QEvent *aEvent);
+    virtual void showEvent (QShowEvent *aEvent);
     virtual void resizeEvent (QResizeEvent *aEvent);
     virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
@@ -83,6 +84,8 @@ private:
 
     QPointer<QSizeGrip> mSizeGrip;
     QPointer<QPushButton> mDefaultButton;
+
+    bool mPolished;
 };
 
 #endif /* __QIMainDialog_h__ */

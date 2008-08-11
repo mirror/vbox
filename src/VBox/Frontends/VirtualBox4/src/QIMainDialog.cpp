@@ -22,6 +22,7 @@
 
 #include "QIMainDialog.h"
 #include "VBoxUtils.h"
+#include "VBoxGlobal.h"
 
 #include <iprt/assert.h>
 
@@ -41,6 +42,7 @@ QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
                             Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QMainWindow (aParent, aFlags)
     , mRescode (QDialog::Rejected)
+    , mPolished (false)
 {
     qApp->installEventFilter (this);
 }
@@ -209,6 +211,20 @@ bool QIMainDialog::event (QEvent *aEvent)
               break;
      }
      return QMainWindow::event (aEvent);
+}
+
+void QIMainDialog::showEvent (QShowEvent *aEvent)
+{
+	QMainWindow::showEvent (aEvent);
+
+    /* Polishing border */
+    if (mPolished)
+        return;
+    mPolished = true;
+
+    /* Explicit widget centering relatively to it's parent
+     * if any or desktop if parent is missed. */
+    vboxGlobal().centerWidget (this, parentWidget(), false);
 }
 
 void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
