@@ -1,5 +1,5 @@
 /** @file
- * IPRT - System.
+ * IPRT - System Information.
  */
 
 /*
@@ -40,24 +40,6 @@ __BEGIN_DECLS
  * @ingroup grp_rt
  * @{
  */
-
-/**
- * Gets the number of logical (not physical) processors in the system.
- *
- * @returns Number of logical processors in the system.
- *
- * @todo Replaced by RTMpGetOnlineCount / RTMpGetCount, retire this guy.
- */
-RTDECL(unsigned) RTSystemProcessorGetCount(void);
-
-/**
- * Gets the active logical processor mask.
- *
- * @returns Active logical processor mask. (bit 0 == logical cpu 0)
- *
- * @todo Replaced by RTMpGetOnlineSet, retire this guy.
- */
-RTDECL(uint64_t) RTSystemProcessorGetActiveMask(void);
 
 /** @} */
 
