@@ -569,6 +569,8 @@ int main(int argc, char **argv)
     const char *pszIf = "en0";
 #elif defined(RT_OS_LINUX)
     const char *pszIf = "eth0";
+#elif defined(RT_OS_SOLARIS)
+    const char* pszIf = "rge0";
 #else
     const char *pszIf = "em0";
 #endif
