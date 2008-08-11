@@ -42,6 +42,16 @@ VBoxManage_SOURCES     = \
 	VBoxInternalManage.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	VBoxManageSVN.cpp
+ifneq ($(KBUILD_TARGET),win)
+ # Workaround for buggy gcc-4.3 compilers, see
+ #
+ #   http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36474
+ #
+ # Some later revisions of version 4.3.1 are known to work so we assume
+ # that version 4.3.2 or later has this bug definitely fixed.
+ VBoxManage_CXXFLAGS.release += \
+	$(if $(int-lt $(VBOX_GCC_VERSION_CXX),40300)$(int-gt $(VBOX_GCC_VERSION_CXX),40301),,--param max-fields-for-field-sensitive=0)
+endif
 VBoxManage_LIBS       += $(LIB_DDU)
 
 # VBoxManageSVN.cpp uses VBOX_SVN_REV.
