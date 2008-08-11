@@ -190,6 +190,39 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 }
 
 
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return idCpu < RTCPUSET_MAX_CPUS ? idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return (unsigned)iCpu < RTCPUSET_MAX_CPUS ? iCpu : NIL_RTCPUID;
+}
+
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return RTMpGetCount() - 1;
+}
+
+
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
+{
+    return idCpu != NIL_RTCPUID
+        && idCpu < (RTCPUID)RTMpGetCount();
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    int iStatus = p_online(idCpu, P_STATUS);
+    return iStatus == P_ONLINE
+        || iStatus == P_NOINTR;
+}
+
+
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
     /*
@@ -202,11 +235,13 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 }
 
 
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
-    int iStatus = p_online(idCpu, P_STATUS);
-    return iStatus == P_ONLINE
-        || iStatus == P_NOINTR;
+    RTCpuSetEmpty(pSet);
+    int cCpus = RTMpGetCount()
+    while (cCpus-- > 0)
+        RTCpuSetAdd(pSet, idCpu);
+    return pSet;
 }
 
 
