@@ -63,7 +63,8 @@
 #include <iprt/alloca.h>
 #include <iprt/ldr.h>
 #include <iprt/asm.h>
-#include <iprt/system.h>
+#include <iprt/mp.h>
+#include <iprt/cpuset.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
@@ -1199,7 +1200,7 @@ static int supInstallIDTE(void)
         return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
-    const unsigned  cCpus = RTSystemProcessorGetCount();
+    const RTCPUID cCpus = RTMpGetCount();
     if (cCpus <= 1)
     {
         /* UNI */
@@ -1223,8 +1224,9 @@ static int supInstallIDTE(void)
     {
         /* SMP */
         uint64_t        u64AffMaskSaved = RTThreadGetAffinity();
-        uint64_t        u64AffMaskPatched = RTSystemProcessorGetActiveMask() & u64AffMaskSaved;
+        uint64_t        u64AffMaskPatched = RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) & u64AffMaskSaved;
         unsigned        cCpusPatched = 0;
+        AssertLogRelReturn(cCpus < 64);
 
         for (int i = 0; i < 64; i++)
         {
