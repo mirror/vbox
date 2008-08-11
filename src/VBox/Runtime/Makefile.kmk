@@ -196,6 +196,8 @@ RuntimeR3_SOURCES       = \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
 	common/rand/rand.cpp \
+	common/rand/randadv.cpp \
+	common/rand/randparkmiller.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/string/straprintf.cpp \

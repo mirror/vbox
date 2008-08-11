@@ -112,6 +112,134 @@ RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW;
  */
 RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW;
 
+
+/**
+ * Create an instance of the default random number generator.
+ *
+ * @returns IPRT status code.
+ * @param   hRand       Handle to the random number generator.
+ */
+RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW;
+
+/**
+ * Create an instance of the default pseudo random number generator.
+ *
+ * @returns IPRT status code.
+ * @param   phRand      Where to store the handle to the generator.
+ */
+RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
+
+
+/**
+ * Create an instance of the Park-Miller pseudo random number generator.
+ *
+ * @returns IPRT status code.
+ * @param   phRand      Where to store the handle to the generator.
+ */
+RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
+
+/**
+ * Destroys a random number generator.
+ *
+ * @returns IPRT status code.
+ * @param   hRand       Handle to the random number generator.
+ */
+RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW;
+
+/**
+ * Generic method for seeding of a random number generator.
+ *
+ * The different generators may have specialized methods for
+ * seeding, use one of those if you desire better control
+ * over ther result.
+ *
+ * @returns IPRT status code.
+ * @param   hRand       Handle to the random number generator.
+ * @param   u64Seed     Seed.
+ */
+RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW;
+
+/**
+ * Fills a buffer with random bytes.
+ *
+ * @param   hRand       Handle to the random number generator.
+ * @param   pv  Where to store the random bytes.
+ * @param   cb  Number of bytes to generate.
+ */
+RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW;
+
+/**
+ * Generate a 32-bit signed random number in the set [i32First..i32Last].
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ * @param   i32First    First number in the set.
+ * @param   i32Last     Last number in the set.
+ */
+RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) RT_NO_THROW;
+
+/**
+ * Generate a 32-bit signed random number.
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ */
+RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW;
+
+/**
+ * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ * @param   u32First    First number in the set.
+ * @param   u32Last     Last number in the set.
+ */
+RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Last) RT_NO_THROW;
+
+/**
+ * Generate a 32-bit unsigned random number.
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ */
+RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW;
+
+/**
+ * Generate a 64-bit signed random number in the set [i64First..i64Last].
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ * @param   i64First    First number in the set.
+ * @param   i64Last     Last number in the set.
+ */
+RTDECL(int64_t) RTRandAdvS64Ex(RTRAND hRand, int64_t i64First, int64_t i64Last) RT_NO_THROW;
+
+/**
+ * Generate a 64-bit signed random number.
+ *
+ * @returns The random number.
+ */
+RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW;
+
+/**
+ * Generate a 64-bit unsigned random number in the set [u64First..u64Last].
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ * @param   u64First    First number in the set.
+ * @param   u64Last     Last number in the set.
+ */
+RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Last) RT_NO_THROW;
+
+/**
+ * Generate a 64-bit unsigned random number.
+ *
+ * @returns The random number.
+ * @param   hRand       Handle to the random number generator.
+ */
+RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW;
+
+
 /** @} */
 
 __END_DECLS

@@ -1146,6 +1146,13 @@ typedef RTTIMERLR                                  *PRTTIMERLR;
  * NIL low resolution timer handle value. */
 #define NIL_RTTIMERLR                               ((RTTIMERLR)0)
 
+/** Handle to a random number generator. */
+typedef struct RTRANDINT                           *RTRAND;
+/** Pointer to a random number generator handle. */
+typedef RTRAND                                     *PRTRAND;
+/** NIL random number genrator handle value. */
+#define NIL_RTRAND                                  ((RTRAND)0)
+
 
 /**
  * UUID data type.
