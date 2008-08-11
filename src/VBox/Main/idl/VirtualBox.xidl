@@ -10380,9 +10380,78 @@
       The IPerformanceCollector interface represents a service that collects and
       stores performance metrics data.
 
-      Performance metrics are associated with objects like IHost and IMachine.
-      Each object has a distict set of performance metrics. It can be obtained
-      with <link to="IPerformanceCollector::getMetrics"/>.
+      Performance metrics are associated with objects like IHost and 
+      ISessionMachine. Each object has a distinct set of performance metrics. 
+      The set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
+
+      Metric data are collected at the specified intervals and are retained 
+      internally. The interval and the number of samples retained can be set 
+      with <link to="IPerformanceCollector::setMetrics" />.
+    
+      Metrics are organized hierarchically, each level separated by slash (/). 
+      General scheme for metric name is 
+      "Category/Metric[/SubMetric][:aggregation]". For example CPU/Load/User:avg 
+      metric name stands for: CPU category, Load metric, User submetric, average 
+      aggregate. An aggregate function is computed over all retained data. Valid 
+      aggregate functions are:
+
+      <ul>
+      <li>avg -- average</li>
+      <li>min -- minimum</li>
+      <li>max -- maximum</li>
+      </ul>
+
+      "Category/Metric" together form base metric name. A base metric is the
+      smallest unit for which a sampling interval and the number of retained
+      samples can be set. Only base metrics can be enabled and disabled. All
+      sub-metrics are collected when their base metric is collected.
+      Collected values for any set of sub-metrics can be queried with
+      <link to="IPerformanceCollector::queryMetricsData" />.
+
+      The valid names for base metrics are:
+
+      <ul>
+      <li>CPU/Load</li>
+      <li>CPU/MHz</li>
+      <li>RAM/Usage</li>
+      </ul>
+    
+      The general sequence for collecting and retrieving the metrics is:
+      <ul>
+        <li>
+          Obtain an instance of IPerfromanceCollector with
+          <link to="IVirtualBox::performanceCollector" />
+        </li>
+        <li>
+          Allocate and populate an array with references to objects the metrics 
+          will be collected for.
+        </li>
+        <li>
+          Allocate and populate an array with base metric names the data will be 
+          collected for.
+        </li>
+        <li>
+          Call <link to="IPerformanceCollector::setupMetrics" />. From now on the
+          metric data will be collected and stored.
+        </li>
+        <li>
+          Wait for the data to get collected.
+        </li>
+        <li>
+          Allocate and populate an array with references to objects the metric 
+          values will be queried for. You can re-use the object array used for
+          setting base metrics.
+        </li>
+        <li>
+          Allocate and populate an array with metric names the data will be 
+          collected for. Note that metric names differ from base metric names.
+        </li>
+        <li>
+          Call <link to="IPerformanceCollector::queryMetricsData" />. The data that
+          have been collected so far are returned. Note that the values are still
+          retained internally and data collection continues.
+        </li>
+      </ul>
     </desc>
 
     <attribute name="metricNames" type="wstring" readonly="yes" safearray="yes">
@@ -10424,7 +10493,7 @@
 
     <method name="setupMetrics">
       <desc>
-        Sets parameters of specified metrics for a set of objects.
+        Sets parameters of specified base metrics for a set of objects.
         <note>
           @c Null metrics array means all metrics. @c Null object array means
           all existing objects.
@@ -10457,7 +10526,7 @@
 
     <method name="enableMetrics">
       <desc>
-        Turns on collecting specified metrics.
+        Turns on collecting specified base metrics.
         <note>
           @c Null metrics array means all metrics. @c Null object array means
           all existing objects.
@@ -10478,7 +10547,7 @@
 
     <method name="disableMetrics">
       <desc>
-        Turns off collecting specified metrics.
+        Turns off collecting specified base metrics.
         <note>
           @c Null metrics array means all metrics. @c Null object array means
           all existing objects.
