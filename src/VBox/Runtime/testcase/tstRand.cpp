@@ -100,6 +100,232 @@ static void tstRandCheckDist(uint32_t *pacHits, unsigned iTest)
 }
 
 
+static int tstRandAdv(RTRAND hRand)
+{
+    /*
+     * Test distribution.
+     */
+#if 1
+    /* unsigned 32-bit */
+    static const struct
+    {
+        uint32_t u32First;
+        uint32_t u32Last;
+    } s_aU32Tests[] =
+    {
+        { 0, UINT32_MAX },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 4 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 8 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 16 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 64 },
+        { 0, UINT32_MAX / 2 },
+        { UINT32_MAX / 4, UINT32_MAX / 4 * 3 },
+        { 0, TST_RAND_SAMPLE_RANGES - 1 },
+        { 1234, 1234 + TST_RAND_SAMPLE_RANGES - 1 },
+    };
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(s_aU32Tests); iTest++)
+    {
+        uint32_t       acHits[TST_RAND_SAMPLE_RANGES] = {0};
+        uint32_t const uFirst = s_aU32Tests[iTest].u32First;
+        uint32_t const uLast  = s_aU32Tests[iTest].u32Last;
+        uint32_t const uRange = uLast - uFirst; Assert(uLast >= uFirst);
+        uint32_t const uDivisor = uRange / TST_RAND_SAMPLE_RANGES + 1;
+        RTPrintf("tstRand:   TESTING RTRandAdvU32Ex(,%#RX32, %#RX32) distribution... [div=%#RX32 range=%#RX32]\n", uFirst, uLast, uDivisor, uRange);
+        for (unsigned iSample = 0; iSample < TST_RAND_SAMPLE_RANGES * 10240; iSample++)
+        {
+            uint32_t uRand = RTRandAdvU32Ex(hRand, uFirst, uLast);
+            CHECK_EXPR_MSG(uRand >= uFirst, ("%#RX32 %#RX32\n", uRand, uFirst));
+            CHECK_EXPR_MSG(uRand <= uLast,  ("%#RX32 %#RX32\n", uRand, uLast));
+            uint32_t off = uRand - uFirst;
+            acHits[off / uDivisor]++;
+        }
+        tstRandCheckDist(acHits, iTest);
+    }
+#endif
+
+#if 1
+    /* unsigned 64-bit */
+    static const struct
+    {
+        uint64_t u64First;
+        uint64_t u64Last;
+    } s_aU64Tests[] =
+    {
+        { 0, UINT64_MAX },
+        { 0, UINT64_MAX / 2 + UINT64_MAX / 4 },
+        { 0, UINT64_MAX / 2 + UINT64_MAX / 8 },
+        { 0, UINT64_MAX / 2 + UINT64_MAX / 16 },
+        { 0, UINT64_MAX / 2 + UINT64_MAX / 64 },
+        { 0, UINT64_MAX / 2 },
+        { UINT64_MAX / 4, UINT64_MAX / 4 * 3 },
+        { 0, UINT32_MAX },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 4 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 8 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 16 },
+        { 0, UINT32_MAX / 2 + UINT32_MAX / 64 },
+        { 0, UINT32_MAX / 2 },
+        { UINT32_MAX / 4, UINT32_MAX / 4 * 3 },
+        { 0, TST_RAND_SAMPLE_RANGES - 1 },
+        { 1234, 1234 + TST_RAND_SAMPLE_RANGES - 1 },
+    };
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(s_aU64Tests); iTest++)
+    {
+        uint32_t       acHits[TST_RAND_SAMPLE_RANGES] = {0};
+        uint64_t const uFirst = s_aU64Tests[iTest].u64First;
+        uint64_t const uLast  = s_aU64Tests[iTest].u64Last;
+        uint64_t const uRange = uLast - uFirst;  Assert(uLast >= uFirst);
+        uint64_t const uDivisor = uRange / TST_RAND_SAMPLE_RANGES + 1;
+        RTPrintf("tstRand:   TESTING RTRandAdvU64Ex(,%#RX64, %#RX64) distribution... [div=%#RX64 range=%#RX64]\n", uFirst, uLast, uDivisor, uRange);
+        for (unsigned iSample = 0; iSample < TST_RAND_SAMPLE_RANGES * 10240; iSample++)
+        {
+            uint64_t uRand = RTRandAdvU64Ex(hRand, uFirst, uLast);
+            CHECK_EXPR_MSG(uRand >= uFirst, ("%#RX64 %#RX64\n", uRand, uFirst));
+            CHECK_EXPR_MSG(uRand <= uLast,  ("%#RX64 %#RX64\n", uRand, uLast));
+            uint64_t off = uRand - uFirst;
+            acHits[off / uDivisor]++;
+        }
+        tstRandCheckDist(acHits, iTest);
+    }
+#endif
+
+#if 1
+    /* signed 32-bit */
+    static const struct
+    {
+        int32_t i32First;
+        int32_t i32Last;
+    } s_aS32Tests[] =
+    {
+        { -429496729, 429496729 },
+        { INT32_MIN, INT32_MAX },
+        { INT32_MIN, INT32_MAX / 2 },
+        { -0x20000000, INT32_MAX },
+        { -0x10000000, INT32_MAX },
+        { -0x080000000, INT32_MAX },
+        { -0x008000000, INT32_MAX },
+        { -0x000800000, INT32_MAX },
+        { -0x000080000, INT32_MAX },
+        { -0x000008000, INT32_MAX },
+        { 2, INT32_MAX / 2 },
+        { 4000000, INT32_MAX / 2 },
+        { -4000000, INT32_MAX / 2 },
+        { INT32_MIN / 2, INT32_MAX / 2 },
+        { INT32_MIN / 3, INT32_MAX / 2 },
+        { INT32_MIN / 3, INT32_MAX / 3 },
+        { INT32_MIN / 3, INT32_MAX / 4 },
+        { INT32_MIN / 4, INT32_MAX / 4 },
+        { INT32_MIN / 5, INT32_MAX / 5 },
+        { INT32_MIN / 6, INT32_MAX / 6 },
+        { INT32_MIN / 7, INT32_MAX / 6 },
+        { INT32_MIN / 7, INT32_MAX / 7 },
+        { INT32_MIN / 7, INT32_MAX / 8 },
+        { INT32_MIN / 8, INT32_MAX / 8 },
+        { INT32_MIN / 9, INT32_MAX / 9 },
+        { INT32_MIN / 9, INT32_MAX / 12 },
+        { INT32_MIN / 12, INT32_MAX / 12 },
+        { 0, TST_RAND_SAMPLE_RANGES - 1 },
+        { -TST_RAND_SAMPLE_RANGES / 2, TST_RAND_SAMPLE_RANGES / 2 - 1 },
+    };
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(s_aS32Tests); iTest++)
+    {
+        uint32_t       acHits[TST_RAND_SAMPLE_RANGES] = {0};
+        int32_t const  iFirst = s_aS32Tests[iTest].i32First;
+        int32_t const  iLast  = s_aS32Tests[iTest].i32Last;
+        uint32_t const uRange = iLast - iFirst; AssertMsg(iLast >= iFirst, ("%d\n", iTest));
+        uint32_t const uDivisor = (uRange ? uRange : UINT32_MAX) / TST_RAND_SAMPLE_RANGES + 1;
+        RTPrintf("tstRand:   TESTING RTRandAdvS32Ex(,%#RI32, %#RI32) distribution... [div=%#RX32 range=%#RX32]\n", iFirst, iLast, uDivisor, uRange);
+        for (unsigned iSample = 0; iSample < TST_RAND_SAMPLE_RANGES * 10240; iSample++)
+        {
+            int32_t iRand = RTRandAdvS32Ex(hRand, iFirst, iLast);
+            CHECK_EXPR_MSG(iRand >= iFirst, ("%#RI32 %#RI32\n", iRand, iFirst));
+            CHECK_EXPR_MSG(iRand <= iLast,  ("%#RI32 %#RI32\n", iRand, iLast));
+            uint32_t off = iRand - iFirst;
+            acHits[off / uDivisor]++;
+        }
+        tstRandCheckDist(acHits, iTest);
+    }
+#endif
+
+#if 1
+    /* signed 64-bit */
+    static const struct
+    {
+        int64_t i64First;
+        int64_t i64Last;
+    } s_aS64Tests[] =
+    {
+        { INT64_MIN, INT64_MAX },
+        { INT64_MIN, INT64_MAX / 2 },
+        { INT64_MIN / 2, INT64_MAX / 2 },
+        { INT64_MIN / 2 + INT64_MIN / 4, INT64_MAX / 2 },
+        { INT64_MIN / 2 + INT64_MIN / 8, INT64_MAX / 2 },
+        { INT64_MIN / 2 + INT64_MIN / 16, INT64_MAX / 2 },
+        { INT64_MIN / 2 + INT64_MIN / 64, INT64_MAX / 2 },
+        { INT64_MIN / 2 + INT64_MIN / 64, INT64_MAX / 2 + INT64_MAX / 64 },
+        { INT64_MIN / 2, INT64_MAX / 2 + INT64_MAX / 64 },
+        { INT64_MIN / 2, INT64_MAX / 2 + INT64_MAX / 8 },
+        { INT64_MIN / 2, INT64_MAX / 2 - INT64_MAX / 8 },
+        { INT64_MIN / 2 - INT64_MIN / 4, INT64_MAX / 2 - INT64_MAX / 4 },
+        { INT64_MIN / 2 - INT64_MIN / 4, INT64_MAX / 2 - INT64_MAX / 8 },
+        { INT64_MIN / 2 - INT64_MIN / 8, INT64_MAX / 2 - INT64_MAX / 8 },
+        { INT64_MIN / 2 - INT64_MIN / 16, INT64_MAX / 2 - INT64_MAX / 8 },
+        { INT64_MIN / 2 - INT64_MIN / 16, INT64_MAX / 2 - INT64_MAX / 16 },
+        { INT64_MIN / 2 - INT64_MIN / 32, INT64_MAX / 2 - INT64_MAX / 16 },
+        { INT64_MIN / 2 - INT64_MIN / 32, INT64_MAX / 2 - INT64_MAX / 32 },
+        { INT64_MIN / 2 - INT64_MIN / 64, INT64_MAX / 2 - INT64_MAX / 64 },
+        { INT64_MIN / 2 - INT64_MIN / 8, INT64_MAX / 2 },
+        { INT64_MIN / 4, INT64_MAX / 4 },
+        { INT64_MIN / 5, INT64_MAX / 5 },
+        { INT64_MIN / 6, INT64_MAX / 6 },
+        { INT64_MIN / 7, INT64_MAX / 7 },
+        { INT64_MIN / 8, INT64_MAX / 8 },
+        { INT32_MIN, INT32_MAX },
+        { INT32_MIN, INT32_MAX / 2 },
+        { -0x20000000, INT32_MAX },
+        { -0x10000000, INT32_MAX },
+        { -0x7f000000, INT32_MAX },
+        { -0x08000000, INT32_MAX },
+        { -0x00800000, INT32_MAX },
+        { -0x00080000, INT32_MAX },
+        { -0x00008000, INT32_MAX },
+        { 2, INT32_MAX / 2 },
+        { 4000000, INT32_MAX / 2 },
+        { -4000000, INT32_MAX / 2 },
+        { INT32_MIN / 2, INT32_MAX / 2 },
+        { 0, TST_RAND_SAMPLE_RANGES - 1 },
+        { -TST_RAND_SAMPLE_RANGES / 2, TST_RAND_SAMPLE_RANGES / 2 - 1 }
+    };
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(s_aS64Tests); iTest++)
+    {
+        uint32_t       acHits[TST_RAND_SAMPLE_RANGES] = {0};
+        int64_t const  iFirst = s_aS64Tests[iTest].i64First;
+        int64_t const  iLast  = s_aS64Tests[iTest].i64Last;
+        uint64_t const uRange = iLast - iFirst; AssertMsg(iLast >= iFirst, ("%d\n", iTest));
+        uint64_t const uDivisor = (uRange ? uRange : UINT64_MAX) / TST_RAND_SAMPLE_RANGES + 1;
+        RTPrintf("tstRand:   TESTING RTRandAdvS64Ex(,%#RI64, %#RI64) distribution... [div=%#RX64 range=%#016RX64]\n", iFirst, iLast, uDivisor, uRange);
+        for (unsigned iSample = 0; iSample < TST_RAND_SAMPLE_RANGES * 10240; iSample++)
+        {
+            int64_t iRand = RTRandAdvS64Ex(hRand, iFirst, iLast);
+            CHECK_EXPR_MSG(iRand >= iFirst, ("%#RI64 %#RI64\n", iRand, iFirst));
+            CHECK_EXPR_MSG(iRand <= iLast,  ("%#RI64 %#RI64\n", iRand, iLast));
+            uint64_t off = iRand - iFirst;
+            acHits[off / uDivisor]++;
+        }
+        tstRandCheckDist(acHits, iTest);
+    }
+#endif
+
+    /*
+     * Destroy it.
+     */
+    int rc = RTRandAdvDestroy(hRand);
+    CHECK_EXPR_MSG(rc == VINF_SUCCESS,  ("RTRandAdvDestroy(%p) -> %Rrc (%d)\n", (uintptr_t)hRand, rc, rc));
+
+    return 0;
+}
+
+
+
 int main()
 {
     RTR3Init(false);
@@ -110,6 +336,7 @@ int main()
      */
     /** @todo RTRand smoke testing. */
 
+#if 1
     /*
      * Test distribution.
      */
@@ -322,6 +549,21 @@ int main()
         tstRandCheckDist(acHits, iTest);
     }
 #endif
+#endif /* Testing RTRand */
+
+#if 1
+    /*
+     * Test the various random generators.
+     */
+    RTPrintf("tstRand: TESTING RTRandAdvCreateParkerMiller\n");
+    RTRAND hRand;
+    int rc = RTRandAdvCreateParkMiller(&hRand);
+    CHECK_EXPR_MSG(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+        if (tstRandAdv(hRand))
+            return 1;
+
+#endif /* Testing RTRandAdv */
 
     /*
      * Summary.

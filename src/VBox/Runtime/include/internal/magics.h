@@ -54,6 +54,8 @@
 #define RTMEMHDR_MAGIC              0x18090119
 /** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
 #define RTR0MEMOBJ_MAGIC            0x19611210
+/** RTRANDINT::u32Magic. (Alan Moore) */
+#define RTRANDINT_MAGIC             0x19531118
 /** Magic for the event semaphore structure. (Neil Gaiman) */
 #define RTSEMEVENT_MAGIC            0x19601110
 /** Magic for the multiple release event semaphore structure. (Isaac Asimov) */

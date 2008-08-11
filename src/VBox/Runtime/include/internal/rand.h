@@ -32,6 +32,89 @@
 #define ___internal_rand_h
 
 #include <iprt/types.h>
+#include <iprt/critsect.h>
+
+/** Pointer to a random number generator instance. */
+typedef struct RTRANDINT *PRTRANDINT;
+
+/**
+ * Random number generator instance.
+ *
+ * @remarks Not sure if it makes sense to have three random getters...
+ */
+typedef struct RTRANDINT
+{
+    /** Magic value (RTRANDINT_MAGIC). */
+    uint32_t    u32Magic;
+#if 0 /** @todo later. */
+    /** Fast mutex semaphore that serializes the access, this is optional. */
+    PRTCRITSECT pCritSect;
+#endif
+
+    /**
+     * Generates random bytes.
+     *
+     * @param   pThis       Pointer to the instance data.
+     * @param   pb          Where to store the bytes.
+     * @param   cb          The number of bytes to produce.
+     */
+    DECLCALLBACKMEMBER(void ,    pfnGetBytes)(PRTRANDINT pThis, uint8_t *pb, size_t cb);
+
+    /**
+     * Generates a unsigned 32-bit random number.
+     *
+     * @returns The random number.
+     * @param   pThis       Pointer to the instance data.
+     * @param   u32First    The first number in the range.
+     * @param   u32Last     The last number in the range (i.e. inclusive).
+     */
+    DECLCALLBACKMEMBER(uint32_t, pfnGetU32)(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
+
+    /**
+     * Generates a unsigned 64-bit random number.
+     *
+     * @returns The random number.
+     * @param   pThis       Pointer to the instance data.
+     * @param   u64First    The first number in the range.
+     * @param   u64Last     The last number in the range (i.e. inclusive).
+     */
+    DECLCALLBACKMEMBER(uint64_t, pfnGetU64)(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+
+    /**
+     * Generic seeding.
+     *
+     * @returns IPRT status code.
+     * @param   pThis       Pointer to the instance data.
+     * @param   u64Seed     The seed.
+     */
+    DECLCALLBACKMEMBER(int, pfnSeed)(PRTRANDINT pThis, uint64_t u64Seed);
+
+    /**
+     * Destroys the instance.
+     *
+     * The callee is responsible for freeing all resources, including
+     * the instance data.
+     *
+     * @returns IPRT status code. State undefined on failure.
+     * @param   pThis       Pointer to the instance data.
+     */
+    DECLCALLBACKMEMBER(int, pfnDestroy)(PRTRANDINT pThis);
+
+    /** Union containing the specific state info for each generator. */
+    union
+    {
+        struct RTRandParkMiller
+        {
+            /** The context. */
+            uint32_t    u32Ctx;
+            /** The number of single bits used to fill in the 31st bit. */
+            uint32_t    u32Bits;
+            /** The number bits in u32Bits. */
+            uint32_t    cBits;
+        } ParkMiller;
+    } u;
+} RTRANDINT;
+
 
 __BEGIN_DECLS
 
@@ -51,6 +134,14 @@ int rtRandGenBytesNative(void *pv, size_t cb);
 
 void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW;
 
+DECLCALLBACK(void)      rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb);
+DECLCALLBACK(void)      rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *pb, size_t cb);
+DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
+DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
+DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+
 __END_DECLS
 
 #endif
+
