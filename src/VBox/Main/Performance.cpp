@@ -434,20 +434,20 @@ bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
 {
     ElementList::const_iterator it;
 
-    printf("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str());
+    LogFlowThisFunc(("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str()));
     for (it = mElements.begin(); it != mElements.end(); it++)
     {
-        printf("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str());
+        LogFlowThisFunc(("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str()));
         if ((*it).first.isNull() || (*it).first == object)
         {
             // Objects match, compare names
             if ((*it).second == "*" || (*it).second == name)
             {
-                printf("...found!\n");
+                LogFlowThisFunc(("...found!\n"));
                 return true;
             }
         }
     }
-    printf("...no matches!\n");
+    LogFlowThisFunc(("...no matches!\n"));
     return false;
 }

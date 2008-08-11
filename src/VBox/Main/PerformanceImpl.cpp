@@ -255,7 +255,11 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
         if (filter.match((*it)->getObject(), (*it)->getName()))
         {
+            LogFlow (("PerformanceCollector::SetupMetrics() setting period to %u,"
+                      " count to %u for %s\n", aPeriod, aCount, (*it)->getName()));
             (*it)->init(aPeriod, aCount);
+            LogFlow (("PerformanceCollector::SetupMetrics() enabling %s\n",
+                      aPeriod, aCount, (*it)->getName()));
             (*it)->enable();
         }
 
@@ -349,6 +353,8 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
         ULONG *values, length;
         /* @todo We may want to revise the query method to get rid of excessive alloc/memcpy calls. */
         (*it)->query(&values, &length);
+        LogFlow (("PerformanceCollector::QueryMetricsData() querying metric %s "
+                  "returned %d values.\n", (*it)->getName(), length));
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
         Bstr tmp((*it)->getName());
         tmp.detachTo(&retNames[i]);
