@@ -10572,7 +10572,7 @@
 
         The data itself and related metric information are returned in four
         parallel and one flattened array of arrays. Elements of @c
-        returnMetricNames, @c returnObjects, @c returnDataIndices and @
+        returnMetricNames, @c returnObjects, @c returnDataIndices and @c
         returnDataLengths with the same index describe one set of values
         corresponding to a single metric.
 
@@ -10584,6 +10584,17 @@
         <note>
           @c Null metrics array means all applicable metrics. @c Null object
           array means all existing objects.
+        </note>
+        <note>
+          Data collection continues behind the scenes after call to @c
+          queryMetricsData. The return data can be seen as the snapshot of 
+          the current state at the time of @c queryMetricsData call. The 
+          internally kept metric values are not cleared by the call. This makes
+          possible querying different subsets of metrics or aggregates with
+          subsequent calls. If periodic querying is needed it is highly
+          suggested to query the values with @c interval*count period to avoid
+          confusion. This way a completely new set of data values will be 
+          provided by each query.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
