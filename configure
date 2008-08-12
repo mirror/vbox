@@ -1694,6 +1694,9 @@ for option in $*; do
     --nofatal)
       nofatal=1
       ;;
+    --env-only)
+      ENV_ONLY=1
+      ;;
     --with-gcc=*)
       CC=`echo $option | cut -d'=' -f2`
       ;;
@@ -1841,6 +1844,8 @@ fi
 # first determine our environment
 check_environment
 check_kbuild
+
+[ -n "$ENV_ONLY" ] && exit 0
 
 # append the tools directory to the default search path
 echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
