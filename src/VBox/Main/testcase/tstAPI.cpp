@@ -965,7 +965,7 @@ int main(int argc, char *argv[])
         // Note that one needs to set up metrics after a session is open for a machine.
         com::SafeIfaceArray<IUnknown> objects(2);
         host.queryInterfaceTo(&objects[0]);
-        sessionMachine.queryInterfaceTo(&objects[1]);
+        machine.queryInterfaceTo(&objects[1]);
         CHECK_ERROR_BREAK (collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
                                                    ComSafeArrayAsInParam(objects), 1u, 10u) );
 

@@ -7578,7 +7578,7 @@ void Machine::copyFrom (Machine *aThat)
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Machine::registerMetrics (PerformanceCollector *aCollector, RTPROCESS pid)
+void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
     pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
     /* Create sub metrics */
@@ -7588,7 +7588,7 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, RTPROCESS pid)
     /* Create and register base metrics */
     IUnknown *objptr;
 
-    ComObjPtr<Machine> tmp = this;
+    ComObjPtr<Machine> tmp = aMachine;
     tmp.queryInterfaceTo (&objptr);
     pm::BaseMetric *cpuLoad =
         metricFactory->createMachineCpuLoad (objptr, pid,
@@ -7844,7 +7844,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    registerMetrics (mParent->performanceCollector(), mData->mSession.mPid);
+    registerMetrics (mParent->performanceCollector(), aMachine, mData->mSession.mPid);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     /* Confirm a successful initialization when it's the case */
