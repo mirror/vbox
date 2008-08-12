@@ -57,6 +57,9 @@ if test -f /opt/VirtualBox/VBoxHeadless; then
         /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxVRDP=/opt/VirtualBox/VBox.sh s
     fi
 fi
+if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
+    /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
+fi
 /usr/sbin/removef $PKGINST /opt/VirtualBox/etc/devlink.tab 1>/dev/null
 /usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
 rm -rf /opt/VirtualBox/etc

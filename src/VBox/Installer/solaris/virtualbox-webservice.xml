@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+# Sun xVM VirtualBox
+# Solaris SMF service manifest for VirtualBox webservice server.
+# $Id$
+
+     Copyright (C) 2008 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+-->
+
+<service_bundle type='manifest' name='SUNWvbox:webservice'>
+
+<service
+    name='application/virtualbox/webservice'
+    type='service'
+    version='1'>
+
+    <create_default_instance enabled='false' />
+
+    <single_instance />
+
+    <dependency
+        name='fs-local'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+            <service_fmri value='svc:/system/filesystem/local' />
+    </dependency>
+
+    <dependency
+        name='network-service'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+            <service_fmri value='svc:/network/service' />
+    </dependency>
+
+    <dependency
+        name='name-services'
+        grouping='require_all'
+        restart_on='refresh'
+        type='service'>
+            <service_fmri value='svc:/milestone/name-services' />
+    </dependency>
+
+    <dependent
+        name='virtualbox-webservice_multi-user'
+        grouping='optional_all'
+        restart_on='none'>
+            <service_fmri value='svc:/milestone/multi-user' />
+    </dependency>
+
+    <exec_method
+        type='method'
+        name='start'
+        exec='/opt/VirtualBox/smf-vboxwebsrv %m'
+        timeout_seconds='15'>
+        <method_context>
+            <method_credential user='root' group='root' />
+        </method_context>
+    </exec_method>
+
+    <exec_method
+        type='method'
+        name='stop'
+        exec='/opt/VirtualBox/smf-vboxwebsrv %m'
+        timeout_seconds='15'>
+        <method_context>
+            <method_credential user='root' group='root' />
+        </method_context>
+    </exec_method>
+
+    <template>
+        <common_name>
+            <loctext xml:lang='C'>
+                VirtualBox Webservice
+            </loctext>
+        </common_name>
+    </template>
+
+    <stability value='External' />
+
+</service>
+
+</service_bundle>
