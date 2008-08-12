@@ -66,6 +66,7 @@
 #include <iprt/process.h>
 #include <iprt/ldr.h>
 #include <iprt/cpputils.h>
+#include <iprt/system.h>
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
@@ -4245,13 +4246,26 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
     {
         /* some introductory information */
         RTTIMESPEC timeSpec;
-        char nowUct[64];
-        RTTimeSpecToString(RTTimeNow(&timeSpec), nowUct, sizeof(nowUct));
+        char szTmp[256];
+        RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
         RTLogRelLogger(loggerRelease, 0, ~0U,
                        "VirtualBox %s r%d %s (%s %s) release log\n"
                        "Log opened %s\n",
                        VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
-                       __DATE__, __TIME__, nowUct);
+                       __DATE__, __TIME__, szTmp);
+
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Product: %s\n", szTmp);
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Release: %s\n", szTmp);
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Version: %s\n", szTmp);
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
 
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(loggerRelease);
