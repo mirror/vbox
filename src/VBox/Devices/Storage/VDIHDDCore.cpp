@@ -315,7 +315,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
                           uint64_t cbSize, unsigned uImageFlags,
                           const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                          PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                          PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                           PFNVMPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
@@ -414,6 +414,9 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: setting image size failed for '%s'"), pImage->pszFilename);
         goto out;
     }
+
+    /* Use specified image uuid */
+    *getImageCreationUUID(&pImage->Header) = *pUuid;
 
     /* Generate image last-modify uuid */
     RTUuidCreate(getImageModificationUUID(&pImage->Header));
@@ -799,13 +802,13 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      uint64_t cbSize, unsigned uImageFlags,
                      const char *pszComment,
                      PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                     PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                     PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                      void *pvUser, unsigned uPercentStart,
                      unsigned uPercentSpan, PVDINTERFACE pInterfaces,
                      void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
     int rc;
     PVDIIMAGEDESC pImage;
 
@@ -842,7 +845,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->pInterfaceErrorCallbacks = NULL;
 
     rc = vdiCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
-                        pPCHSGeometry, pLCHSGeometry,
+                        pPCHSGeometry, pLCHSGeometry, pUuid,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
     {

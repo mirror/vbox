@@ -1171,8 +1171,8 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     LCHS.cSectors = 0;
     vrc = VDCreateBase(pDisk, "VMDK", Utf8Str(filename).raw(),
                        VD_IMAGE_TYPE_FIXED, cbSize,
-		       VD_VMDK_IMAGE_FLAGS_RAWDISK, (char *)&RawDescriptor,
-		       &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL, NULL, NULL);
+                       VD_VMDK_IMAGE_FLAGS_RAWDISK, (char *)&RawDescriptor,
+		               &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (VBOX_FAILURE(vrc))
     {
         RTPrintf("Error while creating the raw disk VMDK: %Vrc\n", vrc);

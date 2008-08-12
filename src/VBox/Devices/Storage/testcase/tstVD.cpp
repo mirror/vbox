@@ -82,8 +82,8 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pszBackend, pszFilename, enmType, cbSize,
-                      uFlags, "Test image", &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
-                      NULL, NULL);
+                      uFlags, "Test image", &PCHS, &LCHS, NULL,
+                      VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     CHECK("VDCreateBase()");
 
     VDDumpImages(pVD);
@@ -100,49 +100,49 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
 /* Start of IPRT code */
 
 /**
- * The following code is based on the work of George Marsaglia 
- * taken from 
+ * The following code is based on the work of George Marsaglia
+ * taken from
  * http://groups.google.ws/group/comp.sys.sun.admin/msg/7c667186f6cbf354
- * and 
- * http://groups.google.ws/group/comp.lang.c/msg/0e170777c6e79e8d 
+ * and
+ * http://groups.google.ws/group/comp.lang.c/msg/0e170777c6e79e8d
  */
 
-/* 
-A C version of a very very good 64-bit RNG is given below. 
-You should be able to adapt it to your particular needs. 
+/*
+A C version of a very very good 64-bit RNG is given below.
+You should be able to adapt it to your particular needs.
 
-It is based on the complimentary-multiple-with-carry 
-sequence 
-         x(n)=a*x(n-4)+carry mod 2^64-1, 
-which works as follows: 
-Assume a certain multiplier 'a' and a base 'b'. 
-Given a current x value and a current carry 'c', 
-form:               t=a*x+c 
-Then the new carry is     c=floor(t/b) 
-and the new x value is    x = b-1-(t mod b). 
-
-
-Ordinarily, for 32-bit mwc or cmwc sequences, the 
-value t=a*x+c can be formed in 64 bits, then the new c 
-is the top and the new x the bottom 32 bits (with a little 
-fiddling when b=2^32-1 and cmwc rather than mwc.) 
+It is based on the complimentary-multiple-with-carry
+sequence
+         x(n)=a*x(n-4)+carry mod 2^64-1,
+which works as follows:
+Assume a certain multiplier 'a' and a base 'b'.
+Given a current x value and a current carry 'c',
+form:               t=a*x+c
+Then the new carry is     c=floor(t/b)
+and the new x value is    x = b-1-(t mod b).
 
 
-To generate 64-bit x's, it is difficult to form 
-t=a*x+c in 128 bits then get the new c and new x 
-from the the top and bottom halves. 
-But if 'a' has a special form, for example, 
-a=2^62+2^47+2 and b=2^64-1, then the new c and 
-the new x can be formed with shifts, tests and +/-'s, 
-again with a little fiddling because b=2^64-1 rather 
-than 2^64.   (The latter is not an optimal choice because, 
-being a square, it cannot be a primitive root of the 
-prime a*b^k+1, where 'k' is the 'lag': 
-        x(n)=a*x(n-k)+carry mod b.) 
-But the multiplier a=2^62+2^47+2 makes a*b^4+1 a prime for 
-which b=2^64-1 is a primitive root, and getting  the new x and 
-new c  can be done with arithmetic on integers the size of x. 
-*/ 
+Ordinarily, for 32-bit mwc or cmwc sequences, the
+value t=a*x+c can be formed in 64 bits, then the new c
+is the top and the new x the bottom 32 bits (with a little
+fiddling when b=2^32-1 and cmwc rather than mwc.)
+
+
+To generate 64-bit x's, it is difficult to form
+t=a*x+c in 128 bits then get the new c and new x
+from the the top and bottom halves.
+But if 'a' has a special form, for example,
+a=2^62+2^47+2 and b=2^64-1, then the new c and
+the new x can be formed with shifts, tests and +/-'s,
+again with a little fiddling because b=2^64-1 rather
+than 2^64.   (The latter is not an optimal choice because,
+being a square, it cannot be a primitive root of the
+prime a*b^k+1, where 'k' is the 'lag':
+        x(n)=a*x(n-k)+carry mod b.)
+But the multiplier a=2^62+2^47+2 makes a*b^4+1 a prime for
+which b=2^64-1 is a primitive root, and getting  the new x and
+new c  can be done with arithmetic on integers the size of x.
+*/
 
 struct RndCtx
 {
@@ -158,8 +158,8 @@ typedef struct RndCtx RNDCTX;
 typedef RNDCTX *PRNDCTX;
 
 /**
- * Initialize seeds. 
- *  
+ * Initialize seeds.
+ *
  * @remarks You should choose ANY 4 random 64-bit
  * seeds x,y,z,w < 2^64-1 and a random seed c in
  * 0<= c < a = 2^62+2^47+2.
@@ -195,17 +195,17 @@ RTDECL(uint32_t) RTPRandGetSeedInfo(PRNDCTX pCtx)
  */
 RTDECL(uint64_t) RTPRandU64(PRNDCTX pCtx)
 {
-    uint64_t t; 
-    t = (pCtx->x<<47) + (pCtx->x<<62) + (pCtx->x<<1); 
-    t += pCtx->c; t+= (t < pCtx->c); 
-    pCtx->c = (t<pCtx->c) + (pCtx->x>>17) + (pCtx->x>>2) + (pCtx->x>>63); 
-    pCtx->x = pCtx->y;  pCtx->y = pCtx->z ; pCtx->z = pCtx->w; 
-    return (pCtx->w = ~(t + pCtx->c)-1); 
-} 
+    uint64_t t;
+    t = (pCtx->x<<47) + (pCtx->x<<62) + (pCtx->x<<1);
+    t += pCtx->c; t+= (t < pCtx->c);
+    pCtx->c = (t<pCtx->c) + (pCtx->x>>17) + (pCtx->x>>2) + (pCtx->x>>63);
+    pCtx->x = pCtx->y;  pCtx->y = pCtx->z ; pCtx->z = pCtx->w;
+    return (pCtx->w = ~(t + pCtx->c)-1);
+}
 
 /**
- * Generate a 64-bit unsigned pseudo random number in the set 
- * [u64First..u64Last]. 
+ * Generate a 64-bit unsigned pseudo random number in the set
+ * [u64First..u64Last].
  *
  * @returns The pseudo random number.
  * @param   u64First    First number in the set.
@@ -239,11 +239,11 @@ RTDECL(uint32_t) RTPRandU32(PRNDCTX pCtx)
              pCtx->u32y ^= pCtx->u32y>>17,
              pCtx->u32y ^= pCtx->u32y<<5,
              pCtx->u32x + pCtx->u32y );
-} 
+}
 
 /**
- * Generate a 32-bit unsigned pseudo random number in the set 
- * [u32First..u32Last]. 
+ * Generate a 32-bit unsigned pseudo random number in the set
+ * [u32First..u32Last].
  *
  * @returns The pseudo random number.
  * @param   u32First    First number in the set.
@@ -282,8 +282,8 @@ static void initializeRandomGenerator(PRNDCTX pCtx, uint32_t u32Seed)
         RTPrintf("ERROR: Failed to initialize random generator. RC=%Vrc\n", rc);
     else
     {
-        RTPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));    
-        RTLogPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));    
+        RTPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));
+        RTLogPrintf("INFO: Random generator seed used: %x\n", RTPRandGetSeedInfo(pCtx));
     }
 }
 
@@ -480,7 +480,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
         rc = VDCreateBase(pVD, pszBackend, pszBaseFilename,
                           VD_IMAGE_TYPE_NORMAL, u64DiskSize,
                           VD_IMAGE_FLAGS_NONE, "Test image",
-                          &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
+                          &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL,
                           NULL, NULL);
         CHECK("VDCreateBase()");
     }
@@ -505,7 +505,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     writeSegmentsToDisk(pVD, pvBuf, paBaseSegments);
 
     rc = VDCreateDiff(pVD, pszBackend, pszDiffFilename,
-                      VD_IMAGE_FLAGS_NONE, "Test diff image",
+                      VD_IMAGE_FLAGS_NONE, "Test diff image", NULL,
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     CHECK("VDCreateDiff()");
 
@@ -586,7 +586,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     rc = VDCreateBase(pVD, pszBackend, pszFilename,
                       VD_IMAGE_TYPE_NORMAL, u64DiskSize,
                       VD_IMAGE_FLAGS_NONE, "Test image",
-                      &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
+                      &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL,
                       NULL, NULL);
     CHECK("VDCreateBase()");
 
