@@ -541,6 +541,7 @@ typedef struct _VRDPUSBREQNEGOTIATERET
 
 /** The version of the VRDP server interface. */
 #define VRDP_INTERFACE_VERSION_1 (1)
+#define VRDP_INTERFACE_VERSION_2 (2)
 
 /** The header that does not change when the interface changes. */
 typedef struct _VRDPINTERFACEHDR
@@ -717,6 +718,196 @@ typedef struct _VRDPENTRYPOINTS_1
                                             uint32_t cbBuffer,
                                             uint32_t *pcbOut));
 } VRDPENTRYPOINTS_1;
+
+/** The VRDP server entry points. Interface version 2. 
+ *  A new entry point VRDPRedirect has been added relative to version 1.
+ */
+typedef struct _VRDPENTRYPOINTS_2
+{
+    /** The header. */
+    VRDPINTERFACEHDR header;
+
+    /** Destroy the server instance.
+     *
+     * @param hServer The server instance handle.
+     *
+     * @return IPRT status code.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPDestroy,(HVRDPSERVER hServer));
+
+    /** The server should start to accept clients connections.
+     *
+     * @param hServer The server instance handle.
+     * @param fEnable Whether to enable or disable client connections.
+     *                When is false, all existing clients are disconnected.
+     *
+     * @return IPRT status code.
+     */
+    DECLR3CALLBACKMEMBER(int, VRDPEnableConnections,(HVRDPSERVER hServer,
+                                                   bool fEnable));
+
+    /** The server should disconnect the client.
+     *
+     * @param hServer     The server instance handle.
+     * @param u32ClientId The client identifier.
+     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the 
+     *                    client before disconnecting.
+     *
+     * @return IPRT status code.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPDisconnect,(HVRDPSERVER hServer,
+                                             uint32_t u32ClientId,
+                                             bool fReconnect));
+
+    /**
+     * Inform the server that the display was resized.
+     * The server will query information about display
+     * from the application via callbacks.
+     *
+     * @param hServer Handle of VRDP server instance.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPResize,(HVRDPSERVER hServer));
+
+    /**
+     * Send a update.
+     *
+     * @param hServer   Handle of VRDP server instance.
+     * @param uScreenId The screen index.
+     * @param pvUpdate  Pointer to VBoxGuest.h::VRDPORDERHDR structure with extra data.
+     * @param cbUpdate  Size of the update data.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPUpdate,(HVRDPSERVER hServer,
+                                         unsigned uScreenId,
+                                         void *pvUpdate,
+                                         uint32_t cbUpdate));
+
+    /**
+     * Set the mouse pointer shape.
+     *
+     * @param hServer  Handle of VRDP server instance.
+     * @param pPointer The pointer shape information.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPColorPointer,(HVRDPSERVER hServer,
+                                               const VRDPCOLORPOINTER *pPointer));
+
+    /**
+     * Hide the mouse pointer.
+     *
+     * @param hServer Handle of VRDP server instance.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPHidePointer,(HVRDPSERVER hServer));
+
+    /**
+     * Queues the samples to be sent to clients.
+     *
+     * @param hServer    Handle of VRDP server instance.
+     * @param pvSamples  Address of samples to be sent.
+     * @param cSamples   Number of samples.
+     * @param format     Encoded audio format for these samples.
+     *
+     * @note Initialized to NULL when the application audio callbacks are NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPAudioSamples,(HVRDPSERVER hServer,
+                                               const void *pvSamples,
+                                               uint32_t cSamples,
+                                               VRDPAUDIOFORMAT format));
+
+    /**
+     * Sets the sound volume on clients.
+     *
+     * @param hServer    Handle of VRDP server instance.
+     * @param left       0..0xFFFF volume level for left channel.
+     * @param right      0..0xFFFF volume level for right channel.
+     *
+     * @note Initialized to NULL when the application audio callbacks are NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPAudioVolume,(HVRDPSERVER hServer,
+                                              uint16_t u16Left,
+                                              uint16_t u16Right));
+
+    /**
+     * Sends a USB request.
+     *
+     * @param hServer      Handle of VRDP server instance.
+     * @param u32ClientId  An identifier that allows the server to find the corresponding client.
+     *                     The identifier is always passed by the server as a parameter
+     *                     of the FNVRDPUSBCALLBACK. Note that the value is the same as
+     *                     in the VRDPSERVERCALLBACK functions.
+     * @param pvParm       Function specific parameters buffer.
+     * @param cbParm       Size of the buffer.
+     *
+     * @note Initialized to NULL when the application USB callbacks are NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPUSBRequest,(HVRDPSERVER hServer,
+                                             uint32_t u32ClientId,
+                                             void *pvParm,
+                                             uint32_t cbParm));
+
+    /**
+     * Called by the application when (VRDP_CLIPBOARD_FUNCTION_*):
+     *   - (0) guest announces available clipboard formats;
+     *   - (1) guest requests clipboard data;
+     *   - (2) guest responds to the client's request for clipboard data.
+     *
+     * @param hServer     The VRDP server handle.
+     * @param u32Function The cause of the call.
+     * @param u32Format   Bitmask of announced formats or the format of data.
+     * @param pvData      Points to: (1) buffer to be filled with clients data;
+     *                               (2) data from the host.
+     * @param cbData      Size of 'pvData' buffer in bytes.
+     * @param pcbActualRead Size of the copied data in bytes.
+     *
+     * @note Initialized to NULL when the application clipboard callbacks are NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPClipboard,(HVRDPSERVER hServer,
+                                            uint32_t u32Function,
+                                            uint32_t u32Format,
+                                            void *pvData,
+                                            uint32_t cbData,
+                                            uint32_t *pcbActualRead));
+
+    /**
+     * Query various information from the VRDP server.
+     *
+     * @param hServer   The VRDP server handle.
+     * @param index     VRDP_QI_* identifier of information to be returned.
+     * @param pvBuffer  Address of memory buffer to which the information must be written.
+     * @param cbBuffer  Size of the memory buffer in bytes.
+     * @param pcbOut    Size in bytes of returned information value.
+     *
+     * @remark The caller must check the *pcbOut. 0 there means no information was returned.
+     *         A value greater than cbBuffer means that information is too big to fit in the
+     *         buffer, in that case no information was placed to the buffer.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPQueryInfo,(HVRDPSERVER hServer,
+                                            uint32_t index,
+                                            void *pvBuffer,
+                                            uint32_t cbBuffer,
+                                            uint32_t *pcbOut));
+
+    /**
+     * The server should redirect the client to the specified server.
+     *
+     * @param hServer       The server instance handle.
+     * @param u32ClientId   The client identifier.
+     * @param pszServer     The server to redirect the client to.
+     * @param pszUser       The username to use for the redirection.
+     *                      Can be NULL.
+     * @param pszDomain     The domain. Can be NULL.
+     * @param pszPassword   The password. Can be NULL.
+     * @param u32SessionId  The ID of the session to redirect to.
+     * @param pszCookie     The routing token used by a load balancer to
+     *                      route the redirection. Can be NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDPRedirect,(HVRDPSERVER hServer,
+                                             uint32_t u32ClientId,
+                                             const char *pszServer,
+                                             const char *pszUser,
+                                             const char *pszDomain,
+                                             const char *pszPassword,
+                                             uint32_t u32SessionId,
+                                             const char *pszCookie));
+} VRDPENTRYPOINTS_2;
 
 #define VRDP_QP_NETWORK_PORT      (1)
 #define VRDP_QP_NETWORK_ADDRESS   (2)
@@ -937,6 +1128,9 @@ typedef struct _VRDPCALLBACKS_1
                                                         unsigned uScreenId));
 
 } VRDPCALLBACKS_1;
+
+/* Callbacks are the same for the version 1 and version 2 interfaces. */
+typedef VRDPCALLBACKS_1 VRDPCALLBACKS_2;
 
 /**
  * Create a new VRDP server instance. The instance is fully functional but refuses
