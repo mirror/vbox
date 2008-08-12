@@ -735,7 +735,7 @@ protected:
     void copyFrom (Machine *aThat);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics (PerformanceCollector *aCollector, RTPROCESS pid);
+    void registerMetrics (PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
     void unregisterMetrics (PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
