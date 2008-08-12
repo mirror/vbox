@@ -114,9 +114,6 @@ void VBoxVMSettingsSFDetails::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxVMSettingsSFDetails::retranslateUi (this);
 
-    mPsPath->setNoneToolTip (tr ("No shared folder path is currently selected."));
-    mPsPath->setSelectToolTip (tr ("Selects shared folder path."));
-
     switch (mType)
     {
         case AddType:

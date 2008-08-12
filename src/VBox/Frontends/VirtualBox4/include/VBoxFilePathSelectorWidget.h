@@ -37,24 +37,31 @@ class VBoxFilePathSelectorWidget: public QIWithRetranslateUI<QComboBox>
 
 public:
 
-    enum SelectorMode
+    enum Mode
     {
-        PathMode = 0,
-        FileMode
+        Mode_Folder = 0,
+        Mode_File
     };
 
     VBoxFilePathSelectorWidget (QWidget *aParent = 0);
    ~VBoxFilePathSelectorWidget();
 
-    void setMode (SelectorMode aMode);
-    SelectorMode mode() const;
+    void setMode (Mode aMode);
+    Mode mode() const;
 
     void setResetEnabled (bool aEnabled);
     bool isResetEnabled () const;
 
+#if 0
+
+    /// @todo enabling this requires to allow to customize the names of the
+    /// "Other..." and "Reset" items too which is not yet done.
+
     void setNoneToolTip (const QString &aText);
     void setSelectToolTip (const QString &aText);
     void setResetToolTip (const QString &aText);
+
+#endif /* 0 */
 
     bool isModified() const;
 
@@ -88,7 +95,7 @@ private:
     /* Private member vars */
     QFileIconProvider *mIconProvider;
     QAction *mCopyAction;
-    SelectorMode mMode;
+    Mode mMode;
     QString mPath;
     QString mNoneStr;
     QString mNoneTip;

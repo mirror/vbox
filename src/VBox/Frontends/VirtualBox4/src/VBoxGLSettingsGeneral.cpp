@@ -30,7 +30,7 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsGeneral::setupUi (this);
 
-    mPsVRDP->setMode (VBoxFilePathSelectorWidget::FileMode);
+    mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File);
 
     /* Setup connections */
     connect (mPsVdi,  SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
@@ -75,20 +75,17 @@ void VBoxGLSettingsGeneral::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
 
-    mPsVdi->setWhatsThis (tr ("Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks."));
-    mPsVdi->setNoneToolTip (tr ("The actual default path will be displayed after accepting the changes and opening this dialog again."));
-    mPsVdi->setSelectToolTip (tr ("Opens a dialog to select the default VDI folder."));
-    mPsVdi->setResetToolTip (tr ("Resets the VDI folder path to the default value."));
-
-    mPsMach->setWhatsThis (tr ("Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines."));
-    mPsMach->setNoneToolTip (tr ("The actual default path will be displayed after accepting the changes and opening this dialog again."));
-    mPsMach->setSelectToolTip (tr ("Opens a dialog to select the default virtual machine folder."));
-    mPsMach->setResetToolTip (tr ("Resets the virtual machine folder path to the default value."));
-
-    mPsVRDP->setWhatsThis (tr ("Displays the path to the library that provides authentication for Remote Display (VRDP) clients."));
-    mPsVRDP->setNoneToolTip (tr ("The actual default library file will be displayed after accepting the changes and opening this dialog again."));
-    mPsVRDP->setSelectToolTip (tr ("Opens a dialog to select the VRDP authentication library file."));
-    mPsVRDP->setResetToolTip (tr ("Resets the authentication library file to the default value."));
+    mPsVdi->setWhatsThis (tr ("Displays the path to the default VDI folder. "
+                              "This folder is used, if not explicitly "
+                              "specified otherwise, when adding existing or "
+                              "creating new virtual hard disks."));
+    mPsMach->setWhatsThis (tr ("Displays the path to the default virtual "
+                               "machine folder. This folder is used, if not "
+                               "explicitly specified otherwise, when creating "
+                               "new virtual machines."));
+    mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
+                               "provides authentication for Remote Display "
+                               "(VRDP) clients."));
 }
 
 void VBoxGLSettingsGeneral::onResetFolderClicked()
