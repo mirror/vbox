@@ -74,6 +74,14 @@ __BEGIN_DECLS
  */
 HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 
+/**
+ * Checks if an interrupt event is currently pending. 
+ *
+ * @returns Interrupt event pending state.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMDECL(bool) HWACCMHasPendingIrq(PVM pVM);
+
 #ifndef IN_GC
 /**
  * Flushes the guest TLB
