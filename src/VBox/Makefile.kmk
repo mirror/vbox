@@ -61,7 +61,7 @@ ifdef VBOX_ONLY_ADDITIONS
 	Additions
 
 else  # !VBOX_ONLY_ADDITIONS
- SUBDIRS_BLDPROGS = Devices
+ SUBDIRS_BLDPROGS = Devices Main
 
  SUBDIRS = \
 	Runtime \
