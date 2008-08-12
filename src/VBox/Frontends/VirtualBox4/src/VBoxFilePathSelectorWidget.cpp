@@ -29,6 +29,8 @@
 #include <QDir>
 #include <QFileIconProvider>
 
+#include <VBoxDefs.h>
+
 enum
 {
     PathId = 0,
@@ -40,7 +42,7 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent /* = 0 
     : QIWithRetranslateUI<QComboBox> (aParent)
     , mIconProvider (new QFileIconProvider())
     , mCopyAction (new QAction (this))
-    , mMode (PathMode)
+    , mMode (Mode_Folder)
 {
     /* Populate items */
     insertItem (PathId, "");
@@ -71,12 +73,12 @@ VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
     delete mIconProvider;
 }
 
-void VBoxFilePathSelectorWidget::setMode (SelectorMode aMode)
+void VBoxFilePathSelectorWidget::setMode (Mode aMode)
 {
     mMode = aMode;
 }
 
-VBoxFilePathSelectorWidget::SelectorMode VBoxFilePathSelectorWidget::mode() const
+VBoxFilePathSelectorWidget::Mode VBoxFilePathSelectorWidget::mode() const
 {
     return mMode;
 }
@@ -94,6 +96,11 @@ bool VBoxFilePathSelectorWidget::isResetEnabled () const
 {
     return (count() - 1  == ResetId);
 }
+
+#if 0
+
+/// @todo enabling this requires to allow to customize the names of the
+/// "Other..." and "Reset" items too which is not yet done.
 
 void VBoxFilePathSelectorWidget::setNoneToolTip (const QString &aText)
 {
@@ -115,6 +122,8 @@ void VBoxFilePathSelectorWidget::setResetToolTip (const QString &aText)
     setItemData (ResetId, aText, Qt::ToolTipRole);
 }
 
+#endif /* 0 */
+
 bool VBoxFilePathSelectorWidget::isModified() const
 {
     return true;
@@ -123,15 +132,6 @@ bool VBoxFilePathSelectorWidget::isModified() const
 void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
 {
     mPath = aPath.isEmpty() ? QString::null : aPath;
-
-    /* Attach corresponding icon */
-    setItemIcon (PathId, QFileInfo (mPath).exists() ?
-                         mIconProvider->icon (QFileInfo (mPath)) :
-                         defaultIcon());
-
-    /* Store full path as tooltip */
-    setToolTip (filePath());
-    setItemData (PathId, toolTip(), Qt::ToolTipRole);
 
     refreshText();
 }
@@ -149,8 +149,21 @@ void VBoxFilePathSelectorWidget::resizeEvent (QResizeEvent *aEvent)
 
 void VBoxFilePathSelectorWidget::retranslateUi()
 {
+    /* how do we interpret the "nothing selected" item? */
+    if (isResetEnabled())
+    {
+        mNoneStr = tr ("<reset to default>");
+        mNoneTip = tr ("The actual default path value will be displayed after "
+                       "accepting the changes and opening this dialog again.");
+    }
+    else
+    {
+        mNoneStr = tr ("<not selected>");
+        mNoneTip = tr ("Please use the <b>Other...</b> item from the drop-down "
+                       "list to select a desired path.");
+    }
+
     /* Retranslate 'path' item */
-    mNoneStr = tr ("None");
     if (mPath.isNull())
     {
         setItemText (PathId, mNoneStr);
@@ -164,6 +177,29 @@ void VBoxFilePathSelectorWidget::retranslateUi()
     /* Retranslate 'reset' item */
     if (count() - 1 == ResetId)
         setItemText (ResetId, tr ("Reset"));
+
+    /* set tooltips of the above two items based on the mode */
+    switch (mMode)
+    {
+        case Mode_Folder:
+            setItemData (SelectId,
+                         tr ("Opens a dialog to select a different folder."),
+                         Qt::ToolTipRole);
+            setItemData (ResetId,
+                         tr ("Resets the folder path to the default value."),
+                         Qt::ToolTipRole);
+            break;
+        case Mode_File:
+            setItemData (SelectId,
+                         tr ("Opens a dialog to select a different file."),
+                         Qt::ToolTipRole);
+            setItemData (ResetId,
+                         tr ("Resets the file path to the default value."),
+                         Qt::ToolTipRole);
+            break;
+        default:
+            AssertFailedBreak();
+    }
 
     /* Retranslate copy action */
     mCopyAction->setText (tr ("&Copy"));
@@ -198,7 +234,7 @@ void VBoxFilePathSelectorWidget::copyToClipboard()
 
 QIcon VBoxFilePathSelectorWidget::defaultIcon() const
 {
-    if (mMode == PathMode)
+    if (mMode == Mode_Folder)
         return mIconProvider->icon (QFileIconProvider::Folder);
     else
         return mIconProvider->icon (QFileIconProvider::File);
@@ -206,21 +242,28 @@ QIcon VBoxFilePathSelectorWidget::defaultIcon() const
 
 QString VBoxFilePathSelectorWidget::filePath() const
 {
+    /// @todo (r=dmik) why is it used as if it always returns a full path while
+    /// it actually may not?
+
     if (!mPath.isNull())
     {
-        if (mMode == PathMode)
-            return QDir (mPath).path();
-        else
-            return QFileInfo (mPath).filePath();
+        switch (mMode)
+        {
+            case Mode_Folder:
+                return QDir (mPath).path();
+            case Mode_File:
+                return QFileInfo (mPath).filePath();
+            default:
+                AssertFailedBreak();
+        }
     }
 
-    return mNoneTip;
+    return QString::null;
 }
 
 QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
 {
-    /* Full text stored in toolTip */
-    QString fullText = toolTip();
+    QString fullText = filePath();
     if (fullText.isEmpty())
         return fullText;
 
@@ -256,7 +299,7 @@ QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
     fullText.insert (position, "...");
     int newSize = fontMetrics().width (fullText);
 
-    return newSize < oldSize ? fullText : toolTip();
+    return newSize < oldSize ? fullText : filePath();
 }
 
 void VBoxFilePathSelectorWidget::refreshText()
@@ -264,7 +307,12 @@ void VBoxFilePathSelectorWidget::refreshText()
     if (mPath.isNull())
     {
         if (itemText (PathId) != mNoneStr)
+        {
             setItemText (PathId, mNoneStr);
+            setItemIcon (PathId, QIcon());
+            setItemData (PathId, mNoneTip, Qt::ToolTipRole);
+            setToolTip (mNoneTip);
+        }
     }
     else
     {
@@ -274,6 +322,15 @@ void VBoxFilePathSelectorWidget::refreshText()
         QRect rect = QApplication::style()->subControlRect (
             QStyle::CC_ComboBox, &options, QStyle::SC_ComboBoxEditField);
         setItemText (PathId, shrinkText (rect.width() - iconSize().width()));
+
+        /* Attach corresponding icon */
+        setItemIcon (PathId, QFileInfo (mPath).exists() ?
+                             mIconProvider->icon (QFileInfo (mPath)) :
+                             defaultIcon());
+
+        /* Store full path as tooltip */
+        setToolTip (filePath());
+        setItemData (PathId, toolTip(), Qt::ToolTipRole);
     }
 }
 
