@@ -72,7 +72,7 @@ HWACCMDECL(int) HWACCMFlushTLB(PVM pVM)
     /* @todo Intel for nested paging */
     if (pVM->hwaccm.s.svm.fSupported)
     {
-        Log(("HWACCMFlushTLB\n"));
+        LogFlow(("HWACCMFlushTLB\n"));
         pVM->hwaccm.s.svm.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBManual);
     }
