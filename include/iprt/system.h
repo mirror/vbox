@@ -41,6 +41,39 @@ __BEGIN_DECLS
  * @{
  */
 
+/**
+ * Info level for RTSystemGetOSInfo().
+ */
+typedef enum RTSYSOSINFO
+{
+    RTSYSOSINFO_INVALID = 0,    /**< The usual invalid entry. */
+    RTSYSOSINFO_PRODUCT,        /**< OS product name. (uname -o) */
+    RTSYSOSINFO_RELEASE,        /**< OS release. (uname -r) */
+    RTSYSOSINFO_VERSION,        /**< OS version, optional. (uname -v) */
+    RTSYSOSINFO_SERVICEPACK,    /**< Service/fix pack level, optional. */
+    RTSYSOSINFO_END             /**< End of the valid info levels. */
+} RTSYSOSINFO;
+
+
+/**
+ * Queries information about the OS.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_PARAMETER if enmInfo is invalid.
+ * @retval  VERR_INVALID_POINTER if pszInfoStr is invalid.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small. The buffer will
+ *          contain the chopped off result in this case, provided cchInfo isn't 0.
+ * @retval  VERR_NOT_SUPPORTED if the info level isn't implemented. The buffer will
+ *          contain an empty string.
+ *
+ * @param   enmInfo         The OS info level.
+ * @param   pszInfo         Where to store the result.
+ * @param   cchInfo         The size of the output buffer.
+ */
+RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchInfo);
+
+
 /** @} */
 
 __END_DECLS
