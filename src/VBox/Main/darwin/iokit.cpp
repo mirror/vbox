@@ -101,8 +101,6 @@ static bool darwinOpenMasterPort(void)
 }
 
 
-#ifdef VBOX_WITH_USB
-
 /**
  * Checks whether the value exists.
  *
@@ -230,7 +228,7 @@ static bool darwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
  * @param   KeyStrRef   The key name.
  * @param   pProcess    Where to store the key value.
  */
-static bool darwinDictGetProccess(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, PRTPROCESS pProcess)
+static bool darwinDictGetProcess(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, PRTPROCESS pProcess)
 {
     switch (sizeof(*pProcess))
     {
@@ -498,6 +496,8 @@ static void darwinDumpObj(io_object_t Object)
 
 #endif /* helpers for dumping registry dictionaries */
 
+
+#ifdef VBOX_WITH_USB
 
 /**
  * Notification data created by DarwinSubscribeUSBNotifications, used by
@@ -842,8 +842,8 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
             krc = IORegistryEntryCreateCFProperties(Interface, &PropsRef, kCFAllocatorDefault, kNilOptions);
             if (krc == KERN_SUCCESS)
             {
-                fHaveOwner = darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
-                fHaveClient = darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
+                fHaveOwner = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
+                fHaveClient = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
                 CFRelease(PropsRef);
             }
         }
