@@ -174,7 +174,9 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
 	64Bit/Windows/Drivers/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMRXNP.dll
  endif
  ifdef VBOX_SIGNING_MODE
-  # .cat from output dirs
+  GUESTADDITIONS_FILESPEC.win.amd64 += \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.cat \
+	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.cat
  endif
 endif
 
@@ -204,6 +206,11 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
   GUESTADDITIONS_FILESPEC.win.x86 += \
 	32Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
 	32Bit/Windows/Drivers/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMRXNP.dll
+ endif
+ ifdef VBOX_SIGNING_MODE
+  GUESTADDITIONS_FILESPEC.win.x86 += \
+	32Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat \
+	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.cat
  endif
 endif # win.x86
 
