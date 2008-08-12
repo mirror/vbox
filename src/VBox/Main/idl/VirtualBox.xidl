@@ -10381,7 +10381,7 @@
       stores performance metrics data.
 
       Performance metrics are associated with objects like IHost and 
-      ISessionMachine. Each object has a distinct set of performance metrics. 
+      IMachine. Each object has a distinct set of performance metrics. 
       The set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
 
       Metric data are collected at the specified intervals and are retained 
@@ -10424,7 +10424,7 @@
         </li>
         <li>
           Allocate and populate an array with references to objects the metrics 
-          will be collected for.
+          will be collected for. Use references to IHost and IMachine objects.
         </li>
         <li>
           Allocate and populate an array with base metric names the data will be 
