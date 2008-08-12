@@ -45,7 +45,7 @@ static int g_cErrors = 0;
 
 int main()
 {
-    RTR3Init();
+    RTR3Init(false /*fInitSUPLib */);
 
     RTPrintf("tstSystemQueryOsInfo: TESTINGS...\n");
 
