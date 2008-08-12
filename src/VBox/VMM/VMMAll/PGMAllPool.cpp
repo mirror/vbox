@@ -702,6 +702,10 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFra
 {
     switch (pCpu->pCurInstr->opcode)
     {
+        /* call implies the actual push of the return address faulted */
+        case OP_CALL:
+            Log4(("pgmPoolMonitorIsReused: CALL\n"));
+            return true;
         case OP_PUSH:
             Log4(("pgmPoolMonitorIsReused: PUSH\n"));
             return true;
