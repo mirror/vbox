@@ -82,7 +82,7 @@ RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchIn
         }
 
 
-        case RTSYSOSINFO_SERVICEPACK:
+        case RTSYSOSINFO_SERVICE_PACK:
         default:
             *pszInfo = '\0';
             return VERR_NOT_SUPPORTED;
