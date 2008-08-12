@@ -50,7 +50,7 @@ typedef enum RTSYSOSINFO
     RTSYSOSINFO_PRODUCT,        /**< OS product name. (uname -o) */
     RTSYSOSINFO_RELEASE,        /**< OS release. (uname -r) */
     RTSYSOSINFO_VERSION,        /**< OS version, optional. (uname -v) */
-    RTSYSOSINFO_SERVICEPACK,    /**< Service/fix pack level, optional. */
+    RTSYSOSINFO_SERVICE_PACK,   /**< Service/fix pack level, optional. */
     RTSYSOSINFO_END             /**< End of the valid info levels. */
 } RTSYSOSINFO;
 

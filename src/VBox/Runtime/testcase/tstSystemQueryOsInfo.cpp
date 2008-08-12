@@ -64,8 +64,8 @@ int main()
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
     RTPrintf("tstSystemQueryOsInfo: VERSION: \"%s\", rc=%Rrc\n", szInfo, rc);
 
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICEPACK, szInfo, sizeof(szInfo));
-    RTPrintf("tstSystemQueryOsInfo: SERVICEPACK: \"%s\", rc=%Rrc\n", szInfo, rc);
+    rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
+    RTPrintf("tstSystemQueryOsInfo: SERVICE_PACK: \"%s\", rc=%Rrc\n", szInfo, rc);
 
     /*
      * Check that unsupported stuff is terminated correctly.
