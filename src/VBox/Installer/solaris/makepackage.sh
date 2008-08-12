@@ -76,7 +76,7 @@ filelist_fixup prototype '$2 == "none"'                                         
 
 # install the kernel module to the right place.
 if test "$3" = "x86"; then
-    filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"                                    '$3 = "platform/i86pc/kernel/drv/vboxdrv=vboxdrv"; $6 = "sys"'
+    filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"'                                   '$3 = "platform/i86pc/kernel/drv/vboxdrv=vboxdrv"; $6 = "sys"'
 else
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"'                                   '$3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=vboxdrv"; $6 = "sys"'
 fi
