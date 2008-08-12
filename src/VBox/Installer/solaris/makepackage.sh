@@ -72,7 +72,7 @@ find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postins
 
 # don't grok for the sed class files
 filelist_fixup prototype '$2 == "none"'                                                                 '$5 = "root"; $6 = "bin"'
-filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3"'
+filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
 
 # install the kernel module to the right place.
 if test "$3" = "x86"; then
