@@ -3713,10 +3713,10 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
 
     VBOXHGCMSVCPARM parm[3];
 
-/*
- * Set up the pattern parameter, translating the comma-separated list to a
- * double-terminated zero-separated one.
- */
+    /*
+     * Set up the pattern parameter, translating the comma-separated list to a
+     * double-terminated zero-separated one.
+     */
     Utf8Str Utf8PatternsIn = aPatterns;
     if ((aPatterns != NULL) && Utf8PatternsIn.isNull())
         return E_OUTOFMEMORY;
@@ -3741,13 +3741,13 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
     parm[0].u.pointer.addr = pszPatterns;
     parm[0].u.pointer.size = iPatterns + 1;
 
-/*
- * Now things get slightly complicated.  Due to a race with the guest adding
- * properties, there is no good way to know how much large a buffer to provide
- * the service to enumerate into.  We choose a decent starting size and loop a
- * few times, each time retrying with the size suggested by the service plus
- * one Kb.
- */
+    /*
+     * Now things get slightly complicated.  Due to a race with the guest adding
+     * properties, there is no good way to know how much large a buffer to provide
+     * the service to enumerate into.  We choose a decent starting size and loop a
+     * few times, each time retrying with the size suggested by the service plus
+     * one Kb.
+     */
     size_t cchBuf = 4096;
     Utf8Str Utf8Buf;
     int vrc = VERR_BUFFER_OVERFLOW;
@@ -3768,10 +3768,10 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
     if (VERR_BUFFER_OVERFLOW == vrc)
         return setError (E_UNEXPECTED, tr ("Temporary failure due to guest activity, please retry"));
 
-/*
- * Finally we have to unpack the data returned by the service into the safe
- * arrays supplied by the caller.  We start by counting the number of entries.
- */
+    /*
+     * Finally we have to unpack the data returned by the service into the safe
+     * arrays supplied by the caller.  We start by counting the number of entries.
+     */
     const char *pszBuf
         = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
     unsigned cEntries = 0;
@@ -3785,9 +3785,9 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
        ++cEntries;
     }
 
-/*
- * And now we create the COM safe arrays and fill them in.
- */
+    /*
+     * And now we create the COM safe arrays and fill them in.
+     */
     com::SafeArray <BSTR> names(cEntries);
     com::SafeArray <BSTR> values(cEntries);
     com::SafeArray <ULONG64> timestamps(cEntries);
