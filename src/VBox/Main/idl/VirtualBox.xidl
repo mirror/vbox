@@ -10293,8 +10293,8 @@
 
         <see>ISession</see>
       </desc>
-      <param name="refIVirtualBox" type="wstring" dir="in"/>
-      <param name="return" type="wstring" dir="return"/>
+      <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
+      <param name="return" type="ISession" dir="return"/>
     </method>
 
     <method name="logoff">
@@ -10303,7 +10303,7 @@
         and destroys all resources associated with the session (most importantly, all
         managed objects created in the server while the session was active).
       </desc>
-      <param name="refIVirtualBox" type="wstring" dir="in"/>
+      <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
     </method>
 
   </interface>
