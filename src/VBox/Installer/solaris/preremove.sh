@@ -29,5 +29,10 @@ if test "$currentzone" = "global"; then
     rm -f /dev/vboxdrv
 fi
 
+# stop and unregister webservice daemon
+/usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+/usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
+
+
 echo "Done."
 
