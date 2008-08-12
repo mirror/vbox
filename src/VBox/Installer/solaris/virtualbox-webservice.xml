@@ -59,7 +59,7 @@
         grouping='optional_all'
         restart_on='none'>
             <service_fmri value='svc:/milestone/multi-user' />
-    </dependency>
+    </dependent>
 
     <exec_method
         type='method'
