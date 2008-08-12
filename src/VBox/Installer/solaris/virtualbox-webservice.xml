@@ -81,6 +81,8 @@
         </method_context>
     </exec_method>
 
+    <stability value='External' />
+
     <template>
         <common_name>
             <loctext xml:lang='C'>
@@ -88,8 +90,6 @@
             </loctext>
         </common_name>
     </template>
-
-    <stability value='External' />
 
 </service>
 
