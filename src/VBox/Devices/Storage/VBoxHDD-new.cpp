@@ -1254,6 +1254,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pPCHSGeometry   Pointer to physical disk geometry <= (16383,16,63). Not NULL.
  * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
@@ -1264,18 +1265,19 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszComment,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser)
+                               PCRTUUID pUuid, unsigned uOpenFlags,
+                               PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
+    RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
                  pDisk, pszBackend, pszFilename, enmType, cbSize, uImageFlags, pszComment,
                  pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                  pPCHSGeometry->cSectors, pLCHSGeometry->cCylinders,
-                 pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, uOpenFlags,
-                 pfnProgress, pvUser));
+                 pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, pUuid,
+                 uOpenFlags, pfnProgress, pvUser));
     do
     {
         /* sanity check */
@@ -1316,6 +1318,10 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                             pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
                             pLCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
+        /* The UUID may be NULL. */
+        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
+                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
+                           rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
@@ -1349,10 +1355,24 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             break;
         }
 
+        /* Create UUID if the caller didn't specify one. */
+        if (!pUuid)
+        {
+            rc = RTUuidCreate(&uuid);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdError(pDisk, rc, RT_SRC_POS,
+                             N_("VD: cannot generate UUID for image '%s'"),
+                             pszFilename);
+                break;
+            }
+            pUuid = &uuid;
+        }
+
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
         rc = pImage->Backend->pfnCreate(pImage->pszFilename, enmType, cbSize,
                                         uImageFlags, pszComment, pPCHSGeometry,
-                                        pLCHSGeometry,
+                                        pLCHSGeometry, pUuid,
                                         uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
                                         pfnProgress, pvUser, 0, 99,
                                         pDisk->pInterfaces,
@@ -1456,20 +1476,23 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszFilename     Name of the differencing image file to create.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
-                               const char *pszComment, unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser)
+                               const char *pszComment, PCRTUUID pUuid,
+                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
+                               void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
+    RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
-                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, uOpenFlags,
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, uOpenFlags,
                  pfnProgress, pvUser));
     do
     {
@@ -1486,6 +1509,10 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                            rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
                            ("uImageFlags=%#x\n", uImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
+        /* The UUID may be NULL. */
+        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
+                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
                            rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
                            ("uOpenFlags=%#x\n", uOpenFlags),
@@ -1520,12 +1547,26 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
             break;
         }
 
+        /* Create UUID if the caller didn't specify one. */
+        if (!pUuid)
+        {
+            rc = RTUuidCreate(&uuid);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdError(pDisk, rc, RT_SRC_POS,
+                             N_("VD: cannot generate UUID for image '%s'"),
+                             pszFilename);
+                break;
+            }
+            pUuid = &uuid;
+        }
+
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
         rc = pImage->Backend->pfnCreate(pImage->pszFilename,
                                         VD_IMAGE_TYPE_DIFF, pDisk->cbSize,
                                         uImageFlags, pszComment,
                                         &pDisk->PCHSGeometry,
-                                        &pDisk->LCHSGeometry,
+                                        &pDisk->LCHSGeometry, pUuid,
                                         uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
                                         pfnProgress, pvUser, 0, 99,
                                         pDisk->pInterfaces,
@@ -1966,12 +2007,12 @@ movefail:
         if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
         {
             rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
-                              "", uOpenFlagsFrom, NULL, NULL);
+                              "", NULL, uOpenFlagsFrom, NULL, NULL);
         } else {
             rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
                               cbSize, uImageFlagsFrom, "",
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
-                              uOpenFlagsFrom, NULL, NULL);
+                              NULL, uOpenFlagsFrom, NULL, NULL);
         }
         if (RT_FAILURE(rc))
             break;

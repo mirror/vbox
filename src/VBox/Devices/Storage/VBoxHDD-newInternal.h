@@ -88,6 +88,7 @@ typedef struct VBOXHDDBACKEND
      * @param   pszComment      Pointer to image comment. NULL is ok.
      * @param   pPCHSGeometry   Physical drive geometry CHS <= (16383,16,255).
      * @param   pLCHSGeometry   Logical drive geometry CHS <= (1024,255,63).
+     * @param   pUuid           New UUID of the image. Not NULL.
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
      * @param   pvUser          User argument for the progress callback.
@@ -96,7 +97,7 @@ typedef struct VBOXHDDBACKEND
      * @param   pInterfaces     Pointer to the supported interfaces of the caller.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PVDINTERFACE pInterfaces, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PVDINTERFACE pInterfaces, void **ppvBackendData));
 
     /**
      * Rename a disk image. Only needs to work as long as the operating

@@ -946,6 +946,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pPCHSGeometry   Pointer to physical disk geometry <= (16383,16,63). Not NULL.
  * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
@@ -956,8 +957,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszComment,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser);
+                               PCRTUUID pUuid, unsigned uOpenFlags,
+                               PFNVMPROGRESS pfnProgress, void *pvUser);
 
 /**
  * Creates and opens a new differencing image file in HDD container.
@@ -969,14 +970,16 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszFilename     Name of the differencing image file to create.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
-                               const char *pszComment, unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser);
+                               const char *pszComment, PCRTUUID pUuid,
+                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
+                               void *pvUser);
 
 /**
  * Merges two images (not necessarily with direct parent/child relationship).
