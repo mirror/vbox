@@ -575,7 +575,7 @@ IPCD-HEADERS_SOURCES = \
 xpidl_TEMPLATE = XPCOMBLDPROG
 xpidl_DEFS = EXPORT_XPT_API
 ## @todo This assumes HOST == TARGET.
-xpidl_INST = bin/
+xpidl_INST = $(INST_BIN)
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \
