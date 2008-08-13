@@ -34,6 +34,7 @@
 #include <QPixmap>
 #include <QMenu>
 #include <QStyle>
+#include <QProcess>
 
 class QAction;
 class QLabel;
@@ -159,6 +160,41 @@ public:
         {}
 
     const QString mLangId;
+};
+
+class Process : public QProcess
+{
+    Q_OBJECT;
+
+public:
+
+    static QByteArray singleShot (const QString &aProcessName,
+                                  int aTimeout = 5000
+                                  /* wait for data maximum 5 seconds */)
+    {
+        /* Why is it really needed is because of Qt4.3 bug with QProcess.
+         * This bug is about QProcess sometimes (~70%) do not receive
+         * notification about process was finished, so this makes
+         * 'bool QProcess::waitForFinished (int)' block the GUI thread and
+         * never dismissed with 'true' result even if process was really
+         * started&finished. So we just waiting for some information
+         * on process output and destroy the process with force. Due to
+         * QProcess::~QProcess() has the same 'waitForFinished (int)' blocker
+         * we have to change process state to QProcess::NotRunning. */
+
+        QByteArray result;
+        Process process;
+        process.start (aProcessName);
+        bool firstShotReady = process.waitForReadyRead (aTimeout);
+        if (firstShotReady)
+            result = process.readAllStandardOutput();
+        process.setProcessState (QProcess::NotRunning);
+        return result;
+    }
+
+protected:
+
+    Process (QWidget *aParent = 0) : QProcess (aParent) {}
 };
 
 // VBoxGlobal
